@@ -13,9 +13,9 @@ In this repository, you will find the following Jupyter notebooks:
 - [Unbalanced Optimal Transport](5-unbalanced.ipynb)
 - [Diffusion models and Optimal Transport](6-diffusion.ipynb)
 
-You can either download these `.ipynb` notebooks and run them locally, or click on  
-<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>  
-at the top of the notebook preview to run them directly in Google Colab (requires a Google account).
+You can either download these `.ipynb` notebooks and run them locally, or click on 
+<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" style="display:inline; vertical-align:middle;"/> 
+to run them directly in Google Colab (requires a Google account).
 
 ## Slides for the Course
 
