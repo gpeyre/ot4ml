@@ -5,7 +5,7 @@ This repository contains materials for a course on Optimal Transport for Machine
 
 ## Python Resources
 
-In the `` directory, you will find the following Jupyter notebooks:
+In this repository, you will find the following Jupyter notebooks:
 
 - [Optimal Transport with Linear Programming](1-linprog.ipynb)
 - [Entropic Regularization of Optimal Transport](2-sinkhorn.ipynb)
