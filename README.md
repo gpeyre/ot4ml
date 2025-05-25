@@ -7,27 +7,26 @@ This repository contains materials for a course on Optimal Transport for Machine
 
 ## Python Resources
 
-In the `python/` directory, you will find the following Jupyter notebooks:
+In the `` directory, you will find the following Jupyter notebooks:
 
-- [Optimal Transport with Linear Programming](python/1-linprog.ipynb)
-- [Entropic Regularization of Optimal Transport](python/2-sinkhorn.ipynb)
-- [Advanced Topics on Sinkhorn Algorithm](python/3-sinkhorn-advanced.ipynb)
-- [Semi-discrete Optimal Transport](python/4-semidiscrete.ipynb)
-- [Unbalanced Optimal Transport](python/5-unbalanced.ipynb)
-- [Diffusion models and Optimal Transport](python/6-diffusion.ipynb)
+- [Optimal Transport with Linear Programming](1-linprog.ipynb)
+- [Entropic Regularization of Optimal Transport](2-sinkhorn.ipynb)
+- [Advanced Topics on Sinkhorn Algorithm](3-sinkhorn-advanced.ipynb)
+- [Semi-discrete Optimal Transport](4-semidiscrete.ipynb)
+- [Unbalanced Optimal Transport](5-unbalanced.ipynb)
+- [Diffusion models and Optimal Transport](6-diffusion.ipynb)
 
 To open these notebooks in **Google Colab**, follow these steps:
 
 1. Go to the [GitHub repository](https://github.com/gpeyre/ot4ml).
-2. Navigate to the `python/` folder.
-3. Click on the notebook you want to open.
-4. Click the "Open in Colab" button at the top of the notebook preview, or manually replace `github.com` with `colab.research.google.com/github` in the URL to open it in Colab.
+2. Click on the notebook you want to open.
+3. Click the "Open in Colab" button at the top of the notebook preview, or manually replace `github.com` with `colab.research.google.com/github` in the URL to open it in Colab.
 
 Example:  
-To open `python/1-linprog.ipynb`, go to  
-`https://github.com/gpeyre/ot4ml/blob/main/python/1-linprog.ipynb`  
+To open `1-linprog.ipynb`, go to  
+`https://github.com/gpeyre/ot4ml/blob/main/1-linprog.ipynb`  
 and replace it with  
-`https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/1-linprog.ipynb`
+`https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/1-linprog.ipynb`
 
 ## Slides for the Course
 
