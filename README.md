@@ -1,4 +1,4 @@
-# ot4ml - Optimal Transport for Machine Learners
+<h1 align="center">OT4ML - Optimal Transport for Machine Learners</h1>
 
 This repository contains materials for a course on Optimal Transport for Machine Learning.
 
