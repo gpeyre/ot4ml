@@ -1,6 +1,4 @@
 # ot4ml
-
-# ot4ml
 **Optimal Transport for Machine Learners**
 
 This repository contains materials for a course on Optimal Transport for Machine Learning.
@@ -39,4 +37,16 @@ and replace it with
 
 The lecture notes *Optimal Transport for Machine Learners* can be found on [arXiv:2505.06589](https://arxiv.org/abs/2505.06589).
 
+## Other Resources
 
+### Bibliography
+
+- *Computational Optimal Transport*, Gabriel Peyré & Marco Cuturi, 2018 — [optimaltransport.github.io](https://optimaltransport.github.io/)
+- *Optimal Transport for Applied Mathematicians*, Filippo Santambrogio, Springer, 2016 — [PDF](https://www.math.u-psud.fr/~filippo/OTAM-cvgmt.pdf)
+- *Statistical Optimal Transport*, Sinho Chewi, Jonathan Niles-Weed, Philippe Rigollet, 2024 — [arXiv:2407.18163](https://arxiv.org/abs/2407.18163)
+
+### Code
+
+- [Python Optimal Transport (POT)](https://pythonot.github.io/)
+- [Optimal Transport Tools (OTT) in JAX](https://ott-jax.readthedocs.io/en/latest/)
+- [GeomLoss](https://www.kernel-operations.io/geomloss/)
