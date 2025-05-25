@@ -6,12 +6,12 @@ This repository contains materials for a course on Optimal Transport for Machine
 
 In this repository, you will find the following Jupyter notebooks:
 
-- [Optimal Transport with Linear Programming](python/1-linprog.ipynb)
-- [Entropic Regularization of Optimal Transport](python/2-sinkhorn.ipynb)
-- [Advanced Topics on Sinkhorn Algorithm](python/3-sinkhorn-advanced.ipynb)
-- [Semi-discrete Optimal Transport](python/4-semidiscrete.ipynb)
-- [Unbalanced Optimal Transport](python/5-unbalanced.ipynb)
-- [Diffusion models and Optimal Transport](python/6-diffusion.ipynb)
+- [Optimal Transport with Linear Programming](python/1-linprog.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/1-linprog.ipynb)
+- [Entropic Regularization of Optimal Transport](python/2-sinkhorn.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/2-sinkhorn.ipynb)
+- [Advanced Topics on Sinkhorn Algorithm](python/3-sinkhorn-advanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/3-sinkhorn-advanced.ipynb)
+- [Semi-discrete Optimal Transport](python/4-semidiscrete.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/4-semidiscrete.ipynb)
+- [Unbalanced Optimal Transport](python/5-unbalanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/5-unbalanced.ipynb)
+- [Diffusion models and Optimal Transport](python/6-diffusion.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/6-diffusion.ipynb)
 
 You can either download these `.ipynb` notebooks and run them locally, or click on 
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" style="display:inline; vertical-align:middle;"/> 
