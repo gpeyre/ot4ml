@@ -14,17 +14,9 @@ In this repository, you will find the following Jupyter notebooks:
 - [Unbalanced Optimal Transport](5-unbalanced.ipynb)
 - [Diffusion models and Optimal Transport](6-diffusion.ipynb)
 
-To open these notebooks in **Google Colab**, follow these steps:
-
-1. Go to the [GitHub repository](https://github.com/gpeyre/ot4ml).
-2. Click on the notebook you want to open.
-3. Click the "Open in Colab" button at the top of the notebook preview, or manually replace `github.com` with `colab.research.google.com/github` in the URL to open it in Colab.
-
-Example:  
-To open `1-linprog.ipynb`, go to  
-`https://github.com/gpeyre/ot4ml/blob/main/1-linprog.ipynb`  
-and replace it with  
-`https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/1-linprog.ipynb`
+You can either download these `.ipynb` notebooks and run them locally, or click on  
+<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>  
+at the top of the notebook preview to run them directly in Google Colab (requires a Google account).
 
 ## Slides for the Course
 
