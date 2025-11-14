@@ -12,7 +12,7 @@ In this repository, you will find the following Jupyter notebooks:
 - [Semi-discrete Optimal Transport](python/4-semidiscrete.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/4-semidiscrete.ipynb)
 - [Unbalanced Optimal Transport](python/5-unbalanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/5-unbalanced.ipynb)
 - [Diffusion models and Optimal Transport](python/6-diffusion.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/6-diffusion.ipynb)
-- [Wasserstein gradient flow of interaction functionals](7-wasserstein-flows.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/7-wasserstein-flows.ipynb)
+- [Wasserstein gradient flow of interaction functionals](python/7-wasserstein-flows.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/7-wasserstein-flows.ipynb)
 
 
 You can either download these `.ipynb` notebooks and run them locally, or click on 
