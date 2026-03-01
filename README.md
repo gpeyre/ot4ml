@@ -8,11 +8,12 @@ In this repository, you will find the following Jupyter notebooks:
 
 - [Optimal Transport with Linear Programming](python/1-linprog.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/1-linprog.ipynb)
 - [Entropic Regularization of Optimal Transport](python/2-sinkhorn.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/2-sinkhorn.ipynb)
-- [Advanced Topics on Sinkhorn Algorithm](python/3-sinkhorn-advanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/3-sinkhorn-advanced.ipynb)
+- [Advanced Topics on Sinkhorn Algorithms](python/3-sinkhorn-advanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/3-sinkhorn-advanced.ipynb)
 - [Semi-discrete Optimal Transport](python/4-semidiscrete.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/4-semidiscrete.ipynb)
 - [Unbalanced Optimal Transport](python/5-unbalanced.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/5-unbalanced.ipynb)
-- [Diffusion models and Optimal Transport](python/6-diffusion.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/6-diffusion.ipynb)
-- [Wasserstein gradient flow of interaction functionals](python/7-wasserstein-flows.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/7-wasserstein-flows.ipynb)
+- [Diffusion Models and Optimal Transport](python/6-diffusion.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/6-diffusion.ipynb)
+- [Wasserstein Gradient Flows of Interaction Functionals](python/7-wasserstein-flows.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/7-wasserstein-flows.ipynb)
+- [Discrete Diffusion](python/8-discrete_diffusion.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/8-discrete_diffusion.ipynb)
 
 
 You can either download these `.ipynb` notebooks and run them locally, or click on 
@@ -21,7 +22,7 @@ to run them directly in Google Colab (requires a Google account).
 
 ## Slides for the Course
 
-- [Monge and Kantorovitch](https://speakerdeck.com/gpeyre/computational-ot-number-1-monge-and-kantorovitch)
+- [Monge and Kantorovich](https://speakerdeck.com/gpeyre/computational-ot-number-1-monge-and-kantorovitch)
 - [Entropic Regularization](https://speakerdeck.com/gpeyre/computational-ot-number-2-entropic-regularization)
 - [Dual and Semidiscrete](https://speakerdeck.com/gpeyre/computational-ot-number-1-dual-and-semidiscrete)
 - [Gradient Flow and Diffusion Models](https://speakerdeck.com/gpeyre/computational-ot-number-4-gradient-flow-and-diffusion-models)
