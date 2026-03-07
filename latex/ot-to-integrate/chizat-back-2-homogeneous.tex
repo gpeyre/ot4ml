@@ -1,0 +1,428 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage{bbm}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Ptwo}{\mathcal{P}_2}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\1}{\mathbbm{1}}
+
+\begin{document}
+
+\title{A Semi--Rigorous Sketch of the Chizat--Bach Global Convergence Result\\
+for Wasserstein Gradient Flow of Two--Layer Mean Field Networks}
+\author{}
+\date{}
+\maketitle
+
+\section{Setup and notation}
+
+We follow the mean field viewpoint of two--layer networks from Chizat and Bach, focusing on the quadratic loss and a positively $2$--homogeneous feature map.
+
+\subsection{Mean field model}
+
+Let $\mathcal{X}$ be the input space, with a data distribution $\mu$ on $\mathcal{X}$ and a target function $f^\star:\mathcal{X}\to\R$.
+
+Let $\Theta\subset\R^m$ be the parameter space of a neuron. A two--layer network in the mean field regime is represented by a probability measure $\rho$ on $\Theta$, and the corresponding predictor is
+\begin{equation}
+\label{eq:mean-field-model}
+f_\rho(x) \;:=\; \int_{\Theta} \phi(x,\theta)\,\rho(\dd\theta),
+\end{equation}
+where $\phi:\mathcal{X}\times\Theta\to\R$ is a feature map.
+
+We assume that the activation structure is such that $\phi(\,\cdot\,,\cdot)$ is \emph{positively $2$--homogeneous} in $\theta$:
+\begin{equation}
+\label{eq:2-homog-phi}
+\phi(x,\alpha\theta) = \alpha^2\,\phi(x,\theta), 
+\qquad \forall x\in\mathcal{X},\ \theta\in\Theta,\ \alpha>0.
+\end{equation}
+This reflects the positive homogeneity of ReLU combined with an appropriate reparameterization of the two--layer network, where inner and outer weights are absorbed into $\theta$.
+
+\subsection{Quadratic loss in the mean field regime}
+
+We train the network by minimizing the (population) quadratic loss
+\begin{equation}
+\label{eq:loss}
+\mathcal{L}(\rho)
+:= \frac{1}{2}\int_{\mathcal{X}} \bigl(f_\rho(x)-f^\star(x)\bigr)^2\,\mu(\dd x)
+= \frac{1}{2}\E_{x\sim \mu}\Bigl[\bigl(f_\rho(x)-f^\star(x)\bigr)^2\Bigr].
+\end{equation}
+The model is linear in the measure $\rho$, and the loss is convex in $f_\rho$. Hence $\mathcal{L}$ is convex as a functional of $\rho$ in the \emph{linear} structure
+\[
+\rho\mapsto \rho'=(1-t)\rho_0+t\rho_1,
+\]
+though not necessarily geodesically convex in the Wasserstein metric.
+
+We assume throughout that the target function is in the closure of the model:
+\begin{assumption}[Realizability]
+\label{ass:realizable}
+There exists a probability measure $\rho^\star$ on $\Theta$ such that $f_{\rho^\star}=f^\star$ $\mu$--almost surely, or at least $\inf_\rho \mathcal{L}(\rho)=\mathcal{L}(\rho^\star)$.
+\end{assumption}
+
+\section{First variation and Wasserstein gradient flow}
+
+\subsection{First variation of $\mathcal{L}$}
+
+Let $\rho$ be a probability measure on $\Theta$, and consider a perturbation $\rho+\varepsilon\eta$, where $\eta$ is a signed measure with zero total mass so that $\rho+\varepsilon\eta$ remains a probability measure for small $\varepsilon$.
+
+The corresponding predictor is
+\[
+f_{\rho+\varepsilon\eta}(x)
+= f_\rho(x) + \varepsilon \int_\Theta \phi(x,\theta)\,\eta(\dd\theta).
+\]
+Plugging this into \eqref{eq:loss}, the derivative at $\varepsilon=0$ is
+\begin{align}
+\frac{\dd}{\dd\varepsilon}\mathcal{L}(\rho+\varepsilon\eta)\bigg|_{\varepsilon=0}
+&= \int_{\mathcal{X}} (f_\rho(x)-f^\star(x))
+\left(\int_\Theta \phi(x,\theta)\,\eta(\dd\theta)\right)\mu(\dd x) \\
+&= \int_\Theta \left(
+\int_{\mathcal{X}} (f_\rho(x)-f^\star(x))\phi(x,\theta)\,\mu(\dd x)
+\right)\eta(\dd\theta).
+\end{align}
+This identifies the first variation of $\mathcal{L}$ at $\rho$ as the function
+\begin{equation}
+\label{eq:first-variation}
+\frac{\delta \mathcal{L}}{\delta\rho}(\theta)
+= \Psi_\rho(\theta)
+:= \int_{\mathcal{X}} (f_\rho(x)-f^\star(x))\,\phi(x,\theta)\,\mu(\dd x).
+\end{equation}
+In other words
+\[
+\frac{\dd}{\dd\varepsilon}\mathcal{L}(\rho+\varepsilon\eta)\bigg|_{\varepsilon=0}
+= \int_\Theta \Psi_\rho(\theta)\,\eta(\dd\theta).
+\]
+
+\subsection{Wasserstein gradient flow}
+
+We now look at the gradient flow of $\mathcal{L}$ in the $2$--Wasserstein metric $W_2$ on $\Ptwo(\Theta)$. Formally, this is the curve $(\rho_t)_{t\ge 0}$ solving the continuity equation
+\begin{equation}
+\label{eq:WGF-continuity}
+\partial_t \rho_t + \nabla_\theta\cdot(\rho_t v_t) = 0,
+\end{equation}
+with velocity field
+\begin{equation}
+\label{eq:velocity-def}
+v_t(\theta) = -\nabla_\theta \Psi_{\rho_t}(\theta)
+= -\nabla_\theta \frac{\delta \mathcal{L}}{\delta\rho_t}(\theta).
+\end{equation}
+Here $\nabla_\theta$ and $\nabla_\theta\cdot$ are understood in the standard sense in $\R^m$, assuming enough smoothness of $\Psi_\rho$ and $\rho$ to justify these formal computations.
+
+The curve $t\mapsto \rho_t$ is the mean field limit of gradient descent (in suitable scaling) on the parameters of a wide two--layer network. This link is well established in the mean field literature and we omit its derivation.
+
+\subsection{Energy dissipation identity}
+
+The Wasserstein gradient flow structure implies that $\mathcal{L}(\rho_t)$ decreases along the flow and its rate of change is related to the squared speed in parameter space.
+
+Formally, for smooth compactly supported $v_t$ and $\rho_t$, we compute
+\begin{align}
+\frac{\dd}{\dd t}\mathcal{L}(\rho_t)
+&= \int_\Theta \Psi_{\rho_t}(\theta)\,\partial_t\rho_t(\dd\theta) \\
+&= -\int_\Theta \Psi_{\rho_t}(\theta)\,\nabla_\theta\cdot(\rho_t v_t)(\dd\theta) \\
+&= \int_\Theta \nabla_\theta \Psi_{\rho_t}(\theta)\cdot v_t(\theta)\,\rho_t(\dd\theta),
+\end{align}
+where the last line follows from integration by parts under suitable boundary conditions in $\theta$.
+
+Using the definition \eqref{eq:velocity-def} of $v_t$, we obtain
+\begin{equation}
+\label{eq:energy-diss}
+\frac{\dd}{\dd t}\mathcal{L}(\rho_t)
+= -\int_\Theta \bigl|\nabla_\theta \Psi_{\rho_t}(\theta)\bigr|^2\,\rho_t(\dd\theta)
+\le 0.
+\end{equation}
+In particular $\mathcal{L}(\rho_t)$ is nonincreasing along the flow. Whenever the integral in \eqref{eq:energy-diss} is strictly positive, the loss strictly decreases.
+
+Any stationary point of the Wasserstein gradient flow must satisfy
+\begin{equation}
+\label{eq:stationary-gradient}
+\int_\Theta \bigl|\nabla_\theta \Psi_{\rho_\infty}(\theta)\bigr|^2\,\rho_\infty(\dd\theta) = 0,
+\end{equation}
+which implies
+\begin{equation}
+\label{eq:gradient-zero-on-support}
+\nabla_\theta \Psi_{\rho_\infty}(\theta) = 0
+\quad\text{for }\rho_\infty\text{--almost every }\theta.
+\end{equation}
+
+\section{Structure from $2$--homogeneity}
+
+The key property of $\phi$ is positive $2$--homogeneity in $\theta$.
+
+\subsection{$\Psi_\rho$ is also $2$--homogeneous}
+
+Using \eqref{eq:2-homog-phi}, for any $\alpha>0$ we have
+\begin{align}
+\Psi_\rho(\alpha\theta)
+&= \int_{\mathcal{X}} (f_\rho(x)-f^\star(x))\,\phi(x,\alpha\theta)\,\mu(\dd x) \\
+&= \int_{\mathcal{X}} (f_\rho(x)-f^\star(x))\,\alpha^2\phi(x,\theta)\,\mu(\dd x) \\
+&= \alpha^2 \Psi_\rho(\theta).
+\end{align}
+So $\Psi_\rho$ is also positively $2$--homogeneous in $\theta$.
+
+In particular, for $\theta\neq 0$, Euler's homogeneous function theorem gives
+\begin{equation}
+\label{eq:Euler-Psi}
+\theta\cdot\nabla_\theta \Psi_\rho(\theta) = 2 \Psi_\rho(\theta).
+\end{equation}
+
+\subsection{Consequence at stationary points}
+
+Let $\rho_\infty$ be a stationary measure in the sense of \eqref{eq:gradient-zero-on-support}. For each $\theta$ in the support of $\rho_\infty$ with $\theta\neq 0$, we have
+\[
+\nabla_\theta \Psi_{\rho_\infty}(\theta) = 0.
+\]
+Plugging this into \eqref{eq:Euler-Psi} gives
+\[
+2\Psi_{\rho_\infty}(\theta) 
+= \theta\cdot\nabla_\theta \Psi_{\rho_\infty}(\theta) = 0,
+\]
+hence
+\begin{equation}
+\label{eq:Psi-zero-on-support}
+\Psi_{\rho_\infty}(\theta) = 0,
+\qquad \forall \theta\in\operatorname{supp}(\rho_\infty)\setminus\{0\}.
+\end{equation}
+In other words, the first variation of $\mathcal{L}$ at $\rho_\infty$ vanishes on the support of $\rho_\infty$.
+
+This is stronger than the generic condition $\nabla_\theta \Psi_{\rho_\infty}(\theta)=0$ and relies crucially on $2$--homogeneity.
+
+\section{Reparameterization on the sphere}
+
+We now perform a polar change of variables in parameter space to isolate a radial degree of freedom.
+
+\subsection{Polar decomposition of parameters}
+
+Assume $\Theta = \R^m$, for simplicity. Any $\theta\neq 0$ can be written as
+\[
+\theta = r\omega,
+\qquad r:=|\theta|\in(0,\infty),\ \omega:=\theta/|\theta|\in\mathbb{S}^{m-1},
+\]
+and we set $\theta=0$ aside as a special point.
+
+By $2$--homogeneity, we can write
+\begin{equation}
+\phi(x,\theta) = \phi(x,r\omega) = r^2\phi(x,\omega),
+\end{equation}
+where $\phi(x,\omega)$ now denotes the feature map restricted to the unit sphere.
+
+A measure $\rho$ on $\Theta$ can be disintegrated as a measure $\nu$ on $(0,\infty)\times\mathbb{S}^{m-1}$ and possibly a mass at $\{0\}$:
+\[
+\rho = \rho_0\,\delta_0 + \nu,
+\]
+where $\rho_0\in[0,1]$ and $\nu$ has support in $\{(r,\omega):r>0,\ \omega\in\mathbb{S}^{m-1}\}$.
+
+The predictor becomes
+\begin{equation}
+\label{eq:f-r-omega}
+f_\rho(x)
+= \rho_0\phi(x,0) + \int_{(0,\infty)\times\mathbb{S}^{m-1}} r^2\phi(x,\omega)\,\nu(\dd r,\dd\omega).
+\end{equation}
+Since $\theta=0$ is a degenerate neuron, we may assume $\phi(x,0)=0$ and ignore the mass at the origin in \eqref{eq:f-r-omega}.
+
+\subsection{Effective measure on the sphere}
+
+Define a signed measure $g_\rho$ on the sphere by
+\begin{equation}
+\label{eq:g-rho-def}
+g_\rho(\dd\omega)
+:= \int_{(0,\infty)} r^2\,\nu(\dd r,\dd\omega),
+\end{equation}
+that is, $g_\rho$ integrates the radial weights squared along each direction. Then
+\begin{equation}
+\label{eq:f-sphere}
+f_\rho(x)
+= \int_{\mathbb{S}^{m-1}} \phi(x,\omega)\,g_\rho(\dd\omega).
+\end{equation}
+In this representation, the network behaves as a linear model in $g_\rho$ with features $\phi(x,\omega)$ indexed by directions on the sphere.
+
+The loss can be written as
+\begin{equation}
+\label{eq:loss-g}
+\mathcal{L}(\rho)
+= \frac{1}{2}\int_{\mathcal{X}}\left(
+\int_{\mathbb{S}^{m-1}} \phi(x,\omega)\,g_\rho(\dd\omega)
+- f^\star(x)
+\right)^2\mu(\dd x).
+\end{equation}
+Therefore $\mathcal{L}$ depends on $\rho$ only through the induced measure $g_\rho$ on the sphere.
+
+\begin{remark}
+One may and often does work directly with $g$ as the optimization variable. The key point of Chizat and Bach is that the extra radial degree of freedom in $\theta$ provides enough room to avoid nonoptimal stationary points for the Wasserstein flow.
+\end{remark}
+
+\section{No spurious stationary points for the Wasserstein flow}
+
+We now state a simplified version of the theorem.
+
+\begin{assumption}[Richness of the feature family]
+\label{ass:richness}
+The linear span of $\{\phi(\cdot,\omega): \omega\in\mathbb{S}^{m-1}\}$ is dense in the function space where $f^\star$ lives (for instance in $L^2(\mu)$). In particular, there exists a measure $g^\star$ on $\mathbb{S}^{m-1}$ such that $f_{g^\star}=f^\star$, with $f_g$ defined as in \eqref{eq:f-sphere}.
+\end{assumption}
+
+\begin{assumption}[Nondegenerate initialization]
+\label{ass:nondeg-init}
+The initial measure $\rho_0$ is not concentrated at $\theta=0$, and has support that intersects sufficiently many directions on the sphere so that the flow can, in principle, move mass in directions where the residual correlates with $\phi(x,\omega)$.
+\end{assumption}
+
+\begin{theorem}[Chizat--Bach, informal version]
+\label{thm:chizat-bach}
+Suppose Assumptions \ref{ass:realizable}, \ref{ass:richness}, and \ref{ass:nondeg-init} hold. Let $(\rho_t)_{t\ge 0}$ be a solution of the Wasserstein gradient flow \eqref{eq:WGF-continuity}--\eqref{eq:velocity-def} starting from $\rho_0$.
+
+Then any limit point $\rho_\infty$ of $(\rho_t)$ as $t\to\infty$ is a global minimizer of $\mathcal{L}$:
+\[
+\mathcal{L}(\rho_\infty) = \inf_{\rho}\mathcal{L}(\rho) = \mathcal{L}(\rho^\star).
+\]
+Equivalently, the Wasserstein flow cannot converge to a nonoptimal stationary point.
+\end{theorem}
+
+We now sketch a semi--rigorous proof.
+
+\subsection{Step 1: monotonicity and existence of limit points}
+
+From \eqref{eq:energy-diss}, $\mathcal{L}(\rho_t)$ is nonincreasing in $t$ and bounded below by $0$. Hence it converges to some limit
+\[
+\mathcal{L}_\infty := \lim_{t\to\infty}\mathcal{L}(\rho_t)\in[0,\infty).
+\]
+Under suitable compactness conditions on parameter space and tightness of $(\rho_t)$, there exist subsequences $t_n\to\infty$ such that $\rho_{t_n}$ converges weakly to some $\rho_\infty$. Standard arguments in the theory of Wasserstein gradient flows show that such a limit point $\rho_\infty$ is stationary in the sense of \eqref{eq:gradient-zero-on-support}.
+
+We henceforth fix such a stationary $\rho_\infty$ and study its structure.
+
+\subsection{Step 2: structure of the first variation at a stationary point}
+
+We have already seen that stationarity implies $\nabla_\theta \Psi_{\rho_\infty}(\theta)=0$ on the support of $\rho_\infty$, and by $2$--homogeneity that
+\begin{equation}
+\Psi_{\rho_\infty}(\theta) = 0
+\quad\text{for all }\theta\in\operatorname{supp}(\rho_\infty)\setminus\{0\}.
+\end{equation}
+In other words, the first variation of $\mathcal{L}$ at $\rho_\infty$ vanishes on the support of $\rho_\infty$.
+
+\subsection{Step 3: if $\rho_\infty$ is not optimal, there exists a direction with negative variation}
+
+Assume by contradiction that $\rho_\infty$ is stationary but not globally optimal:
+\begin{equation}
+\mathcal{L}(\rho_\infty) > \mathcal{L}(\rho^\star).
+\end{equation}
+In particular $f_{\rho_\infty}\neq f^\star$ in $L^2(\mu)$, so the residual
+\[
+r_\infty(x) := f_{\rho_\infty}(x) - f^\star(x)
+\]
+is nonzero in $L^2(\mu)$.
+
+By the richness Assumption \ref{ass:richness}, there exists a direction $\omega\in\mathbb{S}^{m-1}$ such that the feature $\phi(x,\omega)$ correlates with $-r_\infty(x)$:
+\begin{equation}
+\int_{\mathcal{X}} r_\infty(x)\,\phi(x,\omega)\,\mu(\dd x) < 0.
+\end{equation}
+But by definition of $\Psi_{\rho_\infty}$,
+\begin{equation}
+\Psi_{\rho_\infty}(\omega)
+= \int_{\mathcal{X}} r_\infty(x)\,\phi(x,\omega)\,\mu(\dd x),
+\end{equation}
+so we have found $\omega$ with
+\begin{equation}
+\label{eq:Psi-negative-omega}
+\Psi_{\rho_\infty}(\omega) < 0.
+\end{equation}
+By $2$--homogeneity,
+\begin{equation}
+\Psi_{\rho_\infty}(R\omega) = R^2\,\Psi_{\rho_\infty}(\omega),
+\qquad \forall R>0.
+\end{equation}
+Hence for $R$ large, $\Psi_{\rho_\infty}(R\omega)$ is negative and has large magnitude.
+
+\subsection{Step 4: constructing a descent direction using radial scaling}
+
+We now show that the existence of $\omega$ with \eqref{eq:Psi-negative-omega} contradicts the stationarity of $\rho_\infty$.
+
+Consider the following perturbation of $\rho_\infty$: for small $\varepsilon>0$ and some large radius $R>0$, define
+\[
+\rho_{\varepsilon}
+:= (1-\varepsilon)\rho_\infty + \varepsilon\delta_{R\omega}.
+\]
+Since $\rho_\infty$ is a probability measure, $\rho_\varepsilon$ is also a probability measure for small $\varepsilon$. Its first order variation at $\varepsilon=0$ is given by the signed measure
+\[
+\eta := \delta_{R\omega} - \rho_\infty.
+\]
+
+The directional derivative of $\mathcal{L}$ at $\rho_\infty$ in this direction is
+\begin{align}
+\frac{\dd}{\dd\varepsilon}\mathcal{L}(\rho_\varepsilon)\bigg|_{\varepsilon=0}
+&= \int_\Theta \Psi_{\rho_\infty}(\theta)\,\eta(\dd\theta) \\
+&= \Psi_{\rho_\infty}(R\omega) - \int_\Theta \Psi_{\rho_\infty}(\theta)\,\rho_\infty(\dd\theta).
+\end{align}
+The second term vanishes because $\Psi_{\rho_\infty}$ is zero on the support of $\rho_\infty$ (by \eqref{eq:Psi-zero-on-support}), hence
+\[
+\int_\Theta \Psi_{\rho_\infty}(\theta)\,\rho_\infty(\dd\theta)
+= 0.
+\]
+Therefore
+\begin{equation}
+\label{eq:directional-derivative}
+\frac{\dd}{\dd\varepsilon}\mathcal{L}(\rho_\varepsilon)\bigg|_{\varepsilon=0}
+= \Psi_{\rho_\infty}(R\omega)
+= R^2\Psi_{\rho_\infty}(\omega).
+\end{equation}
+Since $\Psi_{\rho_\infty}(\omega)<0$, by choosing $R$ large we can make this derivative arbitrarily negative:
+\[
+R^2\Psi_{\rho_\infty}(\omega) \to -\infty
+\quad\text{as }R\to\infty.
+\]
+
+Thus there exists $R>0$ such that the directional derivative \eqref{eq:directional-derivative} is strictly negative. This means that $\rho_\infty$ is \emph{not} a local minimum of $\mathcal{L}$ with respect to the linear geometry on measures.
+
+\subsection{Step 5: connecting this direction to the Wasserstein gradient flow}
+
+The above argument exhibits a direction in measure space that decreases $\mathcal{L}$. To contradict stationarity for the Wasserstein flow, we need to argue that such a direction can be realized as an \emph{infinitesimal transport} of mass in parameter space.
+
+Informally, consider a velocity field $w(\theta)$ that transports a small amount of mass from the region where $\rho_\infty$ has support to the point $R\omega$ along radial rays. Concretely, define $w$ so that its flow at time $t$ moves each $\theta$ to $(1-t)\theta + t R\omega$, and ensure that $w$ is supported on a small portion of the support of $\rho_\infty$. For small $t$, the induced change in $\rho_\infty$ approximates the perturbation $\eta$ considered above.
+
+The first order change of $\mathcal{L}$ along the flow generated by $w$ is
+\[
+\frac{\dd}{\dd t}\mathcal{L}(\rho_t)\bigg|_{t=0}
+= \int_\Theta \nabla_\theta\Psi_{\rho_\infty}(\theta)\cdot w(\theta)\,\rho_\infty(\dd\theta).
+\]
+If $\rho_\infty$ is stationary for the Wasserstein flow, we must have $\nabla_\theta\Psi_{\rho_\infty}(\theta)=0$ on $\operatorname{supp}(\rho_\infty)$, hence this derivative is zero for any such $w$.
+
+On the other hand, by approximation of the measure perturbation $(\rho_\varepsilon)$ with such transport flows, the sign of the variation
+\[
+\frac{\dd}{\dd t}\mathcal{L}(\rho_t)\bigg|_{t=0}
+\]
+can be related to \eqref{eq:directional-derivative}. More precisely, one constructs $w$ so that the associated infinitesimal displacement in $\rho$ approximates the measure perturbation $\eta$ in the sense that
+\[
+\int_\Theta \Psi_{\rho_\infty}(\theta)\,\eta(\dd\theta)
+\approx \int_\Theta \nabla_\theta\Psi_{\rho_\infty}(\theta)\cdot w(\theta)\,\rho_\infty(\dd\theta).
+\]
+Since the left hand side is strictly negative for our choice of $\omega$ and $R$, this contradicts the stationarity of $\rho_\infty$.
+
+This contradiction shows that any stationary point $\rho_\infty$ of the Wasserstein flow must satisfy $\mathcal{L}(\rho_\infty) = \inf_\rho \mathcal{L}(\rho)$. In other words, the Wasserstein gradient flow cannot converge to a nonoptimal stationary point.
+
+\subsection{Step 6: conclusion}
+
+Combining the steps above, we obtain:
+
+\begin{itemize}
+\item Along the Wasserstein gradient flow, $\mathcal{L}(\rho_t)$ is nonincreasing and converges to some $\mathcal{L}_\infty$.
+\item Any limit point $\rho_\infty$ of the flow is stationary and satisfies $\Psi_{\rho_\infty}=0$ on its support.
+\item If $\rho_\infty$ were not globally optimal, richness of the feature family would provide a direction $\omega$ on the sphere where the first variation $\Psi_{\rho_\infty}(\omega)$ is negative.
+\item Using $2$--homogeneity, one can amplify this negative variation by moving mass radially along the ray $\R_+\omega$, obtaining a strict decrease of $\mathcal{L}$ and contradicting stationarity for the Wasserstein flow.
+\end{itemize}
+
+Therefore any limit point of the Wasserstein gradient flow is a global minimizer of the quadratic loss. This completes the semi--rigorous sketch of the Chizat--Bach theorem.
+
+\begin{remark}
+The full proof in the original work requires a careful treatment of existence and uniqueness of the Wasserstein gradient flow, compactness issues, and a more precise construction of admissible velocity fields realizing the measure perturbations. The core idea, however, is exactly the use of positive homogeneity to create arbitrarily strong descent directions along radial rays, which precludes spurious stationary points for the flow.
+\end{remark}
+
+\end{document}

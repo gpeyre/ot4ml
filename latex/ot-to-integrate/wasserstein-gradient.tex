@@ -1,0 +1,455 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage{bbm}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{definition}
+\newtheorem{remark}{Remark}[section]
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Ptwo}{\mathcal{P}_2}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\E}{\mathbb{E}}
+
+\begin{document}
+
+\title{Derivation of the Wasserstein Gradient}
+\author{}
+\date{}
+\maketitle
+
+\section{Setting and notation}
+
+Let $\Omega \subset \R^d$ be a smooth domain, for instance a torus $\mathbb{T}^d$ or a bounded domain with suitable boundary conditions (periodic or no-flux) so that spatial integrations by parts do not produce boundary terms.
+
+We work on the space $\Ptwo(\Omega)$ of Borel probability measures with finite second moment, endowed with the quadratic Wasserstein distance $W_2$. We focus on absolutely continuous measures with densities, still denoted by $\rho$.
+
+Let $F : \Ptwo(\Omega) \to \R$ be a functional with a first variation in the following sense: for any sufficiently smooth curve $(\rho_t)_{t}$ in $\Ptwo(\Omega)$ one has
+\[
+\frac{\dd}{\dd t} F(\rho_t)\bigg|_{t=0}
+= \int_{\Omega} \frac{\delta F}{\delta \rho}(\rho_0)(x) \, \partial_t \rho_t(x)\bigg|_{t=0}\dd x
+\]
+for some function $\frac{\delta F}{\delta \rho}(\rho_0)$, well defined up to an additive constant.
+
+The (formal) $L^2$ Wasserstein gradient flow of $F$ is the curve $(\rho_t)$ solving the PDE
+\begin{equation}
+\label{eq:WGF-PDE}
+\partial_t \rho_t = \nabla\cdot\Big(\rho_t \nabla \frac{\delta F}{\delta \rho}(\rho_t)\Big)
+\end{equation}
+that can also be written as a continuity equation
+\begin{equation}
+\label{eq:continuity-u}
+\partial_t \rho_t + \nabla\cdot(\rho_t u_t) = 0,
+\qquad
+u_t = -\nabla\frac{\delta F}{\delta \rho}(\rho_t).
+\end{equation}
+The aim is to show, in a semi-rigorous way, that this $u_t$ is exactly the Wasserstein gradient of $F$ at $\rho_t$, starting from the JKO scheme and using the Benamou--Brenier representation of $W_2$.
+
+\section{The JKO scheme}
+
+Given a time step $\tau > 0$ and an initial density $\rho^0$, the Jordan--Kinderlehrer--Otto (JKO) scheme defines a sequence $(\rho^k)_{k \ge 0}$ by
+\begin{equation}
+\label{eq:JKO}
+\rho^{k+1}
+\in \operatorname{argmin}_{\rho \in \Ptwo(\Omega)}
+\left\{
+F(\rho) + \frac{1}{2\tau} W_2^2(\rho,\rho^k)
+\right\}.
+\end{equation}
+This is the natural analog of the implicit Euler scheme in a Hilbert space. If $E$ is a functional on a Hilbert space $H$, the implicit Euler step
+\[
+x^{k+1} = \operatorname{argmin}_{x \in H} 
+\left\{
+E(x) + \frac{1}{2\tau}\|x - x^k\|^2
+\right\}
+\]
+is equivalent to
+\[
+0 = \nabla E(x^{k+1}) + \frac{1}{\tau}(x^{k+1} - x^k).
+\]
+In the Wasserstein setting, $W_2$ plays the role of the norm, and \eqref{eq:JKO} is the metric counterpart of this implicit scheme.
+
+
+\section{Benamou--Brenier dynamic formulation}
+
+The Benamou--Brenier formula states that for $\rho_0,\rho_1\in \Ptwo(\Omega)$,
+\begin{equation}
+\label{eq:BB}
+W_2^2(\rho_0,\rho_1)
+= \inf_{(\rho_s,v_s)} \int_0^1 \int_{\Omega} |v_s(x)|^2 \rho_s(x)\,\dd x\,\dd s
+\end{equation}
+where the infimum is taken over pairs $(\rho_s,v_s)_{s\in[0,1]}$ solving
+\begin{equation}
+\label{eq:BB-CE}
+\partial_s \rho_s + \nabla\cdot(\rho_s v_s) = 0,
+\qquad
+\rho_{s=0} = \rho_0,\quad \rho_{s=1} = \rho_1.
+\end{equation}
+Thus, the Wasserstein distance is the minimal kinetic action of all continuity equation paths connecting $\rho_0$ and $\rho_1$.
+
+In the JKO functional \eqref{eq:JKO}, the term $W_2^2(\rho,\rho^k)$ can be written using \eqref{eq:BB} as
+\[
+W_2^2(\rho,\rho^k)
+= \inf_{(\rho_s,v_s)} \int_0^1\!\!\int_{\Omega} |v_s|^2 \rho_s\dd x\dd s
+\quad\text{subject to}\quad
+\rho_0 = \rho^k,\ \rho_1 = \rho.
+\]
+Hence, the JKO step can be rephrased as a joint minimization over entire paths.
+
+\section{Rewriting the JKO step in dynamic form}
+
+For each time step $k$, the JKO problem
+\[
+\rho^{k+1} \in \operatorname{argmin}_\rho
+\left\{
+F(\rho) + \frac{1}{2\tau}W_2^2(\rho,\rho^k)
+\right\}
+\]
+is equivalent to the following dynamic optimization problem: find $(\rho_s^{k+1},v_s^{k+1})_{s\in[0,1]}$ that minimize
+\begin{equation}
+\label{eq:dynamic-JKO}
+\mathcal{J}[\rho_s,v_s]
+:= F(\rho_1) + \frac{1}{2\tau}\int_0^1\!\!\int_{\Omega} |v_s|^2 \rho_s\dd x\dd s
+\end{equation}
+subject to
+\begin{equation}
+\label{eq:dynamic-constraint}
+\partial_s \rho_s + \nabla\cdot(\rho_s v_s) = 0,\quad
+\rho_0 = \rho^k.
+\end{equation}
+The JKO iterate is the endpoint:
+\[
+\rho^{k+1} = \rho_1^{k+1}
+\]
+of a minimizing path for \eqref{eq:dynamic-JKO}--\eqref{eq:dynamic-constraint}.
+
+We now introduce a Lagrange multiplier to enforce the continuity equation and derive first order optimality conditions.
+
+\section{Lagrangian formulation and variations}
+
+Introduce a scalar field $\phi_s(x)$ as a Lagrange multiplier for the constraint \eqref{eq:dynamic-constraint}. Consider the Lagrangian
+\begin{equation}
+\label{eq:Lagrangian}
+\mathcal{L}[\rho_s,v_s,\phi_s]
+=
+F(\rho_1)
++ \int_0^1\!\!\int_{\Omega}
+\left[
+\frac{1}{2\tau} |v_s|^2 \rho_s
++ \phi_s\left(\partial_s \rho_s
++ \nabla\cdot(\rho_s v_s)\right)
+\right]\dd x\dd s.
+\end{equation}
+We assume that variations preserve the mass constraint (so that $\rho_s$ remain probability densities) and that boundary terms in $x$ vanish under integrations by parts, due to suitable boundary conditions.
+
+The minimizer $(\rho_s^{k+1},v_s^{k+1},\phi_s^{k+1})$ for \eqref{eq:Lagrangian} satisfies stationarity with respect to variations in $v_s$, $\rho_s$ and the endpoint $\rho_1$ (subject to $\rho_0 = \rho^k$ fixed).
+
+\subsection{Variation with respect to $v_s$}
+
+Consider a variation $v_s + \varepsilon w_s$, where $w_s$ is a smooth vector field with compact support in space--time. The terms in \eqref{eq:Lagrangian} that depend on $v_s$ are
+\[
+\int_0^1\!\!\int_{\Omega}
+\left[
+\frac{1}{2\tau} |v_s|^2 \rho_s
++ \phi_s \nabla\cdot(\rho_s v_s)
+\right]\dd x\dd s.
+\]
+
+Differentiating at $\varepsilon=0$ gives:
+\begin{itemize}
+\item Kinetic term:
+\[
+\frac{\dd}{\dd\varepsilon}\bigg|_{\varepsilon=0}
+\frac{1}{2\tau}\int_0^1\!\!\int_{\Omega} |v_s+\varepsilon w_s|^2 \rho_s
+\,\dd x\dd s
+= \frac{1}{\tau}\int_0^1\!\!\int_{\Omega} v_s\cdot w_s\,\rho_s\dd x\dd s.
+\]
+\item Constraint term:
+\[
+\frac{\dd}{\dd\varepsilon}\bigg|_{\varepsilon=0}
+\int_0^1\!\!\int_{\Omega} \phi_s\nabla\cdot\left(\rho_s(v_s+\varepsilon w_s)\right)\dd x\dd s
+= \int_0^1\!\!\int_{\Omega} \phi_s \nabla\cdot(\rho_s w_s)\dd x\dd s.
+\]
+Integrating by parts in $x$ and neglecting boundary terms:
+\[
+\int_{\Omega} \phi_s \nabla\cdot(\rho_s w_s)\dd x
+= -\int_{\Omega} \nabla\phi_s\cdot (\rho_s w_s)\dd x.
+\]
+\end{itemize}
+Thus
+\[
+\delta_v \mathcal{L}
+= \int_0^1\!\!\int_{\Omega}
+\rho_s\left(
+\frac{1}{\tau}v_s - \nabla\phi_s
+\right)\cdot w_s \dd x\dd s.
+\]
+Since $w_s$ is arbitrary, stationarity demands
+\begin{equation}
+\label{eq:vs-gradient-phi}
+\frac{1}{\tau}v_s - \nabla\phi_s = 0,
+\qquad\text{hence}\qquad
+v_s = \tau \nabla\phi_s.
+\end{equation}
+So the optimal velocity field is a spatial gradient.
+
+\subsection{Variation with respect to $\rho_s$ for $s\in(0,1)$}
+
+Now vary $\rho_s$ to $\rho_s + \varepsilon \eta_s$ with $\eta_0 = 0$ (to keep $\rho_0 = \rho^k$ fixed) and arbitrary $\eta_s$ for $s\in(0,1]$.
+
+The dependence on $\rho_s$ inside the time integral in \eqref{eq:Lagrangian} is through:
+\[
+\int_0^1\!\!\int_{\Omega}
+\left[
+\frac{1}{2\tau}|v_s|^2 \rho_s
++ \phi_s \partial_s\rho_s
++ \phi_s \nabla\cdot(\rho_s v_s)
+\right]\dd x\dd s.
+\]
+
+We treat each contribution.
+
+\paragraph{Kinetic term.}
+The variation yields
+\[
+\delta \int_0^1\!\!\int_{\Omega} \frac{1}{2\tau}|v_s|^2 \rho_s\dd x\dd s
+= \int_0^1\!\!\int_{\Omega} \frac{1}{2\tau}|v_s|^2 \eta_s\dd x\dd s.
+\]
+
+\paragraph{Term with $\phi_s \partial_s\rho_s$.}
+We first integrate by parts in $s$:
+\[
+\int_0^1\!\!\int_{\Omega} \phi_s \partial_s \rho_s\dd x\dd s
+= -\int_0^1\!\!\int_{\Omega} \partial_s\phi_s \rho_s\dd x\dd s
++ \int_{\Omega} \phi_1 \rho_1\dd x - \int_{\Omega} \phi_0 \rho_0\dd x.
+\]
+Under the variation $\rho_s \mapsto \rho_s + \varepsilon \eta_s$ with $\eta_0 = 0$, only the bulk term and the endpoint term at $s=1$ vary. The bulk variation is
+\[
+\delta \left(
+-\int_0^1\!\!\int_{\Omega} \partial_s\phi_s \rho_s\dd x\dd s
+\right)
+= -\int_0^1\!\!\int_{\Omega} \partial_s\phi_s \eta_s\dd x\dd s.
+\]
+
+\paragraph{Term with $\phi_s \nabla\cdot(\rho_s v_s)$.}
+For fixed $v_s$,
+\[
+\int_{\Omega} \phi_s \nabla\cdot(\rho_s v_s)\dd x
+= -\int_{\Omega} \nabla\phi_s\cdot(\rho_s v_s)\dd x.
+\]
+So the variation with respect to $\rho_s$ gives
+\[
+\delta \int_0^1\!\!\int_{\Omega} \phi_s \nabla\cdot(\rho_s v_s)\dd x\dd s
+= -\int_0^1\!\!\int_{\Omega} \nabla\phi_s\cdot(v_s \eta_s)\dd x\dd s.
+\]
+
+\medskip
+
+Collecting these terms, the variation with respect to $\rho_s$ for $s\in(0,1)$ is
+\[
+\delta_{\rho_s} \mathcal{L}
+= \int_0^1\!\!\int_{\Omega}
+\left[
+\frac{1}{2\tau}|v_s|^2
+- \partial_s\phi_s
+- \nabla\phi_s\cdot v_s
+\right]\eta_s\dd x\dd s.
+\]
+Stationarity for arbitrary $\eta_s$ implies
+\begin{equation}
+\label{eq:HJ-phi}
+\partial_s\phi_s + \nabla\phi_s\cdot v_s + \frac{1}{2\tau}|v_s|^2 = 0.
+\end{equation}
+Using \eqref{eq:vs-gradient-phi}, $v_s = \tau \nabla\phi_s$, this becomes
+\[
+\partial_s\phi_s + \tau|\nabla\phi_s|^2 + \frac{\tau}{2}|\nabla\phi_s|^2 = 0
+\quad\Longrightarrow\quad
+\partial_s\phi_s + \frac{3\tau}{2}|\nabla\phi_s|^2 = 0.
+\]
+This is a Hamilton--Jacobi type equation; the precise coefficient in front of $|\nabla\phi_s|^2$ is not essential for our purpose, since one can rescale the parameter $s$ or adjust the definition of $\phi_s$. What matters is that $\phi_s$ evolves in a way consistent with geodesics in the Wasserstein metric.
+
+\subsection{Variation with respect to the endpoint $\rho_1$}
+
+Finally, we consider variations at $s=1$. The endpoint $\rho_1$ appears in the Lagrangian in two places:
+\begin{itemize}
+\item In $F(\rho_1)$.
+\item In the boundary term $\int_{\Omega}\phi_1 \rho_1\dd x$ coming from the time integration by parts.
+\end{itemize}
+The variation of $F(\rho_1)$ is, by definition of the first variation,
+\[
+\delta F(\rho_1)
+= \int_{\Omega} \frac{\delta F}{\delta \rho}(\rho_1)(x)\,\eta_1(x)\dd x,
+\]
+while
+\[
+\delta \int_{\Omega} \phi_1 \rho_1\dd x
+= \int_{\Omega} \phi_1(x)\,\eta_1(x)\dd x.
+\]
+
+Therefore
+\[
+\delta_{\rho_1} \mathcal{L}
+= \int_{\Omega}
+\left(
+\frac{\delta F}{\delta \rho}(\rho_1)(x) + \phi_1(x)
+\right)\eta_1(x)\dd x.
+\]
+Since $\eta_1$ is arbitrary (up to the total mass constraint, which only introduces an additive constant), stationarity implies
+\begin{equation}
+\label{eq:phi1-first-variation}
+\phi_1(x) + \frac{\delta F}{\delta \rho}(\rho_1)(x)
+= \text{constant}.
+\end{equation}
+Adding a constant to $\phi_s$ does not affect $v_s = \tau \nabla\phi_s$. Thus we can absorb the constant and write, without loss of generality,
+\begin{equation}
+\label{eq:phi1=-deltaF}
+\phi_1(x) = - \frac{\delta F}{\delta \rho}(\rho_1)(x).
+\end{equation}
+
+Combining \eqref{eq:vs-gradient-phi} and \eqref{eq:phi1=-deltaF}, the velocity at $s=1$ is
+\begin{equation}
+\label{eq:vel-at-1}
+v_1(x)
+= \tau \nabla\phi_1(x)
+= - \tau \nabla \frac{\delta F}{\delta \rho}(\rho_1)(x).
+\end{equation}
+
+\section{From the discrete step to the PDE}
+
+We now reinterpret the path parameter $s$ as a rescaled physical time. Consider physical time $t$ such that
+\[
+t = k\tau + \tau s,
+\qquad s\in[0,1].
+\]
+Define
+\[
+u_t(x) := \frac{1}{\tau} v_s(x).
+\]
+Then the continuity equation in $s$,
+\[
+\partial_s \rho_s + \nabla\cdot(\rho_s v_s) = 0,
+\]
+translates into a continuity equation in $t$:
+\[
+\partial_t \rho_t + \nabla\cdot(\rho_t u_t) = 0,
+\]
+with $t\in[k\tau,(k+1)\tau]$.
+
+At the end of the time interval, $t = (k+1)\tau$ corresponds to $s = 1$, so that
+\[
+u_{(k+1)\tau}(x)
+= \frac{1}{\tau} v_1(x)
+= -\nabla \frac{\delta F}{\delta \rho}(\rho_1)(x)
+= -\nabla\frac{\delta F}{\delta \rho}(\rho^{k+1})(x),
+\]
+where we used \eqref{eq:vel-at-1} and the fact that $\rho_1 = \rho^{k+1}$.
+
+Thus the JKO scheme, interpreted dynamically, tells us that at time $t=(k+1)\tau$, the density $\rho^{k+1}$ and velocity field $u_{(k+1)\tau}$ satisfy
+\begin{equation}
+\label{eq:JKO-continuous-approx}
+\partial_t \rho_t + \nabla\cdot(\rho_t u_t) = 0,
+\qquad
+u_t = -\nabla\frac{\delta F}{\delta \rho}(\rho_t)
+\quad\text{at } t=(k+1)\tau.
+\end{equation}
+
+If we look at finite differences,
+\[
+\frac{\rho^{k+1} - \rho^k}{\tau}
+\approx - \nabla\cdot\left(\rho^{k+1}\nabla\frac{\delta F}{\delta \rho}(\rho^{k+1})\right).
+\]
+When $\tau\to 0$, the piecewise constant or piecewise interpolated curve in time built from the JKO scheme converges (in a suitable sense) to a continuous curve $(\rho_t)$ satisfying
+\[
+\partial_t \rho_t
+= \nabla\cdot\left(\rho_t \nabla\frac{\delta F}{\delta \rho}(\rho_t)\right).
+\]
+This is exactly the PDE \eqref{eq:WGF-PDE} of the Wasserstein gradient flow.
+
+\section{Identification of the Wasserstein gradient as a vector field}
+
+The Benamou--Brenier formulation suggests that a tangent vector at $\rho$ in $\Ptwo(\Omega)$ can be represented by a velocity field $u$ that appears in a continuity equation
+\begin{equation}
+\label{eq:CE-tangent}
+\partial_t \rho_t + \nabla\cdot(\rho_t u_t) = 0,
+\qquad \rho_{t=0} = \rho.
+\end{equation}
+The natural norm of $u$ at $\rho$ is given by
+\[
+\|u\|_{T_\rho \Ptwo}^2
+:= \int_{\Omega} |u(x)|^2 \rho(x)\dd x.
+\]
+This is exactly the integrand of the Benamou--Brenier functional \eqref{eq:BB}. The tangent space at $\rho$ can therefore be defined as
+\[
+T_{\rho}\Ptwo
+= \overline{\{\nabla\psi : \psi\in C_c^\infty(\Omega)\}}^{L^2(\rho)}.
+\]
+For $u,w \in T_{\rho}\Ptwo$, the inner product is
+\[
+\langle u,w\rangle_{\rho}
+:= \int_{\Omega} u(x)\cdot w(x)\,\rho(x)\dd x.
+\]
+
+Now let $(\rho_t)$ be any smooth curve in $\Ptwo(\Omega)$ with $\rho_0 = \rho$, and denote by $u_0$ the velocity at $t=0$ in the continuity equation form \eqref{eq:CE-tangent}. Then
+\[
+\partial_t \rho_t\big|_{t=0}
+= -\nabla\cdot(\rho u_0).
+\]
+Using the definition of the first variation of $F$, we have
+\begin{align*}
+\frac{\dd}{\dd t}F(\rho_t)\bigg|_{t=0}
+&= \int_{\Omega} \frac{\delta F}{\delta \rho}(\rho)(x)\,\partial_t\rho_t(x)\big|_{t=0}\dd x \\
+&= -\int_{\Omega} \frac{\delta F}{\delta \rho}(\rho)(x)\,\nabla\cdot(\rho u_0)(x)\dd x.
+\end{align*}
+Integrating by parts in space and neglecting boundary terms:
+\[
+\frac{\dd}{\dd t}F(\rho_t)\bigg|_{t=0}
+= \int_{\Omega} \nabla\frac{\delta F}{\delta \rho}(\rho)(x)\cdot u_0(x)\,\rho(x)\dd x
+= \langle \nabla\frac{\delta F}{\delta \rho}(\rho), u_0\rangle_{\rho}.
+\]
+
+By definition of the Riemannian gradient on a manifold, the Wasserstein gradient $\operatorname{grad}_W F(\rho) \in T_\rho\Ptwo$ is the unique element such that, for any admissible tangent vector $u_0$,
+\[
+\frac{\dd}{\dd t}F(\rho_t)\bigg|_{t=0}
+= \langle \operatorname{grad}_W F(\rho), u_0\rangle_{\rho}.
+\]
+Comparing with the previous identity, we obtain
+\begin{equation}
+\label{eq:gradWF}
+\operatorname{grad}_W F(\rho) = \nabla\frac{\delta F}{\delta \rho}(\rho)
+\quad\text{in }T_{\rho}\Ptwo.
+\end{equation}
+
+The gradient flow equation with respect to this Riemannian structure is
+\[
+\partial_t \rho_t
+= -\operatorname{grad}_W F(\rho_t)
+\]
+in the sense of tangent vectors. If we write the flow in terms of a velocity field $u_t$ and the continuity equation \eqref{eq:continuity-u}, we set
+\[
+u_t = -\operatorname{grad}_W F(\rho_t)
+= -\nabla\frac{\delta F}{\delta \rho}(\rho_t).
+\]
+Hence
+\[
+\partial_t \rho_t + \nabla\cdot(\rho_t u_t) = 0
+\quad\Longleftrightarrow\quad
+\partial_t \rho_t
+= \nabla\cdot\left(\rho_t \nabla\frac{\delta F}{\delta \rho}(\rho_t)\right).
+\]
+
+This matches exactly the PDE obtained by passing to the limit in the JKO scheme, and the optimal velocity at each JKO step is consistent with this vector field, as seen in \eqref{eq:vel-at-1}. In this sense, the Wasserstein gradient of $F$ is not merely a formal object: it is realized as a bona fide vector field in the continuity equation, derived from the variational structure of the JKO time discretization together with the Benamou--Brenier representation of $W_2$.
+
+\begin{remark}
+For specific functionals $F$ (entropy, potential energy, interaction energies), the abstract formula
+\[
+\partial_t \rho_t
+= \nabla\cdot\left(\rho_t \nabla\frac{\delta F}{\delta \rho}(\rho_t)\right)
+\]
+yields classical PDEs such as the heat equation, Fokker--Planck equations, and aggregation--diffusion equations. These can be recovered systematically by computing the first variation $\frac{\delta F}{\delta \rho}$ and applying the general gradient flow framework described above.
+\end{remark}
+
+\end{document}

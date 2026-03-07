@@ -1,0 +1,586 @@
+% !TEX root = ../CourseOT.tex
+
+\section{Wasserstein (gradient) Flows}
+
+The goal of this section is to expose the connection between optimal transport and certain evolutions over the space of probability distributions, particularly solutions to some PDEs and generative models using diffusion. The exposition is informal, focusing on intuition rather than rigorous proof. We work over the space $\mathcal{X} = \mathbb{R}^d$. It is also the opportunity to draw some connexions with recent applications in ML, most notably analyzing the training dynamic of MLP (where neurons are transported), modeling deep transformers (where tokens are transported), and flow matching for generative models (where features, such as image's pixels, are transported).
+
+\subsection{Evolutions over the Space of Measures}
+
+We consider the evolution $t \mapsto \alpha_t \in \mathcal{P}(\mathbb{R}^d)$. Such evolution can be described in a ``Lagrangian'' way as the advection of particles along a (time-dependent) vector field $v_t(x)$ in $\mathbb{R}^d$. At the particle level, this advection is governed by 
+\begin{equation}
+    \frac{\mathrm{d}x(t)}{\mathrm{d}t} = v_t(x(t)), \label{eq:lagrangian-advection}
+\end{equation}
+such that $x(0)$ is mapped to $x(t)$ by a ``transport'' mapping $T_t : x(0) \mapsto x(t)$. The fact that $\alpha_t$ is the density of advected particles implies $\alpha_t = (T_t)_\sharp \alpha_0$. For discrete measures, $\alpha_t = \frac{1}{n} \sum_{i=1}^n \delta_{x_i(t)}$, meaning each $x_i(t)$ solves \eqref{eq:lagrangian-advection}.
+
+In the Eulerian interpretation, over the measure itself, as we show next, the ODE for particles becomes the PDE
+\begin{equation}
+    \frac{\partial \alpha_t}{\partial t} + \mathrm{div}(v_t \alpha_t) = 0. \label{eq:eulerian-advection}
+\end{equation}
+This PDE is often referred to as the advection equation, the continuity equation, or Liouville's equation when operating over a phase space.
+%
+This PDE is only valid if $\alpha_t$ has a smooth density, and for general measure, this PDE \eqref{eq:eulerian-advection} should be understood in the weak sense, allowing it to be defined even for discrete measures with particles evolving according to \eqref{eq:lagrangian-advection}. Specifically, for any smooth function $x \to \varphi(x,t)$ supported on $t \in [0,1]$ (in particular it should vanish at $t=0,1$), 
+\begin{equation}\label{eq:eulerian-advection-weak}
+    \partial_t \Big[ \int_{\RR^d} \varphi(t,x) \mathrm{d} \alpha_t(x) \Big]
+    - \int_{\RR^d} \langle v_t, \nabla_x \varphi(t,x) \rangle \mathrm{d} \alpha_t(x) = 0.
+\end{equation}
+This equation can be obtained from \eqref{eq:eulerian-advection} by integration by parts. So if $\alpha_t$ has a smooth density, then these two formulation are equivalent, but \eqref{eq:eulerian-advection-weak} makes sense even if $\alpha_{t=0}$ is a discrete measure.
+%
+We now show rigorously that indeed, measures whose particles follow the ODE~\eqref{eq:lagrangian-advection} indeed satisfy the advection PDE.
+
+\begin{prop}
+Consider $T_t : \mathbb{R}^d \to \mathbb{R}^d$, denote $\alpha_t := (T_t)_\sharp \alpha_0$ and $v_t(x) := \partial_t T_t(x)$, so that $T_t : x(0) \mapsto x(t)$ where $\dot{x}(t) = v_t(x)$. Then $(\alpha_t, v_t)$ solves the continuity equation in the weak sense~\eqref{eq:eulerian-advection-weak}.
+\end{prop}
+
+Note that if $\alpha_0 = \frac{1}{n} \sum_i \delta_{x_i(0)}$ is made of particles, then $\alpha_t = \frac{1}{n} \sum_i \delta_{x_i(t)} = (T_t)_\sharp \alpha_0$ is also made of particles evolving at speed $\dot x_i(t) = v_t(x_i(t))$.
+
+\begin{proof}
+Let $\varphi(x,t)$ be a smooth test function vanishing at $t=0$ and $t=1$. Define the weak form of the equation as 
+$$
+M := \partial_t \iint \varphi(x,t) \, \d \alpha_t(x) \, \d t - \iint \dotp{\nabla \varphi(x,t)}{v_t(x)} \, \d \alpha_t(x) \, \d t.
+$$
+We aim to show $M = 0$. Using $v_t(x) = \partial_t T_t(x)$ and $\alpha_t = (T_t)_\sharp \alpha_0$, change variables via $x = T_t(y)$ where $y$ is distributed according to $\alpha_0$:
+$$
+M = \iint \left[ \partial_t \varphi(T_t(y),t) - \dotp{\nabla \varphi(T_t(y),t)}{\partial_t T_t(y)} \right] \, \d \alpha_0(y) \, \d t.
+$$
+By the chain rule,
+$$
+\partial_t \varphi(T_t(y),t) = \dotp{\nabla \varphi(T_t(y),t)}{\partial_t T_t(y)} + \partial_t \varphi(T_t(y),t).
+$$
+Substituting into $M$ gives
+$$
+M = \iint \partial_t \varphi(T_t(y),t) \, \d \alpha_0(y) \, \d t.
+$$
+Since $\varphi$ vanishes at $t=0$ and $t=1$, we have
+$
+\int_0^1 \partial_t \varphi(T_t(y),t) \, \d t = 0
+$
+for all $y$, and hence $M = 0$.
+\end{proof}
+
+
+
+\paragraph{From measure evolutions to vector fields.}
+
+It is important to note that for a given evolution $\alpha_t$, there are infinitely many possible choices of vector fields $v_t$ satisfying
+\begin{equation}
+    \partial_t \alpha_t + \mathrm{div}(v_t \alpha_t) = 0. \label{eq:inverse-flow}
+\end{equation}
+This is because modifying $v_t$ by a divergence-free field does not affect the density evolution. The linear space of vector fields that leave a measure $\alpha$ invariant is 
+$$
+	\Hh_\alpha := \{ v : \mathrm{div}( \alpha v ) = 0 \}. 
+$$
+It is non-trivial because it corresponds to the kernel of a ``weighted'' divergence. For instance, if $\alpha$ is an isotropic Gaussian, $\Hh_\alpha$ contains vector fields inducing rotations (i.e., associated with anti-symmetric matrices).
+
+\paragraph{Dacorogna and Moser inversion.}
+
+Consequently, infinitely many particle evolutions result in the same density. Reconstructing particle evolution from observed density evolution (sometimes called ``trajectory inference'') is thus an ill-posed inverse problem.
+%
+A simple choice is to impose that $\alpha_t v_t$ is a gradient field, thus leading to the inversion of a Laplacian (which is possible assuming boundary conditions, for instance, vanishing at infinity)
+\begin{equation}\label{eq:dacorogna-moser}
+    v_t = - \frac{1}{\alpha_t} \nabla \Delta^{-1}(\partial_t \alpha_t).
+\end{equation}
+which was initially proposed by Dacorogna and Moser. A difficulty with this choice is that it is not well defined when $\alpha_t$ vanishes, and also it is not a gradient field, which might be desirable in some cases. In the following, we will consider techniques where $v_t$ is a gradient by design, it is well-defined and can be computed more efficiently without explicitly inverting a Laplacian.  
+
+\paragraph{Least square inversion and gradient structure.}
+
+A more fruitful method (corresponding to both flow matching, optimal transport, and Wasserstein flow construction) is to solve the inversion from \(\alpha_t\) to \(v_t\) in a least-square sense, solving
+\begin{equation}\label{eq:least-square-field}
+	\min_v \frac{1}{2}\int_0^1 \int_{\mathbb{R}^d} \|v_t(x)\|^2 \, \mathrm{d}\alpha_t(x) \, \mathrm{d}t \quad \text{subject to} \quad \text{div}(\alpha v) + \frac{\partial \alpha}{\partial t} = 0.
+\end{equation}
+To understand why the optimal \(v_t\) is a gradient field, one can consider an equivalent constrained optimization reformulated as a saddle-point (inf-sup) problem using a Lagrange multiplier \(\psi_t(x)\), which plays the role of a dual variable enforcing the continuity equation:
+\begin{equation}
+\min_v \max_{\psi} \frac{1}{2} \int_0^1 \left[ \int_{\mathbb{R}^d} \|v_t(x)\|^2 \, \mathrm{d}\alpha_t(x) + \int_{\mathbb{R}^d} \psi_t(x)\left(\text{div}(\alpha_t v_t)(x) + \partial_t \alpha_t(x)\right) \, \mathrm{d}x \right] \mathrm{d}t.
+\end{equation}
+Integrating by parts the term involving, we move the derivative onto \(\psi_t\)
+\begin{equation}
+\min_v \max_{\psi} \int_0^1 \left[ \int_{\mathbb{R}^d} \left( \frac{1}{2} \|v_t(x)\|^2 - \nabla \psi_t(x) \cdot v_t(x)\right) \, \mathrm{d}\alpha_t(x) + \int_{\mathbb{R}^d} \psi_t(x) \, \partial_t \alpha_t(x) \, \mathrm{d}x \right] \mathrm{d}t.
+\end{equation}
+Minimizing over \(v_t\) for fixed \(\psi_t\) gives the first-order condition:
+\begin{equation}
+	v_t(x) = \nabla \psi_t(x).
+\end{equation}
+Hence, the optimal vector field is necessarily a gradient. Substituting this back, one obtains an equation linking \(\psi_t\) and \(\partial_t \alpha_t\). This results in the explicit expression:
+\begin{equation}\label{eq:least-square-field-explicit}
+    v_t = -  \nabla \Delta_\alpha^{-1}(\partial_t \alpha_t), \quad \text{with} \quad \Delta_\alpha(\varphi) := \mathrm{div}(\alpha_t \nabla \varphi).
+\end{equation}
+In general, performing this inversion is computationally demanding, but under specific choices for \(\alpha_t\), simpler formulas may be derived.
+
+
+%%%%%
+\subsection{Generative Models via Flow Matching}
+
+Generative models aim to build a transportation map $T$ between a reference distribution $\alpha$ (typically an isotropic Gaussian) and the target data distribution $\beta$. It is easy to see that such a map always exists for any $\beta$, but finding an explicit constructive method for $T$ is surprisingly non-trivial. 
+%
+Optimal transport is one approach to achieving this, but it is computationally expensive and raises questions about how to estimate it from samples. A recent idea, first introduced in diffusion models and later systematically developed in flow matching by Yaron Lipman and his collaborators, is to obtain $T$ by integrating a time-dependent vector field $v_t$. 
+%
+This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ and then finding $v_t$ using the least square formula~\eqref{eq:least-square-field-explicit}. As we will explain, for a specific class of interpolation (obtained by a parametric push-forward), this $v_t$ can be obtained by avoiding explicitly inverting a Laplacian and instead computing a simple conditional expectation. This conditional expectation can itself be estimated by solving another least squares, but this time unconstrained, making the estimation feasible from finite samples of $\alpha$ and $\beta$.
+
+\paragraph{Stochastic interpolant.}
+
+We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of a latent distribution $\pi \in \Pp(\RR^{d'})$, using an operator $P_t : \RR^{d'} \to \RR^d$ where $d' \gg d$, i.e.
+\begin{equation}\label{eq:interp-coupling}
+	\forall t \in [0,1], \quad \alpha_t := (P_t)_\sharp \pi.
+\end{equation}
+The most usual case is when $d'=2d$, we denote $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and asume $P_0(x,y)=x$ and $P_1(x,y)=y$ so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$. For instance, one can use $\pi = \alpha_0 \otimes \alpha_1$, the trivial coupling. An even more special case is to assume $P_t(x,y)=(1-t)x+ty$ is a linear interpolation. But one can use more complex constructions, as long as it is simple to sample from $\pi$. 
+
+If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses 
+\begin{equation*}
+    \alpha_t = \frac{1}{nm} \sum_{i,j} \delta_{P_t(x_i,y_j)}.
+\end{equation*}
+If $\pi = (\mathrm{Id}, T)_\sharp \alpha$ is a Brenier-type coupling, then $\alpha_t = ((1-t)\mathrm{Id} + tT)_\sharp \alpha$ is the so-called McCann OT interpolation.
+
+\paragraph{Flow matching formula.}
+
+This interpolation is not directly useful for sampling from $\beta$, but it can be used to define a flow field $v_t$ so that the Eulerian advection equation~\eqref{eq:eulerian-advection} holds.
+%
+This flow field is computed by solving an unconstrained least squares problem, or equivalently, it is a conditional expectation.
+
+\begin{prop}
+	The solution of the following flow-matching problem
+	\begin{equation}
+    	\min_{(v_t)_t} \int_{\RR^{d'}} \|v_t(P_t(u)) - [\partial_t P_t](u)\|^2 \, \mathrm{d}\pi(u). \label{eq:flow-matching}
+	\end{equation}
+	or equivalently the conditional expectation 
+	\begin{equation}\label{eq:flow-match-conditional}
+		v_t(z) = \mathbb{E}_{u \sim \pi} \big( [\partial_t  P_t](u) \, \big| \, z = P_t(u) \big).
+	\end{equation}
+	satisfies the continuity equation~\eqref{eq:inverse-flow}
+\end{prop}
+
+\begin{proof} We now prove the flow matching formula \eqref{eq:flow-match-conditional}, i.e. that it defines a valid flow between $\alpha_0$ and $\alpha_1$. 
+%
+First, let us recall the definition of the interpolated density \(\alpha_t\) and the velocity field \(v_t\). 
+% For \(t \in [0, 1]\), let \([x, y]_t := (1-t)x + ty\) denote the linear interpolation between \(x \sim \alpha_0\) and \(y \sim \alpha_1\). 
+According to~\eqref{eq:interp-coupling}, the density \(\alpha_t\) is defined heuristically as:
+\[
+	\alpha_t(z) = \int \delta(z - P_t(u)) \, \mathrm{d}\pi(u)
+\]
+and rigorously for any test function \(\varphi(z)\) as:
+\begin{equation}
+	\int \varphi(z) \, \mathrm{d}\alpha_t(z) = \int \varphi(P_t(u)) \, \mathrm{d} \pi(u). \label{eq:alpha_t}
+\end{equation}
+Following~\eqref{eq:flow-match-conditional}, the velocity field \(v_t\) is defined heuristically as:
+\[
+	v_t(z) = \frac{1}{\alpha_t(z)} \int \delta(z - P_t(u)) [\partial_t P_t](u) \, \mathrm{d}\pi(u),
+\]
+and rigorously for any vector field \(m(z)\) as:
+\begin{equation}
+	\int \langle m(z), v_t(z) \rangle \, \mathrm{d}\alpha_t(z) = \int \langle m(P_t(u)), [\partial_t  P_t](u) \rangle \, \mathrm{d}\pi(u). \label{eq:v_t}
+\end{equation}
+We aim to prove that the density \(\alpha_t\) satisfies the continuity equation:
+\[
+	\frac{\partial \alpha_t}{\partial t} + \mathrm{div}(\alpha_t v_t) = 0.
+\]
+In a rigorous sense, this means showing that for any smooth test function \(\varphi(z)\):
+\begin{equation}
+	\frac{\mathrm{d}}{\mathrm{d}t} \int \varphi(z) \, \mathrm{d}\alpha_t(z) - \int \langle v_t(z), \nabla \varphi(z) \rangle \, \mathrm{d}\alpha_t(z) = 0. \label{eq:continuity}
+\end{equation}
+To prove \eqref{eq:continuity}, we compute both terms separately and show that they cancel out. First, consider the time derivative of \(\int \varphi(z) \, \mathrm{d}\alpha_t(z)\). Using \eqref{eq:alpha_t}, we differentiate under the integral sign:
+\[
+	\frac{\mathrm{d}}{\mathrm{d}t} \int \varphi(z) \, \mathrm{d}\alpha_t(z) = \int \frac{\mathrm{d}}{\mathrm{d}t} \varphi(P_t(u)) \, \mathrm{d}\pi(u).
+\]
+Applying the chain rule to \(t \to \varphi \circ P_t\):
+\[
+	\frac{\mathrm{d}}{\mathrm{d}t} \varphi(P_t(u)) = \left\langle \nabla  \varphi(P_t(u)), [\partial_t \nabla P_t](u) \right\rangle.
+\]
+Thus:
+\begin{equation}
+	\frac{\mathrm{d}}{\mathrm{d}t} \int \varphi(z) \, \mathrm{d}\alpha_t(z) = 
+	\int \left\langle \nabla \varphi(P_t(u)), [\partial_t  P_t](u) \right\rangle \, \mathrm{d}\pi(u). \label{eq:time_derivative}
+\end{equation}
+Next, for the term involving \(\mathrm{div}(\alpha_t v_t)\), we use the definition of \(v_t\) in \eqref{eq:v_t} with \(m(z) = \nabla \varphi(z)\). Substituting this into the expression for \(v_t\), we get:
+\[
+	\int \langle v_t(z), \nabla \varphi(z) \rangle \, \mathrm{d}\alpha_t(z) = 
+	\int \langle \nabla \varphi(P_t(u)), [\partial_t  P_t](u)  \rangle \, \mathrm{d} \pi(u).
+\]
+Comparing this result with \eqref{eq:time_derivative}, we see that:
+\[
+	\frac{\mathrm{d}}{\mathrm{d}t} \int \varphi(z) \, \mathrm{d}\alpha_t(z) - \int \langle v_t(z), \nabla \varphi(z) \rangle \, \mathrm{d}\alpha_t(z) = 0.
+\]
+\end{proof}
+
+The solution of \eqref{eq:flow-matching} is the conditional expectation of the velocities $\partial P_t$, 
+intuitively, this means that $v_t(z)$ at some point $z$ should be the average velocity of all trajectories passing through $z$.
+%
+Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., a U-Net for vision tasks) and estimated using stochastic gradient descent on the objective in \eqref{eq:flow-matching}.
+%
+Once $v_t$ is estimated, integrating the ODE $\dot{x} = v_t(x)$ defines the transport map $T_t$, ensuring that $\alpha_t = (T_t)_\sharp \alpha_0$ produces the same interpolation as \eqref{eq:interp-coupling}, though with a different particle system. Instead of a coupling, this approach uses a deterministic map.
+The sampling procedure consists in first drawing $X_0 \sim \alpha$, and then integrating the ODE $\dot{X}_t = v_t(X_t)$ starting with $X_{t=0} = X_0$. 
+The resulting $X_{t=1}$ is distributed according to $\alpha_1 = \beta$.
+
+\paragraph{Connexion with diffusion models.}
+
+In the special case where $P_t(x,y)=(1-t)x+ty$ is a linear interpolation and $\pi = \alpha \otimes \beta$, then $\alpha_t$ is a convolution of rescaled versions of $\alpha_0$ and $\alpha_1$. Then the flow matching~\eqref{eq:flow-matching} boils down to 
+$$
+    \min_{(v_t)_t} \int_{\RR^{d} \times \RR^d} \|v_t( (1-t)x+t y ) - (y-x) \|^2 \, \mathrm{d}\alpha_0(x) \mathrm{d}\alpha_1(y).
+$$
+If furthermore, $\alpha_0$ is an isotropic Gaussian, this is exactly (up to an exponential change of variable in the time variable) the diffusion model method. 
+%
+In this case, one can show that the obtained $v_t$ has a closed form which is a gradient, as we show next. 
+%
+This means that in this setting, $v_t$ is also the solution of the (constrained) least square problem~\eqref{eq:least-square-field-explicit}. But note that the least square~\eqref{eq:flow-matching} is much simpler because it is unconstrained. 
+%
+To prove this, we rely on a celebrated formula which gives the expression of the optimal Gaussian denoiser as being the scores (gradient of log-density).
+
+\begin{proposition}[Tweedie identity]\label{prop:Tweedie}
+Let $W$ be a random vector in $\mathbb R^{d}$ with density $\beta$.  
+For $\sigma>0$, observe
+\[
+Z \;=\; W + \sigma\,\varepsilon, 
+\quad\text{where } \varepsilon \sim \mathcal N(0,I_{d}) 
+\text{ is independent of } W .
+\]
+Denote by 
+\[
+	\beta_\sigma \;=\; \beta * \mathcal N\bigl(0,\sigma^{2}I_{d}\bigr)
+\]
+the density of $Z$.  
+Then
+\[
+\mathbb E\bigl[\,W \mid Z=z\bigr] 
+      \;=\; z \;+\;\sigma^{2}\,\nabla \log \beta_\sigma(z)
+\qquad\text{for all } z \in \mathbb R^{d}.
+\]
+\end{proposition}
+
+\begin{proof}
+Bayes' rule gives the conditional density
+$
+p_{W|Z}(w\mid z) 
+= \dfrac{\beta(w)\,\varphi_\sigma(z-w)}{\beta_\sigma(z)}
+$
+with $\varphi_\sigma$ the $\mathcal N(0,\sigma^{2}I_{d})$ density.  
+Hence
+\[
+\mathbb E[W\mid Z=z]
+= \frac{1}{\beta_\sigma(z)}
+      \int_{\mathbb R^{d}} w\,
+             \beta(w)\,\varphi_\sigma(z-w)\,\d w .
+\]
+Integrating by parts in $w$ and using
+$
+\nabla_z\varphi_\sigma(z-w)
+     = -\sigma^{-2}(z-w)\,\varphi_\sigma(z-w)
+$
+yields
+\[
+\nabla_z\beta_\sigma(z)
+= \int \beta(w)\,\nabla_z\varphi_\sigma(z-w)\,\d w
+= -\sigma^{-2}\Bigl(z-\mathbb E[W\mid Z=z]\Bigr)\,\beta_\sigma(z).
+\]
+Rearranging finishes the proof.
+\end{proof}
+
+
+
+\begin{proposition}[Optimal vector field]\label{prop:flow}
+Let $X\sim\alpha$ and $Y\sim\mathcal N(0,I_{d})$ be independent.  
+For $t\in(0,1)$ set
+\[
+Z_t \;=\; (1-t)\,X + t\,Y,
+\qquad 
+\alpha_t =\text{Law}(Z_t).
+\]
+The minimiser $v^\star$ of
+\[
+\min_{v}\;\int_{0}^{1}\!
+         \iint_{\mathbb R^{d}\times\mathbb R^{d}}
+              \bigl|x-y-v\bigl((1-t)x+t y,t\bigr)\bigr|^{2}\,
+              \d\alpha(x)\,\d\mathcal N(y)\,\d t
+\]
+is
+\[
+v^\star(x,t) 
+= \frac{1}{1-t}\,x \;+\; \frac{t}{1-t}\,\nabla\log\alpha_t(x)
+\qquad (x\in\mathbb R^{d},\;t\in(0,1)).
+\]
+\end{proposition}
+
+\begin{proof}
+Fix $t\in(0,1)$ and write $W=(1-t)X$, $\sigma=t$, so that 
+$Z_t = W + \sigma\,Y$ matches the setting of Proposition~\ref{prop:Tweedie}.  
+Conditional expectations satisfy
+$
+v^\star(z,t)
+= \mathbb E[X-Y\mid Z_t=z]
+= \frac{1}{1-t}\,\mathbb E[W\mid Z_t=z]
+  -\,\frac{1}{t}\,\mathbb E[Y\mid Z_t=z].
+$
+Applying Proposition~\ref{prop:Tweedie} to $\mathbb E[W\mid Z_t=z]$ and
+noting $\mathbb E[Y\mid Z_t=z]
+      = -\,t\,\nabla\log\alpha_t(z)$
+gives the claimed formula.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Benamou-Brenier dynamic formulation of OT}
+
+Instead of imposing access to the full dynamics $(\alpha_t)_{t=0}^1$, we assume only the knowledge of $\alpha_0$ and $\alpha_1$ and seek for an interpolation minimizing the least square energy~\eqref{eq:least-square-field}. A fundamental result, proved by Benamou and Brenier is that the value of this ``geodesic'' energy is equal to the Wasserstein-2 distance.
+%
+Furthemore, the solution $(v_t,\alpha_t)$ of this geodesic problem can be obtained by evolving particules in straight lines along the Monge map $T$ solving Monge's problem
+
+\begin{thm}[Benamou--Brenier]
+For probability measures $\alpha_0,\alpha_1$ with finite second moments,
+\begin{equation}\label{eq:benamou-brenier}
+  W_2^2(\alpha_0,\alpha_1)
+    = \inf_{(\alpha_t,v_t)} \int_0^1 \int_{\mathbb{R}^d} |v_t(x)|^2\, \d\alpha_t(x)\, \d t,
+\end{equation}
+where the infimum is over $(\alpha_t,v_t)$ solving
+$\partial_t\alpha_t+\nabla\!\cdot(\alpha_t v_t)=0$ with $\alpha_{t=0}=\alpha_0$ and $\alpha_{t=1}=\alpha_1$.  
+If $\alpha_0$ has a density and $T$ is the optimal Monge map $T_{\sharp}\alpha_0=\alpha_1$, the minimiser is
+\begin{equation}\label{eq:static-to-dynamic}
+  \alpha_t=((1-t)\operatorname{Id}+tT)_{\sharp}\alpha_0,
+  \qquad
+  v_t\bigl((1-t)x+tT(x)\bigr)=T(x)-x,\quad t\in[0,1].
+\end{equation}
+\end{thm}
+
+\begin{proof}
+\textit{Static $\le$ dynamic.}  Let $T$ solve the Monge problem and define $(\alpha_t,v_t)$ by \eqref{eq:static-to-dynamic}. As $\dot T_t(x)=T(x)-x$ is $t$-independent,
+\[
+\int_0^1\!\int |v_t|^2\,\d\alpha_t\,\d t=\int |T(x)-x|^2\,\d\alpha_0(x),
+\]so the dynamic cost is no larger.
+
+\smallskip
+\textit{Dynamic $\le$ static.}  Conversely, take optimal $(\alpha_t,v_t)$ and its flow $T_t$ defined by $\dot T_t=v_t\!\circ\!T_t$, $T_0=\operatorname{Id}$.  Then $\alpha_t=(T_t)_{\sharp}\alpha_0$ and $(T_1)_{\sharp}\alpha_0=\alpha_1$. Jensen's inequality gives
+\[
+|T_1(x)-x|^2\le\int_0^1|v_t(T_t(x))|^2\,\d t.
+\]
+Integrating yields
+\[
+\int|T_1(x)-x|^2\,\d\alpha_0\le\int_0^1\!\int|v_t|^2\,\d\alpha_t\,\d t.
+\]
+Thus the Monge cost is no larger than the dynamic one, which completes the proof.
+\end{proof}
+
+While this is not the focus of this chapter, let us note that, while the initial problem~\eqref{eq:benamou-brenier} is non-convex, after the change of variable $m_t := \alpha_t v_t$, it becomes convex in $(m_t,\alpha_t)$. This beautiful property enables solving the geodesic interpolation using convex optimization technics, once the domain is discretized. 
+
+
+\begin{rem} %[Path–space formulation]
+Let $\mathcal S=C([0,1];\mathbb R^d)$ be the space of continuous paths endowed with the uniform topology.  For $t\in[0,1]$ define the evaluation map
+\[
+P_t: \mathcal S\to\mathbb R^d,\qquad P_t(\gamma)=\gamma(t).
+\]
+The Benamou-Brenier cost admits the equivalent formulation
+\[
+W_2^2(\alpha_0,\alpha_1)=\inf_{M\in\mathcal P(\mathcal S)}\Bigl\{\int_{\mathcal S}\!\int_0^1|\dot\gamma(t)|^2\,\d t\,\d M(\gamma): (P_0)_{\sharp}M=\alpha_0,\ (P_1)_{\sharp}M=\alpha_1\Bigr\}.
+\]
+If $\alpha_0$ has a density, the minimiser $M^*$ is unique. Its time marginals reproduce the optimal curve: $\alpha_t=(P_t)_{\sharp}M^*$ for all $t$.  Furthermore, denoting $Q_t: \mathcal S\to\mathbb R^d, Q_t(\gamma)=\dot\gamma(t)$, 
+The conditional law of the velocity is deterministic:
+\[
+(P_t, Q_t)_{\sharp}M^* = \alpha_t\otimes\delta_{v_t^*(x)},\qquad t\in[0,1],
+\]
+where $v_t^*$ is the optimal velocity field in the Benamou-Brenier formulation. Hence $M^*$ concentrates on straight-line geodesics, assigning exactly one direction at each spatial point.
+\end{rem}
+
+
+
+\subsection{Wasserstein Gradient Flows}
+
+We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_t)_t$. The general strategy of minimizing movement over a metric space is to construct a discrete-time evolution using an implicit Euler scheme:
+\begin{equation}
+    \alpha_{t+\tau} := \arg\min_\alpha \frac{1}{2 \tau} \mathrm{W}_2(\alpha_t, \alpha)^2 + f(\alpha). \label{eq:jko-discr}
+\end{equation}
+
+\paragraph{Euclidean gradient flows.}
+
+If we restrict \eqref{eq:jko-discr} to finite dimensions and assume $\alpha_t = \delta_{x(t)}$ and $\alpha = \delta_x$ (single Dirac measures), this matches the implicit Euler scheme:
+\begin{equation*}
+    x(t+\tau) := \arg\min_x \frac{1}{2 \tau} \|x - x(t)\|^2 + h(x),
+\end{equation*}
+where $h(x) = f(\delta_x)$. Its solution is formally given by the implicit Euler formula:
+\begin{equation*}
+    x(t+\tau) = (\mathrm{Id} + \tau \nabla h)^{-1}(x(t)).
+\end{equation*}
+In contrast, the explicit Euler scheme is:
+\begin{equation*}
+    x(t+\tau) = (\mathrm{Id} - \tau \nabla h)(x(t)) = x(t) - \tau \nabla h(x(t)).
+\end{equation*}
+Both schemes converge as $\tau \to 0$ to:
+\begin{equation}
+    \dot{x}(t) = -\nabla h(x(t)). \label{eq:grad-flow-classical}
+\end{equation}
+
+
+\paragraph{Wasserstein gradient formula.}
+
+The implicit Euler scheme has the advantage that it does not require $h$ or $f$ to be smooth. For $f$, this is crucial to handle evolution over arbitrary measures (with or without densities) seamlessly.
+
+As $\tau \to 0$, under certain conditions on $f$, \eqref{eq:jko-discr} defines a continuous evolution $t \mapsto \alpha_t$. As discussed earlier, this evolution can be described as a Lagrangian evolution \eqref{eq:lagrangian-advection}. A key point is that it provides an explicit vector field $v_t$ (depending on $\alpha_t$), denoted as $\nabla_{\mathrm{W}} f(\alpha)$, called the Wasserstein gradient. In the weak sense, $\alpha_t$ satisfies:
+\begin{equation}
+    \frac{\partial \alpha_t}{\partial t} + \mathrm{div}(-\nabla_{\mathrm{W}} f(\alpha_t) \alpha_t) = 0. \label{eq:wassflow-pde}
+\end{equation}
+Here, $\nabla_{\mathrm{W}} f(\alpha_t)(x) \in \mathbb{R}^d$ is a vector field and is a gradient (similar to the computation in \eqref{eq:least-square-field}), computable as:
+\begin{equation*}
+    \nabla_{\mathrm{W}} f(\alpha) = \nabla_{\mathbb{R}^d} \varphi, \quad \text{where } \varphi := \delta f(\alpha).
+\end{equation*}
+The function $\delta f(\alpha) \in \mathcal{C}(\mathbb{R}^d)$ is known as the first variation or Fr\'echet (directional) derivative, satisfying for any $\beta \in \mathcal{P}(\mathbb{R}^d)$:
+\begin{equation*}
+    f((1-\tau)\alpha + \tau \beta) = f(\alpha + \tau \rho) = f(\alpha) + \tau \int [\delta f(\alpha)](x) \mathrm{d} \rho(x) + o(\tau),
+\end{equation*}
+where $\rho = \beta - \alpha$ is a zero-mean measure.
+%
+The idea of doing gradient flow for the Wasserstein metric was first introduced by John D. Lafferty in his PhD, and published in ``The Density Manifold and Configuration Space Quantization'', under the name ``density manifold''. It was systematically studied by Felix Otto, who studied the properties of this space.
+
+%%%%
+\paragraph{Heuristic derivation of the Wasserstein gradient formula.}
+
+An heuristic way to see why~\eqref{eq:wassflow-pde} holds with this specific choice of vector field $\nabla_{\mathrm{W}} f(\alpha)$ is first re-write \eqref{eq:jko-discr} as a minimization over displacement fields $v$ so that $\alpha = (\mathrm{Id} + \tau v)_\sharp \alpha_t$, considering
+$$
+	\min_{v} \frac{1}{2 \tau} \tau^2 \|v\|_{L^2(\alpha_t)}^2 + f( (\mathrm{Id} + \tau v)_\sharp \alpha_t ).
+$$
+Then we perform a first-order Taylor expansion of this formulation using 
+$$
+	 (\mathrm{Id} + \tau v)_\sharp \alpha_t =  \alpha_t + \tau \mathrm{div}( v \alpha_t ) + o(\tau)
+$$
+$$
+	f( (\mathrm{Id} + \tau v)_\sharp \alpha_t ) = f(\alpha_t) - \tau \int \delta f(\alpha_t) \mathrm{div}( v \alpha_t ) \mathrm{d} d x + o(\tau)
+$$
+$$
+	 = f(\alpha_t) + \tau \int \langle \nabla_{\mathbb{R}^d} \delta f(\alpha_t)(x), v(x) \rangle \mathrm{d} \alpha_t(x) + o(\tau)
+$$
+to obtain the following first order expansion in $\tau$ of the problem minimized in  \eqref{eq:jko-discr}
+$$
+	 \min_{v} f(\alpha_t) +  \tau \int \Big[ \frac{1}{2} \|v(x)\|^2 + \langle \nabla_{W} f(\alpha_t)(x), v(x) \rangle \Big]\mathrm{d} \alpha_t(x) + o(\tau)
+$$
+We now detail examples of such Wasserstein gradient flows.
+
+%%%
+\paragraph{Discrete evolutions.}
+
+If $f(\alpha)$ can be evaluated on discrete distributions and $\nabla_W$ is continuous in this case, the flow \eqref{eq:wassflow-pde} maintains the number of Dirac masses, $\alpha_t = \frac{1}{n} \sum_i \delta_{x_i(t)}$. The particles $X(t) := (x_i(t))_i$ evolve according to a system of coupled ODEs:
+\begin{equation}
+    \dot{X}(t) = -\nabla F(X), \label{eq:wassflows-particles}
+\end{equation}
+where $F(X) := f\left(\frac{1}{n} \sum_i \delta_{x_i}\right)$.
+ 
+%%%
+\paragraph{Linear Functionals.} The simplest example of flows is for linear functions
+   \begin{equation}\label{eq:linear-func}
+       f(\alpha) = \int h(x) \mathrm{d} \alpha(x). 
+   \end{equation}
+   Here, $\delta f(\alpha) = h$ is a fixed function (independent of $\alpha$). The flow \eqref{eq:wassflow-pde} becomes:
+   \begin{equation*}
+       \frac{\partial \alpha_t}{\partial t} + \mathrm{div}(-\nabla h \alpha_t) = 0.
+   \end{equation*}
+   This implies particles move independently according to the usual gradient flow \eqref{eq:grad-flow-classical}.
+
+%%%
+\paragraph{Shannon Neg-Entropy.} A very different behavior is obtained by considering functions which require $\alpha_t$ to have a density, the canonical example being Shannon neg-entropy
+   \begin{equation}
+       f(\alpha) = \int \log\left(\frac{\mathrm{d} \alpha}{\mathrm{d} x}(x)\right) \mathrm{d} \alpha(x). \label{eq:entropy-func}
+   \end{equation}
+   Here, $\delta f(\alpha) = \log\left(\frac{\mathrm{d} \alpha}{\mathrm{d} x}\right)$, so $\nabla_W f(\alpha) = \frac{\nabla \alpha}{\alpha}$ (often called the score). The flow \eqref{eq:wassflow-pde} becomes the heat equation:
+   \begin{equation*}
+       \partial_t \alpha_t = \Delta(\alpha).
+   \end{equation*}
+   Other entropy functionals lead to nonlinear diffusion equations. For example, generalized entropy of the form (a.k.a $\phi$-divergences with respect to Lebesgue)
+   \begin{equation}\label{eq:gen-entropies}
+       f(\alpha) = \int g\left(\frac{\mathrm{d} \alpha}{\mathrm{d} x}\right) \mathrm{d} x,
+   \end{equation}
+   for a 1-D function $g(s)$, leads to nonlinear diffusions:
+   \begin{equation*}
+       \frac{\partial \alpha_t}{\partial t} = \Delta(\tilde{g}(\alpha)),
+   \end{equation*}
+   where $s g'(s) = \tilde{g}'(s)$. For example, $g(s) = s \log(s)$ corresponds to \eqref{eq:entropy-func}, while $g(s) = s^{p-1}/(p-1)$, $p > 1$, yields slow diffusion.
+	%
+	A celebrated, and non-trivial, theorem by McCann is that a function of the form~\eqref{eq:gen-entropies}, for $g : \RR^+ \to \RR$, is geodesically convex on $\Pp(\RR^d)$ if $g(0)=0$, $g$ is convex increasing super-linearly and $s \mapsto g(s^{-d}) s^d$ is convex decreasing.
+	%
+	Examples of such functions are $g(s)=s^q$ for $q>1$ and Shannon entropy $g(s)=s \log(s)$. %
+	Note, however, that $-\log(t)$ (associated with the reverse KL divergence) is not super-linear, so one cannot conclude geodesic convexity. 
+	
+%%%
+\paragraph{Interaction Energies.} In a similar spirit, to obtain non-linear evolutions, but without requiring the measure to have density, one can consider
+   \begin{equation}
+       f(\alpha) := \iint k(x, y) \mathrm{d} \alpha(x) \mathrm{d} \alpha(y). \label{eq:quadratic-func}
+   \end{equation}
+   For a symmetric kernel $k$:
+   \begin{equation*}
+       \delta f(\alpha)(x) = 2 \int k(x, y) \mathrm{d} \alpha(y), \quad \nabla_W f(\alpha)(x) = 2 \int \nabla_x k(x, y) \mathrm{d} \alpha(y).
+   \end{equation*}
+   For $\alpha_0 = \frac{1}{n} \sum_i \delta_{x_i}$, the flow \eqref{eq:wassflow-pde} implies particles $(x_i(t))_i$ obey:
+   \begin{equation*}
+       \dot{x}_i(t) = -2 \sum_j \nabla k(x_i(t), x_j(t)).
+   \end{equation*}
+   
+\paragraph{Convergence of the flow.}
+In general, analyzing \eqref{eq:wassflow-pde} is challenging. A simple case is when $f$ is geodesically convex. Denoting $T$ as the optimal transport map from $\alpha_0$ to $\alpha_1$, the function $t \mapsto f(((1-t)\mathrm{Id} + tT)_\sharp \alpha_0)$ is convex. In this case, $\alpha_t$ is well-defined and converges to a global minimizer of $f$. This applies to linear \eqref{eq:linear-func}, quadratic \eqref{eq:quadratic-func} with convex $h(x)$ and $k(x, y)$, and Shannon entropy \eqref{eq:entropy-func}.
+
+
+\subsection{Application: Training Two-Layer MLPs as Wasserstein Flows}
+
+In this section, we replace the variable $x$ with $\theta$ to align with customary notation in machine learning. 
+%
+We consider a two-layer MLP $g_\theta : u \in \mathbb{R}^d \to \mathbb{R}$ with $n$ neurons:
+\begin{equation*}
+    g_\theta(u) := \frac{1}{n} \sum_i \psi(\theta_i, u), \quad \text{where } \psi(\theta_i, u) := a_i \langle u, w_i \rangle,
+\end{equation*}
+and $\theta_i := (w_i, a_i) \in \mathbb{R}^{d+1}$ represents the parameters of a neuron. Importantly, these functions are invariant under permutations of the neurons. Thus, we can rewrite it using a probability distribution $\alpha = \frac{1}{n} \sum_i \delta_{\theta_i}$ as:
+\begin{equation*}
+    G_\alpha(u) := \int_{\mathbb{R}^{d+1}} \psi(\theta, u) \, \mathrm{d} \alpha(\theta).
+\end{equation*}
+This formulation has the advantage that $\alpha$ can represent a continuous density with an infinite number of neurons.
+
+Now, we consider training the MLP by minimizing an empirical risk to predict labels $y_k \in \mathbb{R}$ from features $u_k \in \mathbb{R}^d$:
+\begin{equation*}
+    \min_\alpha f(\alpha) := \frac{1}{N} \sum_{k=1}^N \ell(G_\alpha(u_k), y_k).
+\end{equation*}
+Since $\alpha \mapsto G_\alpha$ is linear, if $\ell$ is convex, then $f$ is a convex function of $\alpha$. However, this observation is not particularly useful because $\alpha$ is infinite-dimensional, making standard minimization infeasible. The typical approach is to perform gradient descent on the neuron parameters, as described in \eqref{eq:wassflows-particles}:
+\begin{equation*}
+    \dot{\theta} = -\nabla F(\theta), \quad \text{where } F(\theta) := f\left(\frac{1}{n} \sum_i \delta_{\theta_i}\right).
+\end{equation*}
+This is equivalent to the PDE \eqref{eq:wassflow-pde} on the neuron density, where the Wasserstein gradient is used.
+%
+Let us write in more detail this PDE in this specific case. 
+For $\ell(s, s') = \frac{1}{2}(s - s')^2$, the first variation of $f$ is:
+\begin{equation*}
+    \delta f(\alpha)(\theta) = \frac{1}{N} \sum_{k=1}^N \left(\int \psi(\theta', u_k) \, \mathrm{d} \alpha(\theta') - y_k\right) \psi(\theta, u_k),
+\end{equation*}
+which can be rewritten as:
+\begin{equation*}
+    \delta f(\alpha)(\theta) = \int k(\theta, \theta') \, \mathrm{d} \alpha(\theta') + g(\theta),
+\end{equation*}
+where the kernel and potential functions are:
+\begin{align}
+    k(\theta, \theta') &:= \frac{1}{N} \sum_k \psi(\theta, u_k) \psi(\theta', u_k), \\
+    g(\theta) &:= -\frac{1}{N} \sum_k y_k \psi(\theta, u_k).
+\end{align}
+Thus, the Wasserstein gradient becomes:
+\begin{equation*}
+    \nabla_W f(\alpha)(\theta) = \int \nabla_\theta k(\theta, \theta') \, \mathrm{d} \alpha(\theta') + \nabla_\theta g(\theta).
+\end{equation*}
+This corresponds to a Wasserstein flow of the sum of a quadratic and a linear interaction potential. These functions are not geodesically convex because neither $k$ nor $g$ are convex, making convergence analysis challenging.
+
+A breakthrough was achieved by Chizat and Bach, who proved that if the initialization has enough Dirac masses, the flow cannot become stuck in local minima or saddle points. This result leverages the classical convexity of the function $f$ and the 1-homogeneity of $\psi((a, w), u)$ with respect to the external weights $a$.
+
+\subsection{Application: Evolution in Depth of Transformers}
+
+We consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This framework is best suited to modeling encoders and vision transformers. 
+
+After tokenization, embedding, and positional encoding, each input (from a set of tokens) is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ points in the space of vectorized tokens. An attention layer with skip connection and rescaling by $1/T$ (where $T$ is the depth) defines a transformation of the tokens:
+\begin{equation*}
+    x_i \mapsto x_i + \frac{1}{T} \sum_j \frac{e^{\langle Q x_i, K x_j \rangle} V x_j}{\sum_{\ell} e^{\langle Q x_i, K x_\ell \rangle}},
+\end{equation*}
+where $\theta = (K, Q, V)$ are the parameters of the attention layer, represented by three matrices.
+
+To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$ as the empirical measure of tokens and rewrite the transformer mapping as:
+\begin{equation*}
+    x_i \mapsto x_i + \frac{1}{T} \Gamma_\theta[\alpha](x_i),
+\end{equation*}
+where
+\begin{equation*}
+    \Gamma_\theta[\alpha](x) := \int \frac{e^{\langle Q x, K y \rangle} V y \, \mathrm{d} \alpha(y)}{\int e^{\langle Q x, K z \rangle} \, \mathrm{d} \alpha(z)}.
+\end{equation*}
+In terms of the evolution of the token distribution $\alpha$, this means $\alpha$ is pushed forward by the ``in-context'' mapping $\Gamma_{\theta_t}[\alpha]$, which depends on the context $\alpha$, the tokens, and the depth-dependent parameters $\theta_t$. Denoting $t \in [0, 1]$ as the depth and $\tau = 1/T$ as the step size, this gives:
+\begin{equation*}
+    \alpha_{t+\tau} = (\mathrm{Id} + \tau \Gamma_{\theta_t}[\alpha_t])_\sharp \alpha_t.
+\end{equation*}
+As $\tau \to 0$, this converges to the following conservation equation:
+\begin{equation*}
+    \partial_t \alpha_t + \mathrm{div}(\alpha_t \Gamma[\alpha_t]) = 0.
+\end{equation*}
+An interesting remark is that, when $V=KQ^T$, then $\Gamma[\alpha]$ is a gradient vector field, but it is not a gradient of a first variation, so that this PDE is not a Wasserstein gradient flow. 
+%
+This formulation was first introduced by Michael Sander in the Sinkformer's paper, modeling deep transformers as PDEs. The key challenge lies in understanding the training of the network, which corresponds to optimizing the parameters $(\theta_t)_t$. This remains an open problem.
+
+
