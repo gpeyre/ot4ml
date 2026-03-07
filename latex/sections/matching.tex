@@ -1,0 +1,86 @@
+% !TEX root = ../CourseOT.tex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Optimal Matching between Point Clouds}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Monge Problem for Discrete Points}
+\label{sec-monge-pbm}
+
+%%%%%%%
+\paragraph{Matching Problem}
+
+Given a cost matrix $(\C_{i,j})_{i \in \range{n}, j \in \range{m}}$ and assuming $n=m$, the optimal assignment problem aims to find a bijection $\sigma$ within the set $\Perm(n)$ of permutations of $n$ elements that solves
+\eql{\label{eq-optimal-assignment}
+	\umin{\sigma \in \Perm(n)} \frac{1}{n}\sum_{i=1}^n \C_{i,\sigma(i)}.
+}
+One could naively evaluate the cost function above using all permutations in the set $\Perm(n)$. However, this set has size $n!$, which becomes enormous even for small values of $n$.
+%
+In general, the optimal $\sigma$ is not unique.
+
+
+\paragraph{1D Case}
+
+In 1D, for convex cost, the matching defines a monotonic map.
+
+\begin{proposition}
+If the cost is of the form $\C_{i,j}=h(x_i-y_j)$, where $h: \RR \rightarrow \RR^+$ is strictly convex (for example, $\C_{i,j}=|x_i-y_j|^p$ for $p > 1$), optimal $\sigma$ defines a strictly increasing map $x_i \mapsto y_{\sigma(i)}$ (and thus is unique), i.e.,
+\eq{
+	\forall (i,i'), \quad (x_i-x_{i'})(y_{\sigma(i)}-y_{\sigma(i')}) > 0.
+}
+\end{proposition}
+\begin{proof}
+Indeed, if this property is violated, i.e., there exists $(i,i')$ such that $(x_i-x_{i'})(y_{\sigma(i)}-y_{\sigma(i')}) < 0$, then one can define a permutation $\tilde{\sigma}$ by swapping the match, i.e., $\tilde{\sigma}(i)=\sigma(i')$ and $\tilde{\sigma}(i')=\sigma(i)$, yielding a strictly better cost, as proved in the following fact.
+%
+Let $h:\mathbb R\to\mathbb R$ be convex and let $x < x'$ and $y \leq y'$. Then
+\[
+  h(x-y)+h(x'-y') < h(x-y')+h(x'-y).
+\]
+We et the gap $d:=y'-y > 0$ and define for every $s\in\mathbb R$
+\[
+	  D(s):=\frac{h(s)-h(s-d)}{d}
+	\quad\text{and}\quad  
+	\Delta:=h(x-y')+h(x'-y)-h(x-y)-h(x'-y') = d ( D(x'-y)-D(x-y) ).
+\]
+Because $h$ is convex, for any $s_1 \leq s_2$ $D(s_1) \leq D(s_2)$.
+Since $x-y < x'-y$, monotonicity yields $D(x-y) < D(x'-y)$, that is $\Delta > 0$. 
+\end{proof}
+
+This property extends by continuity to convex (not strictly convex) costs such as $|x-y|$, but in this case, the matching is not necessarily unique. 
+Note that if $h$ is concave instead of being convex, then the behavior is entirely different, and the optimal match tends to exchange the positions. In this case, there exists an $O(n^2)$ algorithm.
+
+Therefore, the algorithm to compute an optimal transport is to sort the points, i.e., find some pair of permutations $\sigma_X, \sigma_Y$ such that
+\eq{
+	x_{\sigma_X(1)} \leq x_{\sigma_X(2)} \leq \ldots
+	\qandq
+	y_{\sigma_Y(1)} \leq y_{\sigma_Y(2)} \leq \ldots
+}
+and then an optimal match is mapping $x_{\sigma_X(k)} \mapsto y_{\sigma_Y(k)}$, i.e., an optimal transport is $\sigma = \sigma_Y \circ \sigma_X^{-1}$. The total computational cost is thus $O(n\log(n))$, using, for instance, the quicksort algorithm.
+%
+Note that if $\phi : \RR \rightarrow \RR$ is an increasing map, one can apply this technique to costs of the form $h(|\phi(x)-\phi(y)|)$ with a change of variable.
+%
+A typical application is the grayscale histogram equalization of the luminance of images.
+
+Note that if $h$ is strictly convex, then all optimal assignments are increasing, so if the points are all distinct, there is a unique such increasing map. But if $h$ is not strictly convex, for instance $c(x,y)=|x-y|$ then there exists non non-increasing optimal assignment, for instance in the book shifting problem, with overlapping uniform distribution (the mass at the intersection can stay at the same place).
+
+This efficient strategy to compute the OT in 1-D does not extend to higher dimensions. In 2-D, as already noted by Monge, one has the following property.
+
+\begin{proposition}
+	In dimension 2, for $c(x,y) = \norm{x-y}$, if $\sigma$ is an optimal assignement, then segments $[x_i,y_{\sigma(i)}]$ cannot cross.
+\end{proposition} 
+
+\begin{proof}
+	If two segments $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$, by the parallelogram inequality, the asignement where one swap $(\sigma(i),\sigma(j))$ has a strictly smaller cost. 
+\end{proof}
+
+This property alone is, however, not enough to lead to an efficient algorithm, since there exists an exponential in $n$ number of non-crossing assignments. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Matching Algorithms}
+
+Efficient algorithms exist to solve the optimal matching problem. The most well-known are the Hungarian and the auction algorithm, which run in $O(n^3)$ operations. Their derivation and analysis, however, are greatly simplified by introducing the Kantorovich relaxation and its associated dual problem.
+%
+A typical application of these methods is equalizing the color palette between images, corresponding to a 3-D optimal transport.
