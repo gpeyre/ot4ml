@@ -1,25 +1,28 @@
-% !TEX root = ../CourseOT.tex
+% !TEX root = ../OT4ML.tex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dual Problem}
+\label{sec-dual}
+
+Duality turns the transport problem into a search for potentials rather than couplings. This section explains why potentials certify optimality, how $c$-transforms regularize them, and why the quadratic case reveals convex analysis behind Brenier maps. Linear-programming duality gives the discrete picture~\cite{bertsimas1997introduction}, while the continuous form is one of the central theorems of OT~\cite{Villani03,SantambrogioBook}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Discrete dual}
 
-% - Dual pbm discrete, dual of linear programming
-% - Mention auction and eps-scaling
 
-The Kantorovich problem~\eqref{eq-kanto-discr} is a linear program so that one can equivalently compute its value by solving a dual linear program. 
+The discrete dual gives finite-dimensional certificates of optimality. Its complementary slackness conditions identify where an optimal coupling can put mass.
+
+The Kantorovich problem~\eqref{eq-kanto-discr} is a linear program so that one can equivalently compute its value by solving a dual linear program.
 
 % a constrained convex minimization problem, and as such, it can be naturally paired with a so-called dual problem, which is a constrained concave maximization problem. The following fundamental proposition, which is a special case of Fenchel-Rockafellar duality theory, explains the relationship between the primal and dual problems.
 
-\begin{prop}\label{prop-duality-discr}
+\begin{prop}[Discrete Kantorovich duality]\label{prop-duality-discr}
 One has
 \eql{\label{eq-dual}
-	\MKD_\C(\a,\b) = 
-	\umax{(\fD,\gD) \in \PotentialsD(\a,\b)} \dotp{\fD}{\a} + \dotp{\gD}{\b} 
+	\MKD_\C(\a,\b) =
+	\umax{(\fD,\gD) \in \PotentialsD(\a,\b)} \dotp{\fD}{\a} + \dotp{\gD}{\b}
 }
 where the set of admissible potentials is
 \eql{\label{eq-feasible-potential}
@@ -32,21 +35,21 @@ where the set of admissible potentials is
 \begin{proof}
 % This result is a direct consequence of the more general result on the strong duality for linear programs~\cite[p.148,Theo.4.4]{bertsimas1997introduction}. The easier part of that result, namely that the right-hand side of Equation~\eqref{eq-dual} is a lower bound on $\MKD_\C(\a,\b)$ is discussed in~\ref{rem-duality}.
 %
-For the sake of completeness, let us derive this dual problem with the use of Lagrangian duality. The Lagrangian associate to~\eqref{eq-kanto-discr} reads
+For the sake of completeness, let us derive this dual problem using Lagrangian duality. The Lagrangian associated to~\eqref{eq-kanto-discr} reads
 \eql{\label{eq-mk-lagr}
 	\umin{\P \geq 0} \umax{ (\fD,\gD) \in \RR^n \times \RR^m }
-		\dotp{\C}{\P} + \dotp{\a - \P\ones_m}{\fD} + \dotp{\b - \P^\top \ones_n}{\gD}. 
+		\dotp{\C}{\P} + \dotp{\a - \P\ones_m}{\fD} + \dotp{\b - \P^\top \ones_n}{\gD}.
 }
-For a linear program, if the primal set of constraints is non-empty, one can always exchange the min and the max and get the same value of the linear program, and one thus consider
+For a linear program, if the primal constraint set is non-empty, one can always exchange the min and the max and get the same value. We thus consider
 \eq{
-	\umax{ (\fD,\gD) \in \RR^n \times \RR^m } 
+	\umax{ (\fD,\gD) \in \RR^n \times \RR^m }
 	\dotp{\a}{\fD} + \dotp{\b}{\gD}
-	+ \umin{\P \geq 0} 
-		\dotp{\C - \fD\ones_m^\top - \ones_n \g^\top}{\P}.
+	+ \umin{\P \geq 0}
+		\dotp{\C - \fD\ones_m^\top - \ones_n \gD^\top}{\P}.
 }
-We conclude by remarking that 
+We conclude by remarking that
 \eq{
-	\umin{\P \geq 0} \dotp{\Q}{\P} = 
+	\umin{\P \geq 0} \dotp{\Q}{\P} =
 	\choice{
 		0 \qifq \Q \geq 0\\
 		-\infty \quad \text{otherwise}
@@ -58,28 +61,106 @@ so that the constraint reads $\C - \fD\ones_m^\top - \ones_n \gD^\top = \C-\fD\o
 The primal-dual optimality relation for the Lagrangian~\eqref{eq-mk-lagr} allows locating the support of the optimal transport plan
 \eql{\label{eq-mk-pd-rel}
 	\Supp(\P) \subset \enscond{(i,j) \in \range{n} \times \range{m}}{ \fD_i+\gD_j=\C_{i,j} }.
-} 
+}
 
-The formulation~\eqref{eq-dual} shows that $(\a,\b) \mapsto \MKD_\C(\a,\b)$ is a convex function (as a supremum of linear functions). From the primal problem~\eqref{eq-kanto-discr}, one also sees that $\C \mapsto \MKD_\C(\a,\b)$ is concave. 
+Figure~\ref{fig:dual-kantorovich-discrete-potentials} shows these finite-dimensional certificates on a one-dimensional quadratic problem.  The potentials are not transport maps themselves; rather, their contact set with the cost matrix is where an optimal coupling is allowed to put mass.
 
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small balanced target &
+\small shifted target &
+\small unequal widths \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-discrete-potentials/target-balanced.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-discrete-potentials/target-shifted.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-discrete-potentials/target-unequal.pdf}
+\end{tabular}
+\caption{Discrete Kantorovich dual potentials for the quadratic cost $C_{i,j}=|x_i-y_j|^2$.  In each panel the upper strip shows the fixed source histogram in red and the target histogram in blue.  The lower strip shows an optimal pair of dual vectors $(\fD,\gD)$, with gauge chosen so that $\dotp{\fD}{\a}=0$.  Complementary slackness states that mass can be transported only through entries where $\fD_i+\gD_j=C_{i,j}$.}
+\label{fig:dual-kantorovich-discrete-potentials}
+\end{figure}
 
-% \todo{$W_c$ is convex in (mu,nu)  (--> density fitting)}
-% \todo{$W_c$ is concave in c (from the primal) metric learning}
-  
+The formulation~\eqref{eq-dual} shows that $(\a,\b) \mapsto \MKD_\C(\a,\b)$ is a convex function (as a supremum of linear functions). From the primal problem~\eqref{eq-kanto-discr}, one also sees that $\C \mapsto \MKD_\C(\a,\b)$ is concave.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Auction Algorithm and Dual Prices}
+\label{sec-auction-dual-ascent}
+
+The assignment algorithms mentioned in Section~\ref{sec-matching} become more transparent once one has dual variables. The auction algorithm is a dual price method: it updates target prices and maintains an approximate complementary-slackness certificate. The small tolerance $\epsilon$ removes ties, stabilizes the price updates and gives a quantitative optimality certificate~\cite{bertsekas1981new,bertsekas1992auction,merigot2020optimaltransportalgorithms}.
+
+Consider the square assignment problem with costs $C_{i,j}$ and rewrite it as the profit maximization problem with $a_{i,j}=-C_{i,j}$. The auction algorithm keeps prices $p_j$ on the target points and a partial assignment. For an unassigned source $i$, define the best and second-best reduced profits
+\[
+	v_i=\max_j (a_{i,j}-p_j),\qquad
+	j_i\in\operatorname*{argmax}_j(a_{i,j}-p_j),\qquad
+	w_i=\max_{j\neq j_i}(a_{i,j}-p_j).
+\]
+Source $i$ bids for $j_i$ and increases its price by the gap to the second-best target, plus a margin:
+\[
+	p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
+\]
+The target $j_i$ is then assigned to $i$, and its previous owner, if any, becomes unassigned. The iteration stops when all sources are assigned.
+
+For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual minimization gives the convex objective
+\[
+	D(p)=\sum_j p_j+\sum_i \max_j(a_{i,j}-p_j),
+\]
+which comes from the dual constraints $u_i+p_j\geq a_{i,j}$. The auction update should thus be viewed as a price-adjustment method on this nonsmooth dual landscape, rather than as a generic gradient step: the proof of correctness is through approximate complementary slackness.
+
+\begin{defn}[$\epsilon$-complementary slackness]
+	An assignment $\sigma$ and prices $p$ satisfy $\epsilon$-complementary slackness if, for every source $i$,
+	\[
+		a_{i,\sigma(i)}-p_{\sigma(i)}
+		\geq
+		\max_j(a_{i,j}-p_j)-\epsilon.
+	\]
+\end{defn}
+
+\begin{prop}[Auction optimality certificate]\label{prop-auction-eps-cs}
+	If a complete assignment $\sigma$ satisfies $\epsilon$-complementary slackness, then it is $n\epsilon$-optimal for the profit maximization problem, or equivalently $n\epsilon$-optimal for the original cost minimization problem. If all costs are integers and $\epsilon<1/n$, then $\sigma$ is optimal.
+\end{prop}
+
+\begin{proof}
+	Let $\tau$ be any assignment. By $\epsilon$-complementary slackness,
+	\[
+		a_{i,\tau(i)}-p_{\tau(i)}
+		\leq
+		\max_j(a_{i,j}-p_j)
+		\leq
+		a_{i,\sigma(i)}-p_{\sigma(i)}+\epsilon.
+	\]
+	Summing over $i$ cancels prices, because both $\sigma$ and $\tau$ are permutations:
+	\[
+		\sum_i a_{i,\tau(i)}
+		\leq
+		\sum_i a_{i,\sigma(i)}+n\epsilon.
+	\]
+	Thus no assignment has profit more than $n\epsilon$ above that of $\sigma$. Since $a=-C$, the same statement says that the cost of $\sigma$ is at most $n\epsilon$ above the minimum cost. If the costs are integers, all assignment costs are integers; a gap strictly smaller than one therefore forces the gap to be zero.
+\end{proof}
+
+During the bidding process the last bid made by a source makes its chosen target better, up to the margin $\epsilon$, than all alternatives. Subsequent price increases can only make targets less attractive, and one checks by induction that currently assigned pairs satisfy $\epsilon$-complementary slackness. The standard finite-termination proof normalizes prices by subtracting their minimum, observes that each bid increases one target price by at least $\epsilon$, and bounds the normalized price spread in terms of the range of the profits; see~\cite{bertsekas1992auction,merigot2020optimaltransportalgorithms} for the full bound and implementation details.
+
+\begin{rem}[$\epsilon$-scaling and relation with Sinkhorn]
+	In practice one starts with a coarse $\epsilon$ and repeatedly decreases it, warm-starting the prices and assignment. This $\epsilon$-scaling strategy is a homotopy method: large $\epsilon$ regularizes the combinatorial problem by enforcing a visible margin between the best and second-best reduced profits, while small $\epsilon$ recovers the exact dual certificate. If one wants a continuous-optimization analogy, the margin is closer to an exact-penalty or proximal continuation parameter than to a literal quadratic penalty.
+
+	Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum in the dual $c$-transform is replaced by a soft minimum, or log-sum-exp, with temperature $\epsilon$; in the auction algorithm, the hard maximum is kept but the complementary slackness condition is relaxed by $\epsilon$. Both methods therefore use an $\epsilon$-controlled dual continuation, and both recover the unregularized transport certificate as $\epsilon\to0$ under the usual assumptions. The outputs are different: Sinkhorn produces dense entropic couplings, whereas auction keeps a sparse assignment throughout.
+\end{rem}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{General formulation}
+\label{sec-dual-general}
+
+The continuous dual is the analytic counterpart of the discrete linear program. It uses continuous potentials because measures are probed through integration.
 
 To extend this primal-dual construction to arbitrary measures, it is important to realize that measures are naturally paired in duality with continuous functions, using the pairing $\dotp{\f}{\al} \eqdef \int f \d \al$.
 
 %  (a measure can only be accessed through integration against continuous functions). The duality is formalized in the following proposition, which boils down to Proposition~\ref{prop-duality-discr} when dealing with discrete measures.
-	
-\begin{prop}
-	One has
+
+\begin{prop}[Kantorovich duality]
+	Assume that $\Xx$ and $\Yy$ are compact metric spaces and that $c\in\Cc(\Xx\times\Yy)$. Then
 	\eql{\label{eq-dual-generic}
-		\MK_\c(\al,\be) = 
+		\MK_\c(\al,\be) =
 		\umax{(\f,\g) \in \Potentials(\c)}
-			\int_\X \f(x) \d\al(x) + \int_\Y \g(y) \d\be(y), 
-	} 
+			\int_\X \f(x) \d\al(x) + \int_\Y \g(y) \d\be(y),
+	}
 	where the set of admissible dual potentials is
 	\eql{\label{eq-dfn-pot-dual}
 		\Potentials(\c) \eqdef \enscond{
@@ -88,29 +169,60 @@ To extend this primal-dual construction to arbitrary measures, it is important t
 			\forall (x,y), \f(x)+\g(y) \leq \c(x,y)
 		}.
 	}
-	Here, $(\f,\g)$ is a pair of continuous functions, and are often called ``Kantorovich potentials''.
+	Here, $(\f,\g)$ is a pair of continuous functions, often called ``Kantorovich potentials''.
+	The same formula extends under the usual lower-semicontinuity and integrability assumptions, replacing maxima by suprema when dual optimizers need not exist.
 \end{prop}
+\begin{proof}
+	Weak duality is immediate: if $f(x)+g(y)\leq c(x,y)$ and $\pi\in\Couplings(\alpha,\beta)$, then
+	\[
+		\int f\d\alpha+\int g\d\beta
+		=
+		\int (f(x)+g(y))\d\pi(x,y)
+		\leq
+		\int c\d\pi.
+	\]
+	Taking the supremum over admissible potentials and the infimum over couplings gives ``$\leq$''.
 
-The discrete case~\eqref{eq-dual} corresponds to the dual vectors being samples of the continuous potentials, \emph{i.e.} $(\fD_i,\gD_j)=(\f(x_i),\g(y_j))$. 
-	%
-	The primal-dual optimality conditions allow for tracking the support of the optimal plan, and~\eqref{eq-mk-pd-rel} is generalized as 
-	\eql{\label{eq-mk-pd-rel-cont}
-		\Supp(\pi) \subset \enscond{(x,y) \in \X \times \Y}{ \f(x)+\g(y)=\c(x,y) }.
-	} 
-	Note that in contrast to the primal problem~\eqref{eq-mk-generic}, showing the existence of solutions to~\eqref{eq-dual-generic} is non-trivial, because the constraint set $\Potentials(\c)$ is not compact and the function to minimize non-coercive.
-	%
-	Using the machinery of $c$-transform detailed in Section~\ref{sec-c-transfo}, one can however, show that optimal $(\f,\g)$ are necessarily Lipschitz regular, which enables to replacement of the constraint by a compact one. 
+	For the reverse inequality, view the primal problem as a linear program over the locally convex space of Radon measures, paired with $\Cc(\X\times\Y)$. The affine map $\pi\mapsto(\pi_1,\pi_2)$ is continuous for the weak topology, the feasible set is non-empty because it contains $\alpha\otimes\beta$, and the cost is continuous and bounded on compact sets. The separating-hyperplane theorem applied to the convex set of attainable triples
+	\[
+		\Big\{\big(\pi_1,\pi_2,\int c\d\pi+r\big): \pi\geq0,\ r\geq0\Big\}
+	\]
+	gives a continuous affine separator, hence functions $(f,g)$ and a scalar multiplier which can be normalized so that $f\oplus g\leq c$. The separating inequality then states that the supremum over such potentials is at least the primal value. This proves equality. The same argument is the infinite-dimensional analogue of the finite linear-programming proof in Proposition~\ref{prop-duality-discr}.
+\end{proof}
 
+The discrete case~\eqref{eq-dual} corresponds to the dual vectors being samples of the continuous potentials, \emph{i.e.} $(\fD_i,\gD_j)=(\f(x_i),\g(y_j))$. The primal-dual optimality conditions allow for tracking the support of the optimal plan, and~\eqref{eq-mk-pd-rel} is generalized as
+\eql{\label{eq-mk-pd-rel-cont}
+	\Supp(\pi) \subset \enscond{(x,y) \in \X \times \Y}{ \f(x)+\g(y)=\c(x,y) }.
+}
+For the one-dimensional quadratic cost, the continuous potentials can be read from the monotone map $T=F_\be^{-1}\circ F_\al$: on the active graph, $f'(x)=2(x-T(x))$ and $g=f^c$.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small balanced target &
+\small shifted target &
+\small unequal widths \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-continuous-potentials/target-balanced.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-continuous-potentials/target-shifted.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-kantorovich-continuous-potentials/target-unequal.pdf}
+\end{tabular}
+\caption{Continuous Kantorovich potentials for the same source and target families as Figure~\ref{fig:dual-kantorovich-discrete-potentials}.  The upper strips show the source density $\al$ in red and the target density $\be$ in blue.  The lower strips show potentials $f$ and $g=f^c$ for the quadratic cost $c(x,y)=|x-y|^2$, with the same gauge convention as in the discrete figure.  The equality set $f(x)+g(y)=c(x,y)$ contains the monotone transport graph.}
+\label{fig:dual-kantorovich-continuous-potentials}
+\end{figure}
+
+Note that in contrast to the primal problem~\eqref{eq-mk-generic}, showing the existence of solutions to~\eqref{eq-dual-generic} is non-trivial, because the constraint set $\Potentials(\c)$ is not compact and the objective is not coercive. Using the machinery of $c$-transforms detailed in Section~\ref{sec-c-transfo}, one can show that optimal $(\f,\g)$ are necessarily Lipschitz regular, which enables the replacement of the constraint by a compact one.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{$c$-transforms}
+\subsection[c-transforms]{$c$-transforms}
 \label{sec-c-transfo}
 
-%%%%
-\paragraph{Definition.}
+The $c$-transform is the operation that improves potentials without changing feasibility. It is both a proof device for dual attainment and the route from duality to Brenier's convex potentials.
 
-Keeping a dual potential $\g$ fixed, one can try to minimize in closed form the dual problem~\eqref{eq-dual-generic}, which leads to consider
+%%%%
+\paragraph{Best-response potentials and the $c$-transform.}
+
+Keeping a dual potential $\f$ fixed, one can maximize in closed form over the second potential in the dual problem~\eqref{eq-dual-generic}, which leads to consider
 \eq{
 	\usup{\g \in \Cc(\Yy)} \enscond{
 		\int g \d \be }{
@@ -121,110 +233,91 @@ The constraint can be replaced by
 \eq{
 	\foralls y \in \Yy, \quad \g(y) \leq \f^\c(y)
 }
-where we define the $\c$-transform as 
-\eql{\label{eq-c-transform}
-	\foralls y \in \Y, \quad
-	\f^\c(y) \eqdef \uinf{x \in \X} \c(x,y) - \f(x).
-}
+
+\begin{defn}[$c$-transform]\label{def-c-transform}
+	For a function $f:\Xx\to\RR\cup\{-\infty\}$, its $c$-transform is
+	\eql{\label{eq-c-transform}
+		\foralls y \in \Y, \quad
+		\f^\c(y) \eqdef \uinf{x \in \X} \c(x,y) - \f(x).
+	}
+	For a function $g:\Yy\to\RR\cup\{-\infty\}$, the $\bar c$-transform associated with $\bar c(y,x)=c(x,y)$ is
+	\[
+		\foralls x \in \X, \quad
+		\g^{\bar\c}(x) \eqdef \uinf{y \in \Y} \c(x,y) - \g(y).
+	\]
+\end{defn}
 Since $\be$ is positive, the maximization of $\int \g \d \be$ is thus achieved at those functions such that $\g=\f^\c$ on the support of $\be$, which means $\be$-almost everywhere.
 
-Similarly, we defined the $\bar \c$-transform, which a transform for the symetrized cost $\bar c(y,x)=c(x,y)$, i.e.
-\eq{
-	\foralls x \in \X, \quad
-	\g^{\bar\c}(x) \eqdef \uinf{y \in \Y} \c(x,y) - \g(y), 
-}
-and one checks that any function $\f$ such that $\f=\g^{\bar c}$ $\al$-almost everywhere is solution to the dual problem for a fixed $g$.
-
-The map $(\f,\g) \in \Cc(\X) \times \Cc(\Y) \mapsto (\g^{\bar\c},\f^\c) \in \Cc(\X) \times \Cc(\Y)$ replaces dual potentials by ``better'' ones (improving the dual objective $\Ee$). Functions that can be written in the form $\f^\c$ and $\g^{\bar\c}$ are called $c$-concave and $\bar c$-concave functions. 
-
-Note that these partial minimizations define maximizers on the support of respectively $\al$ and $\be$, while the definitions~\eqref{eq-c-transform} define functions on the whole spaces $\X$ and $\Y$. This is thus a way to extend in a canonical way solutions of~\eqref{eq-dual-generic} on the whole space.
-
-Furthermore, if $c$ is Lipschitz, then $f^c$ and $g^c$ are also Lipschitz functions, as we now show. This property is crucial to show the existence of solutions to the dual problem. Indeed, since one can impose this Lipschitz on the dual problems, the constraint set is compact via the Ascoli theorem. 
-
-\begin{prop}
-	If $\c$ is $L$-Lipschitz with respect to the second variable, then $f^\c$ is $L$-Lipschitz.
-\end{prop}
-\begin{proof}
-	We apply to $F_x = c(x,\cdot)-f(x)$ the fact that if all the $F_x$ are $L$-Lipschitz, then the Lipschitz constant of $F=\min_x F_x$ is $L$. Indeed, using the fact that $|\inf(A)-\inf(B)| \leq \sup |A-B|$ for two function $A$ and $B$, then 
-	\eq{
-		|F(y)-F(y')| = |\inf_x(F_x(y)) - \inf_x(F_x(y'))| \leq \sup_x |F_x(y)-F_x(y')| \leq \sup_x L d(y,y') = Ld(y,y'). 
-	}
-\end{proof}
-
-
-%%%%
-\paragraph{Euclidean case.}
-
-The special case $\c(x,y)=-\dotp{x}{y}$ in $\X=\Y=\RR^d$ is of utmost importance because it allows one to study the $W_2$ problem, since for any $\pi \in \Couplings(\al,\be)$
-\eq{
-	\int \norm{x-y}^2 \d\pi(x,y) = \text{cst} - 2 \int \dotp{x}{y} \d\pi(x,y)
-	\qwhereq
-	\text{cst} = \int \norm{x}^2 \d\al(x) + \int \norm{y}^2 \d\be(y). 
-}
-For this special choice of cost, one has $f^c = -(-f)^*$ where $h^*$ is the Fenchel-Legendre transform
-\eq{
-	h^*(y) \eqdef \usup{x} \dotp{x}{y}-h(y).
-}
-One has that $h^*$ is always convex so that $f^c$ is always concave. For a general cost, one thus denotes functions of the form $f^c$ as being $c$-concave.
-
-\begin{rem}[Proof of Brenier's theorem]\label{rem-proof-brenier}
-	In the case $c(x,y)=\norm{x-y}^2$, using instead $c(x,y)=-\dotp{x}{y}$, the primal-dual relationship, together with the fact that one can replace $(f,g)$ by $(f^{cc},f^{ccc}=f^c)$ one sees that 
-	\eq{
-		\supp(\pi) \subset \enscond{(x,y)}{\phi(x)+\phi^*(y) = \dotp{x}{y}}
-	}
-	where we have denoted $\phi=-f^{cc}$ which is a convex function and $-g=\phi^*$. 
-	%
-	One always has $\phi(x)+\phi^*(y) \leq \dotp{x}{y}$ from the definition of the Legendre transform, and the set of $y$ such that this equality holds is precisely the sub-differential $\partial\phi(x)$.
-	%
-	In the special case where $\al$ has a density since a convex function is differentiable Lebesgue-almost everywhere, it is also $\al$-everywhere differentiable, so it is legit to use $T=\nabla\phi$ as an optimal transport plan.
-\end{rem}
-
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small $p=1$ &
+\small $p=2$ &
+\small $p=4$ \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/dual-c-transform-envelope/p1.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-c-transform-envelope/p2.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dual-c-transform-envelope/p4.pdf}
+\end{tabular}
+\caption{Discrete $c$-transform as a lower envelope for costs $c_p(x,y)=|x-y|^p$.  The red circles are four source atoms $x_i$ with potential values $f_i$; the gray curves are the translated functions $y\mapsto c_p(x_i,y)-f_i$; the colored curve is their lower envelope $f^c(y)=\min_i c_p(x_i,y)-f_i$. This is the semi-discrete situation where $\X$ is finite, equivalently the source measure $\al$ is discrete; Section~\ref{sec-semidiscr-w1} studies the complementary case where the eliminated potential is supported on finitely many target atoms.}
+\label{fig:dual-c-transform-envelope}
+\end{figure}
 
 
 %%%%
 \paragraph{The failure of alternate optimization.}
 
-A crucial property of the Legendre transform is that $f^{***}=f^*$, and that $f^{**}$ is the convex envelope of $f$ (the largest convex function below $f$). These properties carry over for the more general setting of $c$-transforms.
+A crucial property of the Legendre transform is that $f^{***}=f^*$, and that $f^{**}$ is the convex envelope of $f$ (the largest convex function below $f$). These properties carry over for the more general setting of $c$-transforms. The required convex-analytic background is standard in Rockafellar's theory~\cite{rockafellar2015convex}.
 
-\begin{prop}
+\begin{prop}[Algebra of $c$-transforms]
 The following identities, in which the inequality sign between vectors should be understood elementwise, hold, denoting $\f^{c\bar c} \eqdef (\f^{c})^{\bar c}$:
-	\begin{itemize}
-	\item[(i)] $f \leq f' \Rightarrow f^{c}\geq f'^{c}$, 
-	\item[(ii)] $f^{\c\bar{\c}} \geq f$, 
-	\item [(iii)] $g^{\bar{\c}\c} \geq g$, 
-	\item[(iv)] $\f^{\c\bar{\c}\c}=\f^{\c}.$
-	\end{itemize}	
+	\[
+		\textnormal{(i) } f \leq f' \Rightarrow f^{c}\geq f'^{c},
+		\qquad
+		\textnormal{(ii) } f^{\c\bar{\c}} \geq f,
+		\qquad
+		\textnormal{(iii) } g^{\bar{\c}\c} \geq g,
+		\qquad
+		\textnormal{(iv) } \f^{\c\bar{\c}\c}=\f^{\c}.
+	\]
 \end{prop}
 
 \begin{proof} The first inequality (i) follows from the definition of $\c$-transforms (because of the $-$ sign). To prove (ii), expanding the definition of $\f^{\c\bar{\c}}$ we have
 \eq{
-	\left(\f^{\c\bar{\c}}\right)(x)= \min_{y} \c(x,y)-\f^{\c}(y) 
+	\left(\f^{\c\bar{\c}}\right)(x)= \min_{y} \c(x,y)-\f^{\c}(y)
 		= \min_{y} \c(x,y) - \min_{x'}( \c(x',y) - \f(x') ).}
-Now, since $-\min_{x'} \c(x',y) - \f(x') \geq -(\c(x,y)-\f(x))$, we recover 
+Now, since $-\min_{x'}\big(\c(x',y)-\f(x')\big) \geq -(\c(x,y)-\f(x))$, we recover
 \eq{
 	(\f^{\c\bar{\c}})(x) \geq \min_{y} \c(x,y) - \c(x,y)+\f(x) = \f(x).
 }
-The relation $\g^{\bar{\c}\c} \geq \g$ is obtained in the same way. 
+The relation $\g^{\bar{\c}\c} \geq \g$ is obtained in the same way.
 %
 Now, to prove (iv), we first apply (ii) and then (i) with $f'=f^{c\bar c}$ to have $f^c \geq f^{c \bar c c}$.
-Then we apply (iii) to $g=f^c$ to obtain $f^c \leq f^{c\bar c c}$. 
-%we apply (ii) to $\g=\f^{\c}$ to obtain 
+Then we apply (iii) to $g=f^c$ to obtain $f^c \leq f^{c\bar c c}$.
+%we apply (ii) to $\g=\f^{\c}$ to obtain
 % set $\g=\f^{\c}$. Then, using (ii), $\g^{\bar{\c}}=\f^{\c\bar{\c}}\geq \f$. Therefore, using result (i) we have $\f^{\c\bar{\c}\c}\leq \f^{\c}$. Result (ii) yields $\f^{\c\bar{\c}\c}\geq \f^{\c}$, proving the equality.
 \end{proof}
 
 This invariance property shows that one can ``improve'' only once the dual potential this way. Indeed, starting from any pair $(f,g)$, one obtains the following iterates by alternating maximization
 \eql{\label{eq-iter-c-trans}
-	(f,g) \mapsto (f,f^c) \mapsto (f^{cc},f^c) \mapsto (f^{cc},f^{ccc}) =  (f^{cc},f^c) \ldots
+	(f,g) \mapsto (f,f^c) \mapsto (f^{c\bar c},f^c) \mapsto (f^{c\bar c},f^{c\bar c c}) =  (f^{c\bar c},f^c) \ldots
 }
-so that one reaches a stationary point. 
+so that one reaches a stationary point.
 %
-This failure is the classical behavior of alternating maximization on a non-smooth problem, where the non-smooth part of the functional (here the constraint) mixes the two variables. 
-% 
-The workaround is to introduce smoothing, which is the classical method of augmented Lagrangian, and that we will develop here using entropic regularization, which corresponds to Sinkhorn's algorithm. 
+This failure is the classical behavior of alternating maximization on a non-smooth problem, where the non-smooth part of the functional (here the constraint) mixes the two variables.
+%
+The workaround is to introduce smoothing, which is the classical method of augmented Lagrangian, and that we will develop here using entropic regularization, which corresponds to Sinkhorn's algorithm.
 
-\todo{put here a diagram showing alternate maximization (with two interleaved rows) and reaching a fixed point}
+For the bilinear cost $c(x,y)=-xy$ on a compact interval, the $c$-concave functions are ordinary concave functions and $f^{c\bar c}$ is the smallest concave majorant of $f$. In that model case, a hard transform removes non-concave oscillations in one closure step rather than producing a gradual ascent.
 
-% Alternatively, this means that alternate maximization does not converge (it immediately enters a cycle), which is classical for functionals involving a nonsmooth (a constraint) coupling of the optimized variables. This is in sharp contrast with entropic regularization of OT as shown in Chapter~\ref{c-entropic}. 
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small source-side closure & \small target-side closure \\[-.15em]
+\includegraphics[width=.46\linewidth]{figures/dual-alternating-c-transform-failure/source-concave-closure.pdf} &
+\includegraphics[width=.46\linewidth]{figures/dual-alternating-c-transform-failure/target-concave-closure.pdf}
+\end{tabular}
+\caption{Hard $c$-transforms for the bilinear cost $c(x,y)=-xy$. Red curves are deliberately non-concave initial potentials $f$ and $g$. Violet curves are the double-transform closures $f^{c\bar c}$ and $g^{\bar c c}$, which are concave majorants. Dashed blue curves are the one-sided best responses $g^{\bar c}$ and $f^c$, displayed after a harmless vertical gauge shift. The figure illustrates why exact alternating best responses are useful for dual certificates but do not give the smooth iterative dynamics later provided by entropic regularization.}
+\label{fig:dual-alternating-c-transform-failure}
+\end{figure}
 
-  
-  
+% Alternatively, this means that alternate maximization does not converge (it immediately enters a cycle), which is classical for functionals involving a nonsmooth (a constraint) coupling of the optimized variables. This is in sharp contrast with entropic regularization of OT as shown in Chapter~\ref{c-entropic}.

@@ -1,0 +1,343 @@
+\section{Advanced Topics on Entropic Regularization}
+\label{sec-sinkhorn-advanced}
+\subsection{Dual of Sinkhorn}
+\paragraph{Discrete dual.}
+\begin{prop}[Dual of entropic OT]
+One has
+\eql{\label{eq-dual-formulation}
+\MKD_\C^\epsilon(\a,\b) = \umax{\fD \in \RR^n,\gD \in \RR^m}
+\dotp{\fD}{\a} + \dotp{\gD}{\b}
+- \epsilon \sum_{i,j} \exp\pa{
+\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}
+} \a_i \b_j + \epsilon.
+}
+The optimal $(\fD,\gD)$ are linked to scalings $(\uD,\vD)$ appearing in~\eqref{eq-scaling-form} through
+\eql{\label{eq-entropy-pd}
+\uD_i=\a_i e^{\fD_i/\epsilon}
+\qandq
+\vD_j=\b_j e^{\gD_j/\epsilon}.
+}
+\end{prop}
+\begin{proof}
+We introduce Lagrange multipliers and consider
+\(\umin{\P \geq 0} \umax{\fD,\gD} \dotp{\C}{\P} + \epsilon \KLD(\P|\a \otimes \b) + \dotp{\a-\P\ones}{\fD} + \dotp{\b-\P^\top\ones}{\gD}.\)
+Finite-dimensional convex duality allows us to exchange the minimum over $\P$ with the maximum over $(\fD,\gD)$, giving
+\eq{
+\umax{\fD,\gD}
+\dotp{\fD}{\a} + \dotp{\gD}{\b}
++
+\epsilon \umin{\P \geq 0}
+\pa{
+\KLD(\P|\a \otimes \b)
+-
+\dotp{\frac{\fD\oplus\gD-\C}{\epsilon}}{\P}
+}
+=
+\dotp{\fD}{\a} + \dotp{\gD}{\b} - \epsilon \KLD^*\pa{ \frac{\fD\oplus\gD-\C}{\epsilon}|\a \otimes \b }.
+}
+One concludes by using~\eqref{eq-legendre} for $\phi(r)=r \log(r)-r+1$
+\(\KLD^*(H|\a \otimes \b) = \sum_{i,j} \phi^*(H_{i,j}) \a_i \b_j.\)
+Indeed, the scalar maximization
+\(\phi^*(s)=\sup_{r\geq0}\{rs-r\log r+r-1\}\)
+has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
+\end{proof}
+\paragraph{Discrete soft $c$-transforms.}
+\eq{
+\a_i - e^{\frac{\fD_i}{\epsilon}} \a_i \sum_j \exp\pa{
+\frac{\gD_j-\C_{i,j}}{\epsilon}
+} \b_j = 0
+}
+\eq{
+\fD_i = -\epsilon \log \sum_j \exp\pa{ \frac{\gD_j-\C_{i,j}}{\epsilon} } \b_j.
+}
+\({\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j\)
+\eql{\label{eq-soft-c-1}
+\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD ).
+}
+\eql{\label{eq-soft-c-2}
+\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
+}
+\({\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}\)
+\paragraph{Continuous dual and soft-transforms.}
+For generic (not necessarily discrete) input measures $(\al,\be)$, the dual problem~\eqref{eq-dual-formulation} reads
+
+\eql{\label{eq-dual-sinkh-cont}
+\usup{\f,\g \in \Cc(\X)\times\Cc(\Y)} \int_\X \f(x)\d\al(x) + \int_\Y \g(y)\d\be(y)
+- \epsilon \int_{\X\times\Y} \pa{e^{ \frac{f\oplus g-c}{\epsilon} }-1} \d\al \otimes \d\be
+}
+The corresponding soft $c$-transform, which minimizes this dual problem with respect to either $f$ or $g$, reads
+
+\begin{align*}
+\foralls y \in \Y, \quad
+\f^{\c,\epsilon}(y) &\eqdef - \epsilon \log\pa{
+\int_{\X} e^{\frac{-\c(x,y) + \f(x)}{\epsilon}} \d\al(x)
+},\\
+\foralls x \in \X, \quad
+\g^{\bar\c,\epsilon}(x) &\eqdef - \epsilon \log\pa{
+\int_{\Y} e^{\frac{-\c(x,y) + \g(y)}{\epsilon}} \d\be(y)
+}.
+\end{align*}
+The soft $c$-transform, besides being useful to define Sinkhorn's algorithm, is also important to show the existence of dual solutions.
+
+\begin{prop}[Existence and uniqueness of entropic dual potentials]
+Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
+$(f^\star+\la,g^\star-\la)$ for $\la \in \RR$.
+\end{prop}
+\begin{proof}
+Normalize potentials by imposing $\int f\d\alpha=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of $c$:
+\(\norm{f}_V+\norm{g}_V \leq 2(\sup c-\inf c).\)
+Moreover the modulus of continuity of the soft transforms is controlled by the modulus of continuity of $c$; for instance
+\(|g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')| \leq \sup_y |c(x,y)-c(x',y)|.\)
+After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzela--Ascoli gives a uniformly converging subsequence, and continuity of the dual objective gives a maximizer.
+
+Uniqueness follows from strict convexity of $H \mapsto \int e^{H/\epsilon} \d\alpha\otimes\beta$ on the image of the map $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\alpha\otimes\beta$-almost everywhere. Since the potentials are continuous on compact supports, this implies $f-f'$ is constant and $g-g'$ is the opposite constant.
+\end{proof}
+\begin{rem}[Convexity properties]
+Similarly to the unregularized case studied in Remark~\ref{rem-proof-brenier}, in the particular case $c(x,y)=-\dotp{x}{y}$, the function $\f^{\c,\epsilon}$ is always concave. Hence, when $c(x,y)=\norm{x-y}^2/2$, the optimal potentials are of the form $f^\star(x)=\norm{x}^2-\phi^\star(x)$ where $\phi^\star$ is a convex function.
+
+\end{rem}
+\begin{rem}[Gaussian marginals]
+\end{rem}
+\subsection{Convergence Analysis}
+\label{sec-convergence-dual}
+\paragraph{Sublinear dual-gap convergence by Bregman projections.}
+Sinkhorn is cyclic coordinate ascent on the smooth dual problem and, equivalently, alternating KL projection on the two marginal constraint sets. We denote the dual objective in~\eqref{eq-dual-sinkh-cont} by
+
+\[
+\mathcal D_\epsilon(f,g)
+\eqdef
+\int f\d\alpha+\int g\d\beta
+-\epsilon\int\left(e^{(f\oplus g-c)/\epsilon}-1\right)\d\alpha\otimes\d\beta.
+\]
+\begin{prop}[Pinsker inequality]\label{prop-pinsker}
+If $p,q\in\simplex_n$, then
+\(\norm{p-q}_1^2 \leq 2\KL(p|q).\)
+\end{prop}
+\begin{proof}
+It is enough to prove the scalar inequality
+\(u\log u-u+1 \geq \frac{(u-1)^2}{2(u+1)} \qquad u\geq0.\)
+Indeed, after bringing the right-hand side to the left, the resulting function $h$ satisfies $h(1)=h'(1)=0$ and
+\(h''(u)=\frac1u-\frac{4}{(u+1)^3} = \frac{(u+1)^3-4u}{u(u+1)^3}\geq0,\)
+so $h$ is convex and minimized at $u=1$.
+Multiplying by $q_i$ and summing with $u=p_i/q_i$ gives \(\KL(p|q) \geq \frac12\sum_i\frac{(p_i-q_i)^2}{p_i+q_i}.\)
+Cauchy--Schwarz yields
+\[
+\norm{p-q}_1^2
+=
+\left(\sum_i\frac{|p_i-q_i|}{\sqrt{p_i+q_i}}\sqrt{p_i+q_i}\right)^2
+\leq
+\left(\sum_i\frac{(p_i-q_i)^2}{p_i+q_i}\right)
+\left(\sum_i(p_i+q_i)\right),
+\]
+and $\sum_i(p_i+q_i)=2$.
+\end{proof}
+\begin{prop}[A compact $O(1/k)$ dual rate]\label{prop-sinkhorn-dual-rate}
+Assume that $\Xx$ and $\Yy$ are compact, that $c$ is bounded, and write $R=\sup c-\inf c$. Let $(f_k,g_k)$ be Sinkhorn dual iterates normalized by $\int f_k\d\alpha=0$, and let
+\(\Delta_k \eqdef \mathcal D_\epsilon(f^\star,g^\star)-\mathcal D_\epsilon(f_k,g_k)\)
+be the dual suboptimality gap for the entropic dual objective~\eqref{eq-dual-sinkh-cont}. Then there exists a numerical constant $C$ such that
+\(\Delta_k \leq \frac{C R^2}{\epsilon(k+1)}.\)
+\end{prop}
+\begin{proof}
+First, the soft $c$-transform bounds the oscillation of every normalized iterate and every normalized optimum: \(\norm{f_k}_V+\norm{g_k}_V+\norm{f^\star}_V+\norm{g^\star}_V \leq C R.\)
+Here $\norm{h}_V\eqdef\sup h-\inf h$ is the variation seminorm, the same projective norm used in Hilbert's metric in Section~\ref{sec-convergence-init}. It is natural because dual potentials can be shifted by constants without changing the coupling.
+
+Second, each Sinkhorn half-step is an exact KL projection. The Pythagorean identity for KL projections gives the ascent identity
+\(\mathcal D_\epsilon(f_{k+1},g_{k+1})- \mathcal D_\epsilon(f_k,g_k) = \epsilon\big[\KL(\pi^\star|\pi_k)-\KL(\pi^\star|\pi_{k+1})\big],\)
+where $\pi_k=e^{(f_k\oplus g_k-c)/\epsilon}\alpha\otimes\beta$ and $\pi^\star$ is the optimal entropic coupling. The KL drop controls the marginal residuals through Pinsker's inequality, Proposition~\ref{prop-pinsker}. Third, convexity of the exponential dual objective gives a one-step estimate of the form
+\(\Delta_k^2 \leq \frac{C R^2}{\epsilon} \big(\mathcal D_\epsilon(f_{k+1},g_{k+1})- \mathcal D_\epsilon(f_k,g_k)\big).\)
+This is the usual Bregman-projection estimate: the dual gap is controlled by the product of a bounded dual radius and the marginal residual corrected by the next projection, and the residual squared is controlled by the KL drop. Summing the reciprocal inequality obtained from the last display yields
+\(\frac{1}{\Delta_{k+1}}-\frac{1}{\Delta_k} \geq \frac{\epsilon}{C R^2},\)
+and therefore $\Delta_k\leq C R^2/(\epsilon(k+1))$.
+\end{proof}
+\begin{cor}[Iteration complexity for entropic accuracy]\label{cor-sinkhorn-dual-complexity}
+Under the assumptions of Proposition~\ref{prop-sinkhorn-dual-rate}, reaching dual objective accuracy $\Delta_k\leq\delta$ is guaranteed after
+\(k+1 \geq \frac{C R^2}{\epsilon\delta}\)
+Sinkhorn cycles.
+\end{cor}
+\begin{proof}
+The proposition gives $\Delta_k\leq C R^2/(\epsilon(k+1))$. Solving this inequality for $k$ gives the displayed sufficient condition.
+\end{proof}
+\paragraph{Hilbert-metric linear convergence.}
+\(\norm{f_k-f^\star}_V = O(\la^k) \qandq \norm{g_k-g^\star}_V = O(\la^k)\)
+\eq{
+\norm{ \log \frac{\d\pi_k}{\d\pi^\star} }_\infty
+=
+\norm{ (f_k-f^\star) \oplus (g_k-g^\star) }_\infty
+\leq
+\norm{f_k-f^\star}_V + \norm{g_k-g^\star}_V
+}
+where the contraction ratio only depends on the radius $R \eqdef \sup_{x,y} c(x,y)$ of the cost, $\la=\frac{\sqrt{\eta}-1}{\sqrt{\eta}+1} \leq \text{tanh}(R/(2\epsilon)) < 1$. One also has the following bounds
+
+\(\norm{f_k-f^\star}_V \leq \frac{ \norm{\log\frac{\d \pi_{k,1}}{\d\al}}_\infty }{1-\la}\)
+\paragraph{Order-monotone convergence.}
+\begin{prop}[Monotone fixed-point route to Sinkhorn convergence]\label{prop-fortet-monotone}
+Let $c$ be bounded and continuous on compact spaces, and define the double Sinkhorn map, normalized by subtracting its $\alpha$-mean,
+\(\mathcal A(f) \eqdef (f^{c,\epsilon})^{\bar c,\epsilon} -\int (f^{c,\epsilon})^{\bar c,\epsilon}\d\alpha.\)
+The map $\mathcal A$ is order preserving modulo additive constants. If an initialization is chosen so that $f_0\leq \mathcal A(f_0)$ after normalization, then the iterates $f_{k+1}=\mathcal A(f_k)$ increase pointwise up to constants, remain uniformly bounded in oscillation, and converge to a fixed point. A convenient practical choice is $f_0=0$, followed if necessary by subtracting a sufficiently large constant so that the subsolution inequality holds. This fixed point is the entropic potential, hence the associated Sinkhorn scalings converge.
+\end{prop}
+\begin{proof}
+The soft $c$-transform is order reversing: if $g\leq g'$, then
+\(-\epsilon\log\int e^{(g-c)/\epsilon}\d\beta \geq -\epsilon\log\int e^{(g'-c)/\epsilon}\d\beta.\)
+The composition of two order-reversing transforms is therefore order preserving. The transform also commutes with additive constants in the projective sense, which is why one fixes a normalization. Starting from a subsolution gives $f_0\leq f_1$, and order preservation gives $f_k\leq f_{k+1}$ for all $k$. Soft-transform oscillation bounds, controlled by $\sup c-\inf c$, prevent escape to infinity after normalization. Monotone pointwise convergence, compactness of equicontinuous soft transforms, and continuity of $\mathcal A$ then give a fixed point. Uniqueness of entropic potentials up to constants, Proposition~\ref{prop-entropic-unique} and the dual uniqueness statement above identify this fixed point with the Sinkhorn solution.
+\end{proof}
+\subsection{Sinkhorn Divergences}
+\label{sec-sinkhorn-div}
+\paragraph{Entropic bias.}
+\(\al_\epsilon = \uargmin{\be} \MK_\c^\epsilon(\al,\be)\)
+\begin{prop}[Large-temperature entropic bias]
+Assume that $c$ is bounded and continuous. Then $\MK_\c^\epsilon(\al,\be) \rightarrow \iint c(x,y)\d\al(x)\d\be(y)$ as $\epsilon \rightarrow +\infty$.
+\end{prop}
+\begin{proof}
+Let $(f_\epsilon,g_\epsilon)$ be optimal dual potentials, normalized by $\int g_\epsilon\d\beta=0$. The soft $c$-transform equation gives
+\[
+f_\epsilon(x)
+=
+-\epsilon\log\int
+\exp\!\left(\frac{g_\epsilon(y)-c(x,y)}{\epsilon}\right)\d\beta(y).
+\]
+For bounded $c$, the oscillations of normalized entropic potentials are bounded uniformly in $\epsilon$ by the oscillation of $c$. Hence the log-sum-exp expansion is uniform:
+\(f_\epsilon(x) = -\int (g_\epsilon(y)-c(x,y))\d\beta(y)+O(\epsilon^{-1}) = \int c(x,y)\d\beta(y)+O(\epsilon^{-1}).\)
+At optimality the exponential penalty in the dual integrates to zero, so
+\(\MK_\c^\epsilon(\alpha,\beta) = \int f_\epsilon\d\alpha+\int g_\epsilon\d\beta = \iint c(x,y)\d\alpha(x)\d\beta(y)+O(\epsilon^{-1}).\)
+This proves the limit.
+\end{proof}
+\eq{
+\al_\epsilon \rightarrow \umin{\be} \dotp{ \int c(x,\cdot) \d\al(x)}{\be} = \de_{y^\star(\al)}
+\qwhereq
+y^\star(\al) = \uargmin{y} \int c(x,y) \d\al(x).
+}
+\paragraph{Sinkhorn divergences.}
+\eql{\label{eq-sinkhorn-divergence}
+\bar\MK_\c^\epsilon(\al,\be) \eqdef
+\MK_\c^\epsilon(\al,\be) - \frac{1}{2} \MK_\c^\epsilon(\al,\al) - \frac{1}{2}\MK_\c^\epsilon(\be,\be).
+}
+\begin{lem}[Entropic dual cost at optimum]
+Let $(f_{\al,\be},g_{\al,\be})$ be optimal dual potentials, normalized arbitrarily. One has
+\eql{\label{eq-formula-cost-dual}
+\MK_\c^\epsilon(\al,\be) = \dotp{f_{\al,\be}}{\al} + \dotp{g_{\al,\be}}{\be}.
+}
+\end{lem}
+\begin{proof}
+We first notice that at optimality, the relation
+\(f_{\al,\be} = -\epsilon\log\int_\Yy e^{\frac{g_{\al,\be}(y)-c(x,y)}{\epsilon}} \d\be(y)\)
+after taking the exponential, equivalently reads
+\eq{
+1 = \int_\Yy e^{\frac{f_{\al,\be}(x) + g_{\al,\be}(y)-c(x,y)}{\epsilon}} \d\be(y)
+\qarrq
+\int_{\Xx\times\Yy} \pa{ e^{\frac{f_{\al,\be} \oplus g_{\al,\be}-c}{\epsilon}} -1 } \d(\al \otimes \be) = 0.
+}
+Plugging this in formula~\eqref{eq-dual-sinkh-cont}, one obtains the result.
+\end{proof}
+\begin{prop}[Asymptotics of Sinkhorn divergences]
+Assume that the two measures are supported on the same space and that $c$ is bounded, continuous and satisfies $c(x,x)=0$.
+One has $\bar\MK_\c^\epsilon(\al,\be) \rightarrow \MK_\c(\al,\be)$ when $\epsilon\rightarrow 0$ and
+\eq{
+\bar\MK_\c^\epsilon(\al,\be) \rightarrow
+\frac{1}{2}\int -c \d(\al-\be) \otimes \d(\al-\be)
+\qwhenq
+\epsilon \rightarrow +\infty.
+}
+\end{prop}
+\begin{proof}
+For discrete measures, the convergence is already proved in~\eqref{eq-entropy-conv-2}; we now give a general treatment.
+\textbf{Case $\epsilon \rightarrow 0$.}
+The first limit follows from the standard $\Gamma$-convergence argument for entropic optimal transport: the entropy term is lower semicontinuous along weakly converging couplings, while any finite-cost coupling can be approximated by couplings with finite entropy. Since $c(x,x)=0$, the two self-costs in the debiased expression converge to zero, and the cross term converges to $\MK_\c(\al,\be)$.
+
+\textbf{Case $\epsilon \rightarrow +\infty$.} We denote by $(f_\epsilon,g_\epsilon)$ optimal dual potentials. After normalizing them and using boundedness of $c$, their oscillations stay uniformly bounded, so the following expansion is uniform. The optimality condition on $f_\epsilon$ (equivalently the Sinkhorn fixed point on $f_\epsilon$) reads
+\begin{align*}
+f_\epsilon &= -\epsilon \log \int \exp\pa{ \frac{g_\epsilon(y) - c(\cdot,y)}{\epsilon} } \d \be(y)
+=	-\epsilon \log \int \pa{ 1 + \frac{g_\epsilon(y) - c(\cdot,y)}{\epsilon} + o(1/\epsilon) } \d \be(y) \\
+&=	-\epsilon \log\pa{1+\frac{1}{\epsilon}\int (g_\epsilon(y)-c(\cdot,y))\d\be(y)+o(1/\epsilon)}
+= - \int g_\epsilon \d\be + \int c(\cdot,y) \d \be(y) + o(1).
+\end{align*}
+Plugging this relation in the dual expression~\eqref{eq-formula-cost-dual}
+\(\MK_\c^\epsilon(\al,\be) = \int f_\epsilon \d\al + \int g_\epsilon \d \be = \iint c(x,y) \d\al(x)\d\be(y) + o(1).\)
+Applying this expansion to $(\alpha,\beta)$, $(\alpha,\alpha)$ and $(\beta,\beta)$ gives
+\[
+\bar\MK_\c^\epsilon(\alpha,\beta)
+\to
+\int c\,\d\alpha\otimes\d\beta
+-\frac12\int c\,\d\alpha\otimes\d\alpha
+-\frac12\int c\,\d\beta\otimes\d\beta
+=
+-\frac12\int c\,\d(\alpha-\beta)\otimes\d(\alpha-\beta).
+\]
+\end{proof}
+In the case where $-c$ defines a conditionally positive definite kernel, $\bar\MK_\c^\epsilon(\al,\be)$ converges to the square of a Hilbertian kernel norm. A typical example is $c(x,y)=\norm{x-y}^p$ for $0 < p < 2$, which corresponds to the energy-distance kernel.
+
+\begin{prop}[Non-negativity of Sinkhorn divergences]\label{prop-sinkhorn-positive}
+If $k(x,y)=e^{-c(x,y)/\epsilon}$ is positive definite, then $\bar\MK_\c^\epsilon(\al,\be) \geq 0$.
+\end{prop}
+\begin{proof}
+In the following, we denote by $(f_{\al,\be},g_{\al,\be})$ optimal dual potentials for the
+dual Schr\"odinger problem between $\al$ and $\be$.
+We denote by $f_{\al,\al}=g_{\al,\al}$ (one can assume they are equal by symmetry) the solution for the problem between $\al$ and itself.
+
+Using the suboptimal function $(f_{\al,\al},g_{\be,\be})$ in the dual maximization problem, and using relation~\eqref{eq-formula-cost-dual} for the simplified expression of the dual cost, one obtains
+\eq{
+\MK_\c^\epsilon(\al,\be) \geq \dotp{f_{\al,\al}}{\al} + \dotp{g_{\be,\be}}{\be}
+- \epsilon \dotp{ e^{\frac{f_{\al,\al} \oplus g_{\be,\be}-c}{\epsilon}} -1 }{\al \otimes \be}
+}
+But one has $\dotp{f_{\al,\al}}{\al} = \frac{1}{2}\MK_\c^\epsilon(\al,\al)$, and similarly for $\be$, so that the previous inequality equivalently reads
+\eq{
+\frac{1}{\epsilon} \bar \MK_\c^\epsilon(\al,\be)
+\geq 1 - \dotp{ e^{\frac{f_{\al,\al} \oplus g_{\be,\be}-c}{\epsilon}} }{\al \otimes \be}
+= 1 - \dotp{\tilde\al}{\tilde\be}_{k}
+}
+where $\tilde\al=e^{f_{\al,\al}/\epsilon} \al$, $\tilde\be=e^{f_{\be,\be}/\epsilon} \be$
+and we introduced the inner product (which is valid because $k$ is positive definite)
+$\dotp{\tilde\al}{\tilde\be}_{k} \eqdef \int k(x,y) \d\tilde\al(x) \d\tilde\be(y)$.
+One notes that the Sinkhorn fixed point equation, once exponentiated, reads
+$e^{f_{\al,\al}/\epsilon} \odot [ k( \tilde \al ) ] = 1$ and hence
+\(\norm{\tilde \al}_k^2 = \dotp{k(\tilde\al)}{\tilde\al} = \dotp{e^{f_{\al,\al}/\epsilon} \odot k(\tilde\al)}{\al} = \dotp{1}{\al}=1\)
+and similarly $\norm{\tilde \be}_k^2=1$. Therefore, by Cauchy--Schwarz, one has
+$1 - \dotp{\tilde\al}{\tilde\be}_{k} \geq 0$.
+\end{proof}
+\begin{rem}[Strict positivity]
+\end{rem}
+\subsection{Sample Complexity}
+\begin{prop}[Empirical OT has dimension-dependent rates]\label{prop-empirical-ot-rate}
+Let $\alpha$ be a probability distribution with a density bounded above and below on $[0,1]^d$, and let $\hat\alpha_n=n^{-1}\sum_{i=1}^n\delta_{X_i}$ be its empirical measure. For $d>2p$, the typical scale of empirical OT is
+\(\EE\Wass_p(\hat\alpha_n,\alpha) \asymp n^{-1/d}.\)
+The exponent changes in low dimension, but the important message is that exact OT deteriorates with the ambient dimension.
+\end{prop}
+\begin{proof}
+For the upper bound, partition $[0,1]^d$ into dyadic cubes. At scale $2^{-j}$, the empirical mass fluctuation over the cells is of order $n^{-1/2}2^{jd/2}$, while moving this excess mass inside cells costs $2^{-j}$. Summing the multiscale contributions up to the scale where the expected number of samples per cell is of order one gives $2^{-J}$ with $2^{Jd}\simeq n$, hence $n^{-1/d}$. For the lower bound, a packing argument shows that a positive fraction of cells at the critical scale are empty or overfull with non-negligible probability, forcing mass to travel at least a distance comparable to $n^{-1/d}$. The matching upper and lower bounds give the displayed rate.
+\end{proof}
+\begin{prop}[MMD has a parametric empirical rate]\label{prop-mmd-sample-rate}
+Let $k$ be a bounded positive definite kernel with RKHS $\Hh_k$, and define
+\(\MMD_k(\alpha,\beta) = \norm{\int k(x,\cdot)\d(\alpha-\beta)(x)}_{\Hh_k}.\)
+If $\hat\alpha_n$ is the empirical measure of $n$ i.i.d. samples from $\alpha$, then
+\(\EE\MMD_k(\hat\alpha_n,\alpha)^2 =\frac{1}{n}\Big(\EE k(X,X)-\EE k(X,X')\Big),\)
+where $X,X'$ are independent with law $\alpha$. In particular, if $k(x,x)\leq \kappa^2$, then $\EE\MMD_k(\hat\alpha_n,\alpha)\leq \kappa/\sqrt n$.
+\end{prop}
+\begin{proof}
+Let $\Phi(x)=k(x,\cdot)$ be the feature map and $m_\alpha=\EE\Phi(X)$. Then
+\(\MMD_k(\hat\alpha_n,\alpha) =\norm{\frac1n\sum_{i=1}^n(\Phi(X_i)-m_\alpha)}_{\Hh_k}.\)
+Independence cancels the cross terms after taking the squared norm and expectation, giving
+\(\EE\MMD_k(\hat\alpha_n,\alpha)^2 =\frac1n\EE\norm{\Phi(X)-m_\alpha}_{\Hh_k}^2 =\frac{1}{n}\Big(\EE k(X,X)-\EE k(X,X')\Big).\)
+The last bound follows from Jensen's inequality and $k(x,x)\leq\kappa^2$.
+\end{proof}
+\begin{prop}[Sinkhorn divergences interpolate the rates]\label{prop-sinkhorn-sample-rate}
+Assume that $\alpha$ and $\beta$ are supported in a compact subset of $\RR^d$ and that the cost is smooth. For fixed $\epsilon>0$, the debiased Sinkhorn divergence satisfies a parametric empirical bound of the form
+\[
+\EE\abs{\bar\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)-\bar\MK_c^\epsilon(\alpha,\beta)}
+\leq
+C_{c,d}\,\epsilon^{-d/2}\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right),
+\]
+up to constants depending on smoothness and support diameter. Thus regularization removes the $n^{-1/d}$ curse for fixed $\epsilon$, while the prefactor deteriorates as $\epsilon\to0$.
+\end{prop}
+\begin{proof}
+The proof follows the empirical-process argument. By the envelope theorem, the fluctuation of $\MK_c^\epsilon$ with respect to its first marginal is controlled by the class of entropic dual potentials. The soft $c$-transform smooths these potentials at spatial scale $\sqrt\epsilon$ for a quadratic-type cost. Covering a bounded $d$-dimensional domain at this scale gives an effective complexity of order $\epsilon^{-d/2}$. Standard Rademacher or Dudley entropy bounds then give an empirical-process fluctuation of order $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to the three terms defining the debiased divergence gives the stated bound.
+\end{proof}
+\begin{rem}[No free lunch when approximating exact OT]
+\[
+\abs{\bar\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)}
+\leq C\epsilon,
+\qquad
+\EE\abs{\bar\MK_c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_c^\epsilon(\alpha,\beta)}
+\leq C_{c,d}\epsilon^{-d/2}n^{-1/2}.
+\]
+Balancing the two terms gives $\epsilon\simeq n^{-1/(d+2)}$ and total error of order $n^{-1/(d+2)}$. Equivalently, target accuracy $\eta$ requires choosing $\epsilon\simeq\eta$ and $n\simeq\eta^{-(d+2)}$ samples under this bound.
+
+\end{rem}
