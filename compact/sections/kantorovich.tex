@@ -1,0 +1,508 @@
+\section{Kantorovich Relaxation}
+\label{sec-kantorovich}
+\subsection{Discrete Relaxation}
+\label{sec-discrete-relaxation}
+\eql{\label{eq-discr-couplings}
+\CouplingsD(\a,\b) \eqdef \enscond{ \P \in \RR_+^{n \times m} }{
+\P \ones_m = \a \qandq
+\transp{\P} \ones_n = \b
+},
+}
+\eq{
+\P \ones_m = \left(\sum_j \P_{i,j}\right)_i \in \RR^n
+\qandq
+\transp{\P} \ones_n = \left(\sum_i \P_{i,j}\right)_j \in \RR^m.
+}
+The set of matrices $\CouplingsD(\a,\b)$ is bounded, defined by $n+m$ equality constraints, and therefore a convex polytope (the convex hull of a finite set of matrices).
+
+\eql{\label{eq-kanto-discr}
+\MKD_{\C}(\a,\b) \eqdef
+\umin{\P \in \CouplingsD(\a,\b)}
+\dotp{\C}{\P} \eqdef \sum_{i,j} \C_{i,j} \P_{i,j}.
+}
+\begin{prop}[Sparse optimal plans]\label{prop-sparse-discrete-ot}
+Problem~\eqref{eq-kanto-discr} admits an optimal coupling $\P^\star$ with at most $n+m-1$ nonzero entries.
+\end{prop}
+\begin{proof}
+The feasible set $\CouplingsD(\a,\b)$ is a non-empty compact polytope, hence the linear objective admits an extreme-point minimizer by Proposition~\ref{prop-extr-optim}. The affine marginal constraints have rank $n+m-1$: there are $n+m$ row and column equations, and the only linear redundancy is that both sets imply the same total mass identity $\sum_{i,j}P_{i,j}=1$.
+
+At an extreme point of a polytope defined by equality constraints and non-negativity constraints, the columns corresponding to positive variables must be linearly independent in the constraint matrix. Otherwise, one could move a small amount of mass along a non-zero signed perturbation supported only on the positive entries while preserving all marginals, contradicting extremality. Since the rank is $n+m-1$, the support of an extreme point has cardinality at most $n+m-1$.
+\end{proof}
+\paragraph{Linear programming algorithms.}
+\paragraph{1-D cases.}
+\paragraph{Permutation Matrices as Couplings.}
+For a permutation $\si\in\Perm(n)$, we write $\P_{\si}$ for the corresponding permutation matrix,
+
+\eql{\label{eq-perm-matrices}
+\foralls (i,j) \in \range{n}^2, \quad
+(\P_{\si})_{i,j} = \choice{
+1 \qifq j=\si_i \\
+0 \quad\text{otherwise.}
+}
+}
+\(\Perm_n \eqdef \enscond{\P_\si}{ \si\in\Perm(n) },\)
+\(\dotp{\C}{\P_{\si}} = \sum_{i=1}^n \C_{i,\si_i}\)
+\(\umin{\P \in \Perm_n} \dotp{\C}{\P}.\)
+\(\Bb_n \eqdef \enscond{ \P \in \RR_+^{n \times n} }{\P \ones_n = \P^\top \ones_n = \ones_n}\)
+\(\umin{\P \in \Bb_n} \dotp{\C}{\P}.\)
+\(\Perm_n = \Bb_n \cap \{0,1\}^{n \times n}.\)
+\(\umin{\P \in \Bb_n} \dotp{\C}{\P} \leq \umin{\P \in \Perm_n} \dotp{\C}{\P}.\)
+\(\text{Extr}(\Cc) \eqdef \enscond{\P}{ \foralls (Q,R) \in \Cc^2, \P = \frac{Q+R}{2} \Rightarrow Q=R }.\)
+\begin{prop}[Existence of extreme points]
+If $\Cc$ is a non-empty compact convex subset of a finite-dimensional vector space, then $\text{\upshape Extr}(\Cc) \neq \emptyset$.
+\end{prop}
+\begin{proof}
+Among all non-empty faces of $\Cc$, choose one of minimal affine dimension (this is possible in finite dimension). If this face contained two distinct points, it would have a non-trivial exposed subface obtained by maximizing a linear functional that is not constant on the face, contradicting minimality. Hence the minimal face is a singleton, and its unique point is an extreme point of $\Cc$.
+\end{proof}
+\begin{prop}[Linear programs have extreme minimizers]\label{prop-extr-optim}
+If $\Cc$ is compact, then
+\(\text{Extr}(\Cc) \cap \pa{ \uargmin{\P \in \Cc} \dotp{\C}{\P} } \neq \emptyset.\)
+\end{prop}
+\begin{proof}
+Let $\Ss \eqdef \uargmin{\P \in \Cc} \dotp{\C}{\P}$.
+
+We first note that $\Ss$ is convex (as always for an argmin) and compact because $\Cc$ is compact and the objective function is continuous so that $\text{Extr}(\Ss) \neq \emptyset$.
+
+Indeed, let $\P \in \text{Extr}(\Ss)$ and assume that $\P=(Q+R)/2$ with $Q,R \in \Cc$. By linearity of the objective and optimality of $\P$, both $Q$ and $R$ must also minimize $\dotp{\C}{\cdot}$ over $\Cc$, hence $Q,R \in \Ss$. Since $\P$ is extremal in $\Ss$, this implies $Q=R=\P$, so $\P \in \text{Extr}(\Cc)$.
+\end{proof}
+\begin{thm}[Birkhoff and von Neumann]\label{thm-birkh-vnm}
+One has $\text{Extr}(\Bb_n) = \Perm_n$.
+\end{thm}
+\begin{proof}
+We first show the simplest inclusion $\Perm_n \subset \text{Extr}(\Bb_n)$. Indeed it follows from the fact that $\text{Extr}([0,1]) = \{0,1\}$. Take $\P \in \Perm_n$, if $\P=(Q+R)/2$ with $Q_{i,j},R_{i,j} \in [0,1]$, since $\P_{i,j} \in \{0,1\}$ then necessarily $Q_{i,j}=R_{i,j} \in \{0,1\}$.
+
+Pick $\P \in \Bb_n \backslash \Perm_n$; we need to split $\P = (Q+R)/2$ where $Q,R$ are distinct bistochastic matrices.
+
+$\P$ defines a bipartite graph linking two sets of $n$ vertices.
+
+This graph is composed of isolated edges when $\P_{i,j}=1$ and connected edges corresponding to $0 < \P_{i,j} <1$.
+If $i$ is such a connected vertex on the left (similarly for $j$ on the right), because $\sum_j \P_{i,j}=1$, there are necessarily at least two edges $(i,j_1)$ and $(i,j_2)$ emanating from it (similarly on the right there are at least two converging edges $(i_1,j)$ and $(i_2,j)$). This means that by following these connections, one necessarily can extract a cycle (if not, one could always extend it by the previous remarks) of the form
+\((i_1,j_1,i_2,j_2,\ldots,i_p,j_p), \quad \text{i.e.}\quad i_{p+1}=i_1.\)
+We assume this cycle is the shortest one among all this (finite) ensemble of cycles. Along this cycle, the left-right and right-left edges satisfy
+\(0 < \P_{i_s,j_s}, \P_{i_{s+1},j_s} < 1.\)
+The $(i_s)_s$ and $(j_s)_s$ are also all distinct because the cycle is the shortest.
+\(\epsilon \eqdef \umin{1 \leq s \leq p} \{ \P_{i_s,j_s}, \P_{i_{s+1},j_s}, 1-\P_{i_s,j_s}, 1-\P_{i_{s+1},j_s} \}\)
+so that $0 < \epsilon < 1$.
+We split the graph into two sets of edges, left-right and right-left
+\(\Aa \eqdef \{(i_s,j_s)\}_{s=1}^p \qandq \Bb \eqdef \{(i_{s+1},j_s)\}_{s=1}^p.\)
+We define the two matrices as
+\eq{
+Q_{i,j} \eqdef
+\choice{
+\P_{i,j} \qifq (i,j) \notin \Aa \cup \Bb \\
+\P_{i,j}+\epsilon/2 \qifq (i,j) \in \Aa \\
+\P_{i,j}-\epsilon/2 \qifq (i,j) \in \Bb
+}
+\qandq
+R_{i,j} \eqdef
+\choice{
+\P_{i,j} \qifq (i,j) \notin \Aa \cup \Bb \\
+\P_{i,j}-\epsilon/2 \qifq (i,j) \in \Aa \\
+\P_{i,j}+\epsilon/2 \qifq (i,j) \in \Bb
+}.
+}
+Because of the choice of $\epsilon$, one has $0 \leq Q_{i,j}, R_{i,j} \leq 1$.
+Because each left-right edge in $\Aa$ is associated with a right-left edge in $\Bb$, (and the other way) the
+sum constraint on the row (and on the column) is maintained, so that $Q,R \in \Bb_n$. Finally, note that $\P=(Q+R)/2$.
+\end{proof}
+\begin{cor}[Kantorovich for matching]\label{prop-matching-kanto}
+If $m=n$ and $\a=\b=\ones_n$, then there exists an optimal solution for Problem~\eqref{eq-kanto-discr} $\P_{\si^\star}$, which is a permutation matrix associated to an optimal permutation $\si^\star \in \Perm(n)$ for Problem~\eqref{eq-optimal-assignment}.
+\end{cor}
+\begin{proof}
+The feasible set of~\eqref{eq-kanto-discr} is the compact convex polytope $\Bb_n$. Proposition~\ref{prop-extr-optim} ensures that the linear objective has an optimal extreme point of $\Bb_n$. By Theorem~\ref{thm-birkh-vnm}, this extreme point is a permutation matrix $\P_{\sigma^\star}$. Since the cost of $\P_{\sigma^\star}$ is exactly $\sum_i C_{i,\sigma^\star(i)}$, the associated permutation solves the assignment problem.
+\end{proof}
+\begin{rem}[General case]
+\end{rem}
+\subsection{Relaxation for Arbitrary Measures}
+\label{sec-kantorovich-continuous}
+\paragraph{Continuous couplings.}
+\begin{defn}[Marginals of a joint measure]\label{def-marginals-joint-measure}
+Let $\pi \in \Mm_+^1(\Xx\times\Yy)$ and let $P_1(x,y)=x$, $P_2(x,y)=y$ be the coordinate projections. The marginals of $\pi$ are
+\(\pi_1 \eqdef P_{1\sharp}\pi \in \Mm_+^1(\Xx), \qquad \pi_2 \eqdef P_{2\sharp}\pi \in \Mm_+^1(\Yy).\)
+Equivalently, for all bounded continuous test functions $(f,g)$, \(\int_{\Xx\times\Yy} f(x)\d\pi(x,y)=\int_\Xx f\d\pi_1, \qquad \int_{\Xx\times\Yy} g(y)\d\pi(x,y)=\int_\Yy g\d\pi_2.\)
+\end{defn}
+A useful mnemonic for the marginal constraint $\pi_1 = \al$ and $\pi_2 = \be$, mimicking the discrete case where one sums along rows and columns, is
+
+\(\int_\Yy \d\pi(x,y) = \d\al(x) \qandq \int_\Xx \d\pi(x,y) = \d\be(y),\)
+\eq{
+\foralls (f,g) \in \Cc_b(\Xx) \times \Cc_b(\Yy), \quad
+\int_{\Xx \times \Yy} f(x) \d\pi(x,y) = \int_\Xx f \d\al
+\qandq
+\int_{\Xx \times \Yy} g(y) \d\pi(x,y) = \int_\Yy g \d\be.
+}
+\(\foralls A \subset \X,\ B \subset \Y, \quad \pi(A \times \Y) = \al(A) \qandq \pi(\X \times B) = \be(B).\)
+\begin{defn}[Couplings]\label{def-continuous-couplings}
+Given $\al\in\Mm_+^1(\Xx)$ and $\be\in\Mm_+^1(\Yy)$, the set of couplings between $\al$ and $\be$ is
+\eql{\label{eq-coupling-generic}
+\Couplings(\al,\be) \eqdef
+\enscond{
+\pi \in \Mm_+^1(\X \times \Y)
+}{
+\pi_1 = \al
+\qandq
+\pi_2 = \be
+}.
+}
+It is the continuous analogue of the transportation polytope~\eqref{eq-discr-couplings}.
+\end{defn}
+\begin{rem}[Probabilistic interpretation of couplings]\label{rem-proba-couplings}
+\end{rem}
+The set $\Couplings(\al,\be)$ is always non-empty because it contains at least the tensor product coupling $\al \otimes \be$ defined by $\d(\al\otimes\be)(x,y)=\d\al(x)\d\be(y)$, i.e.
+
+\eq{
+\foralls h \in \Cc_b(\Xx\times\Yy), \quad
+\begin{aligned}
+\int_{\X \times \Y} h(x,y)\d(\al\otimes\be)(x,y)
+&= \int_\X \pa{\int_\Y h(x,y) \d\be(y)} \d\al(x) \\
+&= \int_\Y \pa{\int_\X h(x,y) \d\al(x)} \d\be(y).
+\end{aligned}
+}
+\eq{
+\foralls f \in \Cc_b(\X), \quad
+\int_\X f(x) \d (\al\otimes\be)_1(x)
+=
+\int_{\X \times \Y} f(x) \d\al(x)\d\be(y)
+= \int_\X f(x) \d\al(x) \int_\Y \d\be
+= \int_\X f(x) \d\al(x)
+}
+A very different (concentrated) type of coupling is defined when there exists a map $T: \X \rightarrow \Y$ such that $T_\sharp \al = \be$ (i.e. the constraint set of Monge's problem~\eqref{eq-monge-continuous} is non-empty). This coupling is defined through the integrated definition of push-forward as
+
+\(\foralls h \in \Cc_b(\Xx\times\Yy), \quad \int_{\X \times \Y} h(x,y)\d\pi(x,y) = \int_{\X} h(x,T(x))\d\al.\)
+A last important class of examples are semi-discrete problems (for instance to perform quantization or to fit statistical models), where $\alpha$ has a density with respect to Lebesgue and $\beta$ is discrete.
+
+\paragraph{Continuous Kantorovich problem.}
+\eql{\label{eq-mk-generic}
+\MK_\c(\al,\be) \eqdef
+\umin{\pi \in \Couplings(\al,\be)}
+\int_{\X \times \Y} \c(x,y) \d\pi(x,y).
+}
+\begin{rem}[Probabilistic interpretation of Kantorovich's problem]\label{rem-proba-kantorovich}
+\eql{\label{eq-mk-proba}
+\MK_\c(\al,\be) =
+\umin{X \sim \al,\, Y \sim \be} \EE(c(X,Y)).
+}
+\end{rem}
+\begin{prop}[Existence on compact spaces]\label{prop-kanto-existence-compact}
+Assume that $\Xx$ and $\Yy$ are compact metric spaces and that $c \in \Cc(\Xx \times \Yy)$. Then the Kantorovich problem~\eqref{eq-mk-generic} admits at least one minimizer.
+\end{prop}
+\begin{proof}
+The constraint set is non-empty because it contains the product coupling $\al \otimes \be$. It is also closed for the weak topology of measures because the marginal constraints are preserved under weak convergence. Since $\Xx \times \Yy$ is compact, the set of probability measures on it is compact for the weak topology, and therefore $\Couplings(\al,\be)$ is compact. Finally, the functional $\pi \mapsto \int c \d\pi$ is weakly continuous because $c$ is continuous and bounded. The minimum is thus attained.
+\end{proof}
+\(\Pp_p(\Xx) = \enscond{\mu\in\Mm_+^1(\Xx)}{\int d(x,x_0)^p\d\mu(x)<+\infty}\)
+\paragraph{Monge-Kantorovich equivalence.}
+\begin{cor}[Monge--Kantorovich equivalence under Brenier]
+We assume $\alpha$ has a density with respect to Lebesgue measure, and that $c(x,y)=\norm{x-y}^2$. We denote by $T$ the optimal transport solving Monge's formulation. Then $\pi=(\Id,T)_\sharp \alpha$ is the unique optimal coupling solving the Kantorovich formulation. Monge and Kantorovich costs are the same.
+\end{cor}
+\begin{proof}
+The proof of Brenier's theorem shows that the support of an optimal $\pi$ is contained in the subdifferential $\partial \phi$ of a convex function $\phi$, which in general is a set-valued mapping.
+
+When $\alpha$ does not have a density, then $\phi$ may be non-smooth, and non-smooth points where $\al(\{x\})>0$ lead to mass splitting.
+
+If $\al$ has a density, then this $\phi$ is differentiable $\al$-almost everywhere. Denoting by $\T=\nabla\phi$ the unique optimal transport (which is a valid definition almost everywhere, and can be assigned arbitrary values at points of non-differentiability), the coupling
+\eq{
+\pi = (\Id,\T)_\sharp \al
+\quad\text{i.e.}\quad
+\foralls h \in \Cc(\Xx \times \Yy), \quad
+\int_{\Xx \times \Yy} h \d \pi = \int_{\Xx} h(x,\T(x)) \d\al(x)
+}
+is optimal. Since any optimal coupling is supported on this graph and $\T$ is unique $\alpha$-almost everywhere, the optimal Kantorovich coupling is unique and the two costs coincide.
+\end{proof}
+In terms of random vectors, denoting $(X,Y)$ a random vector with law $\pi$, it means that any such optimal random vector satisfies $Y=\T(X)$ where $X \sim \al$ (and of course $\T(X) \sim \be$ by the marginal constraint).
+
+\subsection[c-cyclical monotonicity]{$c$-cyclical monotonicity}
+\paragraph{Support and $c$-cyclical monotonicity.}
+\begin{defn}[Support]\label{def:support}
+For a Radon measure $\pi$ on $\X\times \Y$
+\(\supp(\pi) :=\bigl\{(x,y)\;:\; \pi(U\times V)>0 \text{ for every open }U\ni x,\;V\ni y\bigr\}.\)
+\end{defn}
+\begin{defn}[$c$-cyclical monotonicity]\label{def:ccm}
+A set $\Gamma\subset \X\times \Y$ is \emph{$c$-cyclically monotone} if,
+for every $k\ge2$, every finite family
+$\{(x_i,y_i)\}_{i=1}^k\subset\Gamma$, and every permutation
+$\sigma\in\mathfrak{S}_k$, \(\sum_{i=1}^k c(x_i,y_i)\;\le\; \sum_{i=1}^k c\bigl(x_i,y_{\sigma(i)}\bigr).\)
+Any permutation is a product of cycles, so it suffices to verify the
+inequality for cycles, \(\sum_{i=1}^k c(x_i,y_i)\;\le\; \sum_{i=1}^k c\bigl(x_i,y_{i+1}\bigr).\)
+\end{defn}
+\paragraph{Optimal matching to optimal transport.}
+Let the marginals be uniform on $n$ points: $\alpha=\tfrac1n\sum_{i=1}^n\delta_{x_i}$, $\beta =\tfrac1n\sum_{i=1}^n\delta_{y_i}$. Such a permutation defines, by optimality, a coupling with support $\Gamma:= (x_i,y_{\sigma(i)})_i$ that is $c$-cyclically monotone.
+
+\begin{thm}[Rockafellar]\label{thm:opt_ccm}
+For any optimal plan $\pi$ solving Kantorovich's problem,
+$\supp(\pi)$ is $c$-cyclically monotone.
+\end{thm}
+\begin{proof}
+Suppose that $\supp(\pi)$ is not $c$-cyclically monotone. Then there exist points $(x_i,y_i)_{i=1}^k$ in the support and a permutation $\sigma$ such that
+\(\sum_i c(x_i,y_i) > \sum_i c(x_i,y_{\sigma(i)}).\)
+By continuity of $c$, this strict inequality persists on small neighborhoods $U_i\times V_i$ of the points $(x_i,y_i)$, chosen disjoint enough so that each has positive $\pi$-mass. Let $\eta>0$ be smaller than all these masses. Removing mass $\eta$ from each $U_i\times V_i$ and re-inserting the same mass from $U_i$ to $V_{\sigma(i)}$ preserves both marginals, because the operation only permutes target neighborhoods among the same source neighborhoods. The cost strictly decreases by the displayed gap up to the continuity error. This contradicts optimality of $\pi$.
+\end{proof}
+\paragraph{Monotonicity.}
+Assume the plan is induced by a measurable map $T:\X\to \Y$, i.e.\ $\pi=(\Id,T)_\#\alpha$. For any $k$ points $x_1,\dots,x_k$ in the domain, cyclical monotonicity reads
+
+\(\sum_{i=1}^k c\bigl(x_i,T(x_i)\bigr) \;\le\; \sum_{i=1}^k c\bigl(x_i,T(x_{i+1})\bigr),\qquad x_{k+1}=x_1.\)
+For $c(x,y)=\tfrac12|x-y|^2$, taking $k=2$, shows that for any $x,y$,
+
+\(\langle T(x)-T(y),\,x-y\rangle\;\ge\;0,\)
+\paragraph{One dimension.}
+\(|x-T(x)|^p+|y-T(y)|^p \;\le\; |x-T(y)|^p+|y-T(x)|^p,\)
+which is equivalent to $T(x)\le T(y)$ whenever $x<y$. Thus $T$ must be non-decreasing, recovering the classical monotone rearrangement.
+
+\subsection{Metric Properties: Wasserstein Distances}
+\paragraph{OT defines a distance.}
+\begin{lem}[Discrete gluing lemma]\label{lem-gluing-discr}
+Given $(\a,\b,\VectMode{c}) \in \simplex_n \times \simplex_p \times \simplex_m$,
+let $\P \in \CouplingsD(\a,\b)$ and $\Q \in \CouplingsD(\b,\VectMode{c})$. Then there exists a 3-D tensor coupling $\S \in \RR_+^{n \times p \times m}$
+such that the 2-D marginals satisfy
+\(\sum_{k} \S_{i,j,k} = \P_{i,j} \qandq \sum_{i} \S_{i,j,k} = \Q_{j,k}.\)
+Note that this implies that the three 1-D marginals of $\S$ are $(\a,\b,\VectMode{c})$.
+\end{lem}
+\begin{proof}
+One verifies that
+\eql{\label{eq-glued-discr}
+\S_{i,j,k} = \choice{
+\frac{\P_{i,j} \Q_{j,k}}{\b_j} \qifq \b_j \neq 0 \\
+0 \text{ otherwise}
+}
+}
+is acceptable. Indeed, if $\b_j \neq 0$
+\(\sum_{k} \S_{i,j,k} = \sum_{k} \frac{\P_{i,j} \Q_{j,k}}{\b_j} = \frac{\P_{i,j}}{\b_j} ( \Q \ones_m )_j = \frac{\P_{i,j}}{\b_j} \b_j.\)
+If $\b_j = 0$, then necessarily $\P_{i,j}=0$ and $\sum_{k} \S_{i,j,k} = 0 = \P_{i,j}$.
+\end{proof}
+\begin{prop}[Discrete Wasserstein distance]\label{prop-metric-histo}
+We suppose $n=m$, and that for some $p \geq 1$, $\C=\distD^p=(\distD_{i,j}^p)_{i,j} \in \RR^{n \times n}$ where $\distD \in \RR_+^{n \times n}$ is a distance on $\range{n}$, \emph{i.e.}
+\begin{enumerate}
+\item $\distD \in \RR_+^{n \times n}$ is symmetric;
+\item $\distD_{i,j}=0$ if and only if $i=j$;
+\item $\foralls (i,j,k) \in \range{n}^3, \distD_{i,k} \leq \distD_{i,j}+\distD_{j,k}$.
+\end{enumerate}
+Then
+\eql{\label{eq-wass-p-disc}
+\WassD_p(\a,\b) \eqdef \MKD_{\distD^p}(\a,\b)^{1/p}
+}
+(note that $\WassD_p$ depends on $\distD$) defines the $p$-Wasserstein distance on $\Si_n$, \emph{i.e.} $\WassD_p$ is symmetric, positive, $\WassD_p(\a,\b)=0$ if and only if $\a = \b$, and it satisfies the triangle inequality
+\(\foralls \a,\b,\VectMode{c} \in \Si_n, \quad \WassD_p(\a,\VectMode{c}) \leq \WassD_p(\a,\b) + \WassD_p(\b,\VectMode{c}).\)
+\end{prop}
+\begin{proof}
+For symmetry, since $\distD^p$ is symmetric, we use the fact that if $\P \in \CouplingsD(\a,\b)$ is optimal for $\WassD_p(\a,\b)$, then $\P^\top \in \CouplingsD(\b,\a)$ is optimal for $\WassD_p(\b,\a)$. For definiteness, since $\C = \distD^p$ has a null diagonal, $\WassD_p(\a,\b)=0$ is achieved by the diagonal coupling $\P^\star=\diag(\a)=\diag(\b)$ when $\a=\b$; by positivity of all off-diagonal elements of $\distD^p$, $\WassD_p(\a,\b)>0$ whenever $\a\ne \b$ because any admissible coupling then has a nonzero element outside the diagonal.
+
+To prove the triangle inequality of Wasserstein distances for arbitrary measures, we consider $\a,\b,\VectMode{c} \in\simplex_n$, and let $\P$ and $\Q$ be two optimal solutions of the transport problems between $\a$ and $\b$, and $\b$ and $\VectMode{c}$ respectively.
+
+We use the gluing Lemma~\ref{lem-gluing-discr} which defines $\S \in \RR_+^{n^3}$ with marginals $\sum_{k}\S_{\cdot,\cdot,k}=\P$ and $\sum_i \S_{i,\cdot,\cdot}=\Q$. We define $\R=\sum_{j}\S_{\cdot,j,\cdot}$, which is an element of $\CouplingsD(\a,\VectMode{c})$.
+\[
+\begin{tikzpicture}
+\node (a) at (0,0) {$a$};
+\node (b) at (2,0) {$b$};
+\node (c) at (4,0) {$c$};
+\draw[->] (a) -- (b) node[midway, above] {$P$};
+\draw[->] (b) -- (c) node[midway, above] {$Q$};
+\draw[->, bend right=45] (a) to node[midway, below] {$R$} (c);
+\end{tikzpicture}
+\]
+Note that if one assumes $\b>0$ then $\R = \P \diag(1/\b) \Q$.
+
+The triangle inequality follows from
+$$\begin{aligned}
+\WassD_p(\a,\VectMode{c})&=\Big(\min_{\tilde\R\in \CouplingsD(\a,\VectMode{c})}\dotp{\tilde\R}{\distD^p}\Big)^{1/p} \leq \dotp{\R}{\distD^p}^{1/p}\\
+&= \Big(\sum_{i,k} \distD^p_{ik}\sum_{j} \S_{i,j,k} \Big)^{1/p}
+\leq \Big(\sum_{i,j,k} \left(\distD_{ij}+\distD_{j,k}\Big)^p \S_{i,j,k} \right)^{1/p} \\
+& \leq \Big(\sum_{i,j,k} \distD^p_{ij} \S_{i,j,k} \Big)^{1/p} + \Big(\sum_{i,j,k}\distD^p_{j,k} \S_{i,j,k} \Big)^{1/p} \\
+&= \Big(\sum_{i,j} \distD^p_{i,j} \sum_k \S_{i,j,k} \Big)^{1/p} + \Big(\sum_{j,k} \distD^p_{j,k} \sum_i \S_{i,j,k} \Big)^{1/p}\\
+&= \Big(\sum_{i,j} \distD^p_{i,j}\P_{i,j}\Big)^{1/p} + \Big(\sum_{j,k} \distD^p_{j,k} \Q_{j,k}\Big)^{1/p}
+= \WassD_p(\a,\b) +\WassD_p(\b,\VectMode{c}).
+\end{aligned}
+$$
+
+The first inequality follows from the feasibility of $\R$, the second is the usual triangle inequality for elements in $\distD$, and the third comes from Minkowski's inequality.
+\end{proof}
+\begin{lem}[Gluing lemma]\label{lem-gluing-general}
+Let $(\al,\be,\ga) \in \Mm_+^1(\Xx) \times \Mm_+^1(\Yy) \times \Mm_+^1(\Zz)$
+where $(\Xx,\Yy,\Zz)$ are Polish spaces, i.e. separable topological spaces that can be metrized by complete distances.
+Given $\pi \in \Couplings(\al,\be)$ and $\xi \in \Couplings(\be,\ga)$, then there exists a tensor coupling measure
+$\sigma \in \Mm_+(\Xx \times \Yy \times \Zz)$ such that
+\((P_{\Xx,\Yy})_\sharp \sigma = \pi \qandq (P_{\Yy,\Zz})_\sharp \sigma = \xi\)
+where we denoted the projector $P_{\Xx,\Yy}(x,y,z)=(x,y)$ and $P_{\Yy,\Zz}(x,y,z)=(y,z)$.
+\end{lem}
+\begin{proof}
+The proof of this fundamental result is involved since it requires using the disintegration of measure (which corresponds to conditional probabilities).
+
+The disintegration of measures is applicable because the spaces are Polish.
+
+We disintegrate $\pi$ and $\xi$ against $\be$ to obtain two families $(\pi_y)_{y \in \Yy}$ and $(\xi_y)_{y \in \Yy}$ of probability distributions on $\Xx$ and $\Zz$. These families are defined by the fact that
+\(\foralls h \in \Cc(\Xx \times \Yy), \quad \int_\Yy \Big( \int_\Xx h(x,y) \d \pi_y(x) \Big) \d \be(y) = \int h(x,y) \d\pi(x,y).\)
+and similarly for $\xi$.
+
+When $\be=\sum_j \b_j \de_{y_j}$ and $\pi=\sum_{i,j} \P_{i,j} \de_{(x_i,y_j)}$, then this conditional distribution is defined on the support of $\be$ as
+$\pi_{y_j} = \sum_i \frac{\P_{i,j}}{\b_j} \de_{x_i}$ (and similarly for $\xi$).
+
+The glued measure is then defined by the conditional-product formula
+\(\foralls g \in \Cc(\Xx \times \Yy \times \Zz), \quad \int g(x,y,z) \d\sigma(x,y,z) = \int g(x,y,z) \d \pi_y(x) \d \xi_y(z) \d \be(y).\)
+For discrete measures, this matches the definition~\eqref{eq-glued-discr}, since $\sigma=\sum_{i,j,k} \S_{i,j,k} \de_{x_i,y_j,z_k}$ where \(\S_{i,j,k} = \frac{\P_{i,j}}{\b_j} \frac{\Q_{j,k}}{\b_j} \b_j.\)
+\end{proof}
+\begin{prop}[Wasserstein distance on measures]\label{prop-metric-measure}
+We assume $\X=\Y$, and that for some $p \geq 1$, $\c(x,y)=\dist(x,y)^p$ where $\dist$ is a distance on $\X$, \emph{i.e.} \\
+\hbox{}\qquad (i) $\dist(x,y) = \dist(y,x) \geq 0$; \\
+\hbox{}\qquad (ii) $\dist(x,y)=0$ if and only if $x=y$; \\
+\hbox{}\qquad (iii) $\foralls (x,y,z) \in \X^3, \dist(x,z) \leq \dist(x,y)+\dist(y,z)$. \\
+Then
+\eql{\label{eq-defn-wass-dist}
+\Wass_p(\al,\be) \eqdef \MK_{\dist^p}(\al,\be)^{1/p}
+}
+(note that $\Wass_p$ depends on $\dist$) defines the $p$-Wasserstein distance on $\X$, \emph{i.e.} $\Wass_p$ is symmetric, positive, $\Wass_p(\al,\be)=0$ if and only if $\al = \be$, and it satisfies the triangle inequality
+\(\foralls (\al,\be,\ga) \in \Mm_+^1(\X)^3, \quad \Wass_p(\al,\ga) \leq \Wass_p(\al,\be) + \Wass_p(\be,\ga).\)
+\end{prop}
+\begin{proof}
+The symmetry follows from the fact that since $\dist$ is symmetric, if $\pi(x,y)$ is optimal for $\MK_{\dist^p}(\al,\be)$, then
+$\pi(y,x) \in \Couplings(\be,\al)$ is optimal for $\MK_{\dist^p}(\be,\al)$.
+
+If $\MK_{\dist^p}(\al,\be)=0$, then necessarily an optimal coupling $\pi$ is supported on the diagonal $\De \eqdef \{(x,x)\}_x \subset \Xx^2$.
+
+We denote $\la(x)$ the corresponding measure on the diagonal, i.e. such that $\int h(x,y) \d\pi(x,y) = \int h(x,x) \d \la(x)$.
+
+Then since $\pi \in \Couplings(\al,\be)$ necessarily $\la=\al$ and $\la=\be$ so that $\al=\be$.
+
+For the triangle inequality, we consider optimal couplings $\pi \in \Couplings(\al,\be)$ and $\xi \in \Couplings(\be,\ga)$
+and we glue them according to the Lemma~\ref{lem-gluing-general}.
+
+We define the composition of the two couplings $(\pi,\xi)$ as $\rho \eqdef (P_{\Xx,\Zz})_\sharp \si$.
+
+Note that if $\pi$ and $\xi$ are couplings induced by two Monge maps $T_\Xx(x)$ and $T_\Yy(y)$, then $\rho$ is itself induced by the Monge map $T_\Yy \circ T_\Xx$, so that this notion of composition of coupling generalizes the composition of maps.
+
+The triangular inequality follows from
+$$\begin{aligned}
+\Wass_p(\al,\ga) & \leq \Big( \int_{\Xx \times \Zz} \dist(x,z)^p \d\rho(x,z)\Big)^{1/p}
+= \Big( \int_{\Xx \times \Yy \times \Zz} \dist(x,z)^p \d\si(x,y,z)\Big)^{1/p} \\
+&\leq \Big( \int_{\Xx \times \Yy \times \Zz} (\dist(x,y)+\dist(y,z))^p \d\si(x,y,z)\Big)^{1/p} \\
+&\leq \Big( \int_{\Xx \times \Yy \times \Zz} \dist(x,y)^p \d\si(x,y,z)\Big)^{1/p}
++ \Big( \int_{\Xx \times \Yy \times \Zz} \dist(y,z)^p \d\si(x,y,z)\Big)^{1/p} \\
+&= \Big( \int_{\Xx \times \Yy} \dist(x,y)^p \d\pi(x,y)\Big)^{1/p}
++ \Big( \int_{\Yy \times \Zz} \dist(y,z)^p \d\xi(y,z)\Big)^{1/p}
+= \Wass_p(\al,\be) + \Wass_p(\be,\ga).
+\end{aligned}$$
+\end{proof}
+\subsection{Metric Properties: Topology and Applications}
+\paragraph{Convergence in law topology.}
+On a bounded metric space, all $\Wass_p$ distances define the same topology, although they are not equivalent as distances.
+
+\begin{prop}[Equivalence of Wasserstein distances on compact spaces]\label{prop-comp-wass-p}
+One has for $p \leq q$
+\(\Wass_p( \al,\be ) \leq \Wass_q(\al,\be) \leq \text{\upshape diam}(\Xx)^{\frac{q-p}{q}} \Wass_p(\al,\be)^{\frac{p}{q}}\)
+where $\text{\upshape diam}(\Xx) \triangleq \usup{x,y} d(x,y)$.
+\end{prop}
+\begin{proof}
+The left inequality follows from Jensen inequality, $\phi(\int c(x,y) \d\pi(x,y)) \leq \int \phi(c(x,y)) \d\pi(x,y)$, applied to any probability distribution $\pi$ and to the convex function $\phi(r)=r^{q/p}$ with $c(x,y)=d(x,y)^p$, so that one gets
+\(\pa{\int d(x,y)^{p} \d\pi(x,y)}^{\frac{q}{p}} \leq \int d(x,y)^{q} \d\pi(x,y).\)
+The right inequality follows from
+\(d(x,y)^q \leq \text{diam}(\Xx)^{q-p} d(x,y)^p.\)
+\end{proof}
+\begin{defn}[Weak$^*$ topology]\label{dfn-weak-conv}
+$(\al_k)_k$ converges weakly$^*$ to $\al$ in $\Mm_+^1(\Xx)$ (denoted $\al_k \rightharpoonup \al$) if and only if for any bounded continuous function $f \in \Cc_b(\Xx)$, $\int_\Xx f \d\al_k \rightarrow \int_\Xx f \d\al$. On compact spaces, $\Cc_b(\Xx)=\Cc(\Xx)$, which is why the boundedness is often left implicit there.
+\end{defn}
+\begin{rem}[A Riemann-sum weak limit]\label{rem-riemann-weak-limit}
+\[
+\frac{1}{n} \sum_{k=1}^n \de_{k/n} \rightharpoonup \Uu_{[0,1]}.
+\]
+\(\frac{1}{n} \sum_{k=1}^n f(k/n) \longrightarrow \int_0^1 f(x) \d x,\)
+\end{rem}
+\begin{rem}[Weak convergence for discrete measures]\label{rem-weak-conv-disc}
+\end{rem}
+In terms of random vectors, if $X_n \sim \al_n$ and $X \sim \al$ (not necessarily defined on the same probability space), weak convergence corresponds to convergence in law of $X_n$ toward $X$.
+
+\begin{rem}[Central limit theorem]\label{rem-clt}
+\end{rem}
+\begin{defn}[Strong topology]
+The simplest distance on Radon measures is the total variation norm, which is the dual norm of the $L^\infty$ norm on $\Cc(\Xx)$ and whose topology is often called the ``strong'' topology
+\(\norm{\al-\be}_{\TV} \eqdef \usup{\norm{f}_\infty \leq 1} \int f \d(\al-\be) = |\al-\be|(\Xx)\)
+where $|\al-\be|(\Xx)$ is the mass of the absolute value of the difference measure. When $\al-\be=\rho \d x$ has a density, then $\norm{\al-\be}_{\TV}=\int |\rho(x)| \d x=\norm{\rho}_{L^1(\d x)}$ is the $L^1$ norm associated to $\d x$. When $\al-\be=\sum_i u_i \de_{z_i}$ is discrete, then $\norm{\al-\be}_{\TV}=\sum_i |u_i|=\norm{u}_{\ell^1}$ is the discrete $\ell^1$ norm.
+\end{defn}
+\begin{prop}[Total variation as Wasserstein for the discrete metric]\label{prop-rel-wass-tv}
+Denoting $d$ the 0/1 distance such that $d(x,x)=0$ and $d(x,y)=1$ if $x \neq y$, then
+\(\Wass_p(\al,\be)^p = \frac{1}{2}\norm{\al-\be}_{\TV}.\)
+\end{prop}
+\begin{proof}
+For the sake of simplicity, we do the proof for discrete measures with weights $(\a,\b)$ and without loss of generality assume they have the same support $(x_i)_i$ and we denote $\D \triangleq (d(x_i,x_j))_{i,j}$ which is 0 on the diagonal and one outside.
+
+Also since $d^p=d$ we consider $p=1$.
+We denote $\text{c}_i = \min(\a_i,\b_i)$.
+By conservation of mass, for every $\P \in \CouplingsD(\a,\b)$, $\P_{i,i} \leq \text{c}_i$, thus
+\(\dotp{\P}{\D} = \sum_{i \neq j} \P_{i,j} = 1 - \sum_i \P_{i,i} \geq 1-\sum_i \text{c}_i.\)
+We need to show that this bound is tight, namely to construct $\hat P \in \CouplingsD(\a,\b)$ such that
+$\diag(\hat P)=\text{c}$. Let
+\(\bar\a \triangleq \a-\text{c} = (\a-\b)_+ \geq 0 \qandq \bar\b \triangleq \b-\text{c} = (\b-\a)_+ \geq 0\)
+If $\bar\a=\bar\b=0$, then $\a=\b$ and the diagonal coupling is optimal. Otherwise, one has \(\frac{ \bar\a \otimes \bar\b }{ \dotp{\bar\a}{\ones} } \in \CouplingsD(\bar\a,\bar\b)\)
+and we remark that $\dotp{\bar\a}{\ones} = \dotp{\bar\b}{\ones} = 1-\dotp{\text{c}}{\ones}$.
+
+Thus denoting
+\(\hat \P \triangleq \diag(\text{c}) + \frac{ \bar\a \otimes \bar\b }{ \dotp{\bar\a}{\ones} } \geq 0\)
+satisfies \(\hat\P \ones = \text{c} + \bar\a = \a \qandq \hat\P^\top \ones = \text{c} + \bar\b = \b\)
+so that $\hat P \in \CouplingsD(\a,\b)$ is a coupling so that $\diag(\hat P) = \diag(\text{c})$ since $\diag( \bar\a \otimes \bar\b )=0$. We thus conclude that
+\eq{
+\WassD_1(\a,\b) = \dotp{\D}{\hat \P}
+= \sum_{i,j} \frac{\bar\a_i\bar\b_j}{\dotp{\bar\a}{\ones}}
+= \sum_i \bar\a_i = \sum_i \bar\b_i
+= \frac{1}{2} \sum_i (\bar\a_i + \bar\b_i)
+= \frac{1}{2} \norm{\a-\b}_{\TV}.
+}
+\end{proof}
+\(\norm{\de_{x_n}-\de_x}_{\TV}=2 \qandq \Wass_p(\de_{x_n},\de_x) = d(x_n,x).\)
+\begin{prop}[Wasserstein metrizes weak convergence on compact spaces]
+If $\Xx$ is compact, $\al_k \rightharpoonup \al$ if and only if $\Wass_p(\al_k,\al) \rightarrow 0$.
+\end{prop}
+\begin{proof}
+For $p=1$, this is exactly Corollary~\ref{cor-topol-wass}, which follows from the Kantorovich--Rubinstein dual representation and compactness of the unit Lipschitz ball modulo constants. For a compact space, Proposition~\ref{prop-comp-wass-p} shows that all Wasserstein distances $\Wass_p$ induce the same convergent sequences. Hence weak convergence is equivalent to convergence in $\Wass_p$ for every $p\geq 1$.
+\end{proof}
+\(\int d(x,x_0)^p\d\alpha_k(x)\longrightarrow \int d(x,x_0)^p\d\alpha(x).\)
+\begin{prop}[Comparison with total variation on discrete spaces]
+One has
+\eq{
+\frac{d_{\min}}{2}\norm{\al-\be}_{\TV} \leq \Wass_1(\al,\be) \leq \frac{d_{\max}}{2} \norm{\al-\be}_{\TV}
+\qwhereq
+\choice{
+d_{\min} \eqdef \uinf{x \neq y} d(x,y) \\
+d_{\max} \eqdef \usup{x,y} d(x,y)
+}
+}
+\end{prop}
+\begin{proof}
+We denote $d_0(x,y)$ the distance such that $d_0(x,x)=0$ and $d_0(x,y)=1$ for $x \neq y$. One has
+\(d_{\min} d_0(x,y) \leq d(x,y) \leq d_{\max} d_0(x,y)\)
+so that integrating this against any $\pi \in \Couplings(\al,\be)$ and taking the minimum among those $\pi$ gives the result using Proposition~\ref{prop-rel-wass-tv}.
+\end{proof}
+This bound is sharp, as this can be observed by taking $\al=\de_{x}$ and $\be=\de_y$, in which case the bound simply reads if $x \neq y$
+
+\(d_{\min} \leq d(x,y) \leq d_{\max}.\)
+\paragraph{Distributional robustness and $\Wass_\infty$.}
+Wasserstein distances are also used to define ambiguity sets around an empirical law. A distributionally robust optimization (DRO) problem replaces the empirical risk $\int \ell_\theta\d\hat\alpha$ by
+
+\(\sup_{\beta:\,\Wass_p(\beta,\hat\alpha)\leq \rho} \int \ell_\theta\d\beta,\)
+or, equivalently in penalized form, by $\sup_\beta \int \ell_\theta\d\beta-\lambda\Wass_p(\beta,\hat\alpha)^p$. This asks for performance against all distributions that can be reached by transporting the empirical mass within a budget.
+
+\begin{equation}\label{eq-wass-infty}
+\Wass_\infty(\alpha,\beta)
+\eqdef
+\inf_{\pi\in\Couplings(\alpha,\beta)}
+\operatorname*{ess\,sup}_{(x,y)\sim\pi} d(x,y)
+\end{equation}
+is the limit of $\Wass_p(\alpha,\beta)$ as $p\to\infty$ on bounded spaces, not the limit of the convex programs defining $\Wass_p^p$. It minimizes the worst displacement rather than an average displacement, and the resulting optimization is no longer a linear convex program because of the essential-supremum objective.
+
+\paragraph{Theoretical application: quantitative central limit theorems.}
+\begin{prop}[Berry--Esseen bound in $\Wass_1$]\label{prop-berry-esseen-w1}
+Let $(X_i)_{i=1}^n$ be i.i.d. real random variables such that $\EE X_i=0$, $\EE X_i^2=1$ and $\EE |X_i|^3<+\infty$. If $\alpha_n$ is the law of $n^{-1/2}\sum_i X_i$ and $\gamma$ is the standard Gaussian law, then
+\(\Wass_1(\alpha_n,\gamma) \leq \frac{C\,\EE |X_1|^3}{\sqrt n},\)
+where $C$ is a universal constant.
+\end{prop}
+\begin{proof}
+By Kantorovich--Rubinstein duality,
+\[
+\Wass_1(\alpha_n,\gamma)
+=
+\sup_{\Lip(h)\leq1}
+\left|\EE h(S_n)-\EE h(G)\right|,
+\qquad
+S_n=n^{-1/2}\sum_i X_i,\ G\sim\gamma.
+\]
+For each such $h$, solve Stein's equation
+\(f_h'(x)-x f_h(x)=h(x)-\EE h(G).\)
+The solution satisfies uniform derivative bounds depending only on the Lipschitz constant of $h$. Hence
+\(\EE h(S_n)-\EE h(G)=\EE[f_h'(S_n)-S_nf_h(S_n)].\)
+Expanding $f_h'(S_n)$ and $f_h(S_n)$ by replacing the summands one at a time, the first- and second-order terms cancel because $\EE X_i=0$ and $\EE X_i^2=1$. The Taylor remainder is bounded by $C\sum_i \EE |X_i/\sqrt n|^3$, which gives the displayed $n^{-1/2}$ rate. This is the Wasserstein form of the Berry--Esseen theorem; sharper constants and higher-order transport-distance refinements are studied in.
+\end{proof}
+\paragraph{Applications and implications.}

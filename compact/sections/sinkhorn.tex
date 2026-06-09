@@ -1,0 +1,299 @@
+\section{Sinkhorn}
+\label{sec-sinkhorn}
+\subsection{Entropic Regularization for Discrete Measures}
+\label{sec-entropic-discrete}
+\paragraph{Entropic Regularization for Discrete Measures.}
+\(\HD(\P) \triangleq -\sum_{i,j} \P_{i,j} \log(\P_{i,j}),\)
+\eql{\label{eq-regularized-discr}
+\MKD_\C^\epsilon(\a,\b) \eqdef
+\umin{\P \in \CouplingsD(\a,\b)}
+\dotp{\P}{\C} - \epsilon \HD(\P).
+}
+\begin{prop}[Existence and uniqueness of entropic OT]\label{prop-entropic-unique}
+Assume that $\a,\b$ are probability histograms and that $\C$ is finite. For every $\epsilon>0$, problem~\eqref{eq-regularized-discr} admits a unique minimizer. If all entries of $\a$ and $\b$ are positive, then this minimizer is positive on every entry.
+\end{prop}
+\begin{proof}
+The transport polytope $\CouplingsD(\a,\b)$ is non-empty and compact, and the objective is continuous on it with the convention $0\log0=0$, so a minimizer exists. On the relative interior of the polytope,
+\(-\partial^2 \HD(\P)=\diag(1/\P_{i,j})\)
+is positive definite on every non-zero feasible direction. Hence $-\HD$ is strictly convex on the polytope and $\dotp{\P}{\C}-\epsilon\HD(\P)$ is strictly convex, which implies uniqueness.
+
+If $\a_i,\b_j>0$ and a minimizer had $\P_{i,j}=0$, then for small $t>0$ the perturbation $\P_t=(1-t)\P+t\,\a\otimes\b$ remains feasible. The directional derivative of the entropic part at $t=0$ is $-\infty$ because the derivative of $r\log r$ at $0$ is $-\infty$ along a positive direction. Thus the objective decreases for small $t$, contradicting optimality. Therefore the minimizer is strictly positive.
+\end{proof}
+\paragraph{Smoothing effect.}
+\subsection{Sinkhorn's Algorithm}
+\begin{prop}[Scaling form of entropic OT]\label{prop-regularized-primal}
+$\P$ is the unique solution to~\eqref{eq-regularized-discr} if and only if there exists $(\uD,\vD) \in \RR_+^n \times \RR_+^m$ such that
+\eql{\label{eq-scaling-form}
+\foralls (i,j) \in \range{n} \times \range{m}, \quad \P_{i,j} = \uD_i \K_{i,j} \vD_j
+\qwhereq \K_{i,j} \eqdef e^{-\frac{\C_{i,j}}{\epsilon}},
+}
+and $\P \in \Couplings(\a,\b)$.
+\end{prop}
+\begin{proof}
+Without loss of generality, we assume $\a_i,\b_j>0$ (otherwise, rows or columns with zero mass are fixed to zero and can be removed). By Proposition~\ref{prop-entropic-unique}, the minimizer is strictly positive on the remaining support.
+
+We can thus ignore the positivity constraint when introducing two dual variables $\fD\in\RR^n,\gD\in\RR^m$ for each marginal constraint so that the Lagrangian of~\eqref{eq-regularized-discr} reads
+\eq{\label{eq-sinkhorn-lagrangian}
+\Lag(\P,\fD,\gD)=
+\dotp{\P}{\C}
++\epsilon\sum_{i,j}\P_{i,j}\log(\P_{i,j})
++ \dotp{\fD}{\a - \P\ones_m}
++ \dotp{\gD}{\b - \transp{\P}\ones_n}.
+}
+Considering first-order conditions (where we ignore the positivity constraint as explained above), we have
+$$
+\frac{\partial\Lag(\P,\fD,\gD)}{\partial \P_{i,j}}= \C_{i,j} + \epsilon (\log\pa{ \P_{i,j} }+1) - \fD_i -\gD_j = 0.
+$$
+which results, in an optimal $\P$ coupling of the regularized problem, in the expression
+$\P_{i,j}=e^{\frac{\fD_i+\gD_j - \C_{i,j}}{\epsilon}-1}$
+which can be rewritten in the form provided in the proposition using non-negative vectors $\uD_i \eqdef e^{\fD_i/\epsilon-1}$ and $\vD_j \eqdef e^{\gD_j/\epsilon}$.
+\end{proof}
+\eql{\label{eq-dualsinkhorn-constraints}
+\diag(\uD)\K\diag(\vD)\ones_m=\a,
+\qandq
+\diag(\vD)\K^\top \diag(\uD)\ones_n=\b,
+}
+\eql{\label{eq-dualsinkhorn-constraints2}
+\uD \odot (\K \vD) = \a
+\qandq
+\vD \odot (\transp{\K}\uD) = \b
+}
+where $\odot$ corresponds to the entry-wise multiplication of vectors.
+
+An intuitive way to try to solve these equations is to solve them iteratively, by modifying first $\uD$ so that it satisfies the left-hand side of Equation~\eqref{eq-dualsinkhorn-constraints2} and then $\vD$ to satisfy its right-hand side. These two updates define Sinkhorn's algorithm
+
+\eql{\label{eq-sinkhorn}
+\itt{\uD} \eqdef \frac{\a}{\K \it{\vD}}
+\qandq
+\itt{\vD} \eqdef \frac{\b}{\transp{\K}\itt{\uD}},
+}
+initialized with an arbitrary positive vector, for instance $\init{\vD} = \ones_m$. The division operator used above between two vectors is to be understood entry-wise.
+
+A chief computational advantage of Sinkhorn's algorithm, besides its simplicity, is that the only expensive step is multiplication by the Gibbs kernel. Its complexity therefore scales like $Cnm$, where $C$ is the number of Sinkhorn iterations.
+
+\subsection{Reformulation using relative entropy}
+\eql{\label{eq-kl-defn}
+\KLD(\P|\Q) \eqdef \sum_{i,j} \P_{i,j} \log\pa{\frac{\P_{i,j}}{\Q_{i,j}}} - \P_{i,j} + \Q_{i,j}.
+}
+\(\KLD(\P|\Q) = \sum_{i,j} \P_{i,j} \log\pa{\frac{\P_{i,j}}{\Q_{i,j}}}.\)
+\(\HD( \P ) = -\KLD(\P|\ones_{n \times m}).\)
+$\KLD$ is a particular instance of both a $\phi$-divergence (as defined in Section~\ref{sec-phi-div}) and a Bregman divergence; up to standard affine rescalings, it is the canonical overlap between these two families. This special property is at the heart of the fact that this regularization leads to elegant algorithms and a tractable mathematical analysis.
+
+\begin{prop}[Relative entropy is distance-like]\label{prop-kl-distance-like}
+Let $\P,\Q\in\RR_+^{n\times m}$ have the same total mass and assume $\Q_{i,j}>0$ on the support of $\P$. Then $\KLD(\P|\Q)\geq0$, with equality if and only if $\P=\Q$.
+\end{prop}
+\begin{proof}
+Write $\phi(s)=s\log s-s+1$. Convexity gives $\phi(s)\geq \phi(1)+\phi'(1)(s-1)=0$, and strict convexity gives equality only at $s=1$. Hence
+\(\KLD(\P|\Q)=\sum_{i,j}\Q_{i,j}\phi(\P_{i,j}/\Q_{i,j})\geq0,\)
+with equality only when $\P_{i,j}/\Q_{i,j}=1$ for all entries with $\Q_{i,j}>0$. The support convention rules out positive $\P$ where $\Q=0$, so equality is equivalent to $\P=\Q$.
+\end{proof}
+Equivalently, when $\P$ and $\Q$ have the same total mass, it reads
+
+\(\KLD(\P|\Q) = \sum_{i,j} \phi( \P_{i,j} / \Q_{i,j} ) \Q_{i,j}.\)
+where $\phi(s)=s\log(s)$. For any convex $\phi$ such that $\phi(1)=0$, one has indeed by Jensen
+
+\(\sum_{i,j} \phi( \P_{i,j} / \Q_{i,j} ) \Q_{i,j} \geq \phi( \sum_{i,j} \P_{i,j} / \Q_{i,j} \Q_{i,j} ) = \phi( \sum_{i,j} \P_{i,j} ) =\phi(1)= 0.\)
+\eql{\label{eq-regularized-discr-rescaled}
+\umin{\P \in \CouplingsD(\a,\b)}
+\dotp{\P}{\C} + \epsilon \KLD(\P|\a \otimes \b).
+}
+\begin{prop}[Reference measure shift for KL]\label{prop-kl-shift} For $\P \in \CouplingsD(\a,\b)$, one has
+\(\KLD(\P|\a \otimes \b) = \KLD(\P|\a' \otimes \b') - \KLD(\a|\a') - \KLD(\b|\b').\)
+In particular,~\eqref{eq-regularized-discr-rescaled} and~\eqref{eq-regularized-discr} have the same unique minimizer.
+\end{prop}
+\begin{proof}
+This follows from
+\eq{
+\sum_{i,j} \P_{i,j} \log\frac{\P_{i,j}}{\a_i\b_j}
+=
+\sum_{i,j} \P_{i,j} \log\frac{\P_{i,j}}{\a_i'\b_j'}
++
+\sum_{i,j} \P_{i,j} \pa{\log\frac{\a_i'}{\a_i} + \log\frac{\b_j'}{\b_j}}.
+}
+\end{proof}
+\begin{prop}[Convergence with $\epsilon$]\label{prop-convergence-eps}
+Assume, after removing zero-mass rows and columns, that $\a$ and $\b$ are positive and that $\C$ is finite.
+The unique solution $\P_\epsilon$ of~\eqref{eq-regularized-discr} converges to the optimal solution with maximal entropy within the set of all optimal solutions of the Kantorovich problem, namely
+\eql{\label{eq-entropy-conv-1}
+\P_\epsilon \overset{\epsilon \rightarrow 0}{\longrightarrow}
+\uargmin{\P} \enscond{ -\HD(\P) }{
+\P \in \CouplingsD(\a,\b), \dotp{\P}{\C} = \MKD_\C(\a,\b)
+}
+}
+so that in particular
+\eq{
+\MKD_\C^\epsilon(\a,\b) \overset{\epsilon \rightarrow 0}{\longrightarrow} \MKD_\C(\a,\b).
+}
+One has
+\eql{\label{eq-entropy-conv-2}
+\P_\epsilon \overset{\epsilon \rightarrow \infty}{\longrightarrow}
+\a \otimes \b.
+}
+\end{prop}
+\begin{proof}
+\textbf{Case $\epsilon \rightarrow 0$.}
+We denote $\P_\ell$ the solution of~\eqref{eq-regularized-discr} for $\epsilon=\epsilon_\ell$.
+
+Since $\CouplingsD(\a,\b)$ is bounded, we can extract a sequence (that we do not relabel for the sake of simplicity) such that $\P_\ell \rightarrow \P^\star$. Since $\CouplingsD(\a,\b)$ is closed, $\P^\star \in \CouplingsD(\a,\b)$. Using the equivalent KL-normalized formulation~\eqref{eq-regularized-discr-rescaled}, optimality of $\P$ and $\P_\ell$ for their respective optimization problems (for $\epsilon=0$ and $\epsilon=\epsilon_\ell$) gives
+\eql{\label{eq-proof-gamma-conv}
+0 \leq \dotp{\C}{\P_\ell} - \dotp{\C}{\P} \leq \epsilon_\ell ( \KLD(\P|\a \otimes \b)-\KLD(\P_\ell|\a \otimes \b) ).
+}
+Since $\KLD$ is continuous, taking the limit $\ell \rightarrow +\infty$ in this expression shows that
+$\dotp{\C}{\P^\star} = \dotp{\C}{\P}$ so that $\P^\star$ is a feasible point of~\eqref{eq-entropy-conv-1}. Furthermore, dividing by $\epsilon_\ell$ in~\eqref{eq-proof-gamma-conv} and taking the limit shows that
+$\KLD(\P^\star|\a \otimes \b) \leq \KLD(\P|\a \otimes \b)$, which shows that $\P^\star$ is a solution of~\eqref{eq-entropy-conv-1}. Since the solution $\P_0^\star$ to this program is unique by strict convexity of $\KLD(\cdot|\a \otimes \b)$ on the optimal face, one has $\P^\star = \P_0^\star$, and the whole sequence is converging.
+
+\textbf{Case $\epsilon \rightarrow +\infty$.} Evaluating at $\a \otimes \b$ (which belongs to the constraint set $\CouplingsD(\a,\b)$) the energy, one has
+\(\dotp{\C}{\P_\epsilon} + \epsilon \KLD(\P_\epsilon|\a \otimes \b) \leq \dotp{\C}{\a \otimes \b} + \epsilon \times 0\)
+and since $\dotp{\C}{\P_\epsilon} \geq 0$, this leads to
+\(\KLD(\P_\epsilon|\a \otimes \b) \leq \epsilon^{-1} \dotp{\C}{\a \otimes \b} \leq \frac{\norm{\C}_\infty}{\epsilon}\)
+so that $\KLD(\P_\epsilon|\a \otimes \b) \rightarrow 0$ and thus $\P_\epsilon \rightarrow \a \otimes \b$ since $\KLD$ is a valid divergence.
+\end{proof}
+\subsection{General Formulation}
+\eql{\label{eq-entropic-generic}
+\MK_\c^\epsilon(\al,\be) \eqdef
+\umin{\pi \in \Couplings(\al,\be)}
+\int_{\X \times \Y} c(x,y) \d\pi(x,y) + \epsilon \KL(\pi|\al\otimes\be)
+}
+where the relative entropy is a generalization of the discrete Kullback-Leibler divergence~\eqref{eq-kl-defn}
+
+\eql{\label{eq-defn-rel-entropy}
+\KL(\pi|\xi) \eqdef \int_{\X \times \Y} \log\Big( \frac{\d \pi}{\d\xi}(x,y) \Big) \d\pi(x,y)
++ \int_{\X \times \Y} (\d\xi(x,y)-\d\pi(x,y)),
+}
+\begin{rem}[Probabilistic interpretation]
+If $(X,Y) \sim \pi$ have marginals $X \sim \al$ and $Y \sim \be$, then $\KL(\pi|\al \otimes \be) = \Ii(X,Y)$ is the mutual information of the couple, which is 0 if and only if $X$ and $Y$ are independent. The entropic problem~\eqref{eq-entropic-generic} is thus equivalent to
+
+\(\umin{(X,Y), X \sim \al, Y \sim \be } \EE( c(X,Y)) + \epsilon \Ii(X,Y).\)
+\end{rem}
+\subsection{Convergence of Sinkhorn}
+\label{sec-convergence-init}
+\paragraph{Alternating $\KL$ projections.}
+\begin{defn}[Bregman divergence]\label{def-bregman-divergence}
+Let $\Phi$ be a differentiable strictly convex function on a convex domain $\Omega$. The Bregman divergence generated by $\Phi$ is \(D_\Phi(P|Q)\eqdef \Phi(P)-\Phi(Q)-\dotp{\nabla\Phi(Q)}{P-Q}.\)
+For the negative entropy $\Phi(P)=\sum_{i,j}P_{i,j}\log P_{i,j}$ on the positive orthant, one obtains $D_\Phi(P|Q)=\KLD(P|Q)$ up to the harmless convention at the boundary.
+\end{defn}
+\begin{prop}[Gibbs-KL reformulation]
+One has
+\(\dotp{\P}{\C} + \epsilon \KLD(\P|\a \otimes \b) = \epsilon \KLD(\P|\K) + \text{cst},\)
+\end{prop}
+\begin{proof}
+The objective is indeed equal to
+\eq{
+\epsilon \sum_{i,j} \P_{i,j} \frac{\C_{i,j}}{\epsilon} + \log\pa{\frac{\P_{i,j}}{\a_i \b_j}} \P_{i,j}
+= \epsilon \sum_{i,j} \P_{i,j} \log\pa{\frac{\P_{i,j}}{\a_i \b_j e^{-\C_{i,j}/\epsilon}}}
+= \epsilon \sum_{i,j} \P_{i,j} \log\pa{\frac{\P_{i,j}}{\K_{i,j}}}
++ \text{cst}.
+}
+\end{proof}
+\eql{\label{eq-kl-proj}
+\P_\epsilon = \Proj_{\CouplingsD(\a,\b)}^\KLD(\K) \eqdef \uargmin{\P \in \CouplingsD(\a,\b)} \KLD(\P|\K).
+}
+\begin{prop}[Cyclic KL projections on affine constraints]\label{prop-cyclic-kl-affine}
+Let $\Cc_1,\Cc_2$ be two affine subspaces whose intersection with the positive orthant is non-empty. Define $P_{k+1}=\Proj_{\Cc_2}^{\KLD}\Proj_{\Cc_1}^{\KLD}(P_k)$, starting from a positive $P_0$. If the KL projections are well-defined, then $P_k$ converges to the KL projection of $P_0$ onto $\Cc_1\cap\Cc_2$.
+\end{prop}
+\begin{proof}
+For an affine set $\Cc$, the KL projection $P^+=\Proj_\Cc^\KLD(P)$ satisfies the Pythagorean identity
+\(\KLD(Q|P)=\KLD(Q|P^+)+\KLD(P^+|P) \qquad\forall Q\in\Cc.\)
+This follows by writing the first-order optimality condition: $\nabla\Phi(P^+)-\nabla\Phi(P)$ is orthogonal to the tangent space of $\Cc$, so the usual three-point identity for Bregman divergences has no cross term. Applying this identity successively with any $Q\in\Cc_1\cap\Cc_2$ shows that $\KLD(Q|P_k)$ decreases and that the projection drops $\KLD(P_{k+1}|P_k)$ are summable. Hence the sequence is bounded in KL geometry and every cluster point lies in both affine sets. The Pythagorean identity then identifies any cluster point as the unique KL projection onto $\Cc_1\cap\Cc_2$, by strict convexity. Thus the whole sequence converges.
+\end{proof}
+\(\Cc^1_\a \eqdef \enscond{\P}{\P\ones_m=\a} \qandq \Cc^2_\b \eqdef \enscond{\P}{\transp{\P}\ones_n=\b}\)
+\eql{\label{eq-kl-sinkh-proj}
+\itt{\P} \eqdef \Proj_{\Cc^1_\a}^{\KLD}(\it{\P})
+\qandq
+\ittt{\P} \eqdef \Proj_{\Cc^2_\b}^{\KLD}(\itt{\P}).
+}
+\begin{prop}[KL projections are scalings]
+One has
+\(\Proj_{\Cc^1_\a}^{\KLD}(\P) = \diag\pa{\frac{\a}{\P \ones_m}} \P \qandq \Proj_{\Cc^2_\b}^{\KLD}(\P) = \P \diag\pa{\frac{\b}{\P^\top \ones_n}}.\)
+\end{prop}
+\begin{proof}
+Consider the problem along each row or column vector to impose a fixed sum $s \in \RR_+$
+\(\umin{p} \enscond{ \KL(p|q) }{ \dotp{p}{\ones}=s }.\)
+The Lagrange multiplier equation for this problem reads \(\log(p/q)+\la \ones=0 \qarrq p = u q \qwhereq u = e^{-\la}>0.\)
+The constraint $\dotp{p}{\ones} = s$ is equivalent to $\dotp{uq}{\ones}=s$, i.e. $u=s/\sum_i q_i$, which gives the desired scaling formula
+$p=s q/\sum_i q_i$.
+\end{proof}
+\eq{\label{eq-sink-matrix}\P^{(2\ell)} \eqdef \diag(\it{\uD}) \K \diag(\it{\vD}),}
+\begin{align*}
+\P^{(2\ell+1)} &\eqdef \diag(\itt{\uD}) \K \diag(\it{\vD}) \\
+\qandq
+\P^{(2\ell+2)} &\eqdef \diag(\itt{\uD}) \K \diag(\itt{\vD})
+\end{align*}
+\paragraph{Convergence for the Hilbert metric.}
+\eql{\label{eq-hilbert-metric}
+\foralls (\uD,\uD') \in (\RR_{+,*}^n)^2, \quad
+\Hilbert(\uD,\uD') \eqdef
+\norm{\log(\uD)-\log(\uD')}_V
+}
+\(\norm{z}_V = \max(z)-\min(z).\)
+\begin{prop}[Hilbert metric on the projective cone]
+The function $\Hilbert$ defines a complete distance on the projective cone $\RR_{+,*}^n/\sim$, where $\uD \sim \uD'$ means that $\uD=s\uD'$ for some $s>0$.
+\end{prop}
+\begin{proof}
+The map $\uD \mapsto \log \uD$ identifies $\RR_{+,*}^n/\sim$ with the quotient vector space $\RR^n/\Span(\ones_n)$, because multiplying $\uD$ by $s>0$ adds the constant vector $\log(s)\ones_n$. The variation semi-norm $\norm{z}_V=\max_i z_i-\min_i z_i$ vanishes exactly on constant vectors, so it induces a norm on this quotient. Symmetry, the triangle inequality and separation therefore follow from the corresponding norm properties. Completeness follows because $\RR^n/\Span(\ones_n)$ is finite-dimensional and all finite-dimensional normed spaces are complete.
+\end{proof}
+\begin{thm}[Birkhoff contraction theorem]\label{thm-birkhoff}
+Let $\K \in \RR_{+,*}^{n \times m}$, then for $(\vD,\vD') \in (\RR_{+,*}^m)^2$
+\eq{
+\Hilbert(\K \vD,\K \vD') \leq \la(\K) \Hilbert(\vD,\vD')
+\text{ where }
+\choice{
+\la(\K) \eqdef \frac{ \sqrt{\eta(\K)}-1 }{ \sqrt{\eta(\K)}+1 } < 1 \\
+\eta(\K) \eqdef \umax{i,j,k,\ell} \frac{ \K_{i,k} \K_{j,\ell} }{ \K_{j,k} \K_{i,\ell} }.
+}
+}
+\end{thm}
+\begin{proof}
+For a positive linear map $A$ on a cone, define its projective diameter
+\(\Delta(A) \eqdef \sup_{u,v>0} \Hilbert(Au,Av).\)
+Then
+\(\Hilbert(Au,Av) \leq \tanh(\Delta(A)/4)\Hilbert(u,v).\)
+Indeed, after quotienting by positive scalings, write $r_k=u_k/v_k$ and normalize so that $e^{-h/2}\leq r_k\leq e^{h/2}$, where $h=\Hilbert(u,v)$. The ratio between two coordinates of $Au/Av$ is a quotient of two weighted averages of the numbers $r_k$. A two-point extremal argument shows that the largest possible contraction is obtained when the mass of the two weights is placed on the two endpoints $e^{-h/2}$ and $e^{h/2}$; the cross-ratio bound defining $\Delta(A)$ then gives
+\[
+\Hilbert(Au,Av)
+\leq
+2\log\frac{e^{\Delta(A)/4}e^{h/2}+e^{-\Delta(A)/4}e^{-h/2}}
+{e^{\Delta(A)/4}e^{-h/2}+e^{-\Delta(A)/4}e^{h/2}}
+\leq \tanh(\Delta(A)/4)h.
+\]
+For the matrix $\K$, its projective diameter is \(\Delta(\K)=\log \eta(\K), \qquad \eta(\K)=\max_{i,j,k,\ell} \frac{\K_{i,k}\K_{j,\ell}}{\K_{j,k}\K_{i,\ell}}.\)
+Therefore $\tanh(\Delta(\K)/4)=(\sqrt{\eta(\K)}-1)/(\sqrt{\eta(\K)}+1)$, which is the claimed contraction factor.
+\end{proof}
+\begin{thm}[Linear convergence of Sinkhorn]
+One has $(\it{\uD},\it{\vD}) \rightarrow (\uD^\star,\vD^\star)$ and
+\eql{\label{eq-convlin-sinkh}
+\Hilbert(\it{\uD}, \uD^\star) = O(\la(\K)^{2\ell}), \quad
+\Hilbert(\it{\vD}, \vD^\star) = O(\la(\K)^{2\ell}).
+}
+One also has
+\eql{\label{eq-convsinkh-control}
+\Hilbert(\it{\uD}, \uD^\star) \leq \frac{\Hilbert( \it{\P}\ones_m,\a )}{1-\la(\K)}
+\qandq
+\Hilbert(\it{\vD}, \vD^\star) \leq \frac{\Hilbert( \P^{(\ell),\top} \ones_n,\b )}{1-\la(\K)},
+}
+where we denoted $\it{\P} \eqdef \diag(\it{\uD}) \K \diag(\it{\vD})$. Lastly, one has
+\eql{\label{eq-convlin-sinkh-prim}
+\norm{\log(\it{\P}) - \log(\P^\star)}_\infty \leq \Hilbert(\it{\uD}, \uD^\star) + \Hilbert(\it{\vD}, \vD^\star)
+}
+where $\P^\star$ is the unique solution of~\eqref{eq-regularized-discr}.
+\end{thm}
+\begin{proof}
+Notice that for any $(\vD,\vD') \in (\RR_{+,*}^m)^2$, one has \(\Hilbert(\vD,\vD') = \Hilbert(\vD/\vD',\ones_m) = \Hilbert(\ones_m/\vD,\ones_m/\vD'),\)
+since indeed $\Hilbert(\a/\vD,\a/\vD') = \Hilbert(\vD,\vD')$.
+
+This shows that
+\begin{align*}
+\Hilbert(\itt{\uD},\uD^\star) &= \Hilbert\pa{ \frac{\a}{\K \it{\vD}}, \frac{\a}{\K \vD^\star} }
+= \Hilbert( \K \it{\vD}, \K \vD^\star ) \leq \la(\K) \Hilbert( \it{\vD}, \vD^\star ).
+\end{align*}
+where we used Theorem~\ref{thm-birkhoff}. This shows~\eqref{eq-convlin-sinkh}. One also has, using the triangular inequality
+\begin{align*}
+\Hilbert(\it{\uD},\uD^\star) &\leq \Hilbert(\itt{\uD},\it{\uD}) + \Hilbert(\itt{\uD},\uD^\star)
+\leq \Hilbert\pa{ \frac{\a}{\K \it{\vD}},\it{\uD} } + \la(\K) \Hilbert(\it{\uD},\uD^\star) \\
+&= \Hilbert\pa{ \a,\it{\uD} \odot ( \K \it{\vD} ) } + \la(\K) \Hilbert(\it{\uD},\uD^\star),
+\end{align*}
+which gives the first part of~\eqref{eq-convsinkh-control} since
+$\it{\uD} \odot ( \K \it{\vD} ) = \it{\P}\ones_m$ (the second one being similar).
+
+The proof of~\eqref{eq-convlin-sinkh-prim} follows from
+\end{proof}

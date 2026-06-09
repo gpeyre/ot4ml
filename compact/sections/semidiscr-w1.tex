@@ -1,0 +1,138 @@
+\section[Semi-discrete and W1]{Semi-discrete and $\Wass_1$}
+\label{sec-semidiscr-w1}
+\subsection{Semi-dual}
+\(\usup{f,g \in \Cc(\Xx) \times \Cc(\Yy)} \Ee(f,g)\)
+where $\Ee$ takes into account the constraints one can ``marginalize'' it with respect to $g$ by minimizing over it to obtain the following ``semi-dual'' problem
+
+\eql{\label{eq-semi-dual}
+\usup{f \in \Cc(\Xx)} \tilde\Ee(f) \eqdef \Ee(f,f^c) = \usup{g} \Ee(f,g) =
+\int_\Xx f \d \al + \int_\Yy f^c \d \be.
+}
+\subsection{Semi-discrete}
+\eql{\label{eq-disc-c-transfo}
+\foralls \gD \in \RR^m, \;
+\foralls x \in \Xx, \quad
+\gD^{\bar \c}(x) \eqdef \umin{j \in \range{m}} \c(x,y_j) - \gD_j.
+}
+\eql{\label{eq-semi-dual-discr}
+\MK_\c(\al,\be) =
+\umax{\gD \in \RR^m}
+\Ee(\gD) \eqdef
+\int_\X \gD^{\bar \c}(x) \d\al(x) + \sum_j \gD_j \b_j.
+}
+\(\Laguerre_{j}(\gD) \eqdef \enscond{x \in \X}{ \foralls j' \neq j, \c(x,y_j) - \gD_j \leq \c(x,y_{j'}) - \gD_{j'} }\)
+\eql{\label{eq-semi-disc-energy}
+\Ee(\gD) = \sum_{j=1}^m \int_{\Laguerre_{j}(\gD)} \pa{ c(x,y_j) - \gD_j } \d\al(x) + \dotp{\gD}{\b}.
+}
+\begin{prop}[Gradient of the semi-discrete dual]
+If $\al$ has a density with respect to Lebesgue measure and if $c$ is smooth away from the diagonal, then $\Ee$ is differentiable and
+\(\foralls j \in \range{m}, \quad \nabla\Ee(\gD)_j = \b_j - \int_{\Laguerre_{j}(\gD)} \d\al.\)
+\end{prop}
+\begin{proof}
+One has
+\eq{
+\Ee(\gD+\epsilon\de_j) - \Ee(\gD) - \epsilon \pa{ \b_j - \int_{\Laguerre_{j}(\gD)} \d\al }
+=
+\sum_k \int_{\Laguerre_{k}(\gD+\epsilon\de_j)} c(x,y_k) \d \al(x) - \int_{\Laguerre_{k}(\gD)} c(x,y_k) \d \al(x).
+}
+Most of the terms on the right-hand side vanish (because most of the Laguerre cells associated with $\gD+\epsilon\de_j$ are equal to those of $\gD$) and the only terms remaining correspond to neighboring cells $(j,k)$ such that
+$\Laguerre_{j}(\gD) \cap \Laguerre_{k}(\gD) \neq \emptyset$ (for the cost $\norm{x-y}^2$ and $\gD=0$ this forms the Delaunay triangulation).
+
+On these pairs, the right integral differs on a volume of the order of $\epsilon$ (since $\al$ has a density), and the function being integrated only varies on the order of $\epsilon$ (since the cost is smooth). So the right-hand side is of the order of $\epsilon^2$.
+\end{proof}
+\paragraph{Stochastic optimization.}
+\eql{\label{eq-semi-disc-energy-entropy}
+\Ee(\gD) = \int_\X E(\gD,x) \d\al(x) = \EE_X( E(\gD,X) )
+\qwhereq
+E(\gD,x) \eqdef
+\gD^{\bar\c}(x) - \dotp{\gD}{\b},
+}
+\(\nabla_{\gD} E(x,\gD) = ( \ones_{\Laguerre_{j}(\gD)}(x) - \b_j )_{j=1}^m \in \RR^m\)
+where $\ones_{\Laguerre_{j}(\gD)}$ is the indicator function of the Laguerre cell.
+
+\eql{\label{eq-sgd}
+\itt{\gD} \eqdef \it{\gD} + \tau_\ell \nabla_{\gD} E(\it{\gD},x_\ell).
+}
+\eql{\label{eq-step-size-sgd}
+\tau_\ell \eqdef \frac{\tau_0}{1 + \ell/\ell_0},
+}
+where $\ell_0$ indicates roughly the number of iterations serving as a warmup phase.
+
+\(\Ee(\gD^\star) - \EE( \Ee(\it{\gD}) ) = O\pa{ \frac{1}{\sqrt{\ell}} },\)
+where $\gD^\star$ is a solution of~\eqref{eq-semi-disc-energy-entropy} and where $\EE$ indicates an expectation with respect to the i.i.d. sampling of $(x_\ell)_\ell$ performed at each iteration.
+
+\paragraph{Optimal quantization.}
+\(\Qq_m(\al) = \umin{ Y=(y_j)_{j=1}^m,\ \b\in\simplex_m } \Wass_p\Bigl( \al, \sum_j \b_j \de_{y_j} \Bigr).\)
+The only setting where this problem is simple is the 1-D case, where monotone rearrangement gives the optimal sampling $y_j = \Cc_\al^{-1}(j/m)$.
+
+Solving explicitly for the minimization over $\b$ in the formula~\eqref{eq-semi-dual-discr} (exchanging the role of the min and the max) shows that necessarily, at optimality, one has $\gD=0$, so that the optimal transport maps the Voronoi cells $\Laguerre_{j}(\gD=0)$, which we denote $\VV_j(Y)$ to highlight the dependence on the quantization points $Y=(y_j)_j$
+
+\(\VV_j(Y) = \enscond{x}{ \foralls j', c(x,y_j) \leq c(x,y_{j'}) }.\)
+\(\Qq_m(\al) = \umin{Y} \Ff(Y) \eqdef \int_\Xx \umin{1 \leq j\leq m} c(x,y_j) \d\al(x).\)
+\(y_j \in \uargmin{y} \int_{\VV_j(Y)} c(x,y) \d \al(x).\)
+\(y_j = \frac{ \int_{\VV_j(Y)} x \d \al(x) }{ \int_{\VV_j(Y)} \d \al }.\)
+\subsection[W1]{Wasserstein-1 norm}
+\label{sec-W1}
+\paragraph{$\c$-transform for $\Wass_1$.}
+Here we assume that $d$ is a distance on $\Xx=\Yy$, and we solve the OT problem with the ground cost $c(x,y)=d(x,y)$. In the following, we denote the Lipschitz constant of a function $f \in \Cc(\Xx)$ as
+
+\eql{\label{eq-lip-constant}
+\Lip(f) \eqdef \sup \enscond{ \frac{|\f(x)-\f(y)|}{d(x,y)} }{ (x,y) \in \X^2, x \neq y }.
+}
+\begin{prop}[$c$-transforms and 1-Lipschitz functions]
+Suppose $\X=\Y$ and $c(x,y)=d(x,y)$.
+Then, there exists $g$ such that $\f = g^c$ if and only $\Lip(f) \leq 1$.
+Furthermore, if $\Lip(f)\leq1$, then $f^c=-f$.
+\end{prop}
+\begin{proof}
+First, suppose $f=g^c$ for some $g$. Then, for $x,y\in \X$,
+\begin{align*}
+|f(x)-f(y)|&=\left|\inf_{z\in\X} [d(x,z)-g(z)] \;\; - \;\;\inf_{z\in \X} [d(y,z)-g(z)] \right|\\
+&\leq \sup_{z\in\X} |d(x,z)-d(y,z)|\leq d(x,y).
+\end{align*}
+The first equality follows from the definition of $g^c$, the next inequality from the identity $|\inf A-\inf B|\leq\sup|A-B|$, and the last from the reversed triangle inequality. This shows that $\Lip(f)\leq1$.
+
+If $f$ is 1-Lipschitz, for all $x,y\in\X$, $f(y)-d(x,y)\leq f(x)\leq f(y)+d(x,y)$, which shows that
+\begin{align*}
+f^c(y)&=\inf_{x\in\X}\left[ d(x,y) - f(x) \right]
+\geq\inf_{x\in \X} \left[ d(x,y)-f(y)-d(x,y)\right]=-f(y),\\
+f^c(y)&=\inf_{x\in\X}\left[ d(x,y) - f(x) \right]
+\leq \inf_{x\in\X}\left[ d(x,y) - f(y)+d(x,y) \right]=-f(y),
+\end{align*}
+because $\inf_x d(x,y) = 0$ (for $x=y$) and thus $f^c=-f$.
+
+Applying this property to $-f$ which is also $1$-Lipschitz shows that $(-f)^c = f$ so that $f$ is $c$-concave (i.e. it is the $c$-transform of a function).
+\end{proof}
+Using the iterative $c$-transform scheme~\eqref{eq-iter-c-trans}, one can replace the dual variable $(f,g)$ by $(f^{cc},f^{c})=(-f^c, f^{c})$, or equivalently by any pair $(f,-f)$ where $f$ is $1$-Lipschitz.
+
+\eql{\label{eq-w1-metric}
+\Wass_1(\al,\be) =
+\umax{f} \enscond{ \int_{\Xx} f \d(\al-\be) }{ \Lip(f) \leq 1 }.
+}
+For discrete measures of the form~\eqref{eq-discr-meas}, writing $\al-\be = \sum_{k} \VectMode{m}_k \de_{z_k}$ with $z_k \in \Xx$ and $\sum_k \VectMode{m}_k=0$, the optimization~\eqref{eq-w1-metric} can be rewritten as
+
+\eql{\label{eq-w1-discr}
+\Wass_1(\al,\be) =
+\umax{ (\fD_k)_k } \enscond{ \sum_k \fD_k \VectMode{m}_k }{ \foralls (k,\ell),
+\abs{\fD_k-\fD_\ell} \leq d(z_k,z_\ell), }
+}
+When using $d(x,y)=|x-y|$ with $\X=\RR$, we can reduce the number of constraints by ordering the $z_k$'s via $z_1 \leq z_2 \leq \ldots$.
+
+\(\Wass_1(\al,\be) = \umax{ (\fD_k)_k } \enscond{ \sum_k \fD_k \VectMode{m}_k }{ \foralls k, \abs{\fD_{k+1}-\fD_k} \leq z_{k+1}-z_k },\)
+\paragraph{$\Wass_1$ on Euclidean spaces.}
+\eql{\label{eq-w1-cont}
+\Wass_1(\al,\be) =
+\usup{f} \enscond{ \int_{\RR^\dim} \f (\d\al-\d\be) }{ \norm{\nabla \f}_\infty \leq 1 }.
+}
+\(\iota_{\norm{\cdot}_{\RR^d} \leq 1}(u) = \umax{v} \dotp{u}{v} - \norm{v}_{\RR^d}\)
+\begin{align*}
+\Wass_1(\al,\be) &=
+\usup{f} \uinf{\flow(x) \in \RR^d} \int_{\RR^\dim} \f \d\xi - \int \dotp{\nabla f(x)}{\flow(x)} \d x + \int \norm{\flow(x)}_{\RR^d} \d x \\
+&=
+\uinf{\flow(x) \in \RR^d} \int \norm{\flow(x)} \d x
++ \usup{f} \int f(x) ( \d \xi - \diverg(\flow) \d x)
+\end{align*}
+\eql{\label{eq-w1-cont-div}
+\Wass_1(\al,\be) =
+\uinf{\flow} \enscond{ \int_{\RR^\dim} \norm{\flow(x)}_{\RR^d} \d x }{ \diverg(\flow)=\al-\be },
+}

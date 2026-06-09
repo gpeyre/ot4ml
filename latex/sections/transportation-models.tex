@@ -1,0 +1,798 @@
+% !TEX root = ../OT4ML.tex
+
+\section{General Models via Transportation}
+\label{sec-general-models-transportation}
+
+The preceding gradient-flow calculus is variational. Modern machine-learning models often use the same transportation language more broadly: one may prescribe an interpolation and regress its velocity, fit a one-step generator to a descent field, or view network depth as a continuous transport of token measures. The examples below separate what is genuinely a Wasserstein gradient flow from what is a transportation dynamics with a useful geometric interpretation.
+
+\subsection{Generative Models via Flow Matching}
+
+Flow matching constructs a generative map by learning the velocity field of an interpolation. The key computational insight is that a constrained continuity-equation problem can be trained by an unconstrained regression.
+
+Generative models aim to build a transportation map $T$ between a reference distribution $\alpha$ (typically an isotropic Gaussian) and the target data distribution $\beta$. Since such reference measures are non-atomic, a measurable map with $T_\sharp\alpha=\beta$ exists on standard Borel spaces, for instance by identifying both probability spaces with the unit interval and using a quantile-type rearrangement. This abstract existence statement is much weaker than having an explicit and numerically stable construction of $T$.
+%
+Optimal transport is one approach to achieving this, but it is computationally expensive and raises questions about how to estimate it from samples. A recent idea, first introduced in diffusion models~\cite{Ho2020DDPM,Song2021ScoreSDE} and later systematically developed in flow matching by Yaron Lipman and collaborators~\cite{Lipman2022FlowMatching}, is to obtain $T$ by integrating a time-dependent vector field $v_t$.
+%
+This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ and then finding $v_t$ using the least-squares formula~\eqref{eq:least-square-field-explicit}. As we will explain, for a specific class of interpolation (obtained by a parametric push-forward), this $v_t$ can be obtained by avoiding explicitly inverting a Laplacian and instead computing a simple conditional expectation. This conditional expectation can itself be estimated by solving another least-squares problem, but this time unconstrained, making the estimation feasible from finite samples of $\alpha$ and $\beta$.
+
+\paragraph{Stochastic interpolant.}
+
+
+We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of a latent distribution $\pi \in \Pp(\RR^{d'})$, using an operator $P_t : \RR^{d'} \to \RR^d$ where $d' \gg d$, i.e.
+\begin{equation}\label{eq:interp-coupling}
+	\forall t \in [0,1], \quad \alpha_t := (P_t)_\sharp \pi.
+\end{equation}
+A common case is $d'=2d$. We write $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and assume $P_0(x,y)=x$ and $P_1(x,y)=y$, so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$. For instance, one can use $\pi = \alpha_0 \otimes \alpha_1$, the trivial coupling. An even more special case is the linear interpolation $P_t(x,y)=(1-t)x+ty$. More complex constructions are also possible, provided that sampling from $\pi$ remains simple; stochastic interpolants provide a general framework unifying deterministic flows and diffusions~\cite{Albergo2025StochasticInterpolants}.
+
+If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses
+\begin{equation*}
+    \alpha_t = \frac{1}{nm} \sum_{i,j} \delta_{P_t(x_i,y_j)}.
+\end{equation*}
+If $\pi = (\Id, T)_\sharp \alpha$ is a Brenier-type coupling, then $\alpha_t = ((1-t)\Id + tT)_\sharp \alpha$ is the so-called McCann OT interpolation.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small product pairing & \small OT pairing & \small curved bridge \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/generative-flow-matching-interpolants/product-linear.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-flow-matching-interpolants/ot-linear.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-flow-matching-interpolants/curved-bridge.pdf}
+\end{tabular}
+\caption{Flow matching interpolants between the same empirical source and target measures. A product-style random pairing produces crossing paths, an OT pairing gives direct displacement rays, and a curved bridge changes the path geometry while keeping the same endpoints. Gray arrows mark representative midpoint velocities $\partial_tP_t$.}
+\label{fig:generative-flow-matching-interpolants}
+\end{figure}
+
+\paragraph{Flow matching formula.}
+
+This interpolation is not directly useful for sampling from $\beta$, but it can be used to define a flow field $v_t$ so that the Eulerian advection equation~\eqref{eq:eulerian-advection} holds.
+%
+This flow field is computed by solving an unconstrained least-squares problem, or equivalently, it is a conditional expectation.
+
+\begin{prop}[Flow matching vector field]
+	For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. The minimizer over measurable fields $v_t:\RR^d\to\RR^d$ of the flow-matching problem
+	\begin{equation}
+		\min_{v_t} \int_{\RR^{d'}} \norm{v_t(P_t(u)) - [\partial_t P_t](u)}^2 \, \d\pi(u). \label{eq:flow-matching}
+	\end{equation}
+	is, $\alpha_t$-almost everywhere, the conditional expectation
+	\begin{equation}\label{eq:flow-match-conditional}
+		v_t(z) = \EE_{u \sim \pi} \big( [\partial_t P_t](u) \, \big| \, z = P_t(u) \big).
+	\end{equation}
+	The pair $(\alpha_t,v_t)$ satisfies the continuity equation~\eqref{eq:eulerian-advection}.
+\end{prop}
+
+\begin{proof}
+	The minimizer is the orthogonal projection in $L^2(\pi;\RR^d)$ of the random velocity $\partial_tP_t(u)$ onto the closed subspace of functions that depend on $u$ only through $P_t(u)$. This projection is the conditional expectation~\eqref{eq:flow-match-conditional}. Equivalently, for every test vector field $m$,
+	\begin{equation}\label{eq:v_t}
+		\int \dotp{m(z)}{v_t(z)} \, \d\alpha_t(z)
+		=
+		\int \dotp{m(P_t(u))}{[\partial_t P_t](u)} \, \d\pi(u).
+	\end{equation}
+	Let $\varphi$ be a smooth scalar test function. Since $\alpha_t=(P_t)_\sharp\pi$,
+	\[
+		\frac{\d}{\d t}\int \varphi(z)\d\alpha_t(z)
+		=
+		\int \dotp{\nabla\varphi(P_t(u))}{[\partial_t P_t](u)}\d\pi(u).
+	\]
+	Using~\eqref{eq:v_t} with $m=\nabla\varphi$ gives
+	\[
+		\frac{\d}{\d t}\int \varphi(z)\d\alpha_t(z)
+		=
+		\int \dotp{\nabla\varphi(z)}{v_t(z)}\d\alpha_t(z),
+	\]
+	which is the weak form of $\partial_t\alpha_t+\diverg(\alpha_t v_t)=0$.
+\end{proof}
+
+The solution of \eqref{eq:flow-matching} is the conditional expectation of the velocities $\partial_t P_t$. Intuitively, $v_t(z)$ is the average velocity of all trajectories passing through $z$.
+%
+Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., a U-Net for vision tasks) and estimated using stochastic gradient descent on the objective in \eqref{eq:flow-matching}.
+%
+For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$. Thus the same interpolation as~\eqref{eq:interp-coupling} is represented by a deterministic flow rather than by the original coupling.
+The sampling procedure consists in first drawing $X_0 \sim \alpha$, and then integrating the ODE $\dot{X}_t = v_t(X_t)$ starting with $X_{t=0} = X_0$.
+In the ideal exact-field limit, the resulting $X_{t=1}$ is distributed according to $\alpha_1 = \beta$.
+
+\paragraph{Connection with diffusion models.}
+
+In the special case where $P_t(x,y)=(1-t)x+ty$ is a linear interpolation and $\pi = \alpha \otimes \beta$, the curve $\alpha_t$ is a convolution of rescaled versions of $\alpha_0$ and $\alpha_1$. The flow-matching problem~\eqref{eq:flow-matching} becomes
+\[
+    \min_{(v_t)_t} \int_{\RR^{d} \times \RR^d} \norm{v_t( (1-t)x+t y ) - (y-x) }^2 \, \d\alpha_0(x) \d\alpha_1(y).
+\]
+When one endpoint is an isotropic Gaussian, this construction is closely related to the probability-flow formulation of diffusion models, up to the usual change of time parametrization. The next two propositions are written in the noising direction, from a data law $\alpha$ to a Gaussian; reversing time gives the corresponding sampling flow. They also give an explicit closed form for $v_t$ and show that it is a gradient field.
+%
+In this setting, $v_t$ is also the solution of the constrained least-squares problem~\eqref{eq:least-square-field-explicit}. The regression~\eqref{eq:flow-matching} is computationally simpler because the continuity equation has already been enforced by the chosen interpolant.
+%
+To prove this, we rely on Tweedie's formula, which expresses the optimal Gaussian denoiser through the score, i.e. the gradient of the log-density.
+
+\begin{proposition}[Tweedie identity]\label{prop:Tweedie}
+Let $W$ be a random vector in $\RR^{d}$ with density $\beta$.
+For $\sigma>0$, observe
+\[
+Z \;=\; W + \sigma\,\varepsilon,
+\quad\text{where } \varepsilon \sim \Gaussian(0,I_{d})
+\text{ is independent of } W .
+\]
+Denote by
+\[
+	\beta_\sigma \;=\; \beta * \Gaussian\bigl(0,\sigma^{2}I_{d}\bigr)
+\]
+the density of $Z$.
+Then
+\[
+\EE\bigl[\,W \mid Z=z\bigr]
+      \;=\; z \;+\;\sigma^{2}\,\nabla \log \beta_\sigma(z)
+\qquad\text{for all } z \in \RR^{d}.
+\]
+\end{proposition}
+
+\begin{proof}
+Bayes' rule gives the conditional density
+$
+p_{W|Z}(w\mid z)
+= \dfrac{\beta(w)\,\varphi_\sigma(z-w)}{\beta_\sigma(z)}
+$
+with $\varphi_\sigma$ the $\Gaussian(0,\sigma^{2}I_{d})$ density.
+Hence
+\[
+\EE[W\mid Z=z]
+= \frac{1}{\beta_\sigma(z)}
+      \int_{\RR^{d}} w\,
+             \beta(w)\,\varphi_\sigma(z-w)\,\d w .
+\]
+Differentiating the Gaussian convolution under the integral sign and using
+$
+\nabla_z\varphi_\sigma(z-w)
+     = -\sigma^{-2}(z-w)\,\varphi_\sigma(z-w)
+$
+yields
+\[
+\nabla_z\beta_\sigma(z)
+= \int \beta(w)\,\nabla_z\varphi_\sigma(z-w)\,\d w
+= -\sigma^{-2}\Bigl(z-\EE[W\mid Z=z]\Bigr)\,\beta_\sigma(z).
+\]
+Rearranging finishes the proof.
+\end{proof}
+
+
+\begin{proposition}[Gaussian-endpoint flow-matching field]\label{prop:flow}
+Let $X\sim\alpha$ and $Y\sim\Gaussian(0,I_{d})$ be independent.
+For $t\in(0,1)$ set
+\[
+Z_t \;=\; (1-t)\,X + t\,Y,
+\qquad
+\alpha_t =\text{Law}(Z_t).
+\]
+The regression minimizer $v^\star:\RR^d\times(0,1)\to\RR^d$ of
+\[
+\min_{v}\;\int_{0}^{1}\!
+         \iint_{\RR^{d}\times\RR^{d}}
+              \bigl|y-x-v\bigl((1-t)x+t y,t\bigr)\bigr|^{2}\,
+              \d\alpha(x)\,\d\Gaussian(y)\,\d t
+\]
+is
+\[
+v^\star(x,t)
+= -\frac{1}{1-t}\,x \;-\; \frac{t}{1-t}\,\nabla\log\alpha_t(x)
+\qquad (x\in\RR^{d},\;t\in(0,1)).
+\]
+In particular, for each $t\in(0,1)$ this field is a gradient field,
+\[
+	v^\star(\cdot,t)=-\nabla
+	\left(
+		\frac{\norm{\cdot}^2}{2(1-t)}
+		+\frac{t}{1-t}\log\alpha_t
+	\right).
+\]
+\end{proposition}
+
+\begin{proof}
+Fix $t\in(0,1)$ and write $W=(1-t)X$, $\sigma=t$, so that
+$Z_t = W + \sigma\,Y$ matches the setting of Proposition~\ref{prop:Tweedie}.
+Conditional expectations satisfy
+$
+v^\star(z,t)
+= \EE[Y-X\mid Z_t=z]
+= \frac{1}{t}\,\EE[Z_t-W\mid Z_t=z]
+  -\,\frac{1}{1-t}\,\EE[W\mid Z_t=z].
+$
+Applying Proposition~\ref{prop:Tweedie} to $\EE[W\mid Z_t=z]$ and
+noting $\EE[Y\mid Z_t=z]
+      = -\,t\,\nabla\log\alpha_t(z)$
+gives the claimed formula.
+\end{proof}
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small forward noising & \small reverse probability flow \\[-.15em]
+\includegraphics[width=.43\linewidth]{figures/generative-diffusion-1d-forward-backward/forward-densities.pdf} &
+\includegraphics[width=.43\linewidth]{figures/generative-diffusion-1d-forward-backward/backward-trajectories.pdf}
+\end{tabular}
+\caption{One-dimensional diffusion bridge for a Gaussian-mixture data law. The forward path $Z_t=(1-t)X+tY$ smooths the red data density toward a blue Gaussian endpoint. Reversing the probability-flow ODE transports a denser set of blue noise samples back toward the data modes, making the splitting of trajectories across mixture components visible.}
+\label{fig:generative-diffusion-1d-forward-backward}
+\end{figure}
+
+The same probability-flow intuition is visible in two dimensions. When the data law is a Gaussian mixture, the noising density remains a Gaussian mixture and its score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small forward density evolution &
+\small backward probability flow \\[-.15em]
+\includegraphics[width=.58\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-diffusion-2d-forward-backward/backward-trajectories.pdf}
+\end{tabular}
+\caption{Two-dimensional diffusion bridge from a three-component Gaussian mixture to an isotropic Gaussian. The left panel shows the forward noising densities of $Z_t=(1-t)X+tY$. The right panel integrates the probability-flow ODE backward from near the Gaussian endpoint; trajectories split toward the three red data modes while keeping the smooth, non-straight geometry characteristic of diffusion-type samplers.}
+\label{fig:generative-diffusion-2d-forward-backward}
+\end{figure}
+
+\paragraph{When is the induced map optimal?}
+
+Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\alpha_1$, but this map is not automatically the Brenier optimal map. It is optimal only in special cases where the accumulated flow remains the gradient of a convex potential. For Gaussian marginals, the flow is affine. If the covariance matrices co-diagonalize, the affine map is symmetric positive definite in the common eigenbasis, hence it coincides with the Gaussian Brenier map. More generally, non-commuting covariance dynamics or mixture-like paths can create rotational or shearing components, and the final map need not be optimal even if every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small diffusion-like trajectories & \small OT displacement rays \\[-.15em]
+\includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/diffusion-curves.pdf} &
+\includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/ot-rays.pdf}
+\end{tabular}
+\caption{Diffusion-style sampling trajectories compared with OT rays in a small two-dimensional example. The initial particles are sampled near the center and each trajectory is colored, including its initial disk, by the final target cluster. Curved multi-step trajectories can approach modes through non-straight paths, while the OT map uses straight displacement rays selected by the quadratic matching.}
+\label{fig:generative-diffusion-versus-ot-2d}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{One-Step Generative Models}
+
+One-step generative models try to keep the geometric training principle of flows while removing the expensive multi-step integration at sampling time. The idea is to evolve the model distribution during training, but to store the final evolution in a single generator evaluation.
+
+\paragraph{Training a one-step flow.}
+
+Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. A Wasserstein-flow construction chooses a discrepancy
+\[
+	\mathcal E_\beta(\alpha),
+\]
+for instance a smoothed $\KL(\alpha|\beta)$, an MMD/IPM loss, or the debiased Sinkhorn divergence $\bar\MK_\c^\epsilon(\alpha,\beta)$ introduced in Section~\ref{sec-sinkhorn-div}. The associated formal descent is
+\begin{equation}\label{eq-one-step-wgf}
+	\partial_t\mu_t+\diverg(\mu_t w_t)=0,
+	\qquad
+	w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\mu_t)(x).
+\end{equation}
+Instead of integrating~\eqref{eq-one-step-wgf} at inference time, one fits a parametric residual field $U_\eta$ along the current model distribution:
+\begin{equation}\label{eq-one-step-l2-fit}
+	\min_\eta \int_0^1\!\int
+		\norm{U_\eta(t,x)-w_t(x)}^2
+		\,\d\mu_t(x)\,\d t.
+\end{equation}
+In a particle or generator implementation, the learned residual is then used to update the current generator by
+\[
+	\alpha_{\theta}^{+}
+	=
+	(\Id+\tau U_\eta)_\sharp \alpha_\theta,
+	\qquad\text{or equivalently}\qquad
+	G_\theta^{+}(z)=G_\theta(z)+\tau U_\eta(G_\theta(z)).
+\]
+After many training updates, the accumulated generator is evaluated once at test time. This is the organizing principle behind recent one-step methods based on Wasserstein gradient flows: W-Flow uses such a construction with the Sinkhorn divergence as a tractable global discrepancy~\cite{Han2026WFlow}, while drifting methods evolve the generated distribution during training through a fitted vector field and also admit one-step inference~\cite{Deng2026Drifting}. The gradient-flow interpretation of drifting models, and its relation to KL, MMD, sliced-Wasserstein and Sinkhorn-type discrepancies, is analyzed in~\cite{Gretton2026DriftingWGF,He2026SinkhornDrifting}. These ideas are also connected to the Sinkhorn-type normalization dynamics used to model attention in Sinkformers~\cite{Sander2022Sinkformers}.
+
+\paragraph{Normalized drifting fields.}
+
+Drifting methods need not start from an exact Wasserstein gradient. They often prescribe a normalized attraction-minus-repulsion field and then regress this field in $L^2(\mu_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
+\begin{equation}\label{eq-normalized-kernel-drift}
+	B_\epsilon[\nu](x)
+	\eqdef
+	\frac{\int (y-x)K_\epsilon(x,y)\,\d\nu(y)}
+	     {\int K_\epsilon(x,y)\,\d\nu(y)}.
+\end{equation}
+For the Gaussian kernel
+$K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon))$, this normalized field is a score of a smoothed density:
+\begin{equation}\label{eq-normalized-kernel-score}
+	B_\epsilon[\nu](x)
+	=
+	\epsilon\nabla\log\!\left(\int K_\epsilon(x,y)\,\d\nu(y)\right).
+\end{equation}
+The drifting velocity is then
+\begin{equation}\label{eq-cross-minus-self-drift}
+	u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\mu_t](x)
+	=
+	\epsilon\nabla\log
+	\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
+	     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+\end{equation}
+The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator~\cite{He2026SinkhornDrifting}.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small unnormalized drift & \small normalized drift & \small normalized field \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/unnormalized-trajectories.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-trajectories.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-field.pdf}
+\end{tabular}
+\caption{Drifting fields for a small particle generator. The unnormalized Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The normalized drift uses the local average $B_\epsilon[\beta]-B_\epsilon[\mu_t]$, so particles reach the blue modes while the self-normalized correction prevents collapse. The right panel displays the normalized vector field around an intermediate violet model distribution.}
+\label{fig:generative-drifting-model-trajectories}
+\end{figure}
+
+\begin{prop}[Drifting as a time-dependent Wasserstein gradient]\label{prop-drifting-semi-relaxed-gradient}
+	Let $\mu_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
+	\begin{equation}\label{eq-semi-relaxed-drift-functional}
+		\mathcal R_t(\alpha|\mu_t)
+		\eqdef
+		-\int \phi_t(x)\,\d\alpha(x)
+		+\int \phi_t(x)\,\d\mu_t(x).
+	\end{equation}
+	Here $\mu_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
+	\[
+		\partial_t\mu_t+\diverg(\mu_t u_t)=0
+	\]
+	is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\mu_t)$.
+\end{prop}
+
+\begin{proof}
+	Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is
+	\[
+		\delta_\alpha \mathcal R_t(\alpha|\mu_t)(x)=-\phi_t(x).
+	\]
+	By Proposition~\ref{prop-formal-wass-gradient},
+	\[
+		\Wgrad \mathcal R_t(\alpha|\mu_t)
+		=
+		\nabla\delta_\alpha \mathcal R_t(\alpha|\mu_t)
+		=
+		-\nabla\phi_t
+		=
+		-u_t.
+	\]
+	The Wasserstein gradient-descent velocity is the negative of this gradient, namely $u_t$. Substituting this velocity in the continuity equation gives the claimed flow.
+\end{proof}
+
+\begin{example}[Kernel drifting as a semi-relaxed divergence]
+	For the Gaussian-kernel drift~\eqref{eq-cross-minus-self-drift}, set
+	\[
+		\phi_t(x)=
+		\epsilon\log
+		\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
+		     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+	\]
+	Then $u_t=\nabla\phi_t$, so Proposition~\ref{prop-drifting-semi-relaxed-gradient} shows that kernel drifting is the Wasserstein gradient descent of
+	\[
+		\mathcal R_t^{\mathrm{drift}}(\alpha|\mu_t)
+		=
+		\epsilon
+		\int
+		\log
+		\frac{\int K_\epsilon(x,y)\,\d\mu_t(y)}
+		     {\int K_\epsilon(x,y)\,\d\beta(y)}
+		\,\d\alpha(x)
+		+\mathrm{constant}.
+	\]
+	It is ``semi-relaxed'' because the current model $\mu_t$ is used to build the potential, but it is not varied inside the denominator when computing the first variation in $\alpha$.
+\end{example}
+
+\begin{rem}[General fields and projection onto gradients]
+	A general regressed field $b_t$ is not necessarily a Wasserstein gradient, since Wasserstein tangent vectors are represented by gradient fields modulo $L^2(\mu_t)$-null directions. The gradient component is obtained by the weighted projection
+	\[
+		\nabla\phi_t
+		=
+		\uargmin{\nabla\phi}
+		\int \norm{\nabla\phi(x)-b_t(x)}^2\,\d\mu_t(x).
+	\]
+	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\mu_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
+\end{rem}
+
+\subsection{Evolution in Depth of Transformers}
+
+Deep residual architectures can be read as time discretizations of ODEs or PDEs. For transformers, the transported objects are token measures and the velocity is induced by attention.
+
+We consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This framework is best suited to modeling encoders and vision transformers.
+
+\paragraph{Attention as a context-dependent velocity.}
+
+After tokenization, embedding, and positional encoding, each input (from a set of tokens) is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ points in the space of vectorized tokens. An attention layer with skip connection and rescaling by $1/T$ (where $T$ is the depth) defines a transformation of the tokens:
+\begin{equation*}
+    x_i \mapsto x_i + \frac{1}{T} \sum_j \frac{e^{\langle Q x_i, K x_j \rangle} V x_j}{\sum_{\ell} e^{\langle Q x_i, K x_\ell \rangle}},
+\end{equation*}
+where $\theta = (K, Q, V)$ are the parameters of the attention layer, represented by three matrices.
+
+\paragraph{Token measure evolution.}
+
+To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$ as the empirical measure of tokens and rewrite the transformer mapping as:
+\begin{equation*}
+    x_i \mapsto x_i + \frac{1}{T} \Gamma_\theta[\alpha](x_i),
+\end{equation*}
+where
+\begin{equation*}
+    \Gamma_\theta[\alpha](x) :=
+    \frac{\int e^{\langle Q x, K y \rangle} V y \, \d \alpha(y)}
+    {\int e^{\langle Q x, K z \rangle} \, \d \alpha(z)}.
+\end{equation*}
+At the level of the token distribution, the layer pushes $\alpha$ forward by the ``in-context'' mapping $\Gamma_{\theta_t}[\alpha]$, which depends on the context $\alpha$, the tokens, and the depth-dependent parameters $\theta_t$. Denoting $t \in [0, 1]$ as the depth and $\tau = 1/T$ as the step size, this gives:
+\begin{equation*}
+    \alpha_{t+\tau} = (\Id + \tau \Gamma_{\theta_t}[\alpha_t])_\sharp \alpha_t.
+\end{equation*}
+As $\tau \to 0$, this converges formally to the conservation equation
+\begin{equation*}
+    \partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.
+\end{equation*}
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small attention-induced velocity & \small token flow through depth \\[-.15em]
+\includegraphics[width=.34\linewidth]{figures/transformer-token-measure-flow/attention-edges.pdf} &
+\includegraphics[width=.34\linewidth]{figures/transformer-token-measure-flow/depth-flow.pdf}
+\end{tabular}
+\caption{Attention as a transportation dynamics on token measures. The schematic uses the attractive setup $Q=K=I$ and velocity $W(X)X-X$, where $W(X)$ is the softmax attention matrix. The left panel shows one layer: faint violet edges encode attention weights and gray arrows show the residual velocity applied to red tokens. The right panel follows the same tokens through residual depth, colored from red to blue, and shows local clustering induced by attention.}
+\label{fig:transformer-token-measure-flow}
+\end{figure}
+
+\paragraph{Gradient structure and limitations.}
+
+When the token space has dimension $d$ and the query/key space has dimension $r$, take $Q,K\in\RR^{r\times d}$ and $V\in\RR^{d\times d}$. If $V=Q^\top K$, the field $\Gamma_\theta[\alpha]$ is a gradient vector field in the token variable. Indeed, define the log-partition potential
+\[
+	\Phi_\alpha(x)
+	=
+	\int \exp(\dotp{Qx}{Ky})\d\alpha(y),
+	\qquad
+	U_\alpha(x)=\log\Phi_\alpha(x).
+\]
+Then
+\[
+	\nabla_x U_\alpha(x)
+	=
+	\frac{\int Q^\top K y\,\exp(\dotp{Qx}{Ky})\d\alpha(y)}
+	     {\int \exp(\dotp{Qx}{Kz})\d\alpha(z)}
+	=
+	\Gamma_\theta[\alpha](x).
+\]
+This is an instantaneous gradient in $x$. It is not, however, the gradient of the first variation of a fixed functional of $\alpha$, because the potential $U_\alpha$ itself depends on the current measure through the same attention normalization. Thus the PDE is generally a transportation dynamics, not a Wasserstein gradient flow.
+%
+This formulation is related to continuous-depth neural networks~\cite{Chen2018NeuralODE} and was introduced for attention dynamics in the Sinkformers paper~\cite{Sander2022Sinkformers}, building on the transformer architecture of~\cite{Vaswani2017Attention}. It models deep transformers as PDEs on token measures. The key challenge is to understand training, which corresponds to optimizing the time-dependent parameters $(\theta_t)_t$.
+
+\subsection{Flows over the Gaussian Manifold}
+
+Gaussian measures provide a useful testing ground for the preceding dynamics. They are not invariant under a general Wasserstein gradient flow: a nonlinear velocity usually creates non-Gaussian densities immediately. The useful substitute is to either identify affine velocities, which exactly preserve Gaussianity, or to project the dynamics onto the Gaussian manifold. In both cases the measure PDE reduces to matrix ODEs for the mean and covariance. This viewpoint is emphasized in the survey~\cite{Peyre2026OptimalDiffusionTransports} and is useful for comparing diffusion paths, Wasserstein gradient flows, drifting fields and transformer-type dynamics.
+
+For constrained gradient flows on this family, the covariance equation is the finite-dimensional Bures--Wasserstein gradient flow on positive definite matrices. Thus Gaussian closure is not just a computational shortcut: it is the restriction of Wasserstein geometry to the Gaussian submanifold, where affine gradient fields encode tangent vectors.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small $W_2$ geodesic & \small Sinkhorn closure & \small drifting closure \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/gradflow-gaussian-closure/ot-ellipses.pdf} &
+\includegraphics[width=.30\linewidth]{figures/gradflow-gaussian-closure/sinkhorn-ellipses.pdf} &
+\includegraphics[width=.30\linewidth]{figures/gradflow-gaussian-closure/drifting-ellipses.pdf}
+\end{tabular}
+\caption{Gaussian closures of transport dynamics between two overlapping anisotropic Gaussians. The left panel is the exact $W_2$ Gaussian geodesic. The middle panel shows a regularized Sinkhorn-style closure, where the same mean path is accompanied by inflated intermediate covariances. The right panel shows a drifting-style closure with a curved mean path and moment-matched covariance ellipses. These finite-dimensional pictures keep only means and covariances, and therefore discard higher-order shape information that would be created by a genuinely nonlinear velocity field.}
+\label{fig:gradflow-gaussian-closure}
+\end{figure}
+
+\paragraph{Gaussianity preservation.}
+
+The first question is invariance: one wants a simple criterion ensuring that the continuity equation does not leave the finite-dimensional Gaussian family.
+
+\begin{prop}[Affine velocities preserve Gaussianity]\label{prop-gaussian-affine-closure}
+	Let $\alpha_t=\Gaussian(\mean_t,\cov_t)$, with $\cov_t$ positive definite, solve the continuity equation with an affine velocity
+	\[
+		v_t(x)=b_t+A_t(x-\mean_t).
+	\]
+	Then $\alpha_t$ remains Gaussian and its moments solve
+	\[
+		\dot \mean_t=b_t,
+		\qquad
+		\dot\cov_t=A_t\cov_t+\cov_t A_t^\top .
+	\]
+	Conversely, any smooth Gaussian curve with positive definite covariance can be generated by such an affine velocity. If one wants the velocity to be a Wasserstein tangent gradient, one chooses the unique symmetric solution of the Lyapunov equation
+	\[
+		A_t\cov_t+\cov_t A_t=\dot\cov_t.
+	\]
+\end{prop}
+
+\begin{proof}
+	Let $X_t$ follow the characteristic ODE $\dot X_t=b_t+A_t(X_t-\mean_t)$. This linear ODE maps Gaussian random variables to Gaussian random variables. Taking expectation gives $\dot\mean_t=b_t$. Writing $\tilde X_t=X_t-\mean_t$, one has $\dot{\tilde X}_t=A_t\tilde X_t$, hence
+	\[
+		\dot\cov_t
+		=
+		\frac{\d}{\d t}\EE(\tilde X_t\tilde X_t^\top)
+		=
+		A_t\cov_t+\cov_t A_t^\top .
+	\]
+	For the converse, set $b_t=\dot\mean_t$ and choose any matrix $A_t$ satisfying the covariance equation. Since $\cov_t$ is positive definite, the Lyapunov map $A\mapsto A\cov_t+\cov_t A$ is invertible on symmetric matrices, which gives the unique symmetric choice when a gradient velocity is required. In that case $v_t$ is the gradient of the quadratic potential $x\mapsto \dotp{b_t}{x}+\dotp{A_t(x-\mean_t)}{x-\mean_t}/2$.
+\end{proof}
+
+\paragraph{Constrained evolution on the Gaussian manifold.}
+
+For non-affine velocities, the finite-dimensional substitute is to project the Wasserstein dynamics onto the Gaussian manifold.
+
+Let
+\[
+	\mathcal G=\{\Gaussian(\mean,\cov):\mean\in\RR^d,\ \cov\succ0\}
+\]
+be the Gaussian submanifold of $\Pp_2(\RR^d)$. The Wasserstein gradient of a functional constrained to a smooth submanifold $\mathcal M\subset\Pp_2$ is defined as the Riesz representative of the differential restricted to tangent velocities of $\mathcal M$. Equivalently, it is the small-step limit of the constrained JKO scheme
+\[
+	\alpha^{k+1}\in
+	\uargmin{\alpha\in\mathcal M}
+	\frac{1}{2\tau}\Wass_2^2(\alpha,\alpha^k)+f(\alpha).
+\]
+For $\mathcal M=\mathcal G$, tangent velocities are affine gradient fields $v(x)=b+A(x-\mean)$ with $A=A^\top$. The constrained gradient is therefore the $L^2(\Gaussian(\mean,\cov))$ projection of the ambient Wasserstein gradient onto this finite-dimensional affine space, whenever the ambient gradient exists.
+
+\begin{prop}[Gaussian-constrained Wasserstein gradients]\label{prop-gaussian-gradient-bullet-list}
+	Let $f$ be a smooth functional and assume that its restriction to nondegenerate Gaussian measures can be written as
+	\[
+		f(\Gaussian(\mean,\cov))=F(\mean,\cov).
+	\]
+	Then the Wasserstein gradient constrained to the Gaussian family is the affine vector field
+	\[
+		v_F(x)
+		=
+		\nabla_\mean F(\mean,\cov)
+		+
+		2\nabla_\cov F(\mean,\cov)(x-\mean),
+	\]
+	where $\nabla_\cov F$ denotes the symmetric matrix derivative. Equivalently, $v_F$ is the $L^2(\Gaussian(\mean,\cov))$ projection of the ambient Wasserstein gradient onto affine gradient fields, whenever the ambient gradient exists. Hence the gradient descent flow constrained to Gaussian measures satisfies
+	\begin{equation}\label{eq-gaussian-wgf-closure}
+		\dot\mean_t=-\nabla_\mean F(\mean_t,\cov_t),
+		\qquad
+		\dot\cov_t=-2\bigl(\cov_t\nabla_\cov F(\mean_t,\cov_t)+\nabla_\cov F(\mean_t,\cov_t)\cov_t\bigr),
+	\end{equation}
+	and the descent velocity is affine.
+\end{prop}
+
+\begin{proof}
+	Test the functional along a Gaussian tangent vector, represented by an affine gradient field
+	\[
+		v(x)=b+A(x-\mean)
+	\]
+	with $A$ symmetric. The induced first-order variations are $\dot\mean=b$ and $\dot\cov=A\cov+\cov A$. Therefore
+	\[
+		\d F(\mean,\cov)[b,A\cov+\cov A]
+		=
+		\dotp{\nabla_\mean F}{b}
+		+
+		\mathrm{tr}\!\left(\nabla_\cov F(A\cov+\cov A)\right).
+	\]
+	Since $A$, $\cov$ and $\nabla_\cov F$ are symmetric, the second term equals
+	\[
+		2\,\mathrm{tr}(\nabla_\cov F\,A\cov)
+		=
+		\int \dotp{2\nabla_\cov F(x-\mean)}{A(x-\mean)}\d\Gaussian(\mean,\cov)(x).
+	\]
+	Together with the mean term, this gives
+	\[
+		\d F(\mean,\cov)[\dot\mean,\dot\cov]
+		=
+		\int \dotp{v_F(x)}{v(x)}\d\Gaussian(\mean,\cov)(x)
+	\]
+	for all affine gradient fields $v$. This identifies the constrained Wasserstein gradient in the induced $L^2(\alpha)$ metric, or equivalently the projection of the ambient gradient when it exists. Substituting the descent velocity $-v_F$ in Proposition~\ref{prop-gaussian-affine-closure} gives~\eqref{eq-gaussian-wgf-closure}.
+\end{proof}
+
+This proposition should be read as the organizing rule for Gaussian closures: once the scalar energy has been reduced to a function of $(\mean,\cov)$, its constrained Wasserstein gradient is automatically affine and the covariance follows the Bures-type ODE~\eqref{eq-gaussian-wgf-closure}. When the first variation of $f$ is quadratic, this constrained gradient coincides with the full Wasserstein gradient.
+
+\paragraph{Gaussian-preserving gradient flows.}
+
+The next examples show that many familiar energies already have affine Wasserstein gradients on Gaussian inputs, so their full flow remains inside the Gaussian family.
+
+\begin{example}[Gaussian energies and affine gradients]\label{ex-gaussian-affine-gradients}
+	Proposition~\ref{prop-gaussian-gradient-bullet-list} turns many standard energies into explicit affine fields:
+	\begin{itemize}
+		\item \emph{Quadratic potential energy.} If
+		\[
+			f(\alpha)=\int \Bigl(\frac12 x^\top Hx+\dotp{\ell}{x}\Bigr)\d\alpha(x),
+			\qquad H=H^\top,
+		\]
+		then
+		\[
+			\Wgrad f(\alpha)(x)=Hx+\ell=(H\mean+\ell)+H(x-\mean).
+		\]
+		This is the Gaussian form of transport under a quadratic confinement.
+
+		\item \emph{Quadratic interaction energy.} If
+		\[
+			f(\alpha)=\frac14\iint (x-y)^\top G(x-y)\d\alpha(x)\d\alpha(y),
+			\qquad G=G^\top,
+		\]
+		then $F(\mean,\cov)=\frac12\mathrm{tr}(G\cov)$ and
+		\[
+			\Wgrad f(\alpha)(x)=G(x-\mean).
+		\]
+		The mean is unchanged and the covariance contracts or expands according to the signs of $G$.
+
+		\item \emph{Relative entropy to a Gaussian.} For $\bar\alpha=\Gaussian(\bar\mean,\bar\cov)$,
+		\[
+			f(\alpha)=\KL(\alpha|\bar\alpha)
+		\]
+		has
+		\[
+			\Wgrad f(\alpha)(x)
+			=
+			\bar\cov^{-1}(\mean-\bar\mean)
+			+
+			(\bar\cov^{-1}-\cov^{-1})(x-\mean).
+		\]
+		The descent equations are the Ornstein--Uhlenbeck moment equations
+		\[
+			\dot\mean_t=-\bar\cov^{-1}(\mean_t-\bar\mean),
+			\qquad
+			\dot\cov_t=2\Id-\bar\cov^{-1}\cov_t-\cov_t\bar\cov^{-1}.
+		\]
+
+		\item \emph{Squared Wasserstein distance to a Gaussian.} For
+		\[
+			f(\alpha)=\frac12\Wass_2^2(\alpha,\bar\alpha),
+			\qquad
+			\bar\alpha=\Gaussian(\bar\mean,\bar\cov),
+		\]
+		the Gaussian Brenier map $T_{\alpha\to\bar\alpha}$ is affine,
+		\[
+			T_{\alpha\to\bar\alpha}(x)=\bar\mean+M(x-\mean),
+			\qquad
+			M=\cov^{-1/2}(\cov^{1/2}\bar\cov\cov^{1/2})^{1/2}\cov^{-1/2}.
+		\]
+		Hence
+		\[
+			\Wgrad f(\alpha)(x)=x-T_{\alpha\to\bar\alpha}(x)
+			=
+			(\mean-\bar\mean)+(\Id-M)(x-\mean),
+		\]
+		and descent moves each Gaussian infinitesimally along the Bures--Wasserstein geodesic toward $\bar\alpha$.
+
+		\item \emph{Gaussian-only losses.} Sliced $\SW_2^2$ losses to a Gaussian, Gaussian Sinkhorn divergences, and any smooth closed formula depending only on $(\mean,\cov)$ fit the same constrained-gradient template:
+			\[
+				v_F(x)=\nabla_\mean F+2\nabla_\cov F(x-\mean).
+			\]
+		For Gaussian Sinkhorn divergences this finite-dimensional flow is studied in~\cite{HardionLacombe2026GaussianSinkhornFlow}.
+	\end{itemize}
+
+	Not every PDE preserves Gaussianity exactly. For instance, Wasserstein flows of relative Fisher information, related to quantum-drift or higher-order diffusion equations, typically require a Gaussian projection to close on $(\mean,\cov)$. Such projected closures are still useful: they expose the finite-dimensional dynamics predicted by a variational model and make it easy to compare variational flows with non-variational affine dynamics such as drifting fields or the Gaussian transformer closure below.
+\end{example}
+
+\begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
+	Let $\gamma=\Gaussian(0,\Id)$ and let $\mu_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
+	\[
+	\begin{array}{rcl}
+		\KL(\mu|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
+		\frac12\,\mathcal I(\mu|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
+		\Wass_2^2(\mu,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
+		\MMD_k^2(\mu,\gamma),\quad k(x,y)=\dotp{x}{y}^2
+			&:& h(C)=8(C-C^2), \\[.35em]
+		S_\epsilon(\mu,\gamma)
+			&:& h(C)=
+			4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
+			-2\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}
+			-2C-\frac{\epsilon}{2}\Id, \\[.75em]
+		\SW_2^2(\mu,\gamma)
+			&:& h(C)=V(C)C+CV(C),
+	\end{array}
+	\]
+	where $S_\epsilon$ is the debiased Sinkhorn divergence for the quadratic cost $\norm{x-y}^2$ and KL regularization strength $\epsilon$, and
+	\[
+		V(C)=
+		2\int_{\Sphere^{d-1}}
+		\left(\frac{1}{\sqrt{\theta^\top C\theta}}-1\right)
+		\theta\theta^\top \,\d\sigma(\theta)
+	\]
+	for the normalized spherical measure $\sigma$. Here
+	\[
+		\mathcal I(\mu|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
+		\qquad(\mu=\rho\,\d x).
+	\]
+	Thus the unhalved Fisher divergence has right-hand side $4(C^{-1}-C)$. Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
+\end{prop}
+
+\begin{proof}
+	Each row is obtained by identifying the affine descent velocity $v(x)=M_Cx$ generated by the corresponding Gaussian-constrained calculation and then applying Proposition~\ref{prop-gaussian-affine-closure}, which gives $\dot C=M_CC+CM_C^\top$. For $\KL(\cdot|\gamma)$, the Fokker--Planck velocity is $(C^{-1}-\Id)x$, hence $\dot C=2(\Id-C)$. For the Fisher row, the restriction of $\frac12\mathcal I$ to centered Gaussians is
+	\[
+		\frac12\left(\tr(C)+\tr(C^{-1})-2d\right).
+	\]
+	Using Proposition~\ref{prop-gaussian-gradient-bullet-list} gives the descent velocity $(C^{-2}-\Id)x$, hence $\dot C=2(C^{-1}-C)$. This row should be read as a Gaussian projected closure of the fourth-order Fisher flow.
+
+	For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\mu,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
+
+	Gaussian Sinkhorn dual potentials are quadratic, so the velocity is again linear; differentiating the closed Gaussian formula yields the displayed spectral expression. The square roots are spectral functions of $C$, hence commute with $C$, which is why the covariance ODE closes as a matrix function of $C$ alone. For sliced Wasserstein, each one-dimensional projection is a Gaussian transport with velocity $2((\theta^\top C\theta)^{-1/2}-1)\dotp{\theta}{x}\theta$; averaging these velocities over $\Sphere^{d-1}$ gives $v(x)=V(C)x$ and thus $\dot C=V(C)C+CV(C)$.
+\end{proof}
+
+\begin{example}[Linear mean-field networks as cross-moment flows]
+	In the two-layer model above, take the linear activation $\sigma(s)=s$, so that
+	\[
+		\psi((u,v),z)=v\,\dotp{u}{z}.
+	\]
+	The predictor is the linear map
+	\[
+		G_{\alpha_t}(z)=Q_t z,
+		\qquad
+		Q_t=\int v u^\top\d\alpha_t(u,v)\in\RR^{d'\times d}.
+	\]
+	Thus the energy depends on the neuron law only through the cross moment $Q_t$, a subblock of the raw second moment of $x=(u,v)$. For square loss, set
+	\[
+		S=\int zz^\top\d\rho(z,y),
+		\qquad
+		R=\int y z^\top\d\rho(z,y),
+		\qquad
+		H_t=Q_tS-R.
+	\]
+	The first variation is
+	\[
+		\delta f(\alpha_t)(u,v)=\dotp{H_t}{v u^\top}=v^\top H_t u.
+	\]
+	Hence the particle velocity in parameter space is linear:
+	\[
+		-\nabla_{(u,v)}\delta f(\alpha_t)(u,v)
+		=
+		-\begin{pmatrix}
+			0 & H_t^\top \\
+			H_t & 0
+		\end{pmatrix}
+		\begin{pmatrix} u \\ v \end{pmatrix}.
+	\]
+	Therefore a Gaussian law of neurons remains Gaussian. Its mean and covariance follow Proposition~\ref{prop-gaussian-affine-closure}, with a matrix depending only on the current cross moment $Q_t$, a raw second-moment subblock that becomes a covariance subblock when the neuron law is centered. This exact closure is special to the linear activation; for nonlinear activations, Gaussian closures are usually projections rather than invariant families.
+\end{example}
+
+\paragraph{Non-variational Gaussian-preserving flows.}
+
+The last examples are not ordinary gradient flows of a fixed scalar energy on the full Wasserstein space. They preserve Gaussianity because the prescribed velocity field is affine when evaluated on Gaussian measures.
+
+\begin{example}[Flow matching and diffusion paths between Gaussians]
+	Consider a prescribed Gaussian interpolation $\alpha_t=\Gaussian(\mean_t,\cov_t)$. Proposition~\ref{prop-gaussian-affine-closure} shows that an exact flow-matching velocity can be taken affine:
+	\[
+		v_t(x)=\dot\mean_t+A_t(x-\mean_t),
+		\qquad
+		A_t\cov_t+\cov_t A_t=\dot\cov_t.
+	\]
+	In the isotropic case $\cov_t=s_t^2\Id$, this reduces to the transparent formula
+	\[
+		v_t(x)=\dot\mean_t+\frac{\dot s_t}{s_t}(x-\mean_t).
+	\]
+	For instance, the diffusion noising path
+	\[
+		X_t=a_tX_0+\sigma_t Z,\qquad Z\sim\Gaussian(0,\Id),
+	\]
+	has $\mean_t=a_t\mean_0$ and $\cov_t=a_t^2\cov_0+\sigma_t^2\Id$. Thus, in the Gaussian case, diffusion paths and flow-matching paths reduce to the same mean-covariance bookkeeping, although the corresponding training objectives are different.
+\end{example}
+
+\begin{example}[Gaussian kernel drifting]
+	Let the target be $\beta=\Gaussian(\bar\mean,\bar\cov)$ and assume $\mu_t=\Gaussian(\mean_t,\cov_t)$. For the Gaussian kernel
+	\[
+		K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon)),
+	\]
+	the normalized field~\eqref{eq-normalized-kernel-drift} satisfies
+	\[
+		B_\epsilon[\mu_t](x)
+		=
+		-\epsilon(\cov_t+\epsilon\Id)^{-1}(x-\mean_t).
+	\]
+	Thus the drifting velocity~\eqref{eq-cross-minus-self-drift} is affine and preserves Gaussianity. With
+	\[
+		A_t=(\cov_t+\epsilon\Id)^{-1},
+		\qquad
+		\bar A=(\bar\cov+\epsilon\Id)^{-1},
+	\]
+	the ODE is
+	\[
+		\dot\mean_t=\epsilon\bar A(\bar\mean-\mean_t),
+		\qquad
+		\dot\cov_t=\epsilon\bigl((A_t-\bar A)\cov_t+\cov_t(A_t-\bar A)\bigr).
+	\]
+	This finite-dimensional model explains the stabilizing role of the self-normalized repulsion term in drifting: without it, the covariance equation loses the $A_t\cov_t+\cov_tA_t$ contribution.
+\end{example}
+
+\begin{example}[Gaussian closure of attention dynamics]
+	For the transformer PDE, assume $\alpha=\Gaussian(\mean,\cov)$. Since exponential tilting preserves Gaussianity,
+	\[
+		\frac{\int e^{\dotp{Qx}{Ky}}\,y\,\d\alpha(y)}
+		     {\int e^{\dotp{Qx}{Kz}}\,\d\alpha(z)}
+		=
+		\mean+\cov K^\top Qx.
+	\]
+	Therefore
+	\[
+		\Gamma_\theta[\alpha](x)=V\mean+V\cov K^\top Qx
+	\]
+	is affine. The Gaussian token law is preserved and satisfies
+	\[
+		\dot\mean_t=(V_t+V_t\cov_tK_t^\top Q_t)\mean_t,
+		\qquad
+		\dot\cov_t=B_t\cov_t+\cov_tB_t^\top,
+		\qquad
+		B_t=V_t\cov_tK_t^\top Q_t.
+	\]
+	When $V_t=Q_t^\top K_t$, the matrix $B_t=Q_t^\top K_t\cov_tK_t^\top Q_t$ is symmetric positive semidefinite, matching the gradient-field case mentioned above.
+	This closure is not a convergence theorem for trained transformers. It is instead a tractable model of how attention can shear, amplify or contract a cloud of tokens through its covariance.
+\end{example}
