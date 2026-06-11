@@ -11,7 +11,7 @@ Flow matching constructs a generative map by learning the velocity field of an i
 
 Generative models aim to build a transportation map $T$ between a reference distribution $\alpha$ (typically an isotropic Gaussian) and the target data distribution $\beta$. Since such reference measures are non-atomic, a measurable map with $T_\sharp\alpha=\beta$ exists on standard Borel spaces, for instance by identifying both probability spaces with the unit interval and using a quantile-type rearrangement. This abstract existence statement is much weaker than having an explicit and numerically stable construction of $T$.
 %
-Optimal transport is one approach to achieving this, but it is computationally expensive and raises questions about how to estimate it from samples. A recent idea, first introduced in diffusion models~\cite{Ho2020DDPM,Song2021ScoreSDE} and later systematically developed in flow matching by Yaron Lipman and collaborators~\cite{Lipman2022FlowMatching}, is to obtain $T$ by integrating a time-dependent vector field $v_t$.
+Optimal transport is one approach to achieving this, but it is computationally expensive and raises questions about how to estimate it from samples. A different route is to prescribe an interpolation between noise and data, learn its velocity, and obtain $T$ by integrating a time-dependent vector field $v_t$. This point of view sits at the meeting point of two literatures, surveyed from a transport perspective in~\cite{Peyre2026OptimalDiffusionTransports}. The diffusion branch builds on score matching~\cite{Hyvarinen2005ScoreMatching}, denoising score matching~\cite{Vincent2011DenoisingScoreMatching}, nonequilibrium noising chains~\cite{SohlDickstein2015DeepUnsupervised}, denoising diffusion probabilistic models~\cite{Ho2020DDPM}, score-based generative modeling~\cite{Song2019ScoreMatchingGenerative}, and the continuous-time score-SDE/probability-flow formulation~\cite{Song2021ScoreSDE}. The deterministic regression branch was introduced, essentially in parallel, under three closely related names: flow matching~\cite{Lipman2022FlowMatching}, rectified flow~\cite{Liu2023RectifiedFlow}, and stochastic interpolants~\cite{Albergo2025StochasticInterpolants}. In all three cases, the computational object is a velocity field whose regression loss avoids simulating the learned ODE during training.
 %
 This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ and then finding $v_t$ using the least-squares formula~\eqref{eq:least-square-field-explicit}. As we will explain, for a specific class of interpolation (obtained by a parametric push-forward), this $v_t$ can be obtained by avoiding explicitly inverting a Laplacian and instead computing a simple conditional expectation. This conditional expectation can itself be estimated by solving another least-squares problem, but this time unconstrained, making the estimation feasible from finite samples of $\alpha$ and $\beta$.
 
@@ -22,7 +22,7 @@ We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of 
 \begin{equation}\label{eq:interp-coupling}
 	\forall t \in [0,1], \quad \alpha_t := (P_t)_\sharp \pi.
 \end{equation}
-A common case is $d'=2d$. We write $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and assume $P_0(x,y)=x$ and $P_1(x,y)=y$, so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$. For instance, one can use $\pi = \alpha_0 \otimes \alpha_1$, the trivial coupling. An even more special case is the linear interpolation $P_t(x,y)=(1-t)x+ty$. More complex constructions are also possible, provided that sampling from $\pi$ remains simple; stochastic interpolants provide a general framework unifying deterministic flows and diffusions~\cite{Albergo2025StochasticInterpolants}.
+A common case is $d'=2d$. We write $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and assume $P_0(x,y)=x$ and $P_1(x,y)=y$, so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$. For instance, one can use $\pi = \alpha_0 \otimes \alpha_1$, the trivial coupling. An even more special case is the linear interpolation $P_t(x,y)=(1-t)x+ty$. With this linear path and an arbitrary coupling $\pi$, the regression below is the common core of flow matching and rectified flow: Lipman et al. emphasize conditional probability paths and simulation-free training of continuous normalizing flows, while rectified flow emphasizes straight couplings, reflow, and the possibility of reducing transport costs and discretization error~\cite{Lipman2022FlowMatching,Liu2023RectifiedFlow}. More complex constructions are also possible, provided that sampling from $\pi$ remains simple; stochastic interpolants allow additional latent variables and stochastic perturbations, thereby unifying deterministic flows, probability-flow ODEs and diffusion SDEs~\cite{Albergo2025StochasticInterpolants}.
 
 If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses
 \begin{equation*}
@@ -120,7 +120,7 @@ In the special case where $P_t(x,y)=(1-t)x+ty$ is a linear interpolation and $\p
 \[
     \min_{(v_t)_t} \int_{\RR^{d} \times \RR^d} \norm{v_t( (1-t)x+t y ) - (y-x) }^2 \, \d\alpha_0(x) \d\alpha_1(y).
 \]
-When one endpoint is an isotropic Gaussian, this construction is closely related to the probability-flow formulation of diffusion models, up to the usual change of time parametrization. The next two propositions are written in the noising direction, from a data law $\alpha$ to a Gaussian; reversing time gives the corresponding sampling flow. They also give an explicit closed form for $v_t$ and show that it is a gradient field.
+When one endpoint is an isotropic Gaussian, this construction is closely related to the probability-flow formulation of diffusion models, up to the usual change of time parametrization~\cite{Song2021ScoreSDE}. This is why flow matching can be viewed both as a deterministic alternative to diffusion training and as a common language for diffusion paths, OT-inspired paths, and rectified paths~\cite{Lipman2022FlowMatching,Liu2023RectifiedFlow,Albergo2025StochasticInterpolants}. The next two propositions are written in the noising direction, from a data law $\alpha$ to a Gaussian; reversing time gives the corresponding sampling flow. They also give an explicit closed form for $v_t$ and show that it is a gradient field.
 %
 In this setting, $v_t$ is also the solution of the constrained least-squares problem~\eqref{eq:least-square-field-explicit}. The regression~\eqref{eq:flow-matching} is computationally simpler because the continuity equation has already been enforced by the chosen interpolant.
 %
@@ -234,23 +234,97 @@ gives the claimed formula.
 \label{fig:generative-diffusion-1d-forward-backward}
 \end{figure}
 
-The same probability-flow intuition is visible in two dimensions. When the data law is a Gaussian mixture, the noising density remains a Gaussian mixture and its score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network.
+The same probability-flow intuition is visible in two dimensions. For a discrete data law, or more generally for a Gaussian mixture, the noising density is a Gaussian mixture whose score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network. In the plots below, the Gaussian endpoint has covariance $\sigma^2\Id$ to keep the geometry visible at the scale of the three atoms; then $p_t(z)=\sum_j w_j\Gaussian((1-t)c_j,(t\sigma)^2\Id)$, with $s_t=\nabla\log p_t$, and the scaled version of Proposition~\ref{prop:flow} gives $v_t(z)=-(z+t\sigma^2s_t(z))/(1-t)$.
 
 \begin{figure}[ht]
 \centering
-\begin{tabular}{@{}cc@{}}
-\small forward density evolution &
-\small backward probability flow \\[-.15em]
-\includegraphics[width=.58\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density.pdf} &
-\includegraphics[width=.30\linewidth]{figures/generative-diffusion-2d-forward-backward/backward-trajectories.pdf}
-\end{tabular}
-\caption{Two-dimensional diffusion bridge from a three-component Gaussian mixture to an isotropic Gaussian. The left panel shows the forward noising densities of $Z_t=(1-t)X+tY$. The right panel integrates the probability-flow ODE backward from near the Gaussian endpoint; trajectories split toward the three red data modes while keeping the smooth, non-straight geometry characteristic of diffusion-type samplers.}
+\includegraphics[width=.72\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density.pdf}
+\caption{Two-dimensional noising path from three Dirac masses to a single Gaussian. The interpolation $Z_t=(1-t)X+tY$ starts from three red atoms and progressively turns them into Gaussian components whose centers move toward the origin and whose covariance grows like $(t\sigma)^2\Id$. At $t=1$ the three components coincide, giving the blue centered Gaussian endpoint.}
 \label{fig:generative-diffusion-2d-forward-backward}
 \end{figure}
 
 \paragraph{When is the induced map optimal?}
 
-Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\alpha_1$, but this map is not automatically the Brenier optimal map. It is optimal only in special cases where the accumulated flow remains the gradient of a convex potential. For Gaussian marginals, the flow is affine. If the covariance matrices co-diagonalize, the affine map is symmetric positive definite in the common eigenbasis, hence it coincides with the Gaussian Brenier map. More generally, non-commuting covariance dynamics or mixture-like paths can create rotational or shearing components, and the final map need not be optimal even if every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
+Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\alpha_1$, but this map is not automatically the Brenier optimal map. It is optimal only in special cases where the accumulated flow remains the gradient of a convex potential. The Gaussian product-coupling case already shows the precise obstruction: the interpolated covariances are simple, the velocity is affine, but the terminal map can contain a hidden rotational part. This phenomenon, and its extensions to rectified flows and mixtures, is analyzed in depth in~\cite{HertrichChambolleDelon2025RectifiedOT}.
+
+\begin{prop}[Gaussian flow matching and optimality]\label{prop-gaussian-flow-matching-optimality}
+	Let $\Sigma_0,\Sigma_1\succ0$ and let $X_0\sim\Gaussian(0,\Sigma_0)$ and $X_1\sim\Gaussian(0,\Sigma_1)$ be independent. Consider the linear flow-matching interpolation
+	\[
+		Z_t=(1-t)X_0+tX_1,
+		\qquad
+		\alpha_t=\operatorname{Law}(Z_t)=\Gaussian(0,\Sigma_t),
+	\]
+	where
+	\begin{equation}\label{eq-gaussian-product-fm-covariance}
+		\Sigma_t=(1-t)^2\Sigma_0+t^2\Sigma_1.
+	\end{equation}
+	Then the exact flow-matching velocity is affine, $v_t(z)=A_tz$, with
+	\begin{equation}\label{eq-gaussian-product-fm-velocity}
+		A_t=\bigl(t\Sigma_1-(1-t)\Sigma_0\bigr)\Sigma_t^{-1}.
+	\end{equation}
+	The induced flow map $T_t^{\rm FM}$ from $\alpha_0$ to $\alpha_t$ is
+	\begin{equation}\label{eq-gaussian-product-fm-map}
+		T_t^{\rm FM}
+		=
+		\Sigma_0^{1/2}
+		\Bigl((1-t)^2\Id+t^2\Sigma_0^{-1/2}\Sigma_1\Sigma_0^{-1/2}\Bigr)^{1/2}
+		\Sigma_0^{-1/2}.
+	\end{equation}
+	In particular,
+	\begin{equation}\label{eq-gaussian-product-fm-terminal-map}
+		T_1^{\rm FM}
+		=
+		\Sigma_0^{1/2}
+		\bigl(\Sigma_0^{-1/2}\Sigma_1\Sigma_0^{-1/2}\bigr)^{1/2}
+		\Sigma_0^{-1/2}.
+	\end{equation}
+	This terminal map coincides with the quadratic optimal transport map
+	\begin{equation}\label{eq-gaussian-brenier-map-comparison}
+		T^{\rm OT}
+		=
+		\Sigma_0^{-1/2}
+		\bigl(\Sigma_0^{1/2}\Sigma_1\Sigma_0^{1/2}\bigr)^{1/2}
+		\Sigma_0^{-1/2}
+	\end{equation}
+	if and only if $\Sigma_0\Sigma_1=\Sigma_1\Sigma_0$.
+\end{prop}
+
+\begin{proof}
+	The conditional-expectation formula gives
+	\[
+		v_t(z)=\EE[X_1-X_0\mid Z_t=z].
+	\]
+	Since all variables are jointly Gaussian, this conditional expectation is linear and
+	\[
+		v_t(z)
+		=
+		\operatorname{Cov}(X_1-X_0,Z_t)\operatorname{Cov}(Z_t)^{-1}z
+		=
+		\bigl(t\Sigma_1-(1-t)\Sigma_0\bigr)\Sigma_t^{-1}z,
+	\]
+	which proves~\eqref{eq-gaussian-product-fm-velocity}. To solve the characteristic equation, whiten the source by setting $C=\Sigma_0^{-1/2}\Sigma_1\Sigma_0^{-1/2}$ and $\widetilde Z_t=\Sigma_0^{-1/2}Z_t$. In these coordinates the source covariance is $\Id$ and
+	\[
+		\widetilde\Sigma_t=(1-t)^2\Id+t^2 C.
+	\]
+	Because $\Id$ and $C$ commute, the affine flow map in whitened coordinates is simply $\widetilde T_t=\widetilde\Sigma_t^{1/2}$. Indeed,
+	\[
+		\frac{\d}{\d t}\widetilde\Sigma_t^{1/2}
+		=
+		\bigl(tC-(1-t)\Id\bigr)\widetilde\Sigma_t^{-1/2},
+	\]
+	which is exactly the equation $\dot{\widetilde T}_t=\widetilde A_t\widetilde T_t$ with $\widetilde T_0=\Id$. Returning to the original coordinates gives~\eqref{eq-gaussian-product-fm-map}, and $t=1$ gives~\eqref{eq-gaussian-product-fm-terminal-map}.
+
+	Both $T_1^{\rm FM}$ and $T^{\rm OT}$ push $\Gaussian(0,\Sigma_0)$ to $\Gaussian(0,\Sigma_1)$. The Brenier map between nondegenerate Gaussians is the unique symmetric positive definite linear map with this property. Hence $T_1^{\rm FM}=T^{\rm OT}$ if and only if $T_1^{\rm FM}$ is symmetric positive definite. Since $C^{1/2}$ is symmetric positive definite,
+	\[
+		(T_1^{\rm FM})^\top
+		=
+		\Sigma_0^{-1/2}C^{1/2}\Sigma_0^{1/2}.
+	\]
+	Thus symmetry of $T_1^{\rm FM}$ is equivalent to
+	$\Sigma_0 C^{1/2}=C^{1/2}\Sigma_0$, hence to $\Sigma_0 C=C\Sigma_0$ by functional calculus. Multiplying this identity on the left and right by $\Sigma_0^{1/2}$ gives $\Sigma_0\Sigma_1=\Sigma_1\Sigma_0$. Conversely, if $\Sigma_0$ and $\Sigma_1$ commute, they are orthogonally co-diagonalizable, and both~\eqref{eq-gaussian-product-fm-terminal-map} and~\eqref{eq-gaussian-brenier-map-comparison} reduce in that basis to the diagonal map with entries $\sqrt{\lambda_{1,k}/\lambda_{0,k}}$. This proves the equivalence.
+\end{proof}
+
+Proposition~\ref{prop-gaussian-flow-matching-optimality} explains why the statement ``flow matching gives an optimal map'' is fragile. Commuting covariances reduce the dynamics to independent one-dimensional scalings, but non-commuting covariances create a non-symmetric affine terminal map, hence a transport map with a rotational or shearing component. More generally, mixture-like paths can create the same obstruction even when every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
 
 \begin{figure}[ht]
 \centering
@@ -259,7 +333,7 @@ Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\
 \includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/diffusion-curves.pdf} &
 \includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/ot-rays.pdf}
 \end{tabular}
-\caption{Diffusion-style sampling trajectories compared with OT rays in a small two-dimensional example. The initial particles are sampled near the center and each trajectory is colored, including its initial disk, by the final target cluster. Curved multi-step trajectories can approach modes through non-straight paths, while the OT map uses straight displacement rays selected by the quadratic matching.}
+\caption{Diffusion-style sampling trajectories compared with OT rays in the three-Dirac setting of Figure~\ref{fig:generative-diffusion-2d-forward-backward}. Red particles are sampled from the centered Gaussian endpoint and transported toward the three blue atoms. The left panel integrates the reverse probability-flow ODE using the closed-form Gaussian-mixture score, down to a small terminal time before the singular Dirac endpoint. The right panel uses the straight displacement rays selected by a quadratic OT matching to the same atoms.}
 \label{fig:generative-diffusion-versus-ot-2d}
 \end{figure}
 
@@ -297,9 +371,9 @@ In a particle or generator implementation, the learned residual is then used to 
 \]
 After many training updates, the accumulated generator is evaluated once at test time. This is the organizing principle behind recent one-step methods based on Wasserstein gradient flows: W-Flow uses such a construction with the Sinkhorn divergence as a tractable global discrepancy~\cite{Han2026WFlow}, while drifting methods evolve the generated distribution during training through a fitted vector field and also admit one-step inference~\cite{Deng2026Drifting}. The gradient-flow interpretation of drifting models, and its relation to KL, MMD, sliced-Wasserstein and Sinkhorn-type discrepancies, is analyzed in~\cite{Gretton2026DriftingWGF,He2026SinkhornDrifting}. These ideas are also connected to the Sinkhorn-type normalization dynamics used to model attention in Sinkformers~\cite{Sander2022Sinkformers}.
 
-\paragraph{Normalized drifting fields.}
+\paragraph{Self-corrected drifting fields.}
 
-Drifting methods need not start from an exact Wasserstein gradient. They often prescribe a normalized attraction-minus-repulsion field and then regress this field in $L^2(\mu_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
+Drifting methods need not start from an exact Wasserstein gradient. They often prescribe an attraction-minus-repulsion field and then regress this field in $L^2(\mu_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
 \begin{equation}\label{eq-normalized-kernel-drift}
 	B_\epsilon[\nu](x)
 	\eqdef
@@ -325,13 +399,13 @@ The first term pulls samples toward data, while the second term corrects self-at
 
 \begin{figure}[ht]
 \centering
-\begin{tabular}{@{}ccc@{}}
-\small unnormalized drift & \small normalized drift & \small normalized field \\[-.15em]
-\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/unnormalized-trajectories.pdf} &
-\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-trajectories.pdf} &
-\includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-field.pdf}
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.38\linewidth]{figures/generative-drifting-model-trajectories/unnormalized-trajectories.pdf} &
+\includegraphics[width=.38\linewidth]{figures/generative-drifting-model-trajectories/normalized-trajectories.pdf}
+\\[-.1em]
+\small raw kernel drift & \small self-corrected drift
 \end{tabular}
-\caption{Drifting fields for a small particle generator. The unnormalized Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The normalized drift uses the local average $B_\epsilon[\beta]-B_\epsilon[\mu_t]$, so particles reach the blue modes while the self-normalized correction prevents collapse. The right panel displays the normalized vector field around an intermediate violet model distribution.}
+\caption{Drifting trajectories for a small particle generator. The raw Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The self-corrected field uses the difference $B_\epsilon[\beta]-B_\epsilon[\mu_t]$, so a longer integration brings particles to the blue modes while repelling them from their own current concentration.}
 \label{fig:generative-drifting-model-trajectories}
 \end{figure}
 
@@ -406,7 +480,13 @@ The first term pulls samples toward data, while the second term corrects self-at
 
 Deep residual architectures can be read as time discretizations of ODEs or PDEs. For transformers, the transported objects are token measures and the velocity is induced by attention.
 
-We consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This framework is best suited to modeling encoders and vision transformers.
+Transformers were introduced as sequence-to-sequence architectures driven by self-attention~\cite{Vaswani2017Attention}, and rapidly became the dominant architecture for language models and representation learning, from bidirectional encoders~\cite{Devlin2019BERT} to large autoregressive models~\cite{Brown2020LanguageModels} and vision transformers~\cite{Dosovitskiy2021Image}. Their distinctive feature is that each token is updated by a data-dependent average of all other tokens. This makes the layer permutation-equivariant before positional encoding, context dependent after conditioning on the input sequence, and naturally compatible with a measure viewpoint in which a prompt is regarded as an empirical distribution of tokens. The same viewpoint is increasingly relevant in the long-context regime, where sparse, block, or low-rank approximations of attention were introduced to reduce the quadratic token cost~\cite{Beltagy2020Longformer,Zaheer2020BigBird,Wang2020Linformer}, while recent token-sample complexity results quantify how an empirical attention map converges to its infinite-token operator~\cite{Bohbot2025TokenSampleComplexity}. This separates uniform convergence of the attention map itself from convergence of moments of the transformed token law, which is often the quantity that propagates through depth.
+
+The mathematical analysis of depth takes a complementary limit: instead of increasing the number of tokens, one lets the number of residual attention layers grow. Continuous-depth neural networks already motivate replacing residual blocks by ODEs~\cite{Chen2018NeuralODE}. For attention, the resulting system is nonlinear in the empirical measure because the velocity of each token is normalized by the whole context. This was first made explicit for doubly stochastic attention in Sinkformers~\cite{Sander2022Sinkformers} and is part of a broader measure-theoretic view of attention as a Lipschitz or interacting-particle operator~\cite{Vuckovic2020MathematicalAttention,Geshkovski2023MathematicalPerspective}. In this language, the infinite-depth limit is a transport or Vlasov-type PDE on token measures. Recent work gives a unified well-posedness and mean-field-limit theory for several attention mechanisms, including softmax, $L^2$, Sinkhorn, sigmoid, multi-head and masked attention~\cite{Castin2025DynamicsTransformers}.
+
+This dynamical viewpoint also explains geometric phenomena observed across depth. With fixed weights, self-attention behaves as a nonlinear interacting particle system whose trajectories can concentrate into clusters or leaders determined by the input context~\cite{Geshkovski2023EmergenceClusters,Geshkovski2023MathematicalPerspective}. Causal masks change this picture by destroying some gradient-flow structures, but clustering can still be proved in masked dynamics~\cite{Karagodin2024CausalMasking}. Related mean-field models on the sphere exhibit metastable clustering phases~\cite{Bruno2024MetastableClustering}. Gaussian closures provide another tractable window: for several attention variants, Gaussian token laws remain Gaussian, so the PDE reduces to ODEs for means and covariances and reveals anisotropy amplification and rank-deficiency mechanisms related to clustering~\cite{Castin2025DynamicsTransformers}. The same measure formalism separates two approximation questions: the depth limit, which is the focus here, and the token limit, where one controls the deviation between a finite context and the limiting attention operator~\cite{Bohbot2025TokenSampleComplexity}.
+
+We now consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This stripped-down framework is best suited to modeling encoders and vision transformers, but the preceding literature explains how it can be extended to richer attention mechanisms.
 
 \paragraph{Attention as a context-dependent velocity.}
 
@@ -437,17 +517,6 @@ As $\tau \to 0$, this converges formally to the conservation equation
     \partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.
 \end{equation*}
 
-\begin{figure}[ht]
-\centering
-\begin{tabular}{@{}cc@{}}
-\small attention-induced velocity & \small token flow through depth \\[-.15em]
-\includegraphics[width=.34\linewidth]{figures/transformer-token-measure-flow/attention-edges.pdf} &
-\includegraphics[width=.34\linewidth]{figures/transformer-token-measure-flow/depth-flow.pdf}
-\end{tabular}
-\caption{Attention as a transportation dynamics on token measures. The schematic uses the attractive setup $Q=K=I$ and velocity $W(X)X-X$, where $W(X)$ is the softmax attention matrix. The left panel shows one layer: faint violet edges encode attention weights and gray arrows show the residual velocity applied to red tokens. The right panel follows the same tokens through residual depth, colored from red to blue, and shows local clustering induced by attention.}
-\label{fig:transformer-token-measure-flow}
-\end{figure}
-
 \paragraph{Gradient structure and limitations.}
 
 When the token space has dimension $d$ and the query/key space has dimension $r$, take $Q,K\in\RR^{r\times d}$ and $V\in\RR^{d\times d}$. If $V=Q^\top K$, the field $\Gamma_\theta[\alpha]$ is a gradient vector field in the token variable. Indeed, define the log-partition potential
@@ -467,9 +536,7 @@ Then
 	=
 	\Gamma_\theta[\alpha](x).
 \]
-This is an instantaneous gradient in $x$. It is not, however, the gradient of the first variation of a fixed functional of $\alpha$, because the potential $U_\alpha$ itself depends on the current measure through the same attention normalization. Thus the PDE is generally a transportation dynamics, not a Wasserstein gradient flow.
-%
-This formulation is related to continuous-depth neural networks~\cite{Chen2018NeuralODE} and was introduced for attention dynamics in the Sinkformers paper~\cite{Sander2022Sinkformers}, building on the transformer architecture of~\cite{Vaswani2017Attention}. It models deep transformers as PDEs on token measures. The key challenge is to understand training, which corresponds to optimizing the time-dependent parameters $(\theta_t)_t$.
+This is an instantaneous gradient in $x$. It is not, however, the gradient of the first variation of a fixed functional of $\alpha$, because the potential $U_\alpha$ itself depends on the current measure through the same attention normalization. Thus the PDE is generally a transportation dynamics, not a Wasserstein gradient flow. Special variants recover additional structure: Sinkhorn attention can be interpreted through doubly stochastic normalization and Wasserstein-type gradient flows~\cite{Sander2022Sinkformers,Castin2025DynamicsTransformers}, while layer normalization leads naturally to dynamics on the sphere and to modified metrics. The key open difficulty for the present viewpoint is training: after the architecture has been rewritten as a controlled transport equation, learning corresponds to optimizing the time-dependent parameters $(\theta_t)_t$ rather than merely analyzing the forward PDE for fixed parameters.
 
 \subsection{Flows over the Gaussian Manifold}
 
@@ -820,3 +887,70 @@ The last examples are not ordinary gradient flows of a fixed scalar energy on th
 	When $V_t=Q_t^\top K_t$, the matrix $B_t=Q_t^\top K_t\cov_tK_t^\top Q_t$ is symmetric positive semidefinite, matching the gradient-field case mentioned above.
 	This closure is not a convergence theorem for trained transformers. It is instead a tractable model of how attention can shear, amplify or contract a cloud of tokens through its covariance.
 \end{example}
+
+\paragraph{Contractive Gaussian projection.}
+
+The preceding examples show when Gaussianity is preserved or imposed by projection. Gelbrich's inequality~\cite{gelbrich1990formula} gives a useful variational explanation: replacing a measure by the Gaussian with the same first two moments cannot increase its Wasserstein distance to another similarly projected measure.
+
+\begin{thm}[Gelbrich theorem]\label{thm-gelbrich-projection}
+	For $\mu\in\Pp_2(\RR^d)$, let
+	\[
+		\mathcal R\mu\eqdef \Gaussian(\mean_\mu,\cov_\mu)
+	\]
+	be the Gaussian with the same mean and covariance as $\mu$. Then
+	\[
+		\Wass_2^2(\mathcal R\mu,\mathcal R\nu)
+		=
+		\norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu)
+		\leq
+		\Wass_2^2(\mu,\nu).
+	\]
+\end{thm}
+
+\begin{proof}
+	Take any coupling $(X,Y)$ of $\mu$ and $\nu$, center the variables, and write $C=\EE[(X-\mean_\mu)(Y-\mean_\nu)^\top]$. In the positive definite case, positivity of the block covariance matrix implies the factorization $C=\cov_\mu^{1/2}K\cov_\nu^{1/2}$ with $\norm{K}_{\mathrm{op}}\leq1$, and therefore, by operator/nuclear norm duality,
+	\[
+		\tr C\leq \tr\left((\cov_\mu^{1/2}\cov_\nu\cov_\mu^{1/2})^{1/2}\right).
+	\]
+	The semidefinite case follows by adding $\eta\Id$ to both covariance matrices and letting $\eta\downarrow0$.
+	Expanding $\EE\norm{X-Y}^2$ gives the lower bound
+	\[
+		\EE\norm{X-Y}^2
+		\geq
+		\norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu).
+	\]
+	Taking the infimum over couplings proves the inequality, while equality for Gaussian laws is Proposition~\ref{prop-gaussian-w2-bures}.
+\end{proof}
+
+The following preservation criterion is a direct consequence of Gelbrich's theorem and was explained to us by Hugo Lavenant. It says that a functional which does not increase under moment-matched Gaussian projection admits Gaussian minimizing movements from Gaussian initial data.
+
+\begin{thm}[Hugo Lavenant Gaussian-preservation criterion]\label{thm-lavenant-gaussian-preserving-jko}
+	Let $F:\Pp_2(\RR^d)\to(-\infty,+\infty]$ satisfy
+	\[
+		F(\mathcal R\mu)\leq F(\mu)
+		\qquad\forall\mu\in\Pp_2(\RR^d),
+	\]
+	with $\mathcal R$ defined in Theorem~\ref{thm-gelbrich-projection}. If $\gamma$ is Gaussian and $\nu$ minimizes the JKO step
+	\[
+		\eta\mapsto F(\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\eta),
+	\]
+	then $\mathcal R\nu$ is also a minimizer. If the JKO minimizer is unique, it is Gaussian. Thus any unique Wasserstein gradient flow obtained as the limit of this JKO scheme preserves Gaussian initial data.
+\end{thm}
+
+\begin{proof}
+	For the JKO claim, $\mathcal R\gamma=\gamma$ because $\gamma$ is Gaussian. Hence, for any competitor $\eta$,
+	\[
+		F(\mathcal R\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\mathcal R\eta)
+		\leq
+		F(\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\eta).
+	\]
+	Applying this to a minimizer $\eta=\nu$ shows that $\mathcal R\nu$ is again a minimizer. Uniqueness forces $\nu=\mathcal R\nu$.
+\end{proof}
+
+\begin{rem}[Gaussian barycenters from contraction]
+	The same projection argument also explains why quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If $\be_s$ are Gaussian and
+	\[
+		F(\mu)=\sum_s\la_s\Wass_2^2(\mu,\be_s),
+	\]
+	then $\mathcal R\be_s=\be_s$, and Theorem~\ref{thm-gelbrich-projection} gives $F(\mathcal R\mu)\leq F(\mu)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian. This is the contraction viewpoint behind Corollary~\ref{cor-gaussian-discrete-barycenters}.
+\end{rem}

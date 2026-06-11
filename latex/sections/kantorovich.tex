@@ -24,19 +24,67 @@ Kantorovich's key idea~\cite{Kantorovich42} is to relax the deterministic nature
 	\qquad
 	\be=\sum_j \b_j\de_{y_j}.
 \]
-Admissible couplings are only constrained to satisfy conservation of mass
-\eql{\label{eq-discr-couplings}
-	\CouplingsD(\a,\b)
-	\eqdef
-	\enscond{\P\in\RR_+^{n\times m}}{\P\ones_m=\a \qandq \transp{\P}\ones_n=\b},
-}
-where
+\begin{defn}[Discrete couplings and mass conservation]\label{def-discrete-couplings}
+	Admissible couplings are only constrained to satisfy conservation of mass:
+	\eql{\label{eq-discr-couplings}
+		\CouplingsD(\a,\b)
+		\eqdef
+		\enscond{\P\in\RR_+^{n\times m}}{\P\ones_m=\a \qandq \transp{\P}\ones_n=\b}.
+	}
+	Equivalently,
+	\[
+		\P\ones_m=\left(\sum_j \P_{i,j}\right)_i\in\RR^n,
+		\qquad
+		\transp{\P}\ones_n=\left(\sum_i \P_{i,j}\right)_j\in\RR^m.
+	\]
+\end{defn}
+The set $\CouplingsD(\a,\b)$ is non-empty: it contains the independent product plan
 \[
-	\P\ones_m=\left(\sum_j \P_{i,j}\right)_i\in\RR^n,
-	\qquad
-	\transp{\P}\ones_n=\left(\sum_i \P_{i,j}\right)_j\in\RR^m.
+	\P^\otimes_{ij}\eqdef \a_i\b_j.
 \]
-The set $\CouplingsD(\a,\b)$ is the bounded intersection of an affine space with the nonnegative orthant, hence a convex polytope. In one dimension, an ordered coupling can be read as a matrix: rows index source bins, columns index target bins, and the marginal constraints are visible as prescribed row and column sums.
+This feasible set is the bounded intersection of an affine space with the nonnegative orthant, hence a convex polytope. In one dimension, an ordered coupling can be read as a matrix: rows index source bins, columns index target bins, and the marginal constraints appear as prescribed row and column sums.
+
+\begin{prop}[Discrete product optimality is degenerate]\label{prop-discrete-product-coupling-degenerate}
+	Assume that the zero-mass rows and columns have been removed, so that $\a_i>0$ and $\b_j>0$, and let $\C$ be a finite cost matrix. The product plan $\P^\otimes=\a\b^\top$ minimizes $\P\mapsto\dotp{\C}{\P}$ over $\CouplingsD(\a,\b)$ if and only if every coupling $\P\in\CouplingsD(\a,\b)$ minimizes it.
+\end{prop}
+\begin{proof}
+	The reverse implication is immediate. Assume conversely that $\P^\otimes$ is optimal and let $\Q\in\CouplingsD(\a,\b)$ be arbitrary. Since all entries of $\P^\otimes$ are positive, there exists $t>0$ small enough that
+	\[
+		\R\eqdef (1+t)\P^\otimes-t\Q
+	\]
+	has nonnegative entries. Its row and column sums are
+	\[
+		\R\ones_m=(1+t)\a-t\a=\a,
+		\qquad
+		\R^\top\ones_n=(1+t)\b-t\b=\b,
+	\]
+	so $\R\in\CouplingsD(\a,\b)$. Moreover,
+	\[
+		\P^\otimes=\frac{1}{1+t}\R+\frac{t}{1+t}\Q.
+	\]
+	By optimality of $\P^\otimes$, both $\dotp{\C}{\R}$ and $\dotp{\C}{\Q}$ are at least $\dotp{\C}{\P^\otimes}$. Taking the scalar product of the convex-combination identity with $\C$ gives
+	\[
+		\dotp{\C}{\P^\otimes}
+		=
+		\frac{1}{1+t}\dotp{\C}{\R}
+		+\frac{t}{1+t}\dotp{\C}{\Q}.
+	\]
+	A convex average of two numbers not smaller than $\dotp{\C}{\P^\otimes}$ can equal $\dotp{\C}{\P^\otimes}$ only if both numbers are equal to it. Hence $\dotp{\C}{\Q}=\dotp{\C}{\P^\otimes}$, and $\Q$ is optimal. Since $\Q$ was arbitrary, all couplings are optimal.
+\end{proof}
+
+Thus the product plan is mainly a feasibility witness. Except in the degenerate situation where the linear cost is constant on the whole transportation polytope, it is not expected to solve optimal transport. It is also maximally diffuse: when all masses are positive, it has $nm$ positive entries, whereas Proposition~\ref{prop-sparse-optimal-plans} shows below that sparse optimal plans with at most $n+m-1$ positive entries always exist.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/graph.pdf} &
+\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/product.pdf} &
+\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/optimal.pdf} \\[-.1em]
+\small deterministic graph & \small product plan $\a\otimes\b$ & \small optimal plan
+\end{tabular}
+\caption{Discrete couplings represented as straight transport segments on the canonical point clouds used in the matching section. The deterministic graph is a feasible Monge-type plan, the product plan spreads every source mass over all targets, and the optimal Kantorovich plan minimizes the quadratic transport cost. Line width and opacity encode the transported mass.}
+\label{fig:kantorovich-coupling-polylines}
+\end{figure}
 
 \begin{figure}[H]
 \centering
@@ -47,7 +95,7 @@ The set $\CouplingsD(\a,\b)$ is the bounded intersection of an affine space with
 \includegraphics[width=.22\linewidth]{figures/kantorovich-coupling-matrix-marginals/product-200.pdf} &
 \includegraphics[width=.22\linewidth]{figures/kantorovich-coupling-matrix-marginals/optimal-200.pdf}
 \end{tabular}
-\caption{Coupling matrices with their prescribed marginals. The central grayscale image displays $\P_{ij}$; the red curve on the left is the source marginal $\a$, the blue curve on top is the target marginal $\b$, and the thin red curve inside the matrix is the barycentric projection $i\mapsto\sum_j \P_{ij}j/\a_i$. The independent product plan is diffuse, whereas the one-dimensional optimal plan concentrates near the monotone quantile correspondence. The dense discretization is the same construction with 200 bins.}
+\caption{Coupling matrices with their prescribed marginals. The central grayscale image displays $\P_{ij}$; the red curve on the left is the source marginal $\a$, and the blue curve on top is the target marginal $\b$. The independent product plan is diffuse, whereas the one-dimensional optimal plan concentrates near the monotone quantile correspondence. Only the dense 200-bin optimal panel overlays the barycentric projection $i\mapsto\sum_j \P_{ij}j/\a_i$, because that curve is meaningful visually only at sufficient resolution.}
 \label{fig:kantorovich-coupling-matrix-marginals}
 \end{figure}
 
@@ -103,11 +151,7 @@ This is a linear program, and its solutions need not be unique.
 	Each positive assignment exhausts at least one current row or one current column. Before the final assignment, at most $n-1$ row advances and $m-1$ column advances can occur without terminating the construction. Hence the number of positive entries is at most $(n-1)+(m-1)+1=n+m-1$. For acyclicity, view the positive support as a bipartite graph. Once a row or column index is advanced, it never appears again, so each new positive edge either starts a new component or attaches at least one new vertex to the component currently being swept. No edge is ever added between two old vertices of the same component, so no cycle can be created.
 \end{proof}
 
-The north-west corner rule does not use the cost matrix and is therefore not meant to solve~\eqref{eq-kanto-discr}. Its role is algorithmic: an acyclic support corresponds to linearly independent marginal constraints. When the support has fewer than $n+m-1$ positive entries, transportation simplex implementations complete it with zero-mass basic variables to obtain a degenerate basic feasible solution. This gives a cheap initialization for transportation simplex and network simplex methods.
-
-\paragraph{Linear-programming algorithms.}
-
-The reference algorithms to solve~\eqref{eq-kanto-discr} are transportation simplex and network simplex methods, whose pivoting rules are rooted in minimum-cost-flow theory~\cite{Dantzig51,bertsekas1988dual,Orlin1997}. They improve an initial basic feasible coupling, for instance the one produced by Proposition~\ref{prop-northwest-corner}, by local pivots that reduce the cost. Strongly polynomial minimum-cost-flow algorithms reach complexities of order $O(n^3\log n)$ in balanced regimes, while network simplex implementations are often faster in practice. Alternatives include interior-point methods, which are usually less competitive for this particular type of linear program.
+The north-west corner rule does not use the cost matrix and is therefore not meant to solve~\eqref{eq-kanto-discr}. Its role is algorithmic: an acyclic support corresponds to linearly independent marginal constraints. When the support has fewer than $n+m-1$ positive entries, transportation simplex implementations complete it with zero-mass basic variables to obtain a degenerate basic feasible solution. This gives a cheap initialization for the pivoting methods discussed in Section~\ref{sec-kantorovich-lp-algorithms}.
 
 \paragraph{One-dimensional cases.}
 
@@ -221,6 +265,50 @@ Equivalently, for uniform empirical measures, one can always choose a permutatio
 \end{rem}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Linear-Programming Algorithms}
+\label{sec-kantorovich-lp-algorithms}
+
+The discrete Kantorovich problem is a linear program with much more structure than a generic dense LP. Its variables are the arcs of a complete bipartite network, its equality constraints are flow-conservation constraints, and its extreme points are sparse tree-like couplings. This is why classical transportation algorithms remain important even though the formulation is finite-dimensional and convex.
+
+\paragraph{Transportation simplex and network simplex.}
+
+The transportation simplex goes back to Dantzig's formulation of the transportation problem~\cite{Dantzig51}. It works on basic feasible couplings, whose positive support is completed into a spanning tree of the bipartite supply-demand graph. Starting from a basis, for instance one produced by the north-west corner rule, reduced costs identify whether an unused arc can decrease the objective. Adding such an arc creates a unique cycle in the tree; one then pushes as much mass as possible around this cycle and removes the exhausted arc. This is exactly the simplex method specialized to the transportation polytope, with pivots that can be implemented using graph operations instead of a generic basis inverse.
+
+The network simplex is the corresponding pivoting method for general minimum-cost-flow problems~\cite{bertsekas1988dual}. It keeps node potentials, reduced costs and a spanning-tree basis, and it has become one of the most effective exact solvers for medium-scale discrete OT. Like the ordinary simplex method, its worst-case number of pivots can be exponential for adversarial instances, but the per-pivot operations exploit sparsity and are very efficient in practice. For theoretical polynomial guarantees, one can instead use strongly polynomial minimum-cost-flow algorithms, such as Orlin's algorithm~\cite{Orlin1997}. In a dense balanced transportation problem with $n$ sources and $n$ targets, the graph has $O(n)$ vertices and $O(n^2)$ arcs, so these general bounds are polynomial but still much heavier than the nearly matrix-vector structure that Sinkhorn will exploit.
+
+\paragraph{Interior-point methods.}
+
+Generic interior-point methods approach the same LP through a smooth central path. For the transport polytope, the logarithmic-barrier version is
+\eql{\label{eq-transport-log-barrier}
+	\P_\epsilon
+	\eqdef
+	\uargmin{\substack{\P\ones_m=\a,\ \P^\top\ones_n=\b\\ \P_{ij}>0}}
+		\dotp{\C}{\P}
+		-
+		\epsilon\sum_{i,j}\log \P_{ij},
+}
+where $\epsilon>0$ is decreased along the algorithm. The barrier is singular at the boundary, so each iterate stays strictly inside the transportation polytope; as $\epsilon\downarrow0$, the central path approaches the set of LP minimizers. Each Newton step solves a linear system involving the marginal constraints and the current diagonal Hessian $\operatorname{diag}(\epsilon/\P_{ij}^2)$, which gives robust polynomial complexity but can be expensive for dense couplings~\cite{nesterov1994interior}.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cccc@{}}
+\includegraphics[width=.21\linewidth]{figures/kantorovich-log-barrier-lp-geometry/barrier-large.pdf} &
+\includegraphics[width=.21\linewidth]{figures/kantorovich-log-barrier-lp-geometry/barrier-medium.pdf} &
+\includegraphics[width=.21\linewidth]{figures/kantorovich-log-barrier-lp-geometry/barrier-small.pdf} &
+\includegraphics[width=.21\linewidth]{figures/kantorovich-log-barrier-lp-geometry/barrier-path.pdf} \\[-.1em]
+\small large $\epsilon$ &
+\small medium $\epsilon$ &
+\small small $\epsilon$ &
+\small central path
+\end{tabular}
+\caption{Logarithmic-barrier central path for a two-dimensional equilateral triangular slice of a linear program. The feasible triangle is constrained by positive slacks, and the displayed objective is $\ell^\top z-\epsilon\sum_i\log(b_i-\dotp{a_i}{z})$. Large $\epsilon$ selects a central interior point; decreasing $\epsilon$ moves the minimizer toward the optimal vertex while never touching the boundary. This should be contrasted with entropic OT, where the entropy temperature $\epsilon$ is usually fixed and defines the regularized problem itself.}
+\label{fig:kantorovich-log-barrier-lp-geometry}
+\end{figure}
+
+The comparison with Sinkhorn is therefore subtle. Both methods keep iterates positive, but they use positivity in different ways. Interior-point algorithms solve the original LP by decreasing the barrier parameter $\epsilon$ and following a central path. Sinkhorn fixes an entropic temperature $\epsilon$ and solves a different, KL-regularized OT problem by alternating diagonal scalings. The parameter $\epsilon$ may be decreased in continuation strategies, but for a fixed run it is part of the objective rather than only an algorithmic barrier.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Relaxation for Arbitrary Measures}
 \label{sec-kantorovich-continuous}
 
@@ -285,6 +373,63 @@ Indeed, for every $f\in\Cc_b(\Xx)$,
 \]
 and similarly for the second marginal.
 
+\begin{prop}[Product optimality is degenerate]\label{prop-product-coupling-degenerate}
+	Assume that $\Xx$ and $\Yy$ are compact metric spaces and that $c\in\Cc(\Xx\times\Yy)$. The following statements are equivalent:
+	\[
+		\al\otimes\be\in\uargmin{\pi\in\Couplings(\al,\be)}\int c\,\d\pi,
+		\qquad
+		\text{every coupling in }\Couplings(\al,\be)\text{ is optimal}.
+	\]
+	They are also equivalent to the additive decomposition of the cost on the product support,
+	\[
+		c(x,y)=u(x)+v(y).
+	\]
+\end{prop}
+\begin{proof}
+	If every coupling is optimal, then $\al\otimes\be$ is optimal. Conversely, assume that $\al\otimes\be$ is optimal. We first show that, for every $x_0,x_1\in\supp(\al)$ and $y_0,y_1\in\supp(\be)$,
+	\[
+		c(x_0,y_0)+c(x_1,y_1)
+		=
+		c(x_0,y_1)+c(x_1,y_0).
+	\]
+	Indeed, if this equality failed, after exchanging $y_0$ and $y_1$ if necessary one would have a strict inequality
+	\[
+		c(x_0,y_0)+c(x_1,y_1)
+		>
+		c(x_0,y_1)+c(x_1,y_0).
+	\]
+	By continuity, the strict inequality persists with a uniform margin on small neighborhoods $U_0,U_1$ of $x_0,x_1$ and $V_0,V_1$ of $y_0,y_1$, chosen disjoint within each pair. Since the four points lie in the supports, these neighborhoods have positive marginal mass. Denote by $\al_i$ and $\be_i$ the normalized restrictions of $\al$ to $U_i$ and of $\be$ to $V_i$, and choose
+	\[
+		0<\lambda\leq
+		\min\{\al(U_0)\be(V_0),\al(U_1)\be(V_1)\}.
+	\]
+	The exchanged measure
+	\[
+		\tilde\pi
+		=
+		\al\otimes\be
+		-\lambda\,\al_0\otimes\be_0
+		-\lambda\,\al_1\otimes\be_1
+		+\lambda\,\al_0\otimes\be_1
+		+\lambda\,\al_1\otimes\be_0
+	\]
+	is nonnegative and has the same two marginals as $\al\otimes\be$. The uniform strict inequality on the neighborhoods implies that $\int c\,\d\tilde\pi<\int c\,\d(\al\otimes\be)$, contradicting optimality.
+
+	Fixing any $x_\star\in\supp(\al)$ and $y_\star\in\supp(\be)$, the equality of cross differences gives, for all $(x,y)\in\supp(\al)\times\supp(\be)$,
+	\[
+		c(x,y)=c(x,y_\star)+c(x_\star,y)-c(x_\star,y_\star).
+	\]
+	Thus $c=u+v$ on the product support. Every coupling is concentrated on this product support, so for any $\pi\in\Couplings(\al,\be)$,
+	\[
+		\int c\,\d\pi
+		=
+		\int u\,\d\al+\int v\,\d\be,
+	\]
+	which depends only on the marginals. Hence all couplings are optimal.
+\end{proof}
+
+The tensor product is therefore a trivial feasible coupling, not a typical optimizer. Product optimality means that the cost cannot distinguish between dependences once the marginals are fixed. The continuity assumption is important: if $\al=\be$ is the uniform law on $[0,1]$ and $c(x,y)=\ones_{\{x=y\}}$, then $\al\otimes\be$ has zero cost and is optimal, whereas the identity coupling has cost one. Thus, for arbitrary merely measurable costs, changing the cost on an $\al\otimes\be$-negligible set may affect singular couplings without changing the product cost.
+
 If there exists a map $T:\Xx\to\Yy$ such that $T_\sharp\al=\be$, then the Monge map induces the graph coupling $\pi=(\Id,T)_\sharp\al\in\Couplings(\al,\be)$, characterized by
 \[
 	\int_{\Xx\times\Yy} h(x,y)\d\pi(x,y)
@@ -293,18 +438,6 @@ If there exists a map $T:\Xx\to\Yy$ such that $T_\sharp\al=\be$, then the Monge 
 \]
 Applying this identity to $h(x,y)=f(x)$ or $h(x,y)=g(y)$ gives respectively $\pi_1=\al$ and $\pi_2=\be$. Thus graph couplings are precisely the Kantorovich representation of deterministic Monge maps.
 A last important class consists of semi-discrete problems, where $\al$ has a density and $\be$ is discrete. In this case couplings are singular measures supported on a union of graphs or cells inside $\Xx\times\Yy$.
-
-\begin{figure}[H]
-\centering
-\begin{tabular}{@{}ccc@{}}
-\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/graph.pdf} &
-\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/product.pdf} &
-\includegraphics[width=.28\linewidth]{figures/kantorovich-coupling-polylines/optimal.pdf} \\[-.1em]
-\small deterministic graph & \small product plan $\a\otimes\b$ & \small optimal plan
-\end{tabular}
-\caption{Discrete couplings represented as transport polylines on the canonical point clouds used in the matching section. The deterministic graph is a feasible Monge-type plan, the product plan spreads every source mass over all targets, and the optimal Kantorovich plan minimizes the quadratic transport cost. Line width and opacity encode the transported mass.}
-\label{fig:kantorovich-coupling-polylines}
-\end{figure}
 
 \paragraph{Continuous Kantorovich problem.}
 
@@ -498,7 +631,18 @@ The proof of this result relies on a ``gluing lemma'', which we first prove in t
 		\qandq
 		\sum_{i} \S_{i,j,k} = \Q_{j,k}.
 	}
-	Note that this implies that the three 1-D marginals of $\S$ are $(\a,\b,\VectMode{c})$.
+	Consequently the marginal between the first and third variables,
+	\[
+		\R_{i,k}\eqdef\sum_j \S_{i,j,k},
+	\]
+	belongs to $\CouplingsD(\a,\VectMode{c})$. For the canonical construction below, this glued coupling is the twisted matrix product
+	\[
+		\R=\P\diag(1/\b)\Q,
+		\qquad
+		\R_{i,k}=\sum_{j:\b_j>0}\frac{\P_{i,j}\Q_{j,k}}{\b_j}.
+	\]
+	In the matrix notation, $1/\b_j$ is understood as $0$ when $\b_j=0$.
+	Figure~\ref{fig:kantorovich-discrete-gluing-lemma} displays this construction in matrix form.
 \end{lem}
 \begin{proof}
 	One verifies that
@@ -514,6 +658,22 @@ The proof of this result relies on a ``gluing lemma'', which we first prove in t
 		= \frac{\P_{i,j}}{\b_j} ( \Q \ones_m )_j = \frac{\P_{i,j}}{\b_j}  \b_j.
 	}
 	If $\b_j = 0$, then necessarily $\P_{i,j}=0$ and $\sum_{k} \S_{i,j,k} = 0 = \P_{i,j}$.
+	The same computation gives the other prescribed marginal:
+	\[
+		\sum_i \S_{i,j,k}
+		=
+		\choice{
+			\frac{\Q_{j,k}}{\b_j}\sum_i\P_{i,j}=\Q_{j,k} \qifq \b_j>0,\\
+			0=\Q_{j,k} \qifq \b_j=0.
+		}
+	\]
+	Summing over $j$ then gives the displayed formula for $\R$. Its row and column sums are
+	\[
+		\sum_k\R_{i,k}=\sum_j\P_{i,j}=\a_i,
+		\qquad
+		\sum_i\R_{i,k}=\sum_j\Q_{j,k}=\VectMode{c}_k,
+	\]
+	so $\R\in\CouplingsD(\a,\VectMode{c})$.
 \end{proof}
 
 \begin{figure}[H]
@@ -525,7 +685,7 @@ The proof of this result relies on a ``gluing lemma'', which we first prove in t
 \includegraphics[width=.22\linewidth]{figures/kantorovich-discrete-gluing-lemma/glued-ac-plan.pdf} &
 \includegraphics[width=.22\linewidth]{figures/kantorovich-discrete-gluing-lemma/direct-ac-plan.pdf}
 \end{tabular}
-\caption{Discrete gluing lemma in matrix form. The first two panels are optimal one-dimensional couplings through an intermediate marginal $\b$. The third panel shows the induced marginal $R=P\diag(1/\b)Q$ between $\a$ and $\VectMode{c}$; it is feasible and is the coupling used in the triangle-inequality proof. Because the intermediate marginal is represented on a coarser grid, the glued coupling is more mediated than the direct optimal coupling shown on the right.}
+\caption{Discrete gluing lemma in matrix form. The first two panels are optimal one-dimensional couplings through an intermediate marginal $\b$. The third panel shows the induced marginal $R=P\diag(1/\b)Q$ between $\a$ and $\VectMode{c}$; it is feasible and is the coupling used in the triangle-inequality proof. Because the intermediate marginal is represented on a coarser grid, the glued coupling is more mediated than the direct optimal coupling shown on the right. The thin box frames only the coupling matrix in each panel, while the attached marginal strips remain outside it.}
 \label{fig:kantorovich-discrete-gluing-lemma}
 \end{figure}
 
@@ -551,7 +711,7 @@ Then
 \begin{proof}
 For symmetry, since $\distD^p$ is symmetric, we use the fact that if $\P \in \CouplingsD(\a,\b)$ is optimal for $\WassD_p(\a,\b)$, then $\P^\top \in \CouplingsD(\b,\a)$ is optimal for $\WassD_p(\b,\a)$. For definiteness, since $\C = \distD^p$ has a null diagonal, $\WassD_p(\a,\b)=0$ is achieved by the diagonal coupling $\P^\star=\diag(\a)=\diag(\b)$ when $\a=\b$; by positivity of all off-diagonal elements of $\distD^p$, $\WassD_p(\a,\b)>0$ whenever $\a\ne \b$ because any admissible coupling then has a nonzero element outside the diagonal.
 
-To prove the triangle inequality of Wasserstein distances for arbitrary measures, we consider $\a,\b,\VectMode{c} \in\simplex_n$, and let $\P$ and $\Q$ be two optimal solutions of the transport problems between $\a$ and $\b$, and $\b$ and $\VectMode{c}$ respectively.
+To prove the triangle inequality in this discrete setting, we consider $\a,\b,\VectMode{c} \in\simplex_n$, and let $\P$ and $\Q$ be two optimal solutions of the transport problems between $\a$ and $\b$, and $\b$ and $\VectMode{c}$ respectively.
 %
 We use the gluing Lemma~\ref{lem-gluing-discr} which defines $\S \in \RR_+^{n^3}$ with marginals $\sum_{k}\S_{\cdot,\cdot,k}=\P$ and $\sum_i \S_{i,\cdot,\cdot}=\Q$. We define $\R=\sum_{j}\S_{\cdot,j,\cdot}$, which is an element of $\CouplingsD(\a,\VectMode{c})$.
 \[
@@ -730,18 +890,24 @@ The Wasserstein distance $\Wass_p$ is a weak distance: it compares singular dist
 
 In terms of random vectors, if $X_n \sim \al_n$ and $X \sim \al$ (not necessarily defined on the same probability space), weak convergence corresponds to convergence in law of $X_n$ toward $X$.
 
+\begin{rem}[Modes of convergence for random variables]\label{rem-random-variable-convergences}
+	Convergence of laws should be distinguished from stronger notions of convergence for random variables. If $X_n$ and $X$ are defined on a common probability space, then $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
+	\[
+		\foralls \epsilon>0,\qquad
+		\PP(\norm{X_n-X}>\epsilon)\to0.
+	\]
+	Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak$^*$ convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
+\end{rem}
+
 \begin{rem}[Central limit theorem]\label{rem-clt}
 		The central limit theorem states that if $(X_1,\ldots,X_n)$ are i.i.d. random vectors with finite second moments, $\EE(X_i)=0$, and $\EE(X_i X_i^\top)=\Id$, then the rescaled average $Z_n \eqdef \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i$ converges in law toward a Gaussian $\Gaussian(0,\Id)$. This means that the measure $\al_n$ representing the law of $Z_n$ converges weakly toward the measure $\al$ of the centered normalized Gaussian.
 \end{rem}
 
-\begin{defn}[Strong topology]
-The simplest distance on Radon measures is the total variation norm, which is the dual norm of the $L^\infty$ norm on $\Cc(\Xx)$ and whose topology is often called the ``strong'' topology
-\eq{
-	\norm{\al-\be}_{\TV} \eqdef \usup{\norm{f}_\infty \leq 1} \int f \d(\al-\be)
-	 = |\al-\be|(\Xx)
-}
-where $|\al-\be|(\Xx)$ is the mass of the absolute value of the difference measure. When $\al-\be=\rho \d x$ has a density, then $\norm{\al-\be}_{\TV}=\int |\rho(x)| \d x=\norm{\rho}_{L^1(\d x)}$ is the $L^1$ norm associated to $\d x$. When $\al-\be=\sum_i u_i \de_{z_i}$ is discrete, then $\norm{\al-\be}_{\TV}=\sum_i |u_i|=\norm{u}_{\ell^1}$ is the discrete $\ell^1$ norm.
-\end{defn}
+The total variation norm was introduced in Definition~\ref{defn-total-variation} and Proposition~\ref{prop-tv-dual-measure}. Its induced topology is often called the ``strong'' topology on measures. In the present section we only use the recall that, for a signed difference $\al-\be$,
+\[
+	\norm{\al-\be}_{\TV}=|\al-\be|(\Xx),
+\]
+so densities give an $L^1$ norm and discrete signed measures give an $\ell^1$ norm of the signed weights.
 
 The following proposition shows that the TV norm can be seen as a Wasserstein distance, but for a ``degenerate'' 0/1 metric.
 
@@ -848,7 +1014,8 @@ This bound is sharp, as this can be observed by taking $\al=\de_{x}$ and $\be=\d
 %
 This shows that the ratio between the two distances can blow up as $d_{\max}/d_{\min}$ increases. On non-discrete spaces, if $d_{\min}=0$, then the two distances are not equivalent, in line with the fact that the strong and weak topologies do not coincide.
 
-\paragraph{Distributional robustness and $\Wass_\infty$.}
+\subsection{Distributional Robustness and \texorpdfstring{$\Wass_\infty$}{W-infinity}}
+\label{sec-dro-wasserstein-infinity}
 
 Wasserstein distances are also used to define ambiguity sets around an empirical law. Given samples $z_i$ and $\hat\alpha_n=\frac1n\sum_i\delta_{z_i}$, a distributionally robust optimization (DRO) problem replaces the empirical risk $\frac1n\sum_i \ell_\theta(z_i)$ by
 \[
@@ -879,6 +1046,25 @@ which exhibits Wasserstein robustness as a Lipschitz regularizer. The bound is s
 
 In machine learning, the inner supremum in~\eqref{eq-dro-dual-envelope} has the form of an adversarial perturbation problem: the adversary moves each datum away from $z_i$ but pays a transport penalty. This connects Wasserstein DRO to adversarial training and certified robustness~\cite{sinha2018certifying,NIPS2015_5745}. In sequential decision problems, the same idea places Wasserstein ambiguity sets around transition kernels or rewards, producing robust Bellman operators and robust reinforcement-learning models~\cite{xu2012distributionallyrobustmdp,yang2017convex}.
 
+\begin{prop}[Convexity of transport costs]\label{prop-wasserstein-cost-convex}
+	For any nonnegative lower-semicontinuous cost $c$, the value
+	\[
+		(\alpha,\beta)\mapsto\MK_c(\alpha,\beta)
+	\]
+	is jointly convex. In particular, for a ground metric $d$ and $p\geq1$, the map $(\alpha,\beta)\mapsto\Wass_p(\alpha,\beta)^p$ is jointly convex. The distance $\Wass_1$ is jointly convex, but $\Wass_p$ itself need not be convex for $p>1$.
+\end{prop}
+\begin{proof}
+	Let $\pi_0\in\Couplings(\alpha_0,\beta_0)$ and $\pi_1\in\Couplings(\alpha_1,\beta_1)$ be $\eta$-optimal. Then $(1-t)\pi_0+t\pi_1$ is a coupling between $(1-t)\alpha_0+t\alpha_1$ and $(1-t)\beta_0+t\beta_1$, and its cost is the corresponding convex combination of the two costs. Letting $\eta\to0$ proves joint convexity of $\MK_c$. Taking $c=d^p$ gives convexity of $\Wass_p^p$. For $p=1$, this is convexity of $\Wass_1$ itself. For $p>1$, the root can destroy convexity: on the real line, $F(t)\eqdef\Wass_p((1-t)\delta_0+t\delta_1,\delta_0)=t^{1/p}$ satisfies $F(1/2)> (F(0)+F(1))/2$.
+\end{proof}
+
+This convexity is useful when distributions themselves are decision variables. In the usual DRO problem, however, the ambiguity set is fixed once the data are fixed. Therefore, if $z\mapsto\ell_\theta(z)$ is measurable and $\theta\mapsto\ell_\theta(z)$ is convex for every $z$, then
+\[
+	\theta\mapsto
+	\sup_{\beta:\,\Wass_p(\beta,\hat\alpha_n)\leq\rho}
+	\int \ell_\theta\,\d\beta
+\]
+is convex as a supremum of convex functions of $\theta$. This explains why Wasserstein DRO can preserve convex learning formulations while still modeling adversarial distributional shifts.
+
 The limiting distance
 \begin{equation}\label{eq-wass-infty}
 	\Wass_\infty(\alpha,\beta)
@@ -888,8 +1074,32 @@ The limiting distance
 \end{equation}
 is the limit of $\Wass_p(\alpha,\beta)$ as $p\to\infty$ on bounded spaces, not the limit of the convex programs defining $\Wass_p^p$. It minimizes the worst displacement rather than an average displacement, and the resulting optimization is no longer a linear convex program because of the essential-supremum objective. This makes $\Wass_\infty$ less convenient algorithmically, but very natural in robust formulations where one wants to guarantee that every transported sample stays within a prescribed perturbation radius.
 
+\begin{prop}[$\Wass_\infty$ robust envelope around an empirical law]\label{prop-wasserstein-infty-dro}
+	Let $(\Zz,d)$ be a Polish metric space. Let $\hat\alpha=\sum_{i=1}^n a_i\delta_{z_i}$ with $a_i>0$ and $\sum_i a_i=1$, and assume that the closed balls $\overline B(z_i,\rho)$ are compact. For any real-valued upper-semicontinuous loss $\ell$,
+	\[
+		\sup_{\beta:\,\Wass_\infty(\beta,\hat\alpha)\leq\rho}
+		\int \ell(z)\d\beta(z)
+		=
+		\sum_{i=1}^n a_i\sup_{z\in\overline B(z_i,\rho)}\ell(z).
+	\]
+\end{prop}
+\begin{proof}
+	If $\Wass_\infty(\beta,\hat\alpha)\leq\rho$, then, by symmetry, there are couplings $\pi_m\in\Couplings(\hat\alpha,\beta)$ whose essential displacements are at most $\rho+1/m$. Since the two marginals are fixed probability measures on a Polish space, $\Couplings(\hat\alpha,\beta)$ is tight and closed, hence weakly compact by Prokhorov's theorem. After extraction, $\pi_m\rightharpoonup\pi\in\Couplings(\hat\alpha,\beta)$.
+	For every $\eta>0$, the closed set $F_\eta=\{(x,z):d(x,z)\leq\rho+\eta\}$ has $\pi_m(F_\eta)=1$ for all sufficiently large $m$. Portmanteau's theorem gives $\pi(F_\eta)=1$. Letting $\eta\downarrow0$ along a countable sequence gives $\pi(\{(x,z):d(x,z)\leq\rho\})=1$.
+	Disintegrating $\pi$ with respect to the first marginal gives $\pi=\sum_i a_i\delta_{z_i}\otimes\nu_i$, where each $\nu_i$ is supported in the closed ball $\overline B(z_i,\rho)$ and $\beta=\sum_i a_i\nu_i$. Hence
+	\[
+		\int\ell\,\d\beta
+		=
+		\sum_i a_i\int\ell\,\d\nu_i
+		\leq
+		\sum_i a_i\sup_{\overline B(z_i,\rho)}\ell.
+	\]
+	The reverse inequality follows by choosing, for each $i$, a maximizer $z_i^\star\in\overline B(z_i,\rho)$ and setting $\beta=\sum_i a_i\delta_{z_i^\star}$. The coupling $\sum_i a_i\delta_{(z_i,z_i^\star)}$ has essential displacement at most $\rho$, so this $\beta$ is feasible and attains the displayed value.
+\end{proof}
 
-\paragraph{Theoretical application: quantitative central limit theorems.}
+
+\subsection{Theoretical Application: Quantitative Central Limit Theorems}
+\label{sec-quantitative-clt}
 
 The weak topology only says whether laws converge; Wasserstein distances also quantify how fast they converge. The next result is a representative theoretical application: the central limit theorem becomes a rate estimate in $\Wass_1$. This is useful because $\Wass_1$ is exactly the supremum over 1-Lipschitz observables, so the bound controls the error of all stable numerical or statistical measurements of the normalized sum at once. Figure~\ref{fig:matching-quantitative-clt} illustrates the elementary Bernoulli case.
 
@@ -906,6 +1116,8 @@ The weak topology only says whether laws converge; Wasserstein distances also qu
 \caption{Central-limit theorem for normalized Bernoulli sums. Starting from $\alpha_0=\frac12(\delta_{-1}+\delta_1)$, the law of $Z_n=n^{-1/2}\sum_{i=1}^n X_i$ remains discrete, but its rescaled atom heights approach the standard Gaussian density shown in gray. The Wasserstein Berry--Esseen bound below quantifies this weak convergence by a $\Wass_1$ distance.}
 \label{fig:matching-quantitative-clt}
 \end{figure}
+
+The following estimate is the Wasserstein form of the classical Berry--Esseen theorem~\cite{berry1941accuracy,esseen1942liapunoff}. The proof sketch uses Stein's method, whose modern normal-approximation formulation is developed in~\cite{chen2011normal}.
 
 \begin{prop}[Berry--Esseen bound in $\Wass_1$]\label{prop-berry-esseen-w1}
 	Let $(X_i)_{i=1}^n$ be i.i.d. real random variables such that $\EE X_i=0$, $\EE X_i^2=1$ and $\EE |X_i|^3<+\infty$. If $\alpha_n$ is the law of $n^{-1/2}\sum_i X_i$ and $\gamma$ is the standard Gaussian law, then
@@ -935,11 +1147,5 @@ The weak topology only says whether laws converge; Wasserstein distances also qu
 	\[
 		\EE h(S_n)-\EE h(G)=\EE[f_h'(S_n)-S_nf_h(S_n)].
 	\]
-	Expanding $f_h'(S_n)$ and $f_h(S_n)$ by replacing the summands one at a time, the first- and second-order terms cancel because $\EE X_i=0$ and $\EE X_i^2=1$. The Taylor remainder is bounded by $C\sum_i \EE |X_i/\sqrt n|^3$, which gives the displayed $n^{-1/2}$ rate. This is the Wasserstein form of the Berry--Esseen theorem; sharper constants and higher-order transport-distance refinements are studied in~\cite{bobkov2018berry,rio2011asymptotic}.
+	Expanding $f_h'(S_n)$ and $f_h(S_n)$ by replacing the summands one at a time, the first- and second-order terms cancel because $\EE X_i=0$ and $\EE X_i^2=1$. The Taylor remainder is bounded by $C\sum_i \EE |X_i/\sqrt n|^3$, which gives the displayed $n^{-1/2}$ rate. Sharper constants and higher-order transport-distance refinements are studied in~\cite{bobkov2018berry,rio2011asymptotic}.
 \end{proof}
-
-
-%%%%%
-\paragraph{Applications and implications}
-
-The practical value of Wasserstein distances is that they provide a geometric loss on probability measures. In barycenter problems, minimizing $\sum_s\la_s\Wass_2^2(\al,\be_s)$ produces an average distribution that respects displacement rather than pointwise density interpolation, which is crucial for shape and image averaging~\cite{Carlier_wasserstein_barycenter,CuturiBarycenter,2015-solomon-siggraph}. In registration and morphing, OT penalizes how far mass travels, so it naturally encodes spatial deformations and correspondences~\cite{haker2004optimal,peyre2012wasserstein,GramfortPC15}. In statistical fitting, one can estimate a parametric measure $\theta\mapsto\al_\theta$ from data $\be$ by minimizing $\theta\mapsto\Wass_p(\al_\theta,\be)$; this remains meaningful even when the model and empirical measure are mutually singular, unlike likelihood or $\KL$ objectives~\cite{CanasRosasco,FrognerNIPS}.

@@ -70,18 +70,6 @@ This equation is obtained from~\eqref{eq:eulerian-advection} by integration by p
 	Integrating in time and using the boundary values of $\varphi$ gives~\eqref{eq:eulerian-advection-weak}.
 \end{proof}
 
-\begin{figure}[ht]
-\centering
-\begin{tabular}{@{}cc@{}}
-\small Lagrangian advection &
-\small Eulerian flux \\[-.15em]
-\includegraphics[width=.58\linewidth]{figures/dynamic-continuity-equation/advection.pdf} &
-\includegraphics[width=.30\linewidth]{figures/dynamic-continuity-equation/flux.pdf}
-\end{tabular}
-\caption{Two views of the continuity equation. The left panel advects particles and Gaussian density contours under a smooth affine vector field, showing the Lagrangian flow $x'(t)=v(x(t))$. The right panel shows the Eulerian flux $m_t=\rho_t v_t$ at an intermediate time, where $\alpha_t=\rho_t\,\d x$: arrows are weighted by the local density, so the velocity contributes to the PDE only where mass is present.}
-\label{fig:dynamic-continuity-equation}
-\end{figure}
-
 \paragraph{From measure evolutions to vector fields.}
 
 For a given evolution $(\alpha_t)_t$, there are typically infinitely many velocity fields $v_t$ satisfying
@@ -113,23 +101,41 @@ A more robust choice, used implicitly in flow matching, optimal transport and Wa
 	\quad
 	\partial_t\alpha_t+\diverg(\alpha_t v_t)=0.
 \end{equation}
-Introducing a Lagrange multiplier $\psi_t$ for the continuity equation gives the saddle problem
-\[
-	\umin{v}\umax{\psi}
-	\int_0^1
-	\left[
-		\frac12\int_{\RR^d}\norm{v_t(x)}^2\,\d\alpha_t(x)
-		+\int_{\RR^d}\psi_t(x)\big(\diverg(\alpha_t v_t)(x)+\partial_t\alpha_t(x)\big)\d x
-	\right]\d t.
-\]
-After integrating by parts in the divergence term, the minimization in $v_t$ gives $v_t=\nabla\psi_t$. Equivalently, when $\alpha_t=\rho_t\,\d x$ is smooth and positive, the minimizing velocity is the gradient field $v_t=\nabla\psi_t$ where
-\begin{equation}\label{eq:least-square-field-explicit}
-	-\diverg(\rho_t\nabla\psi_t)=\partial_t\rho_t,
-	\qquad
-	v_t=-\nabla\Delta_{\alpha_t}^{-1}(\partial_t\alpha_t),
-	\quad
-	\Delta_{\alpha_t}\psi=\diverg(\alpha_t\nabla\psi).
-\end{equation}
+
+\begin{prop}[Least-square velocities are gradients]\label{prop-least-square-gradient-velocity}
+	Assume that $\alpha_t=\rho_t\,\d x$ is a smooth positive density curve and that boundary terms vanish. The minimizer of~\eqref{eq:least-square-field}, if it exists, is a gradient field
+	\[
+		v_t=\nabla\phi_t,
+	\]
+	where $\phi_t$, unique up to an additive constant, solves the weighted Poisson equation
+	\begin{equation}\label{eq:least-square-field-explicit}
+		-\diverg(\rho_t\nabla\phi_t)=\partial_t\rho_t,
+		\qquad
+		v_t=-\nabla\Delta_{\alpha_t}^{-1}(\partial_t\alpha_t),
+		\quad
+		\Delta_{\alpha_t}\phi=\diverg(\alpha_t\nabla\phi).
+	\end{equation}
+\end{prop}
+
+\begin{proof}
+	Introduce a Lagrange multiplier $\phi_t$ for the continuity equation. The constrained problem has the formal saddle formulation
+	\[
+		\umin{v}\umax{\phi}
+		\int_0^1
+		\left[
+			\frac12\int_{\RR^d}\norm{v_t(x)}^2\,\d\alpha_t(x)
+			+\int_{\RR^d}\phi_t(x)\big(\diverg(\alpha_t v_t)(x)+\partial_t\alpha_t(x)\big)\d x
+		\right]\d t.
+	\]
+	Integrating by parts in the divergence term gives, for each $t$,
+	\[
+		\int \left(\frac12\norm{v_t}^2-\dotp{\nabla\phi_t}{v_t}\right)\d\alpha_t
+		+
+		\int \phi_t\,\partial_t\alpha_t .
+	\]
+	The pointwise minimizer in $v_t$ is therefore $v_t=\nabla\phi_t$. Substituting this into the constraint $\partial_t\rho_t+\diverg(\rho_t v_t)=0$ gives the weighted Poisson equation in~\eqref{eq:least-square-field-explicit}. The inverse notation is just a shorthand for solving this equation on zero-mean right-hand sides, modulo additive constants.
+\end{proof}
+
 In general this inversion is still computationally demanding, but special choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism exploited later by flow matching.
 
 \subsection{Benamou--Brenier dynamic formulation of OT}
@@ -186,13 +192,15 @@ with the usual convention that the integrand is $0$ when $(\rho_t,m_t)=(0,0)$ an
 
 \begin{figure}[ht]
 \centering
+\newcommand{\bbgeodesicpanelheight}{.155\linewidth}
 \begin{tabular}{@{}cc@{}}
+\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/density-sequence.pdf} &
+\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/midpoint-velocities.pdf}
+\\[-.1em]
 \small density sequence &
-\small midpoint velocities \\[-.15em]
-\includegraphics[width=.58\linewidth]{figures/dynamic-benamou-brenier-geodesic/density-sequence.pdf} &
-\includegraphics[width=.30\linewidth]{figures/dynamic-benamou-brenier-geodesic/midpoint-velocities.pdf}
+\small midpoint velocities
 \end{tabular}
-\caption{Benamou--Brenier geodesic between two sampled silhouettes. A discrete quadratic OT plan between the cat and two-disks point clouds induces the McCann interpolation $Z_t=(1-t)X+tY$, which is the Lagrangian realization of the least-action solution. The left panel shows kernel-density contours along this geodesic, and the right panel displays midpoint particles with their constant characteristic velocities $Y-X$.}
+\caption{Benamou--Brenier geodesic between two sampled silhouettes. A discrete quadratic OT plan between regularly subsampled cat and two-disks point clouds induces the McCann interpolation $Z_t=(1-t)X+tY$, which is the Lagrangian realization of the least-action solution. The left panel renders tight color images of the kernel-smoothed densities along this geodesic. The right panel overlays shortened velocity arrows centered at evenly subsampled midpoint particles $Z_{1/2}$; each arrow is oriented along the matched characteristic direction $Y-X$, but it is not drawn as the full endpoint segment from $X$ to $Y$.}
 \label{fig:dynamic-benamou-brenier-geodesic}
 \end{figure}
 
