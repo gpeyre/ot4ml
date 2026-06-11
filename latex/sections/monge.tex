@@ -344,17 +344,19 @@ The Monge value defines the directed quantity
 If the constraint set is empty, then $\tilde\Wass_p(\al,\be)=+\infty$.
 
 \begin{prop}[Directed Monge distance]\label{prop-directed-monge-distance}
-	Assume that $\Xx=\Yy$ is a compact metric space. The quantity $\tilde\Wass_p$ is nonnegative, vanishes only on the diagonal, and satisfies the triangle inequality. It is therefore a directed extended distance: it need not be symmetric and may take the value $+\infty$.
+	Assume that $\Xx=\Yy$ is a metric space. The quantity $\tilde\Wass_p$ is nonnegative, vanishes only on the diagonal, and satisfies the triangle inequality. It is therefore a directed extended distance: it need not be symmetric and may take the value $+\infty$.
 \end{prop}
 \begin{proof}
-	Nonnegativity is immediate. If $\tilde\Wass_p(\al,\be)=0$, choose feasible maps $\T_k$ with $\int d(x,\T_k(x))^p\d\al(x)\to0$. For every continuous function $h$, compactness gives uniform continuity, hence
+	Nonnegativity is immediate. If $\tilde\Wass_p(\al,\be)=0$, choose feasible maps $\T_k$ with $\int d(x,\T_k(x))^p\d\al(x)\to0$. For every bounded $1$-Lipschitz function $h$,
 	\[
 		\left|\int h\d\be-\int h\d\al\right|
 		=
 		\left|\int h(\T_k(x))-h(x)\d\al(x)\right|
+		\leq
+		\left(\int d(x,\T_k(x))^p\d\al(x)\right)^{1/p}
 		\longrightarrow0.
 	\]
-	Thus $\al=\be$.
+	Since bounded Lipschitz functions separate probability measures on metric spaces, $\al=\be$.
 
 	We prove the triangle inequality. If $\tilde\Wass_p(\al,\be)=+\infty$ while both $\tilde\Wass_p(\al,\ga)$ and $\tilde\Wass_p(\ga,\be)$ were finite, there would be maps $S_\sharp\al=\ga$ and $T_\sharp\ga=\be$, hence $(T\circ S)_\sharp\al=\be$, a contradiction. Thus the inequality is automatic whenever the left-hand side is infinite. In the finite case, fix $\epsilon>0$ and choose $\epsilon$-minimizers $S_\sharp\al=\ga$ and $T_\sharp\ga=\be$ such that
 	\[
@@ -470,9 +472,84 @@ The name is meant to echo the usual polar decomposition of matrices. This analog
 \]
 with $O$ orthogonal when $A$ is invertible, or a partial isometry in the singular case. The factor $Sx$ is the convex-gradient transport part, while $Ox$ preserves the standard Gaussian law. This finite-dimensional picture is often the fastest way to remember the general theorem: polar factorization is matrix polar decomposition with matrices replaced by maps and orthogonal transformations replaced by measure-preserving rearrangements.
 
-\medskip
+\paragraph{Displacement interpolation.}
+\label{sec-monge-interpolation}
 
-McCann's displacement convexity theory clarifies the geometric meaning of interpolating along Brenier maps~\cite{mccann1997convexity}; this is the language of Wasserstein geodesics used later for barycenters in Section~\ref{sec-barycenters} and for gradient flows in Section~\ref{sec-wasserstein-gradient-flows}. Caffarelli's regularity theory, discussed next, explains when the convex potential is actually smooth enough to define a classical deformation.
+An optimal map does not only match two endpoint measures; it also tells how to draw a path between them. The construction is Lagrangian and geometric: each particle keeps its identity and travels at constant speed from its initial position to its image under the transport map. If $\T_\sharp\al=\be$, define
+\[
+	\T_t(x)\eqdef(1-t)x+t\T(x),
+	\qquad
+	\al_t\eqdef(\T_t)_\sharp\al,
+	\qquad t\in[0,1].
+\]
+This is the Monge interpolation between $\al$ and $\be$. For the quadratic cost, when $\T$ is the Brenier map, it is called McCann's displacement interpolation. McCann's displacement convexity theory~\cite{mccann1997convexity} clarifies the geometric meaning of interpolating along Brenier maps; this is the language of Wasserstein geodesics used later for barycenters in Section~\ref{sec-barycenters} and for gradient flows in Section~\ref{sec-wasserstein-gradient-flows}. If no Monge map exists, or if the optimal object splits mass, the same straight-line idea is applied to each active pair of a coupling, as explained in the Kantorovich interpolation of Section~\ref{sec-kantorovich-plan-interpolation}. The following proposition makes the constant-speed property precise for the directed Monge value.
+
+\begin{prop}[Directed Monge displacement geodesics]\label{prop-monge-displacement-geodesic}
+	Let $p\geq1$, let $\al,\be\in\Mm_+^1(\RR^d)$ have finite $p$-th moments, and let $\T$ be an optimal map for $\tilde\Wass_p(\al,\be)$ in~\eqref{eq-monge-distance}. Set $D=\tilde\Wass_p(\al,\be)$ and $\al_t=(\T_t)_\sharp\al$ with $\T_t=(1-t)\Id+t\T$. Assume that, for every $t<1$, $\T_t$ is one-to-one on a full $\al$-measure Borel set, so that $\T_t^{-1}$ is defined $\al_t$-almost everywhere. Then, for $0\leq s\leq t\leq1$,
+	\[
+		\tilde\Wass_p(\al_s,\al_t)=(t-s)D.
+	\]
+	Thus $t\mapsto\al_t$ is an oriented constant-speed geodesic for the directed Monge distance. In particular, for $p=2$, this applies to the Brenier map under the hypotheses of Theorem~\ref{thm-brenier}.
+\end{prop}
+\begin{proof}
+	The case $s=t$ is trivial, so assume $s<t$. Since $s<1$, the inverse $\T_s^{-1}$ is defined $\al_s$-almost everywhere along the transported particles. Define
+	\[
+		S_{s,t}\eqdef\T_t\circ\T_s^{-1}
+		\qquad \al_s\text{-a.e.}
+	\]
+	Then $(S_{s,t})_\sharp\al_s=\al_t$, and, using the optimality of $\T$,
+	\[
+	\begin{aligned}
+		\tilde\Wass_p(\al_s,\al_t)^p
+		&\leq
+		\int \norm{S_{s,t}(z)-z}^p\d\al_s(z) \\
+		&=
+		\int \norm{\T_t(x)-\T_s(x)}^p\d\al(x)
+		=
+		(t-s)^pD^p.
+	\end{aligned}
+	\]
+	The same particle construction gives $\tilde\Wass_p(\al,\al_s)\leq sD$. If $t<1$, the map $\T\circ\T_t^{-1}$ sends $\al_t$ to $\be$ and gives $\tilde\Wass_p(\al_t,\be)\leq(1-t)D$; if $t=1$, this latter distance is zero. Using the triangle inequality from Proposition~\ref{prop-directed-monge-distance},
+	\[
+		D
+		=
+		\tilde\Wass_p(\al,\be)
+		\leq
+		\tilde\Wass_p(\al,\al_s)+\tilde\Wass_p(\al_s,\al_t)+\tilde\Wass_p(\al_t,\be)
+		\leq
+		sD+\tilde\Wass_p(\al_s,\al_t)+(1-t)D.
+	\]
+	Hence $\tilde\Wass_p(\al_s,\al_t)\geq(t-s)D$, which proves equality. For a Brenier map $\T=\nabla\phi$, the map $\T_t$ is the gradient of
+	\[
+		x\mapsto (1-t)\frac{\norm{x}^2}{2}+t\phi(x),
+	\]
+	which is $(1-t)$-strongly convex for every $t<1$. On the full-measure set where $\phi$ is differentiable, this gives
+	\[
+		\dotp{\T_t(x)-\T_t(y)}{x-y}\geq(1-t)\norm{x-y}^2,
+	\]
+	so $\T_t$ is injective there. This gives the last claim.
+\end{proof}
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{@{}ccccc@{}}
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t000.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t025.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t050.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t075.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t100.pdf} \\[-.1em]
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t000.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t025.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t050.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t075.pdf} &
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t100.pdf} \\[-.1em]
+\small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
+\end{tabular}
+\caption{McCann displacement interpolation between a cat silhouette and a heart silhouette. The first row displays a small farthest-point subset of transported particles along $T_t(x)=(1-t)x+tT(x)$. The second row renders kernel-smoothed densities from a denser transported cloud as color images: white means zero density, while high density saturates in the red-to-blue interpolation color of the corresponding time.}
+\label{fig:monge-shape-mccann-interpolation}
+\end{figure}
+
+Caffarelli's regularity theory, discussed next, explains when the convex potential is actually smooth enough to define a classical deformation.
 
 \paragraph{Regularity and the Monge--Amp\`ere equation.}
 
@@ -669,42 +746,16 @@ Formula~\eqref{eq-wass-cumul} means that the map $\al\mapsto\cumul{\al}^{-1}$ em
 \label{fig:monge-1d-quantile-geodesic}
 \end{figure}
 
-For $p=1$, formula~\eqref{eq-w1-1d} shows that $\Wass_1$ is a norm on signed measures with zero total mass once they are identified with their cumulative primitives. Other classical one-dimensional distances are obtained by replacing the $L^1$ norm of cumulative functions with $L^2$ or $L^\infty$ norms; under suitable tightness assumptions, such norms also metrize convergence in law and lead for instance to Cram\'er--von Mises and Kolmogorov--Smirnov-type distances.
-
-\paragraph{Displacement interpolation.}
-\label{sec-monge-interpolation}
-
-If $\T_\sharp\al=\be$, the Monge interpolation between $\al$ and $\be$ is
-\[
-	\al_t=((1-t)\Id+t\T)_\sharp\al,
-	\qquad t\in[0,1].
-\]
-For the quadratic cost, when $\T$ is optimal, this is the McCann displacement interpolation. In one dimension it corresponds exactly to interpolating quantiles,
+The last panel of Figure~\ref{fig:monge-1d-quantile-geodesic} is the one-dimensional specialization of the displacement interpolation of Section~\ref{sec-monge-interpolation}. In quantile coordinates, the interpolating measure is characterized by
 \[
 	\cumul{\al_t}^{-1}(r)
 	=
-	(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r).
+	(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
+	\qquad r\in(0,1).
 \]
-The histogram-equalization figure in Section~\ref{sec-monge-pbm} is this construction applied to pixel intensities. Figure~\ref{fig:monge-1d-quantile-geodesic} shows the quantile path directly, and Figure~\ref{fig:monge-shape-mccann-interpolation} shows the same displacement principle for two-dimensional point clouds.
+The histogram-equalization figure in Section~\ref{sec-monge-pbm} is the same construction applied to pixel intensities.
 
-\begin{figure}[htbp]
-\centering
-\begin{tabular}{@{}ccccc@{}}
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t000.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t025.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t050.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t075.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t100.pdf} \\[-.1em]
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t000.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t025.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t050.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t075.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t100.pdf} \\[-.1em]
-\small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
-\end{tabular}
-\caption{McCann displacement interpolation between a cat silhouette and a heart silhouette. The first row displays a small farthest-point subset of transported particles along $T_t(x)=(1-t)x+tT(x)$. The second row renders kernel-smoothed densities from a denser transported cloud as color images: white means zero density, while high density saturates in the red-to-blue interpolation color of the corresponding time.}
-\label{fig:monge-shape-mccann-interpolation}
-\end{figure}
+For $p=1$, formula~\eqref{eq-w1-1d} shows that $\Wass_1$ is a norm on signed measures with zero total mass once they are identified with their cumulative primitives. Other classical one-dimensional distances are obtained by replacing the $L^1$ norm of cumulative functions with $L^2$ or $L^\infty$ norms; under suitable tightness assumptions, such norms also metrize convergence in law and lead for instance to Cram\'er--von Mises and Kolmogorov--Smirnov-type distances.
 
 \paragraph{Triangular rearrangements.}
 
@@ -724,6 +775,31 @@ There is another canonical way to build transport maps in several dimensions: tr
 
 	The map $\T_k(x_{<k},\cdot)$ is nondecreasing by the one-dimensional rearrangement theorem. The chain rule for disintegrations then shows that, after step $k$, the first $k$ coordinates of $\T_\sharp\al$ have the same law as the first $k$ coordinates of $\be$. At $k=d$ this gives $\T_\sharp\al=\be$. Target atoms are handled by generalized quantiles. If a source conditional law has atoms that must be split, the same recursive construction defines a triangular Markov kernel rather than a deterministic map.
 \end{proof}
+
+Figure~\ref{fig:monge-triangular-rearrangement} shows the two-dimensional mechanism on image histograms. The first stage transports only the horizontal marginal, so the middle pivot has the same $x$-marginal as the target but keeps the source vertical conditionals. The second stage then transports each vertical conditional law inside the corresponding column.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{1pt}
+\begin{tabular}{@{}ccccccc@{}}
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-01-source.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-02-horizontal-033.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-03-horizontal-067.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-04-pivot.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-05-vertical-033.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-06-vertical-067.pdf} &
+\includegraphics[width=.135\linewidth]{figures/monge-triangular-rearrangement/stage-07-target.pdf} \\[-.1em]
+\small source &
+\small $x$-move &
+\small $x$-move &
+\small pivot &
+\small $y$-move &
+\small $y$-move &
+\small target
+\end{tabular}
+\caption{Triangular rearrangement between the same cat and heart densities as in Figure~\ref{fig:monge-shape-mccann-interpolation}. The panels are computed directly on image histograms. The first three transitions move mass horizontally by the monotone rearrangement between the $x$-marginals; the pivot has the target horizontal marginal. The last three transitions keep each column fixed and move mass vertically by one-dimensional monotone rearrangements between conditional laws.}
+\label{fig:monge-triangular-rearrangement}
+\end{figure}
 
 This construction transports successively along coordinate axes and is therefore often called axis-wise transport. It depends on the chosen ordering of coordinates and is not generally optimal for the quadratic cost. It is nevertheless a useful limiting object: Brenier maps for increasingly anisotropic quadratic costs converge to triangular rearrangements under suitable assumptions~\cite{carlier2010knothe}.
 

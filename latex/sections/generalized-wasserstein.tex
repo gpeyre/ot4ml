@@ -400,22 +400,77 @@ where $\sigma$ is the uniform probability measure on the sphere. This constructi
 	It is useful when only a small set of projections carries most of the discrepancy, for instance in generative modeling~\cite{deshpande2019maxsliced}.
 \end{defn}
 
+\paragraph{Subspace-sliced variants.}
+
+One-dimensional slices are extremely cheap, but they may discard too much geometry in high dimension. A natural compromise is to project onto $k$-dimensional subspaces: the projected OT problems remain lower dimensional, while each projection retains correlations inside a small block of coordinates. Varying $k$ therefore interpolates between ordinary slicing and full OT.
+
+\begin{defn}[Subspace-sliced Wasserstein]\label{def-subspace-sliced-wasserstein}
+	Fix $1\leq k\leq d$. Subspace-sliced variants replace one-dimensional lines by $k$-dimensional orthogonal projections. If $U\in\RR^{d\times k}$ satisfies $\transp{U}U=\Id_k$, then
+	\[
+		\SW_{p,k}(\alpha,\beta)^p
+		\eqdef
+		\int \Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta)^p\d U,
+	\]
+	where $\d U$ denotes the normalized invariant measure on the Stiefel manifold
+	$\mathrm{St}(d,k)=\{U\in\RR^{d\times k}\;:\;\transp{U}U=\Id_k\}$, and
+	\[
+		\MaxSW_{p,k}(\alpha,\beta)
+		\eqdef
+		\sup_{\transp{U}U=\Id_k}
+		\Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta).
+	\]
+	The case $k=1$ recovers ordinary sliced and max-sliced Wasserstein, while $k=d$ recovers the original Wasserstein distance.
+\end{defn}
+
+\begin{prop}[Basic bounds for sliced variants]\label{prop-sliced-variant-bounds}
+	Let $p\geq1$ and let $\alpha,\beta\in\Pp_p(\RR^d)$. With normalized spherical and Stiefel measures,
+	\[
+		\SW_p(\alpha,\beta)
+		\leq
+		\MaxSW_p(\alpha,\beta)
+		\leq
+		\Wass_p(\alpha,\beta).
+	\]
+	For $k$-dimensional subspace projections,
+	\[
+		\SW_{p,k}(\alpha,\beta)
+		\leq
+		\MaxSW_{p,k}(\alpha,\beta)
+		\leq
+		\Wass_p(\alpha,\beta).
+	\]
+\end{prop}
+
+\begin{proof}
+	The first inequality in each line follows because an $L^p$ average over a probability space is bounded by the corresponding supremum. The second inequality follows because orthogonal projections are $1$-Lipschitz: pushing any admissible coupling between $\alpha$ and $\beta$ through a projection gives an admissible coupling for the projected measures with no larger transport cost. Optimizing over couplings and then averaging or maximizing over the projection gives the result.
+\end{proof}
+
 \paragraph{Min-sliced lifted transport plans.}
 
-There is another, conceptually different, use of slicing: one can use a one-dimensional projection to build a feasible high-dimensional transport plan. For equal-weight empirical measures $\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$, sort the projected samples $\dotp{x_i}{\theta}$ and $\dotp{y_j}{\theta}$, and let $\sigma_\theta$ be the monotone matching induced by this sorting. The lifted plan
+The preceding constructions define distances between projected measures. A different use of slicing is to use a projection only as a device for building a feasible high-dimensional transport plan. For equal-weight empirical measures $\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$, sort the projected samples $\dotp{x_i}{\theta}$ and $\dotp{y_j}{\theta}$, and let $\sigma_\theta$ be the monotone matching induced by this sorting. The lifted plan
 \[
 	\pi_\theta
 	=
 	\frac1n\sum_{i=1}^n\delta_{(x_i,y_{\sigma_\theta(i)})}
 \]
-is a genuine coupling between $\alpha$ and $\beta$ in the original space. Min-SWGG-type methods choose the best projection according to the full-dimensional transport cost,
+is a genuine coupling between $\alpha$ and $\beta$ in the original space. Min-SWGG-type methods then choose the projection whose lifted plan has the smallest full-dimensional quadratic cost,
 \[
 	\operatorname{MSWGG}_2(\alpha,\beta)^2
 	\eqdef
 	\min_{\theta\in\Sphere^{d-1}}
 	\int\norm{x-y}^2\d\pi_\theta(x,y).
 \]
-This is not a projected distance; it is a cheap feasible-plan construction. Consequently it gives an upper bound on $\Wass_2^2(\alpha,\beta)$, and the interest is algorithmic: the plan is obtained by sorting rather than by solving a high-dimensional linear program.
+This quantity is not a projected distance; it is a cheap feasible-plan construction. Consequently it gives an upper bound on $\Wass_2^2(\alpha,\beta)$, and the interest is algorithmic: the plan is obtained by sorting rather than by solving a high-dimensional linear program.
+Indeed, each $\pi_\theta$ is an admissible coupling between the original measures, so
+\[
+	\Wass_2^2(\alpha,\beta)
+	\leq
+	\int\norm{x-y}^2\d\pi_\theta(x,y),
+	\qquad
+	\Wass_2^2(\alpha,\beta)
+	\leq
+	\operatorname{MSWGG}_2(\alpha,\beta)^2.
+\]
 
 \begin{figure}[H]
 \centering
@@ -429,39 +484,6 @@ This is not a projected distance; it is a cheap feasible-plan construction. Cons
 \caption{Lifted min-sliced plan. A one-dimensional direction is selected by a small deterministic sweep, then red and blue atoms are sorted after projection and matched in that order. The middle panel lifts this one-dimensional matching back to the plane; it is a feasible coupling but not the same object as the quadratic $W_2$ matching shown on the right. This illustrates why sliced constructions are computationally light and interpretable, while losing some of the geometry of the full transport problem.}
 \label{fig:min-sliced-transport-plan}
 \end{figure}
-
-\begin{defn}[Subspace-sliced Wasserstein]\label{def-subspace-sliced-wasserstein}
-	Subspace-sliced variants replace one-dimensional lines by $k$-dimensional orthogonal projections. If $U\in\RR^{d\times k}$ satisfies $\transp{U}U=\Id_k$, then
-	\[
-		\SW_{p,k}(\alpha,\beta)^p
-		\eqdef
-		\int \Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta)^p\d U,
-	\]
-	where the integral is over the Stiefel manifold, and
-	\[
-		\MaxSW_{p,k}(\alpha,\beta)
-		\eqdef
-		\sup_{\transp{U}U=\Id_k}
-		\Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta).
-	\]
-	The case $k=1$ recovers ordinary sliced and max-sliced Wasserstein, while $k=d$ recovers the original Wasserstein distance.
-\end{defn}
-
-\begin{prop}[Basic bounds for sliced variants]\label{prop-sliced-variant-bounds}
-	With normalized surface measure,
-	\[
-		\SW_p(\alpha,\beta)
-		\leq
-		\MaxSW_p(\alpha,\beta)
-		\leq
-		\Wass_p(\alpha,\beta).
-	\]
-	In the equal-weight empirical setting above, any min-SWGG-type lifted plan has cost at least $\Wass_2^2(\alpha,\beta)$, hence gives an upper bound on the optimal quadratic transport cost. For $k$-dimensional subspace projections, the corresponding projected Wasserstein distance is bounded above by $\Wass_p$ for every fixed subspace, and so are its average and maximum over subspaces.
-\end{prop}
-
-\begin{proof}
-	The first inequality follows because an average is bounded by a supremum. The second and the subspace bound follow because orthogonal projections are $1$-Lipschitz, so pushing any admissible coupling forward gives a feasible coupling for the projected problem with no larger cost. A lifted one-dimensional matching is an admissible coupling between the original measures; evaluating the full quadratic cost on any admissible coupling can only be larger than the optimal $\Wass_2^2$ value.
-\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Vector Quantiles and Linear Optimal Transport}

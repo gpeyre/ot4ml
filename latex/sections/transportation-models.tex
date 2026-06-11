@@ -234,12 +234,17 @@ gives the claimed formula.
 \label{fig:generative-diffusion-1d-forward-backward}
 \end{figure}
 
-The same probability-flow intuition is visible in two dimensions. For a discrete data law, or more generally for a Gaussian mixture, the noising density is a Gaussian mixture whose score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network. In the plots below, the Gaussian endpoint has covariance $\sigma^2\Id$ to keep the geometry visible at the scale of the three atoms; then $p_t(z)=\sum_j w_j\Gaussian((1-t)c_j,(t\sigma)^2\Id)$, with $s_t=\nabla\log p_t$, and the scaled version of Proposition~\ref{prop:flow} gives $v_t(z)=-(z+t\sigma^2s_t(z))/(1-t)$.
+The same probability-flow intuition is visible in two dimensions. For a discrete data law, or more generally for a Gaussian mixture, the noising density is a Gaussian mixture whose score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network. In the plots below, the Gaussian endpoint has covariance $\sigma^2\Id$ to keep the geometry visible at the scale of the three atoms. For a scalar noising schedule $Z_t=a_tX+b_tY$, the intermediate law has component centers $a_t c_j$ and covariance $(b_t\sigma)^2\Id$. For the linear bridge, $p_t(z)=\sum_j w_j\Gaussian((1-t)c_j,(t\sigma)^2\Id)$, with $s_t=\nabla\log p_t$, and the scaled version of Proposition~\ref{prop:flow} gives $v_t(z)=-(z+t\sigma^2s_t(z))/(1-t)$.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=.72\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density.pdf}
-\caption{Two-dimensional noising path from three Dirac masses to a single Gaussian. The interpolation $Z_t=(1-t)X+tY$ starts from three red atoms and progressively turns them into Gaussian components whose centers move toward the origin and whose covariance grows like $(t\sigma)^2\Id$. At $t=1$ the three components coincide, giving the blue centered Gaussian endpoint.}
+\begin{tabular}{@{}c@{}}
+\small linear bridge, $a_t=1-t$, $b_t=t$ \\[-.15em]
+\includegraphics[width=.72\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density-linear.pdf} \\[.15em]
+\small OU/variance-preserving bridge, $a_t=\cos(\pi t/2)$, $b_t=\sin(\pi t/2)$ \\[-.15em]
+\includegraphics[width=.72\linewidth]{figures/generative-diffusion-2d-forward-backward/forward-density-ou.pdf}
+\end{tabular}
+\caption{Two-dimensional noising paths from three Dirac masses to a single Gaussian. The top row shows the linear interpolation $Z_t=(1-t)X+tY$, whose component centers move linearly toward the origin and whose covariance grows like $(t\sigma)^2\Id$. The bottom row uses the variance-preserving Ornstein--Uhlenbeck coefficients $a_\tau=e^{-\tau}$ and $b_\tau=\sqrt{1-e^{-2\tau}}$, reparametrized by $\tau=-\log\cos(\pi t/2)$ so that $a_t=\cos(\pi t/2)$ and $b_t=\sin(\pi t/2)$. It has the same endpoints but a different speed of contraction and noising.}
 \label{fig:generative-diffusion-2d-forward-backward}
 \end{figure}
 
@@ -304,7 +309,7 @@ Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\
 	\]
 	which proves~\eqref{eq-gaussian-product-fm-velocity}. To solve the characteristic equation, whiten the source by setting $C=\Sigma_0^{-1/2}\Sigma_1\Sigma_0^{-1/2}$ and $\widetilde Z_t=\Sigma_0^{-1/2}Z_t$. In these coordinates the source covariance is $\Id$ and
 	\[
-		\widetilde\Sigma_t=(1-t)^2\Id+t^2 C.
+		\widetilde\Sigma_t=(1-t)^2\Id+t^2C.
 	\]
 	Because $\Id$ and $C$ commute, the affine flow map in whitened coordinates is simply $\widetilde T_t=\widetilde\Sigma_t^{1/2}$. Indeed,
 	\[
@@ -314,7 +319,7 @@ Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\
 	\]
 	which is exactly the equation $\dot{\widetilde T}_t=\widetilde A_t\widetilde T_t$ with $\widetilde T_0=\Id$. Returning to the original coordinates gives~\eqref{eq-gaussian-product-fm-map}, and $t=1$ gives~\eqref{eq-gaussian-product-fm-terminal-map}.
 
-	Both $T_1^{\rm FM}$ and $T^{\rm OT}$ push $\Gaussian(0,\Sigma_0)$ to $\Gaussian(0,\Sigma_1)$. The Brenier map between nondegenerate Gaussians is the unique symmetric positive definite linear map with this property. Hence $T_1^{\rm FM}=T^{\rm OT}$ if and only if $T_1^{\rm FM}$ is symmetric positive definite. Since $C^{1/2}$ is symmetric positive definite,
+	Both $T_1^{\rm FM}$ and $T^{\rm OT}$ push $\Gaussian(0,\Sigma_0)$ to $\Gaussian(0,\Sigma_1)$. The Brenier map between nondegenerate Gaussians is the unique symmetric positive definite linear map with this property. Hence $T_1^{\rm FM}=T^{\rm OT}$ if and only if $T_1^{\rm FM}$ is symmetric positive definite. The map $T_1^{\rm FM}$ is similar to $C^{1/2}$, so if it is symmetric then it is automatically positive definite. It remains to characterize symmetry. Since $C^{1/2}$ is symmetric positive definite,
 	\[
 		(T_1^{\rm FM})^\top
 		=
@@ -324,17 +329,61 @@ Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\
 	$\Sigma_0 C^{1/2}=C^{1/2}\Sigma_0$, hence to $\Sigma_0 C=C\Sigma_0$ by functional calculus. Multiplying this identity on the left and right by $\Sigma_0^{1/2}$ gives $\Sigma_0\Sigma_1=\Sigma_1\Sigma_0$. Conversely, if $\Sigma_0$ and $\Sigma_1$ commute, they are orthogonally co-diagonalizable, and both~\eqref{eq-gaussian-product-fm-terminal-map} and~\eqref{eq-gaussian-brenier-map-comparison} reduce in that basis to the diagonal map with entries $\sqrt{\lambda_{1,k}/\lambda_{0,k}}$. This proves the equivalence.
 \end{proof}
 
-Proposition~\ref{prop-gaussian-flow-matching-optimality} explains why the statement ``flow matching gives an optimal map'' is fragile. Commuting covariances reduce the dynamics to independent one-dimensional scalings, but non-commuting covariances create a non-symmetric affine terminal map, hence a transport map with a rotational or shearing component. More generally, mixture-like paths can create the same obstruction even when every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
+Proposition~\ref{prop-gaussian-flow-matching-optimality} explains why the statement ``flow matching gives an optimal map'' is fragile. The same terminal map~\eqref{eq-gaussian-product-fm-terminal-map} is obtained for any scalar schedule $Z_t=a_tX_0+b_tX_1$ with the same endpoints, because after whitening the covariance path remains $a_t^2\Id+b_t^2C$. Thus changing the speed of a scalar Gaussian bridge, for instance by using an OU schedule, cannot repair the non-optimality created by non-commuting covariances. Commuting covariances reduce the terminal map to independent one-dimensional scalings, whereas non-commuting covariances create a non-symmetric affine map, hence a transport with a rotational or shearing component. More generally, mixture-like paths can create the same obstruction even when every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
 
-\begin{figure}[ht]
+\paragraph{Variations on the interpolant.}
+
+The geometry of the generated trajectories depends on the chosen interpolant, not only on the two endpoint laws. There is first a harmless ambiguity: a monotone reparametrization $Z_t=(1-\lambda(t))X+\lambda(t)Y$ of the linear bridge only changes the speed of the flow,
+\[
+	v_t(z)=\lambda'(t)\,v^{\rm lin}_{\lambda(t)}(z),
+	\qquad
+	v^{\rm lin}_{r}(z)=\EE[Y-X\mid (1-r)X+rY=z].
+\]
+It therefore leaves the spatial integral curves unchanged. Diffusion models use a genuinely different family of noising paths. If
+\[
+	Z_t=a_tX+b_tY,\qquad Y\sim\Gaussian(0,\sigma^2\Id),
+\]
+then both the mixture centers and the component variances are changed. Writing $p_t$ for the density of $Z_t$ and $s_t=\nabla\log p_t$, Tweedie's formula gives, away from times where $a_t=0$,
+\[
+	v_t(z)=a'_t\,\EE[X\mid Z_t=z]+b'_t\,\EE[Y\mid Z_t=z]
+	=\frac{a'_t}{a_t}z+
+	\left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z).
+\]
+For the linear bridge, $a_t=1-t$ and $b_t=t$, this recovers the formula above. For the variance-preserving Ornstein--Uhlenbeck noising used in diffusion models,
+\[
+	a_\tau=e^{-\tau},\qquad b_\tau=\sqrt{1-e^{-2\tau}},
+\]
+one obtains the forward probability-flow velocity $v_\tau(z)=-z-\sigma^2\nabla\log p_\tau(z)$. Sampling follows the reverse field $z+\sigma^2\nabla\log p_\tau(z)$ as $\tau$ decreases. This is the noising law used in the left panel of Figure~\ref{fig:generative-diffusion-versus-ot-2d}; the trajectories are more curved than for the linear bridge because the centers and variances evolve according to the OU/Fokker--Planck scaling rather than by affine interpolation. Numerically, the integration is stopped at a small positive time before the Dirac endpoint, where the score becomes singular.
+
+The finite-time coefficients $a_t=\cos(\pi t/2)$ and $b_t=\sin(\pi t/2)$ are not a new spatial interpolant: they are exactly the OU coefficients after the time change $\tau=-\log\cos(\pi t/2)$. Figure~\ref{fig:generative-diffusion-schedule-comparison} therefore compares OU with a genuinely different scalar bridge,
+\[
+	a_t=(1-t)(1-2t),
+	\qquad
+	b_t=t,
+\]
+whose data coefficient changes sign before vanishing. This overshooting bridge is mainly a diagnostic example: it keeps the same endpoints, but its intermediate mixture reflects through the origin and produces visibly different reverse trajectories.
+
+\begin{figure}[H]
 \centering
 \begin{tabular}{@{}cc@{}}
 \small diffusion-like trajectories & \small OT displacement rays \\[-.15em]
 \includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/diffusion-curves.pdf} &
 \includegraphics[width=.39\linewidth]{figures/generative-diffusion-versus-ot-2d/ot-rays.pdf}
 \end{tabular}
-\caption{Diffusion-style sampling trajectories compared with OT rays in the three-Dirac setting of Figure~\ref{fig:generative-diffusion-2d-forward-backward}. Red particles are sampled from the centered Gaussian endpoint and transported toward the three blue atoms. The left panel integrates the reverse probability-flow ODE using the closed-form Gaussian-mixture score, down to a small terminal time before the singular Dirac endpoint. The right panel uses the straight displacement rays selected by a quadratic OT matching to the same atoms.}
+\caption{Diffusion-style sampling trajectories compared with OT rays in the three-Dirac setting of Figure~\ref{fig:generative-diffusion-2d-forward-backward}. Red particles are sampled from the centered Gaussian endpoint and transported toward the three blue atoms. The left panel integrates the reverse probability-flow ODE for the variance-preserving OU noising $a_\tau=e^{-\tau}$, $b_\tau=\sqrt{1-e^{-2\tau}}$, using the closed-form Gaussian-mixture score and stopping just before the singular Dirac endpoint. The right panel uses the straight displacement rays selected by a quadratic OT matching to the same atoms.}
 \label{fig:generative-diffusion-versus-ot-2d}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small linear bridge & \small OU VP bridge & \small overshooting bridge \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/generative-diffusion-versus-ot-2d/schedule-linear.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-diffusion-versus-ot-2d/schedule-vp.pdf} &
+\includegraphics[width=.30\linewidth]{figures/generative-diffusion-versus-ot-2d/schedule-overshoot.pdf}
+\end{tabular}
+\caption{Effect of the interpolant on the exact reverse flow for the same three-Dirac target and the same Gaussian endpoint. The linear bridge $a_t=1-t$, $b_t=t$ produces almost radial curves. The variance-preserving OU bridge $a_\tau=e^{-\tau}$, $b_\tau=\sqrt{1-e^{-2\tau}}$ changes the relative speed of contraction and noising. The overshooting bridge $a_t=(1-t)(1-2t)$, $b_t=t$ is not a time reparameterization of either one and produces a more pronounced bending of the reverse trajectories.}
+\label{fig:generative-diffusion-schedule-comparison}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -480,13 +529,11 @@ The first term pulls samples toward data, while the second term corrects self-at
 
 Deep residual architectures can be read as time discretizations of ODEs or PDEs. For transformers, the transported objects are token measures and the velocity is induced by attention.
 
-Transformers were introduced as sequence-to-sequence architectures driven by self-attention~\cite{Vaswani2017Attention}, and rapidly became the dominant architecture for language models and representation learning, from bidirectional encoders~\cite{Devlin2019BERT} to large autoregressive models~\cite{Brown2020LanguageModels} and vision transformers~\cite{Dosovitskiy2021Image}. Their distinctive feature is that each token is updated by a data-dependent average of all other tokens. This makes the layer permutation-equivariant before positional encoding, context dependent after conditioning on the input sequence, and naturally compatible with a measure viewpoint in which a prompt is regarded as an empirical distribution of tokens. The same viewpoint is increasingly relevant in the long-context regime, where sparse, block, or low-rank approximations of attention were introduced to reduce the quadratic token cost~\cite{Beltagy2020Longformer,Zaheer2020BigBird,Wang2020Linformer}, while recent token-sample complexity results quantify how an empirical attention map converges to its infinite-token operator~\cite{Bohbot2025TokenSampleComplexity}. This separates uniform convergence of the attention map itself from convergence of moments of the transformed token law, which is often the quantity that propagates through depth.
+Transformers were introduced as sequence-to-sequence architectures driven by self-attention~\cite{Vaswani2017Attention} and have since become a central architecture for language and vision models~\cite{Brown2020LanguageModels,Dosovitskiy2021Image}. Their distinctive feature is that each token is updated by a data-dependent average of all other tokens. This makes an attention layer permutation-equivariant before positional encoding, context dependent after conditioning on the input sequence, and naturally compatible with a measure viewpoint in which a prompt is regarded as an empirical distribution of tokens.
 
-The mathematical analysis of depth takes a complementary limit: instead of increasing the number of tokens, one lets the number of residual attention layers grow. Continuous-depth neural networks already motivate replacing residual blocks by ODEs~\cite{Chen2018NeuralODE}. For attention, the resulting system is nonlinear in the empirical measure because the velocity of each token is normalized by the whole context. This was first made explicit for doubly stochastic attention in Sinkformers~\cite{Sander2022Sinkformers} and is part of a broader measure-theoretic view of attention as a Lipschitz or interacting-particle operator~\cite{Vuckovic2020MathematicalAttention,Geshkovski2023MathematicalPerspective}. In this language, the infinite-depth limit is a transport or Vlasov-type PDE on token measures. Recent work gives a unified well-posedness and mean-field-limit theory for several attention mechanisms, including softmax, $L^2$, Sinkhorn, sigmoid, multi-head and masked attention~\cite{Castin2025DynamicsTransformers}.
+The mathematical limit used below concerns depth rather than model scale: one lets the number of residual attention layers grow while each layer makes a small update, as in continuous-depth neural networks~\cite{Chen2018NeuralODE}. For attention, the resulting velocity is nonlinear in the current token law because it is normalized by the whole context. This measure-theoretic view appears in the analysis of attention as a Lipschitz or interacting-particle operator~\cite{Vuckovic2020MathematicalAttention,Geshkovski2023MathematicalPerspective}, in the Sinkhorn-normalized dynamics of Sinkformers~\cite{Sander2022Sinkformers}, and in recent well-posedness and mean-field-limit results for several attention mechanisms~\cite{Castin2025DynamicsTransformers}. It also separates the infinite-depth limit studied here from the token-limit question, where one controls how a finite empirical context approximates its limiting attention operator~\cite{Bohbot2025TokenSampleComplexity}.
 
-This dynamical viewpoint also explains geometric phenomena observed across depth. With fixed weights, self-attention behaves as a nonlinear interacting particle system whose trajectories can concentrate into clusters or leaders determined by the input context~\cite{Geshkovski2023EmergenceClusters,Geshkovski2023MathematicalPerspective}. Causal masks change this picture by destroying some gradient-flow structures, but clustering can still be proved in masked dynamics~\cite{Karagodin2024CausalMasking}. Related mean-field models on the sphere exhibit metastable clustering phases~\cite{Bruno2024MetastableClustering}. Gaussian closures provide another tractable window: for several attention variants, Gaussian token laws remain Gaussian, so the PDE reduces to ODEs for means and covariances and reveals anisotropy amplification and rank-deficiency mechanisms related to clustering~\cite{Castin2025DynamicsTransformers}. The same measure formalism separates two approximation questions: the depth limit, which is the focus here, and the token limit, where one controls the deviation between a finite context and the limiting attention operator~\cite{Bohbot2025TokenSampleComplexity}.
-
-We now consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This stripped-down framework is best suited to modeling encoders and vision transformers, but the preceding literature explains how it can be extended to richer attention mechanisms.
+We now consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This stripped-down framework is best suited to modeling encoders and vision transformers; the references above indicate which parts of this simplified picture extend to richer attention mechanisms.
 
 \paragraph{Attention as a context-dependent velocity.}
 
