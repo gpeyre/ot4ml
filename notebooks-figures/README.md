@@ -2,7 +2,7 @@
 
 This directory contains the executable notebooks that generate the illustrative figures currently included in the OT4ML book. Each live notebook writes one or several PDF panels to `../latex/figures/<figure-name>/`; the thumbnails below are compact PNG previews rendered from those PDFs.
 
-**Gallery status.** 63 current book figures, 62 live linked notebooks, and 62 active figure thumbnails in [`thumbnails/`](thumbnails/), plus the contact sheet shown below. One notebook can generate several figures; for example, the Gaussian W2 notebook provides both the one-dimensional and two-dimensional Gaussian figures.
+**Gallery status.** 64 current book figures, 63 live linked notebooks, and 63 active figure thumbnails in [`thumbnails/`](thumbnails/), plus the contact sheet shown below. One notebook can generate several figures; for example, the Gaussian W2 notebook provides both the one-dimensional and two-dimensional Gaussian figures.
 
 This README intentionally lists only notebooks that are integrated in the current LaTeX source through live `\includegraphics{figures/...}` references. Retired or exploratory notebooks live in [`removed/`](removed/), with their matching generated panels in [`../latex/figures/removed/`](../latex/figures/removed/). They are kept for provenance but omitted from this paper gallery.
 
@@ -62,15 +62,15 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="monge-1d-quantile-geodesic.ipynb"><img src="thumbnails/monge-1d-quantile-geodesic.png" alt="One-dimensional quantiles and displacement interpolation" width="210"></a><br>
-  <strong>One-dimensional quantiles and displacement interpolation</strong><br>
-  <a href="monge-1d-quantile-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-1d-quantile-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
   <a href="monge-shape-mccann-interpolation.ipynb"><img src="thumbnails/monge-shape-mccann-interpolation.png" alt="McCann interpolation between two shapes" width="210"></a><br>
   <strong>McCann interpolation between two shapes</strong><br>
   <a href="monge-shape-mccann-interpolation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-shape-mccann-interpolation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="monge-1d-quantile-geodesic.ipynb"><img src="thumbnails/monge-1d-quantile-geodesic.png" alt="One-dimensional quantiles and displacement interpolation" width="210"></a><br>
+  <strong>One-dimensional quantiles and displacement interpolation</strong><br>
+  <a href="monge-1d-quantile-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-1d-quantile-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -80,12 +80,16 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="monge-triangular-rearrangement.ipynb"><img src="thumbnails/monge-triangular-rearrangement.png" alt="Triangular rearrangement between two silhouettes" width="210"></a><br>
+  <strong>Triangular rearrangement between two silhouettes</strong><br>
+  <a href="monge-triangular-rearrangement.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-triangular-rearrangement.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="monge-gaussian-w2-geodesic.ipynb"><img src="thumbnails/monge-gaussian-w2-geodesic.png" alt="Gaussian W2 geodesics and Bures ellipses" width="210"></a><br>
   <strong>Gaussian W2 geodesics and Bures ellipses</strong><br>
   <a href="monge-gaussian-w2-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-gaussian-w2-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
-
-<td width="33%"></td>
 
 <td width="33%"></td>
 
