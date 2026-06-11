@@ -57,14 +57,15 @@ The relaxed coupling formulation used in GW can therefore be read as a soft grap
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}ccc@{}}
-\small isometric copy &
-\small mild deformation &
-\small strong deformation \\[-.15em]
 \includegraphics[width=.30\linewidth]{figures/gromov-isometry-matching/isometric.pdf} &
 \includegraphics[width=.30\linewidth]{figures/gromov-isometry-matching/mild-deformation.pdf} &
 \includegraphics[width=.30\linewidth]{figures/gromov-isometry-matching/strong-deformation.pdf}
+\\[-.1em]
+\small isometric copy &
+\small mild deformation &
+\small strong deformation
 \end{tabular}
-\caption{Gromov--Wasserstein correspondences under increasing deformation. The red and blue point clouds are not compared through an ambient Euclidean cross-cost; instead, the GW coupling compares their internal pairwise distances. A perfectly isometric copy admits a clean structural match, while mild and strong deformations progressively bend the correspondence.}
+\caption{Gromov--Wasserstein correspondences under increasing deformation. The red and blue point clouds are not compared through an ambient Euclidean cross-cost; instead, the GW coupling compares their internal pairwise distances. A perfectly isometric copy admits a clean structural match, while mild and deliberately stronger deformations progressively bend the correspondence.}
 \label{fig:gromov-isometry-matching}
 \end{figure}
 
@@ -204,14 +205,61 @@ The metric structure also gives geodesics. Sturm's construction is useful concep
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}cc@{}}
-\small correspondence &
-\small pairwise-distance residual \\[-.15em]
 \includegraphics[width=.43\linewidth]{figures/gromov-nonisometric-distortion/correspondence.pdf} &
 \includegraphics[width=.23\linewidth]{figures/gromov-nonisometric-distortion/distance-residual.pdf}
+\\[-.1em]
+\small hard correspondence $\sigma$ &
+\small residual $|d_\X-d_\Y\circ\sigma|$
 \end{tabular}
-\caption{Local distortion in a non-isometric GW match. The left panel colors transport segments by the average residual induced by the displayed hard correspondence. The right panel shows the pairwise-distance residual matrix $|d_\X(x_i,x_{i'})-d_\Y(y_{\sigma(i)},y_{\sigma(i')})|$, which is the local contribution minimized by the discrete GW objective for this correspondence.}
+\caption{Local distortion in a mildly non-isometric GW match. The left panel colors transport segments by the average residual induced by the displayed hard correspondence. The right panel shows the pairwise-distance residual matrix $|d_\X(x_i,x_{i'})-d_\Y(y_{\sigma(i)},y_{\sigma(i')})|$ in white-to-black scale, with darker entries marking larger local distortion. This matrix is the local contribution minimized by the discrete GW objective for the displayed correspondence.}
 \label{fig:gromov-nonisometric-distortion}
 \end{figure}
+
+We now record the profile lower bound used above as a useful initialization principle for the non-convex solver.
+
+\begin{prop}[M\'emoli profile lower bound]\label{prop-memoli-gw-profile-lower-bound}
+	Let $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$ be compact metric-measure spaces and take $\De(u,v)=|u-v|$ in~\eqref{eq-gw-generic}, with the same exponent $p\geq1$. For each $x\in\X$ and $y\in\Y$, define the distance-profile measures on $\RR_+$ by
+	\[
+		\alpha_x\eqdef(\dist_\X(x,\cdot))_\sharp\alpha,
+		\qquad
+		\beta_y\eqdef(\dist_\Y(y,\cdot))_\sharp\beta.
+	\]
+	Let $\mathsf E_\XX=(x\mapsto\alpha_x)_\sharp\alpha$ and $\mathsf E_\YY=(y\mapsto\beta_y)_\sharp\beta$, which are probability measures on $\Pp(\RR_+)$. Then
+	\[
+		\Wass_p\bigl(\mathsf E_\XX,\mathsf E_\YY\bigr)
+		\leq
+		\GW(\XX,\YY).
+	\]
+	Here the left-hand distance is taken on the space $\Pp(\RR_+)$ of profile measures.
+	Its ground cost is the one-dimensional Wasserstein distance $\Wass_p$.
+\end{prop}
+\begin{proof}
+	Fix any $\pi\in\Couplings(\alpha,\beta)$. It induces a coupling $(x,y)\mapsto(\alpha_x,\beta_y)$ between $\mathsf E_\XX$ and $\mathsf E_\YY$, hence
+	\[
+		\Wass_p\bigl(\mathsf E_\XX,\mathsf E_\YY\bigr)^p
+		\leq
+		\int_{\X\times\Y}\Wass_p(\alpha_x,\beta_y)^p\,\d\pi(x,y).
+	\]
+	For fixed $(x,y)$, the map $(x',y')\mapsto(\dist_\X(x,x'),\dist_\Y(y,y'))$ pushes the same coupling $\pi$ to a coupling between $\alpha_x$ and $\beta_y$. Therefore
+	\[
+		\Wass_p(\alpha_x,\beta_y)^p
+		\leq
+		\int_{\X\times\Y}
+		\abs{\dist_\X(x,x')-\dist_\Y(y,y')}^p
+		\d\pi(x',y').
+	\]
+	Integrating in $(x,y)$ gives
+	\[
+		\Wass_p\bigl(\mathsf E_\XX,\mathsf E_\YY\bigr)^p
+		\leq
+		\int_{\X^2\times\Y^2}
+		\abs{\dist_\X(x,x')-\dist_\Y(y,y')}^p
+		\d\pi(x,y)\d\pi(x',y').
+	\]
+	Taking the infimum over $\pi$ and then the $p$-th root proves the claim.
+\end{proof}
+
+This lower bound is useful computationally because the profile cost matrix $C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
 
 \paragraph{Entropic regularization and iterative solver.}
 
@@ -481,14 +529,16 @@ They can be enforced by the explicit congruence normalizations
 These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. This is Gurvits/operator scaling with prescribed targets; when all matrices are diagonal it reduces to classical Sinkhorn scaling, and when the targets are proportional to identities it matches the usual bistochastic operator-scaling normalization, up to the conventional trace normalization.
 
 
-It is important not to identify~\eqref{eq-qot-gurvits-updates} with the exact Bregman scheme for~\eqref{eq-qot-entropic-primal}. The exact Bregman step would enforce the marginals of $T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true concave dual~\eqref{eq-qot-entropic-dual}. Gurvits scaling instead enforces the marginals of the surrogate
+\begin{rem}[Gurvits scaling is not the exact Bregman scheme]
+	It is important not to identify~\eqref{eq-qot-gurvits-updates} with the exact Bregman scheme for~\eqref{eq-qot-entropic-primal}. The exact Bregman step would enforce the marginals of $T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true concave dual~\eqref{eq-qot-entropic-dual}. Gurvits scaling instead enforces the marginals of the surrogate
 \[
 	T_s=
 	\exp\!\left(\frac{Z}{2\epsilon}\right)
 	\exp(-C/\epsilon)
 	\exp\!\left(\frac{Z}{2\epsilon}\right).
 \]
-The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm.
+	The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm.
+\end{rem}
 
 \begin{rem}[Operator-valued couplings]
 	The same definitions extend formally from matrices to separable Hilbert spaces by replacing density matrices with positive trace-class operators of trace one, observables with bounded self-adjoint operators and~\eqref{eq-qot-partial-traces} with partial traces defined by duality against local bounded observables. If $\Pi(A,B)$ denotes positive trace-class operators with partial traces $A$ and $B$, a bounded cost observable $C$ gives the problem $\inf_{T\in\Pi(A,B)}\Tr(CT)$. For unbounded positive costs one must define the energy through the quadratic form or spectral truncations, and in the entropic case one must ensure that the Gibbs operator $\exp(-C/\epsilon)$ is trace class and that the partial traces of the candidate coupling are well-defined. The matrix formulas above are therefore the clean finite-dimensional core; the operator version adds domain and compactness assumptions rather than a different algebraic structure.

@@ -1,0 +1,644 @@
+% !TEX root = ../OT4ML.tex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Generalized Wasserstein Distances}
+\label{sec-extensions}
+\label{sec-generalized-wasserstein-distances}
+
+The first family of extensions keeps the idea of a distance between measures, but changes the geometry used to compare them. The variants below relax mass conservation, reduce high-dimensional transport to one-dimensional projections, or replace the trace quadratic cost by spectral gauges and robust projected viewpoints. They are useful when standard $\Wass_p$ is too rigid or too expensive, while still preserving a metric interpretation.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Unbalanced OT}
+\label{sec-unbalanced}
+
+Unbalanced OT allows mass creation and destruction by penalizing marginal mismatch. It is essential when histograms are not normalized, when observations contain outliers, or when only part of the source should match the target~\cite{LieroMielkeSavareLong,2015-chizat-unbalanced,2017-chizat-focm}.
+
+%%%
+\paragraph{Relaxed formulation.}
+
+For nonnegative measures $(\al,\be) \in \Mm_+(\Xx) \times \Mm_+(\Yy)$, a generic relaxed formulation is
+\eql{\label{eq-unbalanced-primal}
+	\UW_c(\al,\be)= \uinf{\pi \in \Mm_+(\Xx \times \Yy)} \int_{\Xx \times \Yy} c(x,y) \d\pi(x,y)
+		+ \Dd_{\psi_1}(\pi_1|\al) + \Dd_{\psi_2}(\pi_2|\be),
+}
+where $\psi_1,\psi_2$ are convex entropy functions. Exact conservation $(\pi_1,\pi_2)=(\al,\be)$ is replaced by a cost for changing the marginals. Writing $\psi_s=\tau\bar\psi_s$ exposes the relaxation scale:
+\[
+	\UW_{c,\tau}(\alpha,\beta)
+	=
+	\inf_{\pi\geq0}
+	\int c\d\pi
+	+
+	\tau\Dd_{\bar\psi_1}(\pi_1|\alpha)
+	+
+	\tau\Dd_{\bar\psi_2}(\pi_2|\beta).
+\]
+Large $\tau$ makes marginal mismatch expensive and approaches balanced OT when the total masses are compatible. Small $\tau$ makes creation and destruction cheap; after rescaling by $\tau$, the zero-transport part reveals the pure divergence geometry.
+
+\begin{prop}[Small-transport-scale limit for marginal penalties]\label{prop-unbalanced-small-scale-limit}
+	Assume that $\alpha,\beta$ are finite measures on a compact metric space $\Xx$, that $c$ is continuous, $c\geq0$, and $c(x,y)=0$ if and only if $x=y$. Assume also that the marginal divergences are nonnegative, weak-* lower semicontinuous, and have weak-* compact sublevel sets on $\Mm_+(\Xx)$. Then
+	\[
+		\lim_{\tau\downarrow0}\frac1\tau\UW_{c,\tau}(\alpha,\beta)
+		=
+		\inf_{\rho\in\Mm_+(\Xx)}
+		\Dd_{\bar\psi_1}(\rho|\alpha)
+		+
+		\Dd_{\bar\psi_2}(\rho|\beta).
+	\]
+	The right-hand side is the infimal gluing divergence obtained by matching the two measures through a common zero-transport marginal $\rho$. In particular, when $\bar\psi_1=\bar\psi_2$ is the KL entropy and $\alpha,\beta$ have densities $\rho_\alpha,\rho_\beta$ with respect to a common measure $\lambda$,
+	\[
+		\inf_{\rho\in\Mm_+(\Xx)} \KL(\rho|\alpha)+\KL(\rho|\beta)
+		=
+		\int (\sqrt{\rho_\alpha}-\sqrt{\rho_\beta})^2\d\lambda .
+	\]
+	Thus the KL marginal relaxation contains the squared Hellinger distance as its local mass-variation limit.
+\end{prop}
+
+\begin{proof}
+	For the upper bound, restrict to diagonal plans $\pi=(\Id,\Id)_\sharp\rho$, whose transport cost is zero and whose two marginals are both $\rho$. This gives the desired upper bound after optimizing over $\rho$.
+
+	For the lower bound, let $\tau_n\downarrow0$ and let $\pi_n$ be almost minimizing plans with bounded scaled values $\tau_n^{-1}\UW_{c,\tau_n}(\alpha,\beta)$. Since the divergences are nonnegative, $\int c\d\pi_n=O(\tau_n)$, hence $\int c\d\pi_n\to0$. The bounded scaled values also put the two marginals in compact divergence sublevel sets. Since a coupling has the same total mass as each marginal, the couplings are tight on $\Xx\times\Xx$. Up to subsequences, $\pi_n\rightharpoonup\pi_0$. Lower semicontinuity of the transport cost yields $\int c\d\pi_0=0$, so $\pi_0$ is concentrated on the diagonal. Its two marginals are therefore equal to a common measure $\rho$. Lower semicontinuity of the marginal divergences gives
+	\[
+		\liminf_n\frac1{\tau_n}\UW_{c,\tau_n}(\alpha,\beta)
+		\geq
+		\Dd_{\bar\psi_1}(\rho|\alpha)+\Dd_{\bar\psi_2}(\rho|\beta),
+	\]
+	and optimizing over $\rho$ gives the lower bound.
+
+	For KL, minimizing pointwise over the density $r$ of $\rho$ gives $r\log(r/a)-r+a+r\log(r/b)-r+b$. The optimality condition is $\log(r/a)+\log(r/b)=0$, hence $r=\sqrt{ab}$, and the minimum is $a+b-2\sqrt{ab}=(\sqrt a-\sqrt b)^2$.
+\end{proof}
+
+\begin{prop}[Dual of unbalanced optimal transport]\label{prop-dual-unbalanced-ot}
+	Under the usual Fenchel--Rockafellar qualification assumptions, one has equality between~\eqref{eq-unbalanced-primal} and
+	\[
+		\UW_c(\al,\be)
+		=
+		\usup{f\oplus g\leq c}
+		-
+		\Dd_{\psi_1}^*(-f|\al)
+		-
+		\Dd_{\psi_2}^*(-g|\be).
+	\]
+\end{prop}
+
+\begin{proof}
+	Use the variational formula~\eqref{eq-legendre} for the dual of a divergence and introduce the marginal variables through continuous potentials:
+	\[
+	\inf_{\pi\geq0}\sup_{f,g}
+	\int c\d\pi + \int -f\d\pi_1 + \int -g\d\pi_2
+	-
+	\Dd_{\psi_1}^*(-f|\al)
+	-
+	\Dd_{\psi_2}^*(-g|\be).
+	\]
+	Exchanging the infimum and the supremum gives
+	\[
+	\sup_{f,g}
+	-
+	\Dd_{\psi_1}^*(-f|\al)
+	-
+	\Dd_{\psi_2}^*(-g|\be)
+	+
+	\inf_{\pi\geq0}\int\big(c-(f\oplus g)\big)\d\pi.
+	\]
+	The last infimum is $0$ when $f\oplus g\leq c$ and $-\infty$ otherwise, which gives the displayed dual.
+\end{proof}
+
+%%%
+\paragraph{Reverse and homogeneous formulations.}
+
+The Liero--Mielke--Savar\'e formulation rewrites marginal penalties as a local transport cost and then homogenizes it. Assuming first that the reference measures and transported marginals have mutually absolutely continuous parts, one can factor the objective as
+\begin{align*}
+&\int c(x,y)\d\pi(x,y)
++\Dd_{\psi_1}(\pi_1|\al)+\Dd_{\psi_2}(\pi_2|\be) \\
+&\qquad =
+\int
+\left(
+	c(x,y)
+	+
+	\psi_1\!\left(\frac{\d\pi_1}{\d\al}(x)\right)\frac{\d\al}{\d\pi_1}(x)
+	+
+	\psi_2\!\left(\frac{\d\pi_2}{\d\be}(y)\right)\frac{\d\be}{\d\pi_2}(y)
+\right)
+\d\pi(x,y).
+\end{align*}
+This motivates the local reverse cost
+\eql{\label{eq-unbalanced-reverse-local-cost}
+	L_c(r,s) \eqdef c + r\psi_1(1/r)+s\psi_2(1/s),
+}
+with the usual recession convention at $r=0$ or $s=0$. If $\al=F\pi_1+\al^\perp$ and $\be=G\pi_2+\be^\perp$ are the Lebesgue decompositions of the reference marginals with respect to the transported marginals, then the reverse formulation reads
+\[
+	\UW_c(\al,\be)
+	=
+	\inf_{\pi\geq0}
+	\int L_{c(x,y)}(F(x),G(y))\d\pi(x,y)
+	+
+	\psi_1(0)\al^\perp(\Xx)
+	+
+	\psi_2(0)\be^\perp(\Yy).
+\]
+
+The homogeneous formulation is obtained by taking the perspective transform of $L_c$,
+\eql{\label{eq-unbalanced-homogeneous-local-cost}
+	H_c(r,s) \eqdef \inf_{\theta>0}\theta L_c(r/\theta,s/\theta),
+}
+which is positively $1$-homogeneous. It defines
+\eql{\label{eq-homogeneous}
+	\HW_c(\al,\be)
+	=
+	\inf_{\pi\geq0}
+	\int H_{c(x,y)}(F(x),G(y))\d\pi(x,y)
+	+
+	\psi_1(0)\al^\perp(\Xx)
+	+
+	\psi_2(0)\be^\perp(\Yy).
+}
+
+\begin{prop}[Homogenization does not change the unbalanced cost]\label{prop-homogeneous-unbalanced}
+	One has $\HW_c(\al,\be)=\UW_c(\al,\be)$.
+\end{prop}
+
+\begin{proof}
+	The inequality $\HW\leq\UW$ follows from $H_c\leq L_c$ by taking $\theta=1$. Conversely, take a feasible measure $\pi$ in the homogeneous formulation. By definition of the perspective transform, for every $(x,y)$ and every $\eta>0$ there exists a scale $\theta(x,y)>0$ such that
+	\[
+		H_{c(x,y)}(F(x),G(y))+\eta
+		\geq
+		\theta(x,y)L_{c(x,y)}\big(F(x)/\theta(x,y),G(y)/\theta(x,y)\big).
+	\]
+	Replacing $\pi$ by the rescaled measure $\tilde\pi=\theta\pi$ and the densities by $F/\theta$ and $G/\theta$ gives an admissible competitor for the reverse formulation with cost no larger than the homogeneous cost plus $\eta\pi(\Xx\times\Yy)$. Letting $\eta\to0$ yields $\UW\leq\HW$. The singular terms are unchanged because the same rescaling is performed before taking the Lebesgue decomposition of the marginals.
+\end{proof}
+
+%%%
+\paragraph{Conic lifting.}
+
+Assume now that $\Xx=\Yy$ and $\psi_1=\psi_2=\psi$. The last formulation lifts the problem to the cone space $\mathfrak C[\Xx]\eqdef(\Xx\times\RR_+)/\sim$, where all points $(x,0)$ are identified at the apex. For an exponent $p\geq1$, define
+\[
+	\De((x,r),(y,s))\eqdef H_{c(x,y)}(r^p,s^p)^{1/p}.
+\]
+Several classical unbalanced geometries are obtained by choosing $\psi$, $c$ and $p$ so that $\De$ is a distance on the cone:
+\begin{itemize}
+	\item $\Dd_\psi=\KL$, $p=2$, and $c(x,y)=-\log\cos^2(d(x,y)\wedge\pi/2)$ give the Hellinger--Kantorovich or Wasserstein--Fisher--Rao cone metric
+	\[
+		\De((x,r),(y,s))^2=r^2+s^2-2rs\cos(d(x,y)\wedge\pi/2).
+	\]
+	\item $\Dd_\psi=\KL$, $p=2$, and $c(x,y)=d(x,y)^2$ give the Gaussian Hellinger cone metric
+	\[
+		\De((x,r),(y,s))^2=r^2+s^2-2rs e^{-d(x,y)^2/2}.
+	\]
+	\item $\Dd_\psi=\TV$, $p=1$, and $c(x,y)=d(x,y)$ give the partial-transport cone cost
+	\[
+		\De((x,r),(y,s))=r+s-(r\wedge s)(2-d(x,y))_+.
+	\]
+\end{itemize}
+The corresponding cone value is
+\[
+	\CW(\al,\be)
+	=
+	\inf_{\gamma\in\Mm_+(\mathfrak C[\Xx]^2)}
+	\left\{
+	\int \De((x,r),(y,s))^p\d\gamma
+	\; ; \;
+	\int r^p\d\gamma_1(\cdot,r)=\al,
+	\int s^p\d\gamma_2(\cdot,s)=\be
+	\right\}.
+\]
+
+\begin{thm}[Cone formulation of unbalanced OT]\label{thm-cone-unbalanced-ot}
+	One has $\UW=\HW=\CW$. If $\De$ is a distance, then $\CW^{1/p}$ is a distance between nonnegative measures.
+\end{thm}
+
+\begin{proof}
+	The equality $\UW=\HW$ is Proposition~\ref{prop-homogeneous-unbalanced}. To prove $\HW=\CW$, disintegrate an admissible cone coupling $\gamma$ with respect to its spatial variables $(x,y)$ and radii $(r,s)$. The cone marginal constraints say precisely that the spatial marginals are recovered after weighting by $r^p$ and $s^p$. Since $\De((x,r),(y,s))^p=H_{c(x,y)}(r^p,s^p)$, integrating the cone cost gives the homogeneous objective. Conversely, any homogeneous competitor can be lifted to the cone by placing, over each $(x,y)$, radii whose $p$th powers are the two density factors appearing in $H_c$.
+
+	If $\De$ is a distance on the cone, then $\CW^{1/p}$ is the usual $p$-Wasserstein distance between lifted measures under the linear cone-marginal constraints. Symmetry and the triangle inequality follow from the corresponding Wasserstein properties and the gluing lemma on the cone. If the distance is zero, an optimal cone coupling is concentrated on the diagonal of the cone, so the weighted projections agree and therefore $\alpha=\beta$.
+\end{proof}
+
+%%%
+\paragraph{Entropic KL relaxation.}
+
+A generic entropic regularization of unbalanced OT reads
+\[
+	\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+	\int c\d\pi
+	+
+	\Dd_{\psi_1}(\pi_1|\al)
+	+
+	\Dd_{\psi_2}(\pi_2|\be)
+	+
+	\epsilon\Dd_\phi(\pi|\al\otimes\be).
+\]
+Its dual is
+\[
+	\sup_{f,g}
+	-
+	\Dd_{\psi_1}^*(-f|\al)
+	-
+	\Dd_{\psi_2}^*(-g|\be)
+	-
+	\epsilon\Dd_\phi^*\left(\frac{f\oplus g-c}{\epsilon}\middle|\al\otimes\be\right).
+\]
+For $\Dd_\phi=\KL$, the primal-dual relation is $\d\pi=e^{(f\oplus g-c)/\epsilon}\d\al\d\be$. If in addition $\Dd_{\psi_1}=\Dd_{\psi_2}=\tau\KL$, the dual specializes to
+\[
+	\sup_{f,g}
+	-\tau\int(e^{-f/\tau}-1)\d\al
+	-\tau\int(e^{-g/\tau}-1)\d\be
+	-\epsilon\iint
+	\left(e^{(f\oplus g-c)/\epsilon}-1\right)
+	\d\al\d\be,
+\]
+and coordinate maximization gives the damped soft transforms
+\begin{align*}
+	f(x)
+	&=
+	-
+	\frac{\tau\epsilon}{\tau+\epsilon}
+	\log\int_{\Yy}
+	\exp\left(\frac{g(y)-c(x,y)}{\epsilon}\right)\d\be(y),\\
+	g(y)
+	&=
+	-
+	\frac{\tau\epsilon}{\tau+\epsilon}
+	\log\int_{\Xx}
+	\exp\left(\frac{f(x)-c(x,y)}{\epsilon}\right)\d\al(x).
+\end{align*}
+In the discrete case, with $K_{i,j}=e^{-\C_{i,j}/\epsilon}\a_i\b_j$ and $\rho=\tau/(\tau+\epsilon)$, this gives the generalized Sinkhorn scaling
+\[
+	u_i\leftarrow \left(\frac{\a_i}{(K v)_i}\right)^\rho,
+	\qquad
+	v_j\leftarrow \left(\frac{\b_j}{(\transp{K}u)_j}\right)^\rho,
+	\qquad
+	\P=\diag(u)K\diag(v).
+\]
+The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal corrections are damped because violating the marginals is allowed.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ccc@{}}
+\small small $\tau$ & \small medium $\tau$ & \small large $\tau$ \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/unbalanced-mass-relaxation/tau-small.pdf} &
+\includegraphics[width=.30\linewidth]{figures/unbalanced-mass-relaxation/tau-medium.pdf} &
+\includegraphics[width=.30\linewidth]{figures/unbalanced-mass-relaxation/tau-large.pdf}
+\end{tabular}
+\caption{KL unbalanced OT on one-dimensional Gaussian-mixture densities. The central matrix is the transported coupling. On the left, the red curve is the prescribed source marginal and the violet curve is the transported source marginal; the red gap is destroyed mass. On the top, the blue curve is the prescribed target marginal and the violet curve is the transported target marginal; the blue gap is created mass. Increasing $\tau$ makes marginal mismatch more expensive, so more mass is transported, including toward the far right target mode.}
+\label{fig:unbalanced-mass-relaxation}
+\end{figure}
+
+The entropy used in the marginal relaxation also changes the qualitative behavior. A KL penalty leads to smooth multiplicative rescaling. The reverse-KL, or Burg, penalty blows up when a transported marginal vanishes where the prescribed marginal is positive, so it discourages complete deletion of small modes. Total variation has a linear kink and behaves closer to partial transport: mass is either kept active or created and destroyed at nearly constant marginal price.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ccc@{}}
+\small KL & \small Burg & \small total variation \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/kl.pdf} &
+\includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/burg.pdf} &
+\includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/tv.pdf}
+\end{tabular}
+\caption{Effect of the marginal divergence in unbalanced entropic OT. The geometric cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$ are fixed; only the marginal penalty changes. KL allows smooth mass variation, Burg keeps transported marginals from vanishing on prescribed modes, and total variation gives a sharper active-mass selection. The side plots use the same convention as Figure~\ref{fig:unbalanced-mass-relaxation}.}
+\label{fig:unbalanced-divergence-choice}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Sliced Wasserstein Distances}
+\label{sec-sliced-wasserstein}
+
+Sliced Wasserstein trades exact high-dimensional geometry for many one-dimensional projections. It is cheap, differentiable after sorting, and often effective in imaging and learning. For measures on $\RR^d$ and $\theta\in\Sphere^{d-1}$, let $P_\theta(x)=\dotp{\theta}{x}$ be the projection on direction $\theta$. The sliced distance is
+\eql{\label{eq-sliced-wasserstein}
+	\SW_p(\al,\be)^p
+	\eqdef
+	\int_{\Sphere^{d-1}}
+	\Wass_p\big((P_\theta)_\sharp\al,(P_\theta)_\sharp\be\big)^p
+	\d\sigma(\theta),
+}
+where $\sigma$ is the uniform probability measure on the sphere. This construction is closely related to the Radon transform and is much cheaper to approximate numerically than high-dimensional OT, since each projected problem can be solved by sorting or quantiles~\cite{rabin-ssvm-11,2013-Bonneel-barycenter,kolouri2016sliced}. It metrizes the same weak-plus-moment topology as $\Wass_p$, but its geometry is not bi-Lipschitz equivalent to $\Wass_p$ in high dimension~\cite{nadjahi2019asymptotic}.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}cccc@{}}
+\small source density & \small source slices & \small target slices & \small target density \\[-.15em]
+\includegraphics[width=.23\linewidth]{figures/sliced-wasserstein-projections/density-alpha.pdf} &
+\includegraphics[width=.17\linewidth]{figures/sliced-wasserstein-projections/hist-alpha.pdf} &
+\includegraphics[width=.17\linewidth]{figures/sliced-wasserstein-projections/hist-beta.pdf} &
+\includegraphics[width=.23\linewidth]{figures/sliced-wasserstein-projections/density-beta.pdf}
+\end{tabular}
+\caption{Sliced Wasserstein projections between two planar densities. Five fixed directions are drawn on the source and target point clouds. For each direction, the middle panels show the one-dimensional projected histograms $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\beta$. Sliced OT averages one-dimensional Wasserstein discrepancies over many such directions, replacing a difficult planar comparison by a collection of sorted one-dimensional comparisons.}
+\label{fig:sliced-wasserstein-projections}
+\end{figure}
+
+\begin{prop}[Metric properties of sliced Wasserstein]\label{prop-sliced-wasserstein-metric}
+	For $p\geq1$, $\SW_p$ is a distance on $\Pp_p(\RR^d)$. Moreover, $\SW_p$ metrizes weak convergence together with convergence of the $p$th moment. Finally,
+	\[
+		\SW_p(\alpha,\beta)\leq \Wass_p(\alpha,\beta),
+	\]
+	and, for $p=2$ with the uniform probability measure on the sphere,
+	\[
+		\SW_2(\alpha,\beta)^2\leq \frac1d\Wass_2(\alpha,\beta)^2.
+	\]
+\end{prop}
+
+\begin{proof}
+	Non-negativity and symmetry follow from the one-dimensional Wasserstein distance. For the triangle inequality, apply the triangle inequality of $\Wass_p$ for each direction $\theta$ and then Minkowski's inequality in $L^p(\Sphere^{d-1})$.
+
+	If $\SW_p(\alpha,\beta)=0$, then $(P_\theta)_\sharp\alpha=(P_\theta)_\sharp\beta$ for almost every direction. By continuity of characteristic functions this holds for all directions, and the Cram\'er--Wold theorem implies $\alpha=\beta$. This proves separation.
+
+	The bound $\SW_p\leq\Wass_p$ follows because $P_\theta$ is $1$-Lipschitz, so
+	\[
+		\Wass_p((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\beta)
+		\leq
+		\Wass_p(\alpha,\beta)
+	\]
+	for every $\theta$. For $p=2$, using any coupling $\pi$ between $\alpha$ and $\beta$,
+	\[
+		\int_{\Sphere^{d-1}}\int |\dotp{x-y}{\theta}|^2\d\pi(x,y)\d\sigma(\theta)
+		=
+		\frac1d\int\norm{x-y}^2\d\pi(x,y).
+	\]
+	Optimizing over $\pi$ gives the sharper inequality. The weak-convergence statement follows from the same Cram\'er--Wold mechanism plus the moment condition: convergence in $\SW_p$ gives convergence of almost all one-dimensional projections and tightness of the $p$th moments; conversely, weak convergence with $p$th-moment convergence implies convergence of projected $\Wass_p$ distances and dominated convergence on the sphere.
+\end{proof}
+
+\begin{rem}[Hilbert embedding for $\SW_2$]\label{rem-sliced-hilbert-embedding}
+	In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile functions. Hence
+	\[
+		\SW_2(\alpha,\beta)^2
+		=
+		\int_{\Sphere^{d-1}}\int_0^1
+		\abs{F_{\theta,\alpha}^{-1}(u)-F_{\theta,\beta}^{-1}(u)}^2
+		\d u\d\sigma(\theta),
+	\]
+	where $F_{\theta,\alpha}^{-1}$ is the quantile of $(P_\theta)_\sharp\alpha$. Thus $\SW_2$ is a Hilbertian distance after embedding each measure into its field of projected quantiles. Consequently, $\exp(-\gamma\SW_2^2)$ is a positive definite kernel on probability measures for every $\gamma>0$.
+	Conversely, on compact sets, $\Wass_p$ can be bounded by a dimension-dependent power of $\SW_p$; such inequalities are weaker than the direct bound of Proposition~\ref{prop-sliced-wasserstein-metric} and explain why sliced distances metrize the same topology without being bi-Lipschitz equivalent to $\Wass_p$ in high dimension~\cite{bonnotte2013unidimensional,nadjahi2019asymptotic}.
+\end{rem}
+
+\begin{defn}[Max-sliced Wasserstein]\label{def-sliced-variants}
+	The max-sliced distance replaces the average over directions by the most discriminating one:
+	\[
+		\MaxSW_p(\alpha,\beta)
+		\eqdef
+		\sup_{\theta\in\Sphere^{d-1}}
+		\Wass_p((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\beta).
+	\]
+	It is useful when only a small set of projections carries most of the discrepancy, for instance in generative modeling~\cite{deshpande2019maxsliced}.
+\end{defn}
+
+\paragraph{Min-sliced lifted transport plans.}
+
+There is another, conceptually different, use of slicing: one can use a one-dimensional projection to build a feasible high-dimensional transport plan. For equal-weight empirical measures $\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$, sort the projected samples $\dotp{x_i}{\theta}$ and $\dotp{y_j}{\theta}$, and let $\sigma_\theta$ be the monotone matching induced by this sorting. The lifted plan
+\[
+	\pi_\theta
+	=
+	\frac1n\sum_{i=1}^n\delta_{(x_i,y_{\sigma_\theta(i)})}
+\]
+is a genuine coupling between $\alpha$ and $\beta$ in the original space. Min-SWGG-type methods choose the best projection according to the full-dimensional transport cost,
+\[
+	\operatorname{MSWGG}_2(\alpha,\beta)^2
+	\eqdef
+	\min_{\theta\in\Sphere^{d-1}}
+	\int\norm{x-y}^2\d\pi_\theta(x,y).
+\]
+This is not a projected distance; it is a cheap feasible-plan construction. Consequently it gives an upper bound on $\Wass_2^2(\alpha,\beta)$, and the interest is algorithmic: the plan is obtained by sorting rather than by solving a high-dimensional linear program.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ccc@{}}
+\small selected projection & \small lifted sliced plan & \small quadratic $W_2$ plan \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/min-sliced-transport-plan/direction.pdf} &
+\includegraphics[width=.30\linewidth]{figures/min-sliced-transport-plan/lifted-plan.pdf} &
+\includegraphics[width=.30\linewidth]{figures/min-sliced-transport-plan/w2-plan.pdf}
+\end{tabular}
+\caption{Lifted min-sliced plan. A one-dimensional direction is selected by a small deterministic sweep, then red and blue atoms are sorted after projection and matched in that order. The middle panel lifts this one-dimensional matching back to the plane; it is a feasible coupling but not the same object as the quadratic $W_2$ matching shown on the right. This illustrates why sliced constructions are computationally light and interpretable, while losing some of the geometry of the full transport problem.}
+\label{fig:min-sliced-transport-plan}
+\end{figure}
+
+\begin{defn}[Subspace-sliced Wasserstein]\label{def-subspace-sliced-wasserstein}
+	Subspace-sliced variants replace one-dimensional lines by $k$-dimensional orthogonal projections. If $U\in\RR^{d\times k}$ satisfies $\transp{U}U=\Id_k$, then
+	\[
+		\SW_{p,k}(\alpha,\beta)^p
+		\eqdef
+		\int \Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta)^p\d U,
+	\]
+	where the integral is over the Stiefel manifold, and
+	\[
+		\MaxSW_{p,k}(\alpha,\beta)
+		\eqdef
+		\sup_{\transp{U}U=\Id_k}
+		\Wass_p((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta).
+	\]
+	The case $k=1$ recovers ordinary sliced and max-sliced Wasserstein, while $k=d$ recovers the original Wasserstein distance.
+\end{defn}
+
+\begin{prop}[Basic bounds for sliced variants]\label{prop-sliced-variant-bounds}
+	With normalized surface measure,
+	\[
+		\SW_p(\alpha,\beta)
+		\leq
+		\MaxSW_p(\alpha,\beta)
+		\leq
+		\Wass_p(\alpha,\beta).
+	\]
+	In the equal-weight empirical setting above, any min-SWGG-type lifted plan has cost at least $\Wass_2^2(\alpha,\beta)$, hence gives an upper bound on the optimal quadratic transport cost. For $k$-dimensional subspace projections, the corresponding projected Wasserstein distance is bounded above by $\Wass_p$ for every fixed subspace, and so are its average and maximum over subspaces.
+\end{prop}
+
+\begin{proof}
+	The first inequality follows because an average is bounded by a supremum. The second and the subspace bound follow because orthogonal projections are $1$-Lipschitz, so pushing any admissible coupling forward gives a feasible coupling for the projected problem with no larger cost. A lifted one-dimensional matching is an admissible coupling between the original measures; evaluating the full quadratic cost on any admissible coupling can only be larger than the optimal $\Wass_2^2$ value.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Linear Optimal Transport}
+\label{sec-linear-ot}
+
+Linear OT replaces a nonlinear transport distance by a Hilbert norm between maps. It is useful when one reference measure is fixed and many nearby distributions must be compared cheaply. Fix a reference absolutely continuous measure $\rho$ and let $T_\alpha$ be the Brenier map pushing $\rho$ to $\alpha$. The linear OT embedding is
+\begin{equation}\label{eq-lot-embedding}
+	\alpha \mapsto T_\alpha-\Id\in L^2(\rho;\RR^d),
+	\qquad
+	\LOT_\rho(\alpha,\beta)=\norm{T_\alpha-T_\beta}_{L^2(\rho)}.
+\end{equation}
+If one of the two targets equals the reference, the linearized distance is exact: for instance, $\LOT_\rho(\rho,\alpha)=\norm{T_\alpha-\Id}_{L^2(\rho)}=\Wass_2(\rho,\alpha)$. For two arbitrary targets it is instead a tangent-space approximation of the Wasserstein geometry~\cite{wang2013linear}.
+For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycenter is obtained by averaging maps,
+\[
+	\bar T=\sum_s\lambda_s T_{\alpha_s},
+	\qquad
+	\bar\alpha_{\LOT}=\bar T_\sharp\rho.
+\]
+This is exact in one dimension, where quantile functions linearize $\Wass_2$, and it is especially useful when many barycenters with changing weights must be evaluated quickly.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cc@{}}
+\small 1D displacement fields $T_\alpha-\Id$ & \small exact 1D averaged quantile \\[-.15em]
+\includegraphics[width=.45\linewidth]{figures/dualnorms-linear-ot-embedding/displacements-1d.pdf} &
+\includegraphics[width=.45\linewidth]{figures/dualnorms-linear-ot-embedding/barycenter-1d.pdf}
+\end{tabular}
+
+\vspace{.25em}
+\begin{tabular}{@{}ccc@{}}
+\small map to left target & \small interpolation in map space & \small map to right target \\[-.15em]
+\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/map-left-2d.pdf} &
+\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/interpolation-2d.pdf} &
+\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/map-right-2d.pdf}
+\end{tabular}
+\caption{Linear OT coordinates. Fixing a reference measure $\rho$ turns each target into the displacement field $T_\alpha-\Id$. In one dimension this is exactly the quantile parametrization of $\Wass_2$, so averaging displacement fields gives the true Wasserstein barycenter. In two dimensions the same construction averages Brenier maps from a central Gaussian reference toward two multimodal targets; it is a tangent approximation and should not be confused with the generally nonlinear Wasserstein barycenter.}
+\label{fig:dualnorms-linear-ot-embedding}
+\end{figure}
+
+\begin{prop}[Local stability of linear OT]\label{prop-linear-ot-stability}
+	Assume that the measures are supported on a fixed convex compact set, with densities bounded above and below, and that the Brenier maps from $\rho$ are regular. Then, for $\alpha,\beta$ in a sufficiently small regular neighborhood of $\rho$,
+	\[
+		\Wass_2(\alpha,\beta)\leq \LOT_\rho(\alpha,\beta)
+		\quad\text{and}\quad
+		\LOT_\rho(\alpha,\beta)\leq C\Wass_2(\alpha,\beta)^\eta
+	\]
+	for constants $C>0$ and $\eta\in(0,1]$ depending on regularity.
+\end{prop}
+\begin{proof}
+	The first inequality is immediate: $(T_\alpha,T_\beta)_\sharp\rho$ is a feasible coupling between $\alpha$ and $\beta$. The reverse local estimate is a standard stability statement for the Monge--Amp\`ere equation under the stated regularity assumptions: changes in the target measure control changes in the Brenier potential in H\"older norms, hence control $T_\alpha-T_\beta$ in $L^2(\rho)$. In simple one-dimensional settings, quantile functions make this exact with $\eta=1$.
+	In several dimensions one should not read the statement as a global Lipschitz estimate in $\Wass_2$. Quantitative stability results for semi-discrete and Monge--Amp\`ere maps give H\"older exponents depending on the dimension, density bounds, support geometry and regularity; see for instance the estimates of M\'erigot, Delalande and Chazal~\cite{merigot2020stability}. Under stronger smooth perturbations of uniformly convex smooth densities, elliptic regularity can give Lipschitz dependence in stronger function norms, but converting those controls to Wasserstein perturbations generally loses powers.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Spectral and Robust Wasserstein Distances}
+\label{sec-spectral-subspace-wasserstein}
+
+Spectral OT changes the scalar quadratic cost by measuring the whole displacement covariance through a matrix gauge. The same object admits a robust projected formulation: instead of fixing one projection, one maximizes over the polar set of the gauge. Subspace robust OT is the important non-convex rank-constrained version of this idea~\cite{paty2019subspace}; spectral gauges provide its convex minimax counterpart and connect to recent spectral-gradient viewpoints such as Muon dynamics~\cite{peyre2026muon}.
+
+\begin{defn}[Spectral Wasserstein distance]\label{def-spectral-wasserstein}
+	A monotone spectral gauge on positive semidefinite matrices is a convex, positively $1$-homogeneous map $\gamma:\mathbb S_+^d\to\RR_+$ such that $\gamma(M)=0$ only for $M=0$, $\gamma(QM\transp{Q})=\gamma(M)$ for every orthogonal matrix $Q$, and
+	\[
+		0\preceq M\preceq N
+		\quad\Longrightarrow\quad
+		\gamma(M)\leq\gamma(N).
+	\]
+	For a coupling $\pi\in\Couplings(\alpha,\beta)$, define its displacement covariance
+	\[
+		M_\pi\eqdef\int (x-y)(x-y)^\top\d\pi(x,y).
+	\]
+	The spectral Wasserstein distance associated with $\gamma$ is
+	\eql{\label{eq-spectral-wasserstein}
+		\Wass_\gamma(\alpha,\beta)^2
+		\eqdef
+		\inf_{\pi\in\Couplings(\alpha,\beta)}\gamma(M_\pi).
+	}
+\end{defn}
+
+The special case $\gamma(M)=\tr(M)$ gives the usual quadratic Wasserstein distance $\Wass_2$. The spectral gauge $\gamma(M)=\lambda_{\max}(M)$ instead measures the worst transported variance direction. For $A\succeq0$, define the quadratic projected transport cost
+\eql{\label{eq-quadratic-projected-cost}
+	\Wass_{2,A}(\alpha,\beta)^2
+	\eqdef
+	\inf_{\pi\in\Couplings(\alpha,\beta)}
+	\int (x-y)^\top A(x-y)\d\pi(x,y)
+	=
+	\Wass_2((A^{1/2})_\sharp\alpha,(A^{1/2})_\sharp\beta)^2.
+}
+The polar set of the gauge is
+\eql{\label{eq-spectral-polar-set}
+	\mathcal B_\gamma
+	\eqdef
+	\enscond{A\succeq0}{\tr(AM)\leq\gamma(M)\quad\text{for all }M\succeq0},
+}
+so that, for a closed gauge, $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
+
+\begin{prop}[Robust representation and metric equivalence]\label{prop-spectral-wasserstein-robust}
+	Assume, for simplicity, that the measures are compactly supported and that $\gamma$ is closed and finite on the positive semidefinite cone. Then
+	\[
+		\Wass_\gamma(\alpha,\beta)^2
+		=
+		\sup_{A\in\mathcal B_\gamma}
+		\Wass_{2,A}(\alpha,\beta)^2.
+	\]
+	If there exist constants $0<a\leq b<+\infty$ such that $a\Id\in\mathcal B_\gamma$ and $\mathcal B_\gamma\subset\enscond{A}{0\preceq A\preceq b\Id}$, equivalently
+	\[
+		a\tr(M)\leq\gamma(M)\leq b\tr(M)
+		\qquad (M\succeq0),
+	\]
+	then
+	\[
+		\sqrt a\,\Wass_2(\alpha,\beta)
+		\leq
+		\Wass_\gamma(\alpha,\beta)
+		\leq
+		\sqrt b\,\Wass_2(\alpha,\beta).
+	\]
+	In particular, $\Wass_\gamma$ is a distance. When $\gamma$ is the restriction of a norm to the positive semidefinite cone, these bounds hold automatically in finite dimension, so $\Wass_\gamma$ is equivalent to $\Wass_2$ on measures with finite second moments.
+\end{prop}
+
+\begin{proof}
+	Using the polar representation of $\gamma$,
+	\[
+		\Wass_\gamma(\alpha,\beta)^2
+		=
+		\inf_{\pi\in\Couplings(\alpha,\beta)}
+		\sup_{A\in\mathcal B_\gamma}\tr(AM_\pi).
+	\]
+	The coupling set is convex and compact for weak convergence under compact support. Since $\gamma$ is a finite gauge on a finite-dimensional cone and vanishes only at the origin, it is equivalent to the trace norm on the slice $\tr(M)=1$, so $\mathcal B_\gamma$ is convex and compact. The map $(\pi,A)\mapsto\tr(AM_\pi)$ is affine in each variable and continuous. Sion's minimax theorem gives
+	\[
+		\inf_\pi\sup_{A\in\mathcal B_\gamma}\tr(AM_\pi)
+		=
+		\sup_{A\in\mathcal B_\gamma}\inf_\pi\tr(AM_\pi)
+		=
+		\sup_{A\in\mathcal B_\gamma}\Wass_{2,A}(\alpha,\beta)^2.
+	\]
+	For fixed $A\succeq0$, $\Wass_{2,A}$ is the Wasserstein pseudodistance associated with the seminorm $x\mapsto\norm{A^{1/2}x}$. A supremum of pseudodistances is symmetric and satisfies the triangle inequality.
+
+	If $a\Id\in\mathcal B_\gamma$ and $A\preceq b\Id$ for all $A\in\mathcal B_\gamma$, then
+	\[
+		a\Wass_2(\alpha,\beta)^2
+		=
+		\Wass_{2,a\Id}(\alpha,\beta)^2
+		\leq
+		\Wass_\gamma(\alpha,\beta)^2
+		\leq
+		b\Wass_2(\alpha,\beta)^2,
+	\]
+	which proves definiteness and equivalence with $\Wass_2$. The equivalence between these operator bounds and $a\tr(M)\leq\gamma(M)\leq b\tr(M)$ follows directly from the polar formula. In finite dimension, any norm restricted to the positive semidefinite cone is equivalent to the trace norm on that cone. The finite-second-moment case follows by truncation when these norm-equivalence bounds hold.
+\end{proof}
+
+\begin{defn}[Subspace robust Wasserstein]\label{def-subspace-robust-wasserstein}
+	For $1\leq k\leq d$, the Paty--Cuturi subspace robust Wasserstein distance is
+	\[
+		\SRW_{2,k}(\alpha,\beta)
+		\eqdef
+		\sup_{\transp{U}U=\Id_k}
+		\Wass_2((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta)
+		=
+		\sup_{P^2=P=\transp{P},\ \tr(P)=k}\Wass_{2,P}(\alpha,\beta).
+	\]
+\end{defn}
+
+For the Ky Fan gauge
+\[
+	\gamma_k(M)=\sum_{\ell=1}^k\lambda_\ell(M),
+\]
+where the eigenvalues are sorted in decreasing order, the polar set is
+\[
+	\mathcal B_{\gamma_k}=\enscond{A}{0\preceq A\preceq\Id,\ \tr(A)\leq k}.
+\]
+Thus $k=d$ gives $\gamma_d(M)=\tr(M)$ and recovers $\Wass_2$. The convex hull of rank-$k$ projectors is
+\[
+	\enscond{A}{0\preceq A\preceq\Id,\ \tr(A)=k},
+\]
+and the associated support function is the Ky Fan gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of $\SRW_{2,k}$, while $\SRW_{2,k}$ keeps the original non-convex rank constraint. For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$ and $\mathcal B_{\gamma_1}=\enscond{A\succeq0}{\tr(A)\leq1}$.
+This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-type spectral dynamics in~\cite{peyre2026muon}.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}cc@{}}
+\small trace-gauge coupling & \small $\lambda_{\max}$-gauge coupling \\[-.15em]
+\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/trace-coupling.pdf} &
+\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-coupling.pdf}
+\\[-.1em]
+\small trace-gauge interpolation & \small $\lambda_{\max}$-gauge interpolation \\[-.15em]
+\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/trace-geodesic.pdf} &
+\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-geodesic.pdf}
+\end{tabular}
+\caption{Trace and spectral gauges for displacement covariances. The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by a small finite-direction robust linear program. The bottom row shows the corresponding displacement interpolations, colored from red to blue. The figure is illustrative: it visualizes how changing the gauge changes the coupling and the induced interpolation geometry.}
+\label{fig:spectral-wasserstein-gauge}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

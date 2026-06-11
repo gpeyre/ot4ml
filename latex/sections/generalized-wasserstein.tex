@@ -46,11 +46,19 @@ Large $\tau$ makes marginal mismatch expensive and approaches balanced OT when t
 		+
 		\Dd_{\bar\psi_2}(\rho|\beta).
 	\]
-	The right-hand side is the infimal gluing divergence obtained by matching the two measures through a common zero-transport marginal $\rho$. In particular, when $\bar\psi_1=\bar\psi_2$ is the KL entropy and $\alpha,\beta$ have densities $\rho_\alpha,\rho_\beta$ with respect to a common measure $\lambda$,
+	The right-hand side is the infimal gluing divergence obtained by matching the two measures through a common zero-transport marginal $\rho$. In the dominated case, if $\alpha=a\lambda$, $\beta=b\lambda$, and the minimizing common marginal is absolutely continuous, $\rho=r\lambda$, this divergence decouples pointwise as
+	\[
+		\int \mathfrak m_{\bar\psi_1,\bar\psi_2}(a(x),b(x))\d\lambda(x),
+		\qquad
+		\mathfrak m_{\bar\psi_1,\bar\psi_2}(a,b)
+		\eqdef
+		\inf_{r\geq0} a\,\bar\psi_1(r/a)+b\,\bar\psi_2(r/b),
+	\]
+	with the usual recession conventions when $a=0$ or $b=0$. For superlinear entropies, and in particular for KL, finite energy forces this dominated form. Thus, when $\bar\psi_1=\bar\psi_2$ is the KL entropy,
 	\[
 		\inf_{\rho\in\Mm_+(\Xx)} \KL(\rho|\alpha)+\KL(\rho|\beta)
 		=
-		\int (\sqrt{\rho_\alpha}-\sqrt{\rho_\beta})^2\d\lambda .
+		\int (\sqrt{a}-\sqrt{b})^2\d\lambda .
 	\]
 	Thus the KL marginal relaxation contains the squared Hellinger distance as its local mass-variation limit.
 \end{prop}
@@ -66,7 +74,15 @@ Large $\tau$ makes marginal mismatch expensive and approaches balanced OT when t
 	\]
 	and optimizing over $\rho$ gives the lower bound.
 
-	For KL, minimizing pointwise over the density $r$ of $\rho$ gives $r\log(r/a)-r+a+r\log(r/b)-r+b$. The optimality condition is $\log(r/a)+\log(r/b)=0$, hence $r=\sqrt{ab}$, and the minimum is $a+b-2\sqrt{ab}=(\sqrt a-\sqrt b)^2$.
+	In the dominated case, writing $\rho=r\lambda$ gives
+	\[
+		\Dd_{\bar\psi_1}(\rho|\alpha)+\Dd_{\bar\psi_2}(\rho|\beta)
+		=
+		\int
+		a\,\bar\psi_1(r/a)+b\,\bar\psi_2(r/b)
+		\d\lambda,
+	\]
+	so the minimization over $\rho$ decouples into the scalar envelope $\mathfrak m_{\bar\psi_1,\bar\psi_2}$. For KL, no singular part is admissible when $\alpha$ and $\beta$ are dominated by $\lambda$. The pointwise objective is $r\log(r/a)-r+a+r\log(r/b)-r+b$. Its optimality condition is $\log(r/a)+\log(r/b)=0$, hence $r=\sqrt{ab}$, and the minimum is $a+b-2\sqrt{ab}=(\sqrt a-\sqrt b)^2$.
 \end{proof}
 
 \begin{prop}[Dual of unbalanced optimal transport]\label{prop-dual-unbalanced-ot}
@@ -318,13 +334,14 @@ where $\sigma$ is the uniform probability measure on the sphere. This constructi
 \centering
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}cccc@{}}
-\small source density & \small source slices & \small target slices & \small target density \\[-.15em]
 \includegraphics[width=.23\linewidth]{figures/sliced-wasserstein-projections/density-alpha.pdf} &
 \includegraphics[width=.17\linewidth]{figures/sliced-wasserstein-projections/hist-alpha.pdf} &
 \includegraphics[width=.17\linewidth]{figures/sliced-wasserstein-projections/hist-beta.pdf} &
 \includegraphics[width=.23\linewidth]{figures/sliced-wasserstein-projections/density-beta.pdf}
+\\[-.1em]
+\small source density & \small source slices & \small target slices & \small target density
 \end{tabular}
-\caption{Sliced Wasserstein projections between two planar densities. Five fixed directions are drawn on the source and target point clouds. For each direction, the middle panels show the one-dimensional projected histograms $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\beta$. Sliced OT averages one-dimensional Wasserstein discrepancies over many such directions, replacing a difficult planar comparison by a collection of sorted one-dimensional comparisons.}
+\caption{Sliced Wasserstein projections between two planar densities. The source and target are rendered as smoothed black-and-white density images obtained from dense farthest-point samples of two silhouettes. Five fixed directions are drawn on both densities. For each direction, the middle panels show smoothed one-dimensional density estimates of the projected measures $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\beta$. Sliced OT averages one-dimensional Wasserstein discrepancies over many such directions, replacing a difficult planar comparison by a collection of sorted one-dimensional comparisons.}
 \label{fig:sliced-wasserstein-projections}
 \end{figure}
 
@@ -447,16 +464,36 @@ This is not a projected distance; it is a cheap feasible-plan construction. Cons
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Linear Optimal Transport}
+\subsection{Vector Quantiles and Linear Optimal Transport}
 \label{sec-linear-ot}
+\label{sec-vector-quantiles-linearized-transport}
 
-Linear OT replaces a nonlinear transport distance by a Hilbert norm between maps. It is useful when one reference measure is fixed and many nearby distributions must be compared cheaply. Fix a reference absolutely continuous measure $\rho$ and let $T_\alpha$ be the Brenier map pushing $\rho$ to $\alpha$. The linear OT embedding is
+Linear OT starts from the multivariate analogue of quantile coordinates. The one-dimensional quantile function represents a probability measure by the monotone map sending a fixed reference law to it; in dimension $d>1$, Brenier's theorem gives the corresponding construction after choosing an absolutely continuous reference probability $\rho$, typically the uniform law on a convex body or a standard Gaussian.
+
+\paragraph{Vector quantiles.}
+
+Assume that $\rho$ is absolutely continuous. For a target law $\mu$ with finite second moment, its vector quantile relative to $\rho$ is the Brenier map
+\[
+	\T_\mu=\nabla\phi_\mu,
+	\qquad
+	(\T_\mu)_\sharp\rho=\mu,
+\]
+or equivalently the solution of
+\[
+	\min_{\T_\sharp\rho=\mu}
+	\int \norm{x-\T(x)}^2\d\rho(x).
+\]
+This construction is canonical only after fixing $\rho$: changing the reference law changes the coordinates used to represent $\mu$. Vector quantile regression uses the same idea conditionally, replacing scalar conditional quantiles by conditional Brenier maps and thereby encoding multivariate ranks and depths~\cite{carlier2016vector}.
+
+\paragraph{Linearized Wasserstein coordinates.}
+
+Linear OT replaces a nonlinear transport distance by a Hilbert norm between reference maps. It is useful when one reference measure is fixed and many nearby distributions must be compared cheaply. Let $T_\alpha$ be the Brenier map pushing $\rho$ to $\alpha$, understood as an element of $L^2(\rho;\RR^d)$ and hence defined only $\rho$-almost everywhere. The linear OT embedding is
 \begin{equation}\label{eq-lot-embedding}
 	\alpha \mapsto T_\alpha-\Id\in L^2(\rho;\RR^d),
 	\qquad
 	\LOT_\rho(\alpha,\beta)=\norm{T_\alpha-T_\beta}_{L^2(\rho)}.
 \end{equation}
-If one of the two targets equals the reference, the linearized distance is exact: for instance, $\LOT_\rho(\rho,\alpha)=\norm{T_\alpha-\Id}_{L^2(\rho)}=\Wass_2(\rho,\alpha)$. For two arbitrary targets it is instead a tangent-space approximation of the Wasserstein geometry~\cite{wang2013linear}.
+If one of the two targets equals the reference, the linearized distance is exact: for instance, $\LOT_\rho(\rho,\alpha)=\norm{T_\alpha-\Id}_{L^2(\rho)}=\Wass_2(\rho,\alpha)$. For two arbitrary targets, the coupling $(T_\alpha,T_\beta)_\sharp\rho$ is admissible but not generally optimal, so $\LOT_\rho$ is a tangent-space approximation of the Wasserstein geometry~\cite{wang2013linear}.
 For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycenter is obtained by averaging maps,
 \[
 	\bar T=\sum_s\lambda_s T_{\alpha_s},
@@ -465,23 +502,29 @@ For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycen
 \]
 This is exact in one dimension, where quantile functions linearize $\Wass_2$, and it is especially useful when many barycenters with changing weights must be evaluated quickly.
 
-\begin{figure}[H]
+\begin{rem}[Three Hilbertian embeddings of measures]\label{rem-three-hilbertian-measure-embeddings}
+	Several constructions in this text embed measures into Hilbert spaces, but they encode different geometries. Kernel mean embeddings send $\alpha$ to $\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances; see Section~\ref{sec-rkhs-mmd}. Quadratic sliced Wasserstein sends a measure to the collection of one-dimensional quantile functions of its projections, viewed in $L^2(\Sphere^{d-1}\times[0,1])$; see Section~\ref{sec-sliced-wasserstein}. Linear OT sends $\alpha$ to the displacement field $T_\alpha-\Id$ from a fixed reference $\rho$ in $L^2(\rho;\RR^d)$. The first construction is linear in the measure and depends on the kernel, the second is nonlinear but reduces OT to projected one-dimensional quantiles, and the third is a tangent approximation to the full Wasserstein geometry around a chosen reference.
+\end{rem}
+
+\begin{figure}[htbp]
 \centering
 \setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}cc@{}}
-\small 1D displacement fields $T_\alpha-\Id$ & \small exact 1D averaged quantile \\[-.15em]
+\begin{tabular}{@{}ccc@{}}
 \includegraphics[width=.45\linewidth]{figures/dualnorms-linear-ot-embedding/displacements-1d.pdf} &
-\includegraphics[width=.45\linewidth]{figures/dualnorms-linear-ot-embedding/barycenter-1d.pdf}
+\includegraphics[width=.45\linewidth]{figures/dualnorms-linear-ot-embedding/barycenter-1d.pdf} \\[-.1em]
+\small 1D maps $T_\alpha,T_\beta,T_\gamma$ & \small measures $\alpha,\beta,\gamma$
 \end{tabular}
 
 \vspace{.25em}
 \begin{tabular}{@{}ccc@{}}
-\small map to left target & \small interpolation in map space & \small map to right target \\[-.15em]
-\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/map-left-2d.pdf} &
-\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/interpolation-2d.pdf} &
-\includegraphics[width=.32\linewidth]{figures/dualnorms-linear-ot-embedding/map-right-2d.pdf}
+\includegraphics[width=.30\linewidth]{figures/dualnorms-linear-ot-embedding/targets-2d.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dualnorms-linear-ot-embedding/barycenter-2d.pdf} &
+\includegraphics[width=.30\linewidth]{figures/dualnorms-linear-ot-embedding/barycenter-2d-ot.pdf} \\[-.1em]
+\small maps from $\rho$ to $\alpha,\beta$ &
+\small linearized barycenter $\bar T_\sharp\rho$ &
+\small McCann midpoint
 \end{tabular}
-\caption{Linear OT coordinates. Fixing a reference measure $\rho$ turns each target into the displacement field $T_\alpha-\Id$. In one dimension this is exactly the quantile parametrization of $\Wass_2$, so averaging displacement fields gives the true Wasserstein barycenter. In two dimensions the same construction averages Brenier maps from a central Gaussian reference toward two multimodal targets; it is a tangent approximation and should not be confused with the generally nonlinear Wasserstein barycenter.}
+\caption{Linear OT coordinates. Fixing a reference measure $\rho$ turns each target into a map $T_\alpha$ from $\rho$ to $\alpha$, or equivalently into the displacement field $T_\alpha-\Id$. In one dimension this is exactly the quantile parametrization of $\Wass_2$, so averaging the maps toward a two-component $\alpha$ and a two-component $\beta$ gives the true Wasserstein barycenter. In two dimensions, the first panel shows the reference-to-target maps, computed on dense clouds and displayed on farthest-point subsets, with $\beta$ represented by two Gaussian components. The middle purple panel shows the linearized barycenter obtained by averaging the two maps from $\rho$. The right purple panel shows the genuine McCann midpoint between $\alpha$ and $\beta$, obtained by solving a direct OT problem between the two target clouds and interpolating at $t=1/2$.}
 \label{fig:dualnorms-linear-ot-embedding}
 \end{figure}
 
@@ -581,7 +624,13 @@ so that, for a closed gauge, $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
 		=
 		\sup_{A\in\mathcal B_\gamma}\Wass_{2,A}(\alpha,\beta)^2.
 	\]
-	For fixed $A\succeq0$, $\Wass_{2,A}$ is the Wasserstein pseudodistance associated with the seminorm $x\mapsto\norm{A^{1/2}x}$. A supremum of pseudodistances is symmetric and satisfies the triangle inequality.
+	For fixed $A\succeq0$, $\Wass_{2,A}$ is the Wasserstein pseudodistance associated with the seminorm $x\mapsto\norm{A^{1/2}x}$. Since all terms are nonnegative, the robust identity also gives
+	\[
+		\Wass_\gamma(\alpha,\beta)
+		=
+		\sup_{A\in\mathcal B_\gamma}\Wass_{2,A}(\alpha,\beta).
+	\]
+	A supremum of pseudodistances is symmetric and satisfies the triangle inequality.
 
 	If $a\Id\in\mathcal B_\gamma$ and $A\preceq b\Id$ for all $A\in\mathcal B_\gamma$, then
 	\[
@@ -620,22 +669,35 @@ Thus $k=d$ gives $\gamma_d(M)=\tr(M)$ and recovers $\Wass_2$. The convex hull of
 \[
 	\enscond{A}{0\preceq A\preceq\Id,\ \tr(A)=k},
 \]
-and the associated support function is the Ky Fan gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of $\SRW_{2,k}$, while $\SRW_{2,k}$ keeps the original non-convex rank constraint. For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$ and $\mathcal B_{\gamma_1}=\enscond{A\succeq0}{\tr(A)\leq1}$.
+and, since $M\succeq0$, the associated support function is the same Ky Fan gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of $\SRW_{2,k}$, while $\SRW_{2,k}$ keeps the original non-convex rank constraint. For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$ and $\mathcal B_{\gamma_1}=\enscond{A\succeq0}{\tr(A)\leq1}$.
 This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-type spectral dynamics in~\cite{peyre2026muon}.
 
 \begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}cc@{}}
-\small trace-gauge coupling & \small $\lambda_{\max}$-gauge coupling \\[-.15em]
-\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/trace-coupling.pdf} &
-\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-coupling.pdf}
+\includegraphics[width=.34\linewidth]{figures/spectral-wasserstein-gauge/trace-coupling.pdf} &
+\includegraphics[width=.34\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-coupling.pdf}
 \\[-.1em]
-\small trace-gauge interpolation & \small $\lambda_{\max}$-gauge interpolation \\[-.15em]
-\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/trace-geodesic.pdf} &
-\includegraphics[width=.36\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-geodesic.pdf}
+\small trace-gauge coupling & \small $\lambda_{\max}$-gauge coupling
 \end{tabular}
-\caption{Trace and spectral gauges for displacement covariances. The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by a small finite-direction robust linear program. The bottom row shows the corresponding displacement interpolations, colored from red to blue. The figure is illustrative: it visualizes how changing the gauge changes the coupling and the induced interpolation geometry.}
+\\[.35em]
+\begin{tabular}{@{}ccccc@{}}
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/trace-density-t000.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/trace-density-t025.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/trace-density-t050.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/trace-density-t075.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/trace-density-t100.pdf} \\[-.1em]
+\multicolumn{5}{c}{\small trace-gauge interpolation} \\[.2em]
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-density-t000.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-density-t025.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-density-t050.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-density-t075.pdf} &
+\includegraphics[width=.17\linewidth]{figures/spectral-wasserstein-gauge/lambda-max-density-t100.pdf} \\[-.1em]
+\multicolumn{5}{c}{\small $\lambda_{\max}$-gauge interpolation} \\[-.1em]
+\small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
+\end{tabular}
+\caption{Trace and spectral gauges for displacement covariances. The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan from a two-disk source silhouette to a heart-shaped target. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by approximating the robust formulation with a small finite set of directions. The last two rows render the corresponding displacement interpolations as kernel-smoothed density images, with the same convention as Figure~\ref{fig:monge-shape-mccann-interpolation}: white means zero density, and high density saturates in the red-to-blue interpolation color of the corresponding time. The figure is illustrative: it visualizes how changing the gauge changes the coupling and the induced interpolation geometry.}
 \label{fig:spectral-wasserstein-gauge}
 \end{figure}
 

@@ -219,6 +219,28 @@ Applying another push-forward $\be = \T_\sharp\al$ for $\T : \X \rightarrow \Y$,
 Drawing a random sample $y$ from $Y$ is thus simply achieved by computing $y=\T(x)$ where $x$ is drawn from $X$.
 \end{rem}
 
+\begin{rem}[Push-forward vs. pull-back]\label{rem-push-forward-pull-back}
+	The push-forward $\T_\sharp$ of measures should not be confused with the pull-back of functions. The pull-back is the linear map
+	\[
+		\T^\sharp:\Cc(\Yy)\to\Cc(\Xx),
+		\qquad
+		\T^\sharp g \eqdef g\circ\T .
+	\]
+	It warps functions in the opposite direction from the transported mass. Push-forward and pull-back are adjoint in the sense that
+	\[
+		\foralls (\al,g)\in\Mm(\Xx)\times\Cc(\Yy),
+		\qquad
+		\int_\Yy g \d(\T_\sharp\al)
+		=
+		\int_\Xx \T^\sharp g \d\al .
+	\]
+	Even when $\al$ and $\be$ have densities and $\be=\T_\sharp\al$, the density of $\be$ is not obtained by the naive composition $\T^\sharp\rho_\be=\rho_\be\circ\T$. Formula~\eqref{eq-pfwd-density} shows that the Jacobian determinant is essential:
+	\[
+		\rho_\al(x)=|\det \T'(x)|\,\rho_\be(\T(x)).
+	\]
+	This distinction is important in image registration. OT transports mass and accounts for local volume changes; it is not simply an image-warping operation on intensity functions.
+\end{rem}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Monge's Formulation}
 \label{sec-monge-formulation}
@@ -283,7 +305,7 @@ The constraint $\T_\sharp\al=\be$ means that $\T$ pushes the mass of $\al$ onto 
 	This is the semi-discrete setting. Section~\ref{sec-semidiscr-w1} explains how the cells become Laguerre cells for prescribed masses and ordinary Voronoi cells when the masses are free. If one exchanges the roles of $\al$ and $\be$ so that $\al$ is discrete, then no valid $\T$ exists in general: it is not possible to push forward a discrete measure to a measure with density.
 \end{example}
 
-Figure~\ref{fig:monge-color-transfer-rgb} shows a finite-dimensional instance of this deterministic viewpoint. The source and target measures are empirical color clouds in RGB space, and the map transports colors while leaving pixel positions fixed.
+Figure~\ref{fig:monge-color-transfer-rgb} shows a finite-dimensional instance of this deterministic viewpoint. The source and target measures are empirical color clouds in RGB space, and the map transports colors while leaving pixel positions fixed. Grayscale equalization is one-dimensional, but transferring a full color palette requires transporting empirical measures in a three-dimensional color space, for instance RGB or Lab. Early color-transfer methods used affine statistics or iterated one-dimensional projections~\cite{reinhard2001color,pitie2005n}; replacing these projections by a genuine three-dimensional OT map gives a more intrinsic way to match palettes while preserving their geometry~\cite{rabin-ssvm-11}.
 
 \begin{figure}[H]
 \centering
@@ -424,7 +446,9 @@ Brenier's theorem should be understood through the analogy between convex gradie
 	However, for $\theta\neq0$, $R_\theta$ is not symmetric and therefore cannot be the gradient of a scalar potential. Indeed, if a linear field $Ax$ equals $\nabla\phi(x)$, then its Jacobian $A$ must be symmetric; equivalently, a quadratic potential $\phi(x)=\dotp{Bx}{x}/2$ has gradient $((B+B^\top)/2)x$. Thus monotonicity is weaker than Brenier optimality in dimension $d\geq2$.
 \end{rem}
 
-McCann's displacement convexity theory clarifies the geometric meaning of interpolating along Brenier maps~\cite{mccann1997convexity}; this is the language of Wasserstein geodesics used later for barycenters in Section~\ref{sec-barycenters} and for gradient flows in Section~\ref{sec-wasserstein-gradient-flows}. Caffarelli's regularity theory, discussed next, explains when the convex potential is actually smooth enough to define a classical deformation.
+\paragraph{Polar factorization.}
+
+Brenier's theorem does more than solve one transport problem: it provides a canonical way to extract the ``monotone part'' of an arbitrary map. Suppose one starts from a square-integrable deformation $u:\Omega\to\RR^d$, for instance a velocity snapshot, an image deformation or a generative map. The law $\nu=u_\sharp\lambda$ records where the mass ends up, but it forgets how the points of $\Omega$ were labelled before being sent there. Brenier's polar factorization~\cite{MR923203,Brenier91} separates these two effects. The map first applies a measure-preserving rearrangement $s$ of the source, which changes labels but not mass, and then applies the unique convex-gradient map $\nabla\phi$ sending the uniform source to the output law. Thus the Brenier factor is the canonical optimal-transport representative among all maps with the same image distribution. This is useful because it isolates the part of a map that carries genuine Wasserstein displacement from the volume-preserving noise of a parametrization. It is also a bridge to fluid mechanics, where measure-preserving maps describe incompressible relabellings, and to data analysis, where one often wants to compare maps modulo such relabellings.
 
 \begin{prop}[Polar factorization]\label{prop-polar-factorization}
 	Let $\Omega\subset\RR^d$ be endowed with normalized Lebesgue measure $\lambda$, and let $u\in L^2(\Omega;\RR^d)$. Assume that the law $\nu=u_\sharp\lambda$ has finite second moment. Then there exist a measure-preserving map $s:\Omega\to\Omega$ and a convex function $\phi$ such that
@@ -435,10 +459,24 @@ McCann's displacement convexity theory clarifies the geometric meaning of interp
 	The Brenier factor $\nabla\phi$ is unique $\lambda$-almost everywhere.
 \end{prop}
 \begin{proof}
-	By Brenier's theorem there is a unique gradient of a convex function $\T=\nabla\phi$ transporting $\lambda$ to $\nu$. The maps $u$ and $\T$ have the same image law. The rearrangement theorem for non-atomic probability spaces gives a measure-preserving map $s$ such that $u=\T\circ s$; equivalently, $s$ chooses, with the correct conditional probabilities, preimages of $u(x)$ under $\T$. Uniqueness of the Brenier factor follows from Theorem~\ref{thm-brenier}. In the Gaussian linear case, with reference $\Gaussian(0,\Id)$ and $u(x)=Ax$, this is the usual matrix polar decomposition: $A=SO$ with $S=(AA^\top)^{1/2}$ symmetric positive semidefinite, $Sx$ is the Brenier part and $Ox$ is measure preserving.
+	By Brenier's theorem there is a unique gradient of a convex function $\T=\nabla\phi$ transporting $\lambda$ to $\nu$. The maps $u$ and $\T$ have the same image law. The rearrangement theorem for non-atomic probability spaces gives a measure-preserving map $s$ such that $u=\T\circ s$; equivalently, $s$ chooses, with the correct conditional probabilities, preimages of $u(x)$ under $\T$. Uniqueness of the Brenier factor follows from Theorem~\ref{thm-brenier}.
 \end{proof}
 
+The name is meant to echo the usual polar decomposition of matrices. This analogy becomes literal for linear maps under the Gaussian reference measure. If $X\sim\Gaussian(0,\Id)$ and $u(x)=Ax$, then $u_\sharp\Gaussian(0,\Id)=\Gaussian(0,AA^\top)$. The Brenier map from $\Gaussian(0,\Id)$ to this Gaussian is $x\mapsto Sx$, where $S=(AA^\top)^{1/2}$ is symmetric positive semidefinite. Hence the decomposition $u=\nabla\phi\circ s$ reads
+\[
+	A = S O,
+	\qquad
+	O=S^\dagger A,
+\]
+with $O$ orthogonal when $A$ is invertible, or a partial isometry in the singular case. The factor $Sx$ is the convex-gradient transport part, while $Ox$ preserves the standard Gaussian law. This finite-dimensional picture is often the fastest way to remember the general theorem: polar factorization is matrix polar decomposition with matrices replaced by maps and orthogonal transformations replaced by measure-preserving rearrangements.
+
+\medskip
+
+McCann's displacement convexity theory clarifies the geometric meaning of interpolating along Brenier maps~\cite{mccann1997convexity}; this is the language of Wasserstein geodesics used later for barycenters in Section~\ref{sec-barycenters} and for gradient flows in Section~\ref{sec-wasserstein-gradient-flows}. Caffarelli's regularity theory, discussed next, explains when the convex potential is actually smooth enough to define a classical deformation.
+
 \paragraph{Regularity and the Monge--Amp\`ere equation.}
+
+The previous results identify the optimal map; regularity theory asks when this map is a classical smooth deformation rather than only an almost-everywhere gradient. For quadratic costs this question becomes the regularity theory of the Monge--Amp\`ere equation.
 
 \begin{prop}[Caffarelli regularity]\label{prop-caffarelli-regularity}
 	Let $\Omega,\Lambda\subset\RR^d$ be bounded uniformly convex domains with $C^2$ boundaries. Let $\al=\rho(x)\d x$ be supported on $\Omega$ and $\be=\eta(y)\d y$ be supported on $\Lambda$, with $0<m\leq\rho,\eta\leq M<+\infty$. If $\rho,\eta\in C^\alpha$ for some $\alpha\in(0,1)$, then the Brenier potential $\phi$ transporting $\al$ to $\be$ is strictly convex and satisfies $\phi\in C^{2,\alpha}_{\mathrm{loc}}(\Omega)$; in particular $\nabla\phi$ is locally H\"older. Under the corresponding boundary compatibility and smoothness assumptions, the regularity holds up to the boundary.
@@ -614,6 +652,23 @@ For discrete measures, one cannot directly apply the map formula when the source
 
 Formula~\eqref{eq-wass-cumul} means that the map $\al\mapsto\cumul{\al}^{-1}$ embeds one-dimensional Wasserstein geometry isometrically into a linear $L^p$ space. For $p=2$, the Wasserstein distance on probability measures over the real line is therefore Hilbertian. This makes one-dimensional OT much simpler than higher-dimensional OT, where the Wasserstein geometry is not globally Hilbertian.
 
+\begin{figure}[htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cccc@{}}
+\includegraphics[width=.24\linewidth]{figures/monge-1d-quantile-geodesic/endpoint-densities.pdf} &
+\includegraphics[width=.24\linewidth]{figures/monge-1d-quantile-geodesic/cdfs.pdf} &
+\includegraphics[width=.24\linewidth]{figures/monge-1d-quantile-geodesic/quantiles.pdf} &
+\includegraphics[width=.24\linewidth]{figures/monge-1d-quantile-geodesic/geodesic-densities.pdf} \\[-.1em]
+\small densities &
+\small cumulative functions &
+\small quantiles &
+\small displacement geodesic
+\end{tabular}
+\caption{One-dimensional transport through quantiles. The same two smooth laws are shown as densities, cumulative functions and quantile functions. The last panel displays the displacement interpolation obtained by the linear quantile path $Q_t=(1-t)Q_\alpha+tQ_\beta$, which is the explicit one-dimensional $\Wass_2$ geodesic.}
+\label{fig:monge-1d-quantile-geodesic}
+\end{figure}
+
 For $p=1$, formula~\eqref{eq-w1-1d} shows that $\Wass_1$ is a norm on signed measures with zero total mass once they are identified with their cumulative primitives. Other classical one-dimensional distances are obtained by replacing the $L^1$ norm of cumulative functions with $L^2$ or $L^\infty$ norms; under suitable tightness assumptions, such norms also metrize convergence in law and lead for instance to Cram\'er--von Mises and Kolmogorov--Smirnov-type distances.
 
 \paragraph{Displacement interpolation.}
@@ -630,12 +685,11 @@ For the quadratic cost, when $\T$ is optimal, this is the McCann displacement in
 	=
 	(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r).
 \]
-The histogram-equalization figure in Section~\ref{sec-monge-pbm} is this construction applied to pixel intensities. Figure~\ref{fig:monge-shape-mccann-interpolation} shows the same displacement principle for two-dimensional point clouds.
+The histogram-equalization figure in Section~\ref{sec-monge-pbm} is this construction applied to pixel intensities. Figure~\ref{fig:monge-1d-quantile-geodesic} shows the quantile path directly, and Figure~\ref{fig:monge-shape-mccann-interpolation} shows the same displacement principle for two-dimensional point clouds.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \begin{tabular}{@{}ccccc@{}}
-\small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$ \\[-.15em]
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t000.pdf} &
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t025.pdf} &
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/particles-t050.pdf} &
@@ -645,11 +699,16 @@ The histogram-equalization figure in Section~\ref{sec-monge-pbm} is this constru
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t025.pdf} &
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t050.pdf} &
 \includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t075.pdf} &
-\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t100.pdf}
+\includegraphics[width=.17\linewidth]{figures/monge-shape-mccann-interpolation/density-t100.pdf} \\[-.1em]
+\small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
 \end{tabular}
-\caption{McCann displacement interpolation between a cat silhouette and a heart silhouette. The first row displays transported particles along $T_t(x)=(1-t)x+tT(x)$; the second row shows kernel-smoothed densities computed from a larger cloud, making the evolving support easier to read.}
+\caption{McCann displacement interpolation between a cat silhouette and a heart silhouette. The first row displays a small farthest-point subset of transported particles along $T_t(x)=(1-t)x+tT(x)$. The second row renders kernel-smoothed densities from a denser transported cloud as color images: white means zero density, while high density saturates in the red-to-blue interpolation color of the corresponding time.}
 \label{fig:monge-shape-mccann-interpolation}
 \end{figure}
+
+\paragraph{Triangular rearrangements.}
+
+There is another canonical way to build transport maps in several dimensions: transport one coordinate at a time by conditional one-dimensional quantiles. This construction is not usually cost-optimal, but it gives a deterministic rearrangement under weak assumptions and clarifies how multivariate transport can be reduced recursively to scalar monotone maps.
 
 \begin{prop}[Knothe--Rosenblatt triangular rearrangement]\label{prop-knothe-rosenblatt}
 	Let $\al,\be\in\Mm_+^1(\RR^d)$. Assume, for simplicity, that the first marginal of $\al$ and the one-dimensional conditional laws of $\al$ used below are atomless, and that regular conditional distributions are fixed. There is a triangular map
@@ -668,45 +727,47 @@ The histogram-equalization figure in Section~\ref{sec-monge-pbm} is this constru
 
 This construction transports successively along coordinate axes and is therefore often called axis-wise transport. It depends on the chosen ordering of coordinates and is not generally optimal for the quadratic cost. It is nevertheless a useful limiting object: Brenier maps for increasingly anisotropic quadratic costs converge to triangular rearrangements under suitable assumptions~\cite{carlier2010knothe}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Vector Quantiles and Linearized Transport}
-\label{sec-vector-quantiles-linearized-transport}
+\begin{prop}[Anisotropic Brenier maps converge to Knothe--Rosenblatt]\label{prop-knothe-limit-anisotropic-brenier}
+	Let $\alpha,\beta$ be compactly supported probability measures on $\RR^d$ with densities bounded above and below on their rectangular supports, and assume that the conditional laws entering Proposition~\ref{prop-knothe-rosenblatt} are atomless. For $\epsilon>0$, set
+	\[
+		c_\epsilon(x,y)
+		\eqdef
+		\sum_{k=1}^d \epsilon^{k-1}\abs{x_k-y_k}^2 .
+	\]
+	Let $T_\epsilon$ be the Monge map from $\alpha$ to $\beta$ for the cost $c_\epsilon$, and let $T_{\mathrm{KR}}$ be the triangular Knothe--Rosenblatt rearrangement with the coordinate order used above. Then
+	\[
+		T_\epsilon \longrightarrow T_{\mathrm{KR}}
+		\qquad\text{in } L^2(\alpha;\RR^d)
+		\qquad\text{as } \epsilon\to0 .
+	\]
+\end{prop}
 
-The one-dimensional quantile function represents a probability measure by the monotone map sending a fixed reference law to it. In dimension $d>1$, Brenier's theorem gives the analogous construction after choosing a reference probability $\rho_0$, typically the uniform law on a convex body or a standard Gaussian.
+\begin{proof}
+	We give the standard lexicographic argument, which is the variational core of~\cite{carlier2010knothe}. Let $\pi_\epsilon=(\Id,T_\epsilon)_\sharp\alpha$. Since the supports are compact, a subsequence converges weakly to some coupling $\pi$ between $\alpha$ and $\beta$. The optimality of $\pi_\epsilon$ for
+	\[
+		F_\epsilon(\gamma)
+		=
+		\sum_{k=1}^d \epsilon^{k-1}
+		\int\abs{x_k-y_k}^2\d\gamma(x,y)
+	\]
+	first implies, by letting $\epsilon\to0$, that $\pi$ minimizes the one-dimensional quadratic cost in the first coordinate among all couplings. Since the first marginal of $\alpha$ is atomless, the one-dimensional minimizer is the monotone rearrangement, so $y_1=T_1(x_1)$ under $\pi$.
 
-\paragraph{Vector quantiles.}
+	Now restrict attention to couplings satisfying this first-coordinate constraint. Subtract the common minimal value of the first-coordinate cost, divide the optimality inequality by $\epsilon$, and let $\epsilon\to0$. The limit coupling must minimize the second-coordinate quadratic cost among all couplings that already realize the first monotone rearrangement. Disintegrating with respect to $(x_1,y_1)$ reduces this constrained problem to the one-dimensional monotone rearrangement between the conditional laws of $x_2$ and $y_2$. Hence $y_2=T_2(x_1,x_2)$ under $\pi$.
 
-Assume that the reference law $\rho_0$ is absolutely continuous. For a target law $\mu$ with finite second moment, its vector quantile relative to $\rho_0$ is the Brenier map
-\[
-	\T_\mu=\nabla\phi_\mu,
-	\qquad
-	(\T_\mu)_\sharp\rho_0=\mu,
-\]
-or equivalently the solution of
-\[
-	\min_{\T_\sharp\rho_0=\mu}
-	\int \norm{x-\T(x)}^2\d\rho_0(x).
-\]
-This construction is canonical only after fixing $\rho_0$: changing the reference law changes the coordinates used to represent $\mu$. Vector quantile regression uses the same idea conditionally, replacing scalar conditional quantiles by conditional Brenier maps and thereby encoding multivariate ranks and depths~\cite{carlier2016vector}.
+	Repeating the same subtraction-and-rescaling argument gives, for every $k$, the conditional monotone rearrangement $y_k=T_k(x_1,\ldots,x_k)$. Thus every weak limit of $(\pi_\epsilon)_\epsilon$ is concentrated on the graph of $T_{\mathrm{KR}}$. This graph coupling is unique, so the whole family $\pi_\epsilon$ converges weakly to $(\Id,T_{\mathrm{KR}})_\sharp\alpha$.
 
-\paragraph{Linearized Wasserstein coordinates.}
-
-The same reference measure leads to the linearized OT embedding
-\[
-	\mu\longmapsto \T_\mu-\Id\in L^2(\rho_0;\RR^d).
-\]
-Distances between embedded maps are not equal to Wasserstein distances in general, but they provide a useful tangent-space approximation. In one dimension the construction is exact because quantile functions give the isometry~\eqref{eq-wass-cumul}. Section~\ref{sec-linear-ot} uses this reference-map viewpoint to build fast linearized barycenters: for varying weights, one averages maps in $L^2(\rho_0)$ and pushes $\rho_0$ forward by the averaged map. Figure~\ref{fig:monge-linearized-transport-coordinates} visualizes these coordinates as displacement fields from a fixed disk reference.
-
-\begin{figure}[H]
-\centering
-\begin{tabular}{@{}cc@{}}
-\small red target mixture & \small purple target mixture \\[-.15em]
-\includegraphics[width=.43\linewidth]{figures/monge-linearized-transport-coordinates/red-mixture.pdf} &
-\includegraphics[width=.43\linewidth]{figures/monge-linearized-transport-coordinates/purple-mixture.pdf}
-\end{tabular}
-\caption{Linearized transport coordinates around a fixed disk reference. The gray points sample the reference law, colored contours show the target density, and the arrows display a farthest-point subsample of the barycentric projection $T_\mu-\Id$ of the quadratic OT map. The full OT map is computed on a denser cloud than the arrows shown here.}
-\label{fig:monge-linearized-transport-coordinates}
-\end{figure}
+	Finally, let $X\sim\alpha$. The graph couplings are the laws of $(X,T_\epsilon(X))$, and they converge weakly to the law of $(X,T_{\mathrm{KR}}(X))$. To turn this into convergence of maps, fix $\zeta>0$. By Lusin's theorem, there is a compact set $K$ with $\alpha(K)>1-\zeta$ on which $T_{\mathrm{KR}}$ is continuous. On $K$, the set
+	\[
+		\enscond{(x,y)}{x\in K,\ \norm{y-T_{\mathrm{KR}}(x)}\geq\delta}
+	\]
+	is closed and has zero mass under the limiting graph coupling. Portmanteau's theorem gives
+	\[
+		\limsup_{\epsilon\to0}
+		\alpha\!\left(\enscond{x}{x\in K,\ \norm{T_\epsilon(x)-T_{\mathrm{KR}}(x)}\geq\delta}\right)
+		=0 .
+	\]
+	Adding the complement of $K$ and letting $\zeta\to0$ proves convergence in $\alpha$-probability. Since all maps take values in a common compact set, this convergence is uniformly integrable and hence holds in $L^2(\alpha)$.
+\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Gaussian Measures and the Bures Metric}
@@ -716,23 +777,38 @@ Gaussian measures form the most important finite-dimensional family preserved by
 
 \paragraph{One-dimensional Gaussians.}
 
-Let $\al=\Gaussian(m_\al,s_\al^2)$ and $\be=\Gaussian(m_\be,s_\be^2)$ be two nondegenerate Gaussians on $\RR$. Then
+Let $\al=\Gaussian(m_\al,\sigma_\al^2)$ and $\be=\Gaussian(m_\be,\sigma_\be^2)$ be two nondegenerate Gaussians on $\RR$. Then
 \[
-	\T(x)=\frac{s_\be}{s_\al}(x-m_\al)+m_\be
+	\T(x)=\frac{\sigma_\be}{\sigma_\al}(x-m_\al)+m_\be
 \]
 satisfies $\T_\sharp\al=\be$. It is the derivative of the convex function
 \[
-	\phi(x)=\frac{s_\be}{2s_\al}(x-m_\al)^2+m_\be x,
+	\phi(x)=\frac{\sigma_\be}{2\sigma_\al}(x-m_\al)^2+m_\be x,
 \]
 so Brenier's theorem shows that it is the optimal quadratic transport. The associated distance is
 \[
 	\Wass_2(\al,\be)^2
 	=
-	\int_\RR\left(\frac{s_\be}{s_\al}(x-m_\al)+m_\be-x\right)^2\d\al(x)
+	\int_\RR\left(\frac{\sigma_\be}{\sigma_\al}(x-m_\al)+m_\be-x\right)^2\d\al(x)
 	=
-	(m_\al-m_\be)^2+(s_\al-s_\be)^2.
+	(m_\al-m_\be)^2+(\sigma_\al-\sigma_\be)^2.
 \]
-The formula extends by continuity to Dirac masses, although the affine Monge map itself only pushes a Dirac source to another Dirac. Thus the OT geometry of one-dimensional Gaussians is the Euclidean geometry of the half-plane $(m,s)\in\RR\times\RR_+$. This contrasts with KL geometry, where singular Gaussians are infinitely distant.
+The formula extends by continuity to Dirac masses, although the affine Monge map itself only pushes a Dirac source to another Dirac. Thus the OT geometry of one-dimensional Gaussians is the Euclidean geometry of the half-plane $(m,\sigma)\in\RR\times\RR_+$. This contrasts with KL geometry, where singular Gaussians are infinitely distant.
+
+\begin{figure}[htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.30\linewidth]{figures/monge-gaussian-w2-geodesic/halfplane-1d.pdf} &
+\includegraphics[width=.32\linewidth]{figures/monge-gaussian-w2-geodesic/densities-1d-a.pdf} &
+\includegraphics[width=.32\linewidth]{figures/monge-gaussian-w2-geodesic/densities-1d-b.pdf} \\[-.1em]
+\small $(m,\sigma)$ half-plane &
+\small first geodesic &
+\small second geodesic
+\end{tabular}
+\caption{One-dimensional Gaussian $\Wass_2$ geodesics. In the coordinates $(m,\sigma)$, the geodesics are Euclidean segments in the upper half-plane. The two density panels show the corresponding Gaussian densities along the two segments, with colors interpolating from the red endpoint to the blue endpoint.}
+\label{fig:monge-gaussian-w2-geodesic-1d}
+\end{figure}
 
 \paragraph{Multivariate Gaussians.}
 
@@ -829,6 +905,19 @@ The covariance equation is quadratic in $A$. Under the symmetry constraint impos
 \end{proof}
 
 The covariance term $\Bb$ is the Bures--Wasserstein metric on positive semidefinite matrices~\cite{bures1969extension,gelbrich1990formula,bhatia2018bures}. It separates the Euclidean displacement of the mean from the intrinsic transport geometry of covariance ellipsoids.
+
+\begin{figure}[htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.42\linewidth]{figures/monge-gaussian-w2-geodesic/ellipses-anisotropic-to-isotropic.pdf} &
+\includegraphics[width=.42\linewidth]{figures/monge-gaussian-w2-geodesic/ellipses-rotated-anisotropic.pdf} \\[-.1em]
+\small anisotropic to isotropic &
+\small rotated anisotropies
+\end{tabular}
+\caption{Two-dimensional Gaussian $\Wass_2$ geodesics. Means move linearly, while covariance ellipses follow the Bures--Wasserstein interpolation. The left panel contracts an anisotropic Gaussian toward an isotropic one; the right panel interpolates between two strongly oriented anisotropic covariances.}
+\label{fig:monge-gaussian-w2-geodesic-2d}
+\end{figure}
 
 \begin{prop}[Metric and convexity properties of the Bures term]\label{prop-bures-metric-convex}
 	The function $\Bb$ is a distance on positive semidefinite covariance matrices. Moreover, $\Bb^2$ is jointly convex: for $t\in[0,1]$,
