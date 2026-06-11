@@ -1,7 +1,7 @@
 % !TEX root = ../OT4ML.tex
 
-\section{General Models via Transportation}
-\label{sec-general-models-transportation}
+\section{Generative Models via Transportation}
+\label{sec-generative-models-transportation}
 
 The preceding gradient-flow calculus is variational. Modern machine-learning models often use the same transportation language more broadly: one may prescribe an interpolation and regress its velocity, fit a one-step generator to a descent field, or view network depth as a continuous transport of token measures. The examples below separate what is genuinely a Wasserstein gradient flow from what is a transportation dynamics with a useful geometric interpretation.
 
@@ -30,7 +30,7 @@ If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, 
 \end{equation*}
 If $\pi = (\Id, T)_\sharp \alpha$ is a Brenier-type coupling, then $\alpha_t = ((1-t)\Id + tT)_\sharp \alpha$ is the so-called McCann OT interpolation.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{tabular}{@{}ccc@{}}
 \small product pairing & \small OT pairing & \small curved bridge \\[-.15em]
@@ -48,38 +48,62 @@ This interpolation is not directly useful for sampling from $\beta$, but it can 
 %
 This flow field is computed by solving an unconstrained least-squares problem, or equivalently, it is a conditional expectation.
 
-\begin{prop}[Flow matching vector field]
-	For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. The minimizer over measurable fields $v_t:\RR^d\to\RR^d$ of the flow-matching problem
+\begin{prop}[Flow matching vector field]\label{prop-flow-matching-vector-field}
+	For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. The solution of the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
 	\begin{equation}
 		\min_{v_t} \int_{\RR^{d'}} \norm{v_t(P_t(u)) - [\partial_t P_t](u)}^2 \, \d\pi(u). \label{eq:flow-matching}
 	\end{equation}
-	is, $\alpha_t$-almost everywhere, the conditional expectation
+	Equivalently, the minimizer is characterized $\alpha_t$-almost everywhere by the conditional expectation
 	\begin{equation}\label{eq:flow-match-conditional}
 		v_t(z) = \EE_{u \sim \pi} \big( [\partial_t P_t](u) \, \big| \, z = P_t(u) \big).
 	\end{equation}
-	The pair $(\alpha_t,v_t)$ satisfies the continuity equation~\eqref{eq:eulerian-advection}.
+	Then the pair $(\alpha_t,v_t)$ satisfies the continuity equation~\eqref{eq:eulerian-advection}.
 \end{prop}
 
 \begin{proof}
-	The minimizer is the orthogonal projection in $L^2(\pi;\RR^d)$ of the random velocity $\partial_tP_t(u)$ onto the closed subspace of functions that depend on $u$ only through $P_t(u)$. This projection is the conditional expectation~\eqref{eq:flow-match-conditional}. Equivalently, for every test vector field $m$,
+	We first recall the two equivalent ways of writing the interpolated measure. Formally, one may write
+	\[
+		\alpha_t(z)=\int_{\RR^{d'}}\delta(z-P_t(u))\,\d\pi(u),
+	\]
+	while the rigorous meaning is that, for every smooth test function $\varphi$,
+	\begin{equation}\label{eq:flow-matching-pushforward-test}
+		\int_{\RR^d}\varphi(z)\,\d\alpha_t(z)
+		=
+		\int_{\RR^{d'}}\varphi(P_t(u))\,\d\pi(u).
+	\end{equation}
+	The minimizer in~\eqref{eq:flow-matching} is the orthogonal projection in $L^2(\pi;\RR^d)$ of the latent velocity $\partial_tP_t(u)$ onto the closed subspace of functions that depend on $u$ only through $P_t(u)$. This projection is the conditional expectation~\eqref{eq:flow-match-conditional}. Formally, this can be read as
+	\[
+		v_t(z)=\frac{1}{\alpha_t(z)}
+		\int_{\RR^{d'}}\delta(z-P_t(u))[\partial_tP_t](u)\,\d\pi(u),
+	\]
+	and rigorously it means that, for every smooth test vector field $m$,
 	\begin{equation}\label{eq:v_t}
 		\int \dotp{m(z)}{v_t(z)} \, \d\alpha_t(z)
 		=
 		\int \dotp{m(P_t(u))}{[\partial_t P_t](u)} \, \d\pi(u).
 	\end{equation}
-	Let $\varphi$ be a smooth scalar test function. Since $\alpha_t=(P_t)_\sharp\pi$,
-	\[
+
+	We now prove that this field transports the curve $(\alpha_t)_t$. The weak form of
+	$\partial_t\alpha_t+\diverg(\alpha_t v_t)=0$ is that, for every smooth scalar test function $\varphi$,
+	\begin{equation}\label{eq:flow-matching-weak-target}
+		\frac{\d}{\d t}\int\varphi(z)\,\d\alpha_t(z)
+		-
+		\int\dotp{v_t(z)}{\nabla\varphi(z)}\,\d\alpha_t(z)
+		=0.
+	\end{equation}
+	Using~\eqref{eq:flow-matching-pushforward-test} and differentiating under the integral sign gives
+	\begin{equation}\label{eq:flow-matching-test-derivative}
 		\frac{\d}{\d t}\int \varphi(z)\d\alpha_t(z)
 		=
 		\int \dotp{\nabla\varphi(P_t(u))}{[\partial_t P_t](u)}\d\pi(u).
-	\]
-	Using~\eqref{eq:v_t} with $m=\nabla\varphi$ gives
-	\[
-		\frac{\d}{\d t}\int \varphi(z)\d\alpha_t(z)
+	\end{equation}
+	On the other hand, applying~\eqref{eq:v_t} with $m=\nabla\varphi$ gives
+	\begin{equation}\label{eq:flow-matching-velocity-test}
+		\int\dotp{v_t(z)}{\nabla\varphi(z)}\,\d\alpha_t(z)
 		=
-		\int \dotp{\nabla\varphi(z)}{v_t(z)}\d\alpha_t(z),
-	\]
-	which is the weak form of $\partial_t\alpha_t+\diverg(\alpha_t v_t)=0$.
+		\int \dotp{\nabla\varphi(P_t(u))}{[\partial_t P_t](u)}\d\pi(u).
+	\end{equation}
+	Comparing~\eqref{eq:flow-matching-test-derivative} and~\eqref{eq:flow-matching-velocity-test} yields~\eqref{eq:flow-matching-weak-target}, which is the desired continuity equation.
 \end{proof}
 
 The solution of \eqref{eq:flow-matching} is the conditional expectation of the velocities $\partial_t P_t$. Intuitively, $v_t(z)$ is the average velocity of all trajectories passing through $z$.

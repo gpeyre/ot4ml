@@ -1,25 +1,33 @@
 <h1 align="center">OT4ML - Optimal Transport for Machine Learners</h1>
 
-This repository contains materials for a course on Optimal Transport for Machine Learning.
+This repository contains the book, reproducible figure-generation notebooks, and
+teaching notebooks for Optimal Transport for Machine Learning.
 
-## Repository Layout
+## Book
 
-- `latex/`: draft book source.
-- `notebooks/`: example notebooks for the course.
-- `notebooks-figures/`: executable notebooks that generate the book figures.
-- `latex/figures/`: generated PDF panels included by the LaTeX source.
+The book **[*Optimal Transport for Machine Learners*](https://arxiv.org/abs/2505.06589)**
+is available on arXiv.
 
-## Book Figures
+- [`latex/`](latex/): LaTeX source of the book.
+- [`compact/`](compact/): compact teaching version.
+- [`latex/figures/`](latex/figures/): generated PDF panels included by the book.
 
-The illustrative figures are generated from one notebook per concept. Browse the
-complete visual gallery in
-[`notebooks-figures/README.md`](notebooks-figures/README.md): each card contains
-a compact preview, a link to the local notebook, and an Open in Colab badge.
+## Figures
 
-The notebooks write their PDF panels to `latex/figures/<figure-name>/`, where
-they are included by the book source.
+The book figures are generated from one executable notebook per concept. Browse
+the full visual gallery in
+[`notebooks-figures/README.md`](notebooks-figures/README.md): it lists the
+figures currently integrated in the LaTeX source, with thumbnails, local
+notebook links, and Open in Colab badges.
 
-## Notebook Resources
+| Matching | Sinkhorn | Generative models |
+| --- | --- | --- |
+| [![1D matching preview](notebooks-figures/thumbnails/matching-1d-quantile-assignment.png)](notebooks-figures/README.md) | [![Sinkhorn epsilon preview](notebooks-figures/thumbnails/sinkhorn-plan-epsilon.png)](notebooks-figures/README.md) | [![Diffusion preview](notebooks-figures/thumbnails/generative-diffusion-2d-forward-backward.png)](notebooks-figures/README.md) |
+
+Each figure notebook writes PDF panels to `latex/figures/<figure-name>/`, where
+the LaTeX source assembles them into the book.
+
+## Teaching Notebooks
 
 The course notebooks are available below with a visual preview for each:
 
@@ -32,16 +40,20 @@ The course notebooks are available below with a visual preview for each:
 
 You can run notebooks locally or directly in Google Colab using the badge.
 
+## Repository Layout
+
+- [`latex/`](latex/): book source and bibliography.
+- [`compact/`](compact/): compact version for teaching.
+- [`notebooks/`](notebooks/): course notebooks.
+- [`notebooks-figures/`](notebooks-figures/): notebooks that generate the book figures.
+- [`latex/figures/`](latex/figures/): generated PDF panels included by the LaTeX source.
+
 ## Slides for the Course
 
 - [Monge and Kantorovich](https://speakerdeck.com/gpeyre/computational-ot-number-1-monge-and-kantorovitch)
 - [Entropic Regularization](https://speakerdeck.com/gpeyre/computational-ot-number-2-entropic-regularization)
 - [Dual and Semidiscrete](https://speakerdeck.com/gpeyre/computational-ot-number-1-dual-and-semidiscrete)
 - [Gradient Flow and Diffusion Models](https://speakerdeck.com/gpeyre/computational-ot-number-4-gradient-flow-and-diffusion-models)
-
-## Lecture Notes
-
-The lecture notes [*Optimal Transport for Machine Learners* can be found at this link.](https://arxiv.org/abs/2505.06589).
 
 ## Other Resources
 
