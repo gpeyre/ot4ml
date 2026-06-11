@@ -24,6 +24,8 @@ Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the baryce
 \eql{\label{eq-barycenter-generic}
 	\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
 }
+For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, then the barycenter is unique~\cite{Carlier_wasserstein_barycenter}.
+
 \begin{rem}[Two measures give a Wasserstein geodesic]
 	For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on the Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation detailed in Section~\ref{sec-geodesic-convexity}. If no Monge map is available, the same construction uses an optimal coupling $\pi$ and the interpolation map $(x,y)\mapsto(1-t)x+ty$, giving $((1-t)x+ty)_\sharp\pi$.
 \end{rem}
@@ -51,9 +53,60 @@ Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the baryce
 	Indeed, the squared Wasserstein distance decomposes into a squared distance between means plus a centered Wasserstein term. Minimizing the resulting quadratic function of the barycenter mean gives the displayed identity. If the input measures have compact support, the usual multi-marginal barycentric construction also gives a barycenter supported in the convex hull of the input supports.
 \end{rem}
 
+The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a convex optimization problem over measures. The difficulty is not convexity, but the fact that the unknown is itself a measure whose support is not known in advance.
+
+\begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
+	The map $(\al,\be)\mapsto\MK_\c(\al,\be)$ is convex.
+\end{prop}
+
+\begin{proof}
+	Let $(\al_0,\be_0)$ and $(\al_1,\be_1)$ be two pairs of probability measures and let $t\in[0,1]$. For $\eta>0$, choose couplings $\pi_i\in\Couplings(\al_i,\be_i)$ such that
+	\[
+		\int c\d\pi_i\leq\MK_\c(\al_i,\be_i)+\eta
+		\qquad (i=0,1).
+	\]
+	Then $\pi_t=(1-t)\pi_0+t\pi_1$ is a coupling between $(1-t)\al_0+t\al_1$ and $(1-t)\be_0+t\be_1$. Hence
+	\[
+		\MK_\c((1-t)\al_0+t\al_1,(1-t)\be_0+t\be_1)
+		\leq
+		(1-t)\MK_\c(\al_0,\be_0)+t\MK_\c(\al_1,\be_1)+\eta.
+	\]
+	Letting $\eta\to0$ gives the claim.
+\end{proof}
+
+Even when all input measures are discrete, the support of a barycenter is not known a priori. The multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that a discrete barycenter can be supported on all weighted averages of one support point from each input. This gives at most $\prod_s n_s$ candidate points if the $s$-th input has $n_s$ atoms, which is prohibitive when the number of inputs is large. A common numerical compromise is therefore to prescribe a smaller support for the barycenter and solve a fixed-support problem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\paragraph{Gaussian Case}
+\paragraph{One-dimensional case.}
+
+On the line, barycenters become linear after the quantile change of variables. This gives the rare case where the barycenter is explicit rather than the solution of a high-dimensional optimization problem.
+
+\begin{prop}[Quantile barycenters on the line]\label{prop-quantile-barycenters}
+	For $\X=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein barycenter is the weighted average of the input quantile functions:
+	\[
+		\cumul{\al^\star}^{-1}(r)
+		=
+		\sum_{s=1}^S\la_s\cumul{\be_s}^{-1}(r),
+		\qquad r\in[0,1].
+	\]
+\end{prop}
+
+\begin{proof}
+	The one-dimensional formula~\eqref{eq-wass-cumul} gives
+	\[
+		\sum_s\la_s\Wass_2^2(\al,\be_s)
+		=
+		\int_0^1
+		\sum_s\la_s
+		\abs{\cumul{\al}^{-1}(r)-\cumul{\be_s}^{-1}(r)}^2
+		\d r.
+	\]
+	The minimization decouples pointwise in $r$. For each fixed $r$, the minimizer of $z\mapsto\sum_s\la_s|z-\cumul{\be_s}^{-1}(r)|^2$ is the weighted average $\sum_s\la_s\cumul{\be_s}^{-1}(r)$. This function is nondecreasing because it is a positive weighted sum of nondecreasing quantile functions, hence it is a valid quantile function.
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Gaussian case.}
 
 Gaussian barycenters show that the same separation as in the Gaussian Wasserstein formula~\eqref{eq-dist-gauss} persists: means average linearly, while covariances average according to the Bures--Wasserstein geometry.
 
@@ -84,38 +137,194 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 \end{figure}
 
 
-\begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
-		Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the input measures are discrete, then there exists a barycenter supported on the set of weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input; in particular, if the $s$-th input has $n_s$ atoms, a barycenter exists with at most $\prod_s n_s$ atoms.
-\end{cor}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Sinkhorn for barycenters.}
+
+A key difference with the regularized two-marginal OT problem is that there is no canonical reference measure $\al\otimes\be$, because the barycenter $\al$ is unknown. To reduce complexity, one usually fixes a candidate support for the barycenter and solves the discrete problem~\eqref{eq-wass-discr}; this introduces a discretization error but keeps the number of unknowns manageable.
+
+One can then use entropic smoothing and approximate~\eqref{eq-wass-discr} by
+\eql{\label{eq-entropic-bary}
+	\umin{\a\in\simplex_n}
+	\sum_{s=1}^S\la_s\MKD_{\C_s}^\epsilon(\a,\b_s)
+}
+for some $\epsilon>0$. This is a smooth convex minimization problem, which can be tackled using gradient descent~\cite{CuturiBarycenter}. An alternative is to use a descent method, typically quasi-Newton, on the semi-dual~\cite{2016-Cuturi-siims}; this is useful when adding extra regularization on the barycenter, for instance to impose smoothness.
+
+A simple but effective approach, as remarked in~\cite{2015-benamou-cisc}, rewrites~\eqref{eq-entropic-bary} as a weighted KL projection problem
+\eql{\label{eq-bary-entropy-couplings}
+	\umin{(\P_s)_s}
+	\enscond{
+		\epsilon\sum_s\la_s\KLD(\P_s|\K_s)
+	}{
+		\foralls s,\ \transp{\P_s}\ones_n=\b_s,
+		\quad
+		\P_1\ones_{n_1}=\ldots=\P_S\ones_{n_S}
+	},
+}
+where $\K_s\eqdef e^{-\C_s/\epsilon}$. The barycenter $\a$ is implicitly encoded in the common row marginal
+\[
+	\a=\P_1\ones_{n_1}=\ldots=\P_S\ones_{n_S}.
+\]
+The optimal couplings solving~\eqref{eq-bary-entropy-couplings} have scaling form
+\eql{\label{eq-bary-opt}
+	\P_s=\diag(\uD_s)\K_s\diag(\vD_s),
+}
+and the generalized Sinkhorn iterations are
+\begin{align}
+	\foralls s\in\range{1,S},\qquad
+	\itt{\vD}_s
+	&\eqdef
+	\frac{\b_s}{\transp{\K_s}\it{\uD}_s},
+	\label{eq-sinkhorn-bary}
+	\\
+	\foralls s\in\range{1,S},\qquad
+	\itt{\uD}_s
+	&\eqdef
+	\frac{\itt{\a}}{\K_s\itt{\vD}_s},
+	\label{eq-sinkhorn-bary-2}
+	\\
+	\qwhereq
+	\itt{\a}
+	&\eqdef
+	\prod_s(\K_s\itt{\vD}_s)^{\la_s}.
+	\label{eq-sinkhorn-bary-3}
+\end{align}
+The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all couplings share the same barycenter marginal.
+
+\begin{prop}[Dual of entropic barycenters]\label{prop-dual-entropic-barycenters}
+	The optimal scalings in~\eqref{eq-bary-opt} can be written as $(\uD_s,\vD_s)=(e^{\fD_s/\epsilon},e^{\gD_s/\epsilon})$, where $(\fD_s,\gD_s)_s$ solve the dual problem
+	\eql{\label{eq-dual-bary-entropy}
+		\umax{(\fD_s,\gD_s)_s}
+		\enscond{
+			\sum_s\la_s
+			\left(
+				\dotp{\gD_s}{\b_s}
+				-\epsilon\dotp{\K_s e^{\gD_s/\epsilon}}{e^{\fD_s/\epsilon}}
+			\right)
+		}{
+			\sum_s\la_s\fD_s=0
+		}.
+	}
+\end{prop}
+
 \begin{proof}
-		Let the input Gaussians have means $\mean_s$ and covariances $\cov_s$. For any candidate barycenter $\al$ with mean $\mean$ and covariance $\cov$, Gelbrich's inequality~\cite{gelbrich1990formula} gives
+	Introduce Lagrange multipliers in~\eqref{eq-bary-entropy-couplings}:
+	\begin{align*}
+		\umin{(\P_s)_s,\a}
+		\umax{(\fD_s,\gD_s)_s}
+		\sum_s\la_s\Big(
+			\epsilon\KLD(\P_s|\K_s)
+			+\dotp{\a-\P_s\ones_{n_s}}{\fD_s}
+			+\dotp{\b_s-\transp{\P_s}\ones_n}{\gD_s}
+		\Big).
+	\end{align*}
+	Strong duality holds, so one can exchange the minimum and maximum. The minimization with respect to $\a$ gives the constraint $\sum_s\la_s\fD_s=0$, and the minimization with respect to $\P_s$ gives the Legendre transform of $\KLD(\cdot|\K_s)$:
+	\[
+		\umax{(\fD_s,\gD_s)_s}
+		\sum_s\la_s
+		\left[
+			\dotp{\gD_s}{\b_s}
+			-\epsilon
+			\KLD^*\left(\frac{\fD_s\oplus\gD_s}{\epsilon}\middle|\K_s\right)
+		\right],
+		\qquad
+		\sum_s\la_s\fD_s=0.
+	\]
+	The separable conjugate is
+	\eql{\label{eq-legendre-kl-bary}
+		\KLD^*(\VectMode{U}|\K)
+		=
+		\sum_{i,j}\K_{i,j}\big(e^{\VectMode{U}_{i,j}}-1\big),
+	}
+	because for $k>0$,
+	\[
+		\sup_{r\geq0}
+		ur-\big(r\log(r/k)-r+k\big)
+		=
+		k(e^u-1),
+	\]
+	and the case $k=0$ follows by lower semicontinuity. Dropping constants independent of $(\fD_s,\gD_s)_s$ gives~\eqref{eq-dual-bary-entropy}. The coordinate maximization in $\gD_s$ gives~\eqref{eq-sinkhorn-bary}; the block maximization in all $(\fD_s)_s$ gives the common marginal~\eqref{eq-sinkhorn-bary-3} and then~\eqref{eq-sinkhorn-bary-2}.
+\end{proof}
+
+Classical applications include two-dimensional image interpolation, three-dimensional shape interpolation, and barycenters on surfaces where the ground cost is the square of the geodesic distance; see~\cite{2015-solomon-siggraph} for applications to computer graphics and imaging.
+
+\subsection{Multimarginal OT}
+\label{sec-multimarginal-ot}
+\label{subsec:multi-marginal}
+
+Multi-marginal OT couples more than two measures at once. It is the natural language for barycenters, matching with teams and several-body costs, but its tensor dimension is the main computational obstacle.
+
+\paragraph{Definition and basic structure.}
+
+The multi-marginal formulation replaces a coupling between two measures by a joint distribution with several prescribed marginals. Given measures $(\al_s)_{s=1}^S$ on spaces $(\X_s)_{s=1}^S$ and a cost $c:\X_1\times\cdots\times\X_S\to\RR$, the problem reads
+\[
+	\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)}
+	\int_{\X_1\times\cdots\times\X_S}
+	c(x_1,\ldots,x_S)\d\pi(x_1,\ldots,x_S),
+\]
+where $\Couplings(\al_1,\ldots,\al_S)$ is the set of probability measures whose $s$-th marginal is $\al_s$. This is still a linear program in the discrete setting, but its ambient tensor has size $\prod_s n_s$.
+
+\paragraph{Multi-marginal formulation of barycenters.}
+
+Wasserstein barycenters are the central example. For the squared Euclidean cost, one can introduce a latent barycenter point and eliminate it explicitly, leading to the multi-marginal cost
+\[
+	c_{\mathrm{bar}}(x_1,\ldots,x_S)
+	=
+	\min_{x\in\RR^d}
+	\sum_{s=1}^S\la_s\norm{x-x_s}^2.
+\]
+
+\begin{prop}[Multi-marginal formula for quadratic barycenters]\label{prop-multimarginal-barycenter}
+	Let $\be_1,\ldots,\be_S\in\Pp_2(\RR^d)$ and $\la\in\simplex_S$. Define
+	\[
+		B(x_1,\ldots,x_S)=\sum_{s=1}^S\la_s x_s,
+		\qquad
+		c_{\mathrm{bar}}(x_1,\ldots,x_S)=\min_x\sum_s\la_s\norm{x-x_s}^2.
+	\]
+	If $\pi^\star$ solves the multi-marginal OT problem with marginals $(\be_s)_s$ and cost $c_{\mathrm{bar}}$, then $\al^\star=B_\sharp\pi^\star$ is a Wasserstein barycenter. Conversely, every barycenter is obtained this way from an optimal multi-marginal plan.
+\end{prop}
+
+\begin{proof}
+	For any candidate barycenter $\al$ and couplings $\pi_s\in\Couplings(\al,\be_s)$, glue the couplings along their common $\al$ marginal to obtain a joint law of $(X,Y_1,\ldots,Y_S)$. Conditioning on $(Y_s)_s$ and minimizing over $X$ gives
+	\[
+		\sum_s\la_s\EE\norm{X-Y_s}^2
+		\geq
+		\EE\min_x\sum_s\la_s\norm{x-Y_s}^2
+		=
+		\EE c_{\mathrm{bar}}(Y_1,\ldots,Y_S).
+	\]
+	Taking the infimum over the couplings gives that the barycenter value is at least the multi-marginal value. Conversely, from an optimal multi-marginal plan $\pi^\star$, set $X=B(Y_1,\ldots,Y_S)$. The couplings between $X$ and each $Y_s$ are feasible for the barycenter problem and attain exactly the multi-marginal cost, proving equality and the formula.
+	If $\al^\star$ is any barycenter, choose optimal couplings between $\al^\star$ and each $\be_s$ and glue them along the common $\al^\star$ marginal. Since the barycenter and multi-marginal values are equal, the conditional minimization inequality above must be an equality. Thus $X=B(Y_1,\ldots,Y_S)$ almost surely for the induced optimal multi-marginal plan, and $\al^\star=B_\sharp\pi^\star$.
+\end{proof}
+
+\begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
+	Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the input measures are discrete, then there exists a barycenter supported on the set of weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input; in particular, if the $s$-th input has $n_s$ atoms, a barycenter exists with at most $\prod_s n_s$ atoms.
+\end{cor}
+
+\begin{proof}
+	Let the input Gaussians have means $\mean_s$ and covariances $\cov_s$. For any candidate barycenter $\al$ with mean $\mean$ and covariance $\cov$, Gelbrich's inequality~\cite{gelbrich1990formula} gives
 	\[
 		\Wass_2^2(\al,\be_s)
 		\geq
 		\norm{\mean-\mean_s}^2+\Bb(\cov,\cov_s)^2,
 	\]
-	with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by the Gaussian measure with the minimizing mean and covariance. Hence at least one barycenter is Gaussian, and uniqueness in the usual nondegenerate setting gives the Gaussian barycenter mentioned above. For discrete inputs, the multi-marginal formulation uses the barycentric map
-	\[
-		B(x_1,\ldots,x_S)=\sum_s\lambda_s x_s.
-	\]
-	Any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
+	with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by the Gaussian measure with the minimizing mean and covariance. Hence at least one barycenter is Gaussian, and uniqueness in the usual nondegenerate setting gives the Gaussian barycenter mentioned above. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
 \end{proof}
 
-\paragraph{Entropic regularization of multi-marginal.}
+\paragraph{Entropic regularization of multi-marginal OT.}
 
 As in the two-marginal case, adding an entropic penalty with respect to the product measure $\al_1\otimes\cdots\otimes\al_S$ leads to scaling algorithms:
 \[
-		\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)}
-		\int c\d\pi+\epsilon\KL(\pi|\al_1\otimes\cdots\otimes\al_S).
+	\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)}
+	\int c\d\pi+\epsilon\KL(\pi|\al_1\otimes\cdots\otimes\al_S).
 \]
 The optimizer has the generalized Gibbs form
 \[
 	\d\pi^\star(x_1,\ldots,x_S)
 	=
 	\exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
-		\prod_s\d\al_s(x_s),
+	\prod_s\d\al_s(x_s),
 \]
-and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is that a naive tensor representation has size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
+and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -110,7 +110,6 @@ These values should be treated as the default contract for all notebooks.  They 
 - `[to review]` `fig:dual-c-transform-envelope` -- Discrete `c`-transform as a lower envelope for costs `|x-y|^p` with `p=1`, `p=2`, and `p=4`.  The revised figure exports one boxed, label-free panel per exponent, and the LaTeX caption explains the semi-discrete interpretation where `\mathcal X` is finite, equivalently `\alpha` is discrete.
 
 - `[to review]` `fig:dual-alternating-c-transform-failure` -- Concave-envelope illustration for the bilinear cost `-\langle x,y\rangle`.  The revised two-panel figure uses oscillating non-concave potentials `f` and `g`, shows their double-transform closures `f^{c\bar c}` and `g^{\bar c c}`, and also displays the opposite one-sided best responses `g^{\bar c}` and `f^c`.
-angle`.  The revised two-panel figure uses oscillating non-concave potentials `f` and `g`, shows their double-transform closures `f^{c\bar c}` and `g^{\bar c c}`, and also displays the opposite one-sided best responses `g^{\bar c}` and `f^c`.
 
 ## Semi-discrete and Wasserstein-1
 
@@ -123,6 +122,8 @@ angle`.  The revised two-panel figure uses oscillating non-concave potentials `f
 ## Divergences and Dual Norms
 
 - `[to review]` `fig:dualnorms-ipm-witnesses` -- Witness functions for several integral probability metrics.  For the same pair of one-dimensional mixtures, plot representative dual witnesses for `\Wass_1`, MMD with an energy or Gaussian kernel, and total variation.  The goal is to show the geometry of the test-function classes.
+
+- `[to review]` `fig:dualnorms-mmd-kernel-mean-embedding` -- Kernel mean embedding interpretation of MMD.  The restored figure pairs a schematic RKHS mean-vector distance with the corresponding signed one-dimensional kernel witness, matching the restored subsection on dual RKHS norms.
 
 - `[to review]` `fig:dualnorms-linear-ot-embedding` -- Linear OT coordinates with an exact one-dimensional quantile picture and a two-dimensional tangent-map picture.  The figure contrasts displacement-field averaging in 1D, where it coincides with Wasserstein barycenters, with map-space interpolation from a Gaussian reference toward left and right multimodal point clouds, where the construction is only a linearized approximation.
 
@@ -216,8 +217,6 @@ These notebooks are kept for provenance, but they are not part of the current pa
 
 - `[archived]` `fig:w1-kantorovich-rubinstein-potential` -- Remove the standalone one-dimensional Kantorovich--Rubinstein witness figure from the current sequence.  It is not integrated in the LaTeX section; the notebook remains only as an archived gallery item until final cleanup.
 
-- `[archived]` `fig:dualnorms-mmd-kernel-mean-embedding` -- Remove the standalone kernel mean embedding figure from the current LaTeX sequence.  The notebook remains only as an archived gallery item until final cleanup.
-
 - `[archived]` `fig:sinkhorn-gaussian-regularized-geodesic` -- Remove the standalone Gaussian Sinkhorn-geodesic figure from the current sequence.
 
 - `[archived]` `fig:subspace-robust-wasserstein` -- Remove the standalone rank-one subspace-robust Wasserstein figure from the current sequence.
@@ -237,3 +236,114 @@ These notebooks are kept for provenance, but they are not part of the current pa
 ## Correction Integration Log
 
 The former scratch correction block has been integrated into the roadmap above. Existing figures that required regeneration have been marked `[to review]` after notebook execution and LaTeX integration. Figures requested for removal have been moved to the archived list, so no live `[planned]`, `[to revise]`, or `[to remove]` entry remains.
+
+## New corrections
+
+Figure 2: Histogram equalization as one-dimensional Monge transport on pixel intensities. ->
+replace the uniform target measure by a gaussian quite concentrate and mean close to 0.  Also enforce a fixed vertical axis for all the plot of histogram to be compare them easily
+
+Figure 3: Optimal assignments between the same two point clouds for three powers of the Euclidean distance. -> and also for all the other numerics that use this reference point cloud : replace the mixture of gaussian by uniform on a disc in the middle and uniform on an annulus. The annulus should have radius 1 and width .15 while the disk should have radius .5. Make the sampling semi-random / semi regular by applying a farther point sampling and then add a very small noise of ~30% of the avage distance to the closest point in the same cloud.
+
+
+Figure 4: From assignments to transport plans, -> make the same width of segment as in "Figure 3: Optimal assignments between". Make this width consistant accoss the plots of the book
+-> make coarse targer 50% coarder. For the title, replace "balanced assignmen" by "n=m" and "coarser target" by "m<n", "nonuniform β" by "n=m but a_j \neq 1/n".
+-> varies more the mass for "nonuniform β" and also display the variation of mass by putting the area of the circle propositional to the mass.
+
+General comments :
+- put the title bellow (and not above) the plots (which shouldn't be harcoded in the pdf but added in the latex when forming the figure using eg latex array)
+- try to crop a bit all the figure to avoid having lots of white space arround.
+
+2.5 One-Dimensional Transport and Quantiles -> there was originally a figure on 1D, "monge-1d-quantile-geodesic" which has been removed I think, it should be integrated back.
+
+Figure 6: McCann displacement interpolation -> for the bottom row, use a much higher number of points (like ~1000), use a bit larger smoothing window for the density estimator
+
+Figure 7: Linearized transport coordinates around a fixed disk reference. -> replace "red target mixture" and "purple target mixture" by alpha and beta, which should be in red and blue, show them on the same figure, and then show on the same line, on the right, in purple, a linearized bayrcenter compute by averaging the monge maps, and use a kernel density estimator to estimate also a level set display on plus of the point. For the computaiton, once again use a very large number of sample, and display on screen a subset obtained by subsampling the reference measure by farthest point sampling.
+
+2.7 Gaussian Measures and the Bures Metric -> you should add a figure for 1D gaussian interpolation : you show the (m,sigma) half upper plan space, with 2 geodesics between two (m,sigma) (so these are segment over the 2D space with a few intermediate point along the segment, which are from red to blue, with violet interpolation) and then on the right you show the interpolated density, colored from red to blue. So there should be 3 plots : the (sigma,m) space with the 2 segment / the first segment as interpolation of densities / the second segment as interpolation of densities /
+
+You should add also another figure showing two interpolations between two 2D gaussian : one betwen anisotropic gausian and isotropic gaussian, and another between two rotated anisotropic gaussian (use the same color code red->violet)
+
+There is a large white space/page break after "Figure 7: Linearized transport coordinates around a fixed " and before "3 Kantorovich Relaxation", fix this.
+
+Figure 8: Coupling matrices with their prescribed marginals -> remove the black box around each display. for the "product" coupling and "OT, 20 bins", remove the red curve (no monge map approx), show it only for "OT, 200 bins"
+
+Figure 12: Discrete gluing lemma in matrix form. -> do not show the red approximation of the monge map
+
+Figure 14: Entropic regularization of a linear objective on -> use a very large epsilon for the "large epsilon" to be sure to obtain the barycenter of the triangle as initial point.
+--> in each triangle, display the entropic penalized functional, not the linear function, and display it using a colormap + levelset for nice display
+--> do a second row where in place of the triangle you display a 2D polyhedra A(P)<=b and penalize H(A(P)-b) where H is the entropy sum_i P_i (log(P_i)-1). You need to explain, say this is the entropic barrier function for a linear program, this is not a very good barrier function for interior point of linear progam, the canonical barrier function is the reverse KL / burg one, -sum_i log(P_i), which is self-concordant hence benefiting from favorable property when coupled with second order quasi newton method (give classical ref to book on interior point), but it leads to cubic complexity n^3 per iteration, which is too much for large n, whereas we leverage the nice structure of entropy in the case of the specific class of linprog which are OT problems, and this leads to sinkhorn exposed in the next section. [write this in a dedicated paragraph at the end of the section]
+
+
+Figure 15: Marginal constraints during Sinkhorn scaling -> put on the left rather than on the right the red display of marginal constraint (with red dots and circle)
+
+Figure 16: Dense Sinkhorn scaling for one-dimensional Gaussian-mixture marginals.
+Figure 17: Coupling matrices along Sinkhorn iterations for the same one-dimensional 
+ -> remove the black box around each plot for these two figures
+
+Figure 17: Coupling matrices along Sinkhorn iterations for the same one-dimensional setting as Figure -> replace this figure with a display of the final solutin of sinkhorn but for a varying epsilon
+
+Figure 18: KL-normalized Sinkhorn dual potentials along the scaling iteration for the same one-dimensional -> show on the bottom of each plot both alpha and beta, not just alpha (as you did for "Figure 29: Dual witnesses for integral probability metrics. ")
+
+Figure 20: KL-normalized Sinkhorn dual potentials for the same one-dimensional Gaussian-mixture his- -> same thing here
+
+Figure 21: Entropically regularized couplings between the canonical red and blue point clouds -> something bad happended, redo the numeric, be sure it converged, the cost is correctly computed, etc. Also as requeted earlier "Figure 3: Optimal assignments between the same two point clouds  ..." change the measure to be supported on disk/annulus
+
+Figure 22: Discrete Kantorovich dual potentials for the quadratic cost -> for the second example, shows a stronger shift of the beta distribution. For the third example, use as target a mixture of 3 gaussians in place of 2.
+
+
+Figure 23: Continuous Kantorovich potentials for the same source -> do the change also on this one
+
+Figure 25: Hard c-transforms for the bilinea -> find different color palette for let (redish color) and the right (blueish colors). Also make f and g visually very differents
+
+Figure 26: Laguerre cells for semi-discrete quadratic transport -> use 1.5x more points
+
+Figure 27: Lloyd quantization for the same continuous density and initial site. -> use 1.5x more points
+
+Figure 30: Kernel mean embedding interpretation of MMD.  -> remove this figure
+
+
+Figure 33: Debiasing by point optimization -> ue 3x more blue points. Make the centroid of the mixture closer so that the ellispsoid overlap. Make a 1 liner (4 plots on same line) and put title bellow the sub-figs 
+
+Figure 35: Effect of the density-ratio regularizer on the coupling.  --> use a smaller epsilon. Display the coupling using level sets (use a large number of level set to highlight the compact support). Replace the title by "Vizualization of debiasing effect", instead of raw cost / debiased divergence use maths notation from the main text
+
+
+Figure 34: Empirical fluctuation in dimension three. -> add a second plot on the the same line but in dimension d=6 
+
+Figure 38: Sliced Wasserstein projections -> use more 2x sampling point and farther sampling stragegy
+
+Figure 40: Linear OT coordinates.  -> for the 1D example (top row) for the red measure alpha just use a single translated gaussian on the left, and the blue measure beta use a mixture of 3 gaussians translated on the right. Put the title bellow the plots.
+Change the title into "Displacement" "Measure alpha, beta, gamma" where you put T_alpha, T_beta and T_gamma=(T_alpha+T_beta)/2 (do not substratc Id) and put the alpha, beta, gamma legend with the color of the curves.
+
+Figure 41: Trace and spectral gauges for displacement covariances. -> replace this by farther point sampling between twodisks and heart with lots of point, show both the OT segments associated to trace and lambda_max (for a subsampled of points) and the mccann interpolation displyed using kernel density estimator (render the density with interpolating color from red to blue)
+
+Figure 42: Wasserstein barycenter grids for four corner measures.  -> for the figure on the left (1D) consider as input distribution a mixture of 1/2/3/4 gaussians, sampled using inverse cumulative samples, then compute the barycenter by averaging the point in sorted order, and render using a kernel density estimator.
+--> for the figure on the right (densty) compute the densy on a uniform grid of pixel, and then use some sinkhorn barycenter code. Use as input shapes
+![alt text](cat.png) ![alt text](twodisks.png) ![alt text](cross.jpg) ![alt text](trefle.jpg) images in assets
+
+Figure 43: Bures–Wasserstein barycenters: use stronger anisotropy for the figture on the rights
+
+Figure 44: Changing the ground metric changes the optimal coupling. -> use 1.5x more point, and put the centroids in both mixture a bit closer
+
+gure 45: Weak barycentric transport on a small discrete coupling -> use the same clouds as in "Figure 3: Optimal assignments between the same two point" but with less point, still keep 3x more points for the blue than the red, and replace the title 'conditional coupling' 'barycentric projection' by the actual math notation for these things (and put title bellow the figs)
+
+Figure 46: Gromov–Wasserstein correspondences under increasing deformation. -> do a much stronger deformation of the space to distored strongly the shape on the right
+
+Figure 47: Local distortion in a non-isometric GW match. -> replace the title "correspondence" "pairwise-distance residual" by the actual mathematical notation for these things
+
+Figure 49: Two views of the continuity equation. -> remove this figure
+
+Figure 50: Benamou–Brenier geodesic between two sampled silhouettes. -> remove the dots from the density sequence, remove the white space all around the shapes, use a smaller kernel density estimator, use a higher number of sample with father point sampling strateg. For midpoint velocities, be sure to use another fatherst point sampling to distribute more evenly the points, use more points, only show the arrow and not the points, and use black longer arrow. Be sure to remove as much as white space arround the figure as possible.
+
+Figure 53: Interaction-energy particle flows for three choices -> run for longer time, display the curve with interpolation from red to blue using some curvilinear length interpolation to better see the red->blue transition, use 1.5x point and render with smaller dots
+
+Figure 55: Mean-field training of a homogeneous two-layer model as transport in neuron space. -> you need to re-check seriously how aux/mlp/ proceeds, check the figure rendered in fig-mlp/ to have a similar rendering (only do the W2 flow, not the spectral flow)
+
+Figure 58: Two-dimensional diffusion bridge from a three-component 
+--> display only the diffusion from 3 dirac masses to a single gaussian, same setup as what is shown in "Figure 59: Diffusion-style sampling trajectories compared with OT rays "
+
+Figure 59: Diffusion-style sampling trajectories compared with OT rays 
+--> fuse them together to have the interpolation between 3 diracs and a single gaussian in the middle (make sure the spread of the gaussian not too large so that the 3 dirac are far enough to it). So the target should just be 3 points, trajectores (ot and diffusion) should cluster to these 3 locations. Display the trajectory location.
+
+Figure 60: Drifting fields for a small particle generator.  -> integrate for longer time. Remove "normalized field"
+
+Figure 61: Attention as a transportation dynamics on token measures. -> remove this figure

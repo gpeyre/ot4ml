@@ -99,81 +99,253 @@ Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These i
 }
 and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
 
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cccc@{}}
+\small hard transform & \small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ \\[-.15em]
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/hard.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p55.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p14.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p035.pdf}
+\end{tabular}
+\caption{Soft $c$-transforms for decreasing temperatures. The hard transform is the lower envelope of shifted cost functions, while a positive $\epsilon$ replaces the pointwise minimum by a log-sum-exp soft minimum. As $\epsilon$ decreases, the soft transform sharpens and approaches the non-smooth hard envelope.}
+\label{fig:sinkhorn-soft-c-transform-epsilon}
+\end{figure}
 
-\paragraph{Other regularizers.}
+%%%
+\paragraph{Continuous dual and soft-transforms.}
 
-The exponential form of Sinkhorn scalings is specific to KL regularization. Other convex penalties on the density of $\P$ with respect to $\a\otimes\b$ lead to the same marginal constraints but to different pointwise transfer laws.
-For an entropy $h:\RR_+\to\RR\cup\{+\infty\}$ and $\lambda>0$, consider
-\[
-	\umin{\P\in\CouplingsD(\a,\b)}
-	\dotp{\C}{\P}
-	+\lambda\sum_{i,j}\a_i\b_j\,
-	h\!\left(\frac{\P_{i,j}}{\a_i\b_j}\right),
-\]
-assuming for simplicity that $\a_i,\b_j>0$.
+For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
+\eql{\label{eq-dual-sinkh-cont}
+	\MK_\c^\epsilon(\al,\be)
+	=
+	\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
+	\mathcal D_\epsilon(f,g),
+}
+where
+\eql{\label{eq-dual-sinkhorn-objective}
+	\mathcal D_\epsilon(f,g)
+	\eqdef
+	\int_{\Xx} f(x)\d\al(x)
+	+
+	\int_{\Yy} g(y)\d\be(y)
+	-
+	\epsilon
+	\int_{\Xx\times\Yy}
+	\pa{
+		e^{\frac{f(x)+g(y)-c(x,y)}{\epsilon}}-1
+	}
+	\d\al(x)\d\be(y).
+}
+This is the smooth counterpart of the hard feasibility constraint $f\oplus g\leq c$ from the Kantorovich dual: violations are penalized exponentially and disappear in the limit $\epsilon\to0$.
 
-\begin{prop}[Pointwise laws for entropy-regularized plans]
-	Let $\P$ be an optimal plan for the preceding problem and let $(\fD,\gD)$ be dual multipliers for the two marginal constraints. With
+The corresponding soft $c$-transforms are the exact block maximizers of this dual objective. For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$,
+\begin{align}
+	f^{c,\epsilon}(y)
+	&\eqdef
+	-\epsilon\log\!\left(
+		\int_{\Xx}
+		e^{\frac{f(x)-c(x,y)}{\epsilon}}\d\al(x)
+	\right),
+	\qquad y\in\Yy, \label{eq-soft-c-cont-f}\\
+	g^{\bar c,\epsilon}(x)
+	&\eqdef
+	-\epsilon\log\!\left(
+		\int_{\Yy}
+		e^{\frac{g(y)-c(x,y)}{\epsilon}}\d\be(y)
+	\right),
+	\qquad x\in\Xx . \label{eq-soft-c-cont-g}
+\end{align}
+In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} and~\eqref{eq-soft-c-2}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
+
+\begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
+	Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
 	\[
-		r_{i,j}\eqdef \frac{\P_{i,j}}{\a_i\b_j},
-		\qquad
-		s_{i,j}\eqdef \frac{\fD_i+\gD_j-\C_{i,j}}{\lambda},
-	\]
-	one has $s_{i,j}\in\partial h(r_{i,j})$. In the smooth interior this reads $r_{i,j}=(h')^{-1}(s_{i,j})$. In particular,
-	\[
-	\begin{array}{lll}
-		h(r)=r\log r-r+1 &\Rightarrow& r_{i,j}=e^{s_{i,j}},\\[.25em]
-		h(r)=r-\log r-1 &\Rightarrow& r_{i,j}=(1-s_{i,j})^{-1}\quad (s_{i,j}<1),\\[.25em]
-		h(r)=\frac12(r-1)^2 &\Rightarrow& r_{i,j}=(1+s_{i,j})_+.
-	\end{array}
+		(f^\star+\lambda,g^\star-\lambda),
+		\qquad \lambda\in\RR .
 	\]
 \end{prop}
 
 \begin{proof}
-	Introduce Lagrange multipliers in the form
+	Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
 	\[
-		\dotp{\C}{\P}
-		+\lambda\sum_{i,j}\a_i\b_j h(r_{i,j})
-		+\dotp{\a-\P\ones}{\fD}
-		+\dotp{\b-\P^\top\ones}{\gD}.
+		\norm{f}_V+\norm{g}_V
+		\leq
+		2(\sup c-\inf c).
 	\]
-	The stationarity condition with respect to $\P_{i,j}$ gives
+	Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
 	\[
-		0\in \C_{i,j}-\fD_i-\gD_j+\lambda\partial h(r_{i,j}),
+		\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')}
+		\leq
+		\sup_y\abs{c(x,y)-c(x',y)}.
 	\]
-	which is the announced inclusion. The three displayed formulas follow by inverting $h'$ for KL and Burg. For the quadratic penalty, the unconstrained solution is $1+s_{i,j}$ and the constraint $r_{i,j}\geq0$ projects it to its positive part.
+	After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzel\`a--Ascoli gives a uniformly converging subsequence, and continuity of~\eqref{eq-dual-sinkhorn-objective} gives a maximizer.
+
+	For uniqueness, use strict convexity of
+	\[
+		H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)
+	\]
+	on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
 \end{proof}
 
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}ccc@{}}
-\small KL entropy & \small Burg barrier & \small quadratic density penalty \\[-.15em]
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/kl-plan.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/burg-plan.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/quadratic-plan.pdf}
-\end{tabular}
-\caption{Effect of the regularizing entropy on the coupling. The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. The central matrix displays the square root of the coupling density on a common color scale. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and the quadratic density penalty can set entries exactly to zero through its positive-part law.}
-\label{fig:sinkhorn-entropic-versus-quadratic-regularization}
-\end{figure}
+\begin{rem}[Convexity properties of soft transforms]\label{rem-soft-transform-convexity}
+	The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
+\end{rem}
 
+\begin{rem}[Gaussian marginals]\label{rem-sinkhorn-gaussian-marginals}
+	For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve quadratic functions, because products and convolutions of Gaussian functions remain Gaussian. Hence optimal entropic potentials are quadratic and the optimal entropic coupling is Gaussian. The next subsection makes this finite-dimensional closure explicit.
+\end{rem}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Gaussian Sinkhorn Problems}
+\label{sec-gaussian-sinkhorn}
+
+Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's behavior. The soft $c$-transform preserves quadratic potentials, the optimal entropic coupling is Gaussian, and the value can be written with matrix square roots~\cite{janati2020gaussian}. This is the entropic counterpart of the Gaussian $\Wass_2$ formula in Proposition~\ref{prop-gaussian-w2-bures}.
+
+\begin{prop}[Quadratic closure of Sinkhorn iterates]\label{prop-gaussian-sinkhorn-closure}
+	Let $\be=\Gaussian(\mean_\be,\cov_\be)$ on $\RR^d$ and take $c(x,y)=\norm{x-y}^2$. If $g(y)$ is a quadratic polynomial such that the Gaussian integral below is finite, then the soft transform
+	\[
+		f(x)
+		=
+		-\epsilon\log
+		\int
+		\exp\!\left(\frac{g(y)-\norm{x-y}^2}{\epsilon}\right)
+		\d\be(y)
+	\]
+	is a quadratic polynomial in $x$. In particular, starting Sinkhorn from $g_0=0$ gives
+	\[
+		f_1(x)
+		=
+		\frac{\epsilon}{2}
+		\log\det\!\left(\Id+\frac{2\cov_\be}{\epsilon}\right)
+		+
+		\epsilon
+		\dotp{x-\mean_\be}{(\epsilon\Id+2\cov_\be)^{-1}(x-\mean_\be)}.
+	\]
+\end{prop}
+
+\begin{proof}
+	The exponent is the sum of a quadratic polynomial in $y$ and the logarithm of the Gaussian density of $\be$. Completing the square in $y$ evaluates the integral as a positive constant times the exponential of a quadratic polynomial in $x$. Taking $-\epsilon\log$ therefore gives a quadratic polynomial.
+
+	For $g_0=0$, let $Y\sim\be$. The Gaussian identity
+	\[
+		\EE\exp\!\left(-\frac{\norm{x-Y}^2}{\epsilon}\right)
+		=
+		\det\!\left(\Id+\frac{2\cov_\be}{\epsilon}\right)^{-1/2}
+		\exp\!\left(
+			-\dotp{x-\mean_\be}{(\epsilon\Id+2\cov_\be)^{-1}(x-\mean_\be)}
+		\right)
+	\]
+	gives the displayed expression.
+\end{proof}
+
+\begin{prop}[Balanced entropic OT between Gaussians]\label{prop-gaussian-sinkhorn-closed-form}
+	Let $\al=\Gaussian(\mean_\al,\cov_\al)$ and $\be=\Gaussian(\mean_\be,\cov_\be)$ with positive-definite covariances, and let
+	\[
+		\cov_\al^{1/2}\cov_\be^{1/2}
+		=
+		U\diag(\sigma_i)V^\top
+	\]
+	be a singular-value decomposition. For the balanced objective
+	\[
+		\min_{\pi\in\Couplings(\al,\be)}
+		\int\norm{x-y}^2\d\pi(x,y)
+		+
+		\epsilon\KL(\pi|\al\otimes\be),
+	\]
+	the optimizer is Gaussian with cross-covariance
+	\[
+		K_\epsilon
+		=
+		\cov_\al^{1/2}
+		U\diag(s_i)V^\top
+		\cov_\be^{1/2},
+		\qquad
+		s_i
+		=
+		\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.
+	\]
+	The optimal value is
+	\[
+		\norm{\mean_\al-\mean_\be}^2
+		+
+		\tr(\cov_\al)+\tr(\cov_\be)
+		+
+		\sum_i
+		\left(
+			-2\sigma_i s_i
+			-\frac{\epsilon}{2}\log(1-s_i^2)
+		\right).
+	\]
+	As $\epsilon\downarrow0$, $s_i\to1$ and the covariance term converges to $\Bb(\cov_\al,\cov_\be)^2$.
+\end{prop}
+
+\begin{proof}
+	Let $(X,Y)$ be any coupling with finite second moments and cross-covariance
+	\[
+		K=\EE\big[(X-\mean_\al)(Y-\mean_\be)^\top\big].
+	\]
+	Replacing $(X,Y)$ by the Gaussian vector with the same mean and covariance leaves the quadratic cost unchanged. Since the marginals are fixed,
+	\[
+		\KL(\pi|\al\otimes\be)
+		=
+		-h(X,Y)+h(\al)+h(\be),
+	\]
+	where $h$ denotes differential entropy when it is finite. Among laws with a fixed covariance, the Gaussian maximizes entropy; if the entropy is not finite, the relative entropy is already $+\infty$. Thus the Gaussian replacement cannot increase the objective, and it is enough to optimize over Gaussian couplings.
+
+	Any such coupling has covariance
+	\[
+		\begin{pmatrix}
+			\cov_\al & K\\
+			K^\top & \cov_\be
+		\end{pmatrix}.
+	\]
+	Write $K=\cov_\al^{1/2}S\cov_\be^{1/2}$. The block covariance constraint is equivalent to the singular values of $S$ being at most one, and finite entropy forces them to be strictly smaller than one. The cost depends on $K$ through
+	\[
+		\norm{\mean_\al-\mean_\be}^2+\tr(\cov_\al)+\tr(\cov_\be)-2\tr(K),
+	\]
+	while
+	\[
+		\KL(\pi|\al\otimes\be)
+		=
+		-\frac12\log\det(\Id-SS^\top).
+	\]
+	By von Neumann's trace inequality, the minimizer aligns $S$ with the singular vectors of $\cov_\al^{1/2}\cov_\be^{1/2}$, so $S=U\diag(s_i)V^\top$. The problem separates into scalar minimizations
+	\[
+		\min_{0\leq s<1}
+		-2\sigma_i s-\frac{\epsilon}{2}\log(1-s^2).
+	\]
+	The first-order condition is $2\sigma_i=\epsilon s/(1-s^2)$, whose positive solution is the displayed $s_i$. Substitution gives the value formula. The limit follows from $s_i\to1$ and the identity
+	\[
+		\sum_i\sigma_i
+		=
+		\tr\!\left((\cov_\al^{1/2}\cov_\be\cov_\al^{1/2})^{1/2}\right).
+	\]
+\end{proof}
 
 \begin{rem}[Gaussian rates]\label{rem-gaussian-rates}
-	Because the Sinkhorn iterates remain quadratic, Gaussian Sinkhorn reduces to a finite-dimensional nonlinear iteration on means and covariance parameters. In the centered one-dimensional case with both marginals equal to $\Gaussian(0,1)$ and kernel $K_\epsilon(x,y)=e^{-(x-y)^2/\epsilon}$, write one scaling as $v_k(y)=\exp(-q_k y^2+\mathrm{cst})$. The next row scaling is again Gaussian, with quadratic coefficient
+	Because Sinkhorn iterates remain quadratic, Gaussian Sinkhorn reduces to a finite-dimensional nonlinear iteration on means and covariance parameters. In the centered one-dimensional case $\al=\be=\Gaussian(0,1)$ with $c(x,y)=(x-y)^2$, write a dual potential as $g_q(y)=q y^2+\mathrm{cst}$. Its soft transform has quadratic coefficient
 	\[
-		F(q_k)
+		T_\epsilon(q)
 		=
-		\frac1\epsilon
-		-
-		\frac{1}{\epsilon^2(q_k+\frac12+\frac1\epsilon)}.
+		1-\frac{1}{1-q+\epsilon/2},
+		\qquad q<1+\epsilon/2,
 	\]
-	One full Sinkhorn cycle is therefore $q_{k+1}=F(F(q_k))$. If $q_\star=F(q_\star)$ and $B_\star=q_\star+\frac12+\frac1\epsilon$, then
+	obtained by completing the square in
 	\[
-		B_\star^2-\left(\frac12+\frac2\epsilon\right)B_\star+\frac1{\epsilon^2}=0,
-		\qquad
-		F'(q_\star)=\frac{1}{\epsilon^2 B_\star^2}.
+		\int
+		\exp\!\left(\frac{q y^2-(x-y)^2}{\epsilon}\right)
+		\d\Gaussian(0,1)(y).
 	\]
-	The local linear rate for one full cycle is thus $(F'(q_\star))^2$. This explicit scalar formula shows the same qualitative behavior as the general Gaussian analysis of Chizat, Delalande and Va\v{s}kevi\v{c}ius~\cite{chizat2024sharper}: the rate improves when $\epsilon$ is large and deteriorates as $\epsilon$ becomes small, where the entropic coupling approaches a deterministic Brenier map.
+	One full Sinkhorn cycle acts on the quadratic coefficient as $q\mapsto T_\epsilon(T_\epsilon(q))$. If $q_\star=T_\epsilon(q_\star)$ and $A_\star=1-q_\star+\epsilon/2$, then
+	\[
+		A_\star^2-\frac{\epsilon}{2}A_\star-1=0,
+		\qquad
+		\abs{T_\epsilon'(q_\star)}=\frac{1}{A_\star^2}.
+	\]
+	The local linear rate for one full cycle is therefore $A_\star^{-4}$. This scalar calculation illustrates the general Gaussian convergence picture of Chizat, Delalande and Va\v{s}kevi\v{c}ius~\cite{chizat2024sharper}: the rate improves when $\epsilon$ is large or the covariance scales overlap well, and deteriorates in the small-temperature limit where the entropic coupling approaches a deterministic Brenier map.
 \end{rem}
 
 
@@ -242,14 +414,7 @@ This proof is qualitative rather than quantitative, but it is conceptually usefu
 %%%
 \paragraph{Robust sublinear Bregman rate.}
 
-	Sinkhorn is cyclic coordinate ascent on the smooth dual problem and, equivalently, alternating KL projection on the two marginal constraint sets. We denote the continuous entropic dual objective by
-	\eql{\label{eq-dual-sinkh-cont}
-		\mathcal D_\epsilon(f,g)
-		\eqdef
-		\int f\d\alpha+\int g\d\beta
-		-\epsilon\int\left(e^{(f\oplus g-c)/\epsilon}-1\right)\d\alpha\otimes\d\beta .
-	}
-	The following statement records the rate that is most useful for complexity estimates: before entering a possible linear regime, the dual objective gap decreases at order $1/k$. We state it for balanced entropic OT, which is the specialization needed here; related robust Bregman-projection rates are developed in~\cite{peyre2026robust,altschuler2017near,pmlr-v80-dvurechensky18a}, and statistical consequences of entropic smoothing are analyzed in~\cite{genevay2018sample,bigot2017central}.
+	Sinkhorn is cyclic coordinate ascent on the smooth dual objective $\mathcal D_\epsilon$ defined in~\eqref{eq-dual-sinkhorn-objective} and, equivalently, alternating KL projection on the two marginal constraint sets. The following statement records the rate that is most useful for complexity estimates: before entering a possible linear regime, the dual objective gap decreases at order $1/k$. We state it for balanced entropic OT, which is the specialization needed here; related robust Bregman-projection rates are developed in~\cite{peyre2026robust,altschuler2017near,pmlr-v80-dvurechensky18a}, and statistical consequences of entropic smoothing are analyzed in~\cite{genevay2018sample,bigot2017central}.
 
 \begin{prop}[Pinsker inequality]\label{prop-pinsker}
 	If $p,q\in\simplex_n$, then
@@ -295,7 +460,7 @@ This proof is qualitative rather than quantitative, but it is conceptually usefu
 		\eqdef
 		\mathcal D_\epsilon(f^\star,g^\star)-\mathcal D_\epsilon(f_k,g_k)
 	\]
-	be the dual suboptimality gap for the entropic dual objective~\eqref{eq-dual-sinkh-cont}. Then there exists a numerical constant $C$ such that
+	be the dual suboptimality gap for the entropic dual objective~\eqref{eq-dual-sinkhorn-objective}. Then there exists a numerical constant $C$ such that
 	\[
 		\Delta_k \leq \frac{C R^2}{\epsilon(k+1)}.
 	\]
@@ -620,7 +785,7 @@ The sample complexity of unregularized OT suffers from the curse of dimensionali
 \begin{prop}[Sinkhorn divergences interpolate the rates]\label{prop-sinkhorn-sample-rate}
 	Assume that $\alpha$ and $\beta$ are supported in a compact subset of $\RR^d$ and that the cost is smooth. For fixed $\epsilon>0$, debiased Sinkhorn divergences satisfy representative empirical bounds of the form
 	\[
-		\EE\abs{\bar\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)-\bar\MK_c^\epsilon(\alpha,\beta)}
+		\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_m)-\bar\MK_\c^\epsilon(\alpha,\beta)}
 		\leq
 		C_{c,d}\,\epsilon^{-d/2}\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right),
 	\]
@@ -628,17 +793,116 @@ The sample complexity of unregularized OT suffers from the curse of dimensionali
 \end{prop}
 
 \begin{proof}
-	The proof follows the empirical-process argument of~\cite{genevay2018sample}. By the envelope theorem, the fluctuation of $\MK_c^\epsilon$ with respect to its first marginal is controlled by the class of entropic dual potentials. The soft $c$-transform smooths these potentials at spatial scale $\sqrt\epsilon$ for a quadratic-type cost. Covering a bounded $d$-dimensional domain at this scale gives an effective complexity of order $\epsilon^{-d/2}$. Standard Rademacher or Dudley entropy bounds then give an empirical-process fluctuation of order $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to the three terms defining the debiased divergence gives the stated bound.
+	The proof follows the empirical-process argument of~\cite{genevay2018sample}. By the envelope theorem, the fluctuation of $\MK_\c^\epsilon$ with respect to its first marginal is controlled by the class of entropic dual potentials. The soft $c$-transform smooths these potentials at spatial scale $\sqrt\epsilon$ for a quadratic-type cost. Covering a bounded $d$-dimensional domain at this scale gives an effective complexity of order $\epsilon^{-d/2}$. Standard Rademacher or Dudley entropy bounds then give an empirical-process fluctuation of order $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to the three terms defining the debiased divergence gives the stated bound.
 \end{proof}
 
 \begin{rem}[No free lunch when approximating exact OT]\label{rem-sinkhorn-no-free-lunch}
 	The parametric rate in Proposition~\ref{prop-sinkhorn-sample-rate} holds for fixed $\epsilon$. If the goal is to approximate the unregularized OT value, one must also account for the regularization bias. In a typical bounded-cost finite-dimensional regime,
 	\[
-		\abs{\bar\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)}
+		\abs{\bar\MK_\c^\epsilon(\alpha,\beta)-\MK_\c(\alpha,\beta)}
 		\leq C\epsilon,
 		\qquad
-		\EE\abs{\bar\MK_c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_c^\epsilon(\alpha,\beta)}
+		\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_\c^\epsilon(\alpha,\beta)}
 		\leq C_{c,d}\epsilon^{-d/2}n^{-1/2}.
 	\]
 	Balancing the two terms gives $\epsilon\simeq n^{-1/(d+2)}$ and total error of order $n^{-1/(d+2)}$. Equivalently, target accuracy $\eta$ requires choosing $\epsilon\simeq\eta$ and $n\simeq\eta^{-(d+2)}$ samples under this bound. Thus entropic smoothing improves the statistical behavior at fixed scale, but approximating exact OT still forces a bias-variance tradeoff whose exponent deteriorates with dimension.
 \end{rem}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Other Convex Regularizers}
+\label{sec-sinkhorn-other-regularizers}
+
+KL regularization is the case that leads to multiplicative Sinkhorn scalings. Replacing the KL divergence by another density-ratio penalty keeps the same transport constraints but changes the scalar law linking the optimal density to the dual potentials.
+
+Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, and recall the $\phi$-divergence $\Divergm_\phi$ from Definition~\ref{def_divergence}. For $\lambda>0$, define the $\phi$-regularized transport value
+\eql{\label{eq-phi-regularized-ot}
+	\MK_{\c,\phi}^{\lambda}(\al,\be)
+	\eqdef
+	\umin{\pi\in\Couplings(\al,\be)}
+	\int_{\Xx\times\Yy} c(x,y)\d\pi(x,y)
+	+
+	\lambda\Divergm_\phi(\pi|\al\otimes\be).
+}
+
+\begin{prop}[Dual and density law for $\phi$-regularized OT]\label{prop-phi-regularized-ot-dual}
+	Under the usual Fenchel--Rockafellar qualification assumptions, for instance compact spaces, continuous $c$, and finite value in~\eqref{eq-phi-regularized-ot}, one has
+	\eql{\label{eq-phi-regularized-ot-dual}
+		\MK_{\c,\phi}^{\lambda}(\al,\be)
+		=
+		\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
+		\int f\d\al+\int g\d\be
+		-
+		\lambda
+		\int
+		\phi^{*,\geq 0}\!\left(\frac{f(x)+g(y)-c(x,y)}{\lambda}\right)
+		\d\al(x)\d\be(y).
+	}
+	If an optimal plan has density $r^\star=\frac{\d\pi^\star}{\d(\al\otimes\be)}$ and optimal potentials $(f^\star,g^\star)$, then
+	\[
+		\frac{f^\star(x)+g^\star(y)-c(x,y)}{\lambda}
+		\in
+		\partial\phi(r^\star(x,y))
+		\qquad
+		\al\otimes\be\text{-a.e.}
+	\]
+	In the smooth interior this reads
+	\[
+		r^\star(x,y)
+		=
+		(\phi')^{-1}
+		\!\left(\frac{f^\star(x)+g^\star(y)-c(x,y)}{\lambda}\right).
+	\]
+\end{prop}
+
+\begin{proof}
+	Introduce dual variables $(f,g)$ for the two marginal constraints. For fixed $(f,g)$, the minimization over $\pi$ gives
+	\[
+		\int f\d\al+\int g\d\be
+		+
+		\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+		\left\{
+		\int\big(c-(f\oplus g)\big)\d\pi
+		+
+		\lambda\Divergm_\phi(\pi|\al\otimes\be)
+		\right\}.
+	\]
+	Using the Legendre formula~\eqref{eq-legendre} for the convex functional $\Divergm_\phi(\cdot|\al\otimes\be)$, the infimum equals
+	\[
+		-\lambda
+		\int
+		\phi^{*,\geq0}\!\left(\frac{f(x)+g(y)-c(x,y)}{\lambda}\right)
+		\d\al(x)\d\be(y),
+	\]
+	which gives~\eqref{eq-phi-regularized-ot-dual}. Equality in the Fenchel inequality is equivalent to the subgradient inclusion
+	\[
+		\frac{f^\star\oplus g^\star-c}{\lambda}
+		\in
+		\partial\phi(r^\star),
+	\]
+	and inversion of $\phi'$ gives the density law when $\phi$ is differentiable and the optimizer is in the interior of its domain.
+\end{proof}
+
+For the KL entropy $\phi(r)=r\log r-r+1$, one has $\phi^{*,\geq0}(s)=e^s-1$. Taking $\lambda=\epsilon$ in~\eqref{eq-phi-regularized-ot-dual} recovers exactly the continuous Sinkhorn dual~\eqref{eq-dual-sinkhorn-objective}. Other choices replace the exponential law by another scalar transfer function:
+\[
+\begin{array}{lll}
+	\phi(r)=r\log r-r+1 &\Rightarrow& r^\star=e^s,\\[.25em]
+	\phi(r)=r-\log r-1 &\Rightarrow& r^\star=(1-s)^{-1}\quad (s<1),\\[.25em]
+	\phi(r)=\frac12(r-1)^2 &\Rightarrow& r^\star=(1+s)_+,
+\end{array}
+\qquad
+s\eqdef\frac{f^\star\oplus g^\star-c}{\lambda}.
+\]
+
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}ccc@{}}
+\small KL entropy & \small Burg barrier & \small quadratic density penalty \\[-.15em]
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/kl-plan.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/burg-plan.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/quadratic-plan.pdf}
+\end{tabular}
+\caption{Effect of the density-ratio regularizer on the coupling. The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. The central matrix displays the square root of the coupling density on a common color scale. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and the quadratic density penalty can set entries exactly to zero through its positive-part law.}
+\label{fig:sinkhorn-entropic-versus-quadratic-regularization}
+\end{figure}
