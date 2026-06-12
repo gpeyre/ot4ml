@@ -1,14 +1,14 @@
 % !TEX root = ../OT4ML.tex
 
-\section{Generalized OT Problems}
+\chapter{Generalized OT Problems}
 \label{sec-generalized-ot-problems}
 
 The second family changes the optimization problem rather than only the ground distance. Barycenters average several measures, multi-marginal OT couples many measures at once, inverse OT learns the cost from observed transport, and weak OT allows randomized conditional responses. These formulations remain close to Kantorovich linear programming, but the object being optimized is richer than a single two-marginal coupling.
 
-\subsection{OT Barycenters}
+\section{OT Barycenters}
 \label{sec-barycenters}
 
-Barycenters ask how to average probability measures rather than points. This subsection explains the variational definition, the special closed forms in one dimension and for Gaussians, and the entropic algorithms used in practice.
+Barycenters ask how to average probability measures rather than points. This section explains the variational definition, the special closed forms in one dimension and for Gaussians, and the entropic algorithms used in practice.
 
 \paragraph{Fr\'echet means.}
 
@@ -42,7 +42,7 @@ For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, th
 \small one-dimensional quantile barycenters &
 \small two-dimensional entropic barycenters
 \end{tabular}
-\caption{Wasserstein barycenter grids for four corner measures. The left panel uses the one-dimensional formula $Q_{u,v}=\sum_{i,j}\lambda_{ij}(u,v)Q_{ij}$ for one Gaussian law and three asymmetric two-Gaussian mixtures, and displays densities reconstructed from the averaged quantiles. The right panel computes entropic Wasserstein barycenters on a common pixel grid for the cat, two-disk, cross and clover silhouettes, using the normalized squared ground cost and $\epsilon=8\cdot10^{-4}$. The barycenters are rendered as density images with values clamped at their $95\%$ quantile rather than by threshold contours. Colors interpolate between the four corners and encode the same bilinear weights in both panels.}
+\caption{Wasserstein barycenter grids for four corner measures. The left panel uses the one-dimensional formula $Q_{u,v}=\sum_{i,j}\lambda_{ij}(u,v)Q_{ij}$ for one Gaussian law and three asymmetric two-Gaussian mixtures, and displays densities reconstructed from the averaged quantiles. The right panel computes entropic Wasserstein barycenters on a common pixel grid for the cat, two-disk, cross and clover silhouettes, using the normalized squared ground cost, $\epsilon=4\cdot10^{-4}$ and a Sinkhorn tolerance of $5\cdot10^{-8}$. The barycenters are rendered as density images with values clamped at their $95\%$ quantile rather than by threshold contours. Colors interpolate between the four corners and encode the same bilinear weights in both panels.}
 \label{fig:barycenters-four-shapes}
 \end{figure}
 
@@ -249,7 +249,7 @@ The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all coup
 
 Classical applications include two-dimensional image interpolation, three-dimensional shape interpolation, and barycenters on surfaces where the ground cost is the square of the geodesic distance; see~\cite{2015-solomon-siggraph} for applications to computer graphics and imaging.
 
-\subsection{Multimarginal OT}
+\section{Multimarginal OT}
 \label{sec-multimarginal-ot}
 \label{subsec:multi-marginal}
 
@@ -332,9 +332,9 @@ and generalized Sinkhorn iterations alternately update one potential $f_s$ so th
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Metric learning and inverse OT}
+\section{Metric learning and inverse OT}
 
-This final subsection points to inverse problems where the ground cost itself is learned. Such problems are typically bilevel and non-convex, but OT provides useful gradients with respect to the cost.
+This final section points to inverse problems where the ground cost itself is learned. Such problems are typically bilevel and non-convex, but OT provides useful gradients with respect to the cost.
 
 %%%
 \paragraph{Metric learning and derivatives of OT}
@@ -449,12 +449,52 @@ which leads to likelihood-based or KL-based convex objectives when $C_\theta$ is
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Weak Optimal Transport}
+\section{Weak Optimal Transport}
 \label{sec-weak-ot}
 
-Weak OT relaxes the cost so that it depends on the conditional distribution of destinations rather than only on pointwise pairs. It is useful when a source point is allowed to choose a randomized response and the model only penalizes some aggregate of that response, such as its conditional mean. The framework was introduced through general transport costs and weak transport inequalities in~\cite{gozlan2017kantorovich}; existence, duality and optimality conditions on Polish spaces are developed in~\cite{backhoff2019weak}.
+Weak OT relaxes the cost so that it depends on the conditional distribution of destinations rather than only on pointwise pairs. It is useful when a source point is allowed to choose a randomized response and the model only penalizes an aggregate of that response, such as its conditional mean. The first object to isolate is therefore the map obtained by collapsing each conditional law to its barycenter.
 
-Given $\pi\in\Couplings(\alpha,\beta)$, disintegrate it as $\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. For a weak cost $C:\X\times\Pp(\Y)\to\RR\cup\{+\infty\}$, the weak OT value is
+\paragraph{Barycentric projection of a coupling.}
+Let $\alpha,\beta\in\Pp_2(\RR^d)$ and let $\pi\in\Couplings(\alpha,\beta)$. Disintegrate $\pi$ with respect to its first marginal as
+$\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. The barycentric projection of $\pi$ is the map
+\begin{equation}\label{eq-barycentric-projection}
+	\bar T_\pi(x)
+	\eqdef
+	\int_{\RR^d}y\d\pi_x(y),
+	\qquad
+	\bar\beta_\pi
+	\eqdef
+	(\bar T_\pi)_\sharp\alpha.
+\end{equation}
+The projected target $\bar\beta_\pi$ records the distribution of conditional means, not the full second marginal. Thus it is generally different from $\beta$; if $\pi=(\Id,T)_\sharp\alpha$ is induced by a map, then $\bar T_\pi=T$ and $\bar\beta_\pi=\beta$. This projection is not an optimal map for an arbitrary coupling: a deterministic rotation of a radially symmetric source, for example, projects to the rotation itself, whereas the optimal map from the source to itself is the identity. The useful positive statement is attached to quadratic optimal plans, as in the tangent-space viewpoint on $\Wass_2$ developed by Ambrosio, Gigli and Savar{\'e}~\cite[Chap.~7]{ambrosio2006gradient}.
+
+\begin{prop}[Barycentric projection of a quadratic optimal plan]\label{prop-barycentric-projection-optimal}
+	Let $\pi\in\Couplings(\alpha,\beta)$ be optimal for the quadratic cost $\norm{x-y}^2$ between $\alpha,\beta\in\Pp_2(\RR^d)$, and define $\bar T_\pi$ and $\bar\beta_\pi$ by~\eqref{eq-barycentric-projection}. Then $(\Id,\bar T_\pi)_\sharp\alpha$ is an optimal coupling between $\alpha$ and $\bar\beta_\pi$. Equivalently, $\bar T_\pi$ is a quadratic optimal transport map from $\alpha$ to the projected target $\bar\beta_\pi$.
+\end{prop}
+
+\begin{proof}
+	By Theorem~\ref{thm:opt_ccm}, $\pi$ is concentrated on a $c$-cyclically monotone set $\Gamma$ for $c(x,y)=\norm{x-y}^2$. For the quadratic cost, and since it is enough to check cyclic permutations, this means that every finite cycle $(x_i,y_i)_{i=1}^m\subset\Gamma$ satisfies
+	\[
+		\sum_{i=1}^m \dotp{x_i}{y_i}
+		\geq
+		\sum_{i=1}^m \dotp{x_i}{y_{i+1}},
+		\qquad y_{m+1}=y_1.
+	\]
+	After changing the disintegration on an $\alpha$-negligible set, $\pi_x$ is supported on the section
+	\[
+		\Gamma_x=\enscond{y}{(x,y)\in\Gamma}
+	\]
+	for $\alpha$-a.e. $x$.
+	Choose $x_1,\ldots,x_m$ in this full-measure set and independently sample $Y_i\sim\pi_{x_i}$. Applying the cyclic inequality to $(x_i,Y_i)$ and taking expectations gives
+	\[
+		\sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_i)}
+		\geq
+		\sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_{i+1})}.
+	\]
+	Thus $(\Id,\bar T_\pi)_\sharp\alpha$ is concentrated on a cyclically monotone graph. By the cyclic-monotonicity characterization of quadratic optimality, this plan is optimal between its two marginals, namely $\alpha$ and $\bar\beta_\pi$.
+\end{proof}
+
+Weak transport costs use the same disintegration but allow the objective to depend on the whole conditional law, or on summaries such as the barycentric projection~\eqref{eq-barycentric-projection}. The framework was introduced through general transport costs and weak transport inequalities in~\cite{gozlan2017kantorovich}; existence, duality and optimality conditions on Polish spaces are developed in~\cite{backhoff2019weak}. For a weak cost $C:\X\times\Pp(\Y)\to\RR\cup\{+\infty\}$, the weak OT value is
 \begin{equation}\label{eq-weak-ot}
 	\mathcal{W}_C(\alpha,\beta)
 	\eqdef
@@ -502,7 +542,7 @@ The classical Kantorovich problem is recovered when $C(x,\nu)=\int c(x,y)\d\nu(y
 		=
 		\norm{x-\int y\d\nu(y)}^2.
 	\]
-	Then
+	Equivalently, for a coupling $\pi$, the integrand is $\norm{x-\bar T_\pi(x)}^2$. Then
 	\[
 		\mathcal{W}_{C_{\mathrm{bar}}}(\alpha,\beta)
 		\leq
@@ -513,7 +553,7 @@ The classical Kantorovich problem is recovered when $C(x,\nu)=\int c(x,y)\d\nu(y
 \begin{proof}
 	Let $\pi$ be any coupling and disintegrate it as $\pi_x\alpha$. By Jensen's inequality,
 	\[
-		\norm{x-\int y\d\pi_x(y)}^2
+		\norm{x-\bar T_\pi(x)}^2
 		\leq
 		\int\norm{x-y}^2\d\pi_x(y).
 	\]
@@ -526,10 +566,10 @@ The classical Kantorovich problem is recovered when $C(x,\nu)=\int c(x,y)\d\nu(y
 \includegraphics[width=.43\linewidth]{figures/weak-ot-barycentric-projection/conditional-coupling.pdf} &
 \includegraphics[width=.43\linewidth]{figures/weak-ot-barycentric-projection/barycentric-projection.pdf}
 \\[-.1em]
-\small conditionals $\pi_x$ & \small $\bar y(x)=\int y\,\d\pi_x(y)$
+\small conditionals $\pi_x$ & \small barycentric projection $\bar T_\pi$
 \end{tabular}
-\caption{Weak barycentric transport on a small disk-to-annulus coupling. The left panel shows the full conditional laws: each red source atom splits its mass among several blue target atoms, with segment thickness proportional to transported mass. The right panel collapses each conditional law $\pi_x$ to its barycenter $\bar y(x)=\int y\d\pi_x(y)$, shown in violet. The barycentric weak cost only sees the red-to-violet displacement, and therefore ignores the conditional spread around each barycenter.}
+\caption{Weak barycentric transport on a small disk-to-annulus coupling. The left panel shows the full conditional laws: each red source atom splits its mass among several blue target atoms, with segment thickness proportional to transported mass. The right panel collapses each conditional law $\pi_x$ to its barycenter $\bar T_\pi(x)=\int y\d\pi_x(y)$, shown in violet. The barycentric weak cost only sees the red-to-violet displacement, and therefore ignores the conditional spread around each barycenter.}
 \label{fig:weak-ot-barycentric-projection}
 \end{figure}
 
-The barycentric cost is the canonical example to keep in mind: it only asks the conditional mean of $Y$ given $X=x$ to be close to $x$, and ignores the conditional variance. This connects weak OT with martingale transport, Strassen-type convex-order constraints, barycentric projections and learning problems where conditional averages are meaningful objects.
+The barycentric cost is the canonical example to keep in mind: admissibility still constrains the full conditional laws to have second marginal $\beta$, but the objective only charges the displacement from $x$ to $\bar T_\pi(x)$ and ignores the conditional variance around this barycenter. This connects weak OT with martingale transport, Strassen-type convex-order constraints, barycentric projections and learning problems where conditional averages are meaningful objects.
