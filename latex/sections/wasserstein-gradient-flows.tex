@@ -1,13 +1,13 @@
 % !TEX root = ../OT4ML.tex
 
-\section{Wasserstein Gradient Flows}
+\chapter{Wasserstein Gradient Flows}
 \label{sec-wasserstein-gradient-flows}
 
-Once $\Wass_2$ is a dynamic metric, one can run gradient descent directly on the space of measures. This section derives the formal Wasserstein gradient, explains the JKO minimizing-movement scheme, records the role of geodesic convexity in convergence, and then applies the same calculus to mean-field neural-network training.
+Once $\Wass_2$ is a dynamic metric, one can run gradient descent directly on the space of measures. This chapter derives the formal Wasserstein gradient, explains the JKO minimizing-movement scheme, records the role of geodesic convexity in convergence, and then applies the same calculus to mean-field neural-network training.
 
-\subsection{Minimizing Movements and Wasserstein Gradients}
+\section{Minimizing Movements and Wasserstein Gradients}
 
-This first subsection explains how a variational implicit-Euler step on measures gives rise, in the small-step limit, to a continuity equation driven by the Wasserstein gradient of the energy.
+This first section explains how a variational implicit-Euler step on measures gives rise, in the small-step limit, to a continuity equation driven by the Wasserstein gradient of the energy.
 
 We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_t)_t$. The general strategy of minimizing movement over a metric space is to construct a discrete-time evolution using an implicit Euler scheme:
 \begin{equation}
@@ -203,15 +203,35 @@ In a similar spirit, to obtain nonlinear evolutions without requiring the measur
    \begin{equation*}
        \dot{x}_i(t) = -\frac{2}{n} \sum_j \nabla k(x_i(t), x_j(t)).
    \end{equation*}
-   If $k$ is positive definite and one minimizes the squared MMD distance to a teacher distribution $\beta$, then
+	   If $k$ is positive definite, or more generally conditionally positive definite on signed measures of zero total mass as for the energy-distance kernel $k(x,y)=-\norm{x-y}$, and one minimizes the squared kernel discrepancy to a teacher distribution $\beta$, then
    \[
        \norm{\alpha-\beta}_k^2
        =
        \iint k\d\alpha\d\alpha
        -2\int\!\left(\int k(x,y)\d\beta(y)\right)\d\alpha(x)
        +\mathrm{constant}.
-   \]
-   Thus MMD training energies are exactly an interaction energy plus a linear potential; the teacher distribution appears through the potential $x\mapsto-2\int k(x,y)\d\beta(y)$.
+       \]
+	       Thus MMD-type training energies are exactly an interaction energy plus a linear potential; the teacher distribution appears through the potential $x\mapsto-2\int k(x,y)\d\beta(y)$. The corresponding empirical Wasserstein gradient flow is
+       \[
+		\dot x_i(t)
+		=
+		-\frac{2}{n}\sum_j\nabla_x k(x_i(t),x_j(t))
+		+
+		2\int\nabla_x k(x_i(t),y)\d\beta(y).
+       \]
+	       The first term is a kernelized self-interaction, while the second is the attraction induced by the continuous teacher kernel mean. At the continuum level, characteristic positive-definite kernels, and the Euclidean energy-distance kernel on probability measures, have $\beta$ as the unique minimizer of $\norm{\alpha-\beta}_k^2$. For a finite number of particles, however, the flow can only form a kernelized quadrature of $\beta$, and small particle systems may cover the target modes poorly. Figure~\ref{fig:gradflow-mmd-particle-count} illustrates this finite-particle effect.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\small $n=10$ particles & \small $n=50$ particles & \small $n=300$ particles \\[-.15em]
+\includegraphics[width=.30\linewidth]{figures/gradflow-mmd-particle-count/n-010.pdf} &
+\includegraphics[width=.30\linewidth]{figures/gradflow-mmd-particle-count/n-050.pdf} &
+\includegraphics[width=.30\linewidth]{figures/gradflow-mmd-particle-count/n-300.pdf}
+\end{tabular}
+\caption{Particle count in the deterministic Wasserstein gradient flow of the squared MMD-type discrepancy to a smooth two-Gaussian teacher distribution, using here the energy-distance kernel $k(x,y)=-\norm{x-y}$. The teacher itself is shown only through true density contours, while red dots are a compact shifted Gaussian initialization placed away from the target, red-to-blue curves show a thinned subset of particle trajectories, and blue dots show the stabilized long-time particles. With too few particles, the empirical measure forms a sparse kernelized quadrature and may under-cover the target modes; increasing $n$ makes the particle cloud approximate the continuous target geometry more faithfully.}
+\label{fig:gradflow-mmd-particle-count}
+\end{figure}
 
 \begin{figure}[ht]
 \centering
@@ -238,7 +258,53 @@ In a similar spirit, to obtain nonlinear evolutions without requiring the measur
 \label{fig:gradflow-particle-objective-geometries}
 \end{figure}
 
-\subsection{Geodesic Convexity and Convergence}
+\paragraph{Stochastic particles and McKean--Vlasov limits.}
+More generally, deterministic particle flows have stochastic counterparts, where Brownian noise at the particle level becomes an entropy term at the level of measures. If the drift does not depend on the empirical measure, each particle evolves independently according to
+\[
+	\d X_t=b(X_t)\d t+\sqrt{2}\sigma\d B_t,
+\]
+and the one-particle law $\alpha_t=\rho_t\d x$ directly satisfies the linear Fokker--Planck equation
+\[
+	\partial_t\rho_t=-\diverg(b\rho_t)+\sigma^2\Delta\rho_t.
+\]
+For example, if $b=-\nabla V$, this is the $\Wass_2$ gradient flow of the free energy $\int V\rho\,\d x+\sigma^2\int\rho\log\rho\,\d x$. The mean-field case is different: the drift is recomputed from the current empirical distribution of all particles,
+\[
+	\d X_i^n(t)=b(X_i^n(t),\mu_t^n)\d t+\sqrt{2}\sigma\d B_i(t),
+	\qquad
+	\mu_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)} .
+\]
+For finite $n$, the empirical law $\mu_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\mu_t^n$ converges in probability to this law. The limiting density solves the nonlinear Fokker--Planck, or McKean--Vlasov, equation
+\[
+	\partial_t \rho_t
+	=
+	-\diverg\big(b(x,\rho_t)\rho_t\big)
+	+
+	\sigma^2\Delta\rho_t .
+\]
+When the interaction drift has variational form
+\[
+	b(x,\rho)=-\nabla \frac{\delta \mathcal E}{\delta \rho}(x),
+\]
+	this PDE is the Wasserstein gradient flow of the entropy-regularized energy
+	\[
+		\mathcal E(\rho)+\sigma^2\int \rho\log\rho\,\d x .
+	\]
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}c@{}}
+\small independent Langevin particles \\[-.15em]
+\includegraphics[width=.86\linewidth]{figures/gradflow-fokker-planck-three-representations/langevin-particles.pdf} \\[.25em]
+\small deterministic KDE-score particles \\[-.15em]
+\includegraphics[width=.86\linewidth]{figures/gradflow-fokker-planck-three-representations/kde-particles.pdf} \\[.25em]
+\small grid Fokker--Planck density \\[-.15em]
+\includegraphics[width=.86\linewidth]{figures/gradflow-fokker-planck-three-representations/grid-pde.pdf}
+\end{tabular}
+\caption{Three numerical representations of the same entropy-regularized Wasserstein gradient flow of $\KL(\rho|\beta)$, where $\beta$ is a two-Gaussian target shifted to the right of an initially isotropic Gaussian density. The first row simulates independent Langevin particles and displays a thinned set of trajectories in the left panel. The second row evolves many deterministic particles with velocity $\tau(\nabla\log\beta-\nabla\log\rho_t)$, estimating $\nabla\log\rho_t$ by a sharper kernel-density score; only representative trajectories and particle subsets are displayed. The third row solves the corresponding Fokker--Planck equation on a grid, starting from the initial density in the left panel. The remaining columns use front-loaded times, so that the onset of the flow and the later deformation toward a bimodal law are both visible.}
+\label{fig:gradflow-fokker-planck-three-representations}
+\end{figure}
+
+\section{Geodesic Convexity and Convergence}
 \label{sec-geodesic-convexity}
 
 Geodesic convexity is the convexity notion adapted to Wasserstein geometry. It is the condition that turns the formal gradient-flow calculus into a convergence theory.
@@ -394,9 +460,9 @@ In general, analyzing \eqref{eq:wassflow-pde} is delicate. The cleanest case is 
 Outside this convex regime, such as in the mean-field neural-network example below, the flow may still be informative but its convergence analysis requires problem-specific arguments.
 
 
-\subsection{Training Two-Layer MLPs as Wasserstein Flows}
+\section{Training Two-Layer MLPs as Wasserstein Flows}
 
-Mean-field limits recast the training of wide neural networks as transport of a distribution of neurons. This subsection shows how the particle ODE of gradient descent becomes a Wasserstein flow in parameter space.
+Mean-field limits recast the training of wide neural networks as transport of a distribution of neurons. This section shows how the particle ODE of gradient descent becomes a Wasserstein flow in parameter space.
 
 We use $z\in\RR^d$ for the input data and $y\in\RR^{d'}$ for the label. A neuron is a particle
 \[
@@ -479,6 +545,46 @@ These kernels are generally not convex in the particle variable, so the geodesic
 \caption{Mean-field training of a homogeneous two-layer model as transport in neuron space. The left panel shows the Wasserstein particle gradient flow in the reduced homogeneous coordinates $(|u|v_1,|u|v_2)$, with black dashed rays marking the teacher directions. The right panel shows the weighted angular density along a front-loaded sequence of times, colored from red to blue, so that the early concentration of neuron directions is visible. The display follows the rendering of the auxiliary MLP experiment but keeps only the $W_2$ flow, not the spectral-flow comparison.}
 \label{fig:gradflow-mlp-homogeneous-relu}
 \end{figure}
+
+\paragraph{Classical convexity and stationarity.}
+Before using the specific homogeneity mechanism of Chizat and Bach, it is useful to isolate a simpler convex-analytic principle behind many mean-field arguments. Consider an energy of the form
+\[
+	F(\alpha)
+	=
+	\frac12\iint k(x,x')\d\alpha(x)\d\alpha(x')
+	+
+	\int V(x)\d\alpha(x)
+	+C,
+\]
+on probability measures over a parameter domain. Assume that the quadratic part is convex in the classical sense, namely convex for the affine structure of measures:
+\[
+	Q((1-s)\alpha+s\beta)\leq (1-s)Q(\alpha)+sQ(\beta),
+	\qquad
+	Q(\alpha)=\frac12\iint k\d\alpha\d\alpha.
+\]
+This is ordinary convexity of the functional on the convex set of measures, not displacement convexity along $\Wass_2$ geodesics.
+
+\begin{prop}[Affine convexity and stationary densities]\label{prop-classical-convex-stationary}
+	Let $F=Q+\int V\,\d\alpha+C$ be as above, and assume that $Q$ is classically convex. Suppose that a Wasserstein gradient flow for $F$ converges to a measure $\alpha_\infty=\rho_\infty\d x$. Assume also the standard regularity needed to pass to the limit in the first variation, and assume that the support and positivity of $\rho_\infty$ allow the stationary condition to be tested against all admissible zero-mass density perturbations. In the form needed here, assume that this stationarity yields, for every competitor $\beta$, the variational inequality
+	\[
+		\int \delta F(\alpha_\infty)(x)\d(\beta-\alpha_\infty)(x)\geq0.
+	\]
+	Then $\alpha_\infty$ is a global minimizer of $F$.
+\end{prop}
+\begin{proof}[Proof sketch]
+	The dissipation identity for the gradient flow gives stationarity of the limit: formally, after passing to the limit,
+	\[
+		\int \norm{\nabla \delta F(\alpha_\infty)}^2\d\alpha_\infty=0.
+	\]
+	Without such a support and positivity assumption, this identity only controls the first variation on the region explored by the limit. The density hypothesis allows one to test against sufficiently many signed density perturbations of total mass zero. By approximation and the assumed regularity, this yields the displayed first-order variational inequality for arbitrary competitors $\beta$. Classical convexity of $F$ in the affine variable $\alpha$ then gives the usual subgradient inequality
+	\[
+		F(\beta)\geq F(\alpha_\infty)
+		+
+		\int \delta F(\alpha_\infty)\d(\beta-\alpha_\infty)
+		\geq F(\alpha_\infty).
+	\]
+	Thus no competitor has smaller energy. For square-loss two-layer mean-field models, \eqref{eq-mlp-square-loss-quadratic-linear} is exactly of this quadratic-plus-linear form, and positive semidefiniteness of the induced kernel $k$ is the classical convexity assumption.
+\end{proof}
 
 The mean-field description of two-layer training was developed in several works, including~\cite{ChizatBach2018OverparameterizedOT,MeiMontanariNguyen2018MeanFieldNN}. The distinctive contribution of Chizat and Bach is a global-convergence analysis for positively homogeneous networks without adding an explicit regularizer or relying on noisy SGD to create a Laplacian term. The following formal statement isolates the core mechanism and ignores the technical issues due to ReLU non-smoothness, support propagation and compactness.
 

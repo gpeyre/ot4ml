@@ -569,13 +569,17 @@ Gabriel Peyr{{\'e}}\\[-.1em]
 
 
 def write_readme() -> None:
-    readme = """# Compact teaching version
+    readme = """# Compact Teaching Version
 
-This directory contains a compact, bibliography-free version of the course notes.
-It is generated from `latex/` by `generate_compact.py`, using a 10pt A4 layout
-with tight margins for teaching handouts.
+This directory contains the compact, bibliography-free teaching version of the
+OT4ML manuscript. It is generated from the current sources in `latex/` with
+`generate_compact.py`, using a 10pt A4 layout and tight margins for handouts.
 
-Build from the repository root:
+The compact version is meant for lecture use: it preserves the mathematical
+statements and proofs, while removing expansive exposition, transitions,
+references, the bibliography, and the notation table from the full book.
+
+## Build
 
 ```sh
 python3 compact/generate_compact.py
@@ -584,15 +588,19 @@ pdflatex -synctex=1 -interaction=nonstopmode -halt-on-error CourseOT-compact.tex
 pdflatex -synctex=1 -interaction=nonstopmode -halt-on-error CourseOT-compact.tex
 ```
 
-Policy of the compact generator:
+Run these commands from the repository root. The first command refreshes the
+compact LaTeX source, and the two LaTeX passes refresh cross-references.
+
+## Generator Policy
 
 - preserve formal mathematical environments and proofs;
 - strip citations and omit the bibliography;
 - remove pitches, transitions and background prose outside formal/math blocks;
 - inline short unnumbered displayed equations when this saves vertical space.
 
-LaTeX auxiliary files are ignored in this directory; keep the source files,
-generator and final `CourseOT-compact.pdf` under version control.
+LaTeX auxiliary files are ignored in this directory. Keep the generator, style
+files, compact section files, generated source, and final
+`CourseOT-compact.pdf` under version control.
 """
     (OUT / "README.md").write_text(readme, encoding="utf-8")
 

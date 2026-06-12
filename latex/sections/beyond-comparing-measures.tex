@@ -1,36 +1,158 @@
 % !TEX root = ../OT4ML.tex
 
-\section{Beyond Comparing Measures}
+\chapter{Beyond Comparing Measures}
 \label{sec-beyond-comparing-measures}
 
-The last group leaves the setting of scalar measures on a common ambient space. Vector and tensor-valued OT transports matrix-valued mass with internal degrees of freedom, Gromov--Wasserstein compares metric-measure spaces without a prescribed correspondence, and quantum OT replaces scalar couplings by positive operators. In each case, the transport plan also has to encode structure carried by the support, the fibers or the non-commutative state space.
+The last group leaves the setting of scalar measures on a common ambient space. Vector- and matrix-valued OT transports mass with internal degrees of freedom, Gromov--Wasserstein compares metric-measure spaces without a prescribed correspondence, and quantum OT replaces scalar couplings by positive operators. In each case, the transport plan also has to encode structure carried by the support, the fibers or the non-commutative state space.
 
-\subsection{Vector and Tensor-Valued Measures}
-\label{sec-vector-tensor-valued-measures}
+\section{Vector and Matrix-Valued Measures}
+\label{sec-vector-matrix-valued-measures}
 
-Scalar OT transports a nonnegative density. In imaging, diffusion tensor imaging, spectral analysis and quantum-inspired models, the mass attached to a point can instead be a vector, a covariance matrix or a positive semidefinite tensor. A convenient finite-dimensional model is a matrix-valued measure $A$ on $\X$ with values in $\mathbb H_m^+$, the cone of $m\times m$ positive semidefinite Hermitian matrices. If $A$ has a density, we write $A(x)\succeq0$ and interpret $\tr A(x)$ as the local amount of mass while the normalized matrix describes an internal state. Static matrix-valued Monge--Kantorovich problems and dual test-function metrics were developed in~\cite{Ning2014metrics,JiangSpectral,ning2015matrix}; dynamic non-commutative versions are closely related to the matrix transport models of~\cite{Chen2016,ChenGangbo17} and to non-commutative Wasserstein geometries for density matrices~\cite{Carlen2014,2016-peyre-qot}.
+Scalar OT transports a nonnegative density. In imaging, color processing, spectral analysis, diffusion tensor imaging and quantum-inspired models, the object attached to a point can instead have several nonnegative components or a positive semidefinite matrix. The first step beyond scalar OT is the positive vector-valued case, where the fiber remains linear and commutative but the channels may interact.
 
-A Benamou--Brenier-type construction introduces, in addition to the matrix density $A_t(x)$, a spatial matrix flux $M_t(x)=(M_{t,1},\ldots,M_{t,d})$ and sometimes an internal flux $Q_t(x)=(Q_{t,r})_r$ that rotates or mixes the matrix fibers. A schematic matrix-perspective action, written in the simplest left-perspective convention, is
+\paragraph{Positive vector-valued measures.}
+A positive vector-valued measure is a tuple
+\[
+	\mu=(\mu^1,\ldots,\mu^m)\in\Mm_+(\X;\RR_+^m),
+\]
+where each component $\mu^k$ is a nonnegative finite measure. This models multi-channel densities such as color histograms, spectral bins or several species transported on the same domain. In a conservative model the mass of each channel is preserved, so one assumes $\mu_0^k(\X)=\mu_1^k(\X)$ for every $k$. The natural vector-valued extension of OT therefore starts from the positive cone $\RR_+^m$.
+
+To keep the notation readable, first assume that the endpoints and the curve have densities. The direct analogue of Benamou--Brenier fixes a vector density $u_t(x)\in\RR_+^m$ and a spatial flux
+$V_t(x)=(V_{t,1},\ldots,V_{t,d})\in(\RR^m)^d$, where $V_{t,\ell}^k$ is the momentum of channel $k$ in spatial direction $\ell$. The conservative vector transport cost associated with an action density $\Phi$ is
+\begin{equation}\label{eq-vector-valued-bb}
+	\mathcal W_{\Phi}^2(\mu_0,\mu_1)
+	\eqdef
+	\inf_{u,V}
+	\int_0^1\!\int_\X
+	\Phi(u_t(x),V_t(x))\,\d x\,\d t
+\end{equation}
+subject to the endpoint constraints $u_0\d x=\mu_0$, $u_1\d x=\mu_1$ and the componentwise continuity equation
+\begin{equation}\label{eq-vector-valued-continuity}
+	\partial_t u_t+\nabla_x\cdot V_t=0,
+	\qquad
+	(\nabla_x\cdot V_t)^k=\sum_{\ell=1}^d \partial_{x_\ell} V_{t,\ell}^k .
+\end{equation}
+Thus each component satisfies its own continuity equation, but the cost may still couple the components. Singular curves are handled as in scalar dynamic OT by replacing densities and fluxes by measures and using the lower semicontinuous perspective recession convention.
+
+A simple quadratic family is obtained from a mobility matrix $\mathsf M(u)\in\mathbb S_+^m$, where $\mathbb S_+^m$ denotes the cone of real symmetric positive semidefinite matrices:
+\[
+	\Phi_{\mathsf M}(u,V)
+	=
+	\sum_{\ell=1}^d V_{\ell}^{\top}\mathsf M(u)^\dagger V_{\ell},
+\]
+with the usual convention that the value is finite only when each $V_\ell$ belongs to the range of $\mathsf M(u)$. One chooses $\mathsf M$ so that this matrix perspective is convex and one-homogeneous in $(u,V)$; this holds for the linear positive mobilities below. For $m=1$ and $\mathsf M(u)=u$, one recovers exactly the scalar Benamou--Brenier action. For
+\[
+	\mathsf M_{\mathrm{diag}}(u)=\diag(u_1,\ldots,u_m),
+\]
+the channels move independently. Non-diagonal mobilities are the simplest way to couple the coordinates while keeping the same componentwise conservation law. For instance, with $q=m^{-1/2}(1,\ldots,1)$ and $\kappa\geq0$,
+\[
+	\mathsf M_\kappa(u)=\diag(u)+\kappa\Big(\sum_{k=1}^m u_k\Big) q q^\top
+\]
+increases the mobility in the common channel direction $q$ while leaving transverse directions controlled by the diagonal part. The local cost of moving one component can therefore depend on the densities and momenta of the other components, even though each component mass remains conserved.
+
+\begin{prop}[Diagonal positive vector Benamou--Brenier]\label{prop-diagonal-positive-vector-bb}
+Assume that $\mu_0^k,\mu_1^k\in\Mm_+(\X)$ have the same mass $m_k$ for every $k$. For the diagonal mobility $\mathsf M_{\mathrm{diag}}$, the value of~\eqref{eq-vector-valued-bb} is
+\[
+	\mathcal W_{\mathrm{diag}}^2(\mu_0,\mu_1)
+	=
+	\sum_{k:m_k>0} m_k\,\Wass_2^2\!\left(\frac{\mu_0^k}{m_k},\frac{\mu_1^k}{m_k}\right),
+\]
+with the convention that zero-mass channels contribute zero.
+\end{prop}
+\begin{proof}
+For $\mathsf M_{\mathrm{diag}}(u)=\diag(u_1,\ldots,u_m)$, the action separates as
+\[
+	\sum_{\ell=1}^d V_\ell^\top \mathsf M_{\mathrm{diag}}(u)^\dagger V_\ell
+	=
+	\sum_{k=1}^m \frac{|V^k|^2}{u^k},
+\]
+where $V^k=(V_1^k,\ldots,V_d^k)$ is the spatial momentum of channel $k$, and the scalar perspective convention is used. The constraint~\eqref{eq-vector-valued-continuity} also separates into $\partial_t u^k+\nabla\cdot V^k=0$. The minimization therefore splits into $m$ independent scalar Benamou--Brenier problems. If $m_k=0$, nonnegativity and conservation force the whole channel to vanish. If $m_k>0$, normalizing $\rho_t^k=u_t^k/m_k$ and $p_t^k=V_t^k/m_k$ factors the channel action as $m_k\int |p_t^k|^2/\rho_t^k$, hence the scalar value is $m_k\Wass_2^2(\mu_0^k/m_k,\mu_1^k/m_k)$. Summing over the channels proves the claim.
+\end{proof}
+
+The conservative positive-cone model above is the basic extension of Benamou--Brenier. Adding a source term $\partial_t u+\nabla\cdot V=S$ and a convex perspective penalty in $S$ gives unbalanced or reaction--transport variants. Such generalized transport models with dissipation and density modulation were developed by Maas, Rumpf, Sch{\"o}nlieb and Simon~\cite{maas2015generalized,maas2016generalized}; related nonlinear mobility distances and gradient structures appear in~\cite{dolbeault2009new,MielkeCVPDE}. Figure~\ref{fig:vector-valued-measure-geodesics} contrasts the exact diagonal case $\kappa=0$, where each positive channel is transported by its quantile map, with a large-$\kappa$ illustrative common-mode interpolation in which the channels move more coherently. The endpoints are two-mode mixtures: at each spatial mode the two channels have Gaussian profiles with the same center but different amplitudes.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.45\linewidth]{figures/vector-valued-measure-geodesics/kappa-zero-arrows.pdf} &
+\includegraphics[width=.45\linewidth]{figures/vector-valued-measure-geodesics/kappa-large-arrows.pdf}
+\\[-.1em]
+\small independent channels $(\kappa=0)$ &
+\small strongly coupled channels $(\kappa\gg1)$
+\end{tabular}
+\caption{One-dimensional positive $\RR_+^2$-valued transport displayed by arrow glyphs at eight time levels. Each endpoint is a mixture of two localized Gaussian modes, and, inside each mode, both channel profiles have the same center. Each arrow is proportional to the local fiber value $(u_t^1(x),u_t^2(x))$, and time runs vertically from the red source to the blue target. Left: for $\kappa=0$, the diagonal mobility of Proposition~\ref{prop-diagonal-positive-vector-bb} gives two independent scalar quantile geodesics. Right: a large-$\kappa$ common-mode interpolation bends the display toward the direction $q=2^{-1/2}(1,1)$, illustrating the qualitative effect of a mobility that favors coherent channel motion while keeping the same componentwise continuity equation.}
+\label{fig:vector-valued-measure-geodesics}
+\end{figure}
+
+\paragraph{Positive matrix-valued measures.}
+The next simplest fiber is the positive matrix cone. This is the simplest tensor-valued model beyond vectors: the diagonal entries behave like positive channels, while the eigenvectors encode local orientations. Write $\mathbb S^m$ for real symmetric matrices, so that $\mathbb S_+^m$ is its positive semidefinite cone, and consider
+\[
+	\mathcal A\in\Mm_+(\X;\mathbb S_+^m).
+\]
+If $\mathcal A$ has density $A(x)\succeq0$, then $\tr A(x)$ is the scalar amount of mass at $x$, while, wherever $\tr A(x)>0$, the normalized matrix $A(x)/\tr A(x)$ records an internal covariance or orientation. This is the matrix analogue of the positive vector case: diagonal matrices encode nonnegative vector components, and non-diagonal matrices add a local eigenbasis.
+
+The conservative Benamou--Brenier model fixes a matrix density $A_t(x)\in\mathbb S_+^m$ and symmetric matrix fluxes $P_t(x)=(P_{t,1},\ldots,P_{t,d})\in(\mathbb S^m)^d$. With no flux through the boundary of $\X$, the full matrix mass $\int_\X A_t(x)\d x$ is conserved, so the endpoints must have the same total matrix. The model minimizes the matrix-perspective action
 \begin{equation}\label{eq-matrix-valued-bb}
 \begin{aligned}
-\mathcal W_{\mathrm{mv}}^2(A_0,A_1)
-=\inf_{A,M,Q}\int_0^1\!\int_\X
-\Bigg[
-\sum_{\ell=1}^d \tr\big(M_{t,\ell}^* A_t^\dagger M_{t,\ell}\big)
-+\lambda\sum_r \tr\big(Q_{t,r}^* A_t^\dagger Q_{t,r}\big)
-\Bigg]\d x\d t
+\mathcal W_{\mathrm{mat}}^2(\mathcal A_0,\mathcal A_1)
+\eqdef
+\inf_{A,P}\int_0^1\!\int_\X
+\sum_{\ell=1}^d \tr\big(P_{t,\ell}^{\top} A_t^\dagger P_{t,\ell}\big)\d x\d t
 \end{aligned}
 \end{equation}
-subject to the endpoint constraints and to a continuity equation
+subject to $A_0\d x=\mathcal A_0$, $A_1\d x=\mathcal A_1$ and to the matrix-valued continuity equation
 \begin{equation}\label{eq-matrix-valued-continuity}
-\partial_t A_t+\nabla_x\cdot M_t+\nabla_L^* Q_t=0.
+\partial_t A_t+\nabla_x\cdot P_t=0,
+\qquad
+\nabla_x\cdot P_t=\sum_{\ell=1}^d \partial_{x_\ell}P_{t,\ell}.
 \end{equation}
-Here $A^\dagger$ denotes the Moore--Penrose inverse, with the usual perspective convention: the action is finite only when the fluxes are supported in the range of $A$. In genuinely non-commutative settings, one often replaces the displayed left-perspective expression by a symmetrized left-right perspective; this choice is part of the definition of the metric and is what ensures convexity and compatibility with adjoints. The operator $\nabla_L$ is a non-commutative gradient generated by a finite family of matrices $(L_r)_r$, for instance $\nabla_L X=(L_rX-XL_r)_r$, and $\nabla_L^*$ is its adjoint. The spatial term moves matrix-valued mass through $\X$; the internal term changes the fiber state without spatial displacement. If $m=1$ and $Q=0$,~\eqref{eq-matrix-valued-bb} reduces to the scalar Benamou--Brenier action of Section~\ref{sec-dynamic-optimal-transport}. If $\X$ is a single point, only the internal non-commutative transport remains, giving a dynamic geometry on positive matrices.
+Here $A^\dagger$ denotes the Moore--Penrose inverse, with the usual perspective convention: the action is finite only when the columns of each $P_{t,\ell}$ belong to the range of $A_t$. The map $(A,P)\mapsto\tr(P^{\top}A^\dagger P)$ is the matrix fractional function; it is jointly convex on $A\succeq0$. This gives the simplest non-trivial matrix-valued transport model: spatial motion is conservative, but the fiber carries orientation through the eigenvectors of $A_t(x)$.
 
-The important point is not the particular choice of $\nabla_L$, but the variational grammar. One chooses admissible spatial and internal directions, writes a linear continuity equation for the matrix density, and minimizes a convex matrix-perspective kinetic energy. Different choices of $L_r$, symmetrization conventions and boundary conditions give different tensor-valued Wasserstein metrics. These models are useful when the transported object carries orientation, color covariance, spectral content or a quantum state, and they provide the dynamic counterpart of the finite-dimensional quantum couplings described below.
+\begin{prop}[Diagonal matrix subproblem]\label{prop-matrix-diagonal-reduction}
+Assume that the endpoints are diagonal in a fixed orthonormal basis,
+\[
+	\mathcal A_i=\diag(\mu_i^1,\ldots,\mu_i^m),
+	\qquad i=0,1,
+\]
+and that $\mu_0^k(\X)=\mu_1^k(\X)=m_k$ for every $k$. If one restricts the admissible curves in~\eqref{eq-matrix-valued-bb} to remain diagonal in that basis,
+\[
+	A_t=\diag(u_t^1,\ldots,u_t^m),
+	\qquad
+	P_{t,\ell}=\diag(V_{t,\ell}^1,\ldots,V_{t,\ell}^m),
+\]
+then the value of this restricted matrix problem is
+\[
+	\sum_{k:m_k>0} m_k\,\Wass_2^2\!\left(\frac{\mu_0^k}{m_k},\frac{\mu_1^k}{m_k}\right),
+\]
+with zero contribution from zero-mass channels. Thus the commuting matrix submodel is exactly the diagonal positive vector-valued Benamou--Brenier model of Proposition~\ref{prop-diagonal-positive-vector-bb}.
+\end{prop}
+\begin{proof}
+The continuity equation~\eqref{eq-matrix-valued-continuity} is diagonal entry by diagonal entry and gives $\partial_t u^k+\nabla\cdot V^k=0$. Moreover,
+\[
+	\sum_{\ell=1}^d \tr\big(P_{t,\ell}^{\top}A_t^\dagger P_{t,\ell}\big)
+	=
+	\sum_{k=1}^m \frac{|V_t^k|^2}{u_t^k}
+\]
+with the same scalar perspective convention as before. The admissible set and the action are therefore exactly those of the diagonal vector model.
+\end{proof}
+
+The restriction to a fixed diagonal basis gives eigenvalue transport; it should be read as a commuting submodel, not as a claim that non-diagonal excursions can never change the unrestricted value. The genuinely matrix-valued case starts when the eigenspaces vary with $x$ or along the interpolation, so that the transported object carries both mass and orientation. Static matrix-valued Monge--Kantorovich problems and dual test-function metrics were developed in~\cite{Ning2014metrics,JiangSpectral,ning2015matrix}; dynamic versions and related non-commutative geometries appear in~\cite{Chen2016,ChenGangbo17,Carlen2014,2016-peyre-qot}. Figure~\ref{fig:matrix-valued-measure-geodesic} shows the analogous independent/coupled contrast for positive $2\times2$ matrix fibers, using two localized matrix modes whose eigenvalue profiles share a common center at each mode.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.46\linewidth]{figures/matrix-valued-measure-geodesic/independent-ellipses.pdf} &
+\includegraphics[width=.46\linewidth]{figures/matrix-valued-measure-geodesic/coupled-ellipses.pdf}
+\\[-.1em]
+\small commuting tensor channels &
+\small strongly coupled tensor fibers
+\end{tabular}
+\caption{Positive $2\times2$ matrix-valued transport on a one-dimensional base. Each endpoint is a mixture of two localized matrix modes; within one mode, both eigenvalue profiles are Gaussian bumps with the same center. Each ellipse is the glyph of a positive semidefinite matrix $A_t(x)$, with axes given by eigenvectors and eigenvalues. Left: the matrices are diagonal in a fixed basis, giving the commuting tensor analogue of independent vector channels. Right: a coupled illustrative interpolation bends packet motion toward the trace-density transport and uses non-commuting eigendirections; the superposition remains positive semidefinite and produces spatially varying orientations.}
+\label{fig:matrix-valued-measure-geodesic}
+\end{figure}
 
 
-\subsection{Gromov--Wasserstein}
+\section{Gromov--Wasserstein}
 \label{sec-gromov-wasserstein}
 
 Gromov--Wasserstein compares spaces through their internal distance structures rather than through a fixed ambient ground cost. This is the right extension for graphs, shapes and point clouds whose points are not pre-aligned.
@@ -73,7 +195,7 @@ When the matrices $\distD,\distD'$ are genuine distance matrices, the general co
 %
 This distance was introduced and studied in detail by Memoli in~\cite{memoli-2011}. An in-depth mathematical exposition (in particular, its geodesic structure and gradient flows) is given in~\cite{SturmGW}. See also~\cite{schmitzer2013modelling} for applications in computer vision.
 %
-Its relation to Hausdorff and Gromov--Hausdorff distances is discussed at the end of this subsection.
+Its relation to Hausdorff and Gromov--Hausdorff distances is discussed at the end of this section.
 
 %%%%%%%%%%%%%%%%%%%%%
 \paragraph{General setting.}
@@ -331,7 +453,7 @@ The Gromov--Hausdorff distance removes the common ambient space by minimizing th
 \]
 Equivalently, it is half the minimal distortion of a correspondence between $\X$ and $\Y$~\cite{gromov-2001,memoli-2007}. This is a worst-case set distance: every point must be matched with small distortion. Gromov--Wasserstein replaces correspondences by probability couplings and worst-case distortion by averaged distortion. It is therefore better adapted to noisy sampled shapes and weighted graphs, but it can ignore small sets of mass that would dominate the Hausdorff distance.
 
-\subsection{Quantum Optimal Transport}
+\section{Quantum Optimal Transport}
 \label{sec-quantum-ot}
 
 Quantum optimal transport replaces probability vectors by density matrices and scalar couplings by positive operators on a tensor product space. This is the right language when the transported objects are matrix-valued signals, covariance-like descriptors or quantum states, and it exposes a precise bridge between OT, non-commutative entropy and operator scaling. The finite-dimensional formulation below follows the semidefinite viewpoint developed in matrix-valued and quantum OT~\cite{Ning2014metrics,Chen2016,ChenGangbo17,2016-peyre-qot,caglioti2019quantum,chakrabarti2019quantum}.

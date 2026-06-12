@@ -1,12 +1,29 @@
 # Figure Notebooks
 
-This directory contains the executable notebooks that generate the illustrative figures currently included in the OT4ML book. Each live notebook writes one or several PDF panels to `../latex/figures/<figure-name>/`; the thumbnails below are compact PNG previews rendered from those PDFs.
+This directory contains the executable notebooks that generate the illustrative
+figures currently included in the OT4ML book. Each live notebook writes one or
+several PDF panels to `../latex/figures/<figure-name>/`; the thumbnails below
+are compact PNG previews rendered from those outputs.
 
-**Gallery status.** 64 current book figures, 63 live linked notebooks, and 63 active figure thumbnails in [`thumbnails/`](thumbnails/), plus the contact sheet shown below. One notebook can generate several figures; for example, the Gaussian W2 notebook provides both the one-dimensional and two-dimensional Gaussian figures.
+**Gallery status.** Checked against the current LaTeX source: all 73 live
+`latex/figures/<figure-name>/` directories referenced by
+`\includegraphics{figures/...}` have a matching notebook card below, a live
+`.ipynb` file, a thumbnail in [`thumbnails/`](thumbnails/), and generated PDF
+panels in `../latex/figures/`. The book currently has 75 LaTeX figure labels
+because two notebooks generate two labeled figures each, for example the
+Gaussian W2 notebook provides both the one-dimensional and two-dimensional
+Gaussian figures. The contact sheet below is built from the same active
+thumbnail set.
 
-This README intentionally lists only notebooks that are integrated in the current LaTeX source through live `\includegraphics{figures/...}` references. Retired or exploratory notebooks live in [`removed/`](removed/), with their matching generated panels in [`../latex/figures/removed/`](../latex/figures/removed/). They are kept for provenance but omitted from this paper gallery.
+This README intentionally lists only notebooks integrated in the current LaTeX
+source through live `\includegraphics{figures/...}` references. Retired or
+exploratory notebooks live in [`removed/`](removed/), with their matching
+generated panels in [`../latex/figures/removed/`](../latex/figures/removed/).
+They are kept for provenance but omitted from this paper gallery.
 
-Open a notebook locally from the **Open notebook** link, or launch it in Google Colab from the badge. The Colab links target the `main` branch of [`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml).
+Open a notebook locally from the **Open notebook** link, or launch it in Google
+Colab from the badge. The Colab links target the `main` branch of
+[`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml).
 
 [![Contact sheet of book figures](thumbnails/book-figures-contact-sheet.png)](../README.md#figures-of-the-book)
 
@@ -22,15 +39,15 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="monge-histogram-equalization.ipynb"><img src="thumbnails/monge-histogram-equalization.png" alt="Histogram equalization as one-dimensional Monge transport" width="210"></a><br>
-  <strong>Histogram equalization as one-dimensional Monge transport</strong><br>
-  <a href="monge-histogram-equalization.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-histogram-equalization.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="matching-1d-convex-concave-costs.ipynb"><img src="thumbnails/matching-1d-convex-concave-costs.png" alt="Convex and concave costs on the line" width="210"></a><br>
+  <strong>Convex and concave costs on the line</strong><br>
+  <a href="matching-1d-convex-concave-costs.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-1d-convex-concave-costs.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="matching-2d-cost-exponent.ipynb"><img src="thumbnails/matching-2d-cost-exponent.png" alt="Two-dimensional assignments for different cost exponents" width="210"></a><br>
-  <strong>Two-dimensional assignments for different cost exponents</strong><br>
-  <a href="matching-2d-cost-exponent.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-2d-cost-exponent.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="monge-histogram-equalization.ipynb"><img src="thumbnails/monge-histogram-equalization.png" alt="Histogram equalization as one-dimensional Monge transport" width="210"></a><br>
+  <strong>Histogram equalization as one-dimensional Monge transport</strong><br>
+  <a href="monge-histogram-equalization.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-histogram-equalization.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -40,9 +57,39 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="monge-circle-cut-unfolding.ipynb"><img src="thumbnails/monge-circle-cut-unfolding.png" alt="Circle transport by cutting and unfolding" width="210"></a><br>
+  <strong>Circle transport by cutting and unfolding</strong><br>
+  <a href="monge-circle-cut-unfolding.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-circle-cut-unfolding.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="matching-2d-cost-exponent.ipynb"><img src="thumbnails/matching-2d-cost-exponent.png" alt="Two-dimensional assignments for different cost exponents" width="210"></a><br>
+  <strong>Two-dimensional assignments for different cost exponents</strong><br>
+  <a href="matching-2d-cost-exponent.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-2d-cost-exponent.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="matching-resolution-and-weights.ipynb"><img src="thumbnails/matching-resolution-and-weights.png" alt="Resolution and nonuniform weights in discrete transport" width="210"></a><br>
   <strong>Resolution and nonuniform weights in discrete transport</strong><br>
   <a href="matching-resolution-and-weights.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-resolution-and-weights.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="matching-rational-duplication.ipynb"><img src="thumbnails/matching-rational-duplication.png" alt="Rational weights as duplicated matchings" width="210"></a><br>
+  <strong>Rational weights as duplicated matchings</strong><br>
+  <a href="matching-rational-duplication.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-rational-duplication.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="matching-hungarian-progression.ipynb"><img src="thumbnails/matching-hungarian-progression.png" alt="Hungarian algorithm progression" width="210"></a><br>
+  <strong>Hungarian algorithm progression</strong><br>
+  <a href="matching-hungarian-progression.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-hungarian-progression.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%"></td>
@@ -155,7 +202,11 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
   <a href="matching-quantitative-clt.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-quantitative-clt.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="kantorovich-wow-mixtures.ipynb"><img src="thumbnails/kantorovich-wow-mixtures.png" alt="Wasserstein over Wasserstein for Gaussian mixtures" width="210"></a><br>
+  <strong>Wasserstein over Wasserstein for Gaussian mixtures</strong><br>
+  <a href="kantorovich-wow-mixtures.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-wow-mixtures.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 <td width="33%"></td>
 
@@ -197,7 +248,11 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
   <a href="dual-alternating-c-transform-failure.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-alternating-c-transform-failure.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="dual-auction-progression.ipynb"><img src="thumbnails/dual-auction-progression.png" alt="Auction algorithm progression" width="210"></a><br>
+  <strong>Auction algorithm progression</strong><br>
+  <a href="dual-auction-progression.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-auction-progression.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 <td width="33%"></td>
 
@@ -468,10 +523,28 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="vector-valued-measure-geodesics.ipynb"><img src="thumbnails/vector-valued-measure-geodesics.png" alt="Positive vector-valued coupled transport" width="210"></a><br>
+  <strong>Positive vector-valued coupled transport</strong><br>
+  <a href="vector-valued-measure-geodesics.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/vector-valued-measure-geodesics.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="matrix-valued-measure-geodesic.ipynb"><img src="thumbnails/matrix-valued-measure-geodesic.png" alt="Positive matrix-valued coupled transport" width="210"></a><br>
+  <strong>Positive matrix-valued coupled transport</strong><br>
+  <a href="matrix-valued-measure-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matrix-valued-measure-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="gromov-isometry-matching.ipynb"><img src="thumbnails/gromov-isometry-matching.png" alt="Gromov-Wasserstein matching of isometric shapes" width="210"></a><br>
   <strong>Gromov-Wasserstein matching of isometric shapes</strong><br>
   <a href="gromov-isometry-matching.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gromov-isometry-matching.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+</tr>
+</table>
+
+<table>
+<tr>
 
 <td width="33%" align="center" valign="top">
   <a href="gromov-nonisometric-distortion.ipynb"><img src="thumbnails/gromov-nonisometric-distortion.png" alt="Gromov-Wasserstein distortion for non-isometric shapes" width="210"></a><br>
@@ -484,6 +557,8 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
   <strong>Fused Gromov-Wasserstein: features versus geometry</strong><br>
   <a href="fused-gromov-feature-geometry.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/fused-gromov-feature-geometry.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+<td width="33%"></td>
 
 </tr>
 </table>
@@ -536,6 +611,24 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="gradflow-fokker-planck-three-representations.ipynb"><img src="thumbnails/gradflow-fokker-planck-three-representations.png" alt="Three Fokker-Planck representations" width="210"></a><br>
+  <strong>Three Fokker-Planck representations</strong><br>
+  <a href="gradflow-fokker-planck-three-representations.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-fokker-planck-three-representations.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-mmd-particle-count.ipynb"><img src="thumbnails/gradflow-mmd-particle-count.png" alt="Particle count for squared-MMD flow" width="210"></a><br>
+  <strong>Particle count for squared-MMD flow</strong><br>
+  <a href="gradflow-mmd-particle-count.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mmd-particle-count.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
   <a href="gradflow-particle-objective-geometries.ipynb"><img src="thumbnails/gradflow-particle-objective-geometries.png" alt="Particle trajectories for different discrepancy geometries" width="210"></a><br>
   <strong>Particle trajectories for different discrepancy geometries</strong><br>
   <a href="gradflow-particle-objective-geometries.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-particle-objective-geometries.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -546,6 +639,8 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
   <strong>Homogeneous ReLU mean-field flow</strong><br>
   <a href="gradflow-mlp-homogeneous-relu.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mlp-homogeneous-relu.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+<td width="33%"></td>
 
 <td width="33%"></td>
 
@@ -604,4 +699,6 @@ Open a notebook locally from the **Open notebook** link, or launch it in Google 
 
 ## Roadmap and Archive
 
-Archived or exploratory notebooks are intentionally omitted from this gallery. See [`figures.md`](figures.md) for the full roadmap and archive list.
+Archived or exploratory notebooks are intentionally omitted from this gallery.
+See [`figures.md`](figures.md) for the figure roadmap and
+[`removed/`](removed/) for retired notebooks.
