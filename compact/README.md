@@ -4,9 +4,11 @@ This directory contains the compact, bibliography-free teaching version of the
 OT4ML manuscript. It is generated from the current sources in `latex/` with
 `generate_compact.py`, using a 10pt A4 layout and tight margins for handouts.
 
-The compact version is meant for lecture use: it preserves the mathematical
-statements and proofs, while removing expansive exposition, transitions,
-references, the bibliography, and the notation table from the full book.
+The compact version is meant for lecture use: it follows the current chapter
+order of the full book, mapping chapters to article sections, and preserves the
+core mathematical statements, proofs and equations. It removes expansive
+exposition, side remarks and examples, transitions, references, figures, tables,
+the bibliography, the index, and the notation table from the full book.
 
 ## Build
 
@@ -23,7 +25,9 @@ compact LaTeX source, and the two LaTeX passes refresh cross-references.
 ## Generator Policy
 
 - preserve formal mathematical environments and proofs;
-- strip citations and omit the bibliography;
+- follow the section order of `latex/OT4ML.tex`;
+- strip citations and omit the bibliography, index, figures, tables, remarks,
+  and examples;
 - remove pitches, transitions and background prose outside formal/math blocks;
 - inline short unnumbered displayed equations when this saves vertical space.
 

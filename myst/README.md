@@ -1,15 +1,50 @@
 # OT4ML MyST Web Prototype
 
 This directory contains an experimental MyST/Jupyter Book 2 version of OT4ML.
-The current prototype starts with `chapters/matching.md`, which keeps the
-mathematical text close to the LaTeX manuscript while replacing selected static
-figure references by executable cells with small, visible parameter blocks.
+It fuses the LaTeX exposition with the notebook-generated figures and adds
+small live parameter panels beside selected examples. The converted chapters
+are listed in `myst.yml`.
 
 The entry point is `index.md`, the project configuration is `myst.yml`, and
-shared plotting helpers live in `ot4ml_web.py`. Generated build artifacts are
-written under `_build/` and ignored by `myst/.gitignore`.
+shared Python plotting helpers live in `ot4ml_web.py`. Browser-native live
+controls live in `live/`. Generated build artifacts are written under
+`_build/` and ignored by `myst/.gitignore`.
 
-## Rendering Workflow
+## How the Live Controls Work
+
+There are two separate execution layers.
+
+| Layer | Where it runs | Needs Python/Jupyter? | What it controls |
+| --- | --- | --- | --- |
+| MyST executable cells | At build time, or in a connected local Jupyter session | Yes | The hidden Python code that reproduces the book figures and notebook outputs |
+| **Live controls** dropdowns | Directly in the browser | No | Lightweight interactive versions of selected figures, with sliders and menus for the main parameters |
+
+The **Live controls** dropdowns are not `ipywidgets`. Each dropdown embeds a
+small static HTML page from `live/`, for example:
+
+```html
+<iframe src="../live/quantile.html"></iframe>
+```
+
+Those panels load `live/ot4ml-live.js` and redraw the demo in JavaScript. They
+do not call Python, do not connect to a Jupyter kernel, and do not recompute the
+hidden notebook cells. This is intentional: the technical Python code stays out
+of the reader's way, while the important conceptual parameters remain editable.
+
+This also means that the live controls work in a static/offline copy of the
+already-built site, without Python computing, as long as the `live/` directory
+is shipped next to the generated HTML. The `myst.yml` file already does this
+through:
+
+```yaml
+static_files:
+  - live
+```
+
+Python is only needed when you want to rebuild the book outputs, rerun or edit
+the actual executable cells, or generate a new static site from source.
+
+## Local Development Preview
 
 From this directory, install the local MyST dependency and start the executable
 development server:
@@ -19,28 +54,21 @@ npm install
 npm run start
 ```
 
-The development server prints a local URL, typically `http://localhost:3000`.
-To build the static site instead, run:
-
-```bash
-npm run build
-```
+The development server prints a local URL, typically `http://localhost:3000`
+or `http://localhost:3001` if another server is already using port 3000. The
+command is defined as `myst start --execute`, so it executes the Python cells
+while preparing the preview. The browser-native **Live controls** panels then
+work directly on the rendered page.
 
 The Python dependencies needed by the executable cells are listed in
 `requirements.txt`.
 
-During development without a local npm install, the equivalent one-shot command
-is:
+## Python-Backed Cell Editing
 
-```bash
-npx -y mystmd build --html --execute
-```
+Use this mode when you want to edit visible Python parameter cells and rerun the
+actual MyST notebook cells from the web page.
 
-## Editing Parameters in the Browser
-
-`npm run start` executes the page while building it, but the rendered page is
-static until it is connected to a live Jupyter kernel. For local live execution,
-run two terminals from this directory:
+Run two terminals from this directory:
 
 ```bash
 npm run jupyter
@@ -55,4 +83,58 @@ npm run start
 Then open the MyST page, click the power button at the top of the page, edit a
 visible parameter cell, and run the page cells again. The MyST configuration in
 `myst.yml` points the page to `http://localhost:8888/` with the local token used
-by `npm run jupyter`.
+by `npm run jupyter`. The Jupyter script accepts the usual MyST preview ports
+`3000` through `3009`.
+
+For full source editing, use the "Launch Jupyter Server Window" button in the
+in-page execution toolbar.
+
+## Build a Static Site
+
+To make a static website, run:
+
+```bash
+npm run build
+```
+
+This script is equivalent to:
+
+```bash
+myst build --html --execute
+```
+
+Without a local npm install, the one-shot command is:
+
+```bash
+npx -y mystmd build --html --execute
+```
+
+The static site is written to:
+
+```text
+_build/html/
+```
+
+Preview it with a simple static server:
+
+```bash
+python3 -m http.server 8000 --directory _build/html
+```
+
+Then open `http://localhost:8000`. The live controls should still work because
+`_build/html/live/` is part of the static output. For deployment, copy the
+contents of `_build/html/` to any static host, such as GitHub Pages, Netlify,
+Vercel, or the project web server.
+
+If the site is deployed below a path prefix, set the MyST base URL when
+building, for example:
+
+```bash
+BASE_URL=/ot4ml/ npm run build
+```
+
+As a final release check, you can ask MyST to fail on warnings:
+
+```bash
+npx -y mystmd build --html --execute --strict
+```

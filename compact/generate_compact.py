@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a bibliography-free compact teaching version of CourseOT.
+"""Generate a bibliography-free compact teaching version of OT4ML.
 
 The compact edition preserves formal mathematical blocks (definitions,
 statements, proofs and displayed equations) while thinning expository prose.
@@ -22,13 +22,17 @@ SECTION_NAMES = [
     "matching",
     "monge",
     "kantorovich",
-    "sinkhorn",
     "dual",
     "semidiscr-w1",
     "dual-norms",
+    "sinkhorn",
     "sinkhorn-advanced",
-    "extensions",
-    "grad-flows",
+    "generalized-wasserstein",
+    "generalized-ot-problems",
+    "beyond-comparing-measures",
+    "dynamic-ot",
+    "wasserstein-gradient-flows",
+    "transportation-models",
 ]
 
 PRESERVE_ENVS = {
@@ -51,24 +55,27 @@ PRESERVE_ENVS = {
     "pmatrix",
     "enumerate",
     "itemize",
-    "figure",
-    "table",
     "tikzpicture",
     "longtable",
 }
 
-COMPACT_ENVS = {
+SKIP_ENVS = {
+    "figure",
+    "table",
     "rem",
     "rem1",
     "rem2",
     "example",
+    "exmp",
 }
+
+COMPACT_ENVS: set[str] = set()
 
 BEGIN_RE = re.compile(r"\\begin\{([^}]+)\}")
 END_RE = re.compile(r"\\end\{([^}]+)\}")
 CITE_RE = re.compile(r"~?\\cite(?:\[[^\]]*\])*\{[^{}]*\}")
 COMMAND_CITE_RE = re.compile(r"\\(?:citep|citet)(?:\[[^\]]*\])*\{[^{}]*\}")
-PARAGRAPH_RE = re.compile(r"\\paragraph\{(.+)\}$")
+HEADING_COMMANDS = ("chapter", "section", "subsection", "subsubsection", "paragraph")
 
 DROP_SENTENCE_START_RE = re.compile(
     r"^(?:"
@@ -98,6 +105,7 @@ DROP_SENTENCE_START_RE = re.compile(
 DROP_SENTENCE_CONTAINS_RE = re.compile(
     r"(?:"
     r"\\cite|citep\{|citet\{|"
+    r"Figure~\\ref|fig:|"
     r"\b(?:background|motivation|survey|overview|literature)\b|"
     r"\bdeveloped in\.?$|"
     r"\bshould be read as a warning\b|"
@@ -137,19 +145,108 @@ def strip_citations(text: str) -> str:
     return text.strip()
 
 
+def _scan_bracketed(text: str, start: int, open_char: str, close_char: str) -> tuple[str, int] | None:
+    if start >= len(text) or text[start] != open_char:
+        return None
+    depth = 0
+    for pos in range(start, len(text)):
+        ch = text[pos]
+        if ch == open_char:
+            depth += 1
+        elif ch == close_char:
+            depth -= 1
+            if depth == 0:
+                return text[start + 1 : pos], pos + 1
+    return None
+
+
+def parse_heading(line: str) -> tuple[str, str, str] | None:
+    for cmd in HEADING_COMMANDS:
+        prefix = f"\\{cmd}"
+        if not line.startswith(prefix):
+            continue
+        pos = len(prefix)
+        if pos < len(line) and line[pos] == "*":
+            pos += 1
+        while pos < len(line) and line[pos].isspace():
+            pos += 1
+        if pos < len(line) and line[pos] == "[":
+            optional = _scan_bracketed(line, pos, "[", "]")
+            if optional is None:
+                return None
+            _, pos = optional
+            while pos < len(line) and line[pos].isspace():
+                pos += 1
+        parsed = _scan_bracketed(line, pos, "{", "}")
+        if parsed is None:
+            return None
+        title, end = parsed
+        return cmd, title.strip(), line[end:].strip()
+    return None
+
+
+def plain_heading(title: str) -> str:
+    plain = title
+    replacements = {
+        r"$\Wass_1$": "W1",
+        r"$\Wass_\infty$": "W-infinity",
+        r"$\phi$": "phi",
+        r"$c$": "c",
+        r"$p$": "p",
+        r"$\KL$": "KL",
+    }
+    for src, dst in replacements.items():
+        plain = plain.replace(src, dst)
+    plain = re.sub(r"\\texorpdfstring\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*)\}", r"\2", plain)
+    plain = re.sub(r"\$([^$]*)\$", r"\1", plain)
+    plain = plain.replace(r"\Wass", "W")
+    plain = plain.replace(r"\phi", "phi")
+    plain = plain.replace(r"\infty", "infinity")
+    plain = re.sub(r"\\[a-zA-Z]+", "", plain)
+    plain = plain.replace("{", "").replace("}", "")
+    plain = re.sub(r"\s+", " ", plain).strip()
+    return plain or "section"
+
+
 def polish_heading(line: str) -> str:
     """Normalize compact-only heading typography."""
     line = line.replace("1D", "1-D")
     line = line.replace("Gromov Wasserstein", "Gromov--Wasserstein")
     line = line.replace("Gromov-Wasserstein", "Gromov--Wasserstein")
     line = line.replace("Benamou-Brenier", "Benamou--Brenier")
-    match = PARAGRAPH_RE.fullmatch(line)
-    if not match:
+    parsed = parse_heading(line)
+    if parsed is None:
         return line
-    title = match.group(1).strip()
-    if title and title[-1] not in ".?!:":
-        title += "."
-    return rf"\paragraph{{{title}}}"
+    cmd, title, trailing = parsed
+    cmd = {
+        "chapter": "section",
+        "section": "subsection",
+        "subsection": "subsubsection",
+        "subsubsection": "paragraph",
+        "paragraph": "paragraph",
+    }[cmd]
+    if cmd == "paragraph":
+        title = title.strip()
+        if title and title[-1] not in ".?!:":
+            title += "."
+    if "$" in title and r"\texorpdfstring" not in title:
+        title = rf"\texorpdfstring{{{title}}}{{{plain_heading(title)}}}"
+    return rf"\{cmd}{{{title}}}" + (trailing if trailing else "")
+
+
+def is_index_line(stripped: str) -> bool:
+    return stripped.startswith(r"\index{")
+
+
+def starts_skipped_env(stripped: str) -> str | None:
+    for env in BEGIN_RE.findall(stripped):
+        if env in SKIP_ENVS:
+            return env
+    return None
+
+
+def ends_env(stripped: str, env_name: str) -> bool:
+    return any(env == env_name for env in END_RE.findall(stripped))
 
 
 def remove_comment(line: str) -> str:
@@ -371,6 +468,7 @@ def compact_section(path: Path) -> str:
     custom_math_depth = 0
     display_math = False
     skip_if_depth = 0
+    skip_env_stack: list[str] = []
 
     def flush() -> None:
         nonlocal paragraph
@@ -382,6 +480,14 @@ def compact_section(path: Path) -> str:
         line = remove_comment(raw_line)
         stripped = line.strip()
 
+        if skip_env_stack:
+            skipped = starts_skipped_env(stripped)
+            if skipped:
+                skip_env_stack.append(skipped)
+            if ends_env(stripped, skip_env_stack[-1]):
+                skip_env_stack.pop()
+            continue
+
         if skip_if_depth:
             if stripped.startswith(("\\if", "\\iffalse")):
                 skip_if_depth += 1
@@ -391,6 +497,16 @@ def compact_section(path: Path) -> str:
 
         if stripped.startswith(("\\if 0", "\\iffalse")):
             skip_if_depth = 1
+            continue
+
+        skipped = starts_skipped_env(stripped)
+        if skipped:
+            flush()
+            if not ends_env(stripped, skipped):
+                skip_env_stack.append(skipped)
+            continue
+
+        if is_index_line(stripped):
             continue
 
         if not stripped:
@@ -469,7 +585,7 @@ def compact_section(path: Path) -> str:
         starts_custom_math = stripped.startswith("\\eq{") or stripped.startswith("\\eql{")
         starts_display = stripped.startswith("\\[") or stripped.startswith("$$")
 
-        if stripped.startswith(("\\section", "\\subsection", "\\subsubsection", "\\paragraph")):
+        if stripped.startswith(("\\chapter", "\\section", "\\subsection", "\\subsubsection", "\\paragraph")):
             flush()
             out.append(polish_heading(stripped))
             continue
@@ -523,7 +639,9 @@ def write_driver() -> None:
     driver = rf"""\documentclass[10pt,a4paper]{{article}}
 \pdfoutput=1
 \usepackage[bookmarks,bookmarksdepth=2,colorlinks=true,linkcolor=blue,urlcolor=blue]{{hyperref}}
-\usepackage[a4paper,top=8mm,bottom=8mm,left=8mm,right=8mm,includefoot,footskip=5mm]{{geometry}}
+\usepackage[a4paper,top=6mm,bottom=6mm,left=6mm,right=6mm,includefoot,footskip=4mm]{{geometry}}
+\usepackage[compact]{{titlesec}}
+\usepackage{{enumitem}}
 \usepackage{{longtable}}
 \usepackage[latin1]{{inputenc}}
 \usepackage{{mystyle}}
@@ -532,17 +650,26 @@ def write_driver() -> None:
 \usepackage{{tikz}}
 
 \setlength{{\parindent}}{{0pt}}
-\setlength{{\parskip}}{{0.8pt}}
-\linespread{{0.94}}
-\setlength{{\abovedisplayskip}}{{3pt plus 1pt minus 1pt}}
-\setlength{{\belowdisplayskip}}{{3pt plus 1pt minus 1pt}}
-\setlength{{\abovedisplayshortskip}}{{2pt plus 1pt minus 1pt}}
-\setlength{{\belowdisplayshortskip}}{{2pt plus 1pt minus 1pt}}
+\setlength{{\parskip}}{{0.2pt}}
+\linespread{{0.90}}
+\setlength{{\abovedisplayskip}}{{2pt plus .5pt minus .5pt}}
+\setlength{{\belowdisplayskip}}{{2pt plus .5pt minus .5pt}}
+\setlength{{\abovedisplayshortskip}}{{1pt plus .5pt minus .5pt}}
+\setlength{{\belowdisplayshortskip}}{{1pt plus .5pt minus .5pt}}
 \setlength{{\jot}}{{1pt}}
-\setlength{{\topsep}}{{1pt}}
+\setlength{{\topsep}}{{0pt}}
 \setlength{{\partopsep}}{{0pt}}
 \setlength{{\parsep}}{{0pt}}
 \setlength{{\itemsep}}{{0pt}}
+\setlist{{nosep,leftmargin=*}}
+\titlespacing*{{\section}}{{0pt}}{{.55ex plus .15ex}}{{.15ex}}
+\titlespacing*{{\subsection}}{{0pt}}{{.45ex plus .15ex}}{{.1ex}}
+\titlespacing*{{\subsubsection}}{{0pt}}{{.35ex plus .1ex}}{{.05ex}}
+\titlespacing*{{\paragraph}}{{0pt}}{{.25ex plus .1ex}}{{.45em}}
+\titleformat{{\section}}{{\large\bfseries}}{{\thesection}}{{.45em}}{{}}
+\titleformat{{\subsection}}{{\normalsize\bfseries}}{{\thesubsection}}{{.4em}}{{}}
+\titleformat{{\subsubsection}}{{\normalsize\itshape}}{{\thesubsubsection}}{{.35em}}{{}}
+\titleformat{{\paragraph}}[runin]{{\bfseries}}{{}}{{0pt}}{{}}
 \allowdisplaybreaks[2]
 \emergencystretch=2em
 \sloppy
@@ -575,9 +702,11 @@ This directory contains the compact, bibliography-free teaching version of the
 OT4ML manuscript. It is generated from the current sources in `latex/` with
 `generate_compact.py`, using a 10pt A4 layout and tight margins for handouts.
 
-The compact version is meant for lecture use: it preserves the mathematical
-statements and proofs, while removing expansive exposition, transitions,
-references, the bibliography, and the notation table from the full book.
+The compact version is meant for lecture use: it follows the current chapter
+order of the full book, mapping chapters to article sections, and preserves the
+core mathematical statements, proofs and equations. It removes expansive
+exposition, side remarks and examples, transitions, references, figures, tables,
+the bibliography, the index, and the notation table from the full book.
 
 ## Build
 
@@ -594,7 +723,9 @@ compact LaTeX source, and the two LaTeX passes refresh cross-references.
 ## Generator Policy
 
 - preserve formal mathematical environments and proofs;
-- strip citations and omit the bibliography;
+- follow the section order of `latex/OT4ML.tex`;
+- strip citations and omit the bibliography, index, figures, tables, remarks,
+  and examples;
 - remove pitches, transitions and background prose outside formal/math blocks;
 - inline short unnumbered displayed equations when this saves vertical space.
 
@@ -607,7 +738,25 @@ files, compact section files, generated source, and final
 
 def write_clean_copy(src: Path, dst: Path) -> None:
     """Copy small TeX support files while normalizing line endings/whitespace."""
-    lines = src.read_text(encoding="latin1").splitlines()
+    text = src.read_text(encoding="latin1")
+    if src.name == "mystyle.sty":
+        text = text.replace(r"\numberwithin{equation}{chapter}", r"\numberwithin{equation}{section}")
+        text = text.replace(r"\numberwithin{figure}{chapter}", r"\numberwithin{figure}{section}")
+        text = text.replace(r"\newtheorem{thm}{Theorem}[chapter]", r"\newtheorem{thm}{Theorem}[section]")
+        text = text.replace("innertopmargin=3pt,", "innertopmargin=1.2pt,")
+        text = text.replace("innerbottommargin=3pt,", "innerbottommargin=1.2pt,")
+        text = text.replace("innerleftmargin=6pt,", "innerleftmargin=3.5pt,")
+        text = text.replace("innerrightmargin=6pt,", "innerrightmargin=3.5pt,")
+        text = text.replace(r"skipabove=.55\baselineskip,", r"skipabove=.18\baselineskip,")
+        text = text.replace(r"skipbelow=.55\baselineskip,", r"skipbelow=.18\baselineskip,")
+        text = text.replace(
+            r"skipbelow=.18\baselineskip,"
+            "\n}",
+            r"skipbelow=.18\baselineskip,"
+            "\n\tnobreak=true,"
+            "\n}",
+        )
+    lines = text.splitlines()
     dst.write_text("\n".join(line.rstrip() for line in lines) + "\n", encoding="latin1")
 
 
