@@ -619,12 +619,13 @@ show_book_figure("dynamic-unbalanced-geodesic")
 ```
 
 *Balanced and unbalanced Sinkhorn-barycenter interpolations between two
-Gaussian mixtures with mismatched modal masses. The balanced row conserves
-total mass, so excess mass from the heavy upper-left mode is transported
-toward the heavy lower-right target mode. The unbalanced row uses KL-relaxed
-marginal constraints; mass can be attenuated near overrepresented modes and
-recreated near underrepresented modes, giving a reaction--transport
-interpolation closer to the Wasserstein--Fisher--Rao intuition.*
+one-dimensional Gaussian mixtures with swapped modal masses. The balanced row
+conserves total mass, so excess mass from the dominant left mode must move
+along the line toward the dominant right target mode, producing transient mass
+in the middle. The unbalanced row uses KL-relaxed marginal constraints; mass
+can be attenuated near overrepresented modes and recreated near
+underrepresented modes, giving a reaction--transport interpolation closer to
+the Wasserstein--Fisher--Rao intuition.*
 :::
 
 The interactive demo below exposes this balance directly. A high reaction weight
