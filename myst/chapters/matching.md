@@ -40,7 +40,7 @@ thumbnails = repo_root / "notebooks-figures" / "thumbnails"
 def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 
-# Static figures are Python-rendered; live controls are browser-rendered.
+# Static figures are Python-rendered; interactive demos are browser-rendered.
 from ot4ml_web import (
     plot_histogram_equalization,
     plot_cost_power_sweep,
@@ -166,10 +166,7 @@ For the convex quadratic cost, equal ranks are matched and the segments do not
 cross. For the concave cost, the optimum creates long crossing exchanges; the
 ordered line remains useful, but through the alternating-chain structure of
 concave transport rather than through monotone rearrangement.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="One-dimensional convex and concave cost controls" src="../live/linecost.html" loading="lazy" style="width:100%;height:430px;border:0;display:block;"></iframe>
-:::
 
 The next figure shows the monotone case more explicitly. The red and blue
 curves are smooth laws used to generate equal-weight empirical measures; the
@@ -204,10 +201,7 @@ fig = plot_quantile_matching(
     target=target_law,
 )
 ```
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Quantile matching controls" src="../live/quantile.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 If $\phi:\RR\to\RR$ is increasing, the same technique applies to costs of the
 form $h(|\phi(x)-\phi(y)|)$ after a change of variable. A typical application
@@ -246,10 +240,7 @@ fig = plot_histogram_equalization(
     interpolation=interpolation,
 )
 ```
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Histogram equalization controls" src="../live/histogram.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 If $h$ is strictly convex, then all optimal assignments are increasing, and if
 the points are all distinct, this increasing map is unique. If $h$ is not
@@ -341,10 +332,7 @@ blue atoms live on two copies of the circle; the denser point clouds make the
 cyclic ordering visible. Once the circle is opened at this angle, the same
 matching appears as a monotone one-dimensional assignment on the interval, with
 the two green endpoints identified.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Circle cut controls" src="../live/circle.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -380,10 +368,7 @@ fig = plot_cost_power_sweep(
     seed=seed,
 )
 ```
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Cost power controls" src="../live/cost.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 ### Rational Weights
 
@@ -406,7 +391,7 @@ nonuniform target weights, the coupling matrix can merge or split mass; segment
 thickness and opacity encode its nonzero entries, and blue marker areas encode
 the prescribed target masses.*
 
-The live companion below exposes the target resolution, target weights, and
+The interactive companion below exposes the target resolution, target weights, and
 regularization level. The first displayed plan is sparse, while positive
 values of `epsilons` show the entropic smoothing used later in the Sinkhorn
 chapter.
@@ -433,10 +418,7 @@ fig = plot_regularization_sweep(
     seed=2031,
 )
 ```
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Resolution and weight controls" src="../live/resolution.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Rational Weights as Duplicated Uniform Matching
 :class: important
@@ -491,10 +473,7 @@ are kept fixed, while disk areas encode the integer multiplicities $k_i$ and
 $\ell_j$. Solving the assignment problem after duplicating particles produces
 several collapsed segments attached to high-multiplicity atoms; this is the
 integer count matrix of the proposition.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Rational duplication controls" src="../live/duplication.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 ### Two-Dimensional Assignments
 
@@ -624,10 +603,7 @@ rows are one-hot. The snapshots are taken at initialization and after two,
 four, six and eight augmentations; for this pedagogical instance the partial
 assignments grow along the diagonal, and the final matrix is the identity
 assignment certified by complementary slackness.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Hungarian method controls" src="../live/hungarian.html" loading="lazy" style="width:100%;height:430px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Correctness and Complexity of the Hungarian Primal-Dual Method
 :class: important

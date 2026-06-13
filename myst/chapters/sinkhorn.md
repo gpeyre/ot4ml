@@ -239,13 +239,10 @@ show_book_figure("sinkhorn-marginal-errors")
 red source marginal and leave a blue defect; column normalizations align the
 blue target marginal and leave a red defect.*
 
-The live panel exposes the alternating row/column normalization directly.
+The interactive demo exposes the alternating row/column normalization directly.
 Change the half-step count to see the current coupling acquire one marginal,
 lose the other, and then converge toward both.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn scaling controls" src="../live/sinkhorn-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
-:::
 
 ```{code-cell} ipython3
 :tags: [remove-input]
@@ -279,13 +276,10 @@ show_book_figure("sinkhorn-potentials-iterations")
 *KL-normalized dual potentials along the scaling iteration. The logarithmic
 scaling potentials stabilize as the row/column normalizations converge.*
 
-The next live panel keeps the iteration count high and varies the temperature.
+The next interactive demo keeps the iteration count high and varies the temperature.
 It is the quickest way to see the geometry-bias tradeoff: low temperature is
 geometric and sharp, high temperature is smooth and closer to independence.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn epsilon controls" src="../live/sinkhorn-epsilon.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 Complexity bounds for Sinkhorn and comparisons with accelerated first-order
 methods are discussed in
@@ -822,10 +816,7 @@ show_book_figure("sinkhorn-soft-c-transform-epsilon")
 
 *Soft $c$-transforms for decreasing temperatures. A positive $\epsilon$
 replaces the hard lower envelope by a log-sum-exp soft minimum.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn soft c-transform controls" src="../live/sinkhorn-soft-c.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
-:::
 
 ### Continuous Dual and Soft-Transforms
 
@@ -1001,15 +992,12 @@ positive plan, the Burg barrier keeps positive but differently tailed support,
 and the quadratic density penalty can set entries exactly to zero through its
 positive-part law.*
 
-The live panel below separates the two effects. The left plot shows the
+The interactive demo below separates the two effects. The left plot shows the
 pointwise law $r=h(s)$, while the right plot recomputes a coupling after
 enforcing the marginals with that law. Changing $\epsilon$ controls how much
 the cost score is softened; changing the regularizer changes whether mass is
 spread everywhere, protected by a barrier, or clipped to a sparse support.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn regularizer controls" src="../live/sinkhorn-regularizers.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
-:::
 
 ### Bregman vs. $\phi$-Divergence Regularization
 
@@ -1145,13 +1133,10 @@ show_book_figure("sinkhorn-divergence-debiasing")
 entropic cost collapses atoms toward the barycenter, whereas the self-cost
 subtraction keeps a bimodal cloud.*
 
-The live panel below shows the same mechanism in a one-dimensional toy
+The interactive demo below shows the same mechanism in a one-dimensional toy
 setting. Move the model cloud relative to the target and compare the raw
 entropic objective with its debiased version.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn debiasing controls" src="../live/sinkhorn-debias.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Lemma: Entropic Dual Cost at Optimum
 Let $(f_{\alpha,\beta},g_{\alpha,\beta})$ be optimal dual potentials. Then

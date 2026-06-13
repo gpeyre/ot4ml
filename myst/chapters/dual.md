@@ -132,13 +132,10 @@ $(f,g)$, with a gauge chosen so that $\langle f,a\rangle=0$. Complementary
 slackness states that mass can be transported only through entries where
 $f_i+g_j=C_{ij}$.*
 
-The live panel varies the target law and the number of bins. The lower curves
+The interactive demo varies the target law and the number of bins. The lower curves
 are reconstructed from the active monotone transport graph, so the equality
 set moves as the coupling support changes.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Discrete dual potential controls" src="../live/dual-discrete.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 The formula {eq}`eq-dual-discrete-web` also shows that
 $(a,b)\mapsto\mathcal{L}_C(a,b)$ is convex, being a supremum of linear
@@ -188,13 +185,10 @@ bidders are shown as one-hot rows at their currently held target. The snapshots
 show initialization, intermediate price updates, and the final identity
 assignment satisfying complementary slackness.*
 
-The live auction view exposes the price dynamics directly. Increasing
+The interactive auction view exposes the price dynamics directly. Increasing
 $\varepsilon$ makes bids coarser and the final certificate looser; decreasing
 it makes the price landscape closer to exact complementary slackness.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Auction dual price controls" src="../live/dual-auction.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual
 minimization gives the convex objective
@@ -403,14 +397,11 @@ $\alpha$ in red and the target density $\beta$ in blue. The lower strips show
 potentials $f$ and $g=f^c$ for the quadratic cost $c(x,y)=|x-y|^2$. The
 equality set $f(x)+g(y)=c(x,y)$ contains the monotone transport graph.*
 
-The live view computes the monotone map from numerical quantiles and then
+The interactive view computes the monotone map from numerical quantiles and then
 integrates $f'(x)=2(x-T(x))$. It makes clear that the potentials change
 smoothly with the target law, even though the equality set remains a thin
 transport graph.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Continuous dual potential controls" src="../live/dual-continuous.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 In contrast to the primal problem, showing existence of solutions to the
 continuous dual is nontrivial: the constraint set is not compact and the
@@ -475,14 +466,11 @@ curves are $y\mapsto c_p(x_i,y)-f_i$; the colored curve is their lower
 envelope $f^c(y)=\min_i c_p(x_i,y)-f_i$. This is the semi-discrete situation
 where the source space is finite.*
 
-The live envelope view exposes the exponent, the number of atoms, and the
+The interactive envelope view exposes the exponent, the number of atoms, and the
 potential amplitude. This is the local mechanism behind many dual
 regularity statements: taking a pointwise minimum of translated costs inherits
 regularity from the cost.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="c-transform envelope controls" src="../live/dual-envelope.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: $c$-Transforms Solve The Semi-Relaxed Problems
 :class: important
@@ -709,10 +697,7 @@ $g^{\bar c}$ and $f^c$ after a harmless vertical gauge shift. Exact alternating
 best responses are useful for certificates but do not give the smooth
 iterative dynamics later provided by entropic regularization.*
 
-The final live panel turns this algebra into a visible operation: change the
+The final interactive demo turns this algebra into a visible operation: change the
 roughness of the starting potential and observe that the hard double transform
 jumps directly to its concave closure.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Alternating c-transform controls" src="../live/dual-alternate.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
-:::

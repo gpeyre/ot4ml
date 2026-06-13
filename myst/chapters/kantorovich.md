@@ -154,13 +154,10 @@ deterministic graph is a feasible Monge-type plan, the product plan spreads
 every source mass over all targets, and the optimal Kantorovich plan minimizes
 the quadratic transport cost. Line width and opacity encode transported mass.*
 
-The live panel below separates the main feasible-plan archetypes: deterministic
+The interactive demo below separates the main feasible-plan archetypes: deterministic
 graphs, independent product couplings, sparse splitting plans, and entropic
 approximations.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Kantorovich coupling controls" src="../live/kantorovich-couplings.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -175,10 +172,7 @@ monotone quantile correspondence.*
 
 The companion control varies the bin count and the endpoint laws, making the
 transition from diffuse independence to monotone transport visually explicit.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Coupling matrix controls" src="../live/kantorovich-matrix.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 The Kantorovich feasible set is symmetric: $P\in\CouplingsD(a,b)$ if and only
 if $P^\top\in\CouplingsD(b,a)$. With a unit transport cost matrix
@@ -207,13 +201,10 @@ measures have the same number of atoms and uniform weights, an optimal plan can
 be a permutation matrix. Once target masses are nonuniform, one source can send
 mass to several targets and several sources can merge into the same target.*
 
-The live panel keeps the same source and target sites while changing the target
+The interactive demo keeps the same source and target sites while changing the target
 mass imbalance, so the moment where permutation structure breaks becomes
 visible.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Splitting coupling controls" src="../live/kantorovich-splitting.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Sparse Optimal Plans
 :class: important
@@ -416,13 +407,10 @@ the minimizer toward the optimal vertex while never touching the boundary. This
 differs from entropic OT, where the entropy temperature is part of the
 regularized objective itself.*
 
-The live view exposes the barrier parameter directly: lowering $\epsilon$
+The interactive view exposes the barrier parameter directly: lowering $\epsilon$
 slides the minimizer from the center of the feasible triangle toward the LP
 vertex.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Log barrier central path controls" src="../live/kantorovich-barrier.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
-:::
 
 Both interior-point methods and Sinkhorn keep iterates positive, but they use
 positivity differently. Interior-point algorithms solve the original LP by
@@ -621,10 +609,7 @@ moving atoms are colored from red to blue along the interpolation.*
 
 The companion panel lets the same coupling be inspected along time $t$, with an
 entropy slider to contrast sparse and diffuse plans.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Plan interpolation controls" src="../live/kantorovich-plan.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 ### Monge--Kantorovich Equivalence
 
@@ -774,12 +759,9 @@ one-dimensional couplings through an intermediate marginal. The third panel
 shows the induced marginal $R=P\diag(1/b)Q$; it is feasible and is the coupling
 used in the triangle-inequality proof.*
 
-The live version changes the resolution of the intermediate marginal, which
+The interactive version changes the resolution of the intermediate marginal, which
 controls how mediated the glued source-target plan becomes.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Discrete gluing controls" src="../live/kantorovich-gluing.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Discrete Wasserstein Distance
 :class: important
@@ -1102,13 +1084,10 @@ distance between Gaussians. On the right, the mixtures are collapsed into
 ordinary one-dimensional densities and interpolated by the true quantile
 formula for $\Wass_2$.*
 
-The live comparison keeps both geometries side by side: component-level
+The interactive comparison keeps both geometries side by side: component-level
 transport moves Gaussian atoms, while collapsed transport rearranges the full
 density.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Wasserstein-over-Wasserstein controls" src="../live/kantorovich-wow.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Collapsing Is Non-Expansive
 :class: important
@@ -1248,13 +1227,10 @@ $\alpha_0=\frac12(\delta_{-1}+\delta_1)$, the law of
 $Z_n=n^{-1/2}\sum_i X_i$ remains discrete, but its rescaled atom heights
 approach the standard Gaussian density shown in gray.*
 
-The live control varies the number of summands and the Bernoulli skew, making
+The interactive demo varies the number of summands and the Bernoulli skew, making
 the Wasserstein view of weak convergence visible even while the law remains
 discrete.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Quantitative CLT controls" src="../live/kantorovich-clt.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Berry--Esseen Bound In $\Wass_1$
 :class: important

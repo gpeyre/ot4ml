@@ -282,7 +282,7 @@ colored from red to blue. The right panel tracks inverse CDF values
 $Q_t(s)=F_t^{-1}(s)$ for selected probability levels $s$, giving a
 Lagrangian view of the proximal movement in Wasserstein space.*
 
-The live panel uses the heat-flow representative of the entropy JKO scheme:
+The interactive demo uses the heat-flow representative of the entropy JKO scheme:
 changing the step size changes the spacing between implicit Euler iterates,
 while the quantile panel shows how the same movement is seen in Lagrangian
 coordinates.
@@ -400,7 +400,7 @@ panel has the stronger nonlinearity $m=6$, i.e.
 $\partial_t\rho=\Delta(\rho^6)$. Larger powers diffuse mainly where the
 density is high, producing a flatter core and a sharper compact free boundary.*
 
-The live panel isolates the effect of the entropy exponent. The heat curve
+The interactive demo isolates the effect of the entropy exponent. The heat curve
 keeps Gaussian tails, while increasing $m$ keeps a compact front and spreads
 mass mainly from the high-density core.
 
@@ -491,7 +491,7 @@ sparse kernelized quadrature and may under-cover the target modes; increasing
 $n$ makes the particle cloud approximate the continuous target geometry more
 faithfully.*
 
-The live panel turns this finite-particle effect into a parameter: increasing
+The interactive demo turns this finite-particle effect into a parameter: increasing
 the number of particles makes the same deterministic force field approximate
 the teacher geometry more faithfully.
 
@@ -510,7 +510,7 @@ yields a balanced attraction--repulsion dynamics. The curves use
 arclength-based red-to-blue coloring along a longer integration of the coupled
 particle ODE {eq}`eq-wassflows-particles`.*
 
-The live panel lets the sign and strength of the interaction change without
+The interactive demo lets the sign and strength of the interaction change without
 editing the hidden particle solver. This is the quickest way to see how the
 same formal ODE can repel, collapse, or self-organize.
 
@@ -529,7 +529,7 @@ debiased transport attraction; and the normalized drifting field combines
 attraction to data with self-repulsion. The figure is qualitative: it compares
 geometric behavior, not solver performance.*
 
-The live panel keeps the source and target fixed while switching the
+The interactive demo keeps the source and target fixed while switching the
 discrepancy geometry. The smoothing parameter controls how local or nonlocal
 the induced force appears.
 
@@ -620,7 +620,7 @@ equation on a grid, starting from the initial density in the left panel. The
 remaining columns use front-loaded times, so that the onset of the flow and
 the later deformation toward a bimodal law are both visible.*
 
-The live panel compares three views of the same entropy-regularized
+The interactive demo compares three views of the same entropy-regularized
 relaxation: stochastic Langevin particles, deterministic score particles, and
 a smoothed grid density. The noise slider controls the entropy strength.
 
@@ -1074,7 +1074,7 @@ that the early concentration of neuron directions is visible. The display
 follows the rendering of the auxiliary MLP experiment but keeps only the
 $W_2$ flow, not the spectral-flow comparison.*
 
-The live panel gives a lightweight version of the same phenomenon: particles
+The interactive demo gives a lightweight version of the same phenomenon: particles
 move in reduced neuron coordinates, while their angles concentrate around the
 teacher directions.
 

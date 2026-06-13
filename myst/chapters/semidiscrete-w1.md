@@ -162,13 +162,10 @@ color matches its Laguerre cell. Starting from ordinary Voronoi cells,
 semi-dual weight updates deform the cells so that the $\alpha$-mass captured
 by each cell approaches the prescribed target mass.*
 
-The live panel exposes the dual-weight mechanism directly. Increase the number
+The interactive demo exposes the dual-weight mechanism directly. Increase the number
 of weight updates to watch cells with too little mass expand and cells with too
 much mass shrink.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Semi-discrete Laguerre controls" src="../live/semidiscrete-laguerre.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 ### Mass Balance
 
@@ -472,13 +469,10 @@ colors as their Voronoi cells. The iterations move the initially left-located
 sites toward the high-density region and reshape the cells according to
 centroidal Voronoi geometry.*
 
-The live control separates the nonconvex geometry from the fixed-point update:
+The interactive demo separates the nonconvex geometry from the fixed-point update:
 increase the iteration counter and watch sites migrate toward the density
 before settling into a local centroidal configuration.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Lloyd quantization controls" src="../live/semidiscrete-lloyd.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 ## Wasserstein-1 Norm
 
@@ -726,14 +720,11 @@ arrows display the signed edge flow $m$: orientation gives the sign, width is
 proportional to $\sqrt{|m_e|}$, and the flow satisfies the conservation
 constraint $\operatorname{div}_G m=r$.*
 
-The live graph view lets the source and sink clusters move and changes the
+The interactive graph view lets the source and sink clusters move and changes the
 graph resolution. It makes the transshipment interpretation of $\Wass_1$
 visible: signed mass is routed through local edges rather than matched only by
 straight source-to-target segments.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Graph W1 flow controls" src="../live/w1-graph.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-:::
 
 This graph formulation is the transshipment version of $\Wass_1$. It is the
 natural discrete analogue of the Beckmann formulation: gradients are edge

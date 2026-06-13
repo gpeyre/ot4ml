@@ -148,14 +148,11 @@ $\Wass_1$ restricts the slope through Kantorovich--Rubinstein duality, MMD
 restricts the RKHS norm, and total variation can saturate pointwise and
 therefore reacts sharply to signed density differences.*
 
-The live panel makes the topology visible. As the two densities move, the
+The interactive demo makes the topology visible. As the two densities move, the
 total-variation witness jumps with the sign of the density difference, the
 Wasserstein witness keeps a unit-slope geometry, and the MMD witness is
 smoothed by the kernel bandwidth.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="IPM witness controls" src="../live/dualnorm-ipm.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 The following proposition gives a compact-space criterion. The dual ball
 should be rich enough to approximate continuous observables, but compact
@@ -748,15 +745,12 @@ discrete formula $D_\phi(a|b)=\sum_i b_i\phi(a_i/b_i)$: hollow blue circles
 encode $b_i$, filled red circles encode $a_i$, the violet curve gives the
 ratios $a_i/b_i$, and orange lollipops show local KL-type contributions.*
 
-The live control changes the generator family and the amount of mismatch
+The interactive demo changes the generator family and the amount of mismatch
 between two discrete histograms. The near-zero control deliberately creates
 small target bins, making the recession and singularity behavior visible:
 ratio-based penalties react to overlap and density ratios rather than to
 spatial displacement.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Phi-divergence controls" src="../live/dualnorm-phi.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Remark: $\phi$-Divergences vs. Bregman Divergences
 Except for KL-type entropies, $\phi$-divergences should not be confused with

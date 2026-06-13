@@ -778,14 +778,11 @@ iterations. The same Hilbert-metric mechanism extends beyond finite matrices
 to positive integral operators under compactness and positivity assumptions,
 but Gaussian distributions with quadratic cost require a different approach.
 
-The live panel below separates the observed marginal residual from two
+The interactive demo below separates the observed marginal residual from two
 theoretical guides. The $O(1/k)$ curve captures the robust pre-asymptotic
 message, while the Hilbert curve shows how pessimistic the global contraction
 bound becomes when the Gibbs kernel is close to degenerate.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Advanced Sinkhorn convergence controls" src="../live/sinkhorn-advanced-convergence.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 ## Entropic Optimal Transport Between Gaussians
 
@@ -1004,10 +1001,7 @@ which is the Bures--Wasserstein covariance formula.
 The controls below expose exactly the quantities in the formula: $\epsilon$
 sets the singular-value shrinkage, anisotropy changes the eigenvalues, and the
 angle changes the covariance misalignment.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Gaussian Sinkhorn controls" src="../live/sinkhorn-advanced-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: One-Dimensional Gaussian Sinkhorn Rate
 :class: important
@@ -1282,10 +1276,7 @@ at fixed scale, but approximating exact OT still forces a bias-variance
 tradeoff whose exponent deteriorates with dimension.
 :::
 
-The live panel below is only a scaling guide: change the dimension to see the
+The interactive demo below is only a scaling guide: change the dimension to see the
 exact-OT exponent flatten, and change $\epsilon$ to move the Sinkhorn bias
 floor against its parametric fluctuation term.
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Sinkhorn sample-complexity controls" src="../live/sinkhorn-advanced-samples.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
-:::

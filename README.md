@@ -3,7 +3,11 @@
 <p align="center">
   <a href="https://www.gpeyre.com/ot4ml/"><strong>Project homepage</strong></a>
   &nbsp;·&nbsp;
+  <a href="https://www.gpeyre.com/ot4ml/myst/_build/html/"><strong>Interactive book</strong></a>
+  &nbsp;·&nbsp;
   <a href="https://www.gpeyre.com/ot4ml/notebooks-figures/"><strong>Rendered figure gallery</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://www.gpeyre.com/ot4ml/resources.html"><strong>Resources</strong></a>
   &nbsp;·&nbsp;
   <a href="https://github.com/gpeyre/ot4ml"><strong>GitHub source</strong></a>
 </p>
@@ -56,10 +60,12 @@ main computational ideas. Each one can be opened locally or launched in Colab.
 ## Executable Web Prototype
 
 An experimental MyST/Jupyter Book 2 prototype lives in
-[`myst/`](myst/). It fuses the book text with executable figures and
-browser-native live controls. The local workflow, the static-site build, and
-the offline behavior of the live controls are documented in
-[`myst/README.md`](myst/README.md).
+[`myst/`](myst/). It mirrors the LaTeX book front matter, 14 main chapters,
+conclusion, acknowledgements, and notation appendix while fusing the book text
+with executable figures and browser-native interactive demos. The rendered static version is available from the
+[project homepage](https://www.gpeyre.com/ot4ml/myst/_build/html/). The local
+workflow, the static-site build, and the offline behavior of the interactive demos
+are documented in [`myst/README.md`](myst/README.md).
 
 ## Course Slides
 
@@ -69,6 +75,9 @@ the offline behavior of the live controls are documented in
 - [Gradient Flow and Diffusion Models](https://speakerdeck.com/gpeyre/computational-ot-number-4-gradient-flow-and-diffusion-models)
 
 ## Further Resources
+
+A rendered resource portal is available at
+[www.gpeyre.com/ot4ml/resources.html](https://www.gpeyre.com/ot4ml/resources.html).
 
 ### Bibliography
 

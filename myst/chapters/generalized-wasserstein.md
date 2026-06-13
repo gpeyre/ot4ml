@@ -508,7 +508,7 @@ marginals with the transported marginals; increasing $\tau$ makes marginal
 mismatch more expensive, so more mass is moved rather than created or
 destroyed.*
 
-The live panel below exposes the two most important regularization scales.
+The interactive demo below exposes the two most important regularization scales.
 Increasing $\tau$ pushes the transported marginals closer to the prescribed
 ones; increasing $\epsilon$ spreads the coupling itself.
 
@@ -574,7 +574,7 @@ are drawn on both densities, and the middle panels show smoothed
 one-dimensional density estimates of the projected measures. Sliced OT
 averages one-dimensional Wasserstein discrepancies over many such directions.*
 
-The live panel separates two uses of a slice: comparing projected measures and
+The interactive demo separates two uses of a slice: comparing projected measures and
 lifting the sorted one-dimensional matching back to the plane. The lifted plan
 is always feasible in the original space, but it need not be the quadratic
 optimal plan.
@@ -1126,7 +1126,7 @@ transport plan. The $\lambda_{\max}$ gauge penalizes the worst projected
 displacement variance; the displayed plan is obtained by approximating the
 robust formulation with finitely many directions.*
 
-The live panel turns the displacement covariance into a visible object. The
+The interactive demo turns the displacement covariance into a visible object. The
 trace gauge sums both covariance eigenvalues, while the top-eigenvalue gauge
 cares only about the worst transported direction.
 
