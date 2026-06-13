@@ -1,1 +1,1 @@
-import{a}from"/build/_shared/chunk-X3K5S67S.js";import"/build/_shared/chunk-KPSTTWTG.js";import"/build/_shared/chunk-OZE3FFNP.js";export default a();
+import{a}from"/ot4ml/myst/_build/html/build/_shared/chunk-X3K5S67S.js?ot4ml-expanded-chapters=1";import"/ot4ml/myst/_build/html/build/_shared/chunk-KPSTTWTG.js?ot4ml-expanded-chapters=1";import"/ot4ml/myst/_build/html/build/_shared/chunk-OZE3FFNP.js?ot4ml-expanded-chapters=1";export default a();

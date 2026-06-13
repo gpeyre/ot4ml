@@ -128,12 +128,15 @@ Then open `http://localhost:8000`. The interactive demos should still work becau
 contents of `_build/html/` to any static host, such as GitHub Pages, Netlify,
 Vercel, or the project web server.
 
-If the site is deployed below a path prefix, set the MyST base URL when
-building, for example:
+The `npm run build` wrapper defaults `BASE_URL` to the public deployment
+prefix used by the project website:
 
 ```bash
-BASE_URL=/ot4ml/ npm run build
+BASE_URL=/ot4ml/myst/_build/html npm run build
 ```
+
+You can override this value for another host by passing a different `BASE_URL`.
+For a root-hosted static preview, use `BASE_URL=/ npm run build`.
 
 As a final release check, you can ask MyST to fail on warnings:
 

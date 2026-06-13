@@ -1,1 +1,1 @@
-import{b as i}from"/build/_shared/chunk-7DW7L33J.js";function t(c,e){c.accDescr&&e.setAccDescription?.(c.accDescr),c.accTitle&&e.setAccTitle?.(c.accTitle),c.title&&e.setDiagramTitle?.(c.title)}i(t,"populateCommonDb");export{t as a};
+import{b as i}from"/ot4ml/myst/_build/html/build/_shared/chunk-7DW7L33J.js?ot4ml-expanded-chapters=1";function t(c,e){c.accDescr&&e.setAccDescription?.(c.accDescr),c.accTitle&&e.setAccTitle?.(c.accTitle),c.title&&e.setDiagramTitle?.(c.title)}i(t,"populateCommonDb");export{t as a};

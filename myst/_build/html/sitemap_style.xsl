@@ -67,7 +67,7 @@ Number of URLs in this XML Sitemap:
 </table>
 </div>
 </div>
-</body>
+<script src="/ot4ml-sidebar.js" defer data-ot4ml-expanded-chapters></script></body>
 </html>
 </xsl:template>
 </xsl:stylesheet>
