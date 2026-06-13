@@ -494,7 +494,7 @@ three-dimensional OT map gives a more intrinsic palette match
 {cite:p}`rabin-ssvm-11`.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-color-transfer-rgb")
 ```
 
@@ -794,7 +794,7 @@ injective on the differentiability set of $\phi$.
 :::
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-shape-mccann-interpolation")
 ```
 
@@ -1086,7 +1086,7 @@ isometrically into a linear $L^p$ space. For $p=2$, Wasserstein geometry on
 probability measures over the real line is Hilbertian.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-1d-quantile-geodesic")
 ```
 
@@ -1148,7 +1148,7 @@ step $k$ the first $k$ coordinates of $\T_\sharp\al$ match those of $\be$.
 :::
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-triangular-rearrangement")
 ```
 
@@ -1359,7 +1359,7 @@ It separates Euclidean displacement of the mean from the intrinsic transport
 geometry of covariance ellipsoids.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-gaussian-w2-geodesic")
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: Optimal Transport for Machine Learners
-subtitle: Executable web book prototype
+subtitle: Interactive web book
 ---
 
 ## Abstract
@@ -29,12 +29,10 @@ generative models, mean-field networks and attention dynamics. The goal is to
 keep the mathematics explicit while exposing the computational and geometric
 intuitions needed to turn OT into a working toolbox for machine learners.
 
-All material for this book, including the code used to reproduce the figures,
-is available at [gpeyre/ot4ml](https://github.com/gpeyre/ot4ml). Most
-computational figures were produced with the Python Optimal Transport (POT)
-library {cite:p}`flamary2021pot`. The author warmly thanks the POT team and
-contributors for their important and sustained effort in making reliable
-optimal-transport algorithms available to the community.
+The author warmly thanks the many contributors to computational optimal
+transport whose algorithms and software have made the subject broadly usable in
+machine learning, including the Python Optimal Transport (POT) team
+{cite:p}`flamary2021pot`.
 
 ## Guide to the Literature and Scope
 
@@ -72,27 +70,20 @@ intended contribution is therefore not a replacement for the references above,
 but a compact bridge between rigorous OT and the geometric intuitions needed
 to use it in modern ML.
 
-## Executable Web Layer
+## Interactive Web Book
 
-This MyST version gives the LaTeX book a second life as a computational reading
+This web version gives the LaTeX book a second life as an interactive reading
 environment:
 
 - the mathematical exposition stays close to the book;
-- the publication figures become small executable experiments;
-- technical plotting and data-generation code is hidden from the main reading
-  flow;
-- the reader can still change a few meaningful parameters and rerun the cells.
+- the publication figures sit directly beside small parameter panels;
+- the reader can change meaningful quantities and immediately see their
+  influence;
+- the interface stays focused on the book content.
 
 :::{note}
-The current web layer is a prototype, but its table of contents now mirrors the
-front matter, 14 main chapters, conclusion, acknowledgements, and notation-table
-appendix compiled by `latex/OT4ML.tex`. Each chapter demonstrates the intended
-pattern: hidden helpers, static notebook figures, and browser-native interactive
-demos beside the mathematical exposition.
-:::
-
-:::{tip}
-For live parameter editing in the browser, start the local Jupyter backend with
-`npm run jupyter`, start the MyST site with `npm run start`, then click the
-power button at the top of the page.
+The table of contents mirrors the front matter, 14 main chapters, conclusion,
+acknowledgements, and notation-table appendix of the book. Each chapter keeps
+the mathematical exposition first and places browser-native interactive panels
+beside the relevant figures.
 :::

@@ -3,9 +3,9 @@
 <p align="center">
   <a href="https://www.gpeyre.com/ot4ml/"><strong>Project homepage</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://www.gpeyre.com/ot4ml/myst/_build/html/"><strong>Interactive book</strong></a>
+  <a href="https://www.gpeyre.com/ot4ml/myst/_build/html/index.html"><strong>Interactive book</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://www.gpeyre.com/ot4ml/notebooks-figures/"><strong>Rendered figure gallery</strong></a>
+  <a href="https://www.gpeyre.com/ot4ml/notebooks-figures/index.html"><strong>Rendered figure gallery</strong></a>
   &nbsp;·&nbsp;
   <a href="https://www.gpeyre.com/ot4ml/resources.html"><strong>Resources</strong></a>
   &nbsp;·&nbsp;
@@ -29,7 +29,7 @@ LaTeX source. The current gallery has been checked against the live LaTeX
 have a matching notebook card, notebook file, thumbnail, and generated PDF
 directory. The manuscript contains 76 LaTeX figure labels because two notebooks
 generate two labeled figures each. Browse the rendered web gallery at
-[www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/)
+[www.gpeyre.com/ot4ml/notebooks-figures/index.html](https://www.gpeyre.com/ot4ml/notebooks-figures/index.html)
 or the Markdown version in
 [`notebooks-figures/README.md`](notebooks-figures/README.md), with thumbnails,
 notebook links, and Open in Colab badges.
@@ -63,7 +63,7 @@ An experimental MyST/Jupyter Book 2 prototype lives in
 [`myst/`](myst/). It mirrors the LaTeX book front matter, 14 main chapters,
 conclusion, acknowledgements, and notation appendix while fusing the book text
 with executable figures and browser-native interactive demos. The rendered static version is available from the
-[project homepage](https://www.gpeyre.com/ot4ml/myst/_build/html/). The local
+[project homepage](https://www.gpeyre.com/ot4ml/myst/_build/html/index.html). The local
 workflow, the static-site build, and the offline behavior of the interactive demos
 are documented in [`myst/README.md`](myst/README.md).
 

@@ -121,7 +121,7 @@ their equality set with the cost matrix is where an optimal coupling is
 allowed to place mass.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("dual-kantorovich-discrete-potentials")
 ```
 
@@ -174,7 +174,7 @@ The target $j_i$ is assigned to $i$, and its previous owner, if any, becomes
 unassigned. The iteration stops when all sources are assigned.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("dual-auction-progression")
 ```
 
@@ -387,7 +387,7 @@ from the monotone map $T=F_\beta^{-1}\circ F_\alpha$: on the active graph,
 $f'(x)=2(x-T(x))$ and $g=f^c$.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("dual-kantorovich-continuous-potentials")
 ```
 
@@ -456,7 +456,7 @@ Since $\beta$ is positive, maximizing $\int g\,\d\beta$ is achieved by taking
 $g=f^c$ on the support of $\beta$, equivalently $\beta$-almost everywhere.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("dual-c-transform-envelope")
 ```
 
@@ -686,7 +686,7 @@ concave majorant of $f$. A hard transform removes non-concave oscillations in
 one closure step instead of producing a gradual ascent.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("dual-alternating-c-transform-failure")
 ```
 

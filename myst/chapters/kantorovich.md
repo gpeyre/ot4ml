@@ -145,7 +145,7 @@ cost is constant on the whole transportation polytope, it is not expected to
 solve optimal transport.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-coupling-polylines")
 ```
 
@@ -160,7 +160,7 @@ approximations.
 <iframe class="ot4ml-live-frame" title="Kantorovich coupling controls" src="../live/kantorovich-couplings.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-coupling-matrix-marginals")
 ```
 
@@ -192,7 +192,7 @@ $C_{ij}$, the discrete Kantorovich problem reads
 This is a linear program, and its solutions need not be unique.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-permutation-versus-splitting")
 ```
 
@@ -397,7 +397,7 @@ the transportation polytope. As $\epsilon\downarrow0$, the central path
 approaches the set of LP minimizers.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-log-barrier-lp-geometry")
 ```
 
@@ -598,7 +598,7 @@ $x_i$ to $y_j$ along its own segment. When the plan is not induced by a map,
 one source atom can split into several moving atoms.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-plan-interpolation")
 ```
 
@@ -750,7 +750,7 @@ $a$ and $c$.
 :::
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-discrete-gluing-lemma")
 ```
 
@@ -1074,7 +1074,7 @@ differs from the true $\Wass_2$ interpolation between the collapsed mixture
 densities.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("kantorovich-wow-mixtures")
 ```
 
@@ -1218,7 +1218,7 @@ how fast. The central limit theorem becomes a rate estimate in $\Wass_1$, which
 controls the error of all $1$-Lipschitz observables of the normalized sum.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-quantitative-clt")
 ```
 
