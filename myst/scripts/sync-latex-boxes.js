@@ -511,6 +511,10 @@ function normalizeTargetSpacing(markdown) {
   };
 }
 
+function normalizeMarkdown(markdown) {
+  return markdown.replace(/[ \t]+$/gm, '').replace(/\n*$/, '\n');
+}
+
 function frontmatterEnd(markdown) {
   if (!markdown.startsWith('---\n')) return 0;
   const index = markdown.indexOf('\n---', 4);
@@ -565,11 +569,14 @@ function addFigureLabels(markdown, labels) {
   let changed = 0;
   const seenFigures = new Set();
   for (const item of labels) {
-    if (seenFigures.has(item.figureName)) continue;
-    seenFigures.add(item.figureName);
+    const candidates = [...new Set([item.figureName, item.label.replace(/^fig:/, '')])];
+    const found = candidates
+      .map((slug) => ({ slug, markerIndex: markdown.indexOf(`show_book_figure("${slug}"`) }))
+      .find(({ slug, markerIndex }) => markerIndex >= 0 && !seenFigures.has(slug));
+    if (!found) continue;
+    seenFigures.add(found.slug);
     if (collectLabelsFromMarkdown(markdown).has(item.label)) continue;
-    const marker = `show_book_figure("${item.figureName}")`;
-    const markerIndex = markdown.indexOf(marker);
+    const markerIndex = found.markerIndex;
     if (markerIndex < 0) continue;
     const divStart = markdown.lastIndexOf(':::{div}\n:class: ot4ml-book-figure', markerIndex);
     const index = divStart >= 0 ? divStart : markerIndex;
@@ -594,8 +601,11 @@ function prepareFileLabels(texFile, mdFile) {
   markdown = labelled.markdown;
   const normalized = normalizeTargetSpacing(markdown);
   markdown = normalized.markdown;
+  const finalMarkdown = normalizeMarkdown(markdown);
+  const formattingChanged = finalMarkdown !== markdown ? 1 : 0;
+  markdown = finalMarkdown;
 
-  const changed = headed.changed + figured.changed + labelled.changed + normalized.changed;
+  const changed = headed.changed + figured.changed + labelled.changed + normalized.changed + formattingChanged;
   if (changed) fs.writeFileSync(mdPath, markdown);
   return changed;
 }
@@ -605,15 +615,17 @@ function syncFile(texFile, mdFile) {
   const mdPath = path.join(mystChapters, mdFile);
   const blocks = extractBlocks(fs.readFileSync(texPath, 'utf8'));
   let markdown = fs.readFileSync(mdPath, 'utf8');
+  const originalMarkdown = markdown;
   const refreshed = replaceExistingLatexBlocks(markdown, blocks);
   markdown = refreshed.markdown;
   const normalized = normalizeTargetSpacing(markdown);
   markdown = normalized.markdown;
+  markdown = normalizeMarkdown(markdown);
 
   const pending = blocks.filter((block) => block.title && !hasBlock(markdown, block));
   if (!pending.length) {
-    if (refreshed.updated || normalized.changed) fs.writeFileSync(mdPath, markdown);
-    return { inserted: 0, updated: refreshed.updated + normalized.changed };
+    if (markdown !== originalMarkdown) fs.writeFileSync(mdPath, markdown);
+    return { inserted: 0, updated: markdown !== originalMarkdown ? refreshed.updated + normalized.changed : 0 };
   }
 
   const groups = new Map();
@@ -633,8 +645,12 @@ function syncFile(texFile, mdFile) {
     markdown = insertBefore(markdown, index, rendered);
   }
 
-  fs.writeFileSync(mdPath, markdown);
-  return { inserted: pending.length, updated: refreshed.updated };
+  markdown = normalizeMarkdown(markdown);
+  if (markdown !== originalMarkdown) fs.writeFileSync(mdPath, markdown);
+  return {
+    inserted: pending.length,
+    updated: markdown !== originalMarkdown ? refreshed.updated + normalized.changed : 0,
+  };
 }
 
 function collectKnownLabels() {
