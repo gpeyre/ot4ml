@@ -299,41 +299,29 @@ Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum 
 
 **Output:** Assignment map $\sigma$.
 
-**Initialize:** Set prices $p_j=0$.
+**Initialize:** Set prices $p_j=0$, ownership map $o(j)=\emptyset$, and $U=\{1,\ldots,n\}$.
 
-**Mark** all sources and targets as unassigned.
+**While** the unassigned set $U$ is nonempty **do**:
 
-**While** some source $i$ is unassigned **do**:
-
+> **Set** $i=\min U$.
 >
+> **Set** $j_i=\min\argmax_j(a_{ij}-p_j)$.
 >
-> ```{math}
-> v_i=\max_j(a_{ij}-p_j),
-> \qquad
-> j_i\in\argmax_j(a_{ij}-p_j),
-> \qquad
-> w_i=\max_{j\neq j_i}(a_{ij}-p_j).
-> ```
->
+> **Set** \(v_i=a_{ij_i}-p_{j_i}\) and \(w_i=\max_{j\neq j_i}(a_{ij}-p_j)\).
 >
 > **Update price:**
+> \(p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.\)
 >
->
-> ```{math}
-> p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
-> ```
->
->
-> **If** target $j_i$ has owner $i'$ **then**:
+> **If** $o(j_i)=i'\neq\emptyset$ **then**:
 
 >>
->> **Mark** $i'$ as unassigned.
+>> **Set** $U\leftarrow U\cup\{i'\}$.
 >>
 
-> **Assign** target $j_i$ to source $i$.
+> **Set** $o(j_i)=i$ and $U\leftarrow U\setminus\{i\}$.
 >
 
-**Return** $\sigma$ induced by the target owners.
+**Return** $\sigma(i)=j$ iff $o(j)=i$.
 :::
 
 
@@ -486,24 +474,13 @@ replacing arbitrary potentials with regular best responses.
 **Output:** Closed $c$-concave pair $(\tilde f,\tilde g)$.
 
 **Set** target best response:
-
-```{math}
-g=f^c,
-\qquad
-g(y)=\inf_{x\in\X}\ c(x,y)-f(x).
-```
+\(g=f^c, \qquad g(y)=\inf_{x\in\X}\ c(x,y)-f(x).\)
 
 **Set** source closure:
-
-```{math}
-\tilde f=g^{\bar c}=f^{c\bar c}.
-```
+\(\tilde f=g^{\bar c}=f^{c\bar c}.\)
 
 **Set** closed target potential:
-
-```{math}
-\tilde g=\tilde f^c=f^{c\bar c c}=f^c.
-```
+\(\tilde g=\tilde f^c=f^{c\bar c c}=f^c.\)
 
 **Return** $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
 :::

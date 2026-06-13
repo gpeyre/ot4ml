@@ -562,41 +562,17 @@ modes, and total variation gives a sharper active-mass selection.*
 **Output:** Unbalanced entropic coupling $\P$.
 
 **Initialize:** Set
-
-```{math}
-K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j,
-\qquad
-\rho=\frac{\tau}{\tau+\epsilon},
-\qquad
-v^{(0)}\in\RR_{+,*}^m.
-```
+\(K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \qquad \rho=\frac{\tau}{\tau+\epsilon}, \qquad v^{(0)}=\ones_m.\)
 
 **For** $k=0,1,\ldots$ **do**:
 
->
->
-> ```{math}
-> u^{(k+1)}
-> =
-> \left(\frac{\a}{K v^{(k)}}\right)^\rho,
-> \qquad
-> v^{(k+1)}
-> =
-> \left(\frac{\b}{\transp{K}u^{(k+1)}}\right)^\rho.
-> ```
->
+> \(u^{(k+1)} = \left(\frac{\a}{K v^{(k)}}\right)^\rho, \qquad v^{(k+1)} = \left(\frac{\b}{\transp{K}u^{(k+1)}}\right)^\rho.\)
 >
 > **If** scaling changes are below $\mathrm{tol}$ **then**:
 
 >>
 >> **Return**
->>
->>
->> ```{math}
->> \P^{(k+1)}=\diag(u^{(k+1)})K\diag(v^{(k+1)}).
->> ```
->>
->>
+>> \(\P^{(k+1)}=\diag(u^{(k+1)})K\diag(v^{(k+1)}).\)
 >>
 :::
 
@@ -884,34 +860,16 @@ quadratic $W_2$ matching shown on the right.*
 >
 > **Sample** $\theta_\ell\sim\sigma$ on $\Sphere^{d-1}$.
 >
-> **Project and sort:**
+> **Set** $s_i^\ell=\dotp{\theta_\ell}{x_i}$ and $t_i^\ell=\dotp{\theta_\ell}{y_i}$.
 >
->
-> ```{math}
-> s_i^\ell=\dotp{\theta_\ell}{x_i},
-> \qquad
-> t_i^\ell=\dotp{\theta_\ell}{y_i},
-> \qquad
-> s_{(1)}^\ell\leq\cdots\leq s_{(n)}^\ell,
-> \quad
-> t_{(1)}^\ell\leq\cdots\leq t_{(n)}^\ell .
-> ```
->
+> **Let** $\sigma_\ell,\tau_\ell$ be stable sorting permutations:
+> \(s_{\sigma_\ell(1)}^\ell\leq\cdots\leq s_{\sigma_\ell(n)}^\ell, \quad t_{\tau_\ell(1)}^\ell\leq\cdots\leq t_{\tau_\ell(n)}^\ell.\)
 >
 > **Compute**
->
->
-> ```{math}
-> E_\ell=\frac1n\sum_{i=1}^n\abs{s_{(i)}^\ell-t_{(i)}^\ell}^p.
-> ```
->
->
+> \(E_\ell=\frac1n\sum_{i=1}^n\abs{s_{\sigma_\ell(i)}^\ell-t_{\tau_\ell(i)}^\ell}^p.\)
 
 **Return**
-
-```{math}
-\widehat{\SW}_p^p(\alpha,\beta)=\frac1L\sum_{\ell=1}^L E_\ell.
-```
+\(\widehat{\SW}_p^p(\alpha,\beta)=\frac1L\sum_{\ell=1}^L E_\ell.\)
 :::
 
 (alg:lifted-min-sliced-matching)=
@@ -920,33 +878,24 @@ quadratic $W_2$ matching shown on the right.*
 
 **Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, finite direction set $\Theta\subset\Sphere^{d-1}$.
 
-**Output:** Lifted feasible coupling $\pi_{\theta^\star}$.
+**Output:** Feasible coupling $\pi_{\theta^\star}$ induced by the selected projection direction.
 
 **For** each $\theta\in\Theta$ **do**:
 
 >
-> **Sort** projected values $\dotp{\theta}{x_i}$ and $\dotp{\theta}{y_j}$.
+> **Let** $\sigma_\theta,\tau_\theta$ be stable sorting permutations of $\dotp{\theta}{x_i}$ and $\dotp{\theta}{y_j}$.
 >
-> **Match** equal ranks.
+> **Match** $x_{\sigma_\theta(k)}$ to $y_{\tau_\theta(k)}$ for $k=1,\ldots,n$.
 >
-> **Store** permutation $\sigma_\theta$.
+> **Store** rank-matching permutation $\rho_\theta=\tau_\theta\circ\sigma_\theta^{-1}$.
 >
 > **Evaluate**
->
->
-> ```{math}
-> E(\theta)=\frac1n\sum_{i=1}^n\norm{x_i-y_{\sigma_\theta(i)}}^2.
-> ```
->
->
+> \(E(\theta)=\frac1n\sum_{i=1}^n\norm{x_i-y_{\rho_\theta(i)}}^2.\)
 
-**Set** $\theta^\star\in\argmin_{\theta\in\Theta}E(\theta)$.
+**Set** $\theta^\star=\min\argmin_{\theta\in\Theta}E(\theta)$ for the fixed order on $\Theta$.
 
 **Return**
-
-```{math}
-\pi_{\theta^\star}=\frac1n\sum_i\delta_{(x_i,y_{\sigma_{\theta^\star}(i)})}.
-```
+\(\pi_{\theta^\star}=\frac1n\sum_i\delta_{(x_i,y_{\rho_{\theta^\star}(i)})}.\)
 :::
 
 

@@ -323,38 +323,19 @@ semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 
 **Output:** Semi-discrete dual weights $\gD$ and Laguerre cells.
 
-**Initialize:** Choose $\gD^{(0)}\in\RR^m$.
+**Initialize:** Set $\gD^{(0)}=0$.
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
 > **Compute cells:**
->
->
-> ```{math}
-> \Laguerre_j(\gD^{(k)})
-> =
-> \enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.
-> ```
->
+> \(\Laguerre_j(\gD^{(k)}) = \enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.\)
 >
 > **Compute masses:**
->
->
-> ```{math}
-> m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .
-> ```
->
+> \(m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .\)
 >
 > **Update**
->
->
-> ```{math}
-> \gD^{(k+1)}
-> =
-> \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).
-> ```
->
+> \(\gD^{(k+1)} = \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).\)
 >
 > **If** $\max_j\abs{m_j^{(k)}-\b_j}\leq\mathrm{tol}$ **then**:
 
@@ -378,27 +359,11 @@ semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 >
 > **Draw** $x_\ell\sim\alpha$.
 >
-> **Find** the active Laguerre cell:
->
->
-> ```{math}
-> j_\ell\in\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr).
-> ```
->
+> **Set** \(j_\ell=\min\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr)\).
 >
 > **For** $j=1,\ldots,m$ **do**
 
->>
->>
->> ```{math}
->> \gD_j^{(\ell+1)}
->> =
->> \gD_j^{(\ell)}
->> +
->> \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).
->> ```
->>
->>
+>> \(\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).\)
 
 **Return** $\gD^{(\ell)}$ or its running average.
 :::
@@ -594,42 +559,26 @@ before settling into a local centroidal configuration.
 :::{admonition} Algorithm: Lloyd quantization
 :class: ot4ml-algorithm
 
-**Input:** Source measure $\alpha$, number of codepoints $m$, squared Euclidean cost.
+**Input:** Source measure $\alpha$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost.
 
 **Output:** Codepoints $Y=(y_j)_{j=1}^m$.
 
-**Initialize:** Choose $Y^{(0)}=(y_j^{(0)})_{j=1}^m$.
+**Initialize:** Set $k=0$.
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
 > **Compute Voronoi cells:**
->
->
-> ```{math}
-> \VV_j(Y^{(k)})
-> =
-> \enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.
-> ```
->
+> \(\VV_j(Y^{(k)}) = \enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.\)
 >
 > **For** each nonempty cell $\VV_j$ **do**
 
->>
->>
->> ```{math}
->> y_j^{(k+1)}
->> =
->> \frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)}
->> {\int_{\VV_j(Y^{(k)})}\d\al(x)}.
->> ```
->>
->>
+>> \(y_j^{(k+1)} = \frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(k)})}\d\al(x)}.\)
 
 > **For** each empty cell $\VV_j$ **do**:
 
 >>
->> **Keep or reseed** $y_j^{(k+1)}$.
+>> **Set** $y_j^{(k+1)}=y_j^{(k)}$.
 >>
 
 > **If** codepoint displacement is below $\mathrm{tol}$ **then**:
@@ -667,17 +616,14 @@ The same LP is a minimum-cost transshipment problem. Replace each undirected edg
 **Replace** each undirected edge by two directed arcs.
 
 **Impose balances:**
+\(\sum_j u_{ij}-\sum_j u_{ji}=r_i .\)
 
-```{math}
-\sum_j u_{ij}-\sum_j u_{ji}=r_i .
-```
+**Initialize:** Add artificial root arcs and compute a feasible tree flow on a spanning tree $T$ with node potentials.
 
-**Initialize:** Choose a feasible spanning-tree basis, tree flow, and node potentials.
-
-**While** some non-tree arc has negative reduced cost **do**:
+**While** \(\min_{e\notin T}\bar c_e<0\) **do**:
 
 >
-> **Choose** entering arc with negative reduced cost.
+> **Set** entering arc \(e=\min\argmin_{a\notin T}\bar c_a\) for a fixed ordering of arcs.
 >
 > **Add** it to the tree.
 >
@@ -685,7 +631,7 @@ The same LP is a minimum-cost transshipment problem. Replace each undirected edg
 >
 > **Send** the largest admissible flow around $\mathcal C$.
 >
-> **Remove** the leaving arc that becomes tight.
+> **Remove** the first zero-flow arc met on the directed cycle after augmentation.
 >
 > **Update** the tree, potentials, and reduced costs.
 >

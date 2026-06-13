@@ -1,1 +1,0 @@
-import{c as e}from"/ot4ml/myst/_build/html/build/_shared/chunk-OZE3FFNP.js?ot4ml-expanded-chapters=1";var n=e((l,t)=>{function a(i){return{name:"Plain text",aliases:["text","txt"],disableAutodetect:!0}}t.exports=a});export default n();

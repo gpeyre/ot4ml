@@ -705,15 +705,7 @@ a smoothed grid density. The noise slider controls the entropy strength.
 
 **For** $k=0,\ldots,K-1$ **do**:
 
->
->
-> ```{math}
-> \alpha^{k+1}
-> \in
-> \uargmin{\alpha\in\Pp_2(\RR^d)}
-> \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).
-> ```
->
+> \(\alpha^{k+1} \in \uargmin{\alpha\in\Pp_2(\RR^d)} \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).\)
 >
 > **Set** $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
 >
@@ -725,35 +717,24 @@ a smoothed grid density. The noise slider controls the entropy strength.
 :::{admonition} Algorithm: Empirical Wasserstein particle descent
 :class: ot4ml-algorithm
 
-**Input:** Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$.
+**Input:** Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$, tolerance $\mathrm{tol}$.
 
 **Output:** Particle trajectory $(X^k)_k$ and empirical measures.
 
 **Define**
-
-```{math}
-F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).
-```
+\(F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).\)
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
 > **For** $i=1,\ldots,n$ **do**
 
->>
->>
->> ```{math}
->> g_i^k=n\nabla_{x_i}F(X^k),
->> \qquad
->> x_i^{k+1}=x_i^k-h\,g_i^k.
->> ```
->>
->>
+>> \(g_i^k=n\nabla_{x_i}F(X^k), \qquad x_i^{k+1}=x_i^k-h\,g_i^k.\)
 
-> **If** stopping criterion is met **then**:
+> **If** \(\max_i\norm{x_i^{k+1}-x_i^k}\leq \mathrm{tol}\) **then**:
 
 >>
->> **Return** $\frac1n\sum_i\delta_{x_i^k}$.
+>> **Return** $\frac1n\sum_i\delta_{x_i^{k+1}}$.
 >>
 :::
 
@@ -819,7 +800,7 @@ f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
 :::{admonition} Algorithm: MMD particle flow against a teacher law
 :class: ot4ml-algorithm
 
-**Input:** Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$, kernel $k$, step size $h$.
+**Input:** Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$ or teacher samples $(y_b)_{b=1}^B$, kernel $k$, step size $h$.
 
 **Output:** Particle trajectory targeting $\beta$.
 
@@ -828,31 +809,24 @@ f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
 >
 > **For** $i=1,\ldots,n$ **do**
 
+>> **Set** self-interaction \(r_i^k=-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)\).
 >>
->>
->> ```{math}
->> v_i^k
->> =
->> -\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)
->> +
->> 2\int\nabla_x k(x_i^k,y)\d\beta(y).
->> ```
->>
->>
->> **If** the teacher integral is unavailable **then**:
+>> **If** $\beta$ is available analytically **then**:
 
 >>>
->>> **Set** teacher integral by quadrature/minibatch estimation.
+>>> **Set** teacher attraction \(a_i^k=2\int\nabla_x k(x_i^k,y)\d\beta(y)\).
 >>>
 
+>> **If** only samples $(y_b)_{b=1}^B$ are available **then**:
+
+>>>
+>>> **Set** \(a_i^k=\frac{2}{B}\sum_{b=1}^B\nabla_x k(x_i^k,y_b)\).
+>>>
+
+>> **Set** velocity \(v_i^k=r_i^k+a_i^k\).
+>>
 >> **Update**
->>
->>
->> ```{math}
->> x_i^{k+1}=x_i^k+h\,v_i^k.
->> ```
->>
->>
+>> \(x_i^{k+1}=x_i^k+h\,v_i^k.\)
 
 **Return** $(x_i^k)_{i,k}$.
 :::

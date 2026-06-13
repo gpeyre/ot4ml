@@ -1,1 +1,0 @@
-import{c as s}from"/ot4ml/myst/_build/html/build/_shared/chunk-OZE3FFNP.js?ot4ml-expanded-chapters=1";var t=s((i,n)=>{function a(e){return{aliases:["pycon"],contains:[{className:"meta",starts:{end:/ |$/,starts:{end:"$",subLanguage:"python"}},variants:[{begin:/^>>>(?=[ ]|$)/},{begin:/^\.\.\.(?=[ ]|$)/}]}]}}n.exports=a});export default t();

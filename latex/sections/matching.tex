@@ -76,11 +76,8 @@ and then an optimal match is mapping $x_{\sigma_X(k)} \mapsto y_{\sigma_Y(k)}$, 
 \textbf{Output:} Optimal permutation $\sigma$.
 
 \textbf{Sort} source and target points:
-\[
-	x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)},
-	\qquad
-	y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
-\]
+\(x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)}, \qquad y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.\)
+
 \textbf{For} $k=1,\ldots,n$ \textbf{do}:
 \begin{algblock}
 
@@ -88,9 +85,7 @@ and then an optimal match is mapping $x_{\sigma_X(k)} \mapsto y_{\sigma_Y(k)}$, 
 
 \end{algblock}
 \textbf{Return}
-\[
-	\sigma=\sigma_Y\circ\sigma_X^{-1}.
-\]
+\(\sigma=\sigma_Y\circ\sigma_X^{-1}.\)
 \end{alg}
 
 If the distance profile is concave instead of convex, the geometry changes. For costs such as $c_p(x,y)=|x-y|^p$ with $0<p<1$, splitting a displacement into several smaller displacements is expensive, so optimal matchings tend to create long exchanges rather than the monotone equal-rank pairing; see Figure~\ref{fig:matching-1d-convex-concave-costs}. This is the strictly concave regime studied by Gangbo and McCann~\cite{gangbo1996geometry}.
@@ -237,20 +232,17 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 
 \textbf{Output:} Optimal cyclic assignment.
 
-\textbf{Choose} cyclic orderings $(x_{(k)})_{k=1}^n$ and $(y_{(k)})_{k=1}^n$.
+\textbf{Let} $x_{(1)},\ldots,x_{(n)}$ and $y_{(1)},\ldots,y_{(n)}$ be the points sorted by increasing angle from a fixed origin.
 
 \textbf{For} $s=0,\ldots,n-1$ \textbf{do}:
 \begin{algblock}
-\[
-	E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p,
-	\qquad y_{(k+n)}=y_{(k)}.
-\]
+\(E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p, \qquad y_{(k+n)}=y_{(k)}.\)
 \end{algblock}
-\textbf{Set} $s^\star\in\argmin_sE_s$.
+\textbf{Set} $s^\star=\min\argmin_{0\leq s<n}E_s$.
 
-\textbf{Open} circle at a gap compatible with $s^\star$.
+\textbf{Set} $\theta_{\rm cut}$ in an empty arc separating two consecutive matched pairs for the shift $s^\star$.
 
-\textbf{Lift} all points to the unfolded interval.
+\textbf{Replace} every angle by its representative in $[\theta_{\rm cut},\theta_{\rm cut}+2\pi)$.
 
 \textbf{Return} $x_{(k)}\mapsto y_{(k+s^\star)}$.
 \end{alg}
@@ -436,7 +428,7 @@ Algorithm~\ref{alg:hungarian-primal-dual} summarizes the primal-dual loop. Figur
 
 \textbf{Output:} Minimum-cost perfect matching $M$.
 
-\textbf{Initialize:} Choose dual feasible labels $(u,v)$.
+\textbf{Initialize:} Set $u_i=\min_j C_{ij}$ and $v_j=0$.
 
 \textbf{Set} $M=\emptyset$.
 
@@ -444,35 +436,51 @@ Algorithm~\ref{alg:hungarian-primal-dual} summarizes the primal-dual loop. Figur
 \begin{algblock}
 
 \textbf{Build} equality graph:
-\[
-	E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.
-\]
-\textbf{Choose} unmatched source.
+\(E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.\)
 
-\textbf{Grow} an alternating tree in $E(u,v)$.
+\textbf{Set} root $i_0=\min\{i:\ i\text{ is unmatched in }M\}$.
 
-\textbf{If} the tree reaches an unmatched target \textbf{then}:
+\textbf{Set} reached sets $S=\{i_0\}$ and $T=\emptyset$; clear parent pointers.
+
+\textbf{While} $T$ contains no unmatched target \textbf{do}:
 \begin{algblock}
 
-\textbf{Augment} $M$ along the alternating path.
+\textbf{If} $N_E(S)\setminus T=\emptyset$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Compute} $\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr)$.
+
+\textbf{Update} $u_i\leftarrow u_i+\delta$ for $i\in S$ and $v_j\leftarrow v_j-\delta$ for $j\in T$.
+
+\textbf{Refresh} equality graph $E(u,v)$.
 
 \end{algblock}
+\textbf{Set} $J=N_E(S)\setminus T$.
 
-\textbf{Else}:
+\textbf{For} each $j\in J$ in increasing order \textbf{do}:
 \begin{algblock}
 
-\textbf{Set} $S=$ reached sources and $T=$ reached targets.
+\textbf{Add} $j$ to $T$ and set parent row $p(j)=\min\{i\in S:(i,j)\in E(u,v)\}$.
 
-\textbf{Compute}
-\[
-	\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr),
-\]
-\textbf{Update}
-\[
-	u_i\leftarrow u_i+\delta\quad(i\in S),
-	\qquad
-	v_j\leftarrow v_j-\delta\quad(j\in T).
-\]
+\textbf{If} $j$ is matched to $i'$ in $M$ \textbf{then set} \(S\leftarrow S\cup\{i'\}\) and \(q(i')=j\).
+
+\end{algblock}
+\end{algblock}
+\textbf{Set} $j_0=\min\{j\in T:\ j\text{ is unmatched in }M\}$.
+
+\textbf{Set} $j=j_0$.
+
+\textbf{While} $j$ is defined \textbf{do}:
+\begin{algblock}
+
+\textbf{Set} $i=p(j)$.
+
+\textbf{Set} $M\leftarrow M\cup\{(i,j)\}$.
+
+\textbf{Set} $j_{\rm old}=q(i)$.
+
+\textbf{If} $j_{\rm old}$ is defined \textbf{then set} \(M\leftarrow M\setminus\{(i,j_{\rm old})\}\).
+\textbf{Set} $j=j_{\rm old}$.
 \end{algblock}
 \end{algblock}
 \textbf{Return} $M$.

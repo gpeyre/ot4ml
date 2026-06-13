@@ -458,35 +458,15 @@ ground cost is the square of the geodesic distance {cite:p}`2015-solomon-siggrap
 **Output:** Gaussian barycenter $\Gaussian(\mean,\cov)$.
 
 **Set**
+\(\mean=\sum_s\lambda_s\mean_s .\)
 
-```{math}
-\mean=\sum_s\lambda_s\mean_s .
-```
-
-**Initialize:** Choose $\cov^{(0)}\succ0$.
+**Initialize:** Set $\cov^{(0)}=\sum_s\lambda_s\cov_s$.
 
 **For** $k=0,1,\ldots$ **do**:
 
+> \(S^{(k)} = \sum_s\lambda_s \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.\)
 >
->
-> ```{math}
-> S^{(k)}
-> =
-> \sum_s\lambda_s
-> \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.
-> ```
->
->
->
->
-> ```{math}
-> \cov^{(k+1)}
-> =
-> (\cov^{(k)})^{-1/2}
-> \left(S^{(k)}\right)^2
-> (\cov^{(k)})^{-1/2}.
-> ```
->
+> \(\cov^{(k+1)} = (\cov^{(k)})^{-1/2} \left(S^{(k)}\right)^2 (\cov^{(k)})^{-1/2}.\)
 >
 > **If** $\norm{\cov^{(k+1)}-\cov^{(k)}}\leq\mathrm{tol}$ **then**:
 
@@ -505,58 +485,27 @@ ground cost is the square of the geodesic distance {cite:p}`2015-solomon-siggrap
 
 **Output:** Barycenter weights $\a$ and couplings $\P_s$.
 
-**Initialize:** Set $\K_s=e^{-\C_s/\epsilon}$ and choose $\uD_s^{(0)}\in\RR_{+,*}^n$.
+**Initialize:** Set $\K_s=e^{-\C_s/\epsilon}$ and $\uD_s^{(0)}=\ones_n$ for all $s$.
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
 > **For** each marginal $s$ **do**
 
->>
->>
->> ```{math}
->> \vD_s^{(k+1)}
->> =
->> \frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.
->> ```
->>
->>
+>> \(\vD_s^{(k+1)} = \frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.\)
 
 > **Compute** barycenter marginal:
->
->
-> ```{math}
-> \a^{(k+1)}
-> =
-> \prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.
-> ```
->
+> \(\a^{(k+1)} = \prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.\)
 >
 > **For** each marginal $s$ **do**
 
->>
->>
->> ```{math}
->> \uD_s^{(k+1)}
->> =
->> \frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.
->> ```
->>
->>
+>> \(\uD_s^{(k+1)} = \frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.\)
 
 > **If** marginal residuals are below $\mathrm{tol}$ **then**:
 
 >>
 >> **Return**
->>
->>
->> ```{math}
->> \a^{(k+1)},
->> \qquad
->> \P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).
->> ```
->>
->>
+>> \(\a^{(k+1)}, \qquad \P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).\)
 >>
 :::
 
@@ -713,49 +662,29 @@ fixed barycenter support.
 :::{admonition} Algorithm: Multi-marginal Sinkhorn
 :class: ot4ml-algorithm
 
-**Input:** Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$.
+**Input:** Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 **Output:** Multi-marginal entropic coupling tensor $P$.
 
 **Build**
+\(K_{i_1,\ldots,i_S} = \exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right) \prod_{s=1}^S(\a_s)_{i_s}.\)
 
-```{math}
-K_{i_1,\ldots,i_S}
-=
-\exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right)
-\prod_{s=1}^S(\a_s)_{i_s}.
-```
+**Initialize:** Set \(u_s=\ones_{n_s}\) for all $s$ and residual \(r=+\infty\).
 
-**Initialize:** Set $u_s\in\RR_{+,*}^{n_s}$ for all $s$.
-
-**Repeat**:
+**While** \(r>\mathrm{tol}\) **do**:
 
 >
 > **For** $s=1,\ldots,S$ **do**:
 
->>
->>
->> ```{math}
->> (u_s)_i
->> \leftarrow
->> \frac{(\a_s)_i}
->> {\displaystyle
->> \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S}
->> K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S}
->> \prod_{r\neq s}(u_r)_{i_r}}.
->> ```
->>
->>
+>> \((u_s)_i \leftarrow \frac{(\a_s)_i} { \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S} K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S} \prod_{r\neq s}(u_r)_{i_r}}.\)
 
-**Until** all marginal residuals are below $\mathrm{tol}$.
+>
+> **Set** \(P_{i_1,\ldots,i_S}=K_{i_1,\ldots,i_S}\prod_s (u_s)_{i_s}\).
+>
+> **Set** \(r=\max_s\norm{(\mathrm{proj}_s)_\sharp P-\a_s}_1\).
 
 **Return**
-
-```{math}
-P_{i_1,\ldots,i_S}
-=
-K_{i_1,\ldots,i_S}\prod_{s=1}^S (u_s)_{i_s}.
-```
+\(P\).
 :::
 
 
@@ -989,28 +918,16 @@ iterations and transport-regularized inverse problems
 
 **Input:** Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features $C^{(r)}$, feasible set $\Theta$, regularizer $R$.
 
-**Output:** Fitted cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
+**Output:** Identified cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
 
 **Set** parametric cost:
+\(C_\theta=\sum_r\theta_r C^{(r)}.\)
 
-```{math}
-C_\theta=\sum_r\theta_r C^{(r)}.
-```
-
-**Solve**
-
-```{math}
-\min_{\theta\in\Theta,f,g}
-R(\theta)+\lambda
-\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
-```
+**Let** $(\theta^\star,f^\star,g^\star)$ be a minimizer of
+\(\min_{\theta\in\Theta,f,g} R(\theta)+\lambda \sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)\)
 
 **Subject to**
-
-```{math}
-f_i+g_j\leq(C_\theta)_{i,j}
-\qquad\text{for all }(i,j).
-```
+\(f_i+g_j\leq(C_\theta)_{i,j} \qquad\text{for all }(i,j).\)
 
 **Return** $\theta^\star$, $C_{\theta^\star}$, and $(f^\star,g^\star)$.
 :::

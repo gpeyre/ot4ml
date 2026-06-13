@@ -1305,34 +1305,16 @@ In higher dimension, Brenier maps for the quadratic cost are gradients of convex
 **Compute** $\cumul{\al}$, $\cumul{\be}$ and generalized inverses.
 
 **Couple** equal quantile levels:
-
-```{math}
-X=\cumul{\al}^{-1}(r),
-\qquad
-Y=\cumul{\be}^{-1}(r),
-\qquad
-r\in(0,1).
-```
+\(X=\cumul{\al}^{-1}(r), \qquad Y=\cumul{\be}^{-1}(r), \qquad r\in(0,1).\)
 
 **If** $\alpha$ has no atoms **then**:
 
 >
 > **Set**
->
->
-> ```{math}
-> T(x)=\cumul{\be}^{-1}(\cumul{\al}(x)).
-> ```
->
->
+> \(T(x)=\cumul{\be}^{-1}(\cumul{\al}(x)).\)
 
 **Interpolate** quantiles:
-
-```{math}
-Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
-\qquad
-\al_t=(Q_t)_\sharp\mathrm{Leb}_{[0,1]}.
-```
+\(Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r), \qquad \al_t=(Q_t)_\sharp\mathrm{Leb}_{[0,1]}.\)
 
 **Return** $(X,Y)$, $T$ if defined, and $\alpha_t$.
 :::
@@ -1346,10 +1328,7 @@ Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
 **Output:** Knothe--Rosenblatt triangular map $\T$.
 
 **Compute** first-coordinate rearrangement:
-
-```{math}
-\T_1=(F_{\be_1})^{-1}\circ F_{\al_1}.
-```
+\(\T_1=(F_{\be_1})^{-1}\circ F_{\al_1}.\)
 
 **For** $k=2,\ldots,d$ **do**:
 
@@ -1359,23 +1338,10 @@ Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
 > **Compute** conditional laws $\al^k_{x_{<k}}$ and $\be^k_{\T_{<k}(x_{<k})}$.
 >
 > **Set**
->
->
-> ```{math}
-> \T_k(x_{<k},x_k)
-> =
-> \bigl(F_{\be^k_{\T_{<k}(x_{<k})}}\bigr)^{-1}
-> \circ
-> F_{\al^k_{x_{<k}}}(x_k).
-> ```
->
->
+> \(\T_k(x_{<k},x_k) = \bigl(F_{\be^k_{\T_{<k}(x_{<k})}}\bigr)^{-1} \circ F_{\al^k_{x_{<k}}}(x_k).\)
 
 **Return**
-
-```{math}
-\T(x)=(\T_1(x_1),\T_2(x_1,x_2),\ldots,\T_d(x_1,\ldots,x_d)).
-```
+\(\T(x)=(\T_1(x_1),\T_2(x_1,x_2),\ldots,\T_d(x_1,\ldots,x_d)).\)
 :::
 
 

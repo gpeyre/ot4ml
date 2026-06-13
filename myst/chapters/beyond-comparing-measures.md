@@ -857,33 +857,14 @@ mass that would dominate the Hausdorff distance.
 
 **Output:** Approximate entropic GW coupling $\P\in\CouplingsD(\a,\b)$.
 
-**Initialize:** Choose $\P^{(0)}\in\CouplingsD(\a,\b)$.
+**Initialize:** Set $\P^{(0)}=\a\otimes\b$.
 
 **For** $k=0,1,\ldots$ **do**:
 
->
->
-> ```{math}
-> \C^{(k)}
-> =
-> \distD^{\odot2}\a\,\ones_m^\top
-> +
-> \ones_n(\distD'^{\odot2}\b)^\top
-> -
-> 2\distD\,\P^{(k)}\,\transp{\distD'}.
-> ```
->
+> \(\C^{(k)} = \distD^{\odot2}\a\,\ones_m^\top + \ones_n(\distD'^{\odot2}\b)^\top - 2\distD\,\P^{(k)}\,\transp{\distD'}.\)
 >
 > **Solve** entropic OT subproblem:
->
->
-> ```{math}
-> \P^{(k+1)}
-> =
-> \uargmin{\P\in\CouplingsD(\a,\b)}
-> \dotp{\P}{\C^{(k)}}-\epsilon\HD(\P).
-> ```
->
+> \(\P^{(k+1)} = \uargmin{\P\in\CouplingsD(\a,\b)} \dotp{\P}{\C^{(k)}}-\epsilon\HD(\P).\)
 >
 > **If** $\norm{\P^{(k+1)}-\P^{(k)}}\leq\mathrm{tol}$ **then**:
 
@@ -1282,39 +1263,19 @@ The same definitions extend formally from matrices to separable Hilbert spaces b
 
 **Output:** Quantum entropic coupling $T$ with partial traces $A$ and $B$.
 
-**Initialize:** Hermitian potentials $F^{(0)}$ and $G^{(0)}$.
+**Initialize:** Set Hermitian potentials $F^{(0)}=0$ and $G^{(0)}=0$.
 
 **For** $k=0,1,\ldots$ **do**:
 
->
->
-> ```{math}
-> T^{(k)}=
-> T_e(F^{(k)},G^{(k)})
-> =
-> \exp\!\left(
-> \frac{F^{(k)}\otimes\Id_m+\Id_n\otimes G^{(k)}-C}{\epsilon}
-> \right).
-> ```
->
+> \(T^{(k)}= T_e(F^{(k)},G^{(k)}) = \exp\!\left( \frac{F^{(k)}\otimes\Id_m+\Id_n\otimes G^{(k)}-C}{\epsilon} \right).\)
 >
 > **Solve** $A$-projection equation:
->
->
-> ```{math}
-> \operatorname{Tr}_B T_e(F^+,G^{(k)})=A,
-> ```
->
+> \(\operatorname{Tr}_B T_e(F^+,G^{(k)})=A,\)
 >
 > **Set** $F^{(k+1)}=F^+$.
 >
 > **Solve** $B$-projection equation:
->
->
-> ```{math}
-> \operatorname{Tr}_A T_e(F^{(k+1)},G^+)=B,
-> ```
->
+> \(\operatorname{Tr}_A T_e(F^{(k+1)},G^+)=B,\)
 >
 > **Set** $G^{(k+1)}=G^+$.
 >
@@ -1333,37 +1294,19 @@ The same definitions extend formally from matrices to separable Hilbert spaces b
 
 **Output:** Symmetrically scaled coupling $T_s$.
 
-**Initialize:** Set $U,V\succ0$.
+**Initialize:** Set $U=\Id_n$ and $V=\Id_m$.
 
-**Repeat**:
+**Set** residual \(r=+\infty\).
 
->
->
-> ```{math}
-> R_V=\mathcal K(V^2),
-> \qquad
-> U\leftarrow
-> R_V^{-1/2}\bigl(R_V^{1/2} A R_V^{1/2}\bigr)^{1/2}R_V^{-1/2}.
-> ```
->
->
->
->
-> ```{math}
-> S_U=\mathcal K^\star(U^2),
-> \qquad
-> V\leftarrow
-> S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
-> ```
->
->
+**While** \(r>\mathrm{tol}\) **do**:
 
-**Until** both operator-marginal residuals are at most $\mathrm{tol}$.
+> \(R_V=\mathcal K(V^2), \qquad U\leftarrow R_V^{-1/2}\bigl(R_V^{1/2} A R_V^{1/2}\bigr)^{1/2}R_V^{-1/2}.\)
+>
+> \(S_U=\mathcal K^\star(U^2), \qquad V\leftarrow S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.\)
+>
+> **Set** \(T_s=(U\otimes V)K(U\otimes V)\) and \(r\) to the maximum of its two operator-marginal residuals against $A$ and $B$.
 
 **Return**
-
-```{math}
-T_s=(U\otimes V)K(U\otimes V).
-```
+\(T_s\).
 :::
 

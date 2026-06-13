@@ -627,12 +627,7 @@ among the exponentially many planar matchings that survive this local test.
 **Output:** Optimal permutation $\sigma$.
 
 **Sort** source and target points:
-
-```{math}
-x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)},
-\qquad
-y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
-```
+\(x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)}, \qquad y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.\)
 
 **For** $k=1,\ldots,n$ **do**:
 
@@ -641,10 +636,7 @@ y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
 >
 
 **Return**
-
-```{math}
-\sigma=\sigma_Y\circ\sigma_X^{-1}.
-```
+\(\sigma=\sigma_Y\circ\sigma_X^{-1}.\)
 :::
 
 (alg:concave-line-local-indicators)=
@@ -691,24 +683,17 @@ y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
 
 **Output:** Optimal cyclic assignment.
 
-**Choose** cyclic orderings $(x_{(k)})_{k=1}^n$ and $(y_{(k)})_{k=1}^n$.
+**Let** $x_{(1)},\ldots,x_{(n)}$ and $y_{(1)},\ldots,y_{(n)}$ be the points sorted by increasing angle from a fixed origin.
 
 **For** $s=0,\ldots,n-1$ **do**:
 
->
->
-> ```{math}
-> E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p,
-> \qquad y_{(k+n)}=y_{(k)}.
-> ```
->
->
+> \(E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p, \qquad y_{(k+n)}=y_{(k)}.\)
 
-**Set** $s^\star\in\argmin_sE_s$.
+**Set** $s^\star=\min\argmin_{0\leq s<n}E_s$.
 
-**Open** circle at a gap compatible with $s^\star$.
+**Set** $\theta_{\rm cut}$ in an empty arc separating two consecutive matched pairs for the shift $s^\star$.
 
-**Lift** all points to the unfolded interval.
+**Replace** every angle by its representative in $[\theta_{\rm cut},\theta_{\rm cut}+2\pi)$.
 
 **Return** $x_{(k)}\mapsto y_{(k+s^\star)}$.
 :::
@@ -856,7 +841,7 @@ matching.
 
 **Output:** Minimum-cost perfect matching $M$.
 
-**Initialize:** Choose dual feasible labels $(u,v)$.
+**Initialize:** Set $u_i=\min_j C_{ij}$ and $v_j=0$.
 
 **Set** $M=\emptyset$.
 
@@ -864,47 +849,50 @@ matching.
 
 >
 > **Build** equality graph:
+> \(E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.\)
 >
+> **Set** root $i_0=\min\{i:\ i\text{ is unmatched in }M\}$.
 >
-> ```{math}
-> E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.
-> ```
+> **Set** reached sets $S=\{i_0\}$ and $T=\emptyset$; clear parent pointers.
 >
->
-> **Choose** unmatched source.
->
-> **Grow** an alternating tree in $E(u,v)$.
->
-> **If** the tree reaches an unmatched target **then**:
+> **While** $T$ contains no unmatched target **do**:
 
 >>
->> **Augment** $M$ along the alternating path.
->>
+>> **If** $N_E(S)\setminus T=\emptyset$ **then**:
 
+>>>
+>>> **Compute** $\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr)$.
+>>>
+>>> **Update** $u_i\leftarrow u_i+\delta$ for $i\in S$ and $v_j\leftarrow v_j-\delta$ for $j\in T$.
+>>>
+>>> **Refresh** equality graph $E(u,v)$.
+>>>
+
+>> **Set** $J=N_E(S)\setminus T$.
+>>
+>> **For** each $j\in J$ in increasing order **do**:
+
+>>>
+>>> **Add** $j$ to $T$ and set parent row $p(j)=\min\{i\in S:(i,j)\in E(u,v)\}$.
+>>>
+>>> **If** $j$ is matched to $i'$ in $M$ **then set** \(S\leftarrow S\cup\{i'\}\) and \(q(i')=j\).
+>>>
+
+> **Set** $j_0=\min\{j\in T:\ j\text{ is unmatched in }M\}$.
 >
-> **Else**:
+> **Set** $j=j_0$.
+>
+> **While** $j$ is defined **do**:
 
 >>
->> **Set** $S=$ reached sources and $T=$ reached targets.
+>> **Set** $i=p(j)$.
 >>
->> **Compute**
+>> **Set** $M\leftarrow M\cup\{(i,j)\}$.
 >>
+>> **Set** $j_{\rm old}=q(i)$.
 >>
->> ```{math}
->> \delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr),
->> ```
->>
->>
->> **Update**
->>
->>
->> ```{math}
->> u_i\leftarrow u_i+\delta\quad(i\in S),
->> \qquad
->> v_j\leftarrow v_j-\delta\quad(j\in T).
->> ```
->>
->>
+>> **If** $j_{\rm old}$ is defined **then set** \(M\leftarrow M\setminus\{(i,j_{\rm old})\}\).
+>> **Set** $j=j_{\rm old}$.
 
 **Return** $M$.
 :::

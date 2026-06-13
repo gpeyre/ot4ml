@@ -35,12 +35,8 @@ We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_
 
 \textbf{For} $k=0,\ldots,K-1$ \textbf{do}:
 \begin{algblock}
-\[
-	\alpha^{k+1}
-	\in
-	\uargmin{\alpha\in\Pp_2(\RR^d)}
-	\frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).
-\]
+\(\alpha^{k+1} \in \uargmin{\alpha\in\Pp_2(\RR^d)} \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).\)
+
 \textbf{Set} $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
 
 \end{algblock}
@@ -203,29 +199,24 @@ where $F(X) := f\left(\frac{1}{n} \sum_i \delta_{x_i}\right)$ and the factor $n$
 
 \begin{alg}[Empirical Wasserstein particle descent]\label{alg:empirical-wasserstein-particle-flow}
 \index{particle!Wasserstein descent}% strictindex
-\textbf{Input:} Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$.
+\textbf{Input:} Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Particle trajectory $(X^k)_k$ and empirical measures.
 
 \textbf{Define}
-\[
-	F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).
-\]
+\(F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).\)
+
 \textbf{For} $k=0,1,\ldots$ \textbf{do}:
 \begin{algblock}
 
 \textbf{For} $i=1,\ldots,n$ \textbf{do}
 \begin{algblock}
-\[
-	g_i^k=n\nabla_{x_i}F(X^k),
-	\qquad
-	x_i^{k+1}=x_i^k-h\,g_i^k.
-\]
+\(g_i^k=n\nabla_{x_i}F(X^k), \qquad x_i^{k+1}=x_i^k-h\,g_i^k.\)
 \end{algblock}
-\textbf{If} stopping criterion is met \textbf{then}:
+\textbf{If} \(\max_i\norm{x_i^{k+1}-x_i^k}\leq \mathrm{tol}\) \textbf{then}:
 \begin{algblock}
 
-\textbf{Return} $\frac1n\sum_i\delta_{x_i^k}$.
+\textbf{Return} $\frac1n\sum_i\delta_{x_i^{k+1}}$.
 
 \end{algblock}
 \end{algblock}
@@ -353,7 +344,7 @@ The corresponding simulation loop is Algorithm~\ref{alg:mmd-particle-flow}.
 
 \begin{alg}[MMD particle flow against a teacher law]\label{alg:mmd-particle-flow}
 \index{maximum mean discrepancy}% strictindex
-\textbf{Input:} Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$, kernel $k$, step size $h$.
+\textbf{Input:} Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$ or teacher samples $(y_b)_{b=1}^B$, kernel $k$, step size $h$.
 
 \textbf{Output:} Particle trajectory targeting $\beta$.
 
@@ -362,23 +353,24 @@ The corresponding simulation loop is Algorithm~\ref{alg:mmd-particle-flow}.
 
 \textbf{For} $i=1,\ldots,n$ \textbf{do}
 \begin{algblock}
-\[
-	v_i^k
-	=
-	-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)
-	+
-	2\int\nabla_x k(x_i^k,y)\d\beta(y).
-\]
-\textbf{If} the teacher integral is unavailable \textbf{then}:
+\textbf{Set} self-interaction \(r_i^k=-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)\).
+
+\textbf{If} $\beta$ is available analytically \textbf{then}:
 \begin{algblock}
 
-\textbf{Set} teacher integral by quadrature/minibatch estimation.
+\textbf{Set} teacher attraction \(a_i^k=2\int\nabla_x k(x_i^k,y)\d\beta(y)\).
 
 \end{algblock}
+\textbf{If} only samples $(y_b)_{b=1}^B$ are available \textbf{then}:
+\begin{algblock}
+
+\textbf{Set} \(a_i^k=\frac{2}{B}\sum_{b=1}^B\nabla_x k(x_i^k,y_b)\).
+
+\end{algblock}
+\textbf{Set} velocity \(v_i^k=r_i^k+a_i^k\).
+
 \textbf{Update}
-\[
-	x_i^{k+1}=x_i^k+h\,v_i^k.
-\]
+\(x_i^{k+1}=x_i^k+h\,v_i^k.\)
 \end{algblock}
 \end{algblock}
 \textbf{Return} $(x_i^k)_{i,k}$.
