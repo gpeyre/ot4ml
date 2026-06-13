@@ -1,1 +1,1 @@
-import{a}from"/ot4ml/myst/_build/html//build/_shared/chunk-I2P5JYEV.js";import"/ot4ml/myst/_build/html//build/_shared/chunk-OZE3FFNP.js";export default a();
+import{a}from"/build/_shared/chunk-I2P5JYEV.js";import"/build/_shared/chunk-OZE3FFNP.js";export default a();

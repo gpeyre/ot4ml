@@ -1,6 +1,11 @@
 <h1 align="center">OT4ML - Optimal Transport for Machine Learners</h1>
 
 <p align="center">
+  <strong>Project webpage:</strong>
+  <a href="https://www.gpeyre.com/ot4ml">https://www.gpeyre.com/ot4ml</a>
+</p>
+
+<p align="center">
   <a href="https://www.gpeyre.com/ot4ml/"><strong>Project homepage</strong></a>
   &nbsp;·&nbsp;
   <a href="https://www.gpeyre.com/ot4ml/myst/_build/html/index.html"><strong>Interactive book</strong></a>
