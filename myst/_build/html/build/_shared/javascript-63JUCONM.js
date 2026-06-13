@@ -1,1 +1,0 @@
-import{a,b,c,d,e}from"/ot4ml/myst/_build/html/build/_shared/chunk-265RPIE7.js?ot4ml-expanded-chapters=1";import"/ot4ml/myst/_build/html/build/_shared/chunk-OZE3FFNP.js?ot4ml-expanded-chapters=1";e();export{a as javascript,b as json,c as jsonld,d as typescript};

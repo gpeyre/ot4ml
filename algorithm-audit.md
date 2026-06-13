@@ -8,9 +8,11 @@ Third enforcement pass: all remaining inline `If ..., Return` and `If ..., break
 
 Fourth presentation pass: all active control-flow bodies below `For`, `While`, `If`, `Else`, and `Repeat` statements are wrapped in scoped pseudo-code blocks. In the PDF these blocks are indented with a thin left rule, and in the MyST build the same structure is rendered as nested ruled blocks. Textual closure markers such as `End for`, `End while`, and `End if` are intentionally omitted: the indentation and left rule carry the scope.
 
+Fifth spacing pass: displayed equations have been removed from all active pseudo-code blocks. Formula updates and assignments are written inline, and the algorithm style no longer adds special paragraph or display spacing around `Input`, `Output`, loop bodies, or nested blocks. The vertical spacing is therefore the ordinary text spacing of the algorithm float.
+
 Scope: active manuscript files included by `latex/OT4ML.tex`. The files `latex/sections/barycenters.tex` and `latex/sections/estimation.tex` are present in the repository but are not currently input by the main book, so they are not counted here.
 
-The style files now define `alg` as a custom ruled floating environment named `Algorithm`. This follows the standard book convention for mathematical pseudocode: a captioned float with muted horizontal rules above the caption, between the caption and the body, and below the body. The environment uses compact typography, tightened display-equation spacing, and normal mathematical prose rather than code syntax highlighting. The same visual convention is mirrored in the MyST build with a top-and-bottom ruled algorithm admonition.
+The style files now define `alg` as a custom ruled floating environment named `Algorithm`. This follows the standard book convention for mathematical pseudocode: a captioned float with muted horizontal rules above the caption, between the caption and the body, and below the body. The environment uses normal text spacing and inline mathematical pseudo-code rather than code syntax highlighting. The same visual convention is mirrored in the MyST build with a top-and-bottom ruled algorithm admonition.
 
 ## Implementation status
 
@@ -66,6 +68,8 @@ Status after this pass: all P0 algorithms from the recommended first batch, all 
 No remaining candidates from this audit. Future algorithm additions should now be driven by new manuscript edits rather than by this initial sweep.
 
 ## Verification
+
+Additional precision pass: all active algorithm floats were scanned for vague instructions such as "choose", "find", "run", generic "stopping criterion", and unspecified "estimation". These were replaced by explicit initializations, deterministic tie-breaking rules such as `min argmin`, residual-based `while` conditions, concrete empirical sums, and step-by-step parent-pointer updates where appropriate. Remaining nonstandard verbs denote exact operations such as sorting, projection, sampling from a specified distribution, or graph construction.
 
 The current verification pass used
 

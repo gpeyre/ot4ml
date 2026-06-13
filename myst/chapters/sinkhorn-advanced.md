@@ -319,30 +319,13 @@ gap whose constants depend on the cost range and potential oscillation.
 **Output:** Point in $\Cc_1\cap\Cc_2$ when the intersection is feasible.
 
 **Specialize** to entropic OT, if needed:
-
-```{math}
-\Cc_1=\Cc^1_\a,
-\qquad
-\Cc_2=\Cc^2_\b,
-\qquad
-B_\Phi=\KL.
-```
+\(\Cc_1=\Cc^1_\a, \qquad \Cc_2=\Cc^2_\b, \qquad B_\Phi=\KL.\)
 
 **For** $k=0,1,\ldots$ **do**:
 
+> \(P_{k+1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_k).\)
 >
->
-> ```{math}
-> P_{k+1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_k).
-> ```
->
->
->
->
-> ```{math}
-> P_{k+1}=\Proj_{\Cc_2}^{B_\Phi}(P_{k+1/2}).
-> ```
->
+> \(P_{k+1}=\Proj_{\Cc_2}^{B_\Phi}(P_{k+1/2}).\)
 >
 > **If** both constraint defects are below $\mathrm{tol}$ **then**:
 
@@ -673,18 +656,15 @@ remaining dual gap, up to the bounded-radius constant.
 
 **Output:** Certified lower bound $L_{\epsilon,k}$ for exact OT.
 
-**Choose**
+**Set**
+\(\epsilon=\frac{\delta}{2\log(nm)}.\)
 
-```{math}
-\epsilon=\frac{\delta}{2\log(nm)}.
-```
-
-**Run** stabilized Sinkhorn iterations.
+**Initialize** stabilized Sinkhorn potentials and dual values.
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
-> **Compute** upper bound $\widehat\Delta_k$ on the entropic dual gap.
+> **Perform** one stabilized Sinkhorn sweep and compute upper bound $\widehat\Delta_k$ on the entropic dual gap.
 >
 > **If** $\widehat\Delta_k\leq\delta/2$ **then**:
 
@@ -693,16 +673,7 @@ remaining dual gap, up to the bounded-radius constant.
 >>
 
 **Return**
-
-```{math}
-L_{\epsilon,k}
-=
-\mathcal D_{\epsilon,k}
--
-\epsilon\HD(\a)-\epsilon\HD(\b),
-\qquad
-0\leq\MKD_{\C}(\a,\b)-L_{\epsilon,k}\leq\delta.
-```
+\(L_{\epsilon,k} = \mathcal D_{\epsilon,k} - \epsilon\HD(\a)-\epsilon\HD(\b), \qquad 0\leq\MKD_{\C}(\a,\b)-L_{\epsilon,k}\leq\delta.\)
 :::
 
 
@@ -1202,31 +1173,15 @@ approaches a deterministic Brenier map.
 
 **Output:** Gaussian entropic coupling covariance.
 
-**Compute**
-
-```{math}
-\cov_\al^{1/2}\cov_\be^{1/2}
-=
-U\diag(\sigma_i)V^\top .
-```
+**Compute singular value decomposition**
+\(\cov_\al^{1/2}\cov_\be^{1/2} = U\diag(\sigma_i)V^\top .\)
 
 **For** each $\sigma_i>0$ **do**
 
->
->
-> ```{math}
-> s_i=\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.
-> ```
->
->
+> \(s_i=\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.\)
 
 **Set** cross-covariance:
-
-```{math}
-K_\epsilon
-=
-\cov_\al^{1/2}U\diag(s_i)V^\top\cov_\be^{1/2}.
-```
+\(K_\epsilon = \cov_\al^{1/2}U\diag(s_i)V^\top\cov_\be^{1/2}.\)
 
 **Return** Gaussian coupling with means $(\mean_\al,\mean_\be)$, marginal covariances $(\cov_\al,\cov_\be)$, and cross-covariance $K_\epsilon$.
 :::

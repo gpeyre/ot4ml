@@ -426,24 +426,10 @@ the Monge constraint may be empty and splitting couplings are essential.
 
 **While** $i\leq n$ and $j\leq m$ **do**:
 
->
->
-> ```{math}
-> \eta=\min(r_i,s_j),
-> \qquad
-> \P_{ij}\leftarrow \eta.
-> ```
->
+> \(\eta=\min(r_i,s_j), \qquad \P_{ij}\leftarrow \eta.\)
 >
 > **Update residuals:**
->
->
-> ```{math}
-> r_i\leftarrow r_i-\eta,
-> \qquad
-> s_j\leftarrow s_j-\eta.
-> ```
->
+> \(r_i\leftarrow r_i-\eta, \qquad s_j\leftarrow s_j-\eta.\)
 >
 > **If** $r_i=0$ **then**:
 
@@ -469,14 +455,9 @@ the Monge constraint may be empty and splitting couplings are essential.
 **Output:** Monotone optimal coupling $\P$.
 
 **Sort** atoms:
+\(x_1\leq\cdots\leq x_n, \qquad y_1\leq\cdots\leq y_m.\)
 
-```{math}
-x_1\leq\cdots\leq x_n,
-\qquad
-y_1\leq\cdots\leq y_m.
-```
-
-**Run** Algorithm {ref}`alg:north-west-corner` on sorted weights $(\a_i)_i$ and $(\b_j)_j$.
+**Set** $\P$ to the output of Algorithm {ref}`alg:north-west-corner` applied to the sorted weights $(\a_i)_i$ and $(\b_j)_j$.
 
 **Return** $\P$.
 :::
@@ -501,41 +482,20 @@ Compactness cannot be dropped from Proposition {ref}`prop-extreme-point-existenc
 **While** $R\neq0$ **do**:
 
 >
-> **Find** a permutation $\sigma$ supported by positive entries:
+> **Build** bipartite graph $G_R=\{(i,j):R_{ij}>0\}$.
 >
->
-> ```{math}
-> R_{i,\sigma(i)}>0
-> \qquad\text{for all }i.
-> ```
->
+> **Set** $\sigma$ to the lexicographically first perfect matching of $G_R$.
 >
 > **Set**
->
->
-> ```{math}
-> \lambda=\min_i R_{i,\sigma(i)}.
-> ```
->
+> \(\lambda=\min_i R_{i,\sigma(i)}.\)
 >
 > **Append** $(\lambda,\sigma)$ to $\mathcal L$.
 >
 > **Update**
->
->
-> ```{math}
-> R\leftarrow R-\lambda P_\sigma .
-> ```
->
->
+> \(R\leftarrow R-\lambda P_\sigma .\)
 
 **Return**
-
-```{math}
-P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r},
-\qquad
-\sum_r\lambda_r=1.
-```
+\(P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r}, \qquad \sum_r\lambda_r=1.\)
 :::
 
 
@@ -1137,35 +1097,19 @@ coupling gives the same value.
 
 **Output:** Displacement interpolant $\alpha_t$.
 
-**Solve** quadratic Kantorovich problem.
-
-**Choose** $\pi^\star$ among the minimizers.
+**Let** $\pi^\star$ be any minimizer of the quadratic Kantorovich problem.
 
 **Set** interpolation map:
-
-```{math}
-e_t(x,y)=(1-t)x+t y.
-```
+\(e_t(x,y)=(1-t)x+t y.\)
 
 **Push forward:**
-
-```{math}
-\al_t=(e_t)_\sharp\pi^\star.
-```
+\(\al_t=(e_t)_\sharp\pi^\star.\)
 
 **If** $\pi^\star=\sum_{i,j}P^\star_{ij}\delta_{(x_i,y_j)}$ **then**:
 
 >
 > **Compute**
->
->
-> ```{math}
-> \al_t=
-> \sum_{i,j}P^\star_{ij}
-> \delta_{(1-t)x_i+t y_j}.
-> ```
->
->
+> \(\al_t= \sum_{i,j}P^\star_{ij} \delta_{(1-t)x_i+t y_j}.\)
 
 **Return** $\alpha_t$.
 :::

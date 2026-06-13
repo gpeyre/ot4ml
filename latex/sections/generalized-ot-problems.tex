@@ -174,26 +174,16 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 \textbf{Output:} Gaussian barycenter $\Gaussian(\mean,\cov)$.
 
 \textbf{Set}
-\[
-	\mean=\sum_s\lambda_s\mean_s .
-\]
-\textbf{Initialize:} Choose $\cov^{(0)}\succ0$.
+\(\mean=\sum_s\lambda_s\mean_s .\)
+
+\textbf{Initialize:} Set $\cov^{(0)}=\sum_s\lambda_s\cov_s$.
 
 \textbf{For} $k=0,1,\ldots$ \textbf{do}:
 \begin{algblock}
-\[
-	S^{(k)}
-	=
-	\sum_s\lambda_s
-	\left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.
-\]
-\[
-	\cov^{(k+1)}
-	=
-	(\cov^{(k)})^{-1/2}
-	\left(S^{(k)}\right)^2
-	(\cov^{(k)})^{-1/2}.
-\]
+\(S^{(k)} = \sum_s\lambda_s \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.\)
+
+\(\cov^{(k+1)} = (\cov^{(k)})^{-1/2} \left(S^{(k)}\right)^2 (\cov^{(k)})^{-1/2}.\)
+
 \textbf{If} $\norm{\cov^{(k+1)}-\cov^{(k)}}\leq\mathrm{tol}$ \textbf{then}:
 \begin{algblock}
 
@@ -287,42 +277,27 @@ The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all coup
 
 \textbf{Output:} Barycenter weights $\a$ and couplings $\P_s$.
 
-\textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$ and choose $\uD_s^{(0)}\in\RR_{+,*}^n$.
+\textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$ and $\uD_s^{(0)}=\ones_n$ for all $s$.
 
 \textbf{For} $k=0,1,\ldots$ \textbf{do}:
 \begin{algblock}
 
 \textbf{For} each marginal $s$ \textbf{do}
 \begin{algblock}
-\[
-	\vD_s^{(k+1)}
-	=
-	\frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.
-\]
+\(\vD_s^{(k+1)} = \frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.\)
 \end{algblock}
 \textbf{Compute} barycenter marginal:
-\[
-	\a^{(k+1)}
-	=
-	\prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.
-\]
+\(\a^{(k+1)} = \prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.\)
+
 \textbf{For} each marginal $s$ \textbf{do}
 \begin{algblock}
-\[
-	\uD_s^{(k+1)}
-	=
-	\frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.
-\]
+\(\uD_s^{(k+1)} = \frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.\)
 \end{algblock}
 \textbf{If} marginal residuals are below $\mathrm{tol}$ \textbf{then}:
 \begin{algblock}
 
 \textbf{Return}
-\[
-	\a^{(k+1)},
-	\qquad
-	\P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).
-\]
+\(\a^{(k+1)}, \qquad \P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).\)
 
 \end{algblock}
 \end{algblock}
@@ -503,44 +478,30 @@ and generalized Sinkhorn iterations alternately update one potential $f_s$ so th
 In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn.
 
 \begin{alg}[Multi-marginal Sinkhorn]\label{alg:multimarginal-sinkhorn}
-\textbf{Input:} Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$.
+\textbf{Input:} Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Multi-marginal entropic coupling tensor $P$.
 
 \textbf{Build}
-\[
-	K_{i_1,\ldots,i_S}
-	=
-	\exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right)
-	\prod_{s=1}^S(\a_s)_{i_s}.
-\]
-\textbf{Initialize:} Set $u_s\in\RR_{+,*}^{n_s}$ for all $s$.
+\(K_{i_1,\ldots,i_S} = \exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right) \prod_{s=1}^S(\a_s)_{i_s}.\)
 
-\textbf{Repeat}:
+\textbf{Initialize:} Set \(u_s=\ones_{n_s}\) for all $s$ and residual \(r=+\infty\).
+
+\textbf{While} \(r>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
 \textbf{For} $s=1,\ldots,S$ \textbf{do}:
 \begin{algblock}
-\[
-	(u_s)_i
-	\leftarrow
-	\frac{(\a_s)_i}
-	{\displaystyle
-	\sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S}
-	K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S}
-	\prod_{r\neq s}(u_r)_{i_r}}.
-\]
-\end{algblock}
+\((u_s)_i \leftarrow \frac{(\a_s)_i} { \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S} K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S} \prod_{r\neq s}(u_r)_{i_r}}.\)
 \end{algblock}
 
-\textbf{Until} all marginal residuals are below $\mathrm{tol}$.
+\textbf{Set} \(P_{i_1,\ldots,i_S}=K_{i_1,\ldots,i_S}\prod_s (u_s)_{i_s}\).
+
+\textbf{Set} \(r=\max_s\norm{(\mathrm{proj}_s)_\sharp P-\a_s}_1\).
+\end{algblock}
 
 \textbf{Return}
-\[
-	P_{i_1,\ldots,i_S}
-	=
-	K_{i_1,\ldots,i_S}\prod_{s=1}^S (u_s)_{i_s}.
-\]
+\(P\).
 \end{alg}
 
 
@@ -683,23 +644,17 @@ where $\Theta$ is convex and the matrices $C^{(r)}$ encode features, graph dista
 \index{dual!gap}% strictindex
 \textbf{Input:} Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features $C^{(r)}$, feasible set $\Theta$, regularizer $R$.
 
-\textbf{Output:} Fitted cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
+\textbf{Output:} Identified cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
 
 \textbf{Set} parametric cost:
-\[
-	C_\theta=\sum_r\theta_r C^{(r)}.
-\]
-\textbf{Solve}
-\[
-	\min_{\theta\in\Theta,f,g}
-	R(\theta)+\lambda
-	\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
-\]
+\(C_\theta=\sum_r\theta_r C^{(r)}.\)
+
+\textbf{Let} $(\theta^\star,f^\star,g^\star)$ be a minimizer of
+\(\min_{\theta\in\Theta,f,g} R(\theta)+\lambda \sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)\)
+
 \textbf{Subject to}
-\[
-	f_i+g_j\leq(C_\theta)_{i,j}
-	\qquad\text{for all }(i,j).
-\]
+\(f_i+g_j\leq(C_\theta)_{i,j} \qquad\text{for all }(i,j).\)
+
 \textbf{Return} $\theta^\star$, $C_{\theta^\star}$, and $(f^\star,g^\star)$.
 \end{alg}
 

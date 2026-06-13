@@ -332,48 +332,27 @@ More complex constructions are possible when sampling from $\pi$ remains simple;
 :::{admonition} Algorithm: Flow matching regression and sampling
 :class: ot4ml-algorithm
 
-**Input:** Interpolant $P_t(u)$, training coupling/sample source $u\sim\pi$, parametrized field $v_\theta(t,z)$.
+**Input:** Interpolant $P_t(u)$, training source $u\sim\pi$, parametrized field $v_\theta(t,z)$, training steps $N$.
 
 **Output:** Learned sampler $X_0\mapsto X_1$.
 
 **Training:**
 
-**Repeat**:
+**For** $q=1,\ldots,N$ **do**:
 
+> **Draw** $t_q\sim\mathrm{Unif}(0,1)$ and $u_q\sim\pi$.
 >
+> **Set** $z_q=P_{t_q}(u_q)$ and $w_q=\partial_tP_t(u_q)|_{t=t_q}$.
 >
-> ```{math}
-> t\sim\mathrm{Unif}(0,1),
-> \qquad
-> u\sim\pi,
-> \qquad
-> z=P_t(u),
-> \qquad
-> w=\partial_tP_t(u).
-> ```
+> **Update** $\theta$ by one stochastic-gradient step on \(\norm{v_\theta(t_q,z_q)-w_q}^2.\)
 >
->
-> **Update** $\theta$ by one stochastic-gradient step on
->
->
-> ```{math}
-> \norm{v_\theta(t,z)-w}^2.
-> ```
->
->
-
-**Until** stopping criterion is met
 
 **Sampling:**
 
 **Draw** $X_0\sim\alpha_0$.
 
 **Integrate**
-
-```{math}
-\dot X_t=v_\theta(t,X_t),
-\qquad t\in[0,1].
-```
+\(\dot X_t=v_\theta(t,X_t), \qquad t\in[0,1].\)
 
 **Return** $X_1$.
 :::
@@ -391,33 +370,24 @@ Commuting covariances reduce the terminal map to independent one-dimensional sca
 :::{admonition} Algorithm: Exact probability-flow sampling for a Gaussian mixture
 :class: ot4ml-algorithm
 
-**Input:** Gaussian-mixture data law, schedule $(a_t,b_t)$, noise level $\sigma$.
+**Input:** Gaussian-mixture data law, schedule $(a_t,b_t)$, noise level $\sigma$, number of samples $R$.
 
 **Output:** Backward samples $(Z_0^{(r)})_r$.
 
 **Define** the noising variable:
-
-```{math}
-Z_t=a_tX+b_tY,
-\qquad
-Y\sim\Gaussian(0,\sigma^2\Id).
-```
+\(Z_t=a_tX+b_tY, \qquad Y\sim\Gaussian(0,\sigma^2\Id).\)
 
 **Compute** closed-form mixture density $p_t$ and score $s_t=\nabla\log p_t$.
 
 **Set** probability-flow velocity:
+\(v_t(z)=\frac{a'_t}{a_t}z+ \left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z).\)
 
-```{math}
-v_t(z)=\frac{a'_t}{a_t}z+
-\left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z).
-```
-
-**For** each terminal particle **do**:
+**For** $r=1,\ldots,R$ **do**:
 
 >
-> **Draw** $Z_1$ from the Gaussian endpoint.
+> **Draw** $Z_1^{(r)}$ from the Gaussian endpoint.
 >
-> **Integrate** $\dot Z_t=v_t(Z_t)$ backward in time.
+> **Integrate** $\dot Z_t^{(r)}=v_t(Z_t^{(r)})$ backward from $t=1$ to $t=0$.
 >
 
 **Return** $(Z_0^{(r)})_r$.
@@ -502,34 +472,21 @@ Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, 
 :::{admonition} Algorithm: One-step Wasserstein-flow generator update
 :class: ot4ml-algorithm
 
-**Input:** Generator $G_{\theta_k}$, latent law $\zeta$, data law $\beta$, step size $\tau$.
+**Input:** Generator $G_{\theta_k}$, latent law $\zeta$, data law $\beta$, numerical descent-field oracle $W_\beta$, step size $\tau$, batch size $B$.
 
 **Output:** Updated generator $G_{\theta_{k+1}}$.
 
-**Sample** $z\sim\zeta$.
+**Draw** $z_b\sim\zeta$ for $b=1,\ldots,B$.
 
-**Set** $x=G_{\theta_k}(z)$.
+**Set** $x_b=G_{\theta_k}(z_b)$.
 
-**Estimate** the Wasserstein descent field:
+**Set** \(w_k(x)=W_\beta[\alpha_{\theta_k}](x)\), where \(W_\beta[\alpha]=-\nabla\delta_\alpha\mathcal E_\beta(\alpha)\).
 
-```{math}
-w_k(x)=-\nabla\delta_\alpha\mathcal E_\beta(\alpha_{\theta_k})(x).
-```
-
-**Fit** a residual field $U_{\eta_k}$:
-
-```{math}
-\EE_{z\sim\zeta}\,
-\norm{U_{\eta_k}(G_{\theta_k}(z))-w_k(G_{\theta_k}(z))}^2.
-```
+**Set** $\eta_k$ by minimizing the empirical least-squares loss:
+\(\frac1B\sum_{b=1}^B \norm{U_{\eta}(x_b)-w_k(x_b)}^2.\)
 
 **Update by composition:**
-
-```{math}
-G_{\theta_{k+1}}(z)
-=
-G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z)).
-```
+\(G_{\theta_{k+1}}(z) = G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z)).\)
 
 **Return** $G_{\theta_{k+1}}$.
 :::
@@ -538,41 +495,22 @@ G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z)).
 :::{admonition} Algorithm: Self-corrected drifting particle update
 :class: ot4ml-algorithm
 
-**Input:** Particles $x_i^k$ for $\mu_k$, data samples from $\beta$, kernel scale $\epsilon$, step $h$.
+**Input:** Particles $x_i^k$ for $\mu_k$, data samples $(y_b)_{b=1}^B$ from $\beta$, kernel scale $\epsilon$, step $h$.
 
 **Output:** Updated particles $x_i^{k+1}$.
 
 **For** each particle $i$ **do**:
 
 >
-> **Estimate**
+> **Set** \(Z_{\beta,i}=\sum_{b=1}^B K_\epsilon(x_i^k,y_b)\) and \(b_i^k=Z_{\beta,i}^{-1}\sum_{b=1}^B (y_b-x_i^k)K_\epsilon(x_i^k,y_b)\).
 >
->
-> ```{math}
-> B_\epsilon[\beta](x_i^k)
-> \qquad\text{and}\qquad
-> B_\epsilon[\mu_k](x_i^k)
-> ```
->
->
-> using {eq}`eq-normalized-kernel-drift`.
+> **Set** \(Z_{\mu,i}=\sum_{j=1}^n K_\epsilon(x_i^k,x_j^k)\) and \(m_i^k=Z_{\mu,i}^{-1}\sum_{j=1}^n (x_j^k-x_i^k)K_\epsilon(x_i^k,x_j^k)\).
 >
 > **Set**
->
->
-> ```{math}
-> u_i^k=B_\epsilon[\beta](x_i^k)-B_\epsilon[\mu_k](x_i^k).
-> ```
->
+> \(u_i^k=b_i^k-m_i^k.\)
 >
 > **Update**
->
->
-> ```{math}
-> x_i^{k+1}=x_i^k+h\,u_i^k.
-> ```
->
->
+> \(x_i^{k+1}=x_i^k+h\,u_i^k.\)
 
 **Return** $(x_i^{k+1})_i$.
 :::
@@ -666,44 +604,19 @@ When the token space has dimension $d$ and the query/key space has dimension $r$
 **Output:** Final token measure $\alpha_T$.
 
 **Initialize:**
-
-```{math}
-\alpha_0=\frac1n\sum_{i=1}^n\delta_{x_i^0},
-\qquad
-\tau=1/T.
-```
+\(\alpha_0=\frac1n\sum_{i=1}^n\delta_{x_i^0}, \qquad \tau=1/T.\)
 
 **For** $k=0,\ldots,T-1$ **do**:
 
 >
 > **For** $i=1,\ldots,n$ **do**
 
+>> \(\Gamma_{\theta_k}[\alpha_k](x_i^k) = \frac{\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})\,V_kx_j^k} {\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})}.\)
 >>
->>
->> ```{math}
->> \Gamma_{\theta_k}[\alpha_k](x_i^k)
->> =
->> \frac{\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})\,V_kx_j^k}
->>      {\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})}.
->> ```
->>
->>
->>
->>
->> ```{math}
->> x_i^{k+1}=x_i^k+\tau\,\Gamma_{\theta_k}[\alpha_k](x_i^k).
->> ```
->>
->>
+>> \(x_i^{k+1}=x_i^k+\tau\,\Gamma_{\theta_k}[\alpha_k](x_i^k).\)
 
 > **Set**
->
->
-> ```{math}
-> \alpha_{k+1}=(\Id+\tau\Gamma_{\theta_k}[\alpha_k])_\sharp\alpha_k.
-> ```
->
->
+> \(\alpha_{k+1}=(\Id+\tau\Gamma_{\theta_k}[\alpha_k])_\sharp\alpha_k.\)
 
 **Return** $\alpha_T$.
 :::

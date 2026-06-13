@@ -376,35 +376,19 @@ instead of $O(N^2)$. With FFT-based or truncated Gaussian convolutions, the same
 
 **Output:** Entropic coupling $\P$.
 
-**Initialize:** Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$ and choose $\vD^{(0)}\in\RR_{+,*}^m$.
+**Initialize:** Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$ and $\vD^{(0)}=\ones_m$.
 
 **For** $k=0,1,\ldots$ **do**:
 
+> \(\uD^{(k+1)}=\frac{\a}{\K\vD^{(k)}}.\)
 >
->
-> ```{math}
-> \uD^{(k+1)}=\frac{\a}{\K\vD^{(k)}}.
-> ```
->
->
->
->
-> ```{math}
-> \vD^{(k+1)}=\frac{\b}{\transp{\K}\uD^{(k+1)}}.
-> ```
->
+> \(\vD^{(k+1)}=\frac{\b}{\transp{\K}\uD^{(k+1)}}.\)
 >
 > **If** marginal residuals are below $\mathrm{tol}$ **then**:
 
 >>
 >> **Return**
->>
->>
->> ```{math}
->> \P^{(k+1)}=\diag(\uD^{(k+1)})\K\diag(\vD^{(k+1)}).
->> ```
->>
->>
+>> \(\P^{(k+1)}=\diag(\uD^{(k+1)})\K\diag(\vD^{(k+1)}).\)
 >>
 :::
 
@@ -860,33 +844,17 @@ coupling in the limit.
 
 **Output:** Schrodinger path law $M_\epsilon^\star$.
 
-**Solve** static entropic endpoint problem:
-
-```{math}
-\pi_\epsilon^\star
-\in
-\argmin_{\pi\in\Couplings(\al,\be)}
-\int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).
-```
+**Let** $\pi_\epsilon^\star$ be a minimizer of the static entropic endpoint problem:
+\(\pi_\epsilon^\star \in \argmin_{\pi\in\Couplings(\al,\be)} \int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).\)
 
 **For** each endpoint pair $(x,y)$ sampled from $\pi_\epsilon^\star$ **do**:
 
 >
 > **Draw** bridge path:
->
->
-> ```{math}
-> \omega\sim\Rr^{\epsilon,x,y}.
-> ```
->
->
+> \(\omega\sim\Rr^{\epsilon,x,y}.\)
 
 **Return**
-
-```{math}
-M_\epsilon^\star=
-\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).
-```
+\(M_\epsilon^\star= \int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).\)
 :::
 
 
@@ -1090,32 +1058,16 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 
 **Output:** Entropic coupling $\P$ computed from stabilized potentials.
 
-**Initialize:** Choose $\gD^{(0)}\in\RR^m$.
+**Initialize:** Set $\gD^{(0)}=0$.
 
 **For** $k=0,1,\ldots$ **do**:
 
 >
 > **Compute** stabilized soft transform:
->
->
-> ```{math}
-> \fD_i^{(k+1)}
-> =
-> -\epsilon\log\sum_j
-> \exp\!\left(\frac{\gD_j^{(k)}-\C_{ij}}{\epsilon}\right)\b_j.
-> ```
->
+> \(\fD_i^{(k+1)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k)}-\C_{ij}}{\epsilon}\right)\b_j.\)
 >
 > **Compute** stabilized reverse soft transform:
->
->
-> ```{math}
-> \gD_j^{(k+1)}
-> =
-> -\epsilon\log\sum_i
-> \exp\!\left(\frac{\fD_i^{(k+1)}-\C_{ij}}{\epsilon}\right)\a_i.
-> ```
->
+> \(\gD_j^{(k+1)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k+1)}-\C_{ij}}{\epsilon}\right)\a_i.\)
 >
 > **If** potential changes are below $\mathrm{tol}$ **then**:
 
@@ -1124,13 +1076,7 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 >>
 
 **Return**
-
-```{math}
-\P_{ij}
-=
-\a_i\b_j
-\exp\!\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right).
-```
+\(\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right).\)
 :::
 
 

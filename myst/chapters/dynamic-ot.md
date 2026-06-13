@@ -296,23 +296,10 @@ exploited later by flow matching.
 > **Compute** $\partial_t\rho_t$.
 >
 > **Solve** weighted Poisson equation:
->
->
-> ```{math}
-> -\diverg(\rho_t\nabla\phi_t)=\partial_t\rho_t,
-> \qquad
-> \int\phi_t\rho_t=0.
-> ```
->
+> \(-\diverg(\rho_t\nabla\phi_t)=\partial_t\rho_t, \qquad \int\phi_t\rho_t=0.\)
 >
 > **Set**
->
->
-> ```{math}
-> v_t=\nabla\phi_t .
-> ```
->
->
+> \(v_t=\nabla\phi_t .\)
 
 **Return** $(v_t)_{t\in[0,1]}$.
 :::
@@ -670,32 +657,13 @@ must carry mass through space.
 
 **For** $k=0,1,\ldots$ **do**:
 
->
->
-> ```{math}
-> U^{k+1}=\prox_{\tau\mathcal F}(Z^k).
-> ```
->
+> \(U^{k+1}=\prox_{\tau\mathcal F}(Z^k).\)
 >
 > **Project** reflected point:
->
->
-> ```{math}
-> \widetilde U^{k+1}
-> =
-> \prox_{\tau\mathcal G}(2U^{k+1}-Z^k)
-> =
-> \Proj_{\mathcal C}(2U^{k+1}-Z^k).
-> ```
->
+> \(\widetilde U^{k+1} = \prox_{\tau\mathcal G}(2U^{k+1}-Z^k) = \Proj_{\mathcal C}(2U^{k+1}-Z^k).\)
 >
 > **Update**
->
->
-> ```{math}
-> Z^{k+1}=Z^k+\widetilde U^{k+1}-U^{k+1}.
-> ```
->
+> \(Z^{k+1}=Z^k+\widetilde U^{k+1}-U^{k+1}.\)
 >
 > **If** $\norm{U^{k+1}-\widetilde U^{k+1}}\leq\mathrm{tol}$ **then**:
 

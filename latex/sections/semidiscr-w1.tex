@@ -159,27 +159,20 @@ The first-order optimality condition shows that solving the dual semi-discrete p
 
 \textbf{Output:} Semi-discrete dual weights $\gD$ and Laguerre cells.
 
-\textbf{Initialize:} Choose $\gD^{(0)}\in\RR^m$.
+\textbf{Initialize:} Set $\gD^{(0)}=0$.
 
 \textbf{For} $k=0,1,\ldots$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Compute cells:}
-\[
-	\Laguerre_j(\gD^{(k)})
-	=
-	\enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.
-\]
+\(\Laguerre_j(\gD^{(k)}) = \enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.\)
+
 \textbf{Compute masses:}
-\[
-	m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .
-\]
+\(m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .\)
+
 \textbf{Update}
-\[
-	\gD^{(k+1)}
-	=
-	\gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).
-\]
+\(\gD^{(k+1)} = \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).\)
+
 \textbf{If} $\max_j\abs{m_j^{(k)}-\b_j}\leq\mathrm{tol}$ \textbf{then}:
 \begin{algblock}
 
@@ -260,19 +253,11 @@ where $\gD^\star$ is a maximizer and the expectation is over the i.i.d. samples.
 
 \textbf{Draw} $x_\ell\sim\alpha$.
 
-\textbf{Find} the active Laguerre cell:
-\[
-	j_\ell\in\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr).
-\]
+\textbf{Set} \(j_\ell=\min\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr)\).
+
 \textbf{For} $j=1,\ldots,m$ \textbf{do}
 \begin{algblock}
-\[
-	\gD_j^{(\ell+1)}
-	=
-	\gD_j^{(\ell)}
-	+
-	\tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).
-\]
+\(\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).\)
 \end{algblock}
 \end{algblock}
 \textbf{Return} $\gD^{(\ell)}$ or its running average.
@@ -384,34 +369,26 @@ Lloyd's algorithm, also known as the $k$-means algorithm, iterates this fixed po
 \index{Lloyd algorithm}% strictindex
 
 \begin{alg}[Lloyd quantization]\label{alg:lloyd-quantization}
-\textbf{Input:} Source measure $\alpha$, number of codepoints $m$, squared Euclidean cost.
+\textbf{Input:} Source measure $\alpha$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost.
 
 \textbf{Output:} Codepoints $Y=(y_j)_{j=1}^m$.
 
-\textbf{Initialize:} Choose $Y^{(0)}=(y_j^{(0)})_{j=1}^m$.
+\textbf{Initialize:} Set $k=0$.
 
 \textbf{For} $k=0,1,\ldots$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Compute Voronoi cells:}
-\[
-	\VV_j(Y^{(k)})
-	=
-	\enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.
-\]
+\(\VV_j(Y^{(k)}) = \enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.\)
+
 \textbf{For} each nonempty cell $\VV_j$ \textbf{do}
 \begin{algblock}
-\[
-	y_j^{(k+1)}
-	=
-	\frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)}
-	{\int_{\VV_j(Y^{(k)})}\d\al(x)}.
-\]
+\(y_j^{(k+1)} = \frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(k)})}\d\al(x)}.\)
 \end{algblock}
 \textbf{For} each empty cell $\VV_j$ \textbf{do}:
 \begin{algblock}
 
-\textbf{Keep or reseed} $y_j^{(k+1)}$.
+\textbf{Set} $y_j^{(k+1)}=y_j^{(k)}$.
 
 \end{algblock}
 \textbf{If} codepoint displacement is below $\mathrm{tol}$ \textbf{then}:
@@ -649,15 +626,14 @@ This graph distance turns $\Wass_1$ into a finite-dimensional flow problem.
 \textbf{Replace} each undirected edge by two directed arcs.
 
 \textbf{Impose balances:}
-\[
-	\sum_j u_{ij}-\sum_j u_{ji}=r_i .
-\]
-\textbf{Initialize:} Choose a feasible spanning-tree basis, tree flow, and node potentials.
+\(\sum_j u_{ij}-\sum_j u_{ji}=r_i .\)
 
-\textbf{While} some non-tree arc has negative reduced cost \textbf{do}:
+\textbf{Initialize:} Add artificial root arcs and compute a feasible tree flow on a spanning tree $T$ with node potentials.
+
+\textbf{While} \(\min_{e\notin T}\bar c_e<0\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Choose} entering arc with negative reduced cost.
+\textbf{Set} entering arc \(e=\min\argmin_{a\notin T}\bar c_a\) for a fixed ordering of arcs.
 
 \textbf{Add} it to the tree.
 
@@ -665,7 +641,7 @@ This graph distance turns $\Wass_1$ into a finite-dimensional flow problem.
 
 \textbf{Send} the largest admissible flow around $\mathcal C$.
 
-\textbf{Remove} the leaving arc that becomes tight.
+\textbf{Remove} the first zero-flow arc met on the directed cycle after augmentation.
 
 \textbf{Update} the tree, potentials, and reduced costs.
 
