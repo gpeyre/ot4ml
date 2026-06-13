@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-divergences-dual-norms)=
 
 This chapter compares optimal transport with divergence-based and adversarial
 ways of measuring discrepancy. The main stake is topological:
@@ -49,6 +50,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-dual-norms)=
 ## Dual Norms and Integral Probability Metrics
 
 Dual norms generalize the $\Wass_1$ test-function principle. They are useful
@@ -61,6 +63,7 @@ The Kantorovich--Rubinstein formula for $\Wass_1$ is a special case of a dual
 norm. This viewpoint designs weak discrepancies by testing signed differences
 of measures against a controlled class of functions.
 
+(def-dual-norm-ipm)=
 :::{admonition} Definition: Dual Norm and Integral Probability Metric
 :class: important
 For a symmetric convex set $B$ of measurable functions, define on signed
@@ -81,61 +84,61 @@ is often called an integral probability metric.
 The choice of the test-function class $B$ determines both the topology and the
 statistical behavior of the discrepancy {cite:p}`sriperumbudur2012empirical,sriperumbudur2009integral,sriperumbudur2008injective`.
 
-:::{admonition} Example: Total Variation
-Total variation is the dual norm associated with the unit ball of continuous
-functions
+:::{admonition} Example: Total variation
+:class: ot4ml-example
+
+As recalled in Definition {ref}`defn-total-variation` and Proposition {ref}`prop-tv-dual-measure`, total variation is the dual norm associated with the unit ball of continuous functions
 
 ```{math}
-B=\left\{f\in\Cc(\X):\norm{f}_\infty\le1\right\}.
+B = \enscond{f \in \Cc(\X)}{\norm{f}_\infty \leq 1}.
 ```
 
-It is the canonical nontrivial example of a discrepancy that is both a
-$\phi$-divergence and a dual norm {cite:p}`sriperumbudur2009integral`.
+Total variation is the canonical nontrivial example of a discrepancy that is both a $\phi$-divergence and a dual norm; see {cite:p}`sriperumbudur2009integral`.
 :::
 
-:::{admonition} Example: Wasserstein-1 Norm
-The distance $\Wass_1$ is the dual norm associated with the set of
-$1$-Lipschitz functions,
+:::{admonition} Example: $\Wass_1$ norm
+:class: ot4ml-example
+
+$\Wass_1$, as defined in {eq}`eq-w1-cont-web`, is the dual norm {eq}`eq-dual-norm-cont-web` associated with
 
 ```{math}
-B=\left\{f:\operatorname{Lip}(f)\le1\right\}.
+B = \enscond{f}{\Lip(f) \leq 1}
+```
+
+the set of 1-Lipschitz functions.
+:::
+
+:::{admonition} Example: Flat norm and Dudley metric
+:class: ot4ml-example
+
+If the set $B$ is bounded and separates measures, then $\norm{\cdot}_B$ is a norm on the whole space $\Mm(\Xx)$ of finite measures.
+
+This is not the case of $\Wass_1$, which is only finite on signed measures $\xi$ such that $\int_\X \d\xi=0$; otherwise $\norm{\xi}_B=+\infty$ because constants belong to the Lipschitz ball.
+
+This is remedied by imposing a bound on the value of the potential $\f$, which leads for instance to the flat norm,
+
+```{math}
+:label: eq-set-flatnorm
+
+B=\enscond{f}{\Lip(f) \leq 1 \qquad\text{and}\qquad \norm{\f}_\infty \leq 1}.
+```
+
+On compact metric spaces, it metrizes weak convergence on the whole space $\Mm(\X)$ of finite measures.
+
+The finite-dimensional version is obtained from the usual $\Wass_1$ dual linear program by adding the box constraints $\abs{\fD_k}\leq1$.
+
+The flat norm is sometimes called the "Kantorovich--Rubinstein" norm {cite:p}`hanin1992kantorovich` and has been used as a fidelity term for inverse problems in imaging {cite:p}`lellmann2014imaging`.
+
+The flat norm is similar to the Dudley metric, which uses
+
+```{math}
+:label: eq-set-dudley
+
+B=\enscond{f}{\norm{\nabla \f}_\infty + \norm{\f}_\infty \leq 1}.
 ```
 :::
 
-:::{admonition} Example: Flat Norm and Dudley Metric
-If $B$ is bounded and separates measures, then $\norm{\cdot}_B$ is a norm on
-the whole space $\mathcal{M}(\X)$ of finite measures. This is not the case for
-$\Wass_1$, which is finite only on signed measures of total mass zero because
-constants belong to the Lipschitz ball.
-
-The flat norm remedies this by imposing a bound on the potential:
-
-```{math}
-B
-=
-\left\{
-f:\operatorname{Lip}(f)\le1
-\ \text{and}\
-\norm{f}_\infty\le1
-\right\}.
-```
-
-On compact metric spaces it metrizes weak convergence on the whole space of
-finite measures. In finite dimension it is obtained from the usual
-$\Wass_1$ dual linear program by adding box constraints $|f_k|\le1$. The flat
-norm is sometimes called the Kantorovich--Rubinstein norm
-{cite:p}`hanin1992kantorovich` and has been used as a fidelity term for
-inverse problems in imaging {cite:p}`lellmann2014imaging`.
-
-The Dudley metric is similar, using
-
-```{math}
-B=\left\{
-f:\norm{\nabla f}_\infty+\norm{f}_\infty\le1
-\right\}.
-```
-:::
-
+(fig:dualnorms-ipm-witnesses)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -169,6 +172,7 @@ should be rich enough to approximate continuous observables, but compact
 enough for weak convergence to imply uniform convergence over the
 discriminator class.
 
+(prop-dual-norm-metrization)=
 :::{admonition} Proposition: Metrization by Dual Norms
 :class: important
 Assume that $\X$ is compact, $B=-B$, and the measures considered are
@@ -228,6 +232,7 @@ The first term tends to zero by weak convergence and the last two by uniform
 convergence. Hence the limsup is zero.
 :::
 
+(cor-topol-wass)=
 :::{admonition} Corollary: Wasserstein Metrizes Weak Convergence
 On a compact metric space, $\Wass_p$ metrizes weak convergence on probability
 measures for every $p\ge1$.
@@ -247,6 +252,7 @@ previous proposition gives $\Wass_1(\alpha_n,\alpha)\to0$. On compact spaces,
 all $\Wass_p$ distances induce the same topology.
 :::
 
+(sec-rkhs-mmd)=
 ## Dual RKHS Norms and Maximum Mean Discrepancies
 
 Kernel methods turn probability measures into mean elements of a reproducing
@@ -254,6 +260,7 @@ kernel Hilbert space. The resulting Hilbertian dual norms are quadratic
 discrepancies, handled with Euclidean geometry while retaining a weak
 test-function interpretation.
 
+(def-positive-kernels)=
 :::{admonition} Definition: Positive and Conditionally Positive Kernels
 :class: important
 A symmetric function $K:\X\times\X\to\RR$ is positive definite if for every
@@ -273,35 +280,21 @@ $\xi=\alpha-\beta$ of total mass zero. Adding $a(x)+a(y)$ to the kernel does
 not change $\iint K(x,y)\,\d\xi(x)\,\d\xi(y)$ on such measures, and many
 natural distance kernels are only conditionally positive definite.
 
-:::{admonition} Example: Riesz, Energy and Matern-Type Kernels
-On $\RR^d$, translation-invariant kernels are most transparent in Fourier
-variables. The Riesz family associated with $(-\Delta)^{-s}$ has multiplier
-$\norm{\omega}^{-2s}$ and defines a nonnegative quadratic form on zero-mass
-measures when the low-frequency singularity is integrable
-{cite:p}`berg84harmonic`.
+:::{admonition} Example: Riesz, energy and Mat\'ern-type kernels
+:class: ot4ml-example
 
-The energy distance corresponds to the conditionally positive kernel
-$K(x,y)=-\norm{x-y}$, whose Fourier multiplier is proportional to
-$\norm{\omega}^{-(d+1)}$; for $\xi=\alpha-\beta$,
+On $\RR^d$, translation-invariant kernels are most transparent in Fourier variables. The Riesz family associated with $(-\Delta)^{-s}$ has multiplier $\norm{\om}^{-2s}$ and defines a nonnegative quadratic form on zero-mass measures for which the low-frequency singularity is integrable; this is the kernel counterpart of classical Riesz potentials {cite:p}`berg84harmonic`. The energy distance corresponds to the conditionally positive kernel $\Krkhs(x,y)=-\norm{x-y}$, whose Fourier multiplier is proportional to $\norm{\om}^{-(d+1)}$; for $\xi=\al-\be$,
 
 ```{math}
--\iint \norm{x-y}\,\d\xi(x)\,\d\xi(y)
+-\iint \norm{x-y}\d\xi(x)\d\xi(y)
 ```
 
-is the squared energy distance up to a dimensional constant
-{cite:p}`schoenberg38,szekely2004testing`.
+is the squared energy distance up to a dimensional constant {cite:p}`schoenberg38,szekely2004testing`.
 
-Shifted kernels replace $(-\Delta)^{-s}$ by $(-\Delta+\lambda I)^{-s}$ with
-$\lambda>0$. Their Fourier multiplier $(\norm{\omega}^2+\lambda)^{-s}$ is
-bounded at the origin, so the kernel is positive definite without imposing
-zero mass. These are Matern kernels; in closed form they are radial and
-involve a modified Bessel function {cite:p}`wendland2005scattered`. The
-Laplacian kernel $\exp(-\norm{x-y}/\sigma)$ is a low-smoothness Matern
-example, while the Gaussian kernel $\exp(-\norm{x-y}^2/(2\sigma^2))$ is the
-infinite-smoothness limit after the usual rescaling of the smoothness
-parameter.
+Shifted kernels replace $(-\Delta)^{-s}$ by $(-\Delta+\lambda I)^{-s}$ with $\lambda>0$. Their Fourier multiplier $(\norm{\om}^2+\lambda)^{-s}$ is bounded at the origin, hence the kernel is positive definite without imposing zero mass. These are Matern kernels; in closed form they are radial and involve a modified Bessel function {cite:p}`wendland2005scattered`. The Laplacian kernel $e^{-\norm{x-y}/\sigma}$ is a low-smoothness Matern example, while the Gaussian kernel $e^{-\norm{x-y}^2/(2\sigma^2)}$ is the infinite-smoothness limit after the usual rescaling of the Matern smoothness parameter.
 :::
 
+(def-kernel-mmd-norm)=
 :::{admonition} Definition: Kernel Norm and MMD
 :class: important
 Let $K$ be positive definite. More generally, let $K$ be conditionally
@@ -331,6 +324,7 @@ norms in shape analysis {cite:p}`Hofmann2008`. If $X,X'$ are independent with
 law $\alpha$, then
 $\norm{\alpha}_K^2=\EE_{X,X'}(K(X,X'))$, whenever this expression is finite.
 
+(prop-kernel-rkhs-dual)=
 :::{admonition} Proposition: Kernel Norm as an RKHS Dual Norm
 :class: important
 Let $\mathcal{H}$ be the RKHS with reproducing kernel $K$, and assume that the
@@ -382,6 +376,7 @@ Finally,
 ```
 :::
 
+(prop-mmd-metrization)=
 :::{admonition} Proposition: Universal Kernels Metrize Weak Convergence
 :class: important
 Assume that $\X$ is compact and that the RKHS generated by the continuous
@@ -430,13 +425,10 @@ gives convergence to zero.
 Further background on RKHS spaces can be found in
 {cite:p}`berlinet03reproducing,Hofmann2008,scholkopf2002learning`.
 
-:::{admonition} Remark: Universal Kernels
-The hypothesis above is called universality. Equivalently, finite sums
-$\sum_{i=1}^n a_i K(x_i,\cdot)$ are dense in $\Cc(\X)$ for the uniform norm.
-For translation-invariant kernels on $\X=\RR^d$, $K(x,y)=K_0(x-y)$, this is
-equivalent, in the usual sense on compact sets or with suitable decay
-assumptions, to the Fourier transform not vanishing on its support
-{cite:p}`sriperumbudur2008injective,sriperumbudur2012empirical`.
+:::{admonition} Remark: Universal kernels
+:class: ot4ml-remark
+
+The hypothesis in Proposition {ref}`prop-mmd-metrization` is called universality of the kernel. Equivalently, finite sums of the form $\sum_{i=1}^n a_i \Krkhs(x_i,\cdot)$ are dense in $\Cc(\Xx)$ for the uniform norm. For translation-invariant kernels on $\Xx=\RR^d$, $\Krkhs(x,y)=\Krkhs_0(x-y)$, this is equivalent, in the usual sense on compact sets or with suitable decay assumptions, to the Fourier transform not vanishing on its support {cite:p}`sriperumbudur2008injective,sriperumbudur2012empirical`.
 :::
 
 In the special case where $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$ is discrete,
@@ -468,6 +460,7 @@ the simplex. For two arbitrary discrete measures,
 2\sum_{i,j}a_i b_j K(x_i,y_j).
 ```
 
+(sec-phi-div)=
 ## Phi-Divergences
 
 This section develops divergences based on pointwise density ratios. They are
@@ -482,6 +475,7 @@ measures. Another route is possible through Bregman divergences, which may
 metrize weak-$\ast$ convergence when the associated entropy functional is
 weakly regular.
 
+(def_entropy)=
 :::{admonition} Definition: Entropy Function
 :class: important
 A function $\phi:\RR\to\RR\cup\{+\infty\}$ is an entropy function if it is
@@ -551,7 +545,7 @@ For discrete measures supported on the same set,
 the formula becomes
 
 ```{math}
-:label: eq-discrete-phi-div-web
+:label: eq-div-disc-meas
 D_\phi(a|b)
 =
 \sum_{i\in\operatorname{supp}(b)}
@@ -645,68 +639,69 @@ sensitive to absolute continuity, while total variation gives the strong
 topology and therefore behaves very differently from Wasserstein-type weak
 metrics.
 
-:::{admonition} Example: Kullback--Leibler Divergence
-The Kullback--Leibler divergence, also known as relative entropy, is the
-$\phi$-divergence associated with the Shannon--Boltzmann entropy
+:::{admonition} Example: Kullback--Leibler divergence
+:class: ot4ml-example
+
+The Kullback--Leibler divergence $\KL \eqdef \Divergm_{\phi_{\KL}}$, also known as the relative entropy, was already introduced in {eq}`eq-defn-rel-entropy` and {eq}`eq-kl-defn`. It is the divergence associated to the Shannon--Boltzmann entropy function $\phi_{\KL}$, given by
 
 ```{math}
-\phi_{\operatorname{KL}}(s)
-=
-\begin{cases}
-s\log s-s+1, & s>0,\\
-1, & s=0,\\
-+\infty, & \text{otherwise}.
+:label: eq-shannon-entropy
+
+\phi_{\KL}(s)= \begin{cases}
+s\log(s)-s+1 & \textnormal{for } s>0 , \\
+1 & \textnormal{for } s=0 , \\
++\infty & \textnormal{otherwise.}
 \end{cases}
 ```
 :::
 
-:::{admonition} Example: Total Variation
-Total variation is generated by
+(exmp-tv)=
+:::{admonition} Example: Total variation
+:class: ot4ml-example
+
+The total variation distance $\TV \eqdef \Divergm_{\phi_{\TV}}$ is the divergence associated to
 
 ```{math}
-\phi_{\operatorname{TV}}(s)
-=
-\begin{cases}
-|s-1|, & s\ge0,\\
-+\infty, & \text{otherwise}.
+:label: eq-tv-entropy
+
+\phi_{\TV}(s)= \begin{cases}
+|s-1| & \textnormal{for } s\geq0 , \\
++\infty & \textnormal{otherwise.}
 \end{cases}
 ```
 
-It defines a norm on the full space of measures:
+It actually defines a norm on the full space of measures $\Mm(\X)$ where
 
 ```{math}
-\operatorname{TV}(\alpha|\beta)
-=
-\norm{\alpha-\beta}_{\operatorname{TV}},
-\qquad
-\norm{\alpha}_{\operatorname{TV}}
-=
-|\alpha|(\X).
+:label: eq-defn-tv
+
+\TV(\al|\be) = \norm{\al-\be}_{\TV},
+\qquad\text{where}\qquad
+\norm{\al}_{\TV} = |\al|(\X) = \int_\X \d|\al|(x).
 ```
 
-If $\alpha$ has density $\rho_\alpha$ on $\RR^d$, then
-$\norm{\alpha}_{\operatorname{TV}}=\int|\rho_\alpha(x)|\,\d x$.
-If $\alpha$ is discrete, the TV norm is the $\ell^1$ norm of its vector of
-weights.
+If $\al$ has a density $\density{\al}$ on $\X=\RR^\dim$, then the TV norm is the $L^1$ norm on functions, $\norm{\al}_{\TV} = \int_\X |\density{\al}(x)| \d x = \norm{\density{\al}}_{L^1}$.
+
+If $\al$ is discrete as in {eq}`eq-div-disc-meas`, then the TV norm is the $\ell^1$ norm of vectors in $\RR^n$, $\norm{\al}_{\TV}=\sum_i |\a_i| = \norm{\a}_{\ell^1}$.
 :::
 
-:::{admonition} Remark: Strong vs. Weak Topology
-The total-variation norm defines the strong topology on measures. On a compact
-domain of radius $R$,
+:::{admonition} Remark: Strong vs. weak topology
+:class: ot4ml-remark
+
+The total variation norm {eq}`eq-defn-tv` defines the so-called "strong" topology on the space of measures.
+
+On a compact domain $\X$ of radius $R$, one has
 
 ```{math}
-\Wass_1(\alpha,\beta)
-\le
-R\,\norm{\alpha-\beta}_{\operatorname{TV}},
+\Wass_1(\al,\be) \leq R \norm{\al-\be}_{\TV}
 ```
 
-so strong convergence implies the weak convergence metrized by Wasserstein
-distances. The converse is false: $\delta_x$ does not converge strongly to
-$\delta_y$ as $x\to y$, since
-$\norm{\delta_x-\delta_y}_{\operatorname{TV}}=2$ for $x\ne y$.
+so that this strong notion of convergence implies the weak convergence metrized by Wasserstein distances.
 
-The weak topology is often preferable for optimization, because probability
-measures on a compact ground space are compact for weak convergence.
+The converse is, however, not true, since $\de_x$ does not converge strongly to $\de_y$ if $x \rightarrow y$ (note that
+$\norm{\de_x-\de_y}_{\TV}=2$ if $x \neq y$).
+
+A chief advantage is that $\Mm_+^1(\Xx)$ (once again on a compact ground space $\X$) is compact for the weak topology so that from any sequence of probability measures $(\al_k)_k$, one can always extract a converging subsequence, which makes it a suitable space for several optimization problems.
 :::
 
 ### Main Families of $\phi$-Divergences
@@ -743,6 +738,7 @@ $\phi_{\operatorname{JS}}(s)=s\log s-(s+1)\log((s+1)/2)$. Total variation,
 generated by $|s-1|$, is exceptional because it is both a $\phi$-divergence
 and an integral probability metric.
 
+(fig:dualnorms-phi-generators)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -772,15 +768,10 @@ spatial displacement.
 
 <iframe class="ot4ml-live-frame" title="Phi-divergence controls" src="../live/dualnorm-phi.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
-:::{admonition} Remark: $\phi$-Divergences vs. Bregman Divergences
-Except for KL-type entropies, $\phi$-divergences should not be confused with
-Bregman divergences. A $\phi$-divergence compares measures pointwise through
-the density ratio $\d\alpha/\d\beta$ and is invariant under measurable changes
-of variables. A Bregman divergence is generated by a convex functional on a
-linear space and compares two points through first-order Taylor error. KL is
-special because the integral entropy
-$\alpha\mapsto\int\rho\log\rho$ produces a Bregman divergence whose
-density-ratio form is also a $\phi$-divergence.
+:::{admonition} Remark: $\phi$-divergences versus Bregman divergences
+:class: ot4ml-remark
+
+Except for KL-type entropies, $\phi$-divergences should not be confused with Bregman divergences. A $\phi$-divergence compares measures pointwise through the density ratio $\d\alpha/\d\beta$ and is invariant under measurable changes of variables. A Bregman divergence is generated by a convex functional on a linear space and compares two points through first-order Taylor error. KL is special because the integral entropy $\alpha\mapsto\int \rho\log\rho$ produces a Bregman divergence whose density-ratio form is also a $\phi$-divergence.
 :::
 
 ### Variational Dual Formula
@@ -956,3 +947,9 @@ $f_\xi\in\{f:\operatorname{Lip}(f)\le1\}$. This parameter set is both smaller
 than the true Lipschitz ball and nonconvex, so clipping should be understood
 as a practical heuristic rather than a faithful implementation of the
 Kantorovich--Rubinstein dual constraint.
+
+:::{admonition} Remark: Weight clipping is only a proxy
+:class: ot4ml-remark
+
+Wasserstein GANs originally used weight clipping, constraining $\norm{\xi}_\infty \leq 1$ as a proxy for enforcing $\f_\xi \in B = \enscond{f}{\Lip(f) \leq 1}$. This parameter set is both smaller than the true Lipschitz ball and non-convex, so clipping should be understood as a practical heuristic rather than a faithful implementation of the Kantorovich--Rubinstein dual constraint.
+:::

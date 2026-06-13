@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-wasserstein-gradient-flows)=
 
 Once $\Wass_2$ is a dynamic metric, one can run gradient descent directly on
 the space of measures. This chapter derives the formal Wasserstein gradient,
@@ -123,6 +124,7 @@ f(\alpha)+
 The key infinitesimal object is the vector field that represents this
 differential in the Wasserstein metric.
 
+(def-wasserstein-gradient)=
 :::{admonition} Definition: Wasserstein Gradient
 :class: important
 Assume that $f$ admits a smooth first variation $\delta f(\alpha)$. In the
@@ -145,6 +147,7 @@ The associated formal gradient flow is the continuity equation
 The following proposition explains why this vector field is the Riemannian
 gradient for the $L^2(\alpha)$ metric on velocities.
 
+(prop-formal-wass-gradient)=
 :::{admonition} Proposition: Formal Wasserstein Gradient
 :class: important
 Assume that $f$ admits a smooth first variation $\delta f(\alpha)$ and that
@@ -271,6 +274,7 @@ The pointwise minimizer is $v=-\Wgrad f(\alpha_t)$, which gives the velocity
 in the continuity equation. We now detail examples of such Wasserstein
 gradient flows.
 
+(fig:gradflow-jko-entropy-steps)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -396,6 +400,7 @@ Examples include $g(s)=s^q$ for $q>1$ and Shannon entropy
 $g(s)=s\log s$. By contrast, $g(s)=-\log s$, associated with the reverse KL
 divergence, does not satisfy this displacement-convexity criterion.
 
+(fig:gradflow-heat-versus-porous-medium)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -495,6 +500,7 @@ only form a kernelized quadrature of $\beta$, and small particle systems may
 cover the target modes poorly. The particle-count figure below illustrates
 this finite-particle effect.
 
+(fig:gradflow-mmd-particle-count)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -527,6 +533,7 @@ the teacher geometry more faithfully.
 
 <iframe class="ot4ml-live-frame" title="MMD particle-flow controls" src="../live/gradflow-mmd.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
+(fig:gradflow-interaction-particles)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -556,6 +563,7 @@ same formal ODE can repel, collapse, or self-organize.
 
 <iframe class="ot4ml-live-frame" title="Interaction particle-flow controls" src="../live/gradflow-interaction.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+(fig:gradflow-particle-objective-geometries)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -652,6 +660,7 @@ this PDE is the Wasserstein gradient flow of the entropy-regularized energy
 \mathcal E(\rho)+\sigma^2\int\rho\log\rho\,\d x.
 ```
 
+(fig:gradflow-fokker-planck-three-representations)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -686,6 +695,181 @@ a smoothed grid density. The noise slider controls the entropy strength.
 
 <iframe class="ot4ml-live-frame" title="Fokker-Planck representation controls" src="../live/gradflow-fokker.html" loading="lazy" style="width:100%;height:570px;border:0;display:block;"></iframe>
 
+(alg:jko-minimizing-movement)=
+:::{admonition} Algorithm: JKO minimizing movement
+:class: ot4ml-algorithm
+
+**Input:** Energy $f$, initial measure $\alpha^0$, time step $\tau>0$, number of steps $K$.
+
+**Output:** Discrete gradient-flow trajectory $(\alpha^k)_{k=0}^K$.
+
+**For** $k=0,\ldots,K-1$ **do**:
+
+>
+>
+> ```{math}
+> \alpha^{k+1}
+> \in
+> \uargmin{\alpha\in\Pp_2(\RR^d)}
+> \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).
+> ```
+>
+>
+> **Set** $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
+>
+
+**Return** $(\alpha^k)_{k=0}^K$ and $\alpha_t^\tau$.
+:::
+
+(alg:empirical-wasserstein-particle-flow)=
+:::{admonition} Algorithm: Empirical Wasserstein particle descent
+:class: ot4ml-algorithm
+
+**Input:** Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$.
+
+**Output:** Particle trajectory $(X^k)_k$ and empirical measures.
+
+**Define**
+
+```{math}
+F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).
+```
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **For** $i=1,\ldots,n$ **do**
+
+>>
+>>
+>> ```{math}
+>> g_i^k=n\nabla_{x_i}F(X^k),
+>> \qquad
+>> x_i^{k+1}=x_i^k-h\,g_i^k.
+>> ```
+>>
+>>
+
+> **If** stopping criterion is met **then**:
+
+>>
+>> **Return** $\frac1n\sum_i\delta_{x_i^k}$.
+>>
+:::
+
+
+:::{admonition} Example: Linear potentials generate independent particles
+:class: ot4ml-example
+
+Take a linear functional
+
+```{math}
+:label: eq:linear-func
+
+f(\alpha) = \int h(x) \d \alpha(x).
+```
+
+   Then $\delta f(\alpha) = h$ is independent of $\alpha$, and the flow  {eq}`eq-wassflow-pde` becomes
+
+```{math}
+\frac{\partial \alpha_t}{\partial t} + \diverg(-\nabla h \alpha_t) = 0.
+```
+
+   This implies particles move independently according to the usual gradient flow  {eq}`eq-grad-flow-classical`.
+:::
+
+
+:::{admonition} Example: Entropy generates heat and porous-medium flows
+:class: ot4ml-example
+
+The canonical density-dependent functional is the Shannon neg-entropy
+
+```{math}
+:label: eq:entropy-func
+
+f(\alpha) = \int \log\left(\frac{\d \alpha}{\d x}(x)\right) \d \alpha(x).
+```
+
+   Here, $\delta f(\alpha) = \log(\d\alpha/\d x)$ up to an additive constant, so $\Wgrad f(\alpha) = \nabla \alpha/\alpha$ (often called the score). The flow  {eq}`eq-wassflow-pde` becomes the heat equation
+
+```{math}
+\partial_t \alpha_t = \Delta \alpha_t.
+```
+
+   Other entropy functionals lead to nonlinear diffusion equations; finite-volume and particle discretizations are discussed in {cite:p}`CarrilloFiniteVolume,GianazzaARMA,Maas2011,ErbarHeatManifold`.
+
+For a generalized entropy
+
+```{math}
+:label: eq:gen-entropies
+
+f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
+```
+
+   with a scalar convex function $g$, one obtains nonlinear diffusions in the smooth-density regime:
+
+```{math}
+\frac{\partial \alpha_t}{\partial t} = \Delta(P(\alpha_t)),
+```
+
+   where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers  {eq}`eq:entropy-func`, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
+:::
+
+(alg:mmd-particle-flow)=
+:::{admonition} Algorithm: MMD particle flow against a teacher law
+:class: ot4ml-algorithm
+
+**Input:** Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$, kernel $k$, step size $h$.
+
+**Output:** Particle trajectory targeting $\beta$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **For** $i=1,\ldots,n$ **do**
+
+>>
+>>
+>> ```{math}
+>> v_i^k
+>> =
+>> -\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)
+>> +
+>> 2\int\nabla_x k(x_i^k,y)\d\beta(y).
+>> ```
+>>
+>>
+>> **If** the teacher integral is unavailable **then**:
+
+>>>
+>>> **Set** teacher integral by quadrature/minibatch estimation.
+>>>
+
+>> **Update**
+>>
+>>
+>> ```{math}
+>> x_i^{k+1}=x_i^k+h\,v_i^k.
+>> ```
+>>
+>>
+
+**Return** $(x_i^k)_{i,k}$.
+:::
+
+
+:::{admonition} Example: Langevin drift as a free-energy flow
+:class: ot4ml-example
+
+If $b=-\nabla V$, this linear Fokker--Planck equation is the $\Wass_2$ gradient flow of the free energy
+
+```{math}
+\rho\mapsto \int V\rho\,\d x+\sigma^2\int\rho\log\rho\,\d x.
+```
+:::
+
+
+(sec-geodesic-convexity)=
 ## Geodesic Convexity and Convergence
 
 Geodesic convexity is the convexity notion adapted to Wasserstein geometry. It
@@ -709,6 +893,7 @@ Brenier map $T$, this reduces to $((1-t)\Id+tT)_\sharp\alpha_0$. The coupling
 formula matters because geodesics exist even when no Monge map exists, for
 instance when a Dirac mass must split.
 
+(def-geodesic-convexity)=
 :::{admonition} Definition: Geodesic Convexity
 :class: important
 A functional $f$ on $\Pp_2(\RR^d)$ is geodesically convex if for every
@@ -727,6 +912,7 @@ It is $\lambda$-geodesically convex if the right-hand side is improved by
 ```
 :::
 
+(prop-basic-geodesic-convexity)=
 :::{admonition} Proposition: Basic Geodesically Convex Energies
 :class: important
 The following formal statements hold on $\Pp_2(\RR^d)$.
@@ -772,6 +958,7 @@ In general, analyzing {eq}`eq-wassflow-pde` is delicate. The cleanest case is
 when $f$ is geodesically convex. This condition is the Wasserstein analogue of
 convexity in Euclidean gradient descent.
 
+(prop-convex-wass-flow-rate)=
 :::{admonition} Proposition: Energy Decay for Convex Wasserstein Flows
 :class: important
 Assume formally that $f$ is geodesically convex, admits a smooth first
@@ -886,6 +1073,7 @@ Combining it with the energy dissipation identity yields
 and Gronwall's lemma gives the exponential rate.
 :::
 
+(prop-convex-flow-examples)=
 :::{admonition} Proposition: Convex Examples Covered by the Theory
 :class: important
 The hypotheses of the energy-decay proposition are satisfied in the following
@@ -975,6 +1163,7 @@ $\mathrm{Ric}_g(v,v)\geq\lambda |v|_g^2$ for every tangent vector $v$. The
 fundamental link between curvature and optimal transport is that this tensor
 lower bound is exactly encoded by geodesic convexity of entropy.
 
+(thm-ricci-entropy-convexity)=
 :::{admonition} Theorem: Ricci Curvature and Entropy Convexity
 :class: important
 Let $(M,g)$ be a smooth compact connected Riemannian manifold without
@@ -1120,6 +1309,7 @@ Thus
 These kernels are generally not convex in the particle variable, so the
 geodesic-convex convergence theory above does not apply directly.
 
+(fig:gradflow-mlp-homogeneous-relu)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1179,6 +1369,7 @@ Q(\alpha)=\frac12\iint k\d\alpha\d\alpha.
 This is ordinary convexity of the functional on the convex set of measures,
 not displacement convexity along $\Wass_2$ geodesics.
 
+(prop-classical-convex-stationary)=
 :::{admonition} Proposition: Affine Convexity and Stationary Densities
 :class: important
 Let $F=Q+\int V\d\alpha+C$ be as above, and assume that $Q$ is classically
@@ -1238,6 +1429,7 @@ regularizer or relying on noisy SGD to create a Laplacian term. The following
 formal statement isolates the core mechanism and ignores the technical issues
 due to ReLU non-smoothness, support propagation and compactness.
 
+(prop-formal-chizat-bach)=
 :::{admonition} Proposition: Formal Global Optimality for Two-Homogeneous Mean-Field Flows
 :class: important
 Assume that the feature is positively two-homogeneous in the neuron variable,

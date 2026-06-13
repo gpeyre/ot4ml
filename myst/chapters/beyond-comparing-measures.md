@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-beyond-comparing-measures)=
 
 The last group leaves the setting of scalar measures on a common ambient
 space. Vector- and matrix-valued OT transports mass with internal degrees of
@@ -49,6 +50,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-vector-matrix-valued-measures)=
 ## Vector and Matrix-Valued Measures
 
 Scalar OT transports a nonnegative density. In imaging, color processing,
@@ -60,6 +62,7 @@ but the channels may interact.
 
 ### Positive Vector-Valued Measures
 
+(def-positive-vector-valued-measure)=
 :::{admonition} Definition: Positive Vector-Valued Measure
 :class: important
 A positive $\RR_+^m$-valued measure on $\X$ is a tuple
@@ -147,6 +150,7 @@ transverse directions controlled by the diagonal part. The local cost of
 moving one component can therefore depend on the densities and momenta of the
 other components, even though each component mass remains conserved.
 
+(prop-diagonal-positive-vector-bb)=
 :::{admonition} Proposition: Diagonal Positive Vector Benamou--Brenier
 :class: important
 Assume that $\mu_0^k,\mu_1^k\in\mathcal M_+(\X)$ have the same mass $m_k$ for
@@ -200,6 +204,7 @@ channels move more coherently. The endpoints are two-mode mixtures: at each
 spatial mode the two channels have Gaussian profiles with the same center
 but different amplitudes.
 
+(fig:vector-valued-measure-geodesics)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -237,6 +242,7 @@ The next simplest fiber is the positive matrix cone. This is the simplest
 tensor-valued model beyond vectors: the diagonal entries behave like positive
 channels, while the eigenvectors encode local orientations.
 
+(def-positive-matrix-valued-measure)=
 :::{admonition} Definition: Positive Matrix-Valued Measure
 :class: important
 Write $\mathbb S^m$ for real symmetric matrices and $\mathbb S_+^m$ for the
@@ -293,6 +299,7 @@ function and is jointly convex on $A\succeq0$. This gives the simplest
 non-trivial matrix-valued transport model: spatial motion is conservative,
 but the fiber carries orientation through the eigenvectors of $A_t(x)$.
 
+(prop-matrix-diagonal-reduction)=
 :::{admonition} Proposition: Diagonal Matrix Subproblem
 :class: important
 Assume that the endpoints are diagonal in a fixed orthonormal basis,
@@ -357,6 +364,7 @@ shows the analogous independent/coupled contrast for positive $2\times2$
 matrix fibers, using two localized matrix modes whose eigenvalue profiles
 share a common center at each mode.
 
+(fig:matrix-valued-measure-geodesic)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -385,6 +393,34 @@ orientations.*
 
 <iframe class="ot4ml-live-frame" title="Matrix-valued transport controls" src="../live/beyond-matrix.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+:::{admonition} Example: Diagonal and coupled positive mobilities
+:class: ot4ml-example
+
+Choose a mobility matrix $\mathsf M(u)\in\mathbb S_+^m$, where $\mathbb S_+^m$ denotes the cone of real symmetric positive semidefinite matrices, and set
+
+```{math}
+\Phi_{\mathsf M}(u,V)
+=
+\sum_{\ell=1}^d V_{\ell}^{\top}\mathsf M(u)^\dagger V_{\ell},
+```
+
+with the usual convention that the value is finite only when each $V_\ell$ belongs to the range of $\mathsf M(u)$. One chooses $\mathsf M$ so that this matrix perspective is convex and one-homogeneous in $(u,V)$; this holds for the linear positive mobilities below. For $m=1$ and $\mathsf M(u)=u$, one recovers exactly the scalar Benamou--Brenier action. For
+
+```{math}
+\mathsf M_{\mathrm{diag}}(u)=\diag(u_1,\ldots,u_m),
+```
+
+the channels move independently. Non-diagonal mobilities are the simplest way to couple the coordinates while keeping the same componentwise conservation law. For instance, with $q=m^{-1/2}(1,\ldots,1)$ and $\kappa\geq0$,
+
+```{math}
+\mathsf M_\kappa(u)=\diag(u)+\kappa\Big(\sum_{k=1}^m u_k\Big) q q^\top
+```
+
+increases the mobility in the common channel direction $q$ while leaving transverse directions controlled by the diagonal part. The local cost of moving one component can therefore depend on the densities and momenta of the other components, even though each component mass remains conserved.
+:::
+
+
+(sec-gromov-wasserstein)=
 ## Gromov--Wasserstein
 
 Gromov--Wasserstein compares spaces through their internal distance
@@ -419,6 +455,7 @@ Quadratic Assignment Problem, already NP-hard in full generality
 {cite:p}`loiola-2007`. The relaxed coupling formulation can therefore be
 read as a soft graph-matching model {cite:p}`lyzinski-2015`.
 
+(fig:gromov-isometry-matching)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -457,6 +494,7 @@ discussed at the end of the section.
 
 ### General Setting
 
+(def-metric-measure-space)=
 :::{admonition} Definition: Metric-Measure Space
 :class: important
 A metric-measure space is a triple
@@ -486,6 +524,7 @@ $\mathbb Y=(\Y,d_\Y,\beta)$, define
 \d\pi(x,y)\d\pi(x',y').
 ```
 
+(prop-gw-controlled-by-wasserstein)=
 :::{admonition} Proposition: Euclidean GW Is Controlled by Wasserstein
 :class: important
 Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the
@@ -512,6 +551,7 @@ Taking the $L^p$ norm and using Minkowski gives a bound by
 $2(\int\norm{x-y}^p\d\pi)^{1/p}$. Optimizing over $\pi$ proves the claim.
 :::
 
+(def-isometric-mm-spaces)=
 :::{admonition} Definition: Isometric Metric-Measure Spaces
 :class: important
 Two metric-measure spaces $\mathbb X=(\X,d_\X,\alpha)$ and
@@ -527,6 +567,7 @@ d_\Y(\phi(x),\phi(x'))=d_\X(x,x')
 for all $x,x'\in\operatorname{supp}(\alpha)$.
 :::
 
+(thm-gw-metric)=
 :::{admonition} Theorem: Gromov--Wasserstein Metric Modulo Isometries
 :class: important
 For compact metric-measure spaces, $p\geq1$ and $\Delta(u,v)=|u-v|$,
@@ -572,6 +613,7 @@ speak about interpolation, barycenters and gradient flows directly on the
 space of metric-measure spaces, even though the intermediate space lives on a
 product support and is therefore expensive numerically {cite:p}`SturmGW`.
 
+(prop-gw-geodesics)=
 :::{admonition} Proposition: Gromov--Wasserstein Geodesics
 :class: important
 Let $\mathbb X_0=(\X_0,d_{\X_0},\alpha_0)$ and
@@ -614,6 +656,7 @@ inequality to
 $\mathbb X_0,\mathbb X_s,\mathbb X_t,\mathbb X_1$ gives the reverse bound.
 :::
 
+(fig:gromov-nonisometric-distortion)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -638,6 +681,7 @@ minimized by the discrete GW objective for the displayed correspondence.*
 
 <iframe class="ot4ml-live-frame" title="Gromov-Wasserstein distortion controls" src="../live/beyond-gromov-distortion.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+(prop-memoli-gw-profile-lower-bound)=
 :::{admonition} Proposition: Memoli Profile Lower Bound
 :class: important
 Let $\mathbb X=(\X,d_\X,\alpha)$ and $\mathbb Y=(\Y,d_\Y,\beta)$ be compact
@@ -749,6 +793,7 @@ matching. The first term compares node attributes in the usual OT sense, and
 the second compares intrinsic geometry; this is useful when two spaces have
 both distances and features, and the two sources of information may disagree.
 
+(fig:fused-gromov-feature-geometry)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -804,6 +849,51 @@ worst-case distortion by averaged distortion. It is therefore better adapted
 to noisy sampled shapes and weighted graphs, but it can ignore small sets of
 mass that would dominate the Hausdorff distance.
 
+(alg:entropic-gromov-wasserstein)=
+:::{admonition} Algorithm: Entropic Gromov--Wasserstein linearization
+:class: ot4ml-algorithm
+
+**Input:** Metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+**Output:** Approximate entropic GW coupling $\P\in\CouplingsD(\a,\b)$.
+
+**Initialize:** Choose $\P^{(0)}\in\CouplingsD(\a,\b)$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> \C^{(k)}
+> =
+> \distD^{\odot2}\a\,\ones_m^\top
+> +
+> \ones_n(\distD'^{\odot2}\b)^\top
+> -
+> 2\distD\,\P^{(k)}\,\transp{\distD'}.
+> ```
+>
+>
+> **Solve** entropic OT subproblem:
+>
+>
+> ```{math}
+> \P^{(k+1)}
+> =
+> \uargmin{\P\in\CouplingsD(\a,\b)}
+> \dotp{\P}{\C^{(k)}}-\epsilon\HD(\P).
+> ```
+>
+>
+> **If** $\norm{\P^{(k+1)}-\P^{(k)}}\leq\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $\P^{(k+1)}$.
+>>
+:::
+
+
+(sec-quantum-ot)=
 ## Quantum Optimal Transport
 
 Quantum optimal transport replaces probability vectors by density matrices
@@ -815,6 +905,7 @@ bridge between OT, non-commutative entropy and operator scaling
 
 ### Finite-Dimensional States and Couplings
 
+(def-hermitian-density-matrices)=
 :::{admonition} Definition: Hermitian and Density Matrices
 :class: important
 Let $\mathbb H_n$ be the real vector space of $n\times n$ Hermitian matrices,
@@ -852,6 +943,7 @@ $\operatorname{Tr}_B(T)\in\mathbb H_n^+$ and
 $\operatorname{Tr}_A(T)\in\mathbb H_m^+$ play exactly the role of the two
 marginals of a classical coupling.
 
+(def-finite-dimensional-qot)=
 :::{admonition} Definition: Finite-Dimensional Quantum OT
 :class: important
 Let $A\in\mathbb H_n^{+,1}$, $B\in\mathbb H_m^{+,1}$ and let
@@ -874,16 +966,15 @@ the semidefinite program
 The feasible set is never empty, since $A\otimes B$ has marginals $A$ and
 $B$.
 
-:::{admonition} Remark: Classical Diagonal Case
-:class: note
-If $A$, $B$, $C$ and $T$ are all diagonal in fixed bases, then $A$ and $B$ are
-probability vectors, $T$ is a nonnegative matrix and the partial-trace
-constraints reduce to the usual row and column sum constraints. Hence
-classical Kantorovich OT is the diagonal, commutative subcase of
-{eq}`eq-qot-primal`. The genuinely quantum feature is that $T$ may contain
-off-diagonal coherences and entanglement.
+(rem-qot-classical-diagonal-case)=
+:::{admonition} Example: Classical diagonal case
+:class: ot4ml-example
+
+If $A$, $B$, $C$ and $T$ are all diagonal in fixed bases, then $A$ and $B$ are probability vectors, $T$ is a nonnegative matrix and the partial-trace constraints reduce to the usual row and column sum constraints. Hence classical Kantorovich OT is the diagonal, commutative subcase of {eq}`eq-qot-primal`. The genuinely quantum feature is that $T$ may contain off-diagonal coherences and entanglement.
 :::
 
+
+(prop-qot-duality)=
 :::{admonition} Proposition: Quantum Kantorovich Duality
 :class: important
 For $A\in\mathbb H_n^{+,1}$ and $B\in\mathbb H_m^{+,1}$, the dual of
@@ -928,6 +1019,7 @@ unchanged because $\operatorname{tr}(A)=\operatorname{tr}(B)=1$.
 
 ### Entropic Regularization and Bregman Iterations
 
+(def-von-neumann-quantum-entropy)=
 :::{admonition} Definition: von Neumann Quantum Entropy
 :class: important
 For a density matrix or positive semidefinite matrix $T$, the shifted von
@@ -964,6 +1056,7 @@ This is the non-commutative analogue of entropic OT: the Shannon entropy of a
 coupling is replaced by the trace entropy of a density matrix
 {cite:p}`2016-peyre-qot,chakrabarti2019quantum`.
 
+(prop-qot-entropic-duality)=
 :::{admonition} Proposition: Entropic Quantum OT Duality
 :class: important
 Assume $A\succ0$, $B\succ0$ and $\epsilon>0$. Then
@@ -1040,6 +1133,7 @@ projection scheme onto the affine marginal sets
 \mathcal M_B=\{T\succeq0:\operatorname{Tr}_A(T)=B\}.
 ```
 
+(prop-qot-bregman-projections)=
 :::{admonition} Proposition: Exact Bregman Projections
 :class: important
 Assume $A,B\succ0$ and let $K=\exp(-C/\epsilon)$. The minimizer of
@@ -1158,12 +1252,10 @@ when the targets are proportional to identities it matches the usual
 bistochastic operator-scaling normalization, up to the conventional trace
 normalization.
 
-:::{admonition} Remark: Gurvits Scaling Is Not the Exact Bregman Scheme
-:class: note
-The exact Bregman step would enforce the marginals of
-$T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true
-concave dual {eq}`eq-qot-entropic-dual`. Gurvits scaling instead enforces the
-marginals of the surrogate
+:::{admonition} Remark: Gurvits scaling is not the exact Bregman scheme
+:class: ot4ml-remark
+
+It is important not to identify {eq}`eq-qot-gurvits-updates` with the exact Bregman scheme for {eq}`eq-qot-entropic-primal`. The exact Bregman step would enforce the marginals of $T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true concave dual {eq}`eq-qot-entropic-dual`. Gurvits scaling instead enforces the marginals of the surrogate
 
 ```{math}
 T_s=
@@ -1172,26 +1264,106 @@ T_s=
 \exp\!\left(\frac{Z}{2\epsilon}\right).
 ```
 
-The two coincide in the commuting/diagonal regime, but in general the
-Baker--Campbell--Hausdorff commutator terms do not vanish. Gurvits scaling
-should therefore be understood as a tractable symmetric operator-scaling
-approximation to entropic quantum OT, not as the literal alternating KL
-projection algorithm.
+The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm.
 :::
 
-:::{admonition} Remark: Operator-Valued Couplings
-:class: note
-The same definitions extend formally from matrices to separable Hilbert
-spaces by replacing density matrices with positive trace-class operators of
-trace one, observables with bounded self-adjoint operators and partial traces
-defined by duality against local bounded observables. If $\Pi(A,B)$ denotes
-positive trace-class operators with partial traces $A$ and $B$, a bounded
-cost observable $C$ gives the problem
-$\inf_{T\in\Pi(A,B)}\operatorname{Tr}(CT)$. For unbounded positive costs one
-must define the energy through the quadratic form or spectral truncations,
-and in the entropic case one must ensure that $\exp(-C/\epsilon)$ is trace
-class and that the partial traces of the candidate coupling are well-defined.
-The matrix formulas above are therefore the clean finite-dimensional core;
-the operator version adds domain and compactness assumptions rather than a
-different algebraic structure.
+
+:::{admonition} Remark: Operator-valued couplings
+:class: ot4ml-remark
+
+The same definitions extend formally from matrices to separable Hilbert spaces by replacing density matrices with positive trace-class operators of trace one, observables with bounded self-adjoint operators and {eq}`eq-qot-partial-traces` with partial traces defined by duality against local bounded observables. If $\Pi(A,B)$ denotes positive trace-class operators with partial traces $A$ and $B$, a bounded cost observable $C$ gives the problem $\inf_{T\in\Pi(A,B)}\Tr(CT)$. For unbounded positive costs one must define the energy through the quadratic form or spectral truncations, and in the entropic case one must ensure that the Gibbs operator $\exp(-C/\epsilon)$ is trace class and that the partial traces of the candidate coupling are well-defined. The matrix formulas above are therefore the clean finite-dimensional core; the operator version adds domain and compactness assumptions rather than a different algebraic structure.
 :::
+
+(alg:quantum-exact-bregman)=
+:::{admonition} Algorithm: Exact quantum Bregman projections
+:class: ot4ml-algorithm
+
+**Input:** Density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+**Output:** Quantum entropic coupling $T$ with partial traces $A$ and $B$.
+
+**Initialize:** Hermitian potentials $F^{(0)}$ and $G^{(0)}$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> T^{(k)}=
+> T_e(F^{(k)},G^{(k)})
+> =
+> \exp\!\left(
+> \frac{F^{(k)}\otimes\Id_m+\Id_n\otimes G^{(k)}-C}{\epsilon}
+> \right).
+> ```
+>
+>
+> **Solve** $A$-projection equation:
+>
+>
+> ```{math}
+> \operatorname{Tr}_B T_e(F^+,G^{(k)})=A,
+> ```
+>
+>
+> **Set** $F^{(k+1)}=F^+$.
+>
+> **Solve** $B$-projection equation:
+>
+>
+> ```{math}
+> \operatorname{Tr}_A T_e(F^{(k+1)},G^+)=B,
+> ```
+>
+>
+> **Set** $G^{(k+1)}=G^+$.
+>
+> **If** both partial-trace residuals are at most $\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $T_e(F^{(k+1)},G^{(k+1)})$.
+>>
+:::
+
+(alg:quantum-gurvits-scaling)=
+:::{admonition} Algorithm: Gurvits/operator scaling for quantum Sinkhorn
+:class: ot4ml-algorithm
+
+**Input:** Positive marginals $A,B$, positive kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$.
+
+**Output:** Symmetrically scaled coupling $T_s$.
+
+**Initialize:** Set $U,V\succ0$.
+
+**Repeat**:
+
+>
+>
+> ```{math}
+> R_V=\mathcal K(V^2),
+> \qquad
+> U\leftarrow
+> R_V^{-1/2}\bigl(R_V^{1/2} A R_V^{1/2}\bigr)^{1/2}R_V^{-1/2}.
+> ```
+>
+>
+>
+>
+> ```{math}
+> S_U=\mathcal K^\star(U^2),
+> \qquad
+> V\leftarrow
+> S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
+> ```
+>
+>
+
+**Until** both operator-marginal residuals are at most $\mathrm{tol}$.
+
+**Return**
+
+```{math}
+T_s=(U\otimes V)K(U\otimes V).
+```
+:::
+

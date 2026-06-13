@@ -344,6 +344,42 @@ In the discrete case, with $K_{i,j}=e^{-\C_{i,j}/\epsilon}\a_i\b_j$ and $\rho=\t
 \]
 The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal corrections are damped because violating the marginals is allowed.
 
+\begin{alg}[Unbalanced Sinkhorn scaling]\label{alg:unbalanced-sinkhorn}
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, entropic scale $\epsilon>0$, KL strength $\tau>0$.
+
+\textbf{Output:} Unbalanced entropic coupling $\P$.
+
+\textbf{Initialize:} Set
+\[
+	K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j,
+	\qquad
+	\rho=\frac{\tau}{\tau+\epsilon},
+	\qquad
+	v^{(0)}\in\RR_{+,*}^m.
+\]
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	u^{(k+1)}
+	=
+	\left(\frac{\a}{K v^{(k)}}\right)^\rho,
+	\qquad
+	v^{(k+1)}
+	=
+	\left(\frac{\b}{\transp{K}u^{(k+1)}}\right)^\rho.
+\]
+\textbf{If} scaling changes are below $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return}
+\[
+	\P^{(k+1)}=\diag(u^{(k+1)})K\diag(v^{(k+1)}).
+\]
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 \begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{3pt}
@@ -407,6 +443,38 @@ Sliced Wasserstein trades exact high-dimensional geometry for many one-dimension
 This construction is closely related to the Radon transform and is much cheaper to approximate numerically than high-dimensional OT, since each projected problem can be solved by sorting or quantiles~\cite{rabin-ssvm-11,2013-Bonneel-barycenter,kolouri2016sliced}. It metrizes the same weak-plus-moment topology as $\Wass_p$, but its geometry is not bi-Lipschitz equivalent to $\Wass_p$ in high dimension~\cite{nadjahi2019asymptotic}.
 \index{probability measure}% strictindex
 \index{Radon!transform}% strictindex
+
+\begin{alg}[Monte Carlo sliced Wasserstein]\label{alg:monte-carlo-sliced-wasserstein}
+\index{sliced Wasserstein!distance}% strictindex
+\textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p$, number of directions $L$.
+
+\textbf{Output:} Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$.
+
+\textbf{For} $\ell=1,\ldots,L$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Sample} $\theta_\ell\sim\sigma$ on $\Sphere^{d-1}$.
+
+\textbf{Project and sort:}
+\[
+	s_i^\ell=\dotp{\theta_\ell}{x_i},
+	\qquad
+	t_i^\ell=\dotp{\theta_\ell}{y_i},
+	\qquad
+	s_{(1)}^\ell\leq\cdots\leq s_{(n)}^\ell,
+	\quad
+	t_{(1)}^\ell\leq\cdots\leq t_{(n)}^\ell .
+\]
+\textbf{Compute}
+\[
+	E_\ell=\frac1n\sum_{i=1}^n\abs{s_{(i)}^\ell-t_{(i)}^\ell}^p.
+\]
+\end{algblock}
+\textbf{Return}
+\[
+	\widehat{\SW}_p^p(\alpha,\beta)=\frac1L\sum_{\ell=1}^L E_\ell.
+\]
+\end{alg}
 
 \begin{figure}[H]
 \centering
@@ -581,6 +649,34 @@ Indeed, each $\pi_\theta$ is an admissible coupling between the original measure
 	\leq
 	\operatorname{MSWGG}_2(\alpha,\beta)^2.
 \]
+
+\begin{alg}[Lifted min-sliced matching]\label{alg:lifted-min-sliced-matching}
+\index{sliced Wasserstein!min transport}% strictindex
+\textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, finite direction set $\Theta\subset\Sphere^{d-1}$.
+
+\textbf{Output:} Lifted feasible coupling $\pi_{\theta^\star}$.
+
+\textbf{For} each $\theta\in\Theta$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Sort} projected values $\dotp{\theta}{x_i}$ and $\dotp{\theta}{y_j}$.
+
+\textbf{Match} equal ranks.
+
+\textbf{Store} permutation $\sigma_\theta$.
+
+\textbf{Evaluate}
+\[
+	E(\theta)=\frac1n\sum_{i=1}^n\norm{x_i-y_{\sigma_\theta(i)}}^2.
+\]
+\end{algblock}
+\textbf{Set} $\theta^\star\in\argmin_{\theta\in\Theta}E(\theta)$.
+
+\textbf{Return}
+\[
+	\pi_{\theta^\star}=\frac1n\sum_i\delta_{(x_i,y_{\sigma_{\theta^\star}(i)})}.
+\]
+\end{alg}
 
 \begin{figure}[H]
 \centering

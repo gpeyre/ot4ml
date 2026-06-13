@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-matching)=
 
 This opening chapter isolates the simplest form of optimal transport: pairing
 two finite point clouds. The stakes are algorithmic and geometric at once: one
@@ -49,6 +50,7 @@ from ot4ml_web import (
 )
 ```
 
+(sec-monge-pbm)=
 ## Monge Problem for Discrete Points
 
 This section formulates matching as Monge's deterministic transport problem on
@@ -75,6 +77,7 @@ small values of $n$. In general, the optimal $\sigma$ is not unique.
 
 In one dimension, convex costs select monotone matchings.
 
+(prop-matching-1d-monotone)=
 :::{admonition} Proposition: Monotone Matching on the Line
 :class: important
 Assume that the points $(x_i)_i$ and $(y_j)_j$ are pairwise distinct. If the
@@ -154,6 +157,7 @@ greedy heuristics, studied for instance by Ottolini and Steinerberger
 methods are not generic linear-programming solvers; they use the
 one-dimensional order and the concavity of the distance profile.
 
+(fig:matching-1d-convex-concave-costs)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -183,6 +187,7 @@ curves are smooth laws used to generate equal-weight empirical measures; the
 dots are inverse-CDF samples at common quantile levels. The monotone assignment
 connects equal ranks.
 
+(fig:matching-1d-quantile-assignment)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -233,6 +238,7 @@ monotone rearrangement gives the exact transport map, so the operation is both
 computationally simple and geometrically faithful: it matches distributions of
 intensities rather than individual pixels.
 
+(fig:monge-histogram-equalization)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -299,6 +305,7 @@ one-dimensional monotone assignment can be used. In the discrete case, changing
 the cut is the same as applying a cyclic shift to one of the two circular
 orderings.
 
+(prop-circle-ot-cut)=
 :::{admonition} Proposition: Discrete Circle Transport by a Cut
 :class: important
 Let $x_1,\ldots,x_n$ and $y_1,\ldots,y_n$ be two families of distinct points on
@@ -353,6 +360,7 @@ arbitrarily small perturbation and a limiting passage. This is the discrete
 form of the fast circle-Monge construction of {cite:p}`delon-circle`.
 :::
 
+(fig:monge-circle-cut-unfolding)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -376,6 +384,7 @@ the two green endpoints identified.*
 
 <iframe class="ot4ml-live-frame" title="Circle cut controls" src="../live/circle.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+(fig:matching-2d-cost-exponent)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -432,6 +441,7 @@ needs a nonnegative transport matrix with prescribed row and column sums; this
 is the finite-dimensional Kantorovich relaxation developed in the next
 chapters.
 
+(fig:matching-resolution-and-weights)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -484,6 +494,7 @@ fig = plot_regularization_sweep(
 
 <iframe class="ot4ml-live-frame" title="Resolution and weight controls" src="../live/resolution.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
+(prop-rational-weights-duplicated-matching)=
 :::{admonition} Proposition: Rational Weights as Duplicated Uniform Matching
 :class: important
 Let
@@ -526,6 +537,7 @@ Thus the optimum of the rational-weight Kantorovich problem is the same as the
 optimum of the duplicated uniform assignment problem.
 :::
 
+(fig:matching-rational-duplication)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -586,16 +598,10 @@ C_n=\frac{1}{n+1}\binom{2n}{n}
 \sim \frac{4^n}{\sqrt{\pi}n^{3/2}}.
 ```
 
-:::{admonition} Catalan Count of Alternating Non-Crossing Matchings
-:class: note
-The count follows from the standard Catalan recurrence. Fix one red vertex
-$r$. In a non-crossing perfect matching, if $r$ is matched to a blue vertex
-$b$, the chord $[r,b]$ splits the polygon into two smaller polygons. Since the
-boundary colors alternate, each side contains the same number of red and blue
-vertices. If one side contains $k$ red and $k$ blue vertices, the other contains
-$n-1-k$ red and $n-1-k$ blue vertices. Non-crossing matchings on the two sides
-are independent, because no segment can cross the chord $[r,b]$. Thus,
-denoting by $M_n$ the number of such matchings,
+:::{admonition} Remark: Catalan count of alternating non-crossing matchings
+:class: ot4ml-remark
+
+The count follows from the standard Catalan recurrence. Fix one red vertex $r$. In a non-crossing perfect matching, if $r$ is matched to a blue vertex $b$, the chord $[r,b]$ splits the polygon into two smaller polygons. Since the boundary colors alternate, each side contains the same number of red and blue vertices. If one side contains $k$ red and $k$ blue vertices, the other contains $n-1-k$ red and $n-1-k$ blue vertices. Non-crossing matchings on the two sides are independent, because no segment can cross the chord $[r,b]$. Thus, denoting by $M_n$ the number of such matchings, one has
 
 ```{math}
 M_0=1,
@@ -606,10 +612,107 @@ M_n=\sum_{k=0}^{n-1} M_k M_{n-1-k}.
 This recurrence characterizes the Catalan numbers, hence $M_n=C_n$.
 :::
 
+
 Thus even after forbidding crossings, an exhaustive search remains
 exponential. The two-segment swap in the proof above is nevertheless useful:
 it explains why a crossing matching cannot be optimal, but it does not select
 among the exponentially many planar matchings that survive this local test.
+
+(alg:one-dimensional-sorting)=
+:::{admonition} Algorithm: One-dimensional sorting assignment
+:class: ot4ml-algorithm
+
+**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\RR$; convex cost $h(x-y)$.
+
+**Output:** Optimal permutation $\sigma$.
+
+**Sort** source and target points:
+
+```{math}
+x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)},
+\qquad
+y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
+```
+
+**For** $k=1,\ldots,n$ **do**:
+
+>
+> **Match** $x_{\sigma_X(k)}$ with $y_{\sigma_Y(k)}$.
+>
+
+**Return**
+
+```{math}
+\sigma=\sigma_Y\circ\sigma_X^{-1}.
+```
+:::
+
+(alg:concave-line-local-indicators)=
+:::{admonition} Algorithm: Concave line matching by local indicators
+:class: ot4ml-algorithm
+
+**Input:** Unit-mass source and target points on $\RR$; strictly concave distance cost.
+
+**Output:** Optimal concave-cost matching $M$.
+
+**Sort** combined red-blue sequence on the line.
+
+**Decompose** it into maximal alternating chains.
+
+**Initialize:** Set $M=\emptyset$.
+
+**While** unmatched points remain **do**:
+
+>
+> **For** each active alternating chain **do**:
+
+>>
+>> **Compute** local matching indicators {cite:p}`delon-concave`.
+>>
+>> **If** an indicator certifies a pair $(i,j)$ **then**:
+
+>>>
+>>> **Update** $M\leftarrow M\cup\{(i,j)\}$.
+>>>
+>>> **Remove** points $i$ and $j$.
+>>>
+
+> **Recompute** only chains affected by removals.
+>
+
+**Return** $M$.
+:::
+
+(alg:circle-cut-assignment)=
+:::{admonition} Algorithm: Circle assignment by cutting
+:class: ot4ml-algorithm
+
+**Input:** Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; cost $d_{\mathbb S^1}^p$.
+
+**Output:** Optimal cyclic assignment.
+
+**Choose** cyclic orderings $(x_{(k)})_{k=1}^n$ and $(y_{(k)})_{k=1}^n$.
+
+**For** $s=0,\ldots,n-1$ **do**:
+
+>
+>
+> ```{math}
+> E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p,
+> \qquad y_{(k+n)}=y_{(k)}.
+> ```
+>
+>
+
+**Set** $s^\star\in\argmin_sE_s$.
+
+**Open** circle at a gap compatible with $s^\star$.
+
+**Lift** all points to the unfolded interval.
+
+**Return** $x_{(k)}\mapsto y_{(k+s^\star)}$.
+:::
+
 
 ## Matching Algorithms
 
@@ -665,6 +768,7 @@ The following figure summarizes actual iterates by displaying only the
 evolving partial assignment: unmatched rows are shown as flat rows to keep a
 fixed matrix format, and matched rows are shown as one-hot rows.
 
+(fig:matching-hungarian-progression)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -689,6 +793,7 @@ assignment certified by complementary slackness.*
 
 <iframe class="ot4ml-live-frame" title="Hungarian method controls" src="../live/hungarian.html" loading="lazy" style="width:100%;height:430px;border:0;display:block;"></iframe>
 
+(prop-hungarian-correct)=
 :::{admonition} Proposition: Correctness and Complexity of the Hungarian Primal-Dual Method
 :class: important
 Assume the Hungarian method terminates with a perfect matching $\sigma$
@@ -742,3 +847,65 @@ tree expansion costs $O(n)$. A phase therefore costs $O(n^2)$, and the $n$
 phases give $O(n^3)$ operations. Hence the method reaches a perfect optimal
 matching.
 :::
+
+(alg:hungarian-primal-dual)=
+:::{admonition} Algorithm: Hungarian primal-dual augmentation
+:class: ot4ml-algorithm
+
+**Input:** Square cost matrix $C\in\RR^{n\times n}$.
+
+**Output:** Minimum-cost perfect matching $M$.
+
+**Initialize:** Choose dual feasible labels $(u,v)$.
+
+**Set** $M=\emptyset$.
+
+**While** $M$ is not perfect **do**:
+
+>
+> **Build** equality graph:
+>
+>
+> ```{math}
+> E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.
+> ```
+>
+>
+> **Choose** unmatched source.
+>
+> **Grow** an alternating tree in $E(u,v)$.
+>
+> **If** the tree reaches an unmatched target **then**:
+
+>>
+>> **Augment** $M$ along the alternating path.
+>>
+
+>
+> **Else**:
+
+>>
+>> **Set** $S=$ reached sources and $T=$ reached targets.
+>>
+>> **Compute**
+>>
+>>
+>> ```{math}
+>> \delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr),
+>> ```
+>>
+>>
+>> **Update**
+>>
+>>
+>> ```{math}
+>> u_i\leftarrow u_i+\delta\quad(i\in S),
+>> \qquad
+>> v_j\leftarrow v_j-\delta\quad(j\in T).
+>> ```
+>>
+>>
+
+**Return** $M$.
+:::
+

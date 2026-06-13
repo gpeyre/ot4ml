@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-extensions)=
 
 The first family of extensions keeps the idea of a distance between measures,
 but changes the geometry used to compare them. The variants in this chapter
@@ -52,6 +53,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-unbalanced)=
 ## Unbalanced OT
 
 Unbalanced OT allows mass creation and destruction by penalizing marginal
@@ -186,6 +188,7 @@ $\log(r/a)+\log(r/b)=0$, hence $r=\sqrt{ab}$, and the minimum is
 $a+b-2\sqrt{ab}=(\sqrt a-\sqrt b)^2$.
 :::
 
+(prop-dual-unbalanced-ot)=
 :::{admonition} Proposition: Dual of Unbalanced Optimal Transport
 :class: important
 Under the usual Fenchel--Rockafellar qualification assumptions, the relaxed
@@ -405,6 +408,7 @@ The corresponding cone value is
 \right\}.
 ```
 
+(thm-cone-unbalanced-ot)=
 :::{admonition} Theorem: Cone Formulation of Unbalanced OT
 :class: important
 One has $\mathsf{UW}=\mathsf{HW}=\mathsf{CW}$. If $\mathsf D$ is a distance,
@@ -497,6 +501,7 @@ P=\diag(u)K\diag(v).
 The exponent $\rho<1$ is the visible difference with balanced Sinkhorn:
 marginal corrections are damped because violating the marginals is allowed.
 
+(fig:unbalanced-mass-relaxation)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -532,6 +537,7 @@ of small modes. Total variation has a linear kink and behaves closer to
 partial transport: mass is either kept active or created and destroyed at
 nearly constant marginal price.
 
+(fig:unbalanced-divergence-choice)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -547,6 +553,55 @@ variation, Burg keeps transported marginals from vanishing on prescribed
 modes, and total variation gives a sharper active-mass selection.*
 :::
 
+(alg:unbalanced-sinkhorn)=
+:::{admonition} Algorithm: Unbalanced Sinkhorn scaling
+:class: ot4ml-algorithm
+
+**Input:** Weights $\a,\b$, cost matrix $\C$, entropic scale $\epsilon>0$, KL strength $\tau>0$.
+
+**Output:** Unbalanced entropic coupling $\P$.
+
+**Initialize:** Set
+
+```{math}
+K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j,
+\qquad
+\rho=\frac{\tau}{\tau+\epsilon},
+\qquad
+v^{(0)}\in\RR_{+,*}^m.
+```
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> u^{(k+1)}
+> =
+> \left(\frac{\a}{K v^{(k)}}\right)^\rho,
+> \qquad
+> v^{(k+1)}
+> =
+> \left(\frac{\b}{\transp{K}u^{(k+1)}}\right)^\rho.
+> ```
+>
+>
+> **If** scaling changes are below $\mathrm{tol}$ **then**:
+
+>>
+>> **Return**
+>>
+>>
+>> ```{math}
+>> \P^{(k+1)}=\diag(u^{(k+1)})K\diag(v^{(k+1)}).
+>> ```
+>>
+>>
+>>
+:::
+
+
+(sec-sliced-wasserstein)=
 ## Sliced Wasserstein Distances
 
 Sliced Wasserstein trades exact high-dimensional geometry for many
@@ -555,6 +610,7 @@ often effective in imaging and learning. For measures on $\RR^d$ and
 $\theta\in\mathbb S^{d-1}$, let
 $P_\theta(x)=\dotp{\theta}{x}$ be the projection on direction $\theta$.
 
+(def-sliced-wasserstein)=
 :::{admonition} Definition: Sliced Wasserstein Distance
 :class: important
 Let $\sigma$ be the uniform probability measure on the sphere
@@ -578,6 +634,7 @@ metrizes the same weak-plus-moment topology as $\Wass_p$, but its geometry is
 not bi-Lipschitz equivalent to $\Wass_p$ in high dimension
 {cite:p}`nadjahi2019asymptotic`.
 
+(fig:sliced-wasserstein-projections)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -605,6 +662,7 @@ optimal plan.
 
 <iframe class="ot4ml-live-frame" title="Sliced Wasserstein controls" src="../live/generalized-sliced.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
+(prop-sliced-wasserstein-metric)=
 :::{admonition} Proposition: Metric Properties of Sliced Wasserstein
 :class: important
 For $p\geq1$, $\operatorname{SW}_p$ is a distance on
@@ -650,25 +708,27 @@ statement follows from the same Cramer--Wold mechanism plus the moment
 condition.
 :::
 
-:::{admonition} Remark: Hilbert Embedding for $\operatorname{SW}_2$
-:class: note
-In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile
-functions. Hence
+(rem-sliced-hilbert-embedding)=
+:::{admonition} Remark: Hilbert embedding for $\SW_2$
+:class: ot4ml-remark
+
+In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile functions. Hence
 
 ```{math}
-\operatorname{SW}_2(\alpha,\beta)^2
+\SW_2(\alpha,\beta)^2
 =
-\int_{\mathbb S^{d-1}}\int_0^1
+\int_{\Sphere^{d-1}}\int_0^1
 \abs{F_{\theta,\alpha}^{-1}(u)-F_{\theta,\beta}^{-1}(u)}^2
-\d u\d\sigma(\theta).
+\d u\d\sigma(\theta),
 ```
 
-Thus $\operatorname{SW}_2$ is a Hilbertian distance after embedding each
-measure into its field of projected quantiles. Consequently,
-$\exp(-\gamma\operatorname{SW}_2^2)$ is a positive definite kernel on
-probability measures for every $\gamma>0$.
+where $F_{\theta,\alpha}^{-1}$ is the quantile of $(P_\theta)_\sharp\alpha$. Thus $\SW_2$ is a Hilbertian distance after embedding each measure into its field of projected quantiles. Consequently, $\exp(-\gamma\SW_2^2)$ is a positive definite kernel on probability measures for every $\gamma>0$.
+
+Conversely, on compact sets, $\Wass_p$ can be bounded by a dimension-dependent power of $\SW_p$; such inequalities are weaker than the direct bound of Proposition {ref}`prop-sliced-wasserstein-metric` and explain why sliced distances metrize the same topology without being bi-Lipschitz equivalent to $\Wass_p$ in high dimension {cite:p}`bonnotte2013unidimensional,nadjahi2019asymptotic`.
 :::
 
+
+(def-sliced-variants)=
 :::{admonition} Definition: Max-Sliced Wasserstein
 :class: important
 The max-sliced distance replaces the average over directions by the most
@@ -690,6 +750,7 @@ $k$-dimensional subspaces: the projected OT problems remain lower
 dimensional, while each projection retains correlations inside a small block
 of coordinates.
 
+(def-subspace-sliced-wasserstein)=
 :::{admonition} Definition: Subspace-Sliced Wasserstein
 :class: important
 Fix $1\leq k\leq d$. Subspace-sliced variants replace one-dimensional lines by
@@ -717,6 +778,7 @@ The case $k=1$ recovers ordinary sliced and max-sliced Wasserstein, while
 $k=d$ recovers the original Wasserstein distance.
 :::
 
+(prop-sliced-variant-bounds)=
 :::{admonition} Proposition: Basic Bounds for Sliced Variants
 :class: important
 Let $p\geq1$ and let $\alpha,\beta\in\mathcal P_p(\RR^d)$. With normalized
@@ -793,6 +855,7 @@ construction. Consequently,
 \operatorname{MSWGG}_2(\alpha,\beta)^2.
 ```
 
+(fig:min-sliced-transport-plan)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -808,6 +871,86 @@ back to the plane; it is a feasible coupling but not the same object as the
 quadratic $W_2$ matching shown on the right.*
 :::
 
+(alg:monte-carlo-sliced-wasserstein)=
+:::{admonition} Algorithm: Monte Carlo sliced Wasserstein
+:class: ot4ml-algorithm
+
+**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p$, number of directions $L$.
+
+**Output:** Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$.
+
+**For** $\ell=1,\ldots,L$ **do**:
+
+>
+> **Sample** $\theta_\ell\sim\sigma$ on $\Sphere^{d-1}$.
+>
+> **Project and sort:**
+>
+>
+> ```{math}
+> s_i^\ell=\dotp{\theta_\ell}{x_i},
+> \qquad
+> t_i^\ell=\dotp{\theta_\ell}{y_i},
+> \qquad
+> s_{(1)}^\ell\leq\cdots\leq s_{(n)}^\ell,
+> \quad
+> t_{(1)}^\ell\leq\cdots\leq t_{(n)}^\ell .
+> ```
+>
+>
+> **Compute**
+>
+>
+> ```{math}
+> E_\ell=\frac1n\sum_{i=1}^n\abs{s_{(i)}^\ell-t_{(i)}^\ell}^p.
+> ```
+>
+>
+
+**Return**
+
+```{math}
+\widehat{\SW}_p^p(\alpha,\beta)=\frac1L\sum_{\ell=1}^L E_\ell.
+```
+:::
+
+(alg:lifted-min-sliced-matching)=
+:::{admonition} Algorithm: Lifted min-sliced matching
+:class: ot4ml-algorithm
+
+**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, finite direction set $\Theta\subset\Sphere^{d-1}$.
+
+**Output:** Lifted feasible coupling $\pi_{\theta^\star}$.
+
+**For** each $\theta\in\Theta$ **do**:
+
+>
+> **Sort** projected values $\dotp{\theta}{x_i}$ and $\dotp{\theta}{y_j}$.
+>
+> **Match** equal ranks.
+>
+> **Store** permutation $\sigma_\theta$.
+>
+> **Evaluate**
+>
+>
+> ```{math}
+> E(\theta)=\frac1n\sum_{i=1}^n\norm{x_i-y_{\sigma_\theta(i)}}^2.
+> ```
+>
+>
+
+**Set** $\theta^\star\in\argmin_{\theta\in\Theta}E(\theta)$.
+
+**Return**
+
+```{math}
+\pi_{\theta^\star}=\frac1n\sum_i\delta_{(x_i,y_{\sigma_{\theta^\star}(i)})}.
+```
+:::
+
+
+(sec-linear-ot)=
 ## Vector Quantiles and Linear Optimal Transport
 
 Linear OT starts from the multivariate analogue of quantile coordinates. The
@@ -882,17 +1025,15 @@ This is exact in one dimension, where quantile functions linearize
 $\Wass_2$, and it is especially useful when many barycenters with changing
 weights must be evaluated quickly.
 
-:::{admonition} Remark: Three Hilbertian Embeddings of Measures
-:class: note
-Kernel mean embeddings send $\alpha$ to
-$\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances. Quadratic
-sliced Wasserstein sends a measure to the collection of one-dimensional
-quantile functions of its projections, viewed in
-$L^2(\mathbb S^{d-1}\times[0,1])$. Linear OT sends $\alpha$ to the
-displacement field $T_\alpha-\Id$ from a fixed reference $\rho$ in
-$L^2(\rho;\RR^d)$.
+(rem-three-hilbertian-measure-embeddings)=
+:::{admonition} Remark: Three Hilbertian embeddings of measures
+:class: ot4ml-remark
+
+Several constructions in this text embed measures into Hilbert spaces, but they encode different geometries. Kernel mean embeddings send $\alpha$ to $\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances; see Section {ref}`sec-rkhs-mmd`. Quadratic sliced Wasserstein sends a measure to the collection of one-dimensional quantile functions of its projections, viewed in $L^2(\Sphere^{d-1}\times[0,1])$; see Section {ref}`sec-sliced-wasserstein`. Linear OT sends $\alpha$ to the displacement field $T_\alpha-\Id$ from a fixed reference $\rho$ in $L^2(\rho;\RR^d)$. The first construction is linear in the measure and depends on the kernel, the second is nonlinear but reduces OT to projected one-dimensional quantiles, and the third is a tangent approximation to the full Wasserstein geometry around a chosen reference.
 :::
 
+
+(fig:dualnorms-linear-ot-embedding)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -922,6 +1063,7 @@ pushing the reference forward.
 
 <iframe class="ot4ml-live-frame" title="Linear optimal transport controls" src="../live/generalized-linear-ot.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
+(prop-linear-ot-stability)=
 :::{admonition} Proposition: Local Stability of Linear OT
 :class: important
 Assume that the measures are supported on a fixed convex compact set, with
@@ -958,6 +1100,7 @@ dimension, density bounds, support geometry and regularity
 {cite:p}`merigot2020stability`.
 :::
 
+(sec-spectral-subspace-wasserstein)=
 ## Spectral and Robust Wasserstein Distances
 
 Spectral OT changes the scalar quadratic cost by measuring the whole
@@ -968,6 +1111,7 @@ non-convex rank-constrained version of this idea {cite:p}`paty2019subspace`;
 spectral gauges provide its convex minimax counterpart and connect to recent
 spectral-gradient viewpoints such as Muon dynamics {cite:p}`peyre2026muon`.
 
+(def-monotone-spectral-gauge)=
 :::{admonition} Definition: Monotone Spectral Gauge
 :class: important
 A monotone spectral gauge on positive semidefinite matrices is a convex,
@@ -985,6 +1129,7 @@ $\gamma(QMQ^\top)=\gamma(M)$ for every orthogonal matrix $Q$, and
 The monotonicity condition means that increasing the displacement covariance
 in Loewner order cannot decrease the transport penalty.
 
+(def-spectral-wasserstein)=
 :::{admonition} Definition: Spectral Wasserstein Distance
 :class: important
 Let $\gamma$ be a monotone spectral gauge. For a coupling
@@ -1035,6 +1180,7 @@ The polar set of the gauge is
 so that, for a closed gauge,
 $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
 
+(prop-spectral-wasserstein-robust)=
 :::{admonition} Proposition: Robust Representation and Metric Equivalence
 :class: important
 Assume, for simplicity, that the measures are compactly supported and that
@@ -1110,6 +1256,7 @@ b\Wass_2(\alpha,\beta)^2,
 which proves definiteness and equivalence with $\Wass_2$.
 :::
 
+(def-subspace-robust-wasserstein)=
 :::{admonition} Definition: Subspace Robust Wasserstein
 :class: important
 For $1\leq k\leq d$, the Paty--Cuturi subspace robust Wasserstein distance is
@@ -1153,6 +1300,7 @@ original non-convex rank constraint. For $k=1$,
 $\gamma_1(M)=\lambda_{\max}(M)$ and
 $\mathcal B_{\gamma_1}=\{A\succeq0:\tr(A)\leq1\}$.
 
+(fig:spectral-wasserstein-gauge)=
 :::{div}
 :class: ot4ml-book-figure
 

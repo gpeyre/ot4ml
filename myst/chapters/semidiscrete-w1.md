@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-semidiscr-w1)=
 
 This chapter focuses on two computationally useful degeneracies of the dual
 problem. Semi-discrete optimal transport turns a continuous-to-discrete map
@@ -120,6 +121,7 @@ The geometric object encoded by the dual weights is a weighted
 nearest-neighbor diagram: each source point is assigned to the target atom that
 realizes the discrete $\bar c$-transform.
 
+(def-laguerre-power-cells)=
 :::{admonition} Definition: Laguerre Cells and Power Diagrams
 :class: important
 For sites $(y_j)_{j=1}^m$ and weights $g\in\RR^m$, the Laguerre cell
@@ -149,6 +151,7 @@ For quadratic costs, varying the dual weights moves the walls between adjacent
 cells while keeping them parallel. This is the geometric mechanism by which
 the cell masses are adjusted.
 
+(fig:semidiscrete-laguerre-cells)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -312,6 +315,96 @@ where $g^\star$ is a maximizer and the expectation is over the i.i.d. samples.
 This stochastic viewpoint is one of the main algorithmic advantages of the
 semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 
+(alg:semidiscrete-laguerre-descent)=
+:::{admonition} Algorithm: Semi-discrete Laguerre descent
+:class: ot4ml-algorithm
+
+**Input:** Source measure $\alpha$, target atoms $(y_j,\b_j)$, cost $c$, steps $\tau_k$.
+
+**Output:** Semi-discrete dual weights $\gD$ and Laguerre cells.
+
+**Initialize:** Choose $\gD^{(0)}\in\RR^m$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **Compute cells:**
+>
+>
+> ```{math}
+> \Laguerre_j(\gD^{(k)})
+> =
+> \enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.
+> ```
+>
+>
+> **Compute masses:**
+>
+>
+> ```{math}
+> m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .
+> ```
+>
+>
+> **Update**
+>
+>
+> ```{math}
+> \gD^{(k+1)}
+> =
+> \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).
+> ```
+>
+>
+> **If** $\max_j\abs{m_j^{(k)}-\b_j}\leq\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $\gD^{(k+1)}$ and the cells.
+>>
+:::
+
+(alg:semidiscrete-stochastic-ascent)=
+:::{admonition} Algorithm: Stochastic semi-discrete ascent
+:class: ot4ml-algorithm
+
+**Input:** Source sampler $x\sim\alpha$, target atoms $(y_j,\b_j)$, steps $\tau_\ell$.
+
+**Output:** Stochastic semi-discrete dual weights $\gD$.
+
+**Initialize:** Set $\gD^{(0)}=0$.
+
+**For** $\ell=0,1,\ldots$ **do**:
+
+>
+> **Draw** $x_\ell\sim\alpha$.
+>
+> **Find** the active Laguerre cell:
+>
+>
+> ```{math}
+> j_\ell\in\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr).
+> ```
+>
+>
+> **For** $j=1,\ldots,m$ **do**
+
+>>
+>>
+>> ```{math}
+>> \gD_j^{(\ell+1)}
+>> =
+>> \gD_j^{(\ell)}
+>> +
+>> \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).
+>> ```
+>>
+>>
+
+**Return** $\gD^{(\ell)}$ or its running average.
+:::
+
+
+(sec-optimal-quantization)=
 ## Optimal Quantization
 
 Optimal quantization asks for the best discrete approximation of a measure by
@@ -333,6 +426,7 @@ This problem is classical in approximation theory and information theory
 formulation emphasizes that one optimizes both the support locations $Y$ and,
 unless prescribed, the masses $b$.
 
+(prop-quantization-rate)=
 :::{admonition} Proposition: Quantization Rate and Curse of Dimensionality
 :class: important
 Let $\Omega\subset\RR^d$ be a bounded Lipschitz domain and assume
@@ -386,6 +480,7 @@ In one dimension, monotonicity fixes the ordering of cells, reducing the
 problem to interval endpoints and centroids; for the uniform law with the
 quadratic cost, the optimal centroids are equally spaced.
 
+(prop-free-masses-voronoi)=
 :::{admonition} Proposition: Free Masses Give Voronoi Cells
 :class: important
 For the cost $c(x,y)=d(x,y)^p$, fix distinct codepoints
@@ -467,6 +562,7 @@ generally converge only to a local minimum. Good seeding matters; for squared
 Euclidean costs, $k$-means++ gives a logarithmic approximation guarantee in
 expectation {cite:p}`ArthurVassilvitskii2007`.
 
+(fig:semidiscrete-lloyd-quantization)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -494,6 +590,111 @@ before settling into a local centroidal configuration.
 
 <iframe class="ot4ml-live-frame" title="Lloyd quantization controls" src="../live/semidiscrete-lloyd.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
+(alg:lloyd-quantization)=
+:::{admonition} Algorithm: Lloyd quantization
+:class: ot4ml-algorithm
+
+**Input:** Source measure $\alpha$, number of codepoints $m$, squared Euclidean cost.
+
+**Output:** Codepoints $Y=(y_j)_{j=1}^m$.
+
+**Initialize:** Choose $Y^{(0)}=(y_j^{(0)})_{j=1}^m$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **Compute Voronoi cells:**
+>
+>
+> ```{math}
+> \VV_j(Y^{(k)})
+> =
+> \enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.
+> ```
+>
+>
+> **For** each nonempty cell $\VV_j$ **do**
+
+>>
+>>
+>> ```{math}
+>> y_j^{(k+1)}
+>> =
+>> \frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)}
+>> {\int_{\VV_j(Y^{(k)})}\d\al(x)}.
+>> ```
+>>
+>>
+
+> **For** each empty cell $\VV_j$ **do**:
+
+>>
+>> **Keep or reseed** $y_j^{(k+1)}$.
+>>
+
+> **If** codepoint displacement is below $\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $Y^{(k+1)}$.
+>>
+:::
+
+(rem-graph-w1-network-simplex)=
+:::{admonition} Remark: Sparse LP and network simplex
+:class: ot4ml-remark
+
+Let $N=|V|$ and $M=|E|$. The graph Beckmann problem is a linear program, but it is much smaller than the dense Kantorovich LP on the same vertex set. Indeed, writing $m=m^+-m^-$ gives
+
+```{math}
+\min_{m^+,m^-\geq0}\sum_{e\in E}\ell_e(m^+_e+m^-_e)
+\quad\text{subject to}\quad
+\operatorname{div}_G(m^+-m^-)=r .
+```
+
+This formulation has $2M$ nonnegative variables and $N-1$ independent balance constraints, whereas the standard transport LP between two measures on $V$ has $N^2$ coupling variables and $2N-1$ independent marginal constraints. For sparse geometric graphs, such as planar Delaunay graphs where typically $M=O(N)$, the graph formulation is therefore linear-size rather than quadratic-size.
+
+The same LP is a minimum-cost transshipment problem. Replace each undirected edge $\{i,j\}$ by the two directed arcs $i\to j$ and $j\to i$, both with cost $\ell_e$, and impose the node balances $\sum_{j}u_{ij}-\sum_j u_{ji}=r_i$. This is exactly the setting of the network simplex method: a basis is a spanning tree, a pivot adds one non-tree arc, creates a unique cycle, sends flow along this cycle, and updates the node potentials and reduced costs {cite:p}`bertsekas1988dual,Orlin1997`. A basic implementation needs $O(M)$ work to price all arcs and $O(N)$ work to update the tree at each pivot, hence $O(PM)$ arithmetic operations for $P$ pivots on a sparse graph. The pivot count $P$ depends on the rule and can be large in worst-case simplex analyses, but network-simplex variants and general minimum-cost-flow algorithms give polynomial guarantees in $N$ and $M$; in practice, this edge-based formulation is often far cheaper than solving the dense $N^2$-variable transport LP.
+:::
+
+(alg:graph-beckmann-network-simplex)=
+:::{admonition} Algorithm: Graph Beckmann network-simplex pivot
+:class: ot4ml-algorithm
+
+**Input:** Graph $G=(V,E)$, edge lengths $\ell_e$, node balances $r_i$ with $\sum_ir_i=0$.
+
+**Output:** Minimum-cost graph flow $u$.
+
+**Replace** each undirected edge by two directed arcs.
+
+**Impose balances:**
+
+```{math}
+\sum_j u_{ij}-\sum_j u_{ji}=r_i .
+```
+
+**Initialize:** Choose a feasible spanning-tree basis, tree flow, and node potentials.
+
+**While** some non-tree arc has negative reduced cost **do**:
+
+>
+> **Choose** entering arc with negative reduced cost.
+>
+> **Add** it to the tree.
+>
+> **Set** $\mathcal C=$ unique induced cycle.
+>
+> **Send** the largest admissible flow around $\mathcal C$.
+>
+> **Remove** the leaving arc that becomes tight.
+>
+> **Update** the tree, potentials, and reduced costs.
+>
+
+**Return** $u$.
+:::
+
+
+(sec-W1)=
 ## Wasserstein-1 Norm
 
 The $\Wass_1$ distance has an especially transparent dual: the admissible
@@ -514,6 +715,7 @@ $c(x,y)=d(x,y)$. The Lipschitz constant of $f\in\Cc(\X)$ is
 \frac{|f(x)-f(y)|}{d(x,y)}.
 ```
 
+(prop-w1-c-transform-lipschitz)=
 :::{admonition} Proposition: $c$-Transforms and $1$-Lipschitz Functions
 :class: important
 Suppose $\X=\Y$ and $c(x,y)=d(x,y)$. Then there exists $g$ such that
@@ -648,6 +850,7 @@ formulation extends to Riemannian manifolds by replacing the Euclidean
 distance by geodesic distance and interpreting gradient and divergence as
 differential operators on the manifold.
 
+(def-graph-geodesic-distance)=
 :::{admonition} Definition: Graph Geodesic Distance
 :class: important
 Let $G=(V,E)$ be a connected finite graph with positive edge lengths
@@ -665,6 +868,7 @@ The minimum is over all paths $\gamma$ joining $i$ to $j$.
 
 This graph distance turns $\Wass_1$ into a finite-dimensional flow problem.
 
+(prop-graph-w1-beckmann)=
 :::{admonition} Proposition: $\Wass_1$ and Beckmann Flow on a Graph
 :class: important
 Let $G=(V,E)$ be a connected finite graph with positive edge lengths
@@ -729,6 +933,7 @@ set: connectedness and $\sum_i r_i=0$ allow the signed surplus to be routed
 along paths.
 :::
 
+(fig:w1-graph-transport-flow)=
 :::{div}
 :class: ot4ml-book-figure
 

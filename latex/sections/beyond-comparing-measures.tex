@@ -62,7 +62,10 @@ Thus each component satisfies its own continuity equation, but the cost may stil
 \index{lower semicontinuity}% strictindex
 \index{continuity equation}% strictindex
 
-A simple quadratic family is obtained from a mobility matrix $\mathsf M(u)\in\mathbb S_+^m$, where $\mathbb S_+^m$ denotes the cone of real symmetric positive semidefinite matrices:
+The following elementary family separates independent channel motion from genuinely coupled vector transport.
+
+\begin{example}[Diagonal and coupled positive mobilities]
+Choose a mobility matrix $\mathsf M(u)\in\mathbb S_+^m$, where $\mathbb S_+^m$ denotes the cone of real symmetric positive semidefinite matrices, and set
 \index{positive!semidefinite matrix}% strictindex
 \[
 	\Phi_{\mathsf M}(u,V)
@@ -80,6 +83,7 @@ the channels move independently. Non-diagonal mobilities are the simplest way to
 \]
 increases the mobility in the common channel direction $q$ while leaving transverse directions controlled by the diagonal part. The local cost of moving one component can therefore depend on the densities and momenta of the other components, even though each component mass remains conserved.
 \index{momentum}% strictindex
+\end{example}
 
 \begin{prop}[Diagonal positive vector Benamou--Brenier]\label{prop-diagonal-positive-vector-bb}
 \index{Benamou-Brenier}% strictindex
@@ -541,6 +545,40 @@ Each update is an ordinary entropic OT problem and can therefore be solved with 
 \index{Sinkhorn!iteration}% strictindex
 \index{entropic!OT}% strictindex
 
+\begin{alg}[Entropic Gromov--Wasserstein linearization]\label{alg:entropic-gromov-wasserstein}
+\textbf{Input:} Metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Approximate entropic GW coupling $\P\in\CouplingsD(\a,\b)$.
+
+\textbf{Initialize:} Choose $\P^{(0)}\in\CouplingsD(\a,\b)$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	\C^{(k)}
+	=
+	\distD^{\odot2}\a\,\ones_m^\top
+	+
+	\ones_n(\distD'^{\odot2}\b)^\top
+	-
+	2\distD\,\P^{(k)}\,\transp{\distD'}.
+\]
+\textbf{Solve} entropic OT subproblem:
+\[
+	\P^{(k+1)}
+	=
+	\uargmin{\P\in\CouplingsD(\a,\b)}
+	\dotp{\P}{\C^{(k)}}-\epsilon\HD(\P).
+\]
+\textbf{If} $\norm{\P^{(k+1)}-\P^{(k)}}\leq\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return} $\P^{(k+1)}$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 \paragraph{Adding features.}
 \index{cost!feature}% strictindex
 Fused Gromov--Wasserstein augments the structural term with a feature transport cost~\cite{vayer2019optimaltransportstructured}. In the discrete case, given a cross-feature cost $M\in\RR^{n\times m}$ and a parameter $\lambda\in[0,1]$, one minimizes
@@ -656,10 +694,10 @@ for all $F\in\mathbb H_n$ and $G\in\mathbb H_m$. Thus $\operatorname{Tr}_B(T)\in
 	\end{equation}
 \end{defn}
 
-\begin{rem}[Classical diagonal case]\label{rem-qot-classical-diagonal-case}
+\begin{example}[Classical diagonal case]\label{rem-qot-classical-diagonal-case}
 	If $A$, $B$, $C$ and $T$ are all diagonal in fixed bases, then $A$ and $B$ are probability vectors, $T$ is a nonnegative matrix and the partial-trace constraints reduce to the usual row and column sum constraints. Hence classical Kantorovich OT is the diagonal, commutative subcase of~\eqref{eq-qot-primal}. The genuinely quantum feature is that $T$ may contain off-diagonal coherences and entanglement.
 \index{trace!partial constraint}% strictindex
-\end{rem}
+\end{example}
 
 
 \begin{prop}[Quantum Kantorovich duality]\label{prop-qot-duality}
@@ -822,6 +860,47 @@ In the diagonal case this proposition gives the usual multiplicative Sinkhorn up
 do not admit scalar division formulas, because the exponential of $F\otimes\Id_m+\Id_n\otimes G-C$ cannot be separated unless the local potential $F\otimes\Id_m+\Id_n\otimes G$ commutes with the cost $C$.
 When all matrices are diagonal in the same basis, commutativity restores the scalar form $T_e=\diag(u)K\diag(v)$ and the marginal equations reduce to the usual Sinkhorn divisions.
 
+Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-commutative analogue of Sinkhorn.
+
+\begin{alg}[Exact quantum Bregman projections]\label{alg:quantum-exact-bregman}
+\index{quantum!Bregman projection}% strictindex
+\textbf{Input:} Density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Quantum entropic coupling $T$ with partial traces $A$ and $B$.
+
+\textbf{Initialize:} Hermitian potentials $F^{(0)}$ and $G^{(0)}$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	T^{(k)}=
+	T_e(F^{(k)},G^{(k)})
+	=
+	\exp\!\left(
+		\frac{F^{(k)}\otimes\Id_m+\Id_n\otimes G^{(k)}-C}{\epsilon}
+	\right).
+\]
+\textbf{Solve} $A$-projection equation:
+\[
+	\operatorname{Tr}_B T_e(F^+,G^{(k)})=A,
+\]
+\textbf{Set} $F^{(k+1)}=F^+$.
+
+\textbf{Solve} $B$-projection equation:
+\[
+	\operatorname{Tr}_A T_e(F^{(k+1)},G^+)=B,
+\]
+\textbf{Set} $G^{(k+1)}=G^+$.
+
+\textbf{If} both partial-trace residuals are at most $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return} $T_e(F^{(k+1)},G^{(k+1)})$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 \paragraph{Gurvits scaling and quantum Sinkhorn.}
 \index{Gurvits scaling}% strictindex
 \index{quantum!Sinkhorn}% strictindex
@@ -864,6 +943,36 @@ They can be enforced by the explicit congruence normalizations
 	S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
 \end{aligned}
 \end{equation}
+\begin{alg}[Gurvits/operator scaling for quantum Sinkhorn]\label{alg:quantum-gurvits-scaling}
+\textbf{Input:} Positive marginals $A,B$, positive kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Symmetrically scaled coupling $T_s$.
+
+\textbf{Initialize:} Set $U,V\succ0$.
+
+\textbf{Repeat}:
+\begin{algblock}
+\[
+	R_V=\mathcal K(V^2),
+	\qquad
+	U\leftarrow
+	R_V^{-1/2}\bigl(R_V^{1/2} A R_V^{1/2}\bigr)^{1/2}R_V^{-1/2}.
+\]
+\[
+	S_U=\mathcal K^\star(U^2),
+	\qquad
+	V\leftarrow
+	S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
+\]
+\end{algblock}
+
+\textbf{Until} both operator-marginal residuals are at most $\mathrm{tol}$.
+
+\textbf{Return}
+\[
+	T_s=(U\otimes V)K(U\otimes V).
+\]
+\end{alg}
 These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. This is Gurvits/operator scaling with prescribed targets; when all matrices are diagonal it reduces to classical Sinkhorn scaling, and when the targets are proportional to identities it matches the usual bistochastic operator-scaling normalization, up to the conventional trace normalization.
 \index{inverse square root}% strictindex
 \index{Sinkhorn!scaling}% strictindex

@@ -193,7 +193,43 @@ This is a linear program, and its solutions need not be unique.
 \index{graph!bipartite}% strictindex
 \end{proof}
 
-The north-west corner rule does not use the cost matrix and is therefore not meant to solve~\eqref{eq-kanto-discr}. Its role is algorithmic: an acyclic support corresponds to linearly independent marginal constraints. When the support has fewer than $n+m-1$ positive entries, transportation simplex implementations complete it with zero-mass basic variables to obtain a degenerate basic feasible solution. This gives a cheap initialization for the pivoting methods discussed in Section~\ref{sec-kantorovich-lp-algorithms}.
+\begin{alg}[North-west corner coupling]\label{alg:north-west-corner}
+\textbf{Input:} Source weights $\a\in\simplex_n$ and target weights $\b\in\simplex_m$.
+
+\textbf{Output:} Sparse feasible coupling $\P\in\CouplingsD(\a,\b)$.
+
+\textbf{Initialize:} Set $\P=0$, $r=\a$, $s=\b$, and $(i,j)=(1,1)$.
+
+\textbf{While} $i\leq n$ and $j\leq m$ \textbf{do}:
+\begin{algblock}
+\[
+	\eta=\min(r_i,s_j),
+	\qquad
+	\P_{ij}\leftarrow \eta.
+\]
+\textbf{Update residuals:}
+\[
+	r_i\leftarrow r_i-\eta,
+	\qquad
+	s_j\leftarrow s_j-\eta.
+\]
+\textbf{If} $r_i=0$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Set} $i\leftarrow i+1$.
+
+\end{algblock}
+\textbf{If} $s_j=0$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Set} $j\leftarrow j+1$.
+
+\end{algblock}
+\end{algblock}
+\textbf{Return} $\P$.
+\end{alg}
+
+The north-west corner rule, summarized in Algorithm~\ref{alg:north-west-corner}, does not use the cost matrix and is therefore not meant to solve~\eqref{eq-kanto-discr}. Its role is algorithmic: an acyclic support corresponds to linearly independent marginal constraints. When the support has fewer than $n+m-1$ positive entries, transportation simplex implementations complete it with zero-mass basic variables to obtain a degenerate basic feasible solution. This gives a cheap initialization for the pivoting methods discussed in Section~\ref{sec-kantorovich-lp-algorithms}.
 \index{cost matrix}% strictindex
 \index{north-west corner!rule}% strictindex
 \index{linear programming!basic feasible solution}% strictindex
@@ -221,6 +257,22 @@ In one dimension, the transportation polytope has a canonical monotone optimizer
 	\]
 	for $i<i'$ and $j'<j$, with strict inequality for strictly convex $h$ and distinct points. Repeating this uncrossing procedure until no crossing remains yields a monotone optimal plan. There is only one monotone feasible plan with the prescribed sorted marginals, namely the sweep plan: it pairs the leftmost remaining source mass with the leftmost remaining target mass at every step. Sorting costs $O(n\log n+m\log m)$ and the sweep uses at most $n+m-1$ assignments.
 \end{proof}
+
+\begin{alg}[Weighted one-dimensional sweep]\label{alg:weighted-one-dimensional-sweep}
+\textbf{Input:} One-dimensional atoms $(x_i,\a_i)$ and $(y_j,\b_j)$; convex cost $h(x-y)$.
+
+\textbf{Output:} Monotone optimal coupling $\P$.
+
+\textbf{Sort} atoms:
+\[
+	x_1\leq\cdots\leq x_n,
+	\qquad
+	y_1\leq\cdots\leq y_m.
+\]
+\textbf{Run} Algorithm~\ref{alg:north-west-corner} on sorted weights $(\a_i)_i$ and $(\b_j)_j$.
+
+\textbf{Return} $\P$.
+\end{alg}
 
 \paragraph{Permutation matrices as couplings.}
 \index{matrix!permutation}% strictindex
@@ -298,10 +350,10 @@ The next elementary facts lead to the Birkhoff--von Neumann theorem~\cite{birkho
 	Among all non-empty faces of $\mathcal C$, choose one of minimal affine dimension. If this face contained two distinct points, maximizing a linear functional that is not constant on the face would produce a non-empty proper exposed subface, contradicting minimality. Hence the minimal face is a singleton, and its point is extreme.
 \end{proof}
 
-\begin{rem}[Why compactness is needed]
+\begin{example}[Unbounded convex sets may have no extreme point]
 	Compactness cannot be dropped from Proposition~\ref{prop-extreme-point-existence}. For instance, the closed convex set $\enscond{(x,y)\in\RR_+^2}{xy\geq1}$ is unbounded and has no extreme point.
 \index{extreme point}% strictindex
-\end{rem}
+\end{example}
 
 \begin{prop}[Linear programs have extreme minimizers]\label{prop-linear-program-extreme-minimizer}
 \index{extreme minimizer}% strictindex
@@ -400,8 +452,44 @@ The next elementary facts lead to the Birkhoff--von Neumann theorem~\cite{birkho
 	so $Q,R\in\mathcal B_n$. Finally, $Q\neq R$ because $\epsilon>0$ and the cycle is non-empty, while by construction $P=(Q+R)/2$. Thus $P$ is not extreme. Consequently every extreme point of $\mathcal B_n$ is integral, and every integral bistochastic matrix is a permutation matrix.
 	\index{bistochastic matrix}% strictindex
 	\index{graph!bipartite}% strictindex
-	\index{extreme point}% strictindex
+\index{extreme point}% strictindex
 \end{proof}
+
+The same combinatorial idea gives the constructive decomposition used to express a bistochastic matrix as a convex combination of permutations.
+
+\begin{alg}[Birkhoff--von Neumann decomposition]\label{alg:birkhoff-von-neumann-decomposition}
+\textbf{Input:} Bistochastic matrix $P\in\mathcal B_n$.
+
+\textbf{Output:} Decomposition $P=\sum_r\lambda_rP_{\sigma_r}$.
+
+\textbf{Initialize:} Set $R=P$ and $\mathcal L=\emptyset$.
+
+\textbf{While} $R\neq0$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Find} a permutation $\sigma$ supported by positive entries:
+\[
+	R_{i,\sigma(i)}>0
+	\qquad\text{for all }i.
+\]
+\textbf{Set}
+\[
+	\lambda=\min_i R_{i,\sigma(i)}.
+\]
+\textbf{Append} $(\lambda,\sigma)$ to $\mathcal L$.
+
+\textbf{Update}
+\[
+	R\leftarrow R-\lambda P_\sigma .
+\]
+\end{algblock}
+\textbf{Return}
+\[
+	P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r},
+	\qquad
+	\sum_r\lambda_r=1.
+\]
+\end{alg}
 
 \begin{cor}[Kantorovich for matching]\label{cor-kantorovich-matching}
 \index{Kantorovich!relaxation}% strictindex
@@ -726,8 +814,12 @@ The proof of Brenier's theorem~\ref{thm-brenier} relies on Kantorovich relaxatio
 \index{Brenier!theorem}% strictindex
 \end{proof}
 
-If $\al$ does not have a density, then $\phi$ may be non-smooth on a set charged by $\al$, and non-smooth points can lead to mass splitting. For instance, moving $\delta_0$ to $(\delta_{-1}+\delta_{+1})/2$ can be represented by a plan concentrated on the set-valued subdifferential of $\phi(x)=|x|$, but not by a deterministic map. This is the continuous counterpart of the gap between the uniform matching case of Corollary~\ref{cor-kantorovich-matching} and the general splitting case.
+The density assumption is exactly what prevents the relaxed plan from using several destinations at a nonsmooth point.
+
+\begin{rem}[Nonsmooth potentials and splitting]
+	If $\al$ does not have a density, then $\phi$ may be non-smooth on a set charged by $\al$, and non-smooth points can lead to mass splitting. For instance, moving $\delta_0$ to $(\delta_{-1}+\delta_{+1})/2$ can be represented by a plan concentrated on the set-valued subdifferential of $\phi(x)=|x|$, but not by a deterministic map. This is the continuous counterpart of the gap between the uniform matching case of Corollary~\ref{cor-kantorovich-matching} and the general splitting case.
 \index{matching!uniform}% strictindex
+\end{rem}
 
 \begin{rem}[Probabilistic form of tightness]
 \index{tightness}% strictindex
@@ -1149,6 +1241,38 @@ In the discrete case, each mass $\P_{ij}$ moves from $x_i$ to $y_j$ along its ow
 \index{discrete!measure}% strictindex
 \index{plan!transport}% strictindex
 
+\begin{alg}[Displacement interpolation from a transport plan]\label{alg:plan-displacement-interpolation}
+\index{plan!interpolation}% strictindex
+\index{McCann interpolation}% strictindex
+\textbf{Input:} Measures $\alpha,\beta$ on $\RR^d$, time $t\in[0,1]$.
+
+\textbf{Output:} Displacement interpolant $\alpha_t$.
+
+\textbf{Solve} quadratic Kantorovich problem.
+
+\textbf{Choose} $\pi^\star$ among the minimizers.
+
+\textbf{Set} interpolation map:
+\[
+	e_t(x,y)=(1-t)x+t y.
+\]
+\textbf{Push forward:}
+\[
+	\al_t=(e_t)_\sharp\pi^\star.
+\]
+\textbf{If} $\pi^\star=\sum_{i,j}P^\star_{ij}\delta_{(x_i,y_j)}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Compute}
+\[
+	\al_t=
+	\sum_{i,j}P^\star_{ij}
+	\delta_{(1-t)x_i+t y_j}.
+\]
+\end{algblock}
+\textbf{Return} $\alpha_t$.
+\end{alg}
+
 \begin{prop}[Optimal-plan interpolation is a $\Wass_2$ geodesic]\label{prop-plan-interpolation-w2-geodesic}
 \index{Wasserstein!geodesic}% strictindex
 \index{constant-speed geodesic}% strictindex
@@ -1509,7 +1633,31 @@ $\sum_i a_i\Gaussian(m_i,\Sigma_i)$ can either be viewed as the collapsed measur
 \[
 	\mathfrak A=\sum_i a_i\delta_{\Gaussian(m_i,\Sigma_i)}
 \]
-on the Bures-Wasserstein space of Gaussian components. Interpolating $\mathfrak A$ with~\eqref{eq-wow-distance} transports components to components and moves each matched Gaussian along its Gaussian $\Wass_2$ geodesic. This is generally not the same as the true $\Wass_2$ interpolation between the collapsed mixture densities, which can split and recombine mass inside and across components.
+on the Bures-Wasserstein space of Gaussian components. Given two component laws
+\[
+	\mathfrak A=\sum_i a_i\delta_{\Gaussian(m_i,\Sigma_i)},
+	\qquad
+	\mathfrak B=\sum_j b_j\delta_{\Gaussian(n_j,\Lambda_j)},
+\]
+the discrete problem induced by~\eqref{eq-wow-distance} uses the component cost
+\[
+	C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
+\]
+Let $\Pi^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
+\[
+	m_{ij,t}=(1-t)m_i+t n_j,
+	\qquad
+	\Sigma_{ij,t}
+	=
+	\big((1-t)\Id+tA_{ij}\big)\Sigma_i
+	\big((1-t)\Id+tA_{ij}\big),
+\]
+and collapsing these component geodesics gives
+\[
+	\bar\alpha_t=
+	\sum_{i,j}\Pi^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
+\]
+This component-level interpolation transports Gaussian components as atoms of the Wasserstein space before returning to measures on~$\X$. It is generally not the same as the true $\Wass_2$ interpolation between the collapsed mixture densities, which can split and recombine mass inside and across components.
 \index{Bures-Wasserstein geometry}% strictindex
 \index{collapsed mixture}% strictindex
 \index{Wasserstein!space}% strictindex
@@ -1553,7 +1701,10 @@ on the Bures-Wasserstein space of Gaussian components. Interpolating $\mathfrak 
 	up to the arbitrary selection error. Taking first the infimum over $\bar\pi$ and then over $\Pi$ proves the claim.
 \end{proof}
 
-This viewpoint also clarifies lower bounds for Gromov--Wasserstein distances. Given a metric-measure space $\XX=(\X,\dist_\X,\mu_\X)$, each point defines a local distance distribution
+The following remark records a useful way in which this iterated construction reappears later for Gromov--Wasserstein lower bounds.
+
+\begin{rem}[Local profiles as Wasserstein-over-Wasserstein laws]
+	Given a metric-measure space $\XX=(\X,\dist_\X,\mu_\X)$, each point defines a local distance distribution
 \index{Wasserstein!distance}% strictindex
 \index{Gromov-Wasserstein}% strictindex
 \index{Gromov-Wasserstein!distance}% strictindex
@@ -1573,10 +1724,11 @@ The M\'emoli profile lower bound in Proposition~\ref{prop-memoli-gw-profile-lowe
 \index{Wasserstein!over Wasserstein}% strictindex
 \index{Wasserstein!distance}% strictindex
 %
-Note that there exist alternative distances which also metricize weak convergence. The simplest ones are Hilbertian kernel norms, which are detailed in Section~\ref{sec-dual-norms}.
+	Note that there exist alternative distances which also metricize weak convergence. The simplest ones are Hilbertian kernel norms, which are detailed in Section~\ref{sec-dual-norms}.
 \index{kernel!norm}% strictindex
 \index{weak!convergence}% strictindex
 \index{dual!norm}% strictindex
+\end{rem}
 
 
 \section{Distributional Robustness and \texorpdfstring{$\Wass_\infty$}{W-infinity}}

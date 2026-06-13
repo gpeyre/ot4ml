@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-generalized-ot-problems)=
 
 The second family changes the optimization problem rather than only the ground
 distance. Barycenters average several measures, multi-marginal OT couples many
@@ -48,6 +49,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-barycenters)=
 ## OT Barycenters
 
 Barycenters ask how to average probability measures rather than points. This
@@ -86,30 +88,21 @@ then the barycenter is unique {cite:p}`Carlier_wasserstein_barycenter`.
 Discrete existence, consistency, and fixed-point constructions are studied in
 {cite:p}`anderes2016discrete,alvarez2016fixed,leGouic2016existence`.
 
-:::{admonition} Remark: Two Measures Give a Wasserstein Geodesic
-:class: note
-For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the
-point at time $t$ on the Wasserstein geodesic between $\beta_0$ and
-$\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this
-barycenter is
+:::{admonition} Example: Two measures recover a Wasserstein geodesic
+:class: ot4ml-example
 
-```{math}
-((1-t)\Id+tT)_\sharp\beta_0.
-```
-
-If no Monge map is available, the same construction uses an optimal coupling
-$\pi$ and the interpolation map $(x,y)\mapsto(1-t)x+ty$, giving
-$((1-t)x+ty)_\sharp\pi$.
+For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on the Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation detailed in Section {ref}`sec-geodesic-convexity`. If no Monge map is available, the same construction uses an optimal coupling $\pi$ and the interpolation map $(x,y)\mapsto(1-t)x+ty$, giving $((1-t)x+ty)_\sharp\pi$.
 :::
 
-:::{admonition} Example: Dirac Inputs
-:class: note
-Problem {eq}`eq-barycenter-generic` generalizes the computation of
-barycenters of points. If $\beta_s=\delta_{x_s}$ is a single Dirac mass, then
-a solution is $\delta_{x^\star}$, where $x^\star$ is a Frechet mean of the
-points $(x_s)_s$.
+
+:::{admonition} Example: Dirac inputs recover Fr\'echet means
+:class: ot4ml-example
+
+Problem {eq}`eq-barycenter-generic` generalizes the computation of barycenters of points $(x_s)_{s=1}^S \in \X^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution to {eq}`eq-barycenter-generic` is $\de_{x^\star}$ where $x^\star$ is a Frechet mean of the points $(x_s)_s$.
 :::
 
+
+(fig:barycenters-four-shapes)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -144,25 +137,20 @@ resulting barycenter density.
 
 <iframe class="ot4ml-live-frame" title="Quantile barycenter controls" src="../live/ot-problems-barycenter.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
-:::{admonition} Remark: Mean of a Quadratic Barycenter
-:class: note
-For $c(x,y)=\norm{x-y}^2$, the mean of the barycenter $\alpha^\star$ is the
-barycenter of the means:
+:::{admonition} Remark: Mean of a quadratic barycenter
+:class: ot4ml-remark
+
+For $c(x,y)=\norm{x-y}^2$, the mean of the barycenter $\al^\star$ is necessarily the barycenter of the means,
 
 ```{math}
-\int_\X x\d\alpha^\star(x)
-=
-\sum_s\lambda_s\int_\X x\d\beta_s(x).
+\int_\Xx x \d\al^\star(x) = \sum_s \la_s \int_\Xx x \d\be_s(x).
 ```
 
-Indeed, the squared Wasserstein distance decomposes into a squared distance
-between means plus a centered Wasserstein term. Minimizing the resulting
-quadratic function of the barycenter mean gives the identity. If the input
-measures have compact support, the usual multi-marginal barycentric
-construction also gives a barycenter supported in the convex hull of the
-input supports.
+Indeed, the squared Wasserstein distance decomposes into a squared distance between means plus a centered Wasserstein term. Minimizing the resulting quadratic function of the barycenter mean gives the displayed identity. If the input measures have compact support, the usual multi-marginal barycentric construction also gives a barycenter supported in the convex hull of the input supports.
 :::
 
+
+(prop-barycenter-ot-cost-convexity)=
 :::{admonition} Proposition: Convexity of the OT Cost
 :class: important
 The map $(\alpha,\beta)\mapsto\mathcal L_c(\alpha,\beta)$ is convex.
@@ -210,6 +198,7 @@ On the line, barycenters become linear after the quantile change of variables.
 This gives the rare case where the barycenter is explicit rather than the
 solution of a high-dimensional optimization problem.
 
+(prop-quantile-barycenters)=
 :::{admonition} Proposition: Quantile Barycenters on the Line
 :class: important
 For $\X=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein
@@ -250,31 +239,28 @@ Gaussian barycenters show that the same separation as in the Gaussian
 Wasserstein formula persists: means average linearly, while covariances
 average according to the Bures--Wasserstein geometry.
 
-:::{admonition} Remark: Gaussian Barycenters
-:class: note
-The barycenter of Gaussian measures is Gaussian. In one dimension, it is
-obtained by averaging the means and the standard deviations, so the
-barycenter variance is the square of this averaged standard deviation. In
-higher dimensions, the covariance $\Sigma$ minimizes the Bures objective
+:::{admonition} Example: Gaussian inputs remain Gaussian
+:class: ot4ml-example
+
+The barycenter of Gaussian measures is Gaussian. In one dimension, it is obtained by averaging the means and the standard deviations, so the barycenter variance is the square of this averaged standard deviation. In higher dimensions, the covariance $\cov$ minimizes the Bures objective
 
 ```{math}
-\Sigma\mapsto
-\sum_s\lambda_s\mathcal B(\Sigma,\Sigma_s)^2,
+\cov \mapsto \sum_s \la_s \Bb(\cov,\cov_s)^2,
 ```
 
 and equivalently solves the fixed-point equation
 
 ```{math}
-\Sigma
-=
-\sum_s\lambda_s
-\left(\Sigma^{1/2}\Sigma_s\Sigma^{1/2}\right)^{1/2}.
+\cov =
+\sum_s \la_s
+\pa{\cov^{1/2}\cov_s\cov^{1/2}}^{1/2}.
 ```
 
-The mean part averages linearly, while the covariance part averages through
-the Bures--Wasserstein geometry {cite:p}`alvarez2016fixed,bhatia2018bures`.
+This is the covariance analogue of the usual Euclidean barycenter equation: the mean part averages linearly, while the covariance part averages through the Bures--Wasserstein geometry {cite:p}`alvarez2016fixed,bhatia2018bures`.
 :::
 
+
+(fig:barycenters-gaussian-covariances)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -379,6 +365,7 @@ u_s\leftarrow\frac{a}{K_s v_s}.
 The geometric mean enforces the fact that all couplings share the same
 barycenter marginal.
 
+(prop-dual-entropic-barycenters)=
 :::{admonition} Proposition: Dual of Entropic Barycenters
 :class: important
 The optimal scalings in {eq}`eq-bary-opt` can be written as
@@ -462,6 +449,119 @@ Classical applications include two-dimensional image interpolation,
 three-dimensional shape interpolation, and barycenters on surfaces where the
 ground cost is the square of the geodesic distance {cite:p}`2015-solomon-siggraph`.
 
+(alg:gaussian-barycenter-fixed-point)=
+:::{admonition} Algorithm: Gaussian barycenter fixed point
+:class: ot4ml-algorithm
+
+**Input:** Gaussian measures $\Gaussian(\mean_s,\cov_s)$, weights $\lambda_s$, tolerance $\mathrm{tol}$.
+
+**Output:** Gaussian barycenter $\Gaussian(\mean,\cov)$.
+
+**Set**
+
+```{math}
+\mean=\sum_s\lambda_s\mean_s .
+```
+
+**Initialize:** Choose $\cov^{(0)}\succ0$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> S^{(k)}
+> =
+> \sum_s\lambda_s
+> \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.
+> ```
+>
+>
+>
+>
+> ```{math}
+> \cov^{(k+1)}
+> =
+> (\cov^{(k)})^{-1/2}
+> \left(S^{(k)}\right)^2
+> (\cov^{(k)})^{-1/2}.
+> ```
+>
+>
+> **If** $\norm{\cov^{(k+1)}-\cov^{(k)}}\leq\mathrm{tol}$ **then**:
+
+>>
+>> **Set** $\cov=\cov^{(k+1)}$.
+>>
+>> **Return** $\Gaussian(\mean,\cov)$.
+>>
+:::
+
+(alg:entropic-barycenter-sinkhorn)=
+:::{admonition} Algorithm: Entropic barycenter Sinkhorn
+:class: ot4ml-algorithm
+
+**Input:** Costs $\C_s$, target weights $\b_s$, barycenter weights $\lambda_s$, regularization $\epsilon>0$.
+
+**Output:** Barycenter weights $\a$ and couplings $\P_s$.
+
+**Initialize:** Set $\K_s=e^{-\C_s/\epsilon}$ and choose $\uD_s^{(0)}\in\RR_{+,*}^n$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **For** each marginal $s$ **do**
+
+>>
+>>
+>> ```{math}
+>> \vD_s^{(k+1)}
+>> =
+>> \frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.
+>> ```
+>>
+>>
+
+> **Compute** barycenter marginal:
+>
+>
+> ```{math}
+> \a^{(k+1)}
+> =
+> \prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.
+> ```
+>
+>
+> **For** each marginal $s$ **do**
+
+>>
+>>
+>> ```{math}
+>> \uD_s^{(k+1)}
+>> =
+>> \frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.
+>> ```
+>>
+>>
+
+> **If** marginal residuals are below $\mathrm{tol}$ **then**:
+
+>>
+>> **Return**
+>>
+>>
+>> ```{math}
+>> \a^{(k+1)},
+>> \qquad
+>> \P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).
+>> ```
+>>
+>>
+>>
+:::
+
+
+(sec-multimarginal-ot)=
 ## Multimarginal OT
 
 Multi-marginal OT couples more than two measures at once. It is the natural
@@ -498,6 +598,7 @@ c_{\mathrm{bar}}(x_1,\ldots,x_S)
 \sum_{s=1}^S\lambda_s\norm{x-x_s}^2.
 ```
 
+(prop-multimarginal-barycenter)=
 :::{admonition} Proposition: Multi-Marginal Formula for Quadratic Barycenters
 :class: important
 Let $\beta_1,\ldots,\beta_S\in\mathcal P_2(\RR^d)$ and
@@ -548,6 +649,7 @@ Thus $X=B(Y_1,\ldots,Y_S)$ almost surely for the induced optimal
 multi-marginal plan.
 :::
 
+(cor-gaussian-discrete-barycenters)=
 :::{admonition} Corollary: Gaussian and Discrete Barycenters
 :class: important
 Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the
@@ -607,6 +709,56 @@ $\prod_s n_s$ in the discrete case. Practical barycenter solvers exploit
 separability of the cost, low-rank structure, convolutional kernels, or a
 fixed barycenter support.
 
+(alg:multimarginal-sinkhorn)=
+:::{admonition} Algorithm: Multi-marginal Sinkhorn
+:class: ot4ml-algorithm
+
+**Input:** Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$.
+
+**Output:** Multi-marginal entropic coupling tensor $P$.
+
+**Build**
+
+```{math}
+K_{i_1,\ldots,i_S}
+=
+\exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right)
+\prod_{s=1}^S(\a_s)_{i_s}.
+```
+
+**Initialize:** Set $u_s\in\RR_{+,*}^{n_s}$ for all $s$.
+
+**Repeat**:
+
+>
+> **For** $s=1,\ldots,S$ **do**:
+
+>>
+>>
+>> ```{math}
+>> (u_s)_i
+>> \leftarrow
+>> \frac{(\a_s)_i}
+>> {\displaystyle
+>> \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S}
+>> K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S}
+>> \prod_{r\neq s}(u_r)_{i_r}}.
+>> ```
+>>
+>>
+
+**Until** all marginal residuals are below $\mathrm{tol}$.
+
+**Return**
+
+```{math}
+P_{i_1,\ldots,i_S}
+=
+K_{i_1,\ldots,i_S}\prod_{s=1}^S (u_s)_{i_s}.
+```
+:::
+
+
 ## Metric Learning and Inverse OT
 
 This section points to inverse problems where the ground cost itself is
@@ -655,6 +807,7 @@ differentiating a solved OT problem, but learning a cost for which the
 resulting matching has the desired semantic behavior; this is a bilevel and
 usually non-convex optimization problem.
 
+(fig:metric-learning-cost-deformation)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -747,6 +900,7 @@ low-rank and sparse inverse OT models
 formulations for learning OT costs from observed plans
 {cite:p}`ma2020learning,peyre2026curvature`.
 
+(prop-inverse-ot-convex)=
 :::{admonition} Proposition: Convex Dual-Gap Formulation of Inverse OT
 :class: important
 Let $\widehat P\in\mathbf U(a,b)$ be an observed coupling and let
@@ -829,6 +983,40 @@ $C_\theta$ is affine, and connects inverse OT with generalized Sinkhorn
 iterations and transport-regularized inverse problems
 {cite:p}`karlsson2016generalized,ma2020learning`.
 
+(alg:inverse-ot-dual-gap-learning)=
+:::{admonition} Algorithm: Inverse OT by dual-gap fitting
+:class: ot4ml-algorithm
+
+**Input:** Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features $C^{(r)}$, feasible set $\Theta$, regularizer $R$.
+
+**Output:** Fitted cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
+
+**Set** parametric cost:
+
+```{math}
+C_\theta=\sum_r\theta_r C^{(r)}.
+```
+
+**Solve**
+
+```{math}
+\min_{\theta\in\Theta,f,g}
+R(\theta)+\lambda
+\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
+```
+
+**Subject to**
+
+```{math}
+f_i+g_j\leq(C_\theta)_{i,j}
+\qquad\text{for all }(i,j).
+```
+
+**Return** $\theta^\star$, $C_{\theta^\star}$, and $(f^\star,g^\star)$.
+:::
+
+
+(sec-weak-ot)=
 ## Weak Optimal Transport
 
 Weak OT relaxes the cost so that it depends on the conditional distribution
@@ -841,6 +1029,7 @@ penalizes an aggregate of that response, such as its conditional mean.
 The first object to isolate is the map obtained by collapsing each
 conditional law to its barycenter.
 
+(def-barycentric-projection)=
 :::{admonition} Definition: Barycentric Projection of a Coupling
 :class: important
 Let $\alpha,\beta\in\mathcal P_2(\RR^d)$ and let
@@ -871,6 +1060,7 @@ statement is attached to quadratic optimal plans, as in the tangent-space
 viewpoint on $\Wass_2$ developed by Ambrosio, Gigli and Savare
 {cite:p}`ambrosio2006gradient`.
 
+(prop-barycentric-projection-optimal)=
 :::{admonition} Proposition: Barycentric Projection of a Quadratic Optimal Plan
 :class: important
 Let $\pi\in\Couplings(\alpha,\beta)$ be optimal for the quadratic cost
@@ -933,6 +1123,7 @@ $C(x,\nu)=\int c(x,y)\d\nu(y)$, because the objective then becomes
 $\int c(x,y)\d\pi(x,y)$. The genuinely weak behavior starts when $C$ is
 nonlinear in $\nu$.
 
+(prop-weak-ot-duality)=
 :::{admonition} Proposition: Weak Kantorovich Duality
 :class: important
 Assume that $\X,\Y$ are compact metric spaces and that $C(x,\nu)$ is lower
@@ -992,6 +1183,7 @@ lower semicontinuity, convexity and qualification assumptions ensure no
 duality gap.
 :::
 
+(prop-barycentric-weak-ot)=
 :::{admonition} Proposition: Barycentric Weak Transport Is Weaker than $\Wass_2$
 :class: important
 Let $\alpha,\beta\in\mathcal P_2(\RR^d)$ and define
@@ -1027,6 +1219,7 @@ $\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x)\leq
 \int\norm{x-y}^2\d\pi(x,y)$. Taking the infimum over $\pi$ proves the claim.
 :::
 
+(fig:weak-ot-barycentric-projection)=
 :::{div}
 :class: ot4ml-book-figure
 

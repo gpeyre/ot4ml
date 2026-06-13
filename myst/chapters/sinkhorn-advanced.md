@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-sinkhorn-advanced)=
 
 Convergence for entropic optimal transport has two complementary meanings. At
 fixed marginals and fixed temperature, one studies how Sinkhorn iterates
@@ -56,6 +57,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-convergence-init)=
 ## Sinkhorn Convergence: Bregman View
 
 Sinkhorn can be read as alternating Bregman projections. The main geometric
@@ -74,6 +76,7 @@ The projection viewpoint explains Sinkhorn as repeated enforcement of one
 marginal constraint at a time. It is not specific to entropy, although KL is
 the case where the projections reduce to elementary row and column scalings.
 
+(def-bregman-divergence)=
 :::{admonition} Definition: Bregman Divergence
 :class: important
 Let $\Phi$ be a differentiable strictly convex function on a convex domain
@@ -103,6 +106,7 @@ Adding a linear cost to a Bregman penalty merely shifts the reference point in
 dual coordinates. The usual Gibbs--KL reformulation is exactly the entropy
 specialization.
 
+(prop-bregman-linear-tilt)=
 :::{admonition} Proposition: Linear Tilts of Bregman Penalties
 :class: important
 Let $\Phi$ be differentiable and strictly convex, and let $B_\Phi$ be its
@@ -170,6 +174,7 @@ P_\epsilon
 The convergence mechanism is the classical one of Bregman projections
 {cite:p}`bregman1967relaxation`.
 
+(prop-cyclic-kl-affine)=
 :::{admonition} Proposition: Cyclic Bregman Projections on Affine Constraints
 :class: important
 Let $\Phi$ be a Legendre strictly convex generator on a finite-dimensional
@@ -305,6 +310,48 @@ dual analysis below gives a dimension-free qualitative message: before any
 local linear regime becomes visible, one can still guarantee an $O(1/k)$ dual
 gap whose constants depend on the cost range and potential oscillation.
 
+(alg:cyclic-bregman-projections)=
+:::{admonition} Algorithm: Cyclic Bregman projections
+:class: ot4ml-algorithm
+
+**Input:** Constraint sets $\Cc_1,\Cc_2$, Bregman divergence $B_\Phi$, interior point $P_0$.
+
+**Output:** Point in $\Cc_1\cap\Cc_2$ when the intersection is feasible.
+
+**Specialize** to entropic OT, if needed:
+
+```{math}
+\Cc_1=\Cc^1_\a,
+\qquad
+\Cc_2=\Cc^2_\b,
+\qquad
+B_\Phi=\KL.
+```
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> P_{k+1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_k).
+> ```
+>
+>
+>
+>
+> ```{math}
+> P_{k+1}=\Proj_{\Cc_2}^{B_\Phi}(P_{k+1/2}).
+> ```
+>
+>
+> **If** both constraint defects are below $\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $P_{k+1}$.
+>>
+:::
+
+
 ## Sinkhorn Convergence: Monotone Point of View
 
 There is another, older route to convergence, going back to Fortet's proof of
@@ -312,6 +359,7 @@ the Schrodinger system {cite:p}`fortet1940schrodinger,essid2019fortet,leonard201
 It uses the order structure of soft transforms rather than an explicit
 contraction factor.
 
+(prop-fortet-monotone)=
 :::{admonition} Proposition: Monotone Fixed-Point Route to Sinkhorn Convergence
 :class: important
 Let $c$ be bounded and continuous on compact spaces, and define the double
@@ -360,6 +408,7 @@ useful: Sinkhorn is not only alternating projection or projective contraction;
 it is also a monotone fixed-point iteration on potential classes once
 constants are quotiented out.
 
+(def-variation-seminorm)=
 :::{admonition} Definition: Variation Seminorm
 :class: important
 For a bounded real-valued function $h$, the variation seminorm is
@@ -377,6 +426,7 @@ quotienting by additive constants.
 This is the natural size for Sinkhorn potentials because adding constants
 changes their gauge but not the coupling.
 
+(prop-topical-variation-nonexpansive)=
 :::{admonition} Proposition: Topical Maps are Variation-Nonexpansive
 :class: important
 Let $E$ be a vector space of bounded functions, ordered pointwise, and write
@@ -425,6 +475,7 @@ anti-homogeneous case gives the same oscillation bound with the interval
 reversed.
 :::
 
+(cor-soft-transform-nonexpansive)=
 :::{admonition} Corollary: Soft Transforms are Nonexpansive
 :class: important
 For every $\epsilon>0$, the soft $c$-transforms are $1$-Lipschitz for the
@@ -439,14 +490,13 @@ for the other block. The topical-map proposition applies to each block, and
 the composition of two $1$-Lipschitz maps is $1$-Lipschitz.
 :::
 
-:::{admonition} Remark: Topical Maps and Projective Geometry
-Order-preserving additively homogeneous maps are called topical maps in
-nonlinear Perron--Frobenius theory {cite:p}`lemmens2012nonlinear`. The
-variation nonexpansiveness above is the basic mechanism behind Fortet's
-monotone argument. The Hilbert-metric analysis below is stronger: under
-strict positivity of the kernel, it upgrades nonexpansiveness to a genuine
-projective contraction.
+(rem-topical-maps)=
+:::{admonition} Remark: Topical maps and projective geometry
+:class: ot4ml-remark
+
+Order-preserving additively homogeneous maps are called topical maps in nonlinear Perron--Frobenius theory {cite:p}`lemmens2012nonlinear`. Proposition {ref}`prop-topical-variation-nonexpansive` is the basic nonexpansiveness mechanism behind Fortet's monotone argument. The Hilbert-metric analysis in Section {ref}`sec-sinkhorn-hilbert` is stronger: under strict positivity assumptions on the kernel it upgrades nonexpansiveness to a genuine projective contraction.
 :::
+
 
 ## Sinkhorn Convergence: Sublinear Robust Rate
 
@@ -459,6 +509,7 @@ $1/k$. Related robust Bregman-projection rates are developed in
 statistical consequences of entropic smoothing in
 {cite:p}`genevay2018sample,bigot2017central`.
 
+(prop-pinsker)=
 :::{admonition} Proposition: Pinsker Inequality
 :class: important
 If $p,q\in\simplex_n$, then
@@ -488,6 +539,7 @@ derivative, after subtracting $2(a-b)^2$, is nonnegative. Therefore
 $\operatorname{KL}(p\mid q)\geq\frac12\norm{p-q}_1^2$.
 :::
 
+(prop-sinkhorn-dual-rate)=
 :::{admonition} Proposition: A Compact $O(1/k)$ Dual Rate
 :class: important
 Assume that $\Xx$ and $\Yy$ are compact, that $c$ is bounded, and write
@@ -563,6 +615,7 @@ Summing the reciprocal inequality
 gives the displayed $O(1/k)$ rate.
 :::
 
+(cor-sinkhorn-dual-complexity)=
 :::{admonition} Corollary: Approximating Unregularized OT by Regularized Dual Costs
 :class: important
 Consider histograms $a\in\simplex_n$, $b\in\simplex_m$ and a finite cost
@@ -612,6 +665,48 @@ the remaining drop is measured by the column marginal, and conversely after a
 column update. Marginal violations therefore monitor both feasibility and the
 remaining dual gap, up to the bounded-radius constant.
 
+(alg:certified-entropic-ot-accuracy)=
+:::{admonition} Algorithm: Certified entropic approximation of discrete OT
+:class: ot4ml-algorithm
+
+**Input:** Cost matrix $C\in\RR^{n\times m}$, weights $\a,\b$, target accuracy $\delta>0$.
+
+**Output:** Certified lower bound $L_{\epsilon,k}$ for exact OT.
+
+**Choose**
+
+```{math}
+\epsilon=\frac{\delta}{2\log(nm)}.
+```
+
+**Run** stabilized Sinkhorn iterations.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **Compute** upper bound $\widehat\Delta_k$ on the entropic dual gap.
+>
+> **If** $\widehat\Delta_k\leq\delta/2$ **then**:
+
+>>
+>> **Break**.
+>>
+
+**Return**
+
+```{math}
+L_{\epsilon,k}
+=
+\mathcal D_{\epsilon,k}
+-
+\epsilon\HD(\a)-\epsilon\HD(\b),
+\qquad
+0\leq\MKD_{\C}(\a,\b)-L_{\epsilon,k}\leq\delta.
+```
+:::
+
+
+(sec-sinkhorn-hilbert)=
 ## Sinkhorn Convergence: Linear Hilbert Metric Rate
 
 Hilbert's projective metric gives a complementary convergence mechanism.
@@ -620,6 +715,7 @@ scaling vectors modulo global multiplication. Positive kernels are
 contractions in this geometry, yielding a global linear convergence statement
 {cite:p}`franklin1989scaling`.
 
+(def-hilbert-metric)=
 :::{admonition} Definition: Hilbert Metric
 :class: important
 On $\RR_{+,*}^n$, Hilbert's projective metric is
@@ -654,6 +750,7 @@ Hilbert's metric was introduced by Birkhoff and Samelson to give quantitative
 proofs of the Perron--Frobenius theorem {cite:p}`birkhoff1957extensions,samelson1957perron`.
 Sinkhorn can be viewed as a nonlinear matrix-scaling analogue of this theory.
 
+(thm-birkhoff)=
 :::{admonition} Theorem: Birkhoff Contraction Theorem
 :class: important
 Let $K\in\RR_{+,*}^{n\times m}$. For $v,v'\in\RR_{+,*}^m$,
@@ -706,6 +803,7 @@ Substituting into $\tanh(\Delta/4)$ gives
 $\lambda(K)=(\sqrt{\eta(K)}-1)/(\sqrt{\eta(K)}+1)$.
 :::
 
+(eq-convlin-sinkh)=
 :::{admonition} Theorem: Linear Convergence of Sinkhorn
 :class: important
 Let $(u^{(\ell)},v^{(\ell)})$ be Sinkhorn scaling iterates and
@@ -790,6 +888,7 @@ bound becomes when the Gibbs kernel is close to degenerate.
 
 <iframe class="ot4ml-live-frame" title="Advanced Sinkhorn convergence controls" src="../live/sinkhorn-advanced-convergence.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+(sec-gaussian-sinkhorn)=
 ## Entropic Optimal Transport Between Gaussians
 
 Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's
@@ -798,6 +897,7 @@ entropic coupling is Gaussian, and the value can be written with matrix square
 roots {cite:p}`janati2020gaussian`. This is the entropic counterpart of the
 Gaussian $\Wass_2$ and Bures formula.
 
+(prop-gaussian-sinkhorn-closure)=
 :::{admonition} Proposition: Quadratic Closure of Sinkhorn Iterates
 :class: important
 Let $\beta=\mathcal N(m_\beta,\Sigma_\beta)$ on $\RR^d$ and take
@@ -838,6 +938,7 @@ polynomial in $x$. Taking $-\epsilon\log$ therefore gives a quadratic
 polynomial.
 :::
 
+(prop-gaussian-sinkhorn-closed-form)=
 :::{admonition} Proposition: Balanced Entropic OT Between Gaussians
 :class: important
 Let $\alpha=\mathcal N(m_\alpha,\Sigma_\alpha)$ and
@@ -926,6 +1027,7 @@ $2\sigma_i=\epsilon s/(1-s^2)$, whose positive solution is the displayed
 $s_i$.
 :::
 
+(cor-gaussian-sinkhorn-divergence)=
 :::{admonition} Corollary: Gaussian Sinkhorn Divergence and Smoothed Bures Term
 :class: important
 For $r>0$, define
@@ -1015,6 +1117,7 @@ angle changes the covariance misalignment.
 
 <iframe class="ot4ml-live-frame" title="Gaussian Sinkhorn controls" src="../live/sinkhorn-advanced-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+(prop-gaussian-sinkhorn-1d-rate)=
 :::{admonition} Proposition: One-Dimensional Gaussian Sinkhorn Rate
 :class: important
 Consider $\alpha=\beta=\mathcal N(0,1)$ on $\RR$ with $c(x,y)=(x-y)^2$. If a
@@ -1091,6 +1194,44 @@ improves when $\epsilon$ is large or the covariance scales overlap well, and
 deteriorates in the small-temperature limit where the entropic coupling
 approaches a deterministic Brenier map.
 
+(alg:gaussian-sinkhorn-closed-form)=
+:::{admonition} Algorithm: Closed-form Gaussian Sinkhorn coupling
+:class: ot4ml-algorithm
+
+**Input:** Gaussian marginals $\al=\Gaussian(\mean_\al,\cov_\al)$, $\be=\Gaussian(\mean_\be,\cov_\be)$, scale $\epsilon>0$.
+
+**Output:** Gaussian entropic coupling covariance.
+
+**Compute**
+
+```{math}
+\cov_\al^{1/2}\cov_\be^{1/2}
+=
+U\diag(\sigma_i)V^\top .
+```
+
+**For** each $\sigma_i>0$ **do**
+
+>
+>
+> ```{math}
+> s_i=\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.
+> ```
+>
+>
+
+**Set** cross-covariance:
+
+```{math}
+K_\epsilon
+=
+\cov_\al^{1/2}U\diag(s_i)V^\top\cov_\be^{1/2}.
+```
+
+**Return** Gaussian coupling with means $(\mean_\al,\mean_\be)$, marginal covariances $(\cov_\al,\cov_\be)$, and cross-covariance $K_\epsilon$.
+:::
+
+
 ## Sample Complexity
 
 This section separates two statistical regimes. Exact OT resolves geometry at
@@ -1107,6 +1248,7 @@ viewpoints are developed in {cite:p}`ramdas2017wasserstein`, and the
 large-$\epsilon$ kernel limit connects to classical MMD tests
 {cite:p}`gretton2012kernel`.
 
+(fig:sinkhorn-bias-variance-tradeoff)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1122,6 +1264,7 @@ and the fixed-$\epsilon$ Sinkhorn divergence behave closer to the parametric
 $n^{-1/2}$ guide. This is a statistical illustration, not a solver benchmark.*
 :::
 
+(prop-empirical-ot-rate)=
 :::{admonition} Proposition: Empirical OT has Dimension-Dependent Value Rates
 :class: important
 Let $\alpha$ and $\beta$ be probability distributions with densities bounded
@@ -1164,6 +1307,7 @@ $2^{Jd}\simeq n$, hence $n^{-1/d}$. Matching lower bounds follow from packing
 arguments {cite:p}`dudley1969speed,fournier2015rate,weed2017sharp`.
 :::
 
+(prop-mmd-sample-rate)=
 :::{admonition} Proposition: MMD has a Parametric Value Rate
 :class: important
 Let $k$ be a bounded positive definite kernel with RKHS $\mathcal H_k$, and
@@ -1226,6 +1370,7 @@ Independence cancels cross terms after taking squared norms and expectation:
 Jensen's inequality and $k(x,x)\leq\kappa^2$ give the displayed bound.
 :::
 
+(prop-sinkhorn-sample-rate)=
 :::{admonition} Proposition: Sinkhorn Divergences Interpolate the Rates
 :class: important
 Assume $\alpha$ and $\beta$ are supported in a compact subset of $\RR^d$ and
@@ -1263,34 +1408,23 @@ $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to
 the three terms defining the debiased divergence gives the stated bound.
 :::
 
-:::{admonition} Remark: No Free Lunch When Approximating Exact OT
-The parametric rate holds for fixed $\epsilon$. If the goal is to approximate
-the unregularized OT value, one must also account for the regularization bias.
-In a typical bounded-cost regime,
+(rem-sinkhorn-no-free-lunch)=
+:::{admonition} Remark: No free lunch when approximating exact OT
+:class: ot4ml-remark
+
+The parametric rate in Proposition {ref}`prop-sinkhorn-sample-rate` holds for fixed $\epsilon$. If the goal is to approximate the unregularized OT value, one must also account for the regularization bias. In a typical bounded-cost finite-dimensional regime,
 
 ```{math}
-\abs{
-\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
--
-\operatorname{OT}_c(\alpha,\beta)
-}
+\abs{\bar\MK_\c^\epsilon(\alpha,\beta)-\MK_\c(\alpha,\beta)}
 \leq C\epsilon,
 \qquad
-\mathbb E
-\abs{
-\overline{\mathcal L}_c^\epsilon(\hat\alpha_n,\hat\beta_n)
--
-\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
-}
-\leq
-C_{c,d}\epsilon^{-d/2}n^{-1/2}.
+\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_\c^\epsilon(\alpha,\beta)}
+\leq C_{c,d}\epsilon^{-d/2}n^{-1/2}.
 ```
 
-Balancing the two terms gives $\epsilon\simeq n^{-1/(d+2)}$ and total error
-of order $n^{-1/(d+2)}$. Entropic smoothing improves the statistical behavior
-at fixed scale, but approximating exact OT still forces a bias-variance
-tradeoff whose exponent deteriorates with dimension.
+Balancing the two terms gives $\epsilon\simeq n^{-1/(d+2)}$ and total error of order $n^{-1/(d+2)}$. Equivalently, target accuracy $\eta$ requires choosing $\epsilon\simeq\eta$ and $n\simeq\eta^{-(d+2)}$ samples under this bound. Thus entropic smoothing improves the statistical behavior at fixed scale, but approximating exact OT still forces a bias-variance tradeoff whose exponent deteriorates with dimension.
 :::
+
 
 The interactive demo below is only a scaling guide: change the dimension to see the
 exact-OT exponent flatten, and change $\epsilon$ to move the Sinkhorn bias

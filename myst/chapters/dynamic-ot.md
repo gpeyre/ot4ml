@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-dynamic-optimal-transport)=
 
 Optimal transport becomes especially powerful once distances between measures
 are seen as actions of moving mass. This chapter first develops the dynamic
@@ -105,6 +106,7 @@ This weak equation is obtained from {eq}`eq-eulerian-advection` by integration
 by parts. For smooth positive densities, the classical and weak formulations
 are equivalent; for particle clouds, the weak form remains meaningful.
 
+(prop-lagrangian-flow-continuity)=
 :::{admonition} Proposition: Lagrangian Flows Solve the Continuity Equation
 :class: important
 Consider a smooth flow $T_t:\RR^d\to\RR^d$ and define
@@ -216,6 +218,7 @@ one with smallest kinetic energy:
 \partial_t\alpha_t+\operatorname{div}(\alpha_t v_t)=0.
 ```
 
+(prop-least-square-gradient-velocity)=
 :::{admonition} Proposition: Least-Square Velocities Are Gradients
 :class: important
 Assume that $\alpha_t=\rho_t\,\d x$ is a smooth positive density curve and
@@ -279,6 +282,43 @@ In general this inversion is still computationally demanding, but special
 choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism
 exploited later by flow matching.
 
+(alg:least-square-velocity-reconstruction)=
+:::{admonition} Algorithm: Least-square velocity reconstruction
+:class: ot4ml-algorithm
+
+**Input:** Smooth positive density curve $(\rho_t)_{t\in[0,1]}$ and boundary conditions.
+
+**Output:** Minimal-energy velocity field $v_t$ realizing the curve.
+
+**For** each time $t$ **do**:
+
+>
+> **Compute** $\partial_t\rho_t$.
+>
+> **Solve** weighted Poisson equation:
+>
+>
+> ```{math}
+> -\diverg(\rho_t\nabla\phi_t)=\partial_t\rho_t,
+> \qquad
+> \int\phi_t\rho_t=0.
+> ```
+>
+>
+> **Set**
+>
+>
+> ```{math}
+> v_t=\nabla\phi_t .
+> ```
+>
+>
+
+**Return** $(v_t)_{t\in[0,1]}$.
+:::
+
+
+(sec-benamou-brenier-dynamic)=
 ## Benamou--Brenier Dynamic Formulation of OT
 
 The dynamic formulation identifies $\Wass_2$ with the kinetic energy of the
@@ -291,6 +331,7 @@ least-square energy {eq}`eq-least-square-field`. The theorem of Benamou and
 Brenier states that this geodesic energy is exactly the squared Wasserstein
 distance {cite:p}`benamou2000computational`.
 
+(thm-benamou-brenier)=
 :::{admonition} Theorem: Benamou--Brenier
 :class: important
 For probability measures $\alpha_0,\alpha_1\in\mathcal P_2(\RR^d)$,
@@ -379,6 +420,7 @@ vector-valued momentum measures and the corresponding recession convention.
 This convex reformulation enables geodesic interpolation by convex
 optimization once the domain is discretized.
 
+(fig:dynamic-benamou-brenier-geodesic)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -411,13 +453,14 @@ separate the path $\alpha_t$ from the underlying displacement field.
 
 <iframe class="ot4ml-live-frame" title="Benamou-Brenier geodesic controls" src="../live/dynamic-bb.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
-:::{admonition} Remark: Path-Space Formulation
-:class: note
-Let $\mathcal S=C([0,1];\RR^d)$ be the space of continuous paths with the
-uniform topology. For $t\in[0,1]$, define the evaluation map
+(rem-bb-path-space)=
+:::{admonition} Remark: Path-space formulation
+:class: ot4ml-remark
+
+Let $\Ss=C([0,1];\RR^d)$ be the space of continuous paths endowed with the uniform topology. For $t\in[0,1]$ define the evaluation map
 
 ```{math}
-P_t:\mathcal S\to\RR^d,
+P_t:\Ss\to\RR^d,
 \qquad
 P_t(\gamma)=\gamma(t).
 ```
@@ -427,29 +470,25 @@ The Benamou--Brenier cost admits the equivalent formulation
 ```{math}
 \Wass_2^2(\alpha_0,\alpha_1)
 =
-\inf_{M\in\mathcal P(\mathcal S)}
-\left\{
-\int_{\mathcal S}\!\int_0^1\norm{\dot\gamma(t)}^2\d t\,\d M(\gamma):
+\inf_{M\in\Pp(\Ss)}
+\enscond{
+\int_{\Ss}\!\int_0^1\norm{\dot\gamma(t)}^2\d t\,\d M(\gamma)
+}{
 (P_0)_\sharp M=\alpha_0,\ (P_1)_\sharp M=\alpha_1
-\right\}.
+}.
 ```
 
-If $\alpha_0$ has a density, the minimizer $M^\star$ is unique. Its time
-marginals reproduce the optimal curve:
-$\alpha_t=(P_t)_\sharp M^\star$ for all $t$. Furthermore, for a.e. $t$,
-denoting $Q_t(\gamma)=\dot\gamma(t)$ on absolutely continuous paths, the
-conditional law of the velocity is deterministic:
+If $\alpha_0$ has a density, the minimizer $M^*$ is unique. Its time marginals reproduce the optimal curve: $\alpha_t=(P_t)_\sharp M^*$ for all $t$. Furthermore, for a.e. $t$, denoting $Q_t(\gamma)=\dot\gamma(t)$ on absolutely continuous paths, the conditional law of the velocity is deterministic:
 
 ```{math}
-(P_t,Q_t)_\sharp M^\star(\d x,\d q)
+(P_t,Q_t)_\sharp M^*(\d x,\d q)
 =
-\alpha_t(\d x)\delta_{v_t^\star(x)}(\d q).
+\alpha_t(\d x)\delta_{v_t^*(x)}(\d q),
 ```
 
-Here $v_t^\star$ is the optimal velocity field in the Benamou--Brenier
-formulation. Hence $M^\star$ concentrates on straight-line geodesics and, for
-a.e. $t$, assigns exactly one direction at $\alpha_t$-a.e. spatial point.
+where $v_t^*$ is the optimal velocity field in the Benamou--Brenier formulation. Hence $M^*$ concentrates on straight-line geodesics and, for a.e. $t$, assigns exactly one direction at $\alpha_t$-a.e. spatial point.
 :::
+
 
 ### Extensions of the Dynamic Formulation
 
@@ -458,42 +497,34 @@ distance. One changes either the kinetic exponent, the mobility or the
 balance equation, while keeping a continuity-type constraint and a convex
 perspective action.
 
-:::{admonition} Remark: Generalized Benamou--Brenier Distances
-:class: note
-The dynamic formulation is not specific to $\Wass_2$. For measures with finite
-$p$-th moments and $p>1$,
+(rem-generalized-bb)=
+:::{admonition} Remark: Generalized Benamou--Brenier distances
+:class: ot4ml-remark
+
+The dynamic formulation is not specific to $\Wass_2$. For measures with finite $p$-th moments and $p>1$, one has the analogous action formula
 
 ```{math}
 \Wass_p^p(\alpha_0,\alpha_1)
 =
 \inf_{\substack{\partial_t\alpha_t+\nabla\!\cdot(\alpha_t v_t)=0\\
 \alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
-\int_0^1\!\int_{\RR^d}|v_t(x)|^p\,\d\alpha_t(x)\,\d t.
+\int_0^1\!\int_{\RR^d} |v_t(x)|^p\,\d\alpha_t(x)\,\d t.
 ```
 
-When $\alpha_t=\rho_t\,\d x$ and $m_t=\rho_t v_t$, this becomes the convex
-perspective action
+When $\alpha_t=\rho_t\,\d x$ and $m_t=\rho_t v_t$, this becomes the convex perspective action
 
 ```{math}
 \int_0^1\!\int_{\RR^d}
-\frac{|m_t(x)|^p}{\rho_t(x)^{p-1}}\d x\,\d t,
+\frac{|m_t(x)|^p}{\rho_t(x)^{p-1}}\,\d x\,\d t,
 \qquad
 \partial_t\rho_t+\nabla\!\cdot m_t=0,
 ```
 
-with the same zero-density convention as above.
+with the usual convention that the integrand is $0$ if $(\rho,m)=(0,0)$ and $+\infty$ if $\rho=0$ but $m\neq0$.
 
-A second class of variants changes the mobility of the medium: the quadratic
-action $|m|^2/\rho$ is replaced by $|m|^2/\theta(\rho)$ for a suitable
-concave mobility $\theta$. Under appropriate structural assumptions, this
-produces transport metrics adapted to nonlinear diffusions and finite-volume
-discretizations {cite:p}`dolbeault2009new`. On finite graphs and Markov
-chains, the analogous action uses an edge mobility, often the logarithmic
-mean of endpoint densities, and leads to discrete Wasserstein geometries
-{cite:p}`Maas2011,MielkeCVPDE`. These extensions keep the same variational
-grammar as Benamou--Brenier: a continuity-type constraint, an action density,
-and geodesics obtained by minimizing an integrated kinetic cost.
+A second class of variants changes the mobility of the medium: the quadratic action $|m|^2/\rho$ is replaced by $|m|^2/\theta(\rho)$ for a suitable concave mobility $\theta$. Under appropriate structural assumptions, this produces transport metrics adapted to nonlinear diffusions and finite-volume discretizations {cite:p}`dolbeault2009new`. On finite graphs and Markov chains, the analogous action uses an edge mobility, often the logarithmic mean of the endpoint densities, and leads to discrete Wasserstein geometries {cite:p}`Maas2011,MielkeCVPDE`. These extensions keep the same variational grammar as Benamou--Brenier: a continuity-type constraint, an action density, and geodesics obtained by minimizing an integrated kinetic cost.
 :::
+
 
 ### Dynamic Unbalanced OT
 
@@ -555,6 +586,7 @@ value is independent of this choice. The convention is $0/0=0$ and
 $a/0=+\infty$ for $a>0$, so finite action forces both the flux and the source
 to be absolutely continuous with respect to the transported mass.
 
+(prop-static-dynamic-unbalanced)=
 :::{admonition} Proposition: Static/Dynamic Equivalence for Unbalanced OT
 :class: important
 Fix the action above and let $\mathcal C\mathcal W_\kappa$ be the cone value
@@ -598,6 +630,7 @@ therefore equal; lower semicontinuity gives the general finite-measure
 statement from the smooth positive case.
 :::
 
+(fig:dynamic-unbalanced-geodesic)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -626,3 +659,48 @@ must carry mass through space.
 :::
 
 <iframe class="ot4ml-live-frame" title="Dynamic unbalanced transport controls" src="../live/dynamic-unbalanced.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
+
+(alg:benamou-brenier-douglas-rachford)=
+:::{admonition} Algorithm: Douglas--Rachford for dynamic Benamou--Brenier
+:class: ot4ml-algorithm
+
+**Input:** Functionals $\mathcal F,\mathcal G=\iota_{\mathcal C}$, proximal parameter $\tau>0$, initial field $Z^0$.
+
+**Output:** Discrete density-momentum field $U^\star$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> U^{k+1}=\prox_{\tau\mathcal F}(Z^k).
+> ```
+>
+>
+> **Project** reflected point:
+>
+>
+> ```{math}
+> \widetilde U^{k+1}
+> =
+> \prox_{\tau\mathcal G}(2U^{k+1}-Z^k)
+> =
+> \Proj_{\mathcal C}(2U^{k+1}-Z^k).
+> ```
+>
+>
+> **Update**
+>
+>
+> ```{math}
+> Z^{k+1}=Z^k+\widetilde U^{k+1}-U^{k+1}.
+> ```
+>
+>
+> **If** $\norm{U^{k+1}-\widetilde U^{k+1}}\leq\mathrm{tol}$ **then**:
+
+>>
+>> **Return** $U^{k+1}$.
+>>
+:::
+

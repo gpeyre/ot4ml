@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-sinkhorn)=
 
 Entropic regularization makes optimal transport smooth, strictly convex and
 scalable. This chapter first explains the discrete KL-regularized problem,
@@ -54,12 +55,14 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-entropic-discrete)=
 ## Entropic Regularization for Discrete Measures
 
 Entropy turns a possibly non-unique linear program into a unique smooth
 problem. The price is bias, but the reward is differentiability and fast
 scaling algorithms.
 
+(def-discrete-shannon-boltzmann-entropy)=
 :::{admonition} Definition: Discrete Shannon--Boltzmann Entropy
 :class: important
 For a nonnegative matrix $P$, its Shannon--Boltzmann entropy is
@@ -91,6 +94,7 @@ $\epsilon\sum_{i,j}P_{i,j}\log P_{i,j}$. It penalizes concentrated couplings
 and makes the objective strictly convex on the relative interior of the
 transport polytope.
 
+(prop-entropic-unique)=
 :::{admonition} Proposition: Existence and Uniqueness of Entropic OT
 :class: important
 Assume that $a,b$ are probability histograms and that $C$ is finite. For every
@@ -126,6 +130,7 @@ minimizer converges to the independent coupling $a\otimes b$; as
 $\epsilon\to0$, it approaches the optimal face of the original transport
 linear program.
 
+(fig:sinkhorn-entropy-lp-geometry)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -159,6 +164,7 @@ Sinkhorn's algorithm is alternating normalization of rows and columns. The
 key point is that the optimizer of the entropic problem has a multiplicative
 scaling form.
 
+(prop-regularized-primal)=
 :::{admonition} Proposition: Scaling Form of Entropic OT
 :class: important
 $P$ is the unique solution of {eq}`eq-regularized-discrete-web` if and only if
@@ -234,6 +240,7 @@ v^{(\ell+1)}
 The division is entrywise. The scaling vectors are not unique: multiplying
 $u$ by $\lambda>0$ and $v$ by $1/\lambda$ leaves $P$ unchanged.
 
+(fig:sinkhorn-marginal-errors)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -258,6 +265,7 @@ lose the other, and then converge toward both.
 
 <iframe class="ot4ml-live-frame" title="Sinkhorn scaling controls" src="../live/sinkhorn-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
+(fig:sinkhorn-continuous-marginal-scaling)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -276,6 +284,7 @@ kernel remains visible in the optimal plan. Small $\epsilon$ produces a
 concentrated transport band, while larger $\epsilon$ spreads the same
 marginals into a smoother coupling.
 
+(fig:sinkhorn-coupling-iterations)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -290,6 +299,7 @@ optimal-transport graph; increasing $\epsilon$ keeps more of the product
 structure.*
 :::
 
+(fig:sinkhorn-potentials-iterations)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -322,6 +332,7 @@ For fixed positive $\epsilon$, the marginal error eventually has a linear
 regime, but small $\epsilon$ makes the Gibbs kernel more peaked and scaling
 harder.
 
+(fig:sinkhorn-linear-rate-epsilon)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -335,25 +346,68 @@ $\epsilon$. Smaller $\epsilon$ gives sharper transport geometry but slower
 scaling.*
 :::
 
-:::{admonition} Remark: Separable Gaussian Kernels on Grids
-When samples lie on a Cartesian grid and $c(x,y)=\norm{x-y}^2$, the Gibbs
-kernel is Gaussian and factorizes along coordinates:
+(rem-sinkhorn-separable-gaussian)=
+:::{admonition} Remark: Separable Gaussian kernels on grids
+:class: ot4ml-remark
+
+When the samples lie on a Cartesian grid and $c(x,y)=\norm{x-y}^2$, the Gibbs kernel is Gaussian and factorizes along coordinates. If the grid has $q$ points per axis in dimension $d$, so that $N=q^d$ grid points are used, then
 
 ```{math}
-K(x,y)
-=
-\exp\left(-\frac{\norm{x-y}^2}{\epsilon}\right)
+K(x,y)=\exp\!\left(-\frac{\norm{x-y}^2}{\epsilon}\right)
 =
 \prod_{\ell=1}^d
-\exp\left(-\frac{(x_\ell-y_\ell)^2}{\epsilon}\right).
+\exp\!\left(-\frac{(x_\ell-y_\ell)^2}{\epsilon}\right).
 ```
 
-If the grid has $q$ points per axis and $N=q^d$ points total, multiplication
-by $K$ can be applied one coordinate direction at a time. A direct dense
-one-dimensional multiplication costs $O(q^2)$ on each of the $q^{d-1}$
-coordinate lines and is repeated for $d$ axes, giving
-$O(dq^{d+1})=O(dN^{1+1/d})$ per half-step instead of $O(N^2)$.
+Multiplication by $K$ can therefore be applied by successively multiplying along each coordinate direction, equivalently by applying one-dimensional Gaussian kernel operators along the axes. On a periodic or sufficiently padded uniform grid these are literal discrete convolutions. A direct dense one-dimensional multiplication costs $O(q^2)$ on each of the $q^{d-1}$ coordinate lines, and this is repeated for $d$ axes. Hence one Sinkhorn half-step costs
+
+```{math}
+O(d\,q^{d+1})=O(d\,N^{1+1/d})
+```
+
+instead of $O(N^2)$. With FFT-based or truncated Gaussian convolutions, the same separability can be pushed further, but the simple tensor-product estimate already explains why grid-based Sinkhorn can scale much better than a generic dense coupling.
 :::
+
+(alg:sinkhorn-scaling)=
+:::{admonition} Algorithm: Sinkhorn scaling
+:class: ot4ml-algorithm
+
+**Input:** Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+
+**Output:** Entropic coupling $\P$.
+
+**Initialize:** Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$ and choose $\vD^{(0)}\in\RR_{+,*}^m$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+>
+> ```{math}
+> \uD^{(k+1)}=\frac{\a}{\K\vD^{(k)}}.
+> ```
+>
+>
+>
+>
+> ```{math}
+> \vD^{(k+1)}=\frac{\b}{\transp{\K}\uD^{(k+1)}}.
+> ```
+>
+>
+> **If** marginal residuals are below $\mathrm{tol}$ **then**:
+
+>>
+>> **Return**
+>>
+>>
+>> ```{math}
+>> \P^{(k+1)}=\diag(\uD^{(k+1)})\K\diag(\vD^{(k+1)}).
+>> ```
+>>
+>>
+>>
+:::
+
 
 ## Reformulation Using Relative Entropy
 
@@ -361,13 +415,14 @@ The KL formulation identifies Sinkhorn as a projection method. It also
 prepares the continuous and unbalanced settings, where a reference measure is
 essential.
 
+(def-discrete-relative-entropy)=
 :::{admonition} Definition: Discrete Relative Entropy
 :class: important
 For nonnegative matrices $P,Q$ of the same size, the generalized relative
 entropy is
 
 ```{math}
-:label: eq-kl-discrete-web
+:label: eq-kl-defn
 \operatorname{KL}(P|Q)
 \eqdef
 \sum_{i,j}
@@ -403,6 +458,7 @@ reference gives the normalized formulation
 \epsilon\operatorname{KL}(P|a\otimes b).
 ```
 
+(prop-kl-distance-like)=
 :::{admonition} Proposition: Relative Entropy is Distance-Like
 Let $P,Q\in\RR_+^{n\times m}$ have the same total mass and assume $Q_{i,j}>0$
 on the support of $P$. Then $\operatorname{KL}(P|Q)\ge0$, with equality if
@@ -421,6 +477,7 @@ $\phi(s)\ge\phi(1)+\phi'(1)(s-1)=0$, with equality only at $s=1$. Hence
 ```
 :::
 
+(prop-kl-shift)=
 :::{admonition} Proposition: Reference Measure Shift for KL
 After removing zero-mass rows and columns, assume
 $a,a'\in\simplex_n$ and $b,b'\in\simplex_m$ have positive entries. For every
@@ -466,6 +523,7 @@ The tensor-product reference is nevertheless useful when supports vary. It
 makes explicit which entries may vanish and passes cleanly to the continuous
 formulation.
 
+(fig:sinkhorn-dual-potentials-epsilon)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -479,6 +537,7 @@ histograms. Increasing $\epsilon$ turns the hard $c$-transform geometry into
 smoother log-sum-exp potentials.*
 :::
 
+(prop-convergence-eps)=
 :::{admonition} Proposition: Convergence with $\epsilon$
 :class: important
 Assume, after removing zero-mass rows and columns, that $a$ and $b$ are
@@ -514,6 +573,7 @@ Testing the objective at $a\otimes b$ gives
 so the KL divergence to $a\otimes b$ vanishes.
 :::
 
+(fig:sinkhorn-plan-epsilon)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -543,11 +603,14 @@ relative entropy. For probability measures $\alpha$ and $\beta$, define
 \epsilon\operatorname{KL}(\pi|\alpha\otimes\beta).
 ```
 
+(def-measure-relative-entropy)=
 :::{admonition} Definition: Relative Entropy of Measures
 :class: important
 For nonnegative measures $\pi$ and $\xi$ on $\X\times\Y$,
 
 ```{math}
+:label: eq-defn-rel-entropy
+
 \operatorname{KL}(\pi|\xi)
 \eqdef
 \int_{\X\times\Y}
@@ -565,6 +628,7 @@ to additive constants, provided the reference marginals are mutually
 absolutely continuous with $\alpha$ and $\beta$. Its support still matters: it
 determines which couplings have finite entropy.
 
+(sec-path-space-schrodinger)=
 ## Path-Space Schrodinger Problem
 
 Schrodinger's reciprocal problem is naturally posed on paths rather than on
@@ -613,6 +677,7 @@ e_0(\omega)=x,\ e_1(\omega)=y
 For the quadratic action, the minimizing path is the straight segment and
 $c_{\mathcal A}(x,y)=\norm{x-y}^2$.
 
+(prop-path-space-ot-endpoint-reduction)=
 :::{admonition} Proposition: Endpoint Reduction of Path-Space Transport
 :class: important
 Assume that minimizing paths can be selected measurably, or approximated by
@@ -695,6 +760,7 @@ obtained from
 
 up to endpoint entropy terms. The extra term is a Fisher-information penalty.
 
+(prop-schrodinger-endpoint-reduction)=
 :::{admonition} Proposition: Endpoint Reduction of the Schrodinger Problem
 :class: important
 Assume regular conditional laws exist and that the relative-entropy chain rule
@@ -747,6 +813,7 @@ problem is exactly the continuous Sinkhorn problem up to an additive constant.
 Sinkhorn computes which endpoints should be paired; the path-space
 Schrodinger bridge then connects each pair by a Brownian bridge.
 
+(fig:sinkhorn-path-space-bridges)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -760,6 +827,7 @@ softens the endpoint coupling and amplifies the Brownian fluctuations between
 paired endpoints.*
 :::
 
+(def-mutual-information)=
 :::{admonition} Definition: Mutual Information
 If $(X,Y)\sim\pi$ have marginals $X\sim\alpha$ and $Y\sim\beta$, their mutual
 information is
@@ -783,6 +851,44 @@ With this terminology, the entropic problem is
 Large $\epsilon$ favors nearly independent endpoints, while small $\epsilon$
 suppresses endpoint randomness and recovers an optimal Monge--Kantorovich
 coupling in the limit.
+
+(alg:schrodinger-endpoint-path-lift)=
+:::{admonition} Algorithm: Endpoint-to-path Schr\"odinger lift
+:class: ot4ml-algorithm
+
+**Input:** Endpoint laws $\alpha,\beta$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
+
+**Output:** Schrodinger path law $M_\epsilon^\star$.
+
+**Solve** static entropic endpoint problem:
+
+```{math}
+\pi_\epsilon^\star
+\in
+\argmin_{\pi\in\Couplings(\al,\be)}
+\int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).
+```
+
+**For** each endpoint pair $(x,y)$ sampled from $\pi_\epsilon^\star$ **do**:
+
+>
+> **Draw** bridge path:
+>
+>
+> ```{math}
+> \omega\sim\Rr^{\epsilon,x,y}.
+> ```
+>
+>
+
+**Return**
+
+```{math}
+M_\epsilon^\star=
+\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).
+```
+:::
+
 
 ## Dual of Sinkhorn
 
@@ -832,6 +938,7 @@ f_i
 
 This is a smoothed minimum.
 
+(def-discrete-soft-c-transform)=
 :::{admonition} Definition: Soft-Min and Discrete Soft $c$-Transform
 :class: important
 For $h\in\RR^m$ and weights $b\in\simplex_m$,
@@ -857,6 +964,7 @@ algorithm. For small $\epsilon$, one must compute the log-sum-exp terms with
 the usual stabilization trick: subtract the minimum before exponentiating and
 add it back afterward.
 
+(fig:sinkhorn-soft-c-transform-epsilon)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -909,6 +1017,7 @@ e^{(f(x)+g(y)-c(x,y))/\epsilon}
 This is the smooth counterpart of the hard feasibility constraint
 $f\oplus g\le c$ from the Kantorovich dual.
 
+(def-continuous-soft-c-transform)=
 :::{admonition} Definition: Continuous Soft $c$-Transforms
 :class: important
 For $f\in\Cc(\X)$ and $g\in\Cc(\Y)$,
@@ -934,6 +1043,7 @@ e^{(g(y)-c(x,y))/\epsilon}
 ```
 :::
 
+(prop-entropic-dual-potentials)=
 :::{admonition} Proposition: Existence and Uniqueness of Entropic Dual Potentials
 :class: important
 Assume $\X$ and $\Y$ are compact and $c$ is continuous. The dual problem has
@@ -958,22 +1068,73 @@ $H\mapsto\int e^{H/\epsilon}\d(\alpha\otimes\beta)$ on the image of
 $(f,g)\mapsto f\oplus g-c$, modulo constants.
 :::
 
-:::{admonition} Remark: Convexity Properties of Soft Transforms
-For the bilinear cost $c(x,y)=-\langle x,y\rangle$, the soft transform
-preserves concavity. For the quadratic cost
-$c(x,y)=\norm{x-y}^2/2$, optimal potentials have the form
-$f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and
-$g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and
-$\psi^\star$ are convex.
+(rem-soft-transform-convexity)=
+:::{admonition} Remark: Convexity properties of soft transforms
+:class: ot4ml-remark
+
+The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
 :::
 
-:::{admonition} Remark: Gaussian Marginals
-For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, soft transforms preserve
-quadratic functions because products and convolutions of Gaussian functions
-remain Gaussian. Hence the optimal entropic potentials are quadratic and the
-optimal entropic coupling is Gaussian.
+(rem-sinkhorn-gaussian-marginals)=
+:::{admonition} Remark: Gaussian marginals
+:class: ot4ml-remark
+
+For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve quadratic functions, because products and convolutions of Gaussian functions remain Gaussian. Hence optimal entropic potentials are quadratic and the optimal entropic coupling is Gaussian. Section {ref}`sec-gaussian-sinkhorn` makes this finite-dimensional closure explicit.
 :::
 
+(alg:log-domain-sinkhorn)=
+:::{admonition} Algorithm: Log-domain Sinkhorn by soft transforms
+:class: ot4ml-algorithm
+
+**Input:** Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+
+**Output:** Entropic coupling $\P$ computed from stabilized potentials.
+
+**Initialize:** Choose $\gD^{(0)}\in\RR^m$.
+
+**For** $k=0,1,\ldots$ **do**:
+
+>
+> **Compute** stabilized soft transform:
+>
+>
+> ```{math}
+> \fD_i^{(k+1)}
+> =
+> -\epsilon\log\sum_j
+> \exp\!\left(\frac{\gD_j^{(k)}-\C_{ij}}{\epsilon}\right)\b_j.
+> ```
+>
+>
+> **Compute** stabilized reverse soft transform:
+>
+>
+> ```{math}
+> \gD_j^{(k+1)}
+> =
+> -\epsilon\log\sum_i
+> \exp\!\left(\frac{\fD_i^{(k+1)}-\C_{ij}}{\epsilon}\right)\a_i.
+> ```
+>
+>
+> **If** potential changes are below $\mathrm{tol}$ **then**:
+
+>>
+>> **Break**.
+>>
+
+**Return**
+
+```{math}
+\P_{ij}
+=
+\a_i\b_j
+\exp\!\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right).
+```
+:::
+
+
+(sec-sinkhorn-other-regularizers)=
 ## Other Convex Regularizers
 
 KL regularization is the case that leads to multiplicative Sinkhorn scalings.
@@ -993,6 +1154,7 @@ Let $\phi$ be an entropy function and define
 \epsilon D_\phi(\pi|\alpha\otimes\beta).
 ```
 
+(prop-phi-regularized-ot-dual)=
 :::{admonition} Proposition: Dual and Density Law for $\phi$-Regularized OT
 :class: important
 Under standard Fenchel--Rockafellar qualification assumptions,
@@ -1040,6 +1202,7 @@ the exponential law by another scalar transfer function:
 s=\frac{f^\star\oplus g^\star-c}{\epsilon}.
 ```
 
+(fig:sinkhorn-entropic-versus-quadratic-regularization)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1073,6 +1236,7 @@ The previous construction regularizes OT by a density-ratio divergence. This
 differs from using a Bregman divergence generated by a convex functional on
 the space of measures.
 
+(def-measure-bregman-divergence)=
 :::{admonition} Definition: Measure Bregman Divergence
 :class: important
 If $\Phi$ is a differentiable convex functional on a convex class of
@@ -1124,6 +1288,7 @@ Bregman optimality condition. The density-ratio dual follows instead from the
 scalar Legendre formula for $D_\phi(\cdot|\alpha\otimes\beta)$.
 :::
 
+(prop-kl-only-bregman-phi)=
 :::{admonition} Proposition: KL is the Common Bregman and $\phi$ Case
 Under natural smoothness assumptions, if a Bregman divergence
 $B_\Phi(\alpha|\beta)$ equals a $\phi$-divergence
@@ -1141,6 +1306,7 @@ Thus the two generalizations lead to different duals and different
 algorithms. Only for KL do density-ratio regularization and Bregman
 projection geometry coincide and reduce to multiplicative Sinkhorn scalings.
 
+(sec-sinkhorn-div)=
 ## Sinkhorn Divergences
 
 Sinkhorn divergences remove the entropic self-bias while retaining
@@ -1176,6 +1342,7 @@ This cancellation removes the large-temperature attraction toward the
 independent coupling; positivity is a separate property, proved below through
 the positive-definite kernel associated with $e^{-c/\epsilon}$.
 
+(def-sinkhorn-divergence)=
 :::{admonition} Definition: Sinkhorn Divergence
 :class: important
 For $\epsilon>0$, the debiased Sinkhorn divergence is
@@ -1192,6 +1359,7 @@ For $\epsilon>0$, the debiased Sinkhorn divergence is
 ```
 :::
 
+(fig:sinkhorn-divergence-debiasing)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1216,6 +1384,7 @@ entropic objective with its debiased version.
 
 <iframe class="ot4ml-live-frame" title="Sinkhorn debiasing controls" src="../live/sinkhorn-debias.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
 
+(eq-formula-cost-dual)=
 :::{admonition} Lemma: Entropic Dual Cost at Optimum
 Let $(f_{\alpha,\beta},g_{\alpha,\beta})$ be optimal dual potentials. Then
 
@@ -1244,6 +1413,7 @@ dual integrates to zero, and the dual value reduces to the two linear
 potential terms.
 :::
 
+(prop-sinkhorn-divergence-asymptotics)=
 :::{admonition} Proposition: Asymptotics of Sinkhorn Divergences
 :class: important
 Assume the two measures are supported on the same space and that $c$ is
@@ -1270,13 +1440,14 @@ and
 ```
 :::
 
-:::{admonition} Remark: Large-Temperature Hilbertian Limit
-If $-c$ defines a conditionally positive definite kernel, the
-large-temperature limit is the square of a Hilbertian kernel norm. A typical
-example is $c(x,y)=\norm{x-y}^p$ for $0<p<2$, which corresponds to the
-energy-distance kernel.
+:::{admonition} Remark: Large-temperature Hilbertian limit
+:class: ot4ml-remark
+
+If $-c$ defines a conditionally positive definite kernel, the large-temperature limit in Proposition {ref}`prop-sinkhorn-divergence-asymptotics` is the square of a Hilbertian kernel norm. A typical example is $c(x,y)=\norm{x-y}^p$ for $0 < p < 2$, which corresponds to the energy-distance kernel. This kernel norm is the dual of a homogeneous Sobolev norm.
 :::
 
+
+(prop-sinkhorn-positive)=
 :::{admonition} Proposition: Non-Negativity of Sinkhorn Divergences
 If $k(x,y)=e^{-c(x,y)/\epsilon}$ is positive definite, then
 $\overline{\mathcal L}_c^\epsilon(\alpha,\beta)\ge0$.
@@ -1301,8 +1472,32 @@ $\norm{\tilde\alpha}_k=\norm{\tilde\beta}_k=1$, so Cauchy--Schwarz gives the
 result.
 :::
 
-:::{admonition} Remark: Strict Positivity
-Under additional assumptions on the kernel,
-$\overline{\mathcal L}_c^\epsilon(\alpha,\beta)=0$ implies
-$\alpha=\beta$, and the debiased divergence metrizes convergence in law.
+:::{admonition} Remark: Strict positivity
+:class: ot4ml-remark
+
+Under additional assumptions on the kernel, one can furthermore show that $\bar\MK_\c^\epsilon(\al,\be)=0$ implies $\al=\be$, and that this debiased divergence metrizes convergence in law.
 :::
+
+
+:::{admonition} Example: Large-temperature collapse for quadratic costs
+:class: ot4ml-example
+
+The limiting functional minimized by $\al_\epsilon$ is linear in the second argument:
+
+```{math}
+\be\mapsto \int V_\alpha(y)\d\beta(y),
+\qquad
+V_\alpha(y)\eqdef\int c(x,y)\d\alpha(x).
+```
+
+Thus any limiting minimizer is supported on $\argmin V_\alpha$. When this minimizer is unique,
+
+```{math}
+\al_\epsilon \rightharpoonup \delta_{y^\star(\alpha)},
+\qquad
+y^\star(\alpha)=\uargmin{y} V_\alpha(y).
+```
+
+For the quadratic cost $c(x,y)=\norm{x-y}^2$ on $\RR^d$, assuming $\alpha$ has finite second moment, one has $V_\alpha(y)=\norm{y-\int x\d\alpha(x)}^2+\mathrm{const}$, so the collapse is toward the Dirac mass at the mean of $\alpha$.
+:::
+

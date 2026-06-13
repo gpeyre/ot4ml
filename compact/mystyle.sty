@@ -41,6 +41,7 @@
 \setlength{\otfigurecaptionaboveskip}{3pt}
 \makeatletter
 \def\ot@figuretype{figure}
+\def\ot@algtype{algfloat}
 \long\def\@makecaption#1#2{%
 	\ifx\@captype\ot@figuretype
 		\vskip\otfigurecaptionaboveskip
@@ -52,15 +53,24 @@
 		}%
 		\endgroup
 	\else
-		\vskip\abovecaptionskip
-		\sbox\@tempboxa{#1: #2}%
-		\ifdim \wd\@tempboxa >\hsize
-			#1: #2\par
+		\ifx\@captype\ot@algtype
+			\vskip 2pt
+			\begingroup
+			\small
+			\noindent{\bfseries #1:} {\itshape #2}\par
+			\endgroup
+			\vskip 2pt
 		\else
-			\global \@minipagefalse
-			\hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+			\vskip\abovecaptionskip
+			\sbox\@tempboxa{#1: #2}%
+			\ifdim \wd\@tempboxa >\hsize
+				#1: #2\par
+			\else
+				\global \@minipagefalse
+				\hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+			\fi
+			\vskip\belowcaptionskip
 		\fi
-		\vskip\belowcaptionskip
 	\fi
 }
 \makeatother
@@ -105,7 +115,6 @@
 }
 \theoremstyle{plain}
 \newtheorem{cor}[thm]{Corollary}
-\newtheorem{alg}[thm]{Procedure}
 
 \newtheorem{lem}[thm]{Lemma}
 \definecolor{remarkblue}{HTML}{E8F1F8}
@@ -159,9 +168,35 @@
 
 
 \usepackage{float}
-\floatstyle{boxed}
-\newfloat{listing}{H}{loi}
-\floatname{listing}{Table}
+\definecolor{algorithmrule}{HTML}{6D7D8C}
+\makeatletter
+\newcommand{\otalgrule}[1]{%
+	\begingroup\color{algorithmrule}\hrule height #1\relax\endgroup%
+}
+\newcommand\fs@otruled{%
+	\def\@fs@cfont{\bfseries}%
+	\let\@fs@capt\floatc@ruled
+	\def\@fs@pre{\otalgrule{.65pt}\kern2.5pt}%
+	\def\@fs@mid{\kern2pt\otalgrule{.35pt}\kern3pt}%
+	\def\@fs@post{\kern2.5pt\otalgrule{.65pt}\relax}%
+	\let\@fs@iftopcapt\iftrue%
+}
+\makeatother
+\floatstyle{otruled}
+\newfloat{algfloat}{tbp}{loa}[section]
+\floatname{algfloat}{Algorithm}
+\newenvironment{alg}[1][]{%
+	\begin{algfloat}[htbp]%
+	\small\normalfont
+	\setlength{\parindent}{0pt}%
+	\setlength{\parskip}{.35em}%
+	\setlength{\jot}{.2em}%
+	\setlength{\abovedisplayskip}{.45\baselineskip}%
+	\setlength{\belowdisplayskip}{.45\baselineskip}%
+	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
+}{%
+	\end{algfloat}%
+}
 
 %%%%%%%%%%%%%%%% ENVIRONEMENTS %%%%%%%%%%%%%%%%
 \newenvironment{rs}{\begin{list}{\rule[0.6ex]{1.3ex}{0.18ex}~}{
@@ -464,10 +499,6 @@
 
 
 %% MATLAB
-
-\usepackage{float}
-\floatstyle{boxed}
-\newfloat{listing}{H}{loi}
 
 \newcommand{\tabun}[1]{%
 \begin{tabular}{@{}c@{}}

@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-dual)=
 
 Duality turns the transport problem into a search for potentials rather than
 couplings. This chapter explains why potentials certify optimality, how
@@ -49,6 +50,7 @@ The discrete Kantorovich problem is a linear program. Hence its value can be
 computed either by minimizing over couplings or by maximizing over a pair of
 dual vectors.
 
+(prop-duality-discr)=
 :::{admonition} Proposition: Discrete Kantorovich Duality
 :class: important
 For a cost matrix $C\in\RR^{n\times m}$ and weights
@@ -120,6 +122,7 @@ Thus potentials are not transport maps themselves. They are certificates, and
 their equality set with the cost matrix is where an optimal coupling is
 allowed to place mass.
 
+(fig:dual-kantorovich-discrete-potentials)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -152,6 +155,7 @@ $(a,b)\mapsto\mathcal{L}_C(a,b)$ is convex, being a supremum of linear
 functions. From the primal formulation, $C\mapsto\mathcal{L}_C(a,b)$ is
 concave.
 
+(sec-auction-dual-ascent)=
 ## Auction Algorithm and Dual Prices
 
 Assignment algorithms become more transparent once one has dual variables. The
@@ -183,6 +187,7 @@ p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\varepsilon .
 The target $j_i$ is assigned to $i$, and its previous owner, if any, becomes
 unassigned. The iteration stops when all sources are assigned.
 
+(fig:dual-auction-progression)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -233,6 +238,7 @@ a_{i,\sigma(i)}-p_{\sigma(i)}
 ```
 :::
 
+(prop-auction-eps-cs)=
 :::{admonition} Proposition: Auction Optimality Certificate
 :class: important
 If a complete assignment $\sigma$ satisfies
@@ -277,28 +283,61 @@ normalizes prices by subtracting their minimum, observes that each bid
 increases one target price by at least $\varepsilon$, and bounds the normalized
 price spread in terms of the range of the profits.
 
-:::{admonition} Remark: $\varepsilon$-Scaling And Relation With Sinkhorn
-:class: note
-In practice one starts with a coarse $\varepsilon$ and repeatedly decreases it,
-warm-starting the prices and assignment. This $\varepsilon$-scaling strategy is
-a homotopy method: large $\varepsilon$ regularizes the combinatorial problem by
-enforcing a visible margin between the best and second-best reduced profits,
-while small $\varepsilon$ recovers the exact dual certificate.
-As a continuous-optimization analogy, this margin is closer to an
-exact-penalty or proximal continuation parameter than to a literal quadratic
-penalty.
+:::{admonition} Remark: $\epsilon$-scaling and relation with Sinkhorn
+:class: ot4ml-remark
 
-Sinkhorn scaling plays a parallel role for entropic optimal transport. There,
-the hard minimum in the dual $c$-transform is replaced by a soft minimum, or
-log-sum-exp, with temperature $\varepsilon$; in the auction algorithm, the hard
-maximum is kept but the complementary slackness condition is relaxed by
-$\varepsilon$. Both methods use an $\varepsilon$-controlled dual continuation,
-and both recover the unregularized transport certificate as
-$\varepsilon\to0$ under the usual assumptions. Their outputs are different:
-Sinkhorn produces dense entropic couplings, whereas auction keeps a sparse
-assignment throughout.
+In practice one starts with a coarse $\epsilon$ and repeatedly decreases it, warm-starting the prices and assignment. This $\epsilon$-scaling strategy is a homotopy method: large $\epsilon$ regularizes the combinatorial problem by enforcing a visible margin between the best and second-best reduced profits, while small $\epsilon$ recovers the exact dual certificate. If one wants a continuous-optimization analogy, the margin is closer to an exact-penalty or proximal continuation parameter than to a literal quadratic penalty.
+
+Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum in the dual $c$-transform is replaced by a soft minimum, or log-sum-exp, with temperature $\epsilon$; in the auction algorithm, the hard maximum is kept but the complementary slackness condition is relaxed by $\epsilon$. Both methods therefore use an $\epsilon$-controlled dual continuation, and both recover the unregularized transport certificate as $\epsilon\to0$ under the usual assumptions. The outputs are different: Sinkhorn produces dense entropic couplings, whereas auction keeps a sparse assignment throughout.
 :::
 
+(alg:auction-bidding)=
+:::{admonition} Algorithm: Auction bidding with target prices
+:class: ot4ml-algorithm
+
+**Input:** Profit matrix $A=(a_{ij})$, bid increment $\epsilon>0$.
+
+**Output:** Assignment map $\sigma$.
+
+**Initialize:** Set prices $p_j=0$.
+
+**Mark** all sources and targets as unassigned.
+
+**While** some source $i$ is unassigned **do**:
+
+>
+>
+> ```{math}
+> v_i=\max_j(a_{ij}-p_j),
+> \qquad
+> j_i\in\argmax_j(a_{ij}-p_j),
+> \qquad
+> w_i=\max_{j\neq j_i}(a_{ij}-p_j).
+> ```
+>
+>
+> **Update price:**
+>
+>
+> ```{math}
+> p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
+> ```
+>
+>
+> **If** target $j_i$ has owner $i'$ **then**:
+
+>>
+>> **Mark** $i'$ as unassigned.
+>>
+
+> **Assign** target $j_i$ to source $i$.
+>
+
+**Return** $\sigma$ induced by the target owners.
+:::
+
+
+(sec-dual-general)=
 ## General Formulation
 
 The continuous dual is the analytic counterpart of the discrete linear
@@ -306,6 +345,7 @@ program. It uses continuous potentials because measures are naturally probed
 through integration. The pairing is
 $\langle f,\alpha\rangle\eqdef\int f\,\d\alpha$.
 
+(prop-kantorovich-duality-general)=
 :::{admonition} Proposition: Kantorovich Duality
 :class: important
 Assume that $\X$ and $\Y$ are compact metric spaces and that
@@ -377,15 +417,13 @@ such potentials is at least the primal value. This is the infinite-dimensional
 analogue of the finite linear-programming proof.
 :::
 
-:::{admonition} Remark: Dual Attainment From $c$-Transforms
-:class: note
-Under the compactness and continuity assumptions above, the maximum in
-{eq}`eq-dual-generic-web` is attained. If $c$ is Lipschitz, one may replace an
-admissible pair by its $c$-transforms without decreasing the dual objective.
-After fixing one additive gauge, the transformed potentials are uniformly
-bounded and equi-Lipschitz. Arzela--Ascoli then gives a converging maximizing
-subsequence, and the closed constraint $f\oplus g\le c$ passes to the limit.
+(rem-kantorovich-dual-attainment)=
+:::{admonition} Remark: Dual attainment from $c$-transforms
+:class: ot4ml-remark
+
+Under the compactness and continuity assumptions of Proposition {ref}`prop-kantorovich-duality-general`, the maximum in {eq}`eq-dual-generic-web` is attained. If $c$ is Lipschitz, Proposition {ref}`prop-c-transform-lipschitz` shows that one may replace an admissible pair by its $c$-transforms without decreasing the dual objective; after fixing one additive gauge, the transformed potentials are uniformly bounded and equi-Lipschitz. Arzel\`a--Ascoli then gives a converging maximizing subsequence, and the closed constraint $f\oplus g\leq c$ passes to the limit.
 :::
+
 
 The discrete case corresponds to dual vectors that are samples of continuous
 potentials, $(f_i,g_j)=(f(x_i),g(y_j))$. The primal-dual support condition
@@ -406,6 +444,7 @@ For the one-dimensional quadratic cost, the continuous potentials can be read
 from the monotone map $T=F_\beta^{-1}\circ F_\alpha$: on the active graph,
 $f'(x)=2(x-T(x))$ and $g=f^c$.
 
+(fig:dual-kantorovich-continuous-potentials)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -438,6 +477,39 @@ continuous dual is nontrivial: the constraint set is not compact and the
 objective is not coercive. The machinery of $c$-transforms repairs this by
 replacing arbitrary potentials with regular best responses.
 
+(alg:hard-c-transform-closure)=
+:::{admonition} Algorithm: Hard alternating $c$-transform closure
+:class: ot4ml-algorithm
+
+**Input:** Source potential $f$ on $\X$, cost $c$.
+
+**Output:** Closed $c$-concave pair $(\tilde f,\tilde g)$.
+
+**Set** target best response:
+
+```{math}
+g=f^c,
+\qquad
+g(y)=\inf_{x\in\X}\ c(x,y)-f(x).
+```
+
+**Set** source closure:
+
+```{math}
+\tilde f=g^{\bar c}=f^{c\bar c}.
+```
+
+**Set** closed target potential:
+
+```{math}
+\tilde g=\tilde f^c=f^{c\bar c c}=f^c.
+```
+
+**Return** $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
+:::
+
+
+(sec-c-transfo)=
 ## c-Transforms
 
 The $c$-transform is the operation that improves potentials without changing
@@ -461,6 +533,7 @@ g(y)\le c(x,y)-f(x)
 
 The constraint is equivalent to $g(y)\le f^c(y)$.
 
+(def-c-transform)=
 :::{admonition} Definition: $c$-Transform
 :class: important
 For a function $f:\X\to\RR\cup\{-\infty\}$, its $c$-transform is
@@ -485,6 +558,7 @@ g^{\bar c}(x)
 Since $\beta$ is positive, maximizing $\int g\,\d\beta$ is achieved by taking
 $g=f^c$ on the support of $\beta$, equivalently $\beta$-almost everywhere.
 
+(fig:dual-c-transform-envelope)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -512,6 +586,7 @@ regularity from the cost.
 
 <iframe class="ot4ml-live-frame" title="c-transform envelope controls" src="../live/dual-envelope.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
 
+(prop-c-transform-semi-relaxed)=
 :::{admonition} Proposition: $c$-Transforms Solve The Semi-Relaxed Problems
 :class: important
 For fixed $f$, the maximizers of the dual objective over all $g$ such that
@@ -569,6 +644,7 @@ the supports of $\alpha$ and $\beta$, while the transform itself defines
 functions on the whole ambient spaces. This gives a canonical extension of
 dual solutions beyond their active supports.
 
+(prop-c-transform-lipschitz)=
 :::{admonition} Proposition: Lipschitz Stability Of $c$-Transforms
 :class: important
 If $c$ is $L$-Lipschitz with respect to its second variable, uniformly in the
@@ -630,26 +706,21 @@ Thus $c$-concave functions are negatives of convex functions. In the
 one-dimensional bilinear model case, the hard double $c$-transform is an
 operation of taking concave envelopes.
 
-:::{admonition} Remark: Proof Of Brenier's Theorem
-:class: note
-For $c(x,y)=\norm{x-y}^2$, subtracting the harmless quadratic terms reduces
-the geometry to the bilinear cost $-\langle x,y\rangle$. The primal-dual
-relationship, together with the replacement
-$(f,g)\mapsto(f^{c\bar c},f^c)$, shows that an optimal plan satisfies
+(rem-proof-brenier)=
+:::{admonition} Remark: Proof of Brenier's theorem
+:class: ot4ml-remark
+
+For $c(x,y)=\norm{x-y}^2$, subtracting the harmless quadratic terms reduces the geometry to the bilinear cost $-\dotp{x}{y}$. The primal-dual relationship, together with the fact that one can replace $(f,g)$ by $(f^{c\bar c},f^c)$, shows that an optimal plan satisfies
 
 ```{math}
-\operatorname{supp}(\pi)
+\supp(\pi)
 \subset
-\left\{(x,y): \phi(x)+\phi^*(y)=\langle x,y\rangle\right\},
+\enscond{(x,y)}{\phi(x)+\phi^*(y)=\dotp{x}{y}},
 ```
 
-where $\phi=-f^{c\bar c}$ is convex and $-g=\phi^*$. By Fenchel's inequality,
-equality holds exactly when $y\in\partial\phi(x)$. If $\alpha$ has a density,
-convex functions are differentiable Lebesgue-almost everywhere, so
-$\partial\phi(x)$ is a singleton for $\alpha$-almost every $x$. This yields the
-Brenier map $T=\nabla\phi$ and explains why the optimal coupling is
-concentrated on a graph.
+where $\phi=-f^{c\bar c}$ is convex and $-g=\phi^*$. By the Fenchel inequality, equality holds exactly when $y\in\partial\phi(x)$. If $\al$ has a density, convex functions are differentiable Lebesgue-almost everywhere, hence $\al$-almost everywhere, so $\partial\phi(x)$ is a singleton for $\al$-almost every $x$. This yields the Brenier map $T=\nabla\phi$ and explains why the optimal coupling is concentrated on a graph.
 :::
+
 
 ### Failure of Alternating Optimization
 
@@ -725,6 +796,7 @@ functions are ordinary concave functions and $f^{c\bar c}$ is the smallest
 concave majorant of $f$. A hard transform removes non-concave oscillations in
 one closure step instead of producing a gradual ascent.
 
+(fig:dual-alternating-c-transform-failure)=
 :::{div}
 :class: ot4ml-book-figure
 

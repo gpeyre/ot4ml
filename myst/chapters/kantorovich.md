@@ -5,6 +5,7 @@ kernelspec:
   display_name: Python 3
   language: python
 ---
+(sec-kantorovich)=
 
 Kantorovich's relaxation is the decisive move that turns transport into convex
 optimization. Deterministic maps are replaced by couplings, infeasibility and
@@ -39,6 +40,7 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
+(sec-discrete-relaxation)=
 ## Discrete Relaxation
 
 The discrete relaxation is the cleanest place to see mass splitting. It
@@ -63,6 +65,7 @@ matrix $P\in\RR_+^{n\times m}$ for two discrete measures
 \be=\sum_j b_j\delta_{y_j}.
 ```
 
+(def-discrete-couplings)=
 :::{admonition} Definition: Discrete Couplings And Mass Conservation
 :class: important
 Admissible couplings are constrained only by conservation of mass:
@@ -92,6 +95,7 @@ masses:
 The first consequence is feasibility. There is always at least one admissible
 plan.
 
+(def-discrete-product-coupling)=
 :::{admonition} Definition: Discrete Product Coupling
 :class: important
 Given weights $a\in\simplex_n$ and $b\in\simplex_m$, the discrete product, or
@@ -110,6 +114,7 @@ nonnegative orthant, hence a convex polytope. In one dimension, the coupling
 can be read as a matrix: rows index source bins, columns index target bins, and
 the marginal constraints appear as prescribed row and column sums.
 
+(prop-discrete-product-coupling-degenerate)=
 :::{admonition} Proposition: Discrete Product Optimality Is Degenerate
 :class: important
 Assume that all zero-mass rows and columns have been removed, so that
@@ -144,6 +149,7 @@ Thus the product plan is mainly a feasibility witness. Except when the linear
 cost is constant on the whole transportation polytope, it is not expected to
 solve optimal transport.
 
+(fig:kantorovich-coupling-polylines)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -169,6 +175,7 @@ approximations.
 
 <iframe class="ot4ml-live-frame" title="Kantorovich coupling controls" src="../live/kantorovich-couplings.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+(fig:kantorovich-coupling-matrix-marginals)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -211,6 +218,7 @@ $C_{ij}$, the discrete Kantorovich problem reads
 
 This is a linear program, and its solutions need not be unique.
 
+(fig:kantorovich-permutation-versus-splitting)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -236,6 +244,7 @@ visible.
 
 <iframe class="ot4ml-live-frame" title="Splitting coupling controls" src="../live/kantorovich-splitting.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+(prop-sparse-optimal-plans)=
 :::{admonition} Proposition: Sparse Optimal Plans
 :class: important
 Assume $a_i>0$, $b_j>0$ and $\sum_i a_i=\sum_j b_j=1$. The linear program
@@ -253,6 +262,7 @@ nonnegative couplings and $P$ is their midpoint, contradicting extremality.
 Thus the support graph is a forest, which has at most $n+m-1$ edges.
 :::
 
+(prop-northwest-corner)=
 :::{admonition} Proposition: North-West Corner Feasible Plan
 :class: important
 Let $a\in\RR_+^n$ and $b\in\RR_+^m$ have the same positive total mass. A greedy
@@ -283,6 +293,7 @@ In one dimension, the transportation polytope has a canonical monotone
 optimizer. This is the weighted version of the sorting rule from the matching
 chapter.
 
+(prop-1d-weighted-sweep)=
 :::{admonition} Proposition: One-Dimensional Weighted Sweep
 :class: important
 Let $x_1\leq\cdots\leq x_n$ and $y_1\leq\cdots\leq y_m$ be points on the line,
@@ -329,6 +340,7 @@ P^\top\mathbf{1}_n=\mathbf{1}_n
 \right\}.
 ```
 
+(def-extreme-points)=
 :::{admonition} Definition: Extreme Points
 :class: important
 For a compact convex set $\mathcal C$ in a finite-dimensional vector space,
@@ -342,6 +354,22 @@ x=(y+z)/2,\ y,z\in\mathcal C
 ```
 :::
 
+(prop-extreme-point-existence)=
+:::{admonition} Proposition: Existence of Extreme Points
+:class: important
+If $\mathcal C$ is a nonempty compact convex subset of a finite-dimensional
+vector space, then $\Extr(\mathcal C)$ is nonempty.
+:::
+
+:::{dropdown} Proof
+Among all nonempty faces of $\mathcal C$, choose one of minimal affine
+dimension. If this face contained two distinct points, maximizing a linear
+functional that is not constant on the face would produce a nonempty proper
+exposed subface, contradicting minimality. Hence the minimal face is a
+singleton, and its point is extreme.
+:::
+
+(prop-linear-program-extreme-minimizer)=
 :::{admonition} Proposition: Linear Programs Have Extreme Minimizers
 :class: important
 Let $\mathcal C$ be nonempty and compact. For every linear form $\ell$,
@@ -358,6 +386,7 @@ minimal affine dimension. That extreme point is also extreme in the original
 set.
 :::
 
+(thm-birkhoff-von-neumann)=
 :::{admonition} Theorem: Birkhoff--von Neumann
 :class: important
 The extreme points of $\mathcal B_n$ are exactly the permutation matrices.
@@ -373,6 +402,7 @@ $P+\epsilon H$ and $P-\epsilon H$ remain bistochastic, and $P$ is their
 midpoint. Thus $P$ is not extreme.
 :::
 
+(cor-kantorovich-matching)=
 :::{admonition} Corollary: Kantorovich For Matching
 :class: important
 If $m=n$ and $a=b=\mathbf{1}_n/n$, then the discrete Kantorovich problem admits
@@ -384,6 +414,139 @@ For uniform empirical measures, the Kantorovich relaxation is tight: one can
 choose a permutation matrix among the minimizers. For general discrete measures,
 the Monge constraint may be empty and splitting couplings are essential.
 
+(alg:north-west-corner)=
+:::{admonition} Algorithm: North-west corner coupling
+:class: ot4ml-algorithm
+
+**Input:** Source weights $\a\in\simplex_n$ and target weights $\b\in\simplex_m$.
+
+**Output:** Sparse feasible coupling $\P\in\CouplingsD(\a,\b)$.
+
+**Initialize:** Set $\P=0$, $r=\a$, $s=\b$, and $(i,j)=(1,1)$.
+
+**While** $i\leq n$ and $j\leq m$ **do**:
+
+>
+>
+> ```{math}
+> \eta=\min(r_i,s_j),
+> \qquad
+> \P_{ij}\leftarrow \eta.
+> ```
+>
+>
+> **Update residuals:**
+>
+>
+> ```{math}
+> r_i\leftarrow r_i-\eta,
+> \qquad
+> s_j\leftarrow s_j-\eta.
+> ```
+>
+>
+> **If** $r_i=0$ **then**:
+
+>>
+>> **Set** $i\leftarrow i+1$.
+>>
+
+> **If** $s_j=0$ **then**:
+
+>>
+>> **Set** $j\leftarrow j+1$.
+>>
+
+**Return** $\P$.
+:::
+
+(alg:weighted-one-dimensional-sweep)=
+:::{admonition} Algorithm: Weighted one-dimensional sweep
+:class: ot4ml-algorithm
+
+**Input:** One-dimensional atoms $(x_i,\a_i)$ and $(y_j,\b_j)$; convex cost $h(x-y)$.
+
+**Output:** Monotone optimal coupling $\P$.
+
+**Sort** atoms:
+
+```{math}
+x_1\leq\cdots\leq x_n,
+\qquad
+y_1\leq\cdots\leq y_m.
+```
+
+**Run** Algorithm {ref}`alg:north-west-corner` on sorted weights $(\a_i)_i$ and $(\b_j)_j$.
+
+**Return** $\P$.
+:::
+
+
+:::{admonition} Example: Unbounded convex sets may have no extreme point
+:class: ot4ml-example
+
+Compactness cannot be dropped from Proposition {ref}`prop-extreme-point-existence`. For instance, the closed convex set $\enscond{(x,y)\in\RR_+^2}{xy\geq1}$ is unbounded and has no extreme point.
+:::
+
+(alg:birkhoff-von-neumann-decomposition)=
+:::{admonition} Algorithm: Birkhoff--von Neumann decomposition
+:class: ot4ml-algorithm
+
+**Input:** Bistochastic matrix $P\in\mathcal B_n$.
+
+**Output:** Decomposition $P=\sum_r\lambda_rP_{\sigma_r}$.
+
+**Initialize:** Set $R=P$ and $\mathcal L=\emptyset$.
+
+**While** $R\neq0$ **do**:
+
+>
+> **Find** a permutation $\sigma$ supported by positive entries:
+>
+>
+> ```{math}
+> R_{i,\sigma(i)}>0
+> \qquad\text{for all }i.
+> ```
+>
+>
+> **Set**
+>
+>
+> ```{math}
+> \lambda=\min_i R_{i,\sigma(i)}.
+> ```
+>
+>
+> **Append** $(\lambda,\sigma)$ to $\mathcal L$.
+>
+> **Update**
+>
+>
+> ```{math}
+> R\leftarrow R-\lambda P_\sigma .
+> ```
+>
+>
+
+**Return**
+
+```{math}
+P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r},
+\qquad
+\sum_r\lambda_r=1.
+```
+:::
+
+
+:::{admonition} Remark: General discrete case
+:class: ot4ml-remark
+
+For general input measures, one does not have equivalence between Monge and Kantorovich problems, since the Monge constraint can be empty. In finite dimension, however, the support of an optimal coupling still enjoys strong sparsity: one can choose an optimal basic feasible plan whose bipartite support is cycle-free, hence with at most $n+m-1$ nonzero entries. Figure {ref}`fig:kantorovich-permutation-versus-splitting` illustrates the difference between the tight uniform matching case and the genuinely splitting nonuniform case.
+:::
+
+
+(sec-kantorovich-lp-algorithms)=
 ## Linear-Programming Algorithms
 
 The discrete Kantorovich problem is a linear program with much more structure
@@ -426,6 +589,7 @@ The barrier is singular at the boundary, so each iterate stays strictly inside
 the transportation polytope. As $\epsilon\downarrow0$, the central path
 approaches the set of LP minimizers.
 
+(fig:kantorovich-log-barrier-lp-geometry)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -457,6 +621,7 @@ positivity differently. Interior-point algorithms solve the original LP by
 decreasing a barrier parameter. Sinkhorn fixes an entropic temperature and
 solves a different, KL-regularized OT problem by alternating diagonal scalings.
 
+(sec-kantorovich-continuous)=
 ## Relaxation For Arbitrary Measures
 
 This section lifts the finite-dimensional coupling matrix to a joint
@@ -466,6 +631,7 @@ continuous distributions.
 
 ### Continuous Couplings
 
+(def-joint-marginals)=
 :::{admonition} Definition: Marginals Of A Joint Measure
 :class: important
 Let $\pi\in\Mm_+^1(\Xx\times\Yy)$ and let
@@ -488,6 +654,7 @@ $\Yy$,
 ```
 :::
 
+(def-continuous-couplings)=
 :::{admonition} Definition: Couplings
 :class: important
 Given $\al\in\Mm_+^1(\Xx)$ and $\be\in\Mm_+^1(\Yy)$, the set of couplings
@@ -503,18 +670,19 @@ between $\al$ and $\be$ is
 This is the continuous analogue of the transportation polytope.
 :::
 
-:::{admonition} Remark: Probabilistic Interpretation Of Couplings
-:class: note
-If $X\sim\al$ and $Y\sim\be$, then
-$\pi\in\Couplings(\al,\be)$ is the law of a pair $(X,Y)$ whose coordinates have
-laws $\al$ and $\be$. The coupling encodes dependence. The tensor product
-$\al\otimes\be$ corresponds to independence; a graph coupling
-$(\Id,T)_\sharp\al$ corresponds to the deterministic relation $Y=T(X)$.
+:::{admonition} Remark: Probabilistic interpretation of couplings
+:class: ot4ml-remark
+
+If $X\sim\al$ and $Y\sim\be$, then $\pi\in\Couplings(\al,\be)$ means that $\pi$ is the law of a pair $(X,Y)$ whose coordinates have laws $\al$ and $\be$. The coupling encodes the dependence between $X$ and $Y$. The tensor product $\al\otimes\be$ corresponds to independence, whereas a graph coupling $(\Id,T)_\sharp\al$ corresponds to the deterministic relation $Y=T(X)$.
+
+In the discrete case, when $\al=\sum_i \a_i\de_{x_i}$ and $\be=\sum_j \b_j\de_{y_j}$, the constraint $\pi_1=\al$ and $\pi_2=\be$ forces every coupling to have the form $\pi=\sum_{i,j}\P_{ij}\de_{(x_i,y_j)}$ with $\P\in\CouplingsD(\a,\b)$. The discrete formulation is therefore a special case of the continuous one, not merely an approximation.
 :::
+
 
 Unlike the Monge constraint, the coupling constraint is never empty. The
 continuous feasibility witness is the tensor product coupling.
 
+(def-tensor-product-coupling)=
 :::{admonition} Definition: Tensor Product And Trivial Coupling
 :class: important
 Given $\al\in\Mm_+^1(\Xx)$ and $\be\in\Mm_+^1(\Yy)$, the tensor product
@@ -529,6 +697,7 @@ coupling $\al\otimes\be$ is defined by
 ```
 :::
 
+(prop-product-coupling-degenerate)=
 :::{admonition} Proposition: Product Optimality Is Degenerate
 :class: important
 Assume that $\Xx$ and $\Yy$ are compact metric spaces and that
@@ -597,6 +766,7 @@ The minimization is over all possible dependences between the two random
 variables, not over the fixed marginal laws.
 :::
 
+(prop-kantorovich-existence-compact)=
 :::{admonition} Proposition: Existence On Compact Spaces
 :class: important
 Assume that $\Xx$ and $\Yy$ are compact metric spaces and
@@ -637,6 +807,7 @@ $\al_t=(T_t)_\sharp\pi$. In the discrete case, each mass $P_{ij}$ moves from
 $x_i$ to $y_j$ along its own segment. When the plan is not induced by a map,
 one source atom can split into several moving atoms.
 
+(fig:kantorovich-plan-interpolation)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -667,6 +838,7 @@ The proof of Brenier's theorem relies on Kantorovich relaxation and duality.
 Under Brenier's hypotheses, the relaxation is tight: it has the same cost as
 the Monge problem and the optimal coupling is induced by a map.
 
+(cor-monge-kantorovich-brenier)=
 :::{admonition} Corollary: Monge--Kantorovich Equivalence Under Brenier
 :class: important
 Assume that $\al$ is absolutely continuous with respect to Lebesgue measure and
@@ -690,12 +862,42 @@ $\al$ and mass splitting can occur. For instance, moving $\delta_0$ to
 $(\delta_{-1}+\delta_1)/2$ can be represented by a plan concentrated on the
 set-valued subdifferential of $\phi(x)=|x|$, but not by a deterministic map.
 
+:::{admonition} Remark: Probabilistic interpretation of Kantorovich's problem
+:class: ot4ml-remark
+
+The same problem can be written as
+
+```{math}
+\MK_c(\al,\be)
+=
+\inf_{X\sim\al,\,Y\sim\be}\EE(c(X,Y)).
+```
+
+The minimization is not over the marginal laws, which are fixed, but over all possible dependences between the two random variables. OT therefore chooses the cheapest joint law among all couplings.
+:::
+
+
+:::{admonition} Remark: Nonsmooth potentials and splitting
+:class: ot4ml-remark
+
+If $\al$ does not have a density, then $\phi$ may be non-smooth on a set charged by $\al$, and non-smooth points can lead to mass splitting. For instance, moving $\delta_0$ to $(\delta_{-1}+\delta_{+1})/2$ can be represented by a plan concentrated on the set-valued subdifferential of $\phi(x)=|x|$, but not by a deterministic map. This is the continuous counterpart of the gap between the uniform matching case of Corollary {ref}`cor-kantorovich-matching` and the general splitting case.
+:::
+
+
+:::{admonition} Remark: Probabilistic form of tightness
+:class: ot4ml-remark
+
+If $(X,Y)$ has the optimal Kantorovich law under the assumptions of Corollary {ref}`cor-monge-kantorovich-brenier`, then $Y=T(X)$ almost surely with $X\sim\al$ and $T(X)\sim\be$. This is analogous to the Birkhoff--von Neumann result in the fully discrete uniform case: in both settings, the convex relaxation admits an optimizer satisfying the original deterministic constraint. The hypotheses are quite different, however: Birkhoff--von Neumann is finite-dimensional and need not give uniqueness, whereas Brenier's theorem uses absolute continuity of the source and gives uniqueness of the optimal map almost everywhere.
+:::
+
+
 ## Cyclical Monotonicity
 
 Cyclical monotonicity is the local geometric fingerprint of optimality for a
 cost $c$. It converts a global minimization problem into finite exchange
 inequalities and is the bridge from Kantorovich plans to convex potentials.
 
+(def-support)=
 :::{admonition} Definition: Support
 :class: important
 For a Radon measure $\pi$ on $\Xx\times\Yy$,
@@ -708,6 +910,7 @@ For a Radon measure $\pi$ on $\Xx\times\Yy$,
 ```
 :::
 
+(def:ccm)=
 :::{admonition} Definition: $c$-Cyclical Monotonicity
 :class: important
 A set $\Gamma\subset\Xx\times\Yy$ is $c$-cyclically monotone if, for every
@@ -730,6 +933,7 @@ It is enough to check cyclic permutations:
 \qquad y_{k+1}=y_1.
 ```
 
+(thm:opt_ccm)=
 :::{admonition} Theorem: Optimal Plans Are $c$-Cyclically Monotone
 :class: important
 Assume $c$ is continuous. For any optimal plan $\pi$ solving the Kantorovich
@@ -767,6 +971,7 @@ $c(x,y)=|x-y|^p$, this reduces to the classical monotone rearrangement.
 OT costs become genuine distances when the ground cost comes from a metric. The
 proof relies on a gluing lemma.
 
+(lem-gluing-discr)=
 :::{admonition} Lemma: Discrete Gluing Lemma
 :class: important
 Given $a\in\simplex_n$, $b\in\simplex_p$, $c\in\simplex_m$,
@@ -799,6 +1004,7 @@ over the intermediate index $j$ gives $R$. Its row and column sums are
 $a$ and $c$.
 :::
 
+(fig:kantorovich-discrete-gluing-lemma)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -854,6 +1060,7 @@ W_p(a,b)+W_p(b,c).
 ```
 :::
 
+(lem-gluing-general)=
 :::{admonition} Lemma: Gluing Lemma
 :class: important
 Let $(\al,\be,\ga)$ be probability measures on Polish spaces. Given
@@ -922,12 +1129,55 @@ The Kantorovich feasible set is never empty, although the cost may be infinite
 without moment assumptions. When an optimal Monge map exists, the graph
 coupling gives the same value.
 
+(alg:plan-displacement-interpolation)=
+:::{admonition} Algorithm: Displacement interpolation from a transport plan
+:class: ot4ml-algorithm
+
+**Input:** Measures $\alpha,\beta$ on $\RR^d$, time $t\in[0,1]$.
+
+**Output:** Displacement interpolant $\alpha_t$.
+
+**Solve** quadratic Kantorovich problem.
+
+**Choose** $\pi^\star$ among the minimizers.
+
+**Set** interpolation map:
+
+```{math}
+e_t(x,y)=(1-t)x+t y.
+```
+
+**Push forward:**
+
+```{math}
+\al_t=(e_t)_\sharp\pi^\star.
+```
+
+**If** $\pi^\star=\sum_{i,j}P^\star_{ij}\delta_{(x_i,y_j)}$ **then**:
+
+>
+> **Compute**
+>
+>
+> ```{math}
+> \al_t=
+> \sum_{i,j}P^\star_{ij}
+> \delta_{(1-t)x_i+t y_j}.
+> ```
+>
+>
+
+**Return** $\alpha_t$.
+:::
+
+
 ## Metric Properties: Topology And Applications
 
 Wasserstein distances metrize weak convergence under moment control, sit
 between weak and strong topologies, and provide quantitative estimates in
 probability and robust optimization.
 
+(prop-comp-wass-p)=
 :::{admonition} Proposition: Equivalence Of Wasserstein Distances On Compact Spaces
 :class: important
 On a compact metric space, for $p\leq q$,
@@ -947,6 +1197,7 @@ right inequality follows from
 $d(x,y)^q\leq\diam(\Xx)^{q-p}d(x,y)^p$.
 :::
 
+(dfn-weak-conv)=
 :::{admonition} Definition: Weak$^*$ Topology
 :class: important
 A sequence $(\al_k)_k$ converges weakly$^*$ to $\al$ in $\Mm_+^1(\Xx)$ if, for
@@ -957,51 +1208,56 @@ every bounded continuous function $f$,
 ```
 :::
 
-:::{admonition} Remark: A Riemann-Sum Weak Limit
-:class: note
-On $\Xx=\RR$,
+(rem-riemann-weak-limit)=
+:::{admonition} Remark: A Riemann-sum weak limit
+:class: ot4ml-remark
+
+On $\Xx=\RR$, the empirical measures on a regular grid satisfy
 
 ```{math}
-\frac1n\sum_{k=1}^n\delta_{k/n}
-\rightharpoonup
-\mathcal U_{[0,1]}.
+\frac{1}{n} \sum_{k=1}^n \de_{k/n} \rightharpoonup \Uu_{[0,1]}.
 ```
 
-This is exactly convergence of Riemann sums. The convergence is weak but not
-strong: the empirical measure and the uniform density are mutually singular, so
-their total variation distance is $2$.
-:::
-
-:::{admonition} Remark: Weak Convergence For Discrete Measures
-:class: note
-For a single Dirac, $\delta_{x^{(n)}}\rightharpoonup\delta_x$ is equivalent to
-$x^{(n)}\to x$. With a fixed number of atoms, convergence of locations and
-weights gives weak convergence after relabeling and merging identical limits.
-Without a uniform bound on the number of atoms, weak limits of discrete
-measures can be continuous; empirical measures are the standard example.
-:::
-
-:::{admonition} Remark: Modes Of Convergence For Random Variables
-:class: note
-If $X_n$ and $X$ live on a common probability space, almost-sure convergence
-implies convergence in probability, and convergence in probability implies
-convergence in law. Convergence in law is exactly weak convergence of the laws
-$(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all
-variables to live on the same probability space.
-:::
-
-:::{admonition} Remark: Central Limit Theorem
-:class: note
-If $(X_1,\ldots,X_n)$ are i.i.d. random vectors with finite second moments,
-$\mathbb{E}X_i=0$ and $\mathbb{E}(X_iX_i^\top)=\Id$, then
+Indeed, for every continuous bounded function $f$,
 
 ```{math}
-Z_n\eqdef\frac1{\sqrt n}\sum_{i=1}^n X_i
+\frac{1}{n} \sum_{k=1}^n f(k/n) \longrightarrow \int_0^1 f(x) \d x,
 ```
 
-converges in law toward $\Gaussian(0,\Id)$.
+which is precisely the convergence of Riemann sums. This convergence is weak but not strong: for every $n$, the discrete measure and the uniform density are mutually singular, hence their total variation distance is equal to $2$.
 :::
 
+(rem-weak-conv-disc)=
+:::{admonition} Remark: Weak convergence for discrete measures
+:class: ot4ml-remark
+
+In the special case of a single Dirac, $\de_{x^{(n)}} \rightharpoonup \de_x$ is equivalent to $\int f \d\de_{x^{(n)}} = f(x^{(n)}) \rightarrow \int f \d\de_{x} = f(x)$ for any continuous $f$. This in turn is equivalent to $x^{(n)} \rightarrow x$.
+For a fixed number of atoms, if $\al_n=\sum_{i=1}^N a_i^{(n)}\de_{x_i^{(n)}}$ and, after extracting a subsequence and relabeling, $a_i^{(n)}\to a_i$ and $x_i^{(n)}\to x_i$, then $\al_n$ converges weakly to $\sum_i a_i\de_{x_i}$, with atoms at identical limits merged. Without a uniform bound on the number of atoms, weak limits of discrete measures can be non-discrete; empirical measures are the standard example.
+:::
+
+(rem-random-variable-convergences)=
+:::{admonition} Remark: Modes of convergence for random variables
+:class: ot4ml-remark
+
+Convergence of laws should be distinguished from stronger notions of convergence for random variables. If $X_n$ and $X$ are defined on a common probability space, then $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
+
+```{math}
+\foralls \epsilon>0,\qquad
+\PP(\norm{X_n-X}>\epsilon)\to0.
+```
+
+Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak$^*$ convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
+:::
+
+(rem-clt)=
+:::{admonition} Remark: Central limit theorem
+:class: ot4ml-remark
+
+The central limit theorem states that if $(X_1,\ldots,X_n)$ are i.i.d. random vectors with finite second moments, $\EE(X_i)=0$, and $\EE(X_i X_i^\top)=\Id$, then the rescaled average $Z_n \eqdef \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i$ converges in law toward a Gaussian $\Gaussian(0,\Id)$. This means that the measure $\al_n$ representing the law of $Z_n$ converges weakly toward the measure $\al$ of the centered normalized Gaussian.
+:::
+
+
+(prop-rel-wass-tv)=
 :::{admonition} Proposition: Total Variation As Wasserstein For The Discrete Metric
 :class: important
 Let $d$ be the $0/1$ metric, with $d(x,x)=0$ and $d(x,y)=1$ for $x\neq y$.
@@ -1041,6 +1297,7 @@ For Dirac masses,
 Thus the strong topology never sees Diracs converge unless they are eventually
 equal, while the Wasserstein topology captures their spatial convergence.
 
+(prop-wass-metrizes-weak-compact)=
 :::{admonition} Proposition: Wasserstein Metrizes Weak Convergence On Compact Spaces
 :class: important
 If $\Xx$ is compact, then $\al_k\rightharpoonup\al$ if and only if
@@ -1075,6 +1332,7 @@ On a discrete space, weak and strong topologies coincide, and
 \frac{d_{\max}}{2}\|\al-\be\|_{\TV}.
 ```
 
+(sec-wasserstein-over-wasserstein)=
 ## Wasserstein Over Wasserstein
 
 The construction can be iterated. Once $(\X,d)$ is a metric space, the set of
@@ -1083,6 +1341,7 @@ therefore serve as a new ground space. This is useful whenever the objects to
 compare are themselves random probability measures, or mixtures whose
 components are meaningful objects rather than only a collapsed density.
 
+(prop-wasserstein-space-polish)=
 :::{admonition} Proposition: Wasserstein Spaces As Ground Spaces
 :class: important
 If $(\X,d)$ is a Polish metric space, then $\Pp_p(\X)$ endowed with $\Wass_p$
@@ -1129,10 +1388,44 @@ The Wasserstein distance on the Wasserstein space is
 
 For Gaussian mixtures, this separates two geometries. A mixture can be viewed
 as a collapsed density on $\X$, or as a component law over Gaussian atoms in
-the Bures--Wasserstein space. Interpolating at the component level generally
-differs from the true $\Wass_2$ interpolation between the collapsed mixture
-densities.
+the Bures--Wasserstein space. For two component laws
 
+```{math}
+\mathfrak A=\sum_i a_i\delta_{\Gaussian(m_i,\Sigma_i)},
+\qquad
+\mathfrak B=\sum_j b_j\delta_{\Gaussian(n_j,\Lambda_j)},
+```
+
+the component-level problem uses the cost
+
+```{math}
+C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
+```
+
+If $\Pi^\star$ is an optimal coupling between the weights $a$ and $b$, and if
+$A_{ij}$ is the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, each active
+pair follows the Gaussian geodesic
+
+```{math}
+m_{ij,t}=(1-t)m_i+t n_j,
+\qquad
+\Sigma_{ij,t}
+=
+\big((1-t)\Id+tA_{ij}\big)\Sigma_i
+\big((1-t)\Id+tA_{ij}\big).
+```
+
+Collapsing these component geodesics gives
+
+```{math}
+\bar\alpha_t=
+\sum_{i,j}\Pi^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
+```
+
+This component-level interpolation generally differs from the true $\Wass_2$
+interpolation between the collapsed mixture densities.
+
+(fig:kantorovich-wow-mixtures)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1159,6 +1452,7 @@ density.
 
 <iframe class="ot4ml-live-frame" title="Wasserstein-over-Wasserstein controls" src="../live/kantorovich-wow.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+(prop-wow-collapsed-bound)=
 :::{admonition} Proposition: Collapsing Is Non-Expansive
 :class: important
 Let $\mathfrak A,\mathfrak B\in\Pp_2(\Pp_2(\X))$, and let
@@ -1184,6 +1478,23 @@ proves the claim.
 This viewpoint also clarifies lower bounds for Gromov--Wasserstein distances:
 a metric-measure space can be mapped to a law of local distance profiles, and
 these laws can be compared by Wasserstein-over-Wasserstein.
+
+:::{admonition} Remark: Local profiles as Wasserstein-over-Wasserstein laws
+:class: ot4ml-remark
+
+Given a metric-measure space $\XX=(\X,\dist_\X,\mu_\X)$, each point defines a local distance distribution
+
+```{math}
+\alpha_x=(\dist_\X(x,\cdot))_\sharp\mu_\X\in\Pp(\RR_+),
+\qquad
+\mathfrak D_\X=(x\mapsto\alpha_x)_\sharp\mu_\X\in\Pp(\Pp(\RR_+)).
+```
+
+The Memoli profile lower bound in Proposition {ref}`prop-memoli-gw-profile-lower-bound` is precisely a Wasserstein-over-Wasserstein comparison of these laws of local profiles. It replaces the full pairwise distortion by an ordinary OT problem whose ground cost is itself a one-dimensional Wasserstein distance.
+
+Note that there exist alternative distances which also metricize weak convergence. The simplest ones are Hilbertian kernel norms, which are detailed in Section {ref}`sec-dual-norms`.
+:::
+
 
 ## Distributional Robustness And Wasserstein Infinity
 
@@ -1220,6 +1531,7 @@ by its worst penalized perturbation. For $p=1$ and an $L_\theta$-Lipschitz loss,
 \frac1n\sum_i\ell_\theta(z_i)+\rho L_\theta.
 ```
 
+(prop-wasserstein-cost-convex)=
 :::{admonition} Proposition: Convexity Of Transport Costs
 :class: important
 For any nonnegative lower-semicontinuous cost $c$, the value
@@ -1255,6 +1567,7 @@ The limiting distance
 
 minimizes the worst displacement rather than an average displacement.
 
+(prop-wasserstein-infty-dro)=
 :::{admonition} Proposition: $\Wass_\infty$ Robust Envelope Around An Empirical Law
 :class: important
 Let $(\Zz,d)$ be a Polish metric space. Let
@@ -1287,6 +1600,7 @@ Weak topology says whether laws converge; Wasserstein distances also quantify
 how fast. The central limit theorem becomes a rate estimate in $\Wass_1$, which
 controls the error of all $1$-Lipschitz observables of the normalized sum.
 
+(fig:matching-quantitative-clt)=
 :::{div}
 :class: ot4ml-book-figure
 
@@ -1312,6 +1626,7 @@ discrete.
 
 <iframe class="ot4ml-live-frame" title="Quantitative CLT controls" src="../live/kantorovich-clt.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+(prop-berry-esseen-w1)=
 :::{admonition} Proposition: Berry--Esseen Bound In $\Wass_1$
 :class: important
 Let $(X_i)_{i=1}^n$ be i.i.d. real random variables with

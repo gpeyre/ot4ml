@@ -972,7 +972,11 @@ For the cost $c(x,y)=|x-y|^2$, this map is nondecreasing, hence the derivative o
 		\qquad \al\text{-a.e.}
 	\]
 	Indeed, each map is nondecreasing and sends quantile level $r$ to the same quantile level of the target law. This semigroup property is special to the ordered line.
+\end{rem}
 
+The obstruction in higher dimension is already visible for the most elementary Gaussian maps.
+
+\begin{example}[Linear obstruction to composing Brenier maps]
 	In higher dimension, Brenier maps for the quadratic cost are gradients of convex functions, and such maps do not generally remain gradients after composition. The simplest obstruction is linear. If $\T_1(x)=A_1x$ and $\T_2(x)=A_2x$ with $A_1,A_2$ symmetric positive definite, then $\T_2\circ\T_1$ has matrix $A_2A_1$. It is a gradient field only when this product is symmetric, equivalently $A_1A_2=A_2A_1$. Gaussian transport gives a concrete instance: between nondegenerate Gaussian laws, the Brenier map is affine with symmetric positive definite linear part. Compositions of Gaussian optimal maps are therefore optimal only in special commuting situations, for instance when all covariance matrices are simultaneously diagonalizable. Otherwise the composition contains a rotational or shearing component and is not the Brenier map between the initial and final Gaussians.
 \index{rotational component}% strictindex
 \index{shearing component}% strictindex
@@ -981,10 +985,44 @@ For the cost $c(x,y)=|x-y|^2$, this map is nondecreasing, hence the derivative o
 \index{Gaussian!optimal map}% strictindex
 \index{cost!quadratic}% strictindex
 \index{Brenier!map}% strictindex
-\end{rem}
+\end{example}
 
 For discrete measures, one cannot directly apply the map formula when the source has atoms, but if the measures are uniform on the same number of Dirac masses, then it is exactly the sorting formula of Proposition~\ref{prop-matching-1d-monotone}.
 \index{Dirac mass}% strictindex
+
+\begin{alg}[Quantile rearrangement and one-dimensional geodesic]\label{alg:quantile-rearrangement-geodesic}
+\index{quantile!map}% strictindex
+\index{one-dimensional!transport}% strictindex
+\textbf{Input:} One-dimensional probability measures $\alpha,\beta$; time $t\in[0,1]$.
+
+\textbf{Output:} Quantile coupling, Monge map when defined, and geodesic point $\alpha_t$.
+
+\textbf{Compute} $\cumul{\al}$, $\cumul{\be}$ and generalized inverses.
+
+\textbf{Couple} equal quantile levels:
+\[
+	X=\cumul{\al}^{-1}(r),
+	\qquad
+	Y=\cumul{\be}^{-1}(r),
+	\qquad
+	r\in(0,1).
+\]
+\textbf{If} $\alpha$ has no atoms \textbf{then}:
+\begin{algblock}
+
+\textbf{Set}
+\[
+	T(x)=\cumul{\be}^{-1}(\cumul{\al}(x)).
+\]
+\end{algblock}
+\textbf{Interpolate} quantiles:
+\[
+	Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
+	\qquad
+	\al_t=(Q_t)_\sharp\mathrm{Leb}_{[0,1]}.
+\]
+\textbf{Return} $(X,Y)$, $T$ if defined, and $\alpha_t$.
+\end{alg}
 
 \begin{prop}[One-dimensional Wasserstein formulas]\label{prop-wass-quantile-1d}
 \index{Wasserstein!formula}% strictindex
@@ -1094,6 +1132,39 @@ There is another canonical way to build transport maps in several dimensions: tr
 \index{generalized quantile}% strictindex
 \index{conditional law}% strictindex
 \end{proof}
+
+The recursive construction in the proof is an algorithm: it repeatedly applies the one-dimensional quantile rearrangement to conditional distributions.
+
+\begin{alg}[Knothe--Rosenblatt triangular rearrangement]\label{alg:triangular-rearrangement}
+\textbf{Input:} Probability measures $\alpha,\beta$ on $\RR^d$ with conditional laws.
+
+\textbf{Output:} Knothe--Rosenblatt triangular map $\T$.
+
+\textbf{Compute} first-coordinate rearrangement:
+\[
+	\T_1=(F_{\be_1})^{-1}\circ F_{\al_1}.
+\]
+\textbf{For} $k=2,\ldots,d$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Set} $x_{<k}=(x_1,\ldots,x_{k-1})$.
+
+\textbf{Compute} conditional laws $\al^k_{x_{<k}}$ and $\be^k_{\T_{<k}(x_{<k})}$.
+
+\textbf{Set}
+\[
+	\T_k(x_{<k},x_k)
+	=
+	\bigl(F_{\be^k_{\T_{<k}(x_{<k})}}\bigr)^{-1}
+	\circ
+	F_{\al^k_{x_{<k}}}(x_k).
+\]
+\end{algblock}
+\textbf{Return}
+\[
+	\T(x)=(\T_1(x_1),\T_2(x_1,x_2),\ldots,\T_d(x_1,\ldots,x_d)).
+\]
+\end{alg}
 
 Figure~\ref{fig:monge-triangular-rearrangement} shows the two-dimensional mechanism on image histograms. The first stage transports only the horizontal marginal, so the middle pivot has the same $x$-marginal as the target but keeps the source vertical conditionals. The second stage then transports each vertical conditional law inside the corresponding column.
 \index{histogram}% strictindex

@@ -37,7 +37,7 @@ Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the baryce
 For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, then the barycenter is unique~\cite{Carlier_wasserstein_barycenter}.
 \index{Wasserstein!barycenter}% strictindex
 
-\begin{rem}[Two measures give a Wasserstein geodesic]
+\begin{example}[Two measures recover a Wasserstein geodesic]
 \index{Wasserstein!geodesic}% strictindex
 	For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on the Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation detailed in Section~\ref{sec-geodesic-convexity}. If no Monge map is available, the same construction uses an optimal coupling $\pi$ and the interpolation map $(x,y)\mapsto(1-t)x+ty$, giving $((1-t)x+ty)_\sharp\pi$.
 \index{Monge!problem}% strictindex
@@ -46,8 +46,8 @@ For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, th
 \index{convexity!geodesic}% strictindex
 \index{interpolation map}% strictindex
 \index{Brenier!map}% strictindex
-\end{rem}
-\begin{example}[Dirac inputs]
+\end{example}
+\begin{example}[Dirac inputs recover Fr\'echet means]
 	Problem~\eqref{eq-barycenter-generic} generalizes the computation of barycenters of points $(x_s)_{s=1}^S \in \X^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution to~\eqref{eq-barycenter-generic} is $\de_{x^\star}$ where $x^\star$ is a Fr\'echet mean of the points $(x_s)_s$.
 \index{Frechet mean}% strictindex
 \index{Dirac mass}% strictindex
@@ -150,7 +150,7 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 \index{Bures-Wasserstein geometry}% strictindex
 \index{Gaussian!barycenter}% strictindex
 
-\begin{rem}[Gaussian barycenters]
+\begin{example}[Gaussian inputs remain Gaussian]
 	The barycenter of Gaussian measures is Gaussian. In one dimension, it is obtained by averaging the means and the standard deviations, so the barycenter variance is the square of this averaged standard deviation. In higher dimensions, the covariance $\cov$ minimizes the Bures objective
 \index{Gaussian!measure}% strictindex
 	\[
@@ -164,7 +164,46 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 	\]
 	This is the covariance analogue of the usual Euclidean barycenter equation: the mean part averages linearly, while the covariance part averages through the Bures--Wasserstein geometry~\cite{alvarez2016fixed,bhatia2018bures}.
 \index{Bures-Wasserstein geometry}% strictindex
-\end{rem}
+\end{example}
+
+\begin{alg}[Gaussian barycenter fixed point]\label{alg:gaussian-barycenter-fixed-point}
+\index{Gaussian!barycenter}% strictindex
+\index{fixed point!iteration}% strictindex
+\textbf{Input:} Gaussian measures $\Gaussian(\mean_s,\cov_s)$, weights $\lambda_s$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Gaussian barycenter $\Gaussian(\mean,\cov)$.
+
+\textbf{Set}
+\[
+	\mean=\sum_s\lambda_s\mean_s .
+\]
+\textbf{Initialize:} Choose $\cov^{(0)}\succ0$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	S^{(k)}
+	=
+	\sum_s\lambda_s
+	\left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.
+\]
+\[
+	\cov^{(k+1)}
+	=
+	(\cov^{(k)})^{-1/2}
+	\left(S^{(k)}\right)^2
+	(\cov^{(k)})^{-1/2}.
+\]
+\textbf{If} $\norm{\cov^{(k+1)}-\cov^{(k)}}\leq\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Set} $\cov=\cov^{(k+1)}$.
+
+\textbf{Return} $\Gaussian(\mean,\cov)$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -242,6 +281,52 @@ and the generalized Sinkhorn iterations are
 	\label{eq-sinkhorn-bary-3}
 \end{align}
 The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all couplings share the same barycenter marginal.
+
+\begin{alg}[Entropic barycenter Sinkhorn]\label{alg:entropic-barycenter-sinkhorn}
+\textbf{Input:} Costs $\C_s$, target weights $\b_s$, barycenter weights $\lambda_s$, regularization $\epsilon>0$.
+
+\textbf{Output:} Barycenter weights $\a$ and couplings $\P_s$.
+
+\textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$ and choose $\uD_s^{(0)}\in\RR_{+,*}^n$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+
+\textbf{For} each marginal $s$ \textbf{do}
+\begin{algblock}
+\[
+	\vD_s^{(k+1)}
+	=
+	\frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.
+\]
+\end{algblock}
+\textbf{Compute} barycenter marginal:
+\[
+	\a^{(k+1)}
+	=
+	\prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.
+\]
+\textbf{For} each marginal $s$ \textbf{do}
+\begin{algblock}
+\[
+	\uD_s^{(k+1)}
+	=
+	\frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.
+\]
+\end{algblock}
+\textbf{If} marginal residuals are below $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return}
+\[
+	\a^{(k+1)},
+	\qquad
+	\P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).
+\]
+
+\end{algblock}
+\end{algblock}
+\end{alg}
 
 \begin{prop}[Dual of entropic barycenters]\label{prop-dual-entropic-barycenters}
 \index{entropic!barycenter}% strictindex
@@ -415,6 +500,49 @@ The optimizer has the generalized Gibbs form
 and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
 \index{Sinkhorn!iteration}% strictindex
 
+In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn.
+
+\begin{alg}[Multi-marginal Sinkhorn]\label{alg:multimarginal-sinkhorn}
+\textbf{Input:} Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$.
+
+\textbf{Output:} Multi-marginal entropic coupling tensor $P$.
+
+\textbf{Build}
+\[
+	K_{i_1,\ldots,i_S}
+	=
+	\exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right)
+	\prod_{s=1}^S(\a_s)_{i_s}.
+\]
+\textbf{Initialize:} Set $u_s\in\RR_{+,*}^{n_s}$ for all $s$.
+
+\textbf{Repeat}:
+\begin{algblock}
+
+\textbf{For} $s=1,\ldots,S$ \textbf{do}:
+\begin{algblock}
+\[
+	(u_s)_i
+	\leftarrow
+	\frac{(\a_s)_i}
+	{\displaystyle
+	\sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S}
+	K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S}
+	\prod_{r\neq s}(u_r)_{i_r}}.
+\]
+\end{algblock}
+\end{algblock}
+
+\textbf{Until} all marginal residuals are below $\mathrm{tol}$.
+
+\textbf{Return}
+\[
+	P_{i_1,\ldots,i_S}
+	=
+	K_{i_1,\ldots,i_S}\prod_{s=1}^S (u_s)_{i_s}.
+\]
+\end{alg}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -549,6 +677,31 @@ where $\Theta$ is convex and the matrices $C^{(r)}$ encode features, graph dista
 	This nonnegative quantity is exactly the primal-dual gap of $\widehat P$. It vanishes if and only if $\widehat P$ reaches the dual value and is therefore optimal. If $C_\theta$ is affine and $\Theta$ and $R$ are convex, the constraints and objective in~\eqref{eq-inverse-ot-convex} are convex, proving the relaxation claim.
 \index{dual!gap}% strictindex
 \end{proof}
+
+\begin{alg}[Inverse OT by dual-gap fitting]\label{alg:inverse-ot-dual-gap-learning}
+\index{inverse OT}% strictindex
+\index{dual!gap}% strictindex
+\textbf{Input:} Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features $C^{(r)}$, feasible set $\Theta$, regularizer $R$.
+
+\textbf{Output:} Fitted cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
+
+\textbf{Set} parametric cost:
+\[
+	C_\theta=\sum_r\theta_r C^{(r)}.
+\]
+\textbf{Solve}
+\[
+	\min_{\theta\in\Theta,f,g}
+	R(\theta)+\lambda
+	\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
+\]
+\textbf{Subject to}
+\[
+	f_i+g_j\leq(C_\theta)_{i,j}
+	\qquad\text{for all }(i,j).
+\]
+\textbf{Return} $\theta^\star$, $C_{\theta^\star}$, and $(f^\star,g^\star)$.
+\end{alg}
 
 The formulation~\eqref{eq-inverse-ot-convex} is useful because it avoids differentiating through a forward OT solver: it learns a cost by making the observed plan satisfy complementary slackness. In statistical settings, $\widehat P$ is only partially observed or noisy, so one adds sparsity, low-rank, smoothness or metric constraints to select a meaningful cost~\cite{dupuy2016estimating,andrade2024sparsistency}. For entropic OT, the optimality condition becomes smoother:
 \index{entropic!OT}% strictindex
