@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const htmlRoot = path.join(root, '_build', 'html');
 const buildRoot = path.join(root, '_build');
 const sidebarScriptFile = path.join(root, 'ot4ml-sidebar.js');
+const faviconFiles = ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'];
 const marker = 'data-ot4ml-expanded-chapters';
 const serverPatchMarker = 'ot4ml-expanded-chapters-server-patch';
 const assetVersion = '?ot4ml-expanded-chapters=1';
@@ -144,6 +145,29 @@ function copySidebarScript() {
   return changed;
 }
 
+function copyFaviconFiles() {
+  let changed = 0;
+  const destinations = [
+    htmlRoot,
+    path.join(buildRoot, 'templates', 'site', 'myst', 'book-theme', 'public'),
+    path.join(buildRoot, 'templates', 'site', 'myst', 'book-theme', 'book-theme-main', 'public'),
+  ];
+
+  for (const name of faviconFiles) {
+    const sourceFile = path.join(root, name);
+    if (!fs.existsSync(sourceFile)) continue;
+    const source = fs.readFileSync(sourceFile);
+    for (const destinationRoot of destinations) {
+      if (!fs.existsSync(destinationRoot)) continue;
+      const destination = path.join(destinationRoot, name);
+      if (fs.existsSync(destination) && fs.readFileSync(destination).equals(source)) continue;
+      fs.writeFileSync(destination, source);
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
 function patchServerFiles() {
   let changed = 0;
 const setupPatch = `// ${serverPatchMarker}:setup-start
@@ -263,6 +287,7 @@ function patchGeneratedSite() {
     bundles: patchThemeBundles(),
     assets: patchAssetImports(),
     sidebar: copySidebarScript(),
+    favicons: copyFaviconFiles(),
     server: patchServerFiles(),
   };
   patchTemplateZip();
