@@ -27,6 +27,26 @@ We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_
     \alpha_{t+\tau} := \arg\min_\alpha \frac{1}{2 \tau} \Wass_2(\alpha_t, \alpha)^2 + f(\alpha). \label{eq:jko-discr}
 \end{equation}
 
+\begin{alg}[JKO minimizing movement]\label{alg:jko-minimizing-movement}
+\index{JKO scheme}% strictindex
+\textbf{Input:} Energy $f$, initial measure $\alpha^0$, time step $\tau>0$, number of steps $K$.
+
+\textbf{Output:} Discrete gradient-flow trajectory $(\alpha^k)_{k=0}^K$.
+
+\textbf{For} $k=0,\ldots,K-1$ \textbf{do}:
+\begin{algblock}
+\[
+	\alpha^{k+1}
+	\in
+	\uargmin{\alpha\in\Pp_2(\RR^d)}
+	\frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).
+\]
+\textbf{Set} $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
+
+\end{algblock}
+\textbf{Return} $(\alpha^k)_{k=0}^K$ and $\alpha_t^\tau$.
+\end{alg}
+
 \paragraph{Euclidean gradient flows.}
 \index{gradient!flow}% strictindex
 
@@ -181,31 +201,68 @@ If $f(\alpha)$ can be evaluated on discrete distributions and $\Wgrad$ is contin
 \end{equation}
 where $F(X) := f\left(\frac{1}{n} \sum_i \delta_{x_i}\right)$ and the factor $n$ comes from the empirical Wasserstein metric $\frac1n\sum_i \norm{\dot x_i}^2$.
 
+\begin{alg}[Empirical Wasserstein particle descent]\label{alg:empirical-wasserstein-particle-flow}
+\index{particle!Wasserstein descent}% strictindex
+\textbf{Input:} Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$.
+
+\textbf{Output:} Particle trajectory $(X^k)_k$ and empirical measures.
+
+\textbf{Define}
+\[
+	F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).
+\]
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+
+\textbf{For} $i=1,\ldots,n$ \textbf{do}
+\begin{algblock}
+\[
+	g_i^k=n\nabla_{x_i}F(X^k),
+	\qquad
+	x_i^{k+1}=x_i^k-h\,g_i^k.
+\]
+\end{algblock}
+\textbf{If} stopping criterion is met \textbf{then}:
+\begin{algblock}
+
+\textbf{Return} $\frac1n\sum_i\delta_{x_i^k}$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 %%%
 \paragraph{Linear Functionals.}
 \index{linear!functional}% strictindex
 
-The simplest example of flows is for linear functions
+The first benchmark is a functional whose first variation does not depend on the current measure.
+
+\begin{example}[Linear potentials generate independent particles]
+Take a linear functional
    \begin{equation}\label{eq:linear-func}
        f(\alpha) = \int h(x) \d \alpha(x).
    \end{equation}
-   Here, $\delta f(\alpha) = h$ is a fixed function (independent of $\alpha$). The flow \eqref{eq:wassflow-pde} becomes:
+   Then $\delta f(\alpha) = h$ is independent of $\alpha$, and the flow \eqref{eq:wassflow-pde} becomes
    \begin{equation*}
        \frac{\partial \alpha_t}{\partial t} + \diverg(-\nabla h \alpha_t) = 0.
    \end{equation*}
    This implies particles move independently according to the usual gradient flow \eqref{eq:grad-flow-classical}.
 \index{gradient!flow}% strictindex
+\end{example}
 
 %%%
 \paragraph{Shannon Neg-Entropy.}
 \index{Shannon!negative entropy}% strictindex
 
 
-A very different behavior is obtained by considering functionals that require $\alpha_t$ to have a density, the canonical example being Shannon neg-entropy
+Entropy gives the opposite benchmark: the flow is no longer a deterministic push-forward of particles, but a diffusion of density.
+
+\begin{example}[Entropy generates heat and porous-medium flows]
+The canonical density-dependent functional is the Shannon neg-entropy
    \begin{equation}
        f(\alpha) = \int \log\left(\frac{\d \alpha}{\d x}(x)\right) \d \alpha(x). \label{eq:entropy-func}
    \end{equation}
-   Here, $\delta f(\alpha) = \log\left(\frac{\d \alpha}{\d x}\right)$ up to an additive constant, so $\Wgrad f(\alpha) = \frac{\nabla \alpha}{\alpha}$ (often called the score). The flow \eqref{eq:wassflow-pde} becomes the heat equation:
+   Here, $\delta f(\alpha) = \log(\d\alpha/\d x)$ up to an additive constant, so $\Wgrad f(\alpha) = \nabla \alpha/\alpha$ (often called the score). The flow \eqref{eq:wassflow-pde} becomes the heat equation
 \index{score function}% strictindex
 \index{heat equation}% strictindex
    \begin{equation*}
@@ -213,18 +270,20 @@ A very different behavior is obtained by considering functionals that require $\
    \end{equation*}
    Other entropy functionals lead to nonlinear diffusion equations; finite-volume and particle discretizations are discussed in~\cite{CarrilloFiniteVolume,GianazzaARMA,Maas2011,ErbarHeatManifold}.
 %
-For example, a generalized entropy of the form
+For a generalized entropy
    \begin{equation}\label{eq:gen-entropies}
        f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
    \end{equation}
-	   for a scalar convex function $g$, leads to nonlinear diffusions in the smooth-density regime:
+	   with a scalar convex function $g$, one obtains nonlinear diffusions in the smooth-density regime:
 \index{convex!function}% strictindex
    \begin{equation*}
        \frac{\partial \alpha_t}{\partial t} = \Delta(P(\alpha_t)),
    \end{equation*}
    where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers \eqref{eq:entropy-func}, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
 \index{porous medium equation}% strictindex
+\end{example}
 	%
+The preceding examples are also governed by a precise geodesic-convexity criterion.
 	A celebrated theorem by McCann~\cite{mccann1997convexity} states that an internal energy of the form~\eqref{eq:gen-entropies}, for $g : \RR^+ \to \RR\cup\{+\infty\}$ with $g(0)=0$, is geodesically convex on $\Pp(\RR^d)$ when $g$ is convex and the map $r \mapsto r^d g(r^{-d})$ is convex and nonincreasing on $(0,+\infty)$.
 	%
 	Examples of such functions are $g(s)=s^q$ for $q>1$ and Shannon entropy $g(s)=s \log(s)$. %
@@ -289,6 +348,42 @@ In a similar spirit, to obtain nonlinear evolutions without requiring the measur
 		+
 		2\int\nabla_x k(x_i(t),y)\d\beta(y).
        \]
+
+The corresponding simulation loop is Algorithm~\ref{alg:mmd-particle-flow}.
+
+\begin{alg}[MMD particle flow against a teacher law]\label{alg:mmd-particle-flow}
+\index{maximum mean discrepancy}% strictindex
+\textbf{Input:} Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$, kernel $k$, step size $h$.
+
+\textbf{Output:} Particle trajectory targeting $\beta$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+
+\textbf{For} $i=1,\ldots,n$ \textbf{do}
+\begin{algblock}
+\[
+	v_i^k
+	=
+	-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)
+	+
+	2\int\nabla_x k(x_i^k,y)\d\beta(y).
+\]
+\textbf{If} the teacher integral is unavailable \textbf{then}:
+\begin{algblock}
+
+\textbf{Set} teacher integral by quadrature/minibatch estimation.
+
+\end{algblock}
+\textbf{Update}
+\[
+	x_i^{k+1}=x_i^k+h\,v_i^k.
+\]
+\end{algblock}
+\end{algblock}
+\textbf{Return} $(x_i^k)_{i,k}$.
+\end{alg}
+
 	       The first term is a kernelized self-interaction, while the second is the attraction induced by the continuous teacher kernel mean. At the continuum level, characteristic positive-definite kernels, and the Euclidean energy-distance kernel on probability measures, have $\beta$ as the unique minimizer of $\norm{\alpha-\beta}_k^2$. For a finite number of particles, however, the flow can only form a kernelized quadrature of $\beta$, and small particle systems may cover the target modes poorly. Figure~\ref{fig:gradflow-mmd-particle-count} illustrates this finite-particle effect.
 \index{kernelized self-interaction}% strictindex
 \index{teacher kernel mean}% strictindex
@@ -356,7 +451,15 @@ and the one-particle law $\alpha_t=\rho_t\d x$ directly satisfies the linear Fok
 \[
 	\partial_t\rho_t=-\diverg(b\rho_t)+\sigma^2\Delta\rho_t.
 \]
-For example, if $b=-\nabla V$, this is the $\Wass_2$ gradient flow of the free energy $\int V\rho\,\d x+\sigma^2\int\rho\log\rho\,\d x$. The mean-field case is different: the drift is recomputed from the current empirical distribution of all particles,
+
+\begin{example}[Langevin drift as a free-energy flow]
+	If $b=-\nabla V$, this linear Fokker--Planck equation is the $\Wass_2$ gradient flow of the free energy
+	\[
+		\rho\mapsto \int V\rho\,\d x+\sigma^2\int\rho\log\rho\,\d x.
+	\]
+\end{example}
+
+The mean-field case is different: the drift is recomputed from the current empirical distribution of all particles,
 \index{empirical!distribution}% strictindex
 \index{gradient!flow}% strictindex
 \[

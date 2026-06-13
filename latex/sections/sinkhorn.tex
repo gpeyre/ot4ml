@@ -210,6 +210,33 @@ initialized with an arbitrary positive vector, for instance $\init{\vD} = \ones_
 %
 The alternating normalization can be read directly on the coupling matrix: a row update enforces the source marginal and generally perturbs the target marginal, while the next column update does the converse.
 
+\begin{alg}[Sinkhorn scaling]\label{alg:sinkhorn-scaling}
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+
+\textbf{Output:} Entropic coupling $\P$.
+
+\textbf{Initialize:} Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$ and choose $\vD^{(0)}\in\RR_{+,*}^m$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	\uD^{(k+1)}=\frac{\a}{\K\vD^{(k)}}.
+\]
+\[
+	\vD^{(k+1)}=\frac{\b}{\transp{\K}\uD^{(k+1)}}.
+\]
+\textbf{If} marginal residuals are below $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return}
+\[
+	\P^{(k+1)}=\diag(\uD^{(k+1)})\K\diag(\vD^{(k+1)}).
+\]
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 \begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{1.5pt}
@@ -883,6 +910,35 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 \index{path-space!formulation}% strictindex
 \index{endpoint coupling}% strictindex
 
+\begin{alg}[Endpoint-to-path Schr\"odinger lift]\label{alg:schrodinger-endpoint-path-lift}
+\index{Schrodinger!bridge}% strictindex
+\index{bridge!Brownian}% strictindex
+\textbf{Input:} Endpoint laws $\alpha,\beta$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
+
+\textbf{Output:} Schr\"odinger path law $M_\epsilon^\star$.
+
+\textbf{Solve} static entropic endpoint problem:
+\[
+	\pi_\epsilon^\star
+	\in
+	\argmin_{\pi\in\Couplings(\al,\be)}
+	\int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).
+\]
+\textbf{For} each endpoint pair $(x,y)$ sampled from $\pi_\epsilon^\star$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Draw} bridge path:
+\[
+	\omega\sim\Rr^{\epsilon,x,y}.
+\]
+\end{algblock}
+\textbf{Return}
+\[
+	M_\epsilon^\star=
+	\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).
+\]
+\end{alg}
+
 \begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{2pt}
@@ -1032,6 +1088,46 @@ Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These i
 	{\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}
 }
 and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
+
+\begin{alg}[Log-domain Sinkhorn by soft transforms]\label{alg:log-domain-sinkhorn}
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+
+\textbf{Output:} Entropic coupling $\P$ computed from stabilized potentials.
+
+\textbf{Initialize:} Choose $\gD^{(0)}\in\RR^m$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Compute} stabilized soft transform:
+\[
+	\fD_i^{(k+1)}
+	=
+	-\epsilon\log\sum_j
+	\exp\!\left(\frac{\gD_j^{(k)}-\C_{ij}}{\epsilon}\right)\b_j.
+\]
+\textbf{Compute} stabilized reverse soft transform:
+\[
+	\gD_j^{(k+1)}
+	=
+	-\epsilon\log\sum_i
+	\exp\!\left(\frac{\fD_i^{(k+1)}-\C_{ij}}{\epsilon}\right)\a_i.
+\]
+\textbf{If} potential changes are below $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Break}.
+
+\end{algblock}
+\end{algblock}
+\textbf{Return}
+\[
+	\P_{ij}
+	=
+	\a_i\b_j
+	\exp\!\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right).
+\]
+\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -1520,13 +1616,23 @@ does not satisfy $\al_\epsilon=\al$ unless $\epsilon=0$. The following propositi
 	This proves the limit.
 \end{proof}
 
-So in the large $\epsilon$ limit, $\MK_\c^\epsilon$ behaves like an inner product and not like a norm. For instance, in the case
-\eq{
-	\al_\epsilon \rightarrow \umin{\be} \dotp{ \int c(x,\cdot) \d\al(x)}{\be} = \de_{y^\star(\al)}
-	\qwhereq
-	 y^\star(\al) = \uargmin{y} \int c(x,y) \d\al(x).
-}
-For instance, when $c(x,y)=\norm{x-y}^2$ then $\al_\epsilon$ collapses towards a Dirac located at the mean $\int x \d\al(x)$ of $\al$.
+So in the large $\epsilon$ limit, $\MK_\c^\epsilon$ behaves like an inner product and not like a norm. The following special case makes the resulting attraction explicit.
+
+\begin{example}[Large-temperature collapse for quadratic costs]
+	The limiting functional minimized by $\al_\epsilon$ is linear in the second argument:
+	\[
+		\be\mapsto \int V_\alpha(y)\d\beta(y),
+		\qquad
+		V_\alpha(y)\eqdef\int c(x,y)\d\alpha(x).
+	\]
+	Thus any limiting minimizer is supported on $\argmin V_\alpha$. When this minimizer is unique,
+	\[
+		\al_\epsilon \rightharpoonup \delta_{y^\star(\alpha)},
+		\qquad
+		y^\star(\alpha)=\uargmin{y} V_\alpha(y).
+	\]
+	For the quadratic cost $c(x,y)=\norm{x-y}^2$ on $\RR^d$, assuming $\alpha$ has finite second moment, one has $V_\alpha(y)=\norm{y-\int x\d\alpha(x)}^2+\mathrm{const}$, so the collapse is toward the Dirac mass at the mean of $\alpha$.
+\end{example}
 
 %%%
 \paragraph{Sinkhorn divergences.}

@@ -27,7 +27,9 @@
 \usepackage{xspace}
 
 \usepackage{xcolor}
-\usepackage{mdframed}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
+\usepackage[framemethod=tikz]{mdframed}
 
 % spacings
 \renewcommand{\baselinestretch}{1}
@@ -41,6 +43,7 @@
 \setlength{\otfigurecaptionaboveskip}{3pt}
 \makeatletter
 \def\ot@figuretype{figure}
+\def\ot@algtype{algfloat}
 \long\def\@makecaption#1#2{%
 	\ifx\@captype\ot@figuretype
 		\vskip\otfigurecaptionaboveskip
@@ -52,15 +55,24 @@
 		}%
 		\endgroup
 	\else
-		\vskip\abovecaptionskip
-		\sbox\@tempboxa{#1: #2}%
-		\ifdim \wd\@tempboxa >\hsize
-			#1: #2\par
+		\ifx\@captype\ot@algtype
+			\vskip 2pt
+			\begingroup
+			\small
+			\noindent{\bfseries #1:} {\itshape #2}\par
+			\endgroup
+			\vskip 2pt
 		\else
-			\global \@minipagefalse
-			\hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+			\vskip\abovecaptionskip
+			\sbox\@tempboxa{#1: #2}%
+			\ifdim \wd\@tempboxa >\hsize
+				#1: #2\par
+			\else
+				\global \@minipagefalse
+				\hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+			\fi
+			\vskip\belowcaptionskip
 		\fi
-		\vskip\belowcaptionskip
 	\fi
 }
 \makeatother
@@ -104,19 +116,28 @@
 }
 \theoremstyle{plain}
 \newtheorem{cor}[thm]{Corollary}
-\newtheorem{alg}[thm]{Procedure}
 
 \newtheorem{lem}[thm]{Lemma}
 \definecolor{remarkblue}{HTML}{E8F1F8}
 \definecolor{remarkbluebar}{HTML}{8FB6D6}
+\definecolor{examplegoldbar}{HTML}{D6A24C}
+\newcommand{\otwavyframe}[1]{%
+	\draw[
+		#1,
+		line width=.9pt,
+		decorate,
+		decoration={snake, amplitude=.45pt, segment length=3.4pt}
+	] (O) -- (O|-P);%
+}
+\newcommand{\otstraightframe}[1]{%
+	\draw[
+		#1,
+		line width=.9pt
+	] (O) -- (O|-P);%
+}
 \mdfdefinestyle{remarkbox}{%
 	backgroundcolor=white,
-	linecolor=remarkbluebar,
-	linewidth=.9pt,
-	leftline=true,
-	rightline=false,
-	topline=false,
-	bottomline=false,
+	hidealllines=true,
 	innerleftmargin=10pt,
 	innerrightmargin=0pt,
 	innertopmargin=1pt,
@@ -126,6 +147,7 @@
 	frametitleaboveskip=0pt,
 	frametitlebelowskip=0pt,
 	nobreak=true,
+	singleextra={\otstraightframe{remarkbluebar}},
 }
 \newtheoremstyle{waveremark}
 	{0pt}
@@ -135,7 +157,7 @@
 	{\bfseries\color{black!70}}
 	{.}
 	{.45em}
-	{\llap{\textcolor{remarkbluebar}{\scriptsize$\sim$\kern.15em$\sim$}\hspace{.65em}}\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+	{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
 \theoremstyle{waveremark}
 \newtheorem{innerrem}[thm]{Remark}
 \newenvironment{rem}[1][]{%
@@ -149,18 +171,108 @@
 	\end{innerrem}%
 	\end{mdframed}%
 }
-\theoremstyle{remark}
-\newtheorem{exmp}[thm]{Example}
-\newtheorem{example}[thm]{Example}
+\mdfdefinestyle{examplebox}{%
+	backgroundcolor=white,
+	hidealllines=true,
+	innerleftmargin=10pt,
+	innerrightmargin=2pt,
+	innertopmargin=2pt,
+	innerbottommargin=2pt,
+	skipabove=.45\baselineskip,
+	skipbelow=.45\baselineskip,
+	frametitleaboveskip=0pt,
+	frametitlebelowskip=0pt,
+	singleextra={\otwavyframe{examplegoldbar}},
+}
+\newtheoremstyle{smalltheexample}
+	{0pt}
+	{0pt}
+	{\normalfont\small}
+	{}
+	{\bfseries\color{black!72}}
+	{.}
+	{.45em}
+	{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+\theoremstyle{smalltheexample}
+\newtheorem{innerexample}[thm]{Example}
+\newenvironment{example}[1][]{%
+	\begin{mdframed}[style=examplebox]%
+	\if\relax\detokenize{#1}\relax
+		\begin{innerexample}%
+	\else
+		\begin{innerexample}[#1]%
+	\fi
+}{%
+	\end{innerexample}%
+	\end{mdframed}%
+}
+\newenvironment{exmp}[1][]{%
+	\begin{example}[#1]%
+}{%
+	\end{example}%
+}
 \newtheorem*{ass}{Main assumption}
 
 
 
 
 \usepackage{float}
-\floatstyle{boxed}
-\newfloat{listing}{H}{loi}
-\floatname{listing}{Table}
+\definecolor{algorithmrule}{HTML}{6D7D8C}
+\makeatletter
+\newcommand{\otalgrule}[1]{%
+	\begingroup\color{algorithmrule}\hrule height #1\relax\endgroup%
+}
+\newcommand\fs@otruled{%
+	\def\@fs@cfont{\bfseries}%
+	\let\@fs@capt\floatc@ruled
+	\def\@fs@pre{\otalgrule{.65pt}\kern2.5pt}%
+	\def\@fs@mid{\kern2pt\otalgrule{.35pt}\kern3pt}%
+	\def\@fs@post{\kern2.5pt\otalgrule{.65pt}\relax}%
+	\let\@fs@iftopcapt\iftrue%
+}
+\makeatother
+\floatstyle{otruled}
+\newfloat{algfloat}{tbp}{loa}[chapter]
+\floatname{algfloat}{Algorithm}
+\definecolor{algorithmblockrule}{HTML}{B7C0C8}
+\mdfdefinestyle{algorithmblock}{%
+	backgroundcolor=white,
+	linecolor=algorithmblockrule,
+	linewidth=.45pt,
+	topline=false,
+	rightline=false,
+	bottomline=false,
+	innerleftmargin=7pt,
+	innerrightmargin=0pt,
+	innertopmargin=0pt,
+	innerbottommargin=0pt,
+	skipabove=.05\baselineskip,
+	skipbelow=.05\baselineskip,
+	frametitleaboveskip=0pt,
+	frametitlebelowskip=0pt,
+	nobreak=true,
+}
+\newenvironment{algblock}{%
+	\begin{mdframed}[style=algorithmblock]%
+	\setlength{\parindent}{0pt}%
+	\setlength{\parskip}{.32em}%
+	\setlength{\abovedisplayskip}{.35\baselineskip}%
+	\setlength{\belowdisplayskip}{.35\baselineskip}%
+}{%
+	\end{mdframed}%
+}
+\newenvironment{alg}[1][]{%
+	\begin{algfloat}[htbp]%
+	\small\normalfont
+	\setlength{\parindent}{0pt}%
+	\setlength{\parskip}{.35em}%
+	\setlength{\jot}{.2em}%
+	\setlength{\abovedisplayskip}{.45\baselineskip}%
+	\setlength{\belowdisplayskip}{.45\baselineskip}%
+	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
+}{%
+	\end{algfloat}%
+}
 
 %%%%%%%%%%%%%%%% ENVIRONEMENTS %%%%%%%%%%%%%%%%
 \newenvironment{rs}{\begin{list}{\rule[0.6ex]{1.3ex}{0.18ex}~}{
@@ -463,10 +575,6 @@
 
 
 %% MATLAB 
-
-\usepackage{float}
-\floatstyle{boxed}
-\newfloat{listing}{H}{loi}
 
 \newcommand{\tabun}[1]{%
 \begin{tabular}{@{}c@{}}

@@ -70,12 +70,71 @@ For convex costs, the algorithm to compute an optimal transport is therefore to 
 }
 and then an optimal match is mapping $x_{\sigma_X(k)} \mapsto y_{\sigma_Y(k)}$, i.e., an optimal transport is $\sigma = \sigma_Y \circ \sigma_X^{-1}$. The total computational cost is thus $O(n\log(n))$, using, for instance, the quicksort algorithm.
 
+\begin{alg}[One-dimensional sorting assignment]\label{alg:one-dimensional-sorting}
+\textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\RR$; convex cost $h(x-y)$.
+
+\textbf{Output:} Optimal permutation $\sigma$.
+
+\textbf{Sort} source and target points:
+\[
+	x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)},
+	\qquad
+	y_{\sigma_Y(1)}\leq\cdots\leq y_{\sigma_Y(n)}.
+\]
+\textbf{For} $k=1,\ldots,n$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Match} $x_{\sigma_X(k)}$ with $y_{\sigma_Y(k)}$.
+
+\end{algblock}
+\textbf{Return}
+\[
+	\sigma=\sigma_Y\circ\sigma_X^{-1}.
+\]
+\end{alg}
+
 If the distance profile is concave instead of convex, the geometry changes. For costs such as $c_p(x,y)=|x-y|^p$ with $0<p<1$, splitting a displacement into several smaller displacements is expensive, so optimal matchings tend to create long exchanges rather than the monotone equal-rank pairing; see Figure~\ref{fig:matching-1d-convex-concave-costs}. This is the strictly concave regime studied by Gangbo and McCann~\cite{gangbo1996geometry}.
 
 The real line still gives special structure. After sorting all red and blue points together, the ordered sequence decomposes into maximal alternating chains, and local matching indicators can certify pairs that must be matched in an optimum. Removing such certified pairs and repeating yields an exact hierarchical algorithm for the unit-mass balanced assignment problem, with worst-case complexity $O(n^2)$ in the framework of Delon, Salomon and Sobolevski~\cite{delon-concave}. Very concave costs also motivate simpler greedy heuristics, studied for instance by Ottolini and Steinerberger~\cite{OttoliniSteinerberger2023GreedyConcave}. The point is that these methods are not generic linear-programming solvers; they use the one-dimensional order and the concavity of the distance profile.
 \index{mass!balance}% strictindex
 \index{local!matching indicator}% strictindex
 \index{assignment problem}% strictindex
+
+The resulting constructive rule is summarized as Algorithm~\ref{alg:concave-line-local-indicators}.
+
+\begin{alg}[Concave line matching by local indicators]\label{alg:concave-line-local-indicators}
+\textbf{Input:} Unit-mass source and target points on $\RR$; strictly concave distance cost.
+
+\textbf{Output:} Optimal concave-cost matching $M$.
+
+\textbf{Sort} combined red-blue sequence on the line.
+
+\textbf{Decompose} it into maximal alternating chains.
+
+\textbf{Initialize:} Set $M=\emptyset$.
+
+\textbf{While} unmatched points remain \textbf{do}:
+\begin{algblock}
+
+\textbf{For} each active alternating chain \textbf{do}:
+\begin{algblock}
+
+\textbf{Compute} local matching indicators~\cite{delon-concave}.
+
+\textbf{If} an indicator certifies a pair $(i,j)$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Update} $M\leftarrow M\cup\{(i,j)\}$.
+
+\textbf{Remove} points $i$ and $j$.
+
+\end{algblock}
+\end{algblock}
+\textbf{Recompute} only chains affected by removals.
+
+\end{algblock}
+\textbf{Return} $M$.
+\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -172,6 +231,29 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 \index{circle!unfolded interval}% strictindex
 \index{cyclic!shift}% strictindex
 \end{proof}
+
+\begin{alg}[Circle assignment by cutting]\label{alg:circle-cut-assignment}
+\textbf{Input:} Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; cost $d_{\mathbb S^1}^p$.
+
+\textbf{Output:} Optimal cyclic assignment.
+
+\textbf{Choose} cyclic orderings $(x_{(k)})_{k=1}^n$ and $(y_{(k)})_{k=1}^n$.
+
+\textbf{For} $s=0,\ldots,n-1$ \textbf{do}:
+\begin{algblock}
+\[
+	E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p,
+	\qquad y_{(k+n)}=y_{(k)}.
+\]
+\end{algblock}
+\textbf{Set} $s^\star\in\argmin_sE_s$.
+
+\textbf{Open} circle at a gap compatible with $s^\star$.
+
+\textbf{Lift} all points to the unfolded interval.
+
+\textbf{Return} $x_{(k)}\mapsto y_{(k+s^\star)}$.
+\end{alg}
 
 \begin{figure}[htbp]
 \centering
@@ -346,8 +428,55 @@ The equality graph $E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}$ contains the edges whose r
 This update preserves all inequalities $u_i+v_j\leq C_{i,j}$, keeps the current alternating tree tight, and creates at least one new equality edge leaving $S$. Maintaining these slacks incrementally gives the standard $O(n^3)$ implementation for an $n\times n$ assignment problem.
 \index{assignment problem}% strictindex
 \index{alternating!tree}% strictindex
-Figure~\ref{fig:matching-hungarian-progression} summarizes actual iterates by displaying only the evolving partial assignment: unmatched rows are shown as flat rows to keep a fixed matrix format, and matched rows are shown as one-hot rows.
+Algorithm~\ref{alg:hungarian-primal-dual} summarizes the primal-dual loop. Figure~\ref{fig:matching-hungarian-progression} displays actual iterates by showing only the evolving partial assignment: unmatched rows are shown as flat rows to keep a fixed matrix format, and matched rows are shown as one-hot rows.
 \index{Hungarian primal-dual method}% strictindex
+
+\begin{alg}[Hungarian primal-dual augmentation]\label{alg:hungarian-primal-dual}
+\textbf{Input:} Square cost matrix $C\in\RR^{n\times n}$.
+
+\textbf{Output:} Minimum-cost perfect matching $M$.
+
+\textbf{Initialize:} Choose dual feasible labels $(u,v)$.
+
+\textbf{Set} $M=\emptyset$.
+
+\textbf{While} $M$ is not perfect \textbf{do}:
+\begin{algblock}
+
+\textbf{Build} equality graph:
+\[
+	E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.
+\]
+\textbf{Choose} unmatched source.
+
+\textbf{Grow} an alternating tree in $E(u,v)$.
+
+\textbf{If} the tree reaches an unmatched target \textbf{then}:
+\begin{algblock}
+
+\textbf{Augment} $M$ along the alternating path.
+
+\end{algblock}
+
+\textbf{Else}:
+\begin{algblock}
+
+\textbf{Set} $S=$ reached sources and $T=$ reached targets.
+
+\textbf{Compute}
+\[
+	\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr),
+\]
+\textbf{Update}
+\[
+	u_i\leftarrow u_i+\delta\quad(i\in S),
+	\qquad
+	v_j\leftarrow v_j-\delta\quad(j\in T).
+\]
+\end{algblock}
+\end{algblock}
+\textbf{Return} $M$.
+\end{alg}
 
 \begin{figure}[ht]
 \centering

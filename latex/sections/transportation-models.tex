@@ -51,7 +51,17 @@ We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of 
 \begin{equation}\label{eq:interp-coupling}
 	\forall t \in [0,1], \quad \alpha_t := (P_t)_\sharp \pi.
 \end{equation}
-A common case is $d'=2d$. We write $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and assume $P_0(x,y)=x$ and $P_1(x,y)=y$, so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$. For instance, one can use $\pi = \alpha_0 \otimes \alpha_1$, the trivial coupling. An even more special case is the linear interpolation $P_t(x,y)=(1-t)x+ty$. With this linear path and an arbitrary coupling $\pi$, the regression below is the common core of flow matching and rectified flow: Lipman et al. emphasize conditional probability paths and simulation-free training of continuous normalizing flows, while rectified flow emphasizes straight couplings, reflow, and the possibility of reducing transport costs and discretization error~\cite{Lipman2022FlowMatching,Liu2023RectifiedFlow}. More complex constructions are also possible, provided that sampling from $\pi$ remains simple; stochastic interpolants allow additional latent variables and stochastic perturbations, thereby unifying deterministic flows, probability-flow ODEs and diffusion SDEs~\cite{Albergo2025StochasticInterpolants}.
+The basic two-endpoint construction already covers most flow-matching paths used in practice.
+
+\begin{example}[Linear two-endpoint stochastic interpolants]
+	Set $d'=2d$, write $(x,y)\in\RR^d\times\RR^d$, and choose $P_0(x,y)=x$ and $P_1(x,y)=y$. If $\pi$ has marginals $(\alpha_0,\alpha_1)$, then $\alpha_t=(P_t)_\sharp\pi$ interpolates between the two endpoint laws. The simplest choices are the independent coupling $\pi=\alpha_0\otimes\alpha_1$ and the straight path
+	\[
+		P_t(x,y)=(1-t)x+ty.
+	\]
+	With this linear path and an arbitrary coupling $\pi$, the regression below is the common core of flow matching and rectified flow: Lipman et al. emphasize conditional probability paths and simulation-free training of continuous normalizing flows, while rectified flow emphasizes straight couplings, reflow, and the possibility of reducing transport costs and discretization error~\cite{Lipman2022FlowMatching,Liu2023RectifiedFlow}.
+
+	More complex constructions are possible when sampling from $\pi$ remains simple; stochastic interpolants add latent variables or noise, connecting deterministic flows, probability-flow ODEs and diffusion SDEs~\cite{Albergo2025StochasticInterpolants}.
+\end{example}
 \index{continuous normalizing flow}% strictindex
 \index{reflow}% strictindex
 \index{discretization error}% strictindex
@@ -196,6 +206,46 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 \index{stochastic!gradient}% strictindex
 \index{flow!matching}% strictindex
 %
+
+\begin{alg}[Flow matching regression and sampling]\label{alg:flow-matching-regression}
+\index{flow!matching}% strictindex
+\textbf{Input:} Interpolant $P_t(u)$, training coupling/sample source $u\sim\pi$, parametrized field $v_\theta(t,z)$.
+
+\textbf{Output:} Learned sampler $X_0\mapsto X_1$.
+
+\textbf{Training:}
+
+\textbf{Repeat}:
+\begin{algblock}
+\[
+	t\sim\mathrm{Unif}(0,1),
+	\qquad
+	u\sim\pi,
+	\qquad
+	z=P_t(u),
+	\qquad
+	w=\partial_tP_t(u).
+\]
+\textbf{Update} $\theta$ by one stochastic-gradient step on
+\[
+	\norm{v_\theta(t,z)-w}^2.
+\]
+\end{algblock}
+
+\textbf{Until} stopping criterion is met
+
+\textbf{Sampling:}
+
+\textbf{Draw} $X_0\sim\alpha_0$.
+
+\textbf{Integrate}
+\[
+	\dot X_t=v_\theta(t,X_t),
+	\qquad t\in[0,1].
+\]
+\textbf{Return} $X_1$.
+\end{alg}
+
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$. Thus the same interpolation as~\eqref{eq:interp-coupling} is represented by a deterministic flow rather than by the original coupling.
 \index{transport map}% strictindex
 \index{continuity equation}% strictindex
@@ -345,6 +395,37 @@ The same probability-flow intuition is visible in two dimensions. For a discrete
 \index{Gaussian mixture}% strictindex
 \index{score function}% strictindex
 
+\begin{alg}[Exact probability-flow sampling for a Gaussian mixture]\label{alg:gaussian-mixture-probability-flow-sampling}
+\index{probability-flow ODE}% strictindex
+\index{Gaussian mixture}% strictindex
+\textbf{Input:} Gaussian-mixture data law, schedule $(a_t,b_t)$, noise level $\sigma$.
+
+\textbf{Output:} Backward samples $(Z_0^{(r)})_r$.
+
+\textbf{Define} the noising variable:
+\[
+	Z_t=a_tX+b_tY,
+	\qquad
+	Y\sim\Gaussian(0,\sigma^2\Id).
+\]
+\textbf{Compute} closed-form mixture density $p_t$ and score $s_t=\nabla\log p_t$.
+
+\textbf{Set} probability-flow velocity:
+\[
+	v_t(z)=\frac{a'_t}{a_t}z+
+	\left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z).
+\]
+\textbf{For} each terminal particle \textbf{do}:
+\begin{algblock}
+
+\textbf{Draw} $Z_1$ from the Gaussian endpoint.
+
+\textbf{Integrate} $\dot Z_t=v_t(Z_t)$ backward in time.
+
+\end{algblock}
+\textbf{Return} $(Z_0^{(r)})_r$.
+\end{alg}
+
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}c@{}}
@@ -461,7 +542,13 @@ Integrating the learned velocity gives a deterministic map from $\alpha_0$ to $\
 \index{Brenier!map}% strictindex
 \end{proof}
 
-Proposition~\ref{prop-gaussian-flow-matching-optimality} explains why the statement ``flow matching gives an optimal map'' is fragile. The same terminal map~\eqref{eq-gaussian-product-fm-terminal-map} is obtained for any scalar schedule $Z_t=a_tX_0+b_tX_1$ with the same endpoints, because after whitening the covariance path remains $a_t^2\Id+b_t^2C$. Thus changing the speed of a scalar Gaussian bridge, for instance by using an OU schedule, cannot repair the non-optimality created by non-commuting covariances. Commuting covariances reduce the terminal map to independent one-dimensional scalings, whereas non-commuting covariances create a non-symmetric affine map, hence a transport with a rotational or shearing component. More generally, mixture-like paths can create the same obstruction even when every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
+The proposition gives a compact warning about a common overinterpretation of flow matching.
+
+\begin{rem}[Changing the bridge speed does not restore optimality]
+	The same terminal map~\eqref{eq-gaussian-product-fm-terminal-map} is obtained for any scalar schedule $Z_t=a_tX_0+b_tX_1$ with the same endpoints, because after whitening the covariance path remains $a_t^2\Id+b_t^2C$. Thus changing the speed of a scalar Gaussian bridge, for instance by using an OU schedule, cannot repair the non-optimality created by non-commuting covariances.
+
+	Commuting covariances reduce the terminal map to independent one-dimensional scalings, whereas non-commuting covariances create a non-symmetric affine map, hence a transport with a rotational or shearing component. More generally, mixture-like paths can create the same obstruction even when every instantaneous velocity looks natural. This distinction is closely related to counterexamples showing that flow maps associated with Fokker--Planck or diffusion-type evolutions do not in general provide optimal transport maps~\cite{LavenantSantambrogio2022FlowMap}. In particular, starting from an isotropic Gaussian does not by itself guarantee optimality once the target distribution is non-Gaussian; additional structural assumptions on the path or on the coupling are needed.
+\end{rem}
 \index{affine map}% strictindex
 \index{flow!map}% strictindex
 \index{rotational component}% strictindex
@@ -585,6 +672,35 @@ In a particle or generator implementation, the learned residual is then used to 
 	\qquad\text{or equivalently}\qquad
 	G_\theta^{+}(z)=G_\theta(z)+\tau U_\eta(G_\theta(z)).
 \]
+
+\begin{alg}[One-step Wasserstein-flow generator update]\label{alg:one-step-wgf-generator-update}
+\index{one-step!generative model}% strictindex
+\textbf{Input:} Generator $G_{\theta_k}$, latent law $\zeta$, data law $\beta$, step size $\tau$.
+
+\textbf{Output:} Updated generator $G_{\theta_{k+1}}$.
+
+\textbf{Sample} $z\sim\zeta$.
+
+\textbf{Set} $x=G_{\theta_k}(z)$.
+
+\textbf{Estimate} the Wasserstein descent field:
+\[
+	w_k(x)=-\nabla\delta_\alpha\mathcal E_\beta(\alpha_{\theta_k})(x).
+\]
+\textbf{Fit} a residual field $U_{\eta_k}$:
+\[
+	\EE_{z\sim\zeta}\,
+	\norm{U_{\eta_k}(G_{\theta_k}(z))-w_k(G_{\theta_k}(z))}^2.
+\]
+\textbf{Update by composition:}
+\[
+	G_{\theta_{k+1}}(z)
+	=
+	G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z)).
+\]
+\textbf{Return} $G_{\theta_{k+1}}$.
+\end{alg}
+
 After many training updates, the accumulated generator is evaluated once at test time. This is the organizing principle behind recent one-step methods based on Wasserstein gradient flows: W-Flow uses such a construction with the Sinkhorn divergence as a tractable global discrepancy~\cite{Han2026WFlow}, while drifting methods evolve the generated distribution during training through a fitted vector field and also admit one-step inference~\cite{Deng2026Drifting}. The gradient-flow interpretation of drifting models, and its relation to KL, MMD, sliced-Wasserstein and Sinkhorn-type discrepancies, is analyzed in~\cite{Gretton2026DriftingWGF,He2026SinkhornDrifting}. These ideas are also connected to the Sinkhorn-type normalization dynamics used to model attention in Sinkformers~\cite{Sander2022Sinkformers}.
 \index{Wasserstein!gradient}% strictindex
 \index{gradient!flow}% strictindex
@@ -625,6 +741,35 @@ The first term pulls samples toward data, while the second term corrects self-at
 \index{Sinkhorn!scaling}% strictindex
 \index{kernel!norm}% strictindex
 \index{entropic!OT}% strictindex
+
+\begin{alg}[Self-corrected drifting particle update]\label{alg:self-corrected-drifting-particles}
+\index{drifting!model}% strictindex
+\textbf{Input:} Particles $x_i^k$ for $\mu_k$, data samples from $\beta$, kernel scale $\epsilon$, step $h$.
+
+\textbf{Output:} Updated particles $x_i^{k+1}$.
+
+\textbf{For} each particle $i$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Estimate}
+\[
+	B_\epsilon[\beta](x_i^k)
+	\qquad\text{and}\qquad
+	B_\epsilon[\mu_k](x_i^k)
+\]
+using~\eqref{eq-normalized-kernel-drift}.
+
+\textbf{Set}
+\[
+	u_i^k=B_\epsilon[\beta](x_i^k)-B_\epsilon[\mu_k](x_i^k).
+\]
+\textbf{Update}
+\[
+	x_i^{k+1}=x_i^k+h\,u_i^k.
+\]
+\end{algblock}
+\textbf{Return} $(x_i^{k+1})_i$.
+\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -785,6 +930,42 @@ As $\tau \to 0$, this converges formally to the conservation equation
 \begin{equation*}
     \partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.
 \end{equation*}
+
+\begin{alg}[Residual attention depth evolution]\label{alg:residual-attention-depth-evolution}
+\index{attention!self-attention}% strictindex
+\index{transformer}% strictindex
+\textbf{Input:} Tokens $(x_i^0)_{i=1}^n$, depth $T$, layer parameters $(Q_k,K_k,V_k)$.
+
+\textbf{Output:} Final token measure $\alpha_T$.
+
+\textbf{Initialize:}
+\[
+	\alpha_0=\frac1n\sum_{i=1}^n\delta_{x_i^0},
+	\qquad
+	\tau=1/T.
+\]
+\textbf{For} $k=0,\ldots,T-1$ \textbf{do}:
+\begin{algblock}
+
+\textbf{For} $i=1,\ldots,n$ \textbf{do}
+\begin{algblock}
+\[
+	\Gamma_{\theta_k}[\alpha_k](x_i^k)
+	=
+	\frac{\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})\,V_kx_j^k}
+	     {\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})}.
+\]
+\[
+	x_i^{k+1}=x_i^k+\tau\,\Gamma_{\theta_k}[\alpha_k](x_i^k).
+\]
+\end{algblock}
+\textbf{Set}
+\[
+	\alpha_{k+1}=(\Id+\tau\Gamma_{\theta_k}[\alpha_k])_\sharp\alpha_k.
+\]
+\end{algblock}
+\textbf{Return} $\alpha_T$.
+\end{alg}
 
 \paragraph{Gradient structure and limitations.}
 \index{gradient!structure}% strictindex

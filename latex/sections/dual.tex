@@ -126,8 +126,42 @@ Source $i$ bids for $j_i$ and increases its price by the gap to the second-best 
 \[
 	p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
 \]
-The target $j_i$ is then assigned to $i$, and its previous owner, if any, becomes unassigned. The iteration stops when all sources are assigned. Figure~\ref{fig:dual-auction-progression} displays actual auction iterates using the same assignment-state convention as Figure~\ref{fig:matching-hungarian-progression}: flat rows denote unassigned bidders, and one-hot rows denote currently owned targets.
+The target $j_i$ is then assigned to $i$, and its previous owner, if any, becomes unassigned. The iteration stops when all sources are assigned. Algorithm~\ref{alg:auction-bidding} records the bidding loop. Figure~\ref{fig:dual-auction-progression} displays actual auction iterates using the same assignment-state convention as Figure~\ref{fig:matching-hungarian-progression}: flat rows denote unassigned bidders, and one-hot rows denote currently owned targets.
 \index{Hungarian primal-dual method}% strictindex
+
+\begin{alg}[Auction bidding with target prices]\label{alg:auction-bidding}
+\textbf{Input:} Profit matrix $A=(a_{ij})$, bid increment $\epsilon>0$.
+
+\textbf{Output:} Assignment map $\sigma$.
+
+\textbf{Initialize:} Set prices $p_j=0$.
+
+\textbf{Mark} all sources and targets as unassigned.
+
+\textbf{While} some source $i$ is unassigned \textbf{do}:
+\begin{algblock}
+\[
+	v_i=\max_j(a_{ij}-p_j),
+	\qquad
+	j_i\in\argmax_j(a_{ij}-p_j),
+	\qquad
+	w_i=\max_{j\neq j_i}(a_{ij}-p_j).
+\]
+\textbf{Update price:}
+\[
+	p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
+\]
+\textbf{If} target $j_i$ has owner $i'$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Mark} $i'$ as unassigned.
+
+\end{algblock}
+\textbf{Assign} target $j_i$ to source $i$.
+
+\end{algblock}
+\textbf{Return} $\sigma$ induced by the target owners.
+\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -512,6 +546,30 @@ This invariance property shows that one can ``improve'' only once the dual poten
 }
 so that one reaches a stationary point.
 \index{stationarity}% strictindex
+
+\begin{alg}[Hard alternating $c$-transform closure]\label{alg:hard-c-transform-closure}
+\index{c-transform}% strictindex
+\textbf{Input:} Source potential $f$ on $\X$, cost $c$.
+
+\textbf{Output:} Closed $c$-concave pair $(\tilde f,\tilde g)$.
+
+\textbf{Set} target best response:
+\[
+	g=f^c,
+	\qquad
+	g(y)=\inf_{x\in\X}\ c(x,y)-f(x).
+\]
+\textbf{Set} source closure:
+\[
+	\tilde f=g^{\bar c}=f^{c\bar c}.
+\]
+\textbf{Set} closed target potential:
+\[
+	\tilde g=\tilde f^c=f^{c\bar c c}=f^c.
+\]
+\textbf{Return} $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
+\end{alg}
+
 %
 This failure is the classical behavior of alternating maximization on a non-smooth problem, where the non-smooth part of the functional (here the constraint) mixes the two variables.
 %

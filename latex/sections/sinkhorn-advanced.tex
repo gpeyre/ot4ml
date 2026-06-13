@@ -199,6 +199,37 @@ The convergence mechanism is the classical one of Bregman~\cite{bregman1967relax
 \index{strict!convexity}% strictindex
 \end{proof}
 
+\begin{alg}[Cyclic Bregman projections]\label{alg:cyclic-bregman-projections}
+\index{cyclic!Bregman projection}% strictindex
+\textbf{Input:} Constraint sets $\Cc_1,\Cc_2$, Bregman divergence $B_\Phi$, interior point $P_0$.
+
+\textbf{Output:} Point in $\Cc_1\cap\Cc_2$ when the intersection is feasible.
+
+\textbf{Specialize} to entropic OT, if needed:
+\[
+	\Cc_1=\Cc^1_\a,
+	\qquad
+	\Cc_2=\Cc^2_\b,
+	\qquad
+	B_\Phi=\KL.
+\]
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	P_{k+1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_k).
+\]
+\[
+	P_{k+1}=\Proj_{\Cc_2}^{B_\Phi}(P_{k+1/2}).
+\]
+\textbf{If} both constraint defects are below $\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return} $P_{k+1}$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
+
 Denoting
 \eq{
 	\Cc^1_\a \eqdef \enscond{\P}{\P\ones_m=\a}
@@ -524,6 +555,43 @@ Sinkhorn is cyclic coordinate ascent on the smooth dual objective $\mathcal D_\e
 The same identity also yields computable stopping diagnostics. The KL drops are exactly marginal defects: after a row update the row marginal is correct and the remaining drop is measured by the column marginal, and conversely after a column update. Thus marginal violations monitor both feasibility and the remaining dual gap, up to the bounded-radius constant above.
 \index{dual!gap}% strictindex
 
+\begin{alg}[Certified entropic approximation of discrete OT]\label{alg:certified-entropic-ot-accuracy}
+\index{entropic!regularization}% strictindex
+\index{dual!gap}% strictindex
+\textbf{Input:} Cost matrix $C\in\RR^{n\times m}$, weights $\a,\b$, target accuracy $\delta>0$.
+
+\textbf{Output:} Certified lower bound $L_{\epsilon,k}$ for exact OT.
+
+\textbf{Choose}
+\[
+	\epsilon=\frac{\delta}{2\log(nm)}.
+\]
+\textbf{Run} stabilized Sinkhorn iterations.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Compute} upper bound $\widehat\Delta_k$ on the entropic dual gap.
+
+\textbf{If} $\widehat\Delta_k\leq\delta/2$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Break}.
+
+\end{algblock}
+\end{algblock}
+\textbf{Return}
+\[
+	L_{\epsilon,k}
+	=
+	\mathcal D_{\epsilon,k}
+	-
+	\epsilon\HD(\a)-\epsilon\HD(\b),
+	\qquad
+0\leq\MKD_{\C}(\a,\b)-L_{\epsilon,k}\leq\delta.
+\]
+\end{alg}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -847,6 +915,34 @@ Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's be
 	then gives the Bures--Wasserstein covariance contribution.
 \index{Bures-Wasserstein geometry}% strictindex
 \end{proof}
+
+\begin{alg}[Closed-form Gaussian Sinkhorn coupling]\label{alg:gaussian-sinkhorn-closed-form}
+\index{Gaussian!Sinkhorn}% strictindex
+\index{entropic!OT}% strictindex
+\textbf{Input:} Gaussian marginals $\al=\Gaussian(\mean_\al,\cov_\al)$, $\be=\Gaussian(\mean_\be,\cov_\be)$, scale $\epsilon>0$.
+
+\textbf{Output:} Gaussian entropic coupling covariance.
+
+\textbf{Compute}
+\[
+	\cov_\al^{1/2}\cov_\be^{1/2}
+	=
+	U\diag(\sigma_i)V^\top .
+\]
+\textbf{For} each $\sigma_i>0$ \textbf{do}
+\begin{algblock}
+\[
+	s_i=\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.
+\]
+\end{algblock}
+\textbf{Set} cross-covariance:
+\[
+	K_\epsilon
+	=
+	\cov_\al^{1/2}U\diag(s_i)V^\top\cov_\be^{1/2}.
+\]
+\textbf{Return} Gaussian coupling with means $(\mean_\al,\mean_\be)$, marginal covariances $(\cov_\al,\cov_\be)$, and cross-covariance $K_\epsilon$.
+\end{alg}
 
 \begin{cor}[Gaussian Sinkhorn divergence and smoothed Bures term]\label{cor-gaussian-sinkhorn-divergence}
 \index{Bures!smoothed term}% strictindex

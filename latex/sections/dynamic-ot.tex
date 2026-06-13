@@ -179,6 +179,32 @@ A more robust choice, used implicitly in flow matching, optimal transport and Wa
 In general this inversion is still computationally demanding, but special choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism exploited later by flow matching.
 \index{flow!matching}% strictindex
 
+\begin{alg}[Least-square velocity reconstruction]\label{alg:least-square-velocity-reconstruction}
+\index{least-square!velocity}% strictindex
+\index{weighted!Poisson equation}% strictindex
+\textbf{Input:} Smooth positive density curve $(\rho_t)_{t\in[0,1]}$ and boundary conditions.
+
+\textbf{Output:} Minimal-energy velocity field $v_t$ realizing the curve.
+
+\textbf{For} each time $t$ \textbf{do}:
+\begin{algblock}
+
+\textbf{Compute} $\partial_t\rho_t$.
+
+\textbf{Solve} weighted Poisson equation:
+\[
+	-\diverg(\rho_t\nabla\phi_t)=\partial_t\rho_t,
+	\qquad
+	\int\phi_t\rho_t=0.
+\]
+\textbf{Set}
+\[
+	v_t=\nabla\phi_t .
+\]
+\end{algblock}
+\textbf{Return} $(v_t)_{t\in[0,1]}$.
+\end{alg}
+
 \section{Benamou--Brenier dynamic formulation of OT}
 \index{Benamou-Brenier}% strictindex
 \index{Benamou-Brenier!formulation}% strictindex
@@ -256,6 +282,87 @@ Although~\eqref{eq:benamou-brenier} is not jointly convex in $(\alpha_t,v_t)$, i
 with the usual convention that the integrand is $0$ when $(\rho_t,m_t)=(0,0)$ and $+\infty$ when $\rho_t=0$ but $m_t\neq0$. For singular endpoints or curves, the same statement is interpreted with vector-valued momentum measures and the corresponding recession convention. This convex reformulation enables geodesic interpolation by convex optimization once the domain is discretized.
 \index{recession convention}% strictindex
 \index{momentum}% strictindex
+
+\paragraph{Proximal splitting.}
+\index{proximal!splitting}% strictindex
+\index{Douglas-Rachford!splitting}% strictindex
+
+The convex momentum formulation also explains the original Benamou--Brenier solver. Papadakis, Peyr\'e and Oudet~\cite{FPapPeyOud13} showed that, after discretization, the ALG2 scheme is a Douglas--Rachford splitting, equivalently ADMM on the Fenchel--Rockafellar dual. Suppressing discretization indices, write $U=(\rho,m)$ and introduce the perspective integrand
+\[
+	J(\rho,m)=
+	\begin{cases}
+		\norm{m}^2/\rho, & \rho>0,\\
+		0, & (\rho,m)=(0,0),\\
+		+\infty, & \text{otherwise}.
+	\end{cases}
+\]
+Let
+\[
+	\mathcal F(U)=\int_0^1\!\int_{\RR^d}J(\rho_t(x),m_t(x))\,\d x\,\d t,
+	\qquad
+	\mathcal C=\enscond{(\rho,m)}{\partial_t\rho+\diverg m=0,\ \rho_0\d x=\alpha_0,\ \rho_1\d x=\alpha_1},
+\]
+and let $\mathcal G=\iota_{\mathcal C}$ be the indicator of this affine continuity constraint. The convex Benamou--Brenier problem is therefore
+\[
+	\min_U\; \mathcal F(U)+\mathcal G(U).
+\]
+On the resulting Hilbert space of unknowns, or formally for an $L^2$-type product structure, the two proximal operators are
+\[
+	\prox_{\tau\mathcal F}(\bar U)
+	=
+	\argmin_U
+	\frac12\norm{U-\bar U}_{\mathsf H}^2+\tau\mathcal F(U),
+	\qquad
+	\prox_{\tau\mathcal G}(\bar U)
+	=
+	\argmin_{U\in\mathcal C}
+	\frac12\norm{U-\bar U}_{\mathsf H}^2 .
+\]
+For the standard product metric, the first map is local in $(t,x)$: it is the proximal operator of the convex perspective $J$. The second map is the orthogonal projection onto the affine set defined by the divergence equation and endpoint constraints. Douglas--Rachford then alternates these two simple operations:
+\[
+	\begin{aligned}
+		U^{k+1} &= \prox_{\tau\mathcal F}(Z^k),\\
+		\widetilde U^{k+1} &= \prox_{\tau\mathcal G}(2U^{k+1}-Z^k),\\
+		Z^{k+1} &= Z^k+\widetilde U^{k+1}-U^{k+1}.
+	\end{aligned}
+\]
+Equivalently one may swap the roles of $\mathcal F$ and $\mathcal G$. At convergence, the two shadow sequences $U^k$ and $\widetilde U^k$ agree and give a minimizer of the convex dynamic problem. This viewpoint is useful because it separates the nonlinear but pointwise perspective proximal step from the global but linear projection onto the continuity equation~\cite{FPapPeyOud13,Eckstein1992}.
+\index{perspective function}% strictindex
+\index{continuity equation}% strictindex
+\index{Fenchel-Rockafellar duality}% strictindex
+\index{ADMM}% strictindex
+
+\begin{alg}[Douglas--Rachford for dynamic Benamou--Brenier]\label{alg:benamou-brenier-douglas-rachford}
+\index{Douglas-Rachford!splitting}% strictindex
+\textbf{Input:} Functionals $\mathcal F,\mathcal G=\iota_{\mathcal C}$, proximal parameter $\tau>0$, initial field $Z^0$.
+
+\textbf{Output:} Discrete density-momentum field $U^\star$.
+
+\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\begin{algblock}
+\[
+	U^{k+1}=\prox_{\tau\mathcal F}(Z^k).
+\]
+\textbf{Project} reflected point:
+\[
+	\widetilde U^{k+1}
+	=
+	\prox_{\tau\mathcal G}(2U^{k+1}-Z^k)
+	=
+	\Proj_{\mathcal C}(2U^{k+1}-Z^k).
+\]
+\textbf{Update}
+\[
+	Z^{k+1}=Z^k+\widetilde U^{k+1}-U^{k+1}.
+\]
+\textbf{If} $\norm{U^{k+1}-\widetilde U^{k+1}}\leq\mathrm{tol}$ \textbf{then}:
+\begin{algblock}
+
+\textbf{Return} $U^{k+1}$.
+
+\end{algblock}
+\end{algblock}
+\end{alg}
 
 \begin{figure}[ht]
 \centering
