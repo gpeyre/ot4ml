@@ -184,6 +184,7 @@ function latexToMyst(body) {
 
   text = text.replace(/\\index\{(?:[^{}]|\{[^{}]*\})*\}/g, '');
   text = text.replace(/\\normalfont/g, '');
+  text = text.replace(/\\algreturnskip/g, '');
   text = text.replace(/\\begin\{itemize\}/g, '');
   text = text.replace(/\\end\{itemize\}/g, '');
   text = text.replace(/^\s*\\item\s*/gm, '- ');
