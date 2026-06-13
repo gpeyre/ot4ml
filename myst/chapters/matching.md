@@ -155,7 +155,7 @@ methods are not generic linear-programming solvers; they use the
 one-dimensional order and the concavity of the distance profile.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-1d-convex-concave-costs")
 ```
 
@@ -174,7 +174,7 @@ dots are inverse-CDF samples at common quantile levels. The monotone assignment
 connects equal ranks.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-1d-quantile-assignment")
 ```
 
@@ -184,17 +184,18 @@ inverse-CDF samples at common quantile levels. The monotone assignment connects
 equal ranks, both for two Gaussian mixtures and for the transport from one
 central Gaussian toward a three-mode target law.*
 
-The executable companion exposes the point count and the two laws. The hidden
-code uses inverse-CDF samples and connects points with equal quantile rank.
+The interactive panel exposes the point count and the two laws while keeping
+the monotone equal-rank construction in the background.
 
 ```{code-cell} ipython3
+:tags: [remove-input]
 n_points = 52
 source_law = "two"      # one, two, wide_two, three
 target_law = "three"    # one, two, wide_two, three
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 fig = plot_quantile_matching(
     n=n_points,
     source=source_law,
@@ -213,7 +214,7 @@ computationally simple and geometrically faithful: it matches distributions of
 intensities rather than individual pixels.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-histogram-equalization")
 ```
 
@@ -223,17 +224,18 @@ $T=Q_\beta\circ F_\alpha$; here $\beta$ is a truncated Gaussian concentrated
 near dark intensities. The images are interpolated pointwise by
 $I_t=(1-t)I+tT(I)$, and all histograms share the same vertical scale.*
 
-The executable view below exposes the target mean, target standard deviation,
+The interactive view below exposes the target mean, target standard deviation,
 and interpolation time.
 
 ```{code-cell} ipython3
+:tags: [remove-input]
 target_mean = 0.18
 target_sigma = 0.105
 interpolation = 0.67  # 0 is the original image, 1 is fully equalized
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 fig = plot_histogram_equalization(
     target_mean=target_mean,
     target_sigma=target_sigma,
@@ -322,7 +324,7 @@ form of the fast circle-Monge construction of {cite:p}`delon-circle`.
 :::
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("monge-circle-cut-unfolding")
 ```
 
@@ -335,7 +337,7 @@ the two green endpoints identified.*
 <iframe class="ot4ml-live-frame" title="Circle cut controls" src="../live/circle.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-2d-cost-exponent")
 ```
 
@@ -346,11 +348,12 @@ canonical geometry is reused in later coupling and regularization figures. The
 feasible set is unchanged, but increasing $p$ penalizes the longest edges more
 strongly and changes the global organization of the permutation.*
 
-The executable companion reuses the same disk-to-annulus geometry and exposes
-the number of points, the data geometry, and the cost exponents $p$ in
+The interactive panel reuses the same disk-to-annulus geometry and exposes the
+number of points, the data geometry, and the cost exponents $p$ in
 $c(x,y)=\norm{x-y}^p$.
 
 ```{code-cell} ipython3
+:tags: [remove-input]
 n_points_2d = 36
 source_shape = "disk"       # disk, annulus, two_blobs, three_blobs, crescent
 target_shape = "annulus"    # disk, annulus, two_blobs, three_blobs, crescent
@@ -359,7 +362,7 @@ seed = 2074
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 fig = plot_cost_power_sweep(
     n_points=n_points_2d,
     source_shape=source_shape,
@@ -380,7 +383,7 @@ is the finite-dimensional Kantorovich relaxation developed in the next
 chapters.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-resolution-and-weights")
 ```
 
@@ -391,12 +394,13 @@ nonuniform target weights, the coupling matrix can merge or split mass; segment
 thickness and opacity encode its nonzero entries, and blue marker areas encode
 the prescribed target masses.*
 
-The interactive companion below exposes the target resolution, target weights, and
+The interactive panel below exposes the target resolution, target weights, and
 regularization level. The first displayed plan is sparse, while positive
-values of `epsilons` show the entropic smoothing used later in the Sinkhorn
+regularization values show the entropic smoothing used later in the Sinkhorn
 chapter.
 
 ```{code-cell} ipython3
+:tags: [remove-input]
 n_source = 36
 n_target = 18
 weight_mode = "angular"     # uniform, angular, right_heavy
@@ -405,7 +409,7 @@ epsilons = (0.0, 0.03, 0.12)
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 fig = plot_regularization_sweep(
     n_source=n_source,
     n_target=n_target,
@@ -463,7 +467,7 @@ optimum of the duplicated uniform assignment problem.
 :::
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-rational-duplication")
 ```
 
@@ -592,7 +596,7 @@ evolving partial assignment: unmatched rows are shown as flat rows to keep a
 fixed matrix format, and matched rows are shown as one-hot rows.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [remove-input]
 show_book_figure("matching-hungarian-progression")
 ```
 
