@@ -77,6 +77,7 @@ const knownKinds = [
 ];
 const pathKind = knownKinds.find((name) => window.location.pathname.includes(name));
 const kind = document.body.dataset.kind || params.get("kind") || pathKind || "quantile";
+const imageAssets = new Map();
 
 const RED = "#d73027";
 const BLUE = "#2166ac";
@@ -182,10 +183,72 @@ function setStatus(text) {
   status.textContent = text || "";
 }
 
+function imageAsset(src) {
+  if (imageAssets.has(src)) return imageAssets.get(src);
+  const img = new Image();
+  const record = { image: img, state: "loading" };
+  img.onload = () => {
+    record.state = "ready";
+    scheduleRender();
+  };
+  img.onerror = () => {
+    record.state = "error";
+    scheduleRender();
+  };
+  img.src = src;
+  imageAssets.set(src, record);
+  return record;
+}
+
+function rasterSizeForDisplay(width, minSize, maxSize) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  return Math.round(clamp(Math.ceil(width * dpr), minSize, maxSize));
+}
+
+function imageDataFromAsset(record, size) {
+  if (record.state !== "ready") return null;
+  const tmp = document.createElement("canvas");
+  tmp.width = size;
+  tmp.height = size;
+  const ictx = tmp.getContext("2d", { willReadFrequently: true });
+  const side = Math.min(record.image.naturalWidth || size, record.image.naturalHeight || size);
+  const sx = ((record.image.naturalWidth || side) - side) / 2;
+  const sy = ((record.image.naturalHeight || side) - side) / 2;
+  ictx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ictx) ictx.imageSmoothingQuality = "high";
+  ictx.drawImage(record.image, sx, sy, side, side, 0, 0, size, size);
+  try {
+    return ictx.getImageData(0, 0, size, size).data;
+  } catch {
+    record.state = "error";
+    return null;
+  }
+}
+
+function grayImageFromAsset(record, size) {
+  const data = imageDataFromAsset(record, size);
+  if (!data) return null;
+  const out = new Array(size * size);
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = (0.2126 * data[4 * i] + 0.7152 * data[4 * i + 1] + 0.0722 * data[4 * i + 2]) / 255;
+  }
+  return out;
+}
+
+function rgbImageFromAsset(record, size) {
+  const data = imageDataFromAsset(record, size);
+  if (!data) return null;
+  const out = new Array(size * size);
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = [data[4 * i], data[4 * i + 1], data[4 * i + 2]];
+  }
+  return out;
+}
+
 function resizeCanvas(height) {
   const rect = canvas.getBoundingClientRect();
   const fallbackWidth = canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760;
-  const w = Math.max(300, rect.width || fallbackWidth || 760);
+  const w = Math.round(Math.max(300, rect.width || fallbackWidth || 760));
   const controlsHeight = controls.getBoundingClientRect().height || 0;
   const statusHeight = status.getBoundingClientRect().height || 18;
   const availableHeight = window.innerHeight - controlsHeight - statusHeight - 46;
@@ -468,8 +531,15 @@ function drawHistogram() {
   const mean = val("mean");
   const sigma = val("sigma");
   const t = val("interp");
-  const size = 88;
-  const base = syntheticImage(size);
+  const { ctx, w } = resizeCanvas(342);
+  const gap = 34;
+  const leftW = Math.min(300, Math.max(132, Math.floor((w - gap - 46) * 0.44)));
+  const imgX = 22;
+  const imgY = 30;
+  const imgW = leftW;
+  const size = rasterSizeForDisplay(imgW, 150, 300);
+  const cat = imageAsset("assets/cat.jpg");
+  const base = grayImageFromAsset(cat, size) || syntheticImage(size);
   const pairs = base.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const mapped = new Array(base.length);
   const lo = normalCdf(0, mean, sigma);
@@ -479,12 +549,6 @@ function drawHistogram() {
     mapped[pairs[r][1]] = clamp(normalInv(lo + u * (hi - lo), mean, sigma), 0, 1);
   }
   const img = base.map((v, i) => lerp(v, mapped[i], t));
-  const { ctx, w } = resizeCanvas(342);
-  const gap = 34;
-  const leftW = Math.min(300, Math.max(132, Math.floor((w - gap - 46) * 0.44)));
-  const imgX = 22;
-  const imgY = 30;
-  const imgW = leftW;
   const tmp = document.createElement("canvas");
   tmp.width = size;
   tmp.height = size;
@@ -498,7 +562,8 @@ function drawHistogram() {
     data.data[4 * i + 3] = 255;
   }
   ictx.putImageData(data, 0, 0);
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
   ctx.drawImage(tmp, imgX, imgY, imgW, imgW);
   ctx.strokeStyle = "#d8dee8";
   ctx.strokeRect(imgX, imgY, imgW, imgW);
@@ -556,7 +621,8 @@ function drawHistogram() {
   ctx.fillText("gray level", px + pw - 62, py + ph + 20);
   ctx.fillStyle = BLUE;
   ctx.fillText("target law", px + pw - 78, py + 16);
-  setStatus(`target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}`);
+  const imageSource = cat.state === "ready" ? `cat photograph, ${size}x${size}` : "synthetic fallback while the photograph loads";
+  setStatus(`target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
 }
 
 function rng(seed) {
@@ -1325,8 +1391,11 @@ function drawColorImage(ctx, colors, size, x, y, width, title) {
     data.data[4 * i + 3] = 255;
   }
   ictx.putImageData(data, 0, 0);
-  ctx.imageSmoothingEnabled = false;
+  const previousSmoothing = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
   ctx.drawImage(tmp, x, y, width, width);
+  ctx.imageSmoothingEnabled = previousSmoothing;
   ctx.strokeStyle = "#d8dee8";
   ctx.strokeRect(x, y, width, width);
   ctx.fillStyle = "#26333f";
@@ -1373,16 +1442,20 @@ function drawRgbCloud(ctx, colors, box, title) {
 
 function drawMongeColor() {
   const t = val("colorT");
-  const size = val("colorSize");
+  const requestedSize = val("colorSize");
   const targetMode = val("colorTarget");
   const contrast = val("colorContrast");
-  const source = makePaletteImage(size, "beach", contrast);
-  const target = makePaletteImage(size, targetMode, contrast);
-  const transported = transportedPalette(source, target, t);
   const { ctx, w, h } = resizeCanvas(360);
   const pad = 18;
   const gap = 18;
   const imageW = Math.min((w - 2 * pad - 2 * gap) / 3, h * 0.44);
+  const size = Math.round(clamp(Math.max(requestedSize, Math.ceil(imageW)), 96, 260));
+  const beach = imageAsset("assets/beach.jpg");
+  const flower = imageAsset("assets/flower.jpg");
+  const source = rgbImageFromAsset(beach, size) || makePaletteImage(size, "beach", contrast);
+  const target =
+    targetMode === "flower" ? rgbImageFromAsset(flower, size) || makePaletteImage(size, "flower", contrast) : makePaletteImage(size, targetMode, contrast);
+  const transported = transportedPalette(source, target, t);
   const topY = 38;
   const startX = (w - 3 * imageW - 2 * gap) / 2;
   drawColorImage(ctx, source, size, startX, topY, imageW, "source");
@@ -1394,7 +1467,8 @@ function drawMongeColor() {
   drawRgbCloud(ctx, source, { x: pad, y: cloudY, w: cloudW, h: cloudH }, "source RGB");
   drawRgbCloud(ctx, transported, { x: pad + cloudW + gap, y: cloudY, w: cloudW, h: cloudH }, "transported");
   drawRgbCloud(ctx, target, { x: pad + 2 * (cloudW + gap), y: cloudY, w: cloudW, h: cloudH }, "target RGB");
-  setStatus(`ranked palette map with ${size * size} colors; target ${pretty(targetMode)}`);
+  const sourceLabel = beach.state === "ready" && (targetMode !== "flower" || flower.state === "ready") ? "photograph colors" : "palette fallback";
+  setStatus(`ranked RGB map with ${size * size} colors; ${sourceLabel}; target ${pretty(targetMode)}`);
 }
 
 function sampleHeart(n, random) {
@@ -6374,7 +6448,7 @@ function init() {
   } else if (kind === "mongecolor") {
     controls.innerHTML = [
       slider("colorT", "t", 0.62, 0, 1, 0.01),
-      slider("colorSize", "pixels", 56, 24, 92, 4),
+      slider("colorSize", "resolution", 160, 80, 240, 8),
       select("colorTarget", "target", ["flower", "orchid", "forest"], "flower"),
       slider("colorContrast", "contrast", 1, 0.55, 1.35, 0.05),
     ].join("");
