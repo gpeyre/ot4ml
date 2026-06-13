@@ -194,6 +194,7 @@ function latexToMyst(body) {
 
   text = text.replace(/\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}/g, (_, inner) => mathBlock(inner));
   text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, inner) => mathBlock(inner));
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner) => `$${inner.trim()}$`);
 
   text = text.replace(/~?\\cite\{([^}]+)\}/g, (_, keys) => ` {cite:p}\`${keys}\``);
   text = text.replace(/~?\\citep\{([^}]+)\}/g, (_, keys) => ` {cite:p}\`${keys}\``);
