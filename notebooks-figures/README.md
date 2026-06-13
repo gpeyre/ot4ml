@@ -577,8 +577,8 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="dynamic-unbalanced-geodesic.ipynb"><img src="thumbnails/dynamic-unbalanced-geodesic.png" alt="Balanced and unbalanced dynamic geodesics" width="210"></a><br>
-  <strong>Balanced and unbalanced dynamic geodesics</strong><br>
+  <a href="dynamic-unbalanced-geodesic.ipynb"><img src="thumbnails/dynamic-unbalanced-geodesic.png" alt="One-dimensional balanced and unbalanced dynamic geodesics" width="210"></a><br>
+  <strong>One-dimensional balanced and unbalanced dynamic geodesics</strong><br>
   <a href="dynamic-unbalanced-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-unbalanced-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
