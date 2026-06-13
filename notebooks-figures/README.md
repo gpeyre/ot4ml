@@ -5,11 +5,13 @@ figures currently included in the OT4ML book. Each live notebook writes one or
 several PDF panels to `../latex/figures/<figure-name>/`; the thumbnails below
 are compact PNG previews rendered from those outputs.
 
-**Gallery status.** Checked against the current LaTeX source: all 73 live
+Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
+
+**Gallery status.** Checked against the current LaTeX source: all 74 live
 `latex/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching notebook card below, a live
 `.ipynb` file, a thumbnail in [`thumbnails/`](thumbnails/), and generated PDF
-panels in `../latex/figures/`. The book currently has 75 LaTeX figure labels
+panels in `../latex/figures/`. The book currently has 76 LaTeX figure labels
 because two notebooks generate two labeled figures each, for example the
 Gaussian W2 notebook provides both the one-dimensional and two-dimensional
 Gaussian figures. The contact sheet below is built from the same active
@@ -574,7 +576,11 @@ Colab from the badge. The Colab links target the `main` branch of
   <a href="dynamic-benamou-brenier-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-benamou-brenier-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="dynamic-unbalanced-geodesic.ipynb"><img src="thumbnails/dynamic-unbalanced-geodesic.png" alt="Balanced and unbalanced dynamic geodesics" width="210"></a><br>
+  <strong>Balanced and unbalanced dynamic geodesics</strong><br>
+  <a href="dynamic-unbalanced-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-unbalanced-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 <td width="33%"></td>
 

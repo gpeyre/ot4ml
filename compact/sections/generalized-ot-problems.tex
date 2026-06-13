@@ -1,0 +1,275 @@
+\section{Generalized OT Problems}
+\label{sec-generalized-ot-problems}
+\subsection{OT Barycenters}
+\label{sec-barycenters}
+\paragraph{Fr\'echet means.}
+For discrete input histograms $\{\b_s\}_{s=1}^S$, with $\b_s \in \simplex_{n_s}$, and weights $\la \in \simplex_S$, a Wasserstein barycenter can be computed by minimizing
+
+\eql{\label{eq-wass-discr}
+\umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
+}
+where the cost matrices $\C_s \in \RR^{n \times n_s}$ are prescribed.
+
+Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the barycenter problem becomes
+
+\eql{\label{eq-barycenter-generic}
+\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
+}
+\begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
+The map $(\al,\be)\mapsto\MK_\c(\al,\be)$ is convex.
+\end{prop}
+\begin{proof}
+Let $(\al_0,\be_0)$ and $(\al_1,\be_1)$ be two pairs of probability measures and let $t\in[0,1]$. For $\eta>0$, choose couplings $\pi_i\in\Couplings(\al_i,\be_i)$ such that
+\(\int c\d\pi_i\leq\MK_\c(\al_i,\be_i)+\eta \qquad (i=0,1).\)
+Then $\pi_t=(1-t)\pi_0+t\pi_1$ is a coupling between $(1-t)\al_0+t\al_1$ and $(1-t)\be_0+t\be_1$. Hence
+\(\MK_\c((1-t)\al_0+t\al_1,(1-t)\be_0+t\be_1) \leq (1-t)\MK_\c(\al_0,\be_0)+t\MK_\c(\al_1,\be_1)+\eta.\)
+Letting $\eta\to0$ gives the claim.
+\end{proof}
+\paragraph{One-dimensional case.}
+\begin{prop}[Quantile barycenters on the line]\label{prop-quantile-barycenters}
+For $\X=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein barycenter is the weighted average of the input quantile functions:
+\(\cumul{\al^\star}^{-1}(r) = \sum_{s=1}^S\la_s\cumul{\be_s}^{-1}(r), \qquad r\in[0,1].\)
+\end{prop}
+\begin{proof}
+The one-dimensional formula~\eqref{eq-wass-cumul} gives \(\sum_s\la_s\Wass_2^2(\al,\be_s) = \int_0^1 \sum_s\la_s \abs{\cumul{\al}^{-1}(r)-\cumul{\be_s}^{-1}(r)}^2 \d r.\)
+The minimization decouples pointwise in $r$. For each fixed $r$, the minimizer of $z\mapsto\sum_s\la_s|z-\cumul{\be_s}^{-1}(r)|^2$ is the weighted average $\sum_s\la_s\cumul{\be_s}^{-1}(r)$. This function is nondecreasing because it is a positive weighted sum of nondecreasing quantile functions, hence it is a valid quantile function.
+\end{proof}
+\paragraph{Gaussian case.}
+\paragraph{Sinkhorn for barycenters.}
+\eql{\label{eq-entropic-bary}
+\umin{\a\in\simplex_n}
+\sum_{s=1}^S\la_s\MKD_{\C_s}^\epsilon(\a,\b_s)
+}
+\eql{\label{eq-bary-entropy-couplings}
+\umin{(\P_s)_s}
+\enscond{
+\epsilon\sum_s\la_s\KLD(\P_s|\K_s)
+}{
+\foralls s,\ \transp{\P_s}\ones_n=\b_s,
+\quad
+\P_1\ones_{n_1}=\ldots=\P_S\ones_{n_S}
+},
+}
+where $\K_s\eqdef e^{-\C_s/\epsilon}$. The barycenter $\a$ is implicitly encoded in the common row marginal
+
+\(\a=\P_1\ones_{n_1}=\ldots=\P_S\ones_{n_S}.\)
+\eql{\label{eq-bary-opt}
+\P_s=\diag(\uD_s)\K_s\diag(\vD_s),
+}
+\begin{align}
+\foralls s\in\range{1,S},\qquad
+\itt{\vD}_s
+&\eqdef
+\frac{\b_s}{\transp{\K_s}\it{\uD}_s},
+\label{eq-sinkhorn-bary}
+\\
+\foralls s\in\range{1,S},\qquad
+\itt{\uD}_s
+&\eqdef
+\frac{\itt{\a}}{\K_s\itt{\vD}_s},
+\label{eq-sinkhorn-bary-2}
+\\
+\qwhereq
+\itt{\a}
+&\eqdef
+\prod_s(\K_s\itt{\vD}_s)^{\la_s}.
+\label{eq-sinkhorn-bary-3}
+\end{align}
+\begin{prop}[Dual of entropic barycenters]\label{prop-dual-entropic-barycenters}
+The optimal scalings in~\eqref{eq-bary-opt} can be written as $(\uD_s,\vD_s)=(e^{\fD_s/\epsilon},e^{\gD_s/\epsilon})$, where $(\fD_s,\gD_s)_s$ solve the dual problem
+\eql{\label{eq-dual-bary-entropy}
+\umax{(\fD_s,\gD_s)_s}
+\enscond{
+\sum_s\la_s
+\left(
+\dotp{\gD_s}{\b_s}
+-\epsilon\dotp{\K_s e^{\gD_s/\epsilon}}{e^{\fD_s/\epsilon}}
+\right)
+}{
+\sum_s\la_s\fD_s=0
+}.
+}
+\end{prop}
+\begin{proof}
+Introduce Lagrange multipliers in~\eqref{eq-bary-entropy-couplings}:
+\begin{align*}
+\umin{(\P_s)_s,\a}
+\umax{(\fD_s,\gD_s)_s}
+\sum_s\la_s\Big(
+\epsilon\KLD(\P_s|\K_s)
++\dotp{\a-\P_s\ones_{n_s}}{\fD_s}
++\dotp{\b_s-\transp{\P_s}\ones_n}{\gD_s}
+\Big).
+\end{align*}
+Strong duality holds, so one can exchange the minimum and maximum. The minimization with respect to $\a$ gives the constraint $\sum_s\la_s\fD_s=0$, and the minimization with respect to $\P_s$ gives the Legendre transform of $\KLD(\cdot|\K_s)$:
+\[
+\umax{(\fD_s,\gD_s)_s}
+\sum_s\la_s
+\left[
+\dotp{\gD_s}{\b_s}
+-\epsilon
+\KLD^*\left(\frac{\fD_s\oplus\gD_s}{\epsilon}\middle|\K_s\right)
+\right],
+\qquad
+\sum_s\la_s\fD_s=0.
+\]
+The separable conjugate is
+\eql{\label{eq-legendre-kl-bary}
+\KLD^*(\VectMode{U}|\K)
+=
+\sum_{i,j}\K_{i,j}\big(e^{\VectMode{U}_{i,j}}-1\big),
+}
+because for $k>0$, \(\sup_{r\geq0} ur-\big(r\log(r/k)-r+k\big) = k(e^u-1),\)
+and the case $k=0$ follows by lower semicontinuity. Dropping constants independent of $(\fD_s,\gD_s)_s$ gives~\eqref{eq-dual-bary-entropy}. The coordinate maximization in $\gD_s$ gives~\eqref{eq-sinkhorn-bary}; the block maximization in all $(\fD_s)_s$ gives the common marginal~\eqref{eq-sinkhorn-bary-3} and then~\eqref{eq-sinkhorn-bary-2}.
+\end{proof}
+\subsection{Multimarginal OT}
+\label{sec-multimarginal-ot}
+\label{subsec:multi-marginal}
+\paragraph{Definition and basic structure.}
+The multi-marginal formulation replaces a coupling between two measures by a joint distribution with several prescribed marginals. Given measures $(\al_s)_{s=1}^S$ on spaces $(\X_s)_{s=1}^S$ and a cost $c:\X_1\times\cdots\times\X_S\to\RR$, the problem reads
+
+\(\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)} \int_{\X_1\times\cdots\times\X_S} c(x_1,\ldots,x_S)\d\pi(x_1,\ldots,x_S),\)
+where $\Couplings(\al_1,\ldots,\al_S)$ is the set of probability measures whose $s$-th marginal is $\al_s$. This is still a linear program in the discrete setting, but its ambient tensor has size $\prod_s n_s$.
+
+\paragraph{Multi-marginal formulation of barycenters.}
+\(c_{\mathrm{bar}}(x_1,\ldots,x_S) = \min_{x\in\RR^d} \sum_{s=1}^S\la_s\norm{x-x_s}^2.\)
+\begin{prop}[Multi-marginal formula for quadratic barycenters]\label{prop-multimarginal-barycenter}
+Let $\be_1,\ldots,\be_S\in\Pp_2(\RR^d)$ and $\la\in\simplex_S$. Define
+\(B(x_1,\ldots,x_S)=\sum_{s=1}^S\la_s x_s, \qquad c_{\mathrm{bar}}(x_1,\ldots,x_S)=\min_x\sum_s\la_s\norm{x-x_s}^2.\)
+If $\pi^\star$ solves the multi-marginal OT problem with marginals $(\be_s)_s$ and cost $c_{\mathrm{bar}}$, then $\al^\star=B_\sharp\pi^\star$ is a Wasserstein barycenter. Conversely, every barycenter is obtained this way from an optimal multi-marginal plan.
+\end{prop}
+\begin{proof}
+For any candidate barycenter $\al$ and couplings $\pi_s\in\Couplings(\al,\be_s)$, glue the couplings along their common $\al$ marginal to obtain a joint law of $(X,Y_1,\ldots,Y_S)$. Conditioning on $(Y_s)_s$ and minimizing over $X$ gives
+\(\sum_s\la_s\EE\norm{X-Y_s}^2 \geq \EE\min_x\sum_s\la_s\norm{x-Y_s}^2 = \EE c_{\mathrm{bar}}(Y_1,\ldots,Y_S).\)
+Taking the infimum over the couplings gives that the barycenter value is at least the multi-marginal value. Conversely, from an optimal multi-marginal plan $\pi^\star$, set $X=B(Y_1,\ldots,Y_S)$. The couplings between $X$ and each $Y_s$ are feasible for the barycenter problem and attain exactly the multi-marginal cost, proving equality and the formula.
+If $\al^\star$ is any barycenter, choose optimal couplings between $\al^\star$ and each $\be_s$ and glue them along the common $\al^\star$ marginal. Since the barycenter and multi-marginal values are equal, the conditional minimization inequality above must be an equality. Thus $X=B(Y_1,\ldots,Y_S)$ almost surely for the induced optimal multi-marginal plan, and $\al^\star=B_\sharp\pi^\star$.
+\end{proof}
+\begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
+Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the input measures are discrete, then there exists a barycenter supported on the set of weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input; in particular, if the $s$-th input has $n_s$ atoms, a barycenter exists with at most $\prod_s n_s$ atoms.
+\end{cor}
+\begin{proof}
+Let the input Gaussians have means $\mean_s$ and covariances $\cov_s$. For any candidate barycenter $\al$ with mean $\mean$ and covariance $\cov$, Gelbrich's inequality, proved later in Theorem~\ref{thm-gelbrich-projection}, gives
+\(\Wass_2^2(\al,\be_s) \geq \norm{\mean-\mean_s}^2+\Bb(\cov,\cov_s)^2,\)
+with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by the Gaussian measure with the minimizing mean and covariance. Hence at least one barycenter is Gaussian, and uniqueness in the usual nondegenerate setting gives the Gaussian barycenter mentioned above. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
+\end{proof}
+\paragraph{Entropic regularization of multi-marginal OT.}
+\(\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)} \int c\d\pi+\epsilon\KL(\pi|\al_1\otimes\cdots\otimes\al_S).\)
+\[
+\d\pi^\star(x_1,\ldots,x_S)
+=
+\exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
+\prod_s\d\al_s(x_s),
+\]
+\subsection{Metric learning and inverse OT}
+\paragraph{Metric learning and derivatives of OT.}
+\begin{prop}[Derivative with respect to the cost]
+In the discrete setting, assume that the optimal coupling for $\MKD_\C(\a,\b)$ is unique and denote it by $\P^\star(\C)$. Then $\C \mapsto \MKD_\C(\a,\b)$ is differentiable at $\C$ and
+\(\nabla_\C \MKD_\C(\a,\b)=\P^\star(\C).\)
+\end{prop}
+\begin{proof}
+The value is the minimum of affine functions of $\C$, \(\MKD_\C(\a,\b)=\min_{\P\in\CouplingsD(\a,\b)}\dotp{\C}{\P}.\)
+The envelope theorem, or equivalently Danskin's theorem, states that the subdifferential with respect to $\C$ is the convex hull of the optimal couplings. If the optimizer is unique, this subdifferential is the singleton $\{\P^\star(\C)\}$, hence the value is differentiable with the displayed gradient.
+\end{proof}
+Thus, if the cost is parameterized as $\C_\theta$, gradients of losses involving OT values are obtained by backpropagating through the inner product $\dotp{\P^\star(\C_\theta)}{\partial_\theta \C_\theta}$. The difficulty is not differentiating a solved OT problem, but learning a cost for which the resulting matching has the desired semantic behavior; this is a bilevel and usually non-convex optimization problem.
+
+\paragraph{Inverse Optimal Transport.}
+\(\inf_{\pi\in\Couplings(\alpha,\beta)}\int c(x,y)\d\pi(x,y).\)
+A useful statistical methodology is to measure the suboptimality of the observed plan through a Fenchel--Young loss. Write the score as $s=-c$ and define the convex regularized prediction value
+
+\(G_\epsilon(s)= \sup_{\pi\in\Couplings(\alpha,\beta)} \int s\d\pi-\epsilon\KL(\pi|\alpha\otimes\beta).\)
+\(\mathcal L_\epsilon(c;\widehat\pi) = G_\epsilon(-c)+G_\epsilon^*(\widehat\pi)+\int c\d\widehat\pi\)
+is nonnegative by Fenchel's inequality and vanishes exactly when $\widehat\pi\in\partial G_\epsilon(-c)$, i.e. when $\widehat\pi$ satisfies the regularized optimality conditions for $c$. Entropic regularization is important here because it makes the forward map smoother and provides gradients with respect to $c$, at the price of a bias that must be controlled statistically.
+
+\(C_\theta=\sum_{r=1}^R \theta_r C^{(r)}, \qquad \theta\in\Theta,\)
+where $\Theta$ is convex and the matrices $C^{(r)}$ encode features, graph distances or a Mahalanobis parameterization.
+
+\begin{prop}[Convex dual-gap formulation of inverse OT]\label{prop-inverse-ot-convex}
+Let $\widehat P\in\CouplingsD(\a,\b)$ be an observed coupling and let $C_\theta$ depend affinely on $\theta\in\Theta$, where $\Theta$ is convex. The condition that $\widehat P$ is optimal for the cost $C_\theta$ is equivalent to the existence of dual potentials $(f,g)$ such that
+\(f_i+g_j\leq (C_\theta)_{i,j} \qandq \sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)=0.\)
+\eql{\label{eq-inverse-ot-convex}
+\umin{\theta\in\Theta,f,g}
+R(\theta)+\lambda
+\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
+\quad\text{subject to}\quad
+f_i+g_j\leq (C_\theta)_{i,j}\quad\forall i,j.
+}
+\end{prop}
+\begin{proof}
+For a fixed cost $C_\theta$, Kantorovich duality gives \(\min_{P\in\CouplingsD(\a,\b)}\dotp{C_\theta}{P} = \max_{f_i+g_j\leq (C_\theta)_{i,j}} \dotp{f}{\a}+\dotp{g}{\b}.\)
+Since $\widehat P$ has marginals $(\a,\b)$, every dual feasible pair satisfies \(\dotp{C_\theta}{\widehat P}-\dotp{f}{\a}-\dotp{g}{\b} = \sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big) \geq0.\)
+It vanishes if and only if $\widehat P$ reaches the dual value and is therefore optimal. If $C_\theta$ is affine and $\Theta$ and $R$ are convex, the constraints and objective in~\eqref{eq-inverse-ot-convex} are convex, proving the relaxation claim.
+\end{proof}
+\(\widehat P_{i,j}\approx a_i b_j \exp\pa{\frac{f_i+g_j-(C_\theta)_{i,j}}{\epsilon}},\)
+\subsection{Weak Optimal Transport}
+\label{sec-weak-ot}
+\paragraph{Barycentric projection of a coupling.}
+\begin{defn}[Barycentric projection of a coupling]\label{def-barycentric-projection}
+Let $\alpha,\beta\in\Pp_2(\RR^d)$ and let $\pi\in\Couplings(\alpha,\beta)$. Disintegrate $\pi$ with respect to its first marginal as
+$\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. The barycentric projection of $\pi$ is the map
+\begin{equation}\label{eq-barycentric-projection}
+\bar T_\pi(x)
+\eqdef
+\int_{\RR^d}y\d\pi_x(y),
+\qquad
+\bar\beta_\pi
+\eqdef
+(\bar T_\pi)_\sharp\alpha.
+\end{equation}
+\end{defn}
+\begin{prop}[Barycentric projection of a quadratic optimal plan]\label{prop-barycentric-projection-optimal}
+Let $\pi\in\Couplings(\alpha,\beta)$ be optimal for the quadratic cost $\norm{x-y}^2$ between $\alpha,\beta\in\Pp_2(\RR^d)$, and define $\bar T_\pi$ and $\bar\beta_\pi$ by~\eqref{eq-barycentric-projection}. Then $(\Id,\bar T_\pi)_\sharp\alpha$ is an optimal coupling between $\alpha$ and $\bar\beta_\pi$. Equivalently, $\bar T_\pi$ is a quadratic optimal transport map from $\alpha$ to the projected target $\bar\beta_\pi$.
+\end{prop}
+\begin{proof}
+By Theorem~\ref{thm:opt_ccm}, $\pi$ is concentrated on a $c$-cyclically monotone set $\Gamma$ for $c(x,y)=\norm{x-y}^2$. For the quadratic cost, and since it is enough to check cyclic permutations, this means that every finite cycle $(x_i,y_i)_{i=1}^m\subset\Gamma$ satisfies
+\(\sum_{i=1}^m \dotp{x_i}{y_i} \geq \sum_{i=1}^m \dotp{x_i}{y_{i+1}}, \qquad y_{m+1}=y_1.\)
+After changing the disintegration on an $\alpha$-negligible set, $\pi_x$ is supported on the section
+\(\Gamma_x=\enscond{y}{(x,y)\in\Gamma}\)
+for $\alpha$-a.e. $x$.
+Choose $x_1,\ldots,x_m$ in this full-measure set and independently sample $Y_i\sim\pi_{x_i}$. Applying the cyclic inequality to $(x_i,Y_i)$ and taking expectations gives
+\(\sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_i)} \geq \sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_{i+1})}.\)
+Thus $(\Id,\bar T_\pi)_\sharp\alpha$ is concentrated on a cyclically monotone graph. By the cyclic-monotonicity characterization of quadratic optimality, this plan is optimal between its two marginals, namely $\alpha$ and $\bar\beta_\pi$.
+\end{proof}
+\begin{equation}\label{eq-weak-ot}
+\WOT_C(\alpha,\beta)
+\eqdef
+\inf_{\pi\in\Couplings(\alpha,\beta)}
+\int C(x,\pi_x)\d\alpha(x).
+\end{equation}
+\begin{prop}[Weak Kantorovich duality]\label{prop-weak-ot-duality}
+Assume that $\X,\Y$ are compact metric spaces and that $C(x,\nu)$ is lower semicontinuous, bounded from below and convex in $\nu$, with the standard qualification assumptions ensuring Fenchel--Rockafellar duality. For $g\in\Cc(\Y)$ define the weak $C$-transform
+\[
+g^C(x)
+\eqdef
+\inf_{\nu\in\Pp(\Y)}
+\left\{
+C(x,\nu)-\int g(y)\d\nu(y)
+\right\}.
+\]
+Then
+\[
+\WOT_C(\alpha,\beta)
+=
+\sup_{g\in\Cc(\Y)}
+\left\{
+\int g^C(x)\d\alpha(x)+\int g(y)\d\beta(y)
+\right\}.
+\]
+When $C(x,\nu)=\int c(x,y)\d\nu(y)$, this reduces to the usual Kantorovich dual with $g^C(x)=\inf_y(c(x,y)-g(y))$.
+\end{prop}
+\begin{proof}
+For any coupling $\pi$ and any $g\in\Cc(\Y)$, the definition of $g^C$ gives \(C(x,\pi_x)\geq g^C(x)+\int g(y)\d\pi_x(y).\)
+After integration with respect to $\alpha$, the second term becomes $\int g\d\beta$ because the second marginal of $\pi$ is $\beta$. This proves weak duality.
+
+For the reverse inequality, consider the convex minimization over probability kernels $x\mapsto\pi_x$ with the affine constraint $\int \pi_x\d\alpha(x)=\beta$. Fenchel--Rockafellar duality gives a continuous Lagrange multiplier $g$ for this marginal constraint. Minimizing the Lagrangian over each conditional law gives exactly the pointwise term $g^C(x)$, while the multiplier contributes $\int g\d\beta$. The compactness, lower semicontinuity, convexity and qualification assumptions ensure no duality gap. This is the weak-cost analogue of Proposition~\ref{prop-duality-discr}.
+\end{proof}
+\begin{prop}[Barycentric weak transport is weaker than $\Wass_2$]\label{prop-barycentric-weak-ot}
+Let $\alpha,\beta\in\Pp_2(\RR^d)$ and define
+\(C_{\mathrm{bar}}(x,\nu) = \norm{x-\int y\d\nu(y)}^2.\)
+Equivalently, for a coupling $\pi$, the integrand is $\norm{x-\bar T_\pi(x)}^2$. Then
+\(\mathcal{W}_{C_{\mathrm{bar}}}(\alpha,\beta) \leq \Wass_2^2(\alpha,\beta).\)
+\end{prop}
+\begin{proof}
+Let $\pi$ be any coupling and disintegrate it as $\pi_x\alpha$. By Jensen's inequality, \(\norm{x-\bar T_\pi(x)}^2 \leq \int\norm{x-y}^2\d\pi_x(y).\)
+Integrating in $x$ gives $\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x)\leq\int\norm{x-y}^2\d\pi(x,y)$. Taking the infimum over $\pi$ proves the claim.
+\end{proof}
+The barycentric cost is the canonical example to keep in mind: admissibility still constrains the full conditional laws to have second marginal $\beta$, but the objective only charges the displacement from $x$ to $\bar T_\pi(x)$ and ignores the conditional variance around this barycenter.

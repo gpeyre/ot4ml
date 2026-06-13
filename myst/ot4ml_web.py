@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from statistics import NormalDist
+from typing import Callable
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -431,3 +432,126 @@ def plot_histogram_equalization(
     axes[1].legend(frameon=False, loc="upper right")
     fig.tight_layout()
     return fig
+
+
+def _show_figure(fig: plt.Figure) -> None:
+    from IPython.display import display
+
+    display(fig)
+    plt.close(fig)
+
+
+def _widgets():
+    try:
+        import ipywidgets as widgets
+    except ImportError as exc:
+        raise RuntimeError("Interactive controls require ipywidgets. Install the packages in myst/requirements.txt.") from exc
+    return widgets
+
+
+def _live_output(callback: Callable[..., plt.Figure], controls: dict[str, object]):
+    widgets = _widgets()
+
+    def render(**kwargs) -> None:
+        _show_figure(callback(**kwargs))
+
+    return widgets.interactive_output(render, controls)
+
+
+def quantile_matching_controls():
+    """Interactive controls for the one-dimensional quantile matching demo."""
+    widgets = _widgets()
+    controls = {
+        "n": widgets.IntSlider(value=52, min=8, max=140, step=2, description="points", continuous_update=False),
+        "source": widgets.Dropdown(options=MIXTURES, value="two", description="source"),
+        "target": widgets.Dropdown(options=MIXTURES, value="three", description="target"),
+    }
+    output = _live_output(plot_quantile_matching, controls)
+    return widgets.VBox([widgets.HBox(list(controls.values())), output])
+
+
+def histogram_equalization_controls():
+    """Interactive controls for one-dimensional histogram equalization."""
+    widgets = _widgets()
+    controls = {
+        "target_mean": widgets.FloatSlider(value=0.18, min=0.05, max=0.85, step=0.01, description="mean", continuous_update=False),
+        "target_sigma": widgets.FloatSlider(value=0.105, min=0.04, max=0.28, step=0.005, description="sigma", continuous_update=False),
+        "interpolation": widgets.FloatSlider(value=0.67, min=0.0, max=1.0, step=0.05, description="t", continuous_update=False),
+    }
+    output = _live_output(plot_histogram_equalization, controls)
+    return widgets.VBox([widgets.HBox(list(controls.values())), output])
+
+
+def cost_power_sweep_controls():
+    """Interactive controls for comparing exact assignments across cost powers."""
+    widgets = _widgets()
+    n_points = widgets.IntSlider(value=36, min=8, max=72, step=2, description="points", continuous_update=False)
+    source_shape = widgets.Dropdown(options=SHAPES, value="disk", description="source")
+    target_shape = widgets.Dropdown(options=SHAPES, value="annulus", description="target")
+    p1 = widgets.FloatSlider(value=1.0, min=0.5, max=8.0, step=0.5, description="p1", continuous_update=False)
+    p2 = widgets.FloatSlider(value=2.0, min=0.5, max=8.0, step=0.5, description="p2", continuous_update=False)
+    p3 = widgets.FloatSlider(value=6.0, min=0.5, max=8.0, step=0.5, description="p3", continuous_update=False)
+    seed = widgets.IntSlider(value=2074, min=2000, max=2100, step=1, description="seed", continuous_update=False)
+
+    def render(n_points: int, source_shape: str, target_shape: str, p1: float, p2: float, p3: float, seed: int) -> plt.Figure:
+        return plot_cost_power_sweep(
+            n_points=n_points,
+            source_shape=source_shape,
+            target_shape=target_shape,
+            cost_powers=(p1, p2, p3),
+            seed=seed,
+        )
+
+    controls = {
+        "n_points": n_points,
+        "source_shape": source_shape,
+        "target_shape": target_shape,
+        "p1": p1,
+        "p2": p2,
+        "p3": p3,
+        "seed": seed,
+    }
+    output = _live_output(render, controls)
+    return widgets.VBox([widgets.HBox([n_points, source_shape, target_shape, seed]), widgets.HBox([p1, p2, p3]), output])
+
+
+def regularization_sweep_controls():
+    """Interactive controls for comparing exact and entropic coupling plans."""
+    widgets = _widgets()
+    n_source = widgets.IntSlider(value=36, min=8, max=72, step=2, description="source n", continuous_update=False)
+    n_target = widgets.IntSlider(value=18, min=4, max=60, step=2, description="target n", continuous_update=False)
+    weight_mode = widgets.Dropdown(options=WEIGHT_MODES, value="angular", description="weights")
+    weight_strength = widgets.FloatSlider(value=1.4, min=0.0, max=4.0, step=0.2, description="strength", continuous_update=False)
+    eps1 = widgets.FloatSlider(value=0.03, min=0.005, max=0.2, step=0.005, description="eps 1", continuous_update=False)
+    eps2 = widgets.FloatSlider(value=0.12, min=0.005, max=0.3, step=0.005, description="eps 2", continuous_update=False)
+    seed = widgets.IntSlider(value=2031, min=2000, max=2100, step=1, description="seed", continuous_update=False)
+
+    def render(
+        n_source: int,
+        n_target: int,
+        weight_mode: str,
+        weight_strength: float,
+        eps1: float,
+        eps2: float,
+        seed: int,
+    ) -> plt.Figure:
+        return plot_regularization_sweep(
+            n_source=n_source,
+            n_target=n_target,
+            epsilons=(0.0, eps1, eps2),
+            weight_mode=weight_mode,
+            weight_strength=weight_strength,
+            seed=seed,
+        )
+
+    controls = {
+        "n_source": n_source,
+        "n_target": n_target,
+        "weight_mode": weight_mode,
+        "weight_strength": weight_strength,
+        "eps1": eps1,
+        "eps2": eps2,
+        "seed": seed,
+    }
+    output = _live_output(render, controls)
+    return widgets.VBox([widgets.HBox([n_source, n_target, weight_mode, seed]), widgets.HBox([weight_strength, eps1, eps2]), output])

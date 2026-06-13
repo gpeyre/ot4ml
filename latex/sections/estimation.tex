@@ -11,6 +11,7 @@
 \section{Wasserstein Loss}
 
 In statistics, text processing or imaging, one must usually compare a probability distribution $\be$ arising from measurements to a model, namely a parameterized family of distributions $\{\al_\th,\th\in\Theta\}$ where $\Theta$ is a subset of a Euclidean space. Such a comparison is done through a ``loss'' or a ``fidelity'' term, which, in this section, is the Wasserstein distance.
+\index{Wasserstein!distance}% strictindex
 %
 In the simplest scenario, the computation of a suitable parameter $\th$ is obtained by minimizing directly
 \eql{\label{eq-wloss-generic}
@@ -19,6 +20,8 @@ In the simplest scenario, the computation of a suitable parameter $\th$ is obtai
 Of course, one can consider more complicated problems: for instance, the barycenter problem described in Section~\ref{sec-bary} consists in a sum of such terms. However, most of these more advanced problems can usually be solved by adapting tools defined for the basic case: either using the chain rule to compute derivatives explicitly, or using automatic differentiation. %  as advocated in~\S\ref{rem-auto-diff}.
 
 The Wasserstein distance between two histograms or two densities is convex with respect to these inputs, as shown by~\eqref{eq-dual} and~\eqref{eq-dual-generic} respectively. Therefore, when the parameter $\theta$ is itself a histogram, namely $\Theta=\simplex_n$ and $\al_\theta=\theta$, or more generally when $\theta$ describes $K$ weights in the simplex, $\Theta=\simplex_K$, and $\alpha_\theta=\sum_{i=1}^K \theta_i \alpha_i$ is a convex combination of known atoms $\alpha_1,\dots,\alpha_K$ in $\simplex_N$, Problem~\eqref{eq-wloss-generic} remains convex (the first case corresponds to the barycenter problem, the second to one iteration of the dictionary learning problem with a Wasserstein loss~\cite{pmlr-v51-rolet16}). However, for more general parameterizations $\th\mapsto \al_\th$, Problem~\eqref{eq-wloss-generic} is in general not convex.
+\index{histogram}% strictindex
+\index{Wasserstein!distance}% strictindex
 
 
 A practical problem of paramount importance in statistics and machine learning is density fitting.
@@ -32,6 +35,8 @@ Given some discrete samples $(x_i)_{i=1}^n \subset \Xx$ from some unknown distri
 where $\Ll$ is some ``loss'' function between a discrete and a ``continuous'' (arbitrary) distribution (see Figure~\ref{fig-density-fitting}).
 
 In the case where $\al_\th$ has a density $\density{\th} \eqdef \density{\al_\th}$ with respect to the Lebesgue measure (or any other fixed reference measure), the maximum likelihood estimator (MLE) is obtained by solving
+\index{Lebesgue measure}% strictindex
+\index{reference!measure}% strictindex
 \eq{
 	\umin{\th} \Ll_{\text{MLE}}(\al_\th,\be) \eqdef -\sum_i \log(\density{\th}(x_i)).
 }
@@ -45,10 +50,15 @@ This corresponds to using an empirical counterpart of a Kullback-Leibler loss si
 This MLE approach is known to lead to optimal estimation procedures in many cases (see for instance~\cite{owen2001empirical}). However, it fails to work when estimating singular distributions, typically when $\al_\th$ does not have a density (so that $\Ll_{\text{MLE}}(\al_\th,\be) = +\infty$) or when $(x_i)_i$ are samples from some singular $\bar\be$ (so that $\al_\th$ should share the same support as $\be$ for $\KL(\al|\bar\be)$ to be finite, but this support is usually unknown). Another issue is that in several cases of practical interest, the density $\density{\th}$ is inaccessible (or too hard to compute).
 
 A typical setup where both problems (singular and unknown densities) occur is for so-called generative models, where the parametric measure is written as a push-forward of a fixed reference measure $\zeta \in \Mm(\Zz)$
+\index{push-forward}% strictindex
+\index{reference!measure}% strictindex
+\index{generative model}% strictindex
 \eq{
 	\al_\th = \fPF_{\th,\sharp} \zeta \qwhereq \fPF_\th : \Zz \rightarrow \Xx
 }
 where the push-forward operator is introduced in Definition~\ref{defn-pushfwd}. The space $\Zz$ is usually low-dimensional, so that the support of $\al_\th$ is localized along a low-dimensional ``manifold'' and the resulting density is highly singular (it does not have a density with respect to Lebesgue measure).
+\index{Lebesgue measure}% strictindex
+\index{support}% strictindex
 %
 Furthermore, computing this density is usually intractable, while generating i.i.d. samples from $\al_\th$ is achieved by computing $x_i=\fPF_\th(z_i)$ where $(z_i)_i$ are i.i.d. samples from $\zeta$.
 
@@ -59,6 +69,7 @@ In order to cope with such difficult scenarios, one has to use weak metrics in p
 	\enscond{ \int_{\X} \f(x) \d\al(x) + \int_{\X} \g(x) \d\be(x) }{ (\f,\g) \in \Potentials}.
 }
 Dual norms exposed in Section~\ref{sec-dual-norms} correspond to imposing $\Potentials = \enscond{(\f,-\f)}{\f \in B}$, while optimal transport~\eqref{eq-dual-generic} sets $\Potentials = \Potentials(c)$ as defined in~\eqref{eq-dfn-pot-dual}.
+\index{dual!norm}% strictindex
 
 For a fixed $\th$, evaluating the energy to be minimized in~\eqref{eq-density-fitting} using such a loss function corresponds to solving a semi-discrete optimal transport, which is the focus of Chapter~\ref{c-algo-semidiscr}. Minimizing the energy with respect to $\th$ is much more involved, and is typically highly non-convex.
 
@@ -71,6 +82,8 @@ The class of estimators obtained using $\Ll=\MK_\c$, often called ``Minimum Kant
 Wasserstein losses are differentiable with respect to model parameters only through the dependence $\theta \mapsto \alpha_\theta$. There are two complementary viewpoints.
 %
 In the Eulerian viewpoint, one differentiates the loss with respect to the measure itself. When the dual potential $f_\theta$ between $\alpha_\theta$ and $\beta$ is unique, it acts as a first variation:
+\index{first variation}% strictindex
+\index{dual!potential}% strictindex
 \eq{
 	\Ll(\alpha_\theta+\delta\alpha,\beta)-\Ll(\alpha_\theta,\beta)
 	= \int f_\theta \d \delta\alpha + o(\norm{\delta\alpha}).
@@ -82,16 +95,23 @@ In the Lagrangian viewpoint, when $\alpha_\theta=\fPF_{\theta,\sharp}\zeta$ and 
 	= \int_{\Zz} \nabla f_\theta(\fPF_\theta(z)) \partial_\theta \fPF_\theta(z) \d\zeta(z),
 }
 whenever the potential is sufficiently smooth. This formula is the basis for gradient-based fitting of generative models with Wasserstein losses.
+\index{generative model}% strictindex
 %
 Entropic regularization is often used in this context because it replaces non-smooth Kantorovich potentials by smooth Sinkhorn potentials. This makes the numerical gradients more stable, at the price of introducing a bias controlled by the regularization parameter $\epsilon$.
+\index{Kantorovich!potential}% strictindex
+\index{entropic!regularization}% strictindex
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sample Complexity}
+\index{sample complexity}% strictindex
 
 In an applied setting, given two input measures $(\al,\be) \in \Mm_+^1(\X)^2$, an important statistical problem is to approximate the (usually unknown) divergence $D(\al,\be)$ using only samples $(x_i)_{i=1}^n$ from $\al$ and $(y_j)_{j=1}^m$ from $\be$. These samples are assumed to be independently identically distributed from their respective distributions.
 %
 For both Wasserstein distances $\Wass_p$ (see~\ref{eq-defn-wass-dist}) and MMD norms (see Section~\ref{sec-dual-norms}), a straightforward estimator of the unknown distance between distributions is to compute it directly between the empirical measures, hoping ideally that one can control the rate of convergence of the latter to the former,
+\index{empirical!measure}% strictindex
+\index{Wasserstein!distance}% strictindex
+\index{maximum mean discrepancy}% strictindex
 \eq{
 	D(\al,\be) \approx D(\al_n,\be_m) \qwhereq
 	\choice{
@@ -104,8 +124,10 @@ Note that here both $\al_n$ and $\be_m$ are random measures, so $D(\al_n,\be_m)$
 For simplicity, we assume that $\X$ is compact (handling unbounded domain requires extra constraints on the moments of the input measures).
 
 For such a dual distance that metrizes the weak convergence (see Definition~\ref{dfn-weak-conv}), since $\hat\al_n$ converges weakly to $\al$, one has $D(\al_n,\be_n) \rightarrow D(\al,\be)$ as $n \rightarrow +\infty$.
+\index{weak!convergence}% strictindex
 %
 But an important question is the speed of convergence of $D(\al_n,\be_n)$ toward $D(\al,\be)$, and this rate is often called the ``sample complexity'' of $D$.
+\index{sample complexity}% strictindex
 
 % Note that for $D(\al,\be) = \norm{\cdot}_{\TV}$, since the TV norm does not metrize the weak convergence, $\norm{\al_n - \be_n}_{\TV}$ is not a consistent estimator, namely it does not converge toward $\norm{\al-\be}_{\TV}$. Indeed, with probability 1, $\norm{\al_n - \be_n}_{\TV}=2$ since the support of the two discrete measures does not overlap. Similar issues arise with other $\phi$-divergences, which cannot be estimated using divergences between empirical distributions.
 
@@ -117,6 +139,8 @@ For $\X=\RR^\dim$ and measures supported on a bounded domain, it is shown by~\ci
 	\EE( |\Wass_p(\al_n,\be_n)-\Wass_p(\al,\be)| ) = O(n^{-\frac{1}{\dim}}),
 }
 where the expectation $\EE$ is taken with respect to the random samples $(x_i,y_i)_i$. This rate is tight in $\RR^\dim$ if one of the two measures has a density with respect to the Lebesgue measure. This result was proved for general metric spaces~\cite{dudley1969speed} using the notion of covering numbers and was later refined, in particular for $\X=\RR^d$ in~\cite{dereich2013constructive,fournier2015rate}.
+\index{covering number}% strictindex
+\index{Lebesgue measure}% strictindex
 % Proof on $\Wass_1$ implies on $\Wass_p$ for $1 \leq p < +\infty$ by monotonicity in $p$.
 This rate can be refined when the measures are supported on low-dimensional subdomains:~\cite{weed2017sharp} show that, indeed, the rate depends on the intrinsic dimensionality of the support. \cite{weed2017sharp} also study the nonasymptotic behavior of that convergence, such as for measures which are discretely approximated (\emph{e.g.} mixture of Gaussians with small variances).
 %
@@ -124,8 +148,13 @@ It is also possible to prove concentration of $\Wass_p(\al_n,\be_n)$ around its 
 
 %%%
 \paragraph{Rates for MMD.}
+\index{maximum mean discrepancy}% strictindex
 
 For weak norms $\norm{\cdot}^2_{\Krkhs}$ which are dual of RKHS norms (also called MMD), as defined in~\eqref{eq-kernel-dual}, and contrary to Wasserstein distances, the sample complexity rate does not depend on the ambient dimension
+\index{Wasserstein!distance}% strictindex
+\index{RKHS}% strictindex
+\index{maximum mean discrepancy}% strictindex
+\index{sample complexity}% strictindex
 \eq{
 	\EE( |\norm{\al_n-\be_n}_{\Krkhs}^2 - \norm{\al-\be}_{\Krkhs}^2 |^2 )
 	=
@@ -142,6 +171,7 @@ For instance, denoting $\xi=\al-\be$ and $\xi_n=\al_n-\be_n$, one has
 	\int_{\X \times \X} k(x,y) \d(\xi_n \otimes \xi_n - \xi \otimes \xi)(x,y).
 }
 Thus estimating the squared MMD amounts to approximating an integral by empirical averages of kernel evaluations. Standard Monte-Carlo bounds give a variance of order $1/n$ for bounded kernels, hence an expected error of order $1/\sqrt n$ after Jensen's inequality. The hidden constant depends on bounds on the kernel, and these bounds may themselves depend on the ambient dimension or on kernel parameters such as the bandwidth.
+\index{Jensen inequality}% strictindex
 
 %
 % Figure~\ref{fig-sample-complexity} shows a numerical comparison of the sample complexity rates for Wasserstein and MMD distances.
@@ -161,3 +191,6 @@ Thus estimating the squared MMD amounts to approximating an integral by empirica
 \paragraph{Rates for Sinkhorn.}
 
 Entropic regularization improves the statistical behavior of OT because the dual potentials become smoother. For a fixed $\epsilon>0$, the relevant class of Sinkhorn potentials behaves like a smooth function class rather than a Lipschitz one, and its empirical process complexity can lead to dimension-free rates under suitable assumptions~\cite{genevay2018sample}. The tradeoff is that the constants deteriorate as $\epsilon \rightarrow 0$, reflecting the return to the non-smooth Wasserstein regime.
+\index{dual!potential}% strictindex
+\index{entropic!regularization}% strictindex
+\index{empirical!process}% strictindex

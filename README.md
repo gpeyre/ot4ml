@@ -1,5 +1,13 @@
 <h1 align="center">OT4ML - Optimal Transport for Machine Learners</h1>
 
+<p align="center">
+  <a href="https://www.gpeyre.com/ot4ml/"><strong>Project homepage</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://www.gpeyre.com/ot4ml/notebooks-figures/"><strong>Rendered figure gallery</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/gpeyre/ot4ml"><strong>GitHub source</strong></a>
+</p>
+
 This repository gathers the OT4ML book, the executable notebooks used to
 reproduce its figures, a shorter set of teaching notebooks, and an experimental
 MyST web prototype.
@@ -13,12 +21,14 @@ is available on arXiv.
 
 The book figures are generated from executable notebooks and assembled by the
 LaTeX source. The current gallery has been checked against the live LaTeX
-`\includegraphics{figures/...}` references: all 73 referenced figure directories
+`\includegraphics{figures/...}` references: all 74 referenced figure directories
 have a matching notebook card, notebook file, thumbnail, and generated PDF
-directory. The manuscript contains 75 LaTeX figure labels because two notebooks
-generate two labeled figures each. Browse the full visual gallery in
+directory. The manuscript contains 76 LaTeX figure labels because two notebooks
+generate two labeled figures each. Browse the rendered web gallery at
+[www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/)
+or the Markdown version in
 [`notebooks-figures/README.md`](notebooks-figures/README.md), with thumbnails,
-local notebook links, and Open in Colab badges.
+notebook links, and Open in Colab badges.
 
 <p align="center">
   <a href="notebooks-figures/README.md">
@@ -46,8 +56,10 @@ main computational ideas. Each one can be opened locally or launched in Colab.
 ## Executable Web Prototype
 
 An experimental MyST/Jupyter Book 2 prototype lives in
-[`myst/`](myst/). It currently starts with an executable version of the matching
-chapter and is documented in [`myst/README.md`](myst/README.md).
+[`myst/`](myst/). It fuses the book text with executable figures and
+browser-native live controls. The local workflow, the static-site build, and
+the offline behavior of the live controls are documented in
+[`myst/README.md`](myst/README.md).
 
 ## Course Slides
 
