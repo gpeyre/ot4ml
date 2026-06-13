@@ -1,0 +1,1 @@
+import{c as e}from"/ot4ml/myst/_build/html/build/_shared/chunk-OZE3FFNP.js?ot4ml-expanded-chapters=1";var i=e((r,a)=>{a.exports=s;s.displayName="hsts";s.aliases=[];function s(t){t.languages.hsts={directive:{pattern:/\b(?:includeSubDomains|max-age|preload)(?=[\s;=]|$)/i,alias:"property"},operator:/=/,punctuation:/;/}}});export{i as a};

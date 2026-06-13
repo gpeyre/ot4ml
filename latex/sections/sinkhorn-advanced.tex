@@ -201,26 +201,27 @@ The convergence mechanism is the classical one of Bregman~\cite{bregman1967relax
 
 \begin{alg}[Cyclic Bregman projections]\label{alg:cyclic-bregman-projections}
 \index{cyclic!Bregman projection}% strictindex
-\textbf{Input:} Constraint sets $\Cc_1,\Cc_2$, Bregman divergence $B_\Phi$, interior point $P_0$.
+\textbf{Input:} Constraint sets $\Cc_1,\Cc_2$, Bregman divergence $B_\Phi$, interior point $P_0$, constraint defects \(\mathrm{def}_{\Cc_1},\mathrm{def}_{\Cc_2}\), tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Point in $\Cc_1\cap\Cc_2$ when the intersection is feasible.
 
 \textbf{Specialize} to entropic OT, if needed:
 \(\Cc_1=\Cc^1_\a, \qquad \Cc_2=\Cc^2_\b, \qquad B_\Phi=\KL.\)
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
-\begin{algblock}
-\(P_{k+1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_k).\)
+\textbf{Initialize:} Set \(r_0=+\infty\) and \(k=0\).
 
-\(P_{k+1}=\Proj_{\Cc_2}^{B_\Phi}(P_{k+1/2}).\)
-
-\textbf{If} both constraint defects are below $\mathrm{tol}$ \textbf{then}:
+\textbf{While} \(r_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Return} $P_{k+1}$.
+\textbf{Set} \(k\leftarrow k+1\).
 
+\(P_{k-1/2}=\Proj_{\Cc_1}^{B_\Phi}(P_{k-1}).\)
+
+\(P_k=\Proj_{\Cc_2}^{B_\Phi}(P_{k-1/2}).\)
+
+\textbf{Set} \(r_k=\max\{\mathrm{def}_{\Cc_1}(P_k),\mathrm{def}_{\Cc_2}(P_k)\}\).
 \end{algblock}
-\end{algblock}
+\textbf{Return} $P_k$.
 \end{alg}
 
 Denoting
@@ -558,19 +559,16 @@ The same identity also yields computable stopping diagnostics. The KL drops are 
 \textbf{Set}
 \(\epsilon=\frac{\delta}{2\log(nm)}.\)
 
-\textbf{Initialize} stabilized Sinkhorn potentials and dual values.
+\textbf{Initialize} stabilized Sinkhorn potentials and set \(k=0\), \(\widehat\Delta_0=+\infty\).
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\textbf{While} \(\widehat\Delta_k>\delta/2\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Perform} one stabilized Sinkhorn sweep and compute upper bound $\widehat\Delta_k$ on the entropic dual gap.
+\textbf{Set} \(k\leftarrow k+1\).
 
-\textbf{If} $\widehat\Delta_k\leq\delta/2$ \textbf{then}:
-\begin{algblock}
+\textbf{Compute} one row soft-transform update and one column soft-transform update in stabilized log-domain variables.
 
-\textbf{Break}.
-
-\end{algblock}
+\textbf{Compute} the entropic dual value \(\mathcal D_{\epsilon,k}\) and the certified gap upper bound \(\widehat\Delta_k\).
 \end{algblock}
 \textbf{Return}
 \(L_{\epsilon,k} = \mathcal D_{\epsilon,k} - \epsilon\HD(\a)-\epsilon\HD(\b), \qquad 0\leq\MKD_{\C}(\a,\b)-L_{\epsilon,k}\leq\delta.\)
