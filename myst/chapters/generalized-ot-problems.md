@@ -127,7 +127,7 @@ The barycenters are rendered as density images with values clamped at their
 $95\%$ quantile rather than by threshold contours. Colors interpolate between
 the four corners and encode the same bilinear weights in both panels.*
 
-The live panel below keeps the exact one-dimensional formula visible: the two
+The interactive demo below keeps the exact one-dimensional formula visible: the two
 coordinates set bilinear weights on the four corner laws, the middle panel
 averages their quantile functions, and the right panel reconstructs the
 resulting barycenter density.
@@ -277,7 +277,7 @@ input covariances themselves. The right grid uses more anisotropic inputs,
 making the nonlinear rotation and scaling of covariance barycenters more
 visible.*
 
-The live Gaussian panel compares the Bures covariance barycenter with a plain
+The interactive Gaussian demo compares the Bures covariance barycenter with a plain
 Euclidean covariance average under the same weights. The difference is most
 visible for rotated, anisotropic covariances: the Euclidean average blends
 matrix entries, whereas the Bures barycenter follows the geometry induced by
@@ -647,7 +647,7 @@ anisotropic Mahalanobis metrics. The small gray ellipse shows the unit ball of
 the metric: directions in which the ellipse is elongated are cheaper, and
 this deforms the transport segments selected by the OT plan.*
 
-The live panel lets the anisotropy and orientation of the Mahalanobis cost
+The interactive demo lets the anisotropy and orientation of the Mahalanobis cost
 move. The transport plan is recomputed exactly for the displayed particles,
 so the segments show how the learned cost changes the matching.
 
@@ -1010,7 +1010,7 @@ its barycenter $\bar T_\pi(x)=\int y\d\pi_x(y)$, shown in violet. The
 barycentric weak cost only sees the red-to-violet displacement, and therefore
 ignores the conditional spread around each barycenter.*
 
-The live panel lets each source point split toward several targets. Increasing
+The interactive demo lets each source point split toward several targets. Increasing
 the split count or spread usually increases the full quadratic cost while the
 weak barycentric cost can remain much smaller.
 

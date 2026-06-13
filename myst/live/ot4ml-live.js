@@ -94,14 +94,14 @@ let currentRender = null;
 let renderTimer = null;
 
 window.addEventListener("error", (event) => {
-  showError(event.error || event.message || "The live controls could not be initialized.");
+  showError(event.error || event.message || "The interactive demo could not be initialized.");
 });
 
 function showError(error) {
   document.querySelector(".ot4ml-panel").classList.add("ot4ml-error");
   controls.innerHTML = "";
   const message = error && error.message ? error.message : String(error);
-  status.textContent = `Live controls error: ${message}`;
+  status.textContent = `Interactive demo error: ${message}`;
 }
 
 function clamp(x, a, b) {

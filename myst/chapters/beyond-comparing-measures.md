@@ -216,7 +216,7 @@ interpolation bends the display toward $q=2^{-1/2}(1,1)$, illustrating the
 effect of a mobility that favors coherent channel motion while keeping the
 same componentwise continuity equation.*
 
-The live panel keeps the same glyph idea and lets the coupling strength bend
+The interactive demo keeps the same glyph idea and lets the coupling strength bend
 the fibers toward a common channel direction.
 
 <iframe class="ot4ml-live-frame" title="Vector-valued transport controls" src="../live/beyond-vector.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
@@ -411,7 +411,7 @@ distances. A perfectly isometric copy admits a clean structural match, while
 mild and deliberately stronger deformations progressively bend the
 correspondence.*
 
-The live panel uses a fixed structural correspondence and lets the deformation
+The interactive demo uses a fixed structural correspondence and lets the deformation
 change the pairwise-distance residual. This isolates the quantity minimized by
 the GW objective.
 

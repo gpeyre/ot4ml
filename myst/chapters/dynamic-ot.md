@@ -395,7 +395,7 @@ $Z_{1/2}$; each displayed arrow runs in data coordinates from a source-side
 tail to a target-side head along the matched characteristic direction $Y-X$,
 but is not drawn as the full endpoint segment from $X$ to $Y$.*
 
-The live panel keeps the same Lagrangian picture: particles are matched once,
+The interactive demo keeps the same Lagrangian picture: particles are matched once,
 then move along straight characteristics. The time and velocity scale controls
 separate the path $\alpha_t$ from the underlying displacement field.
 
@@ -601,7 +601,7 @@ marginal constraints; mass can be attenuated near overrepresented modes and
 recreated near underrepresented modes, giving a reaction--transport
 interpolation closer to the Wasserstein--Fisher--Rao intuition.*
 
-The live panel below exposes this balance directly. A high reaction weight
+The interactive demo below exposes this balance directly. A high reaction weight
 keeps more mass local by fading and recreating modes, while the balanced path
 must carry mass through space.
 

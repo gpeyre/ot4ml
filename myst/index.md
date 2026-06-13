@@ -84,10 +84,11 @@ environment:
 - the reader can still change a few meaningful parameters and rerun the cells.
 
 :::{note}
-The current web layer is a prototype, but the converted chapters now cover a
-substantial part of the book and demonstrate the intended pattern: hidden
-helpers, static notebook figures, and browser-native live controls beside the
-mathematical exposition.
+The current web layer is a prototype, but its table of contents now mirrors the
+front matter, 14 main chapters, conclusion, acknowledgements, and notation-table
+appendix compiled by `latex/OT4ML.tex`. Each chapter demonstrates the intended
+pattern: hidden helpers, static notebook figures, and browser-native interactive
+demos beside the mathematical exposition.
 :::
 
 :::{tip}

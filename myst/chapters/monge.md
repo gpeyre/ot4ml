@@ -502,10 +502,7 @@ show_book_figure("monge-color-transfer-rgb")
 flower photograph. The top row applies the palette map to the source image; the
 bottom row shows the empirical color clouds in the RGB cube. Only colors are
 transported here, not pixel locations.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Monge color transfer controls" src="../live/monge-color.html" loading="lazy" style="width:100%;height:450px;border:0;display:block;"></iframe>
-:::
 
 ### Monge Distance
 
@@ -807,10 +804,7 @@ particles along $T_t(x)=(1-t)x+tT(x)$. The second row renders kernel-smoothed
 densities from a denser transported cloud as color images: white means zero
 density, while high density saturates in the red-to-blue interpolation color of
 the corresponding time.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="McCann interpolation controls" src="../live/monge-shape.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 ### Regularity And The Monge-Ampere Equation
 
@@ -1101,10 +1095,7 @@ shown as densities, cumulative functions and quantile functions. The last
 panel displays the displacement interpolation obtained by the linear quantile
 path $Q_t=(1-t)Q_\alpha+tQ_\beta$, which is the explicit one-dimensional
 $\Wass_2$ geodesic.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="One-dimensional quantile geodesic controls" src="../live/monge-quantile.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 In quantile coordinates, the interpolating measure is characterized by
 
@@ -1168,10 +1159,7 @@ rearrangement between the $x$-marginals; the pivot has the target horizontal
 marginal. The last three transitions keep each column fixed and move mass
 vertically by one-dimensional monotone rearrangements between conditional
 laws.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Triangular rearrangement controls" src="../live/monge-triangular.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
-:::
 
 This construction transports successively along coordinate axes and is often
 called axis-wise transport. It depends on the chosen ordering of coordinates
@@ -1379,10 +1367,7 @@ show_book_figure("monge-gaussian-w2-geodesic")
 coordinates $(m,\sigma)$ turn geodesics into Euclidean segments in the upper
 half-plane. In two dimensions, means move linearly while covariance ellipses
 follow the Bures--Wasserstein interpolation.*
-
-:::{dropdown} Live controls
 <iframe class="ot4ml-live-frame" title="Gaussian Wasserstein geodesic controls" src="../live/monge-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-:::
 
 :::{admonition} Proposition: Metric And Convexity Properties Of The Bures Term
 :class: important
