@@ -273,34 +273,34 @@ and the generalized Sinkhorn iterations are
 The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all couplings share the same barycenter marginal.
 
 \begin{alg}[Entropic barycenter Sinkhorn]\label{alg:entropic-barycenter-sinkhorn}
-\textbf{Input:} Costs $\C_s$, target weights $\b_s$, barycenter weights $\lambda_s$, regularization $\epsilon>0$.
+\textbf{Input:} Costs $\C_s$, target weights $\b_s$, barycenter weights $\lambda_s$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Barycenter weights $\a$ and couplings $\P_s$.
 
-\textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$ and $\uD_s^{(0)}=\ones_n$ for all $s$.
+\textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$, $\uD_s^{(0)}=\ones_n$ for all $s$, \(r_0=+\infty\), and \(k=0\).
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\textbf{While} \(r_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
+
+\textbf{Set} \(k\leftarrow k+1\).
 
 \textbf{For} each marginal $s$ \textbf{do}
 \begin{algblock}
-\(\vD_s^{(k+1)} = \frac{\b_s}{\transp{\K_s}\uD_s^{(k)}}.\)
+\(\vD_s^{(k)} = \frac{\b_s}{\transp{\K_s}\uD_s^{(k-1)}}.\)
 \end{algblock}
 \textbf{Compute} barycenter marginal:
-\(\a^{(k+1)} = \prod_s \bigl(\K_s\vD_s^{(k+1)}\bigr)^{\lambda_s}.\)
+\(\a^{(k)} = \prod_s \bigl(\K_s\vD_s^{(k)}\bigr)^{\lambda_s}.\)
 
 \textbf{For} each marginal $s$ \textbf{do}
 \begin{algblock}
-\(\uD_s^{(k+1)} = \frac{\a^{(k+1)}}{\K_s\vD_s^{(k+1)}}.\)
+\(\uD_s^{(k)} = \frac{\a^{(k)}}{\K_s\vD_s^{(k)}}.\)
 \end{algblock}
-\textbf{If} marginal residuals are below $\mathrm{tol}$ \textbf{then}:
-\begin{algblock}
 
-\textbf{Return}
-\(\a^{(k+1)}, \qquad \P_s^{(k+1)}=\diag(\uD_s^{(k+1)})\K_s\diag(\vD_s^{(k+1)}).\)
+\textbf{Set} \(\P_s^{(k)}=\diag(\uD_s^{(k)})\K_s\diag(\vD_s^{(k)})\) for all \(s\).
 
+\textbf{Set} \(r_k=\max_s \max\{\norm{\P_s^{(k)}\ones-\a^{(k)}}_1,\norm{(\P_s^{(k)})^\top\ones-\b_s}_1\}\).
 \end{algblock}
-\end{algblock}
+\textbf{Return} \(\a^{(k)}\) and \(\P_s^{(k)}\).
 \end{alg}
 
 \begin{prop}[Dual of entropic barycenters]\label{prop-dual-entropic-barycenters}

@@ -369,35 +369,34 @@ Lloyd's algorithm, also known as the $k$-means algorithm, iterates this fixed po
 \index{Lloyd algorithm}% strictindex
 
 \begin{alg}[Lloyd quantization]\label{alg:lloyd-quantization}
-\textbf{Input:} Source measure $\alpha$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost.
+\textbf{Input:} Source measure $\alpha$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Codepoints $Y=(y_j)_{j=1}^m$.
 
-\textbf{Initialize:} Set $k=0$.
+\textbf{Initialize:} Set \(d_0=+\infty\) and \(k=0\).
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\textbf{While} \(d_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
+\textbf{Set} \(k\leftarrow k+1\).
+
 \textbf{Compute Voronoi cells:}
-\(\VV_j(Y^{(k)}) = \enscond{x}{c(x,y_j^{(k)})\leq c(x,y_\ell^{(k)})\quad\forall \ell}.\)
+\(\VV_j(Y^{(k-1)}) = \enscond{x}{c(x,y_j^{(k-1)})\leq c(x,y_\ell^{(k-1)})\quad\forall \ell}.\)
 
 \textbf{For} each nonempty cell $\VV_j$ \textbf{do}
 \begin{algblock}
-\(y_j^{(k+1)} = \frac{\int_{\VV_j(Y^{(k)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(k)})}\d\al(x)}.\)
+\(y_j^{(k)} = \frac{\int_{\VV_j(Y^{(k-1)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(k-1)})}\d\al(x)}.\)
 \end{algblock}
 \textbf{For} each empty cell $\VV_j$ \textbf{do}:
 \begin{algblock}
 
-\textbf{Set} $y_j^{(k+1)}=y_j^{(k)}$.
+\textbf{Set} $y_j^{(k)}=y_j^{(k-1)}$.
 
 \end{algblock}
-\textbf{If} codepoint displacement is below $\mathrm{tol}$ \textbf{then}:
-\begin{algblock}
 
-\textbf{Return} $Y^{(k+1)}$.
-
+\textbf{Set} \(d_k=\max_j\norm{y_j^{(k)}-y_j^{(k-1)}}\).
 \end{algblock}
-\end{algblock}
+\textbf{Return} $Y^{(k)}$.
 \end{alg}
 
 \begin{figure}[H]
@@ -633,15 +632,17 @@ This graph distance turns $\Wass_1$ into a finite-dimensional flow problem.
 \textbf{While} \(\min_{e\notin T}\bar c_e<0\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Set} entering arc \(e=\min\argmin_{a\notin T}\bar c_a\) for a fixed ordering of arcs.
+\textbf{Set} entering arc \(e\) to the first minimizer of \(\bar c_a\) over \(a\notin T\) in the prescribed arc order.
 
 \textbf{Add} it to the tree.
 
-\textbf{Set} $\mathcal C=$ unique induced cycle.
+\textbf{Set} $\mathcal C=$ unique induced cycle, oriented in the direction of the entering arc \(e\).
 
-\textbf{Send} the largest admissible flow around $\mathcal C$.
+\textbf{Set} \(\theta=\min\{u_a:\ a\in\mathcal C^-\}\), where \(\mathcal C^-\) are the arcs opposed to the cycle orientation.
 
-\textbf{Remove} the first zero-flow arc met on the directed cycle after augmentation.
+\textbf{Update} \(u_a\leftarrow u_a+\theta\) for \(a\in\mathcal C^+\) and \(u_a\leftarrow u_a-\theta\) for \(a\in\mathcal C^-\).
+
+\textbf{Remove} the first arc in \(\mathcal C^-\) attaining the minimum \(\theta\), using the prescribed cycle order.
 
 \textbf{Update} the tree, potentials, and reduced costs.
 

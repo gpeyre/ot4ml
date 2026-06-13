@@ -345,25 +345,23 @@ In the discrete case, with $K_{i,j}=e^{-\C_{i,j}/\epsilon}\a_i\b_j$ and $\rho=\t
 The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal corrections are damped because violating the marginals is allowed.
 
 \begin{alg}[Unbalanced Sinkhorn scaling]\label{alg:unbalanced-sinkhorn}
-\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, entropic scale $\epsilon>0$, KL strength $\tau>0$.
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, entropic scale $\epsilon>0$, KL strength $\tau>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Unbalanced entropic coupling $\P$.
 
 \textbf{Initialize:} Set
-\(K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \qquad \rho=\frac{\tau}{\tau+\epsilon}, \qquad v^{(0)}=\ones_m.\)
+\(K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \rho=\frac{\tau}{\tau+\epsilon}, \quad u^{(0)}=\ones_n, \quad v^{(0)}=\ones_m, \quad \eta_0=+\infty, \quad k=0.\)
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
-\begin{algblock}
-\(u^{(k+1)} = \left(\frac{\a}{K v^{(k)}}\right)^\rho, \qquad v^{(k+1)} = \left(\frac{\b}{\transp{K}u^{(k+1)}}\right)^\rho.\)
-
-\textbf{If} scaling changes are below $\mathrm{tol}$ \textbf{then}:
+\textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Return}
-\(\P^{(k+1)}=\diag(u^{(k+1)})K\diag(v^{(k+1)}).\)
+\textbf{Set} \(k\leftarrow k+1\).
 
+\(u^{(k)} = \left(\frac{\a}{K v^{(k-1)}}\right)^\rho, \qquad v^{(k)} = \left(\frac{\b}{\transp{K}u^{(k)}}\right)^\rho.\)
+
+\textbf{Set} \(\eta_k=\max\{\norm{u^{(k)}-u^{(k-1)}}_\infty,\norm{v^{(k)}-v^{(k-1)}}_\infty\}\).
 \end{algblock}
-\end{algblock}
+\textbf{Return} \(\P^{(k)}=\diag(u^{(k)})K\diag(v^{(k)})\).
 \end{alg}
 
 \begin{figure}[H]

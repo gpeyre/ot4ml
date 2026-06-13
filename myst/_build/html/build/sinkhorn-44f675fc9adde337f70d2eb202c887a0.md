@@ -1,0 +1,1230 @@
+---
+title: "Entropic Regularization: Sinkhorn Algorithm"
+kernelspec:
+  name: python3
+  display_name: Python 3
+  language: python
+---
+
+Entropic regularization makes optimal transport smooth, strictly convex and
+scalable. This chapter first explains the discrete KL-regularized problem,
+derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the
+same construction as a relative-entropy projection problem. It then records
+the general continuous formulation, explains the path-space Schrodinger
+problem behind the static coupling formulation, develops the dual
+soft-transform picture, and presents the main convex regularization variants
+and the debiased Sinkhorn divergence.
+
+The presentation connects the older matrix-scaling literature
+{cite:p}`Sinkhorn64,SinkhornKnopp67,Sinkhorn67` with modern entropic OT
+{cite:p}`CuturiSinkhorn,peyre2019computational`.
+
+:::{admonition} Guiding Comparison
+:class: tip
+The unregularized Kantorovich problem is a linear program. Entropy replaces it
+by a smooth strictly convex problem whose optimizer has the scaling form
+$P=\operatorname{diag}(u)K\operatorname{diag}(v)$. The cost is a biased OT
+approximation, but the payoff is differentiability and matrix-vector
+iterations.
+:::
+
+```{code-cell} ipython3
+:tags: [remove-input]
+from pathlib import Path
+import sys
+
+from IPython.display import Image as DisplayImage
+from IPython.display import display
+
+here = Path.cwd()
+myst_dir = None
+for candidate in [here, here.parent, here / "myst", here.parent / "myst", here.parent.parent / "myst"]:
+    if (candidate / "ot4ml_web.py").exists():
+        myst_dir = candidate.resolve()
+        sys.path.insert(0, str(myst_dir))
+        break
+
+if myst_dir is None:
+    raise RuntimeError("Could not locate myst/ot4ml_web.py")
+
+repo_root = myst_dir.parent
+thumbnails = repo_root / "notebooks-figures" / "thumbnails"
+
+def show_book_figure(name, width=760):
+    display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
+```
+
+## Entropic Regularization for Discrete Measures
+
+Entropy turns a possibly non-unique linear program into a unique smooth
+problem. The price is bias, but the reward is differentiability and fast
+scaling algorithms.
+
+:::{admonition} Definition: Discrete Shannon--Boltzmann Entropy
+:class: important
+For a nonnegative matrix $P$, its Shannon--Boltzmann entropy is
+
+```{math}
+H(P)
+\eqdef
+-\sum_{i,j}P_{i,j}\log P_{i,j},
+```
+
+with the convention $0\log 0=0$.
+:::
+
+Using this entropy as a regularizing function gives the approximate transport
+value
+
+```{math}
+:label: eq-regularized-discrete-web
+\mathcal{L}_{C}^{\epsilon}(a,b)
+\eqdef
+\min_{P\in\mathbf{U}(a,b)}
+\langle P,C\rangle
+-
+\epsilon H(P).
+```
+
+Equivalently, the regularizer is
+$\epsilon\sum_{i,j}P_{i,j}\log P_{i,j}$. It penalizes concentrated couplings
+and makes the objective strictly convex on the relative interior of the
+transport polytope.
+
+:::{admonition} Proposition: Existence and Uniqueness of Entropic OT
+:class: important
+Assume that $a,b$ are probability histograms and that $C$ is finite. For every
+$\epsilon>0$, problem {eq}`eq-regularized-discrete-web` admits a unique
+minimizer. If all entries of $a$ and $b$ are positive, then this minimizer is
+positive on every entry.
+:::
+
+:::{dropdown} Proof
+The transport polytope is non-empty and compact, and the objective is
+continuous with the convention $0\log0=0$, so a minimizer exists. On the
+relative interior,
+
+```{math}
+-\partial^2 H(P)=\operatorname{diag}(1/P_{i,j})
+```
+
+is positive definite on every non-zero feasible direction. Hence
+$-H$ is strictly convex on the polytope, which gives uniqueness.
+
+If $a_i,b_j>0$ and a minimizer had $P_{i,j}=0$, then the perturbation
+$P_t=(1-t)P+t\,a\otimes b$ remains feasible for small $t>0$. The derivative
+of $r\log r$ at zero along a positive direction is $-\infty$, so the objective
+decreases, contradicting optimality.
+:::
+
+### Smoothing Effect
+
+The entropy acts as a barrier for positivity and makes
+$\mathcal{L}_{C}^{\epsilon}(a,b)$ smooth in $a$, $b$, and $C$ as long as these
+variables stay in the relative interior. As $\epsilon\to+\infty$, the
+minimizer converges to the independent coupling $a\otimes b$; as
+$\epsilon\to0$, it approaches the optimal face of the original transport
+linear program.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-entropy-lp-geometry")
+```
+
+*Entropic regularization and slack barriers. Large $\epsilon$ selects an
+interior reference point, while small $\epsilon$ moves the minimizer toward a
+low-cost face of the transport polytope. The second row gives the analogous
+entropy-on-slacks picture for a generic linear program.*
+
+### Entropy Barriers Versus Generic LP Barriers
+
+For a generic linear program $\min_z \ell^\top z$ with constraints
+$Az\le b$, one can introduce positive slacks $s=b-Az$ and penalize them by an
+entropy. This is a useful analogy, but it is not the standard self-concordant
+interior-point barrier. The canonical barrier is the Burg, or reverse-KL,
+barrier $-\sum_i\log s_i$, which leads to Newton systems.
+
+Optimal transport is special because entropy is placed on the entries of
+$P$, while the constraints are only row and column marginals. This separable
+structure turns Bregman projections into diagonal rescalings, giving the
+Sinkhorn iterations.
+
+## Sinkhorn's Algorithm
+
+Sinkhorn's algorithm is alternating normalization of rows and columns. The
+key point is that the optimizer of the entropic problem has a multiplicative
+scaling form.
+
+:::{admonition} Proposition: Scaling Form of Entropic OT
+:class: important
+$P$ is the unique solution of {eq}`eq-regularized-discrete-web` if and only if
+there exist nonnegative vectors $u\in\RR_+^n$ and $v\in\RR_+^m$ such that
+
+```{math}
+:label: eq-scaling-form-web
+P_{i,j}=u_iK_{i,j}v_j,
+\qquad
+K_{i,j}\eqdef\exp(-C_{i,j}/\epsilon),
+```
+
+and $P\in\mathbf{U}(a,b)$.
+:::
+
+:::{dropdown} Proof
+After removing zero-mass rows and columns, the minimizer is strictly positive,
+so the positivity constraint can be ignored in the first-order conditions.
+Introduce Lagrange multipliers $f\in\RR^n$ and $g\in\RR^m$ for the two
+marginal constraints. The Lagrangian is
+
+```{math}
+\mathcal{L}(P,f,g)
+=
+\langle P,C\rangle
++
+\epsilon\sum_{i,j}P_{i,j}\log P_{i,j}
++
+\langle f,a-P\mathbf 1\rangle
++
+\langle g,b-P^\top\mathbf 1\rangle .
+```
+
+Stationarity with respect to $P_{i,j}$ gives
+
+```{math}
+C_{i,j}
++
+\epsilon(\log P_{i,j}+1)
+-
+f_i-g_j
+=0.
+```
+
+Thus
+$P_{i,j}=\exp((f_i+g_j-C_{i,j})/\epsilon-1)$, which is exactly the scaling
+form after absorbing the one-body terms into $u$ and $v$.
+:::
+
+In matrix notation, $P=\operatorname{diag}(u)K\operatorname{diag}(v)$. The
+marginal constraints become
+
+```{math}
+:label: eq-sinkhorn-constraints-web
+u\odot(Kv)=a,
+\qquad
+v\odot(K^\top u)=b.
+```
+
+Solving each equation in turn gives Sinkhorn's algorithm:
+
+```{math}
+:label: eq-sinkhorn-web
+u^{(\ell+1)}
+=
+\frac{a}{Kv^{(\ell)}},
+\qquad
+v^{(\ell+1)}
+=
+\frac{b}{K^\top u^{(\ell+1)}}.
+```
+
+The division is entrywise. The scaling vectors are not unique: multiplying
+$u$ by $\lambda>0$ and $v$ by $1/\lambda$ leaves $P$ unchanged.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-marginal-errors")
+```
+
+*Marginal constraints during Sinkhorn scaling. Row normalizations align the
+red source marginal and leave a blue defect; column normalizations align the
+blue target marginal and leave a red defect.*
+
+The interactive demo exposes the alternating row/column normalization directly.
+Change the half-step count to see the current coupling acquire one marginal,
+lose the other, and then converge toward both.
+<iframe class="ot4ml-live-frame" title="Sinkhorn scaling controls" src="../live/sinkhorn-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-continuous-marginal-scaling")
+```
+
+*Dense Sinkhorn scaling for one-dimensional Gaussian-mixture marginals. The
+violet side curves are the current row and column sums; the red and blue
+curves are the prescribed marginals.*
+
+After convergence, the regularization strength controls how much of the Gibbs
+kernel remains visible in the optimal plan. Small $\epsilon$ produces a
+concentrated transport band, while larger $\epsilon$ spreads the same
+marginals into a smoother coupling.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-coupling-iterations")
+```
+
+*Final Sinkhorn couplings for the same one-dimensional marginals and four
+regularization strengths. Decreasing $\epsilon$ sharpens the plan toward an
+optimal-transport graph; increasing $\epsilon$ keeps more of the product
+structure.*
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-potentials-iterations")
+```
+
+*KL-normalized dual potentials along the scaling iteration. The logarithmic
+scaling potentials stabilize as the row/column normalizations converge.*
+
+The next interactive demo keeps the iteration count high and varies the temperature.
+It is the quickest way to see the geometry-bias tradeoff: low temperature is
+geometric and sharp, high temperature is smooth and closer to independence.
+<iframe class="ot4ml-live-frame" title="Sinkhorn epsilon controls" src="../live/sinkhorn-epsilon.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+Complexity bounds for Sinkhorn and comparisons with accelerated first-order
+methods are discussed in
+{cite:p}`altschuler2017near,pmlr-v80-dvurechensky18a,knight2008sinkhorn`.
+For a dense $n\times m$ problem, each iteration costs one multiplication by
+$K$ and one by $K^\top$, so the cost scales like $Cnm$ for $C$ iterations.
+For fixed positive $\epsilon$, the marginal error eventually has a linear
+regime, but small $\epsilon$ makes the Gibbs kernel more peaked and scaling
+harder.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-linear-rate-epsilon")
+```
+
+*Marginal violation along Sinkhorn half-steps for several values of
+$\epsilon$. Smaller $\epsilon$ gives sharper transport geometry but slower
+scaling.*
+
+:::{admonition} Remark: Separable Gaussian Kernels on Grids
+When samples lie on a Cartesian grid and $c(x,y)=\norm{x-y}^2$, the Gibbs
+kernel is Gaussian and factorizes along coordinates:
+
+```{math}
+K(x,y)
+=
+\exp\left(-\frac{\norm{x-y}^2}{\epsilon}\right)
+=
+\prod_{\ell=1}^d
+\exp\left(-\frac{(x_\ell-y_\ell)^2}{\epsilon}\right).
+```
+
+If the grid has $q$ points per axis and $N=q^d$ points total, multiplication
+by $K$ can be applied one coordinate direction at a time. A direct dense
+one-dimensional multiplication costs $O(q^2)$ on each of the $q^{d-1}$
+coordinate lines and is repeated for $d$ axes, giving
+$O(dq^{d+1})=O(dN^{1+1/d})$ per half-step instead of $O(N^2)$.
+:::
+
+## Reformulation Using Relative Entropy
+
+The KL formulation identifies Sinkhorn as a projection method. It also
+prepares the continuous and unbalanced settings, where a reference measure is
+essential.
+
+:::{admonition} Definition: Discrete Relative Entropy
+:class: important
+For nonnegative matrices $P,Q$ of the same size, the generalized relative
+entropy is
+
+```{math}
+:label: eq-kl-discrete-web
+\operatorname{KL}(P|Q)
+\eqdef
+\sum_{i,j}
+P_{i,j}\log\frac{P_{i,j}}{Q_{i,j}}
+-
+P_{i,j}
++
+Q_{i,j}.
+```
+
+The convention is $0\log0=0$, and
+$\operatorname{KL}(P|Q)=+\infty$ if $Q_{i,j}=0$ but $P_{i,j}>0$ for some
+entry.
+:::
+
+For matrices with the same total mass, the affine terms cancel and
+
+```{math}
+\operatorname{KL}(P|Q)
+=
+\sum_{i,j}P_{i,j}\log\frac{P_{i,j}}{Q_{i,j}}.
+```
+
+On fixed-mass couplings, taking $Q=\mathbf 1_{n\times m}$ is equivalent to
+subtracting the Shannon--Boltzmann entropy. Taking the tensor-product
+reference gives the normalized formulation
+
+```{math}
+:label: eq-kl-normalized-sinkhorn-web
+\min_{P\in\mathbf U(a,b)}
+\langle P,C\rangle
++
+\epsilon\operatorname{KL}(P|a\otimes b).
+```
+
+:::{admonition} Proposition: Relative Entropy is Distance-Like
+Let $P,Q\in\RR_+^{n\times m}$ have the same total mass and assume $Q_{i,j}>0$
+on the support of $P$. Then $\operatorname{KL}(P|Q)\ge0$, with equality if
+and only if $P=Q$.
+:::
+
+:::{dropdown} Proof
+Write $\phi(s)=s\log s-s+1$. Convexity gives
+$\phi(s)\ge\phi(1)+\phi'(1)(s-1)=0$, with equality only at $s=1$. Hence
+
+```{math}
+\operatorname{KL}(P|Q)
+=
+\sum_{i,j}Q_{i,j}\phi(P_{i,j}/Q_{i,j})
+\ge0.
+```
+:::
+
+:::{admonition} Proposition: Reference Measure Shift for KL
+After removing zero-mass rows and columns, assume
+$a,a'\in\simplex_n$ and $b,b'\in\simplex_m$ have positive entries. For every
+$P\in\mathbf U(a,b)$,
+
+```{math}
+\operatorname{KL}(P|a\otimes b)
+=
+\operatorname{KL}(P|a'\otimes b')
+-
+\operatorname{KL}(a|a')
+-
+\operatorname{KL}(b|b').
+```
+
+Consequently, for fixed positive marginals, changing the positive
+tensor-product reference only adds a constant on the transport polytope.
+:::
+
+:::{dropdown} Proof
+Expand the logarithm and use the marginal constraints:
+
+```{math}
+\begin{aligned}
+\operatorname{KL}(P|a\otimes b)
+&=
+\operatorname{KL}(P|a'\otimes b')
++
+\sum_i a_i\log\frac{a_i'}{a_i}
++
+\sum_j b_j\log\frac{b_j'}{b_j} \\
+&=
+\operatorname{KL}(P|a'\otimes b')
+-
+\operatorname{KL}(a|a')
+-
+\operatorname{KL}(b|b').
+\end{aligned}
+```
+:::
+
+The tensor-product reference is nevertheless useful when supports vary. It
+makes explicit which entries may vanish and passes cleanly to the continuous
+formulation.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-dual-potentials-epsilon")
+```
+
+*KL-normalized Sinkhorn dual potentials for one-dimensional Gaussian-mixture
+histograms. Increasing $\epsilon$ turns the hard $c$-transform geometry into
+smoother log-sum-exp potentials.*
+
+:::{admonition} Proposition: Convergence with $\epsilon$
+:class: important
+Assume, after removing zero-mass rows and columns, that $a$ and $b$ are
+positive and that $C$ is finite. The unique solution $P_\epsilon$ converges,
+as $\epsilon\to0$, to the maximum-entropy solution among all optimal solutions
+of the Kantorovich problem. Moreover,
+
+```{math}
+P_\epsilon \to a\otimes b
+\qquad
+\text{as }
+\epsilon\to+\infty.
+```
+:::
+
+:::{dropdown} Proof Sketch
+For $\epsilon\to0$, use compactness of the transport polytope and compare the
+optimality inequalities for the entropic problem against an exact
+Kantorovich optimizer. The cost gap is bounded by
+$\epsilon$ times a KL difference, so every cluster point is cost-optimal; after
+dividing by $\epsilon$, the cluster point is the KL-minimizer on the optimal
+face.
+
+For $\epsilon\to+\infty$, subtract a constant from $C$ so that $C\ge0$.
+Testing the objective at $a\otimes b$ gives
+
+```{math}
+\operatorname{KL}(P_\epsilon|a\otimes b)
+\le
+\frac{\langle C,a\otimes b\rangle}{\epsilon},
+```
+
+so the KL divergence to $a\otimes b$ vanishes.
+:::
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-plan-epsilon")
+```
+
+*Entropically regularized couplings between the red disk and blue annulus
+point clouds. The plans are strictly positive for every $\epsilon>0$, but the
+visible mass pattern evolves from nearly radial and sparse to diffuse as
+$\epsilon$ increases.*
+
+## General Formulation
+
+The continuous formulation replaces matrices by measures and discrete KL by
+relative entropy. For probability measures $\alpha$ and $\beta$, define
+
+```{math}
+:label: eq-entropic-generic-web
+\mathcal{L}_{c}^{\epsilon}(\alpha,\beta)
+\eqdef
+\min_{\pi\in\Couplings(\alpha,\beta)}
+\int_{\X\times\Y}c(x,y)\,\d\pi(x,y)
++
+\epsilon\operatorname{KL}(\pi|\alpha\otimes\beta).
+```
+
+:::{admonition} Definition: Relative Entropy of Measures
+:class: important
+For nonnegative measures $\pi$ and $\xi$ on $\X\times\Y$,
+
+```{math}
+\operatorname{KL}(\pi|\xi)
+\eqdef
+\int_{\X\times\Y}
+\log\left(\frac{\d\pi}{\d\xi}(x,y)\right)\d\pi(x,y)
++
+\int_{\X\times\Y}(\d\xi-\d\pi).
+```
+
+By convention, $\operatorname{KL}(\pi|\xi)=+\infty$ if $\pi$ is not
+absolutely continuous with respect to $\xi$.
+:::
+
+For fixed balanced marginals, the specific product reference only matters up
+to additive constants, provided the reference marginals are mutually
+absolutely continuous with $\alpha$ and $\beta$. Its support still matters: it
+determines which couplings have finite entropy.
+
+## Path-Space Schrodinger Problem
+
+Schrodinger's reciprocal problem is naturally posed on paths rather than on
+endpoint pairs. The Sinkhorn problem appears after the path law is reduced to
+its two endpoint marginals.
+
+### Unregularized Path-Space Transport
+
+Let $\Omega=C([0,1];\X)$ be a path space and let
+$e_t(\omega)=\omega_t$ be the evaluation maps. Given a path action
+$\mathcal A:\Omega\to[0,+\infty]$, the unregularized path-space problem is
+
+```{math}
+:label: eq-path-space-ot-web
+\inf_{M\in\mathcal P(\Omega)}
+\left\{
+\int_\Omega\mathcal A(\omega)\,\d M(\omega)
+:
+(e_0)_\sharp M=\alpha,\ (e_1)_\sharp M=\beta
+\right\}.
+```
+
+For quadratic Wasserstein geometry on $\RR^d$,
+
+```{math}
+\mathcal A(\omega)
+=
+\begin{cases}
+\int_0^1\norm{\dot\omega_t}^2\,\d t,
+& \omega\text{ absolutely continuous},\\
++\infty, & \text{otherwise}.
+\end{cases}
+```
+
+The endpoint cost induced by the action is
+
+```{math}
+c_{\mathcal A}(x,y)
+\eqdef
+\inf\left\{
+\mathcal A(\omega):
+e_0(\omega)=x,\ e_1(\omega)=y
+\right\}.
+```
+
+For the quadratic action, the minimizing path is the straight segment and
+$c_{\mathcal A}(x,y)=\norm{x-y}^2$.
+
+:::{admonition} Proposition: Endpoint Reduction of Path-Space Transport
+:class: important
+Assume that minimizing paths can be selected measurably, or approximated by
+measurable selections. Then the path-space problem has the same value as
+
+```{math}
+\inf_{\pi\in\Couplings(\alpha,\beta)}
+\int_{\X\times\X}c_{\mathcal A}(x,y)\,\d\pi(x,y).
+```
+
+If $\pi^\star$ is an optimal endpoint coupling and $\omega^{x,y}$ is an
+optimal path from $x$ to $y$, then
+
+```{math}
+M^\star
+=
+\int_{\X\times\X}\delta_{\omega^{x,y}}\,\d\pi^\star(x,y)
+```
+
+is an optimal path law.
+:::
+
+:::{dropdown} Proof
+For any feasible path law $M$, set $\pi=(e_0,e_1)_\sharp M$. Then
+$\pi\in\Couplings(\alpha,\beta)$ and by definition of $c_{\mathcal A}$,
+
+```{math}
+\int_\Omega\mathcal A(\omega)\,\d M(\omega)
+\ge
+\int_{\X\times\X}c_{\mathcal A}(x,y)\,\d\pi(x,y).
+```
+
+Conversely, mix selected minimizing paths according to any coupling $\pi$ and
+then optimize over $\pi$.
+:::
+
+### Entropic Path-Space Problem
+
+Let $R^\epsilon\in\mathcal P(\Omega)$ be a reference path law, for instance a
+Brownian or Langevin dynamics at noise level $\epsilon$. The dynamic
+Schrodinger bridge problem is the entropy projection
+
+```{math}
+:label: eq-schrodinger-path-web
+\mathrm{SB}_\epsilon(\alpha,\beta)
+\eqdef
+\inf_{M\in\mathcal P(\Omega)}
+\left\{
+\epsilon\operatorname{KL}(M|R^\epsilon):
+(e_0)_\sharp M=\alpha,\ (e_1)_\sharp M=\beta
+\right\}.
+```
+
+It asks for the most likely path law, relative to the prior dynamics, among
+all path laws matching the observed endpoints
+{cite:p}`Schroedinger31,leonard2012schrodinger,LeonardSchroedinger,chen2016relation`.
+
+The dynamic problem also has viscous Benamou--Brenier formulations. In one
+common convention,
+
+```{math}
+\partial_t\rho_t+\operatorname{div}(\rho_t v_t)
+=
+\frac{\sigma}{2}\Delta\rho_t
+```
+
+and one minimizes a kinetic action. After absorbing the diffusion into the
+velocity $u_t=v_t-\frac{\sigma}{2}\nabla\log\rho_t$, the same minimizers are
+obtained from
+
+```{math}
+\int_0^1\!\int
+\left(
+\frac12\norm{u_t(x)}^2
++
+\frac{\sigma^2}{8}\norm{\nabla\log\rho_t(x)}^2
+\right)
+\rho_t(x)\,\d x\,\d t,
+```
+
+up to endpoint entropy terms. The extra term is a Fisher-information penalty.
+
+:::{admonition} Proposition: Endpoint Reduction of the Schrodinger Problem
+:class: important
+Assume regular conditional laws exist and that the relative-entropy chain rule
+applies. If $R^\epsilon_{01}=(e_0,e_1)_\sharp R^\epsilon$, then
+
+```{math}
+\mathrm{SB}_\epsilon(\alpha,\beta)
+=
+\inf_{\pi\in\Couplings(\alpha,\beta)}
+\epsilon\operatorname{KL}(\pi|R^\epsilon_{01}).
+```
+
+For a fixed endpoint coupling $\pi$, the minimizing path law is the mixture of
+reference bridges
+
+```{math}
+M^\pi
+=
+\int R^{\epsilon,x,y}\,\d\pi(x,y).
+```
+:::
+
+:::{dropdown} Proof
+Disintegrate both $M$ and $R^\epsilon$ with respect to their endpoint pairs.
+The chain rule gives
+
+```{math}
+\operatorname{KL}(M|R^\epsilon)
+=
+\operatorname{KL}(\pi|R^\epsilon_{01})
++
+\int
+\operatorname{KL}(M^{x,y}|R^{\epsilon,x,y})
+\,\d\pi(x,y).
+```
+
+The second term is nonnegative and vanishes exactly when the conditional path
+law is the reference bridge for $\pi$-almost every endpoint pair.
+:::
+
+For Brownian reference dynamics on $\RR^d$, the endpoint prior has heat-kernel
+density proportional to
+
+```{math}
+\exp\left(-\frac{\norm{x-y}^2}{\epsilon}\right).
+```
+
+After rewriting this prior with respect to $\alpha\otimes\beta$, the endpoint
+problem is exactly the continuous Sinkhorn problem up to an additive constant.
+Sinkhorn computes which endpoints should be paired; the path-space
+Schrodinger bridge then connects each pair by a Brownian bridge.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-path-space-bridges")
+```
+
+*Endpoint couplings lifted to Brownian bridges. Increasing $\epsilon$ both
+softens the endpoint coupling and amplifies the Brownian fluctuations between
+paired endpoints.*
+
+:::{admonition} Definition: Mutual Information
+If $(X,Y)\sim\pi$ have marginals $X\sim\alpha$ and $Y\sim\beta$, their mutual
+information is
+
+```{math}
+\mathcal I(X,Y)
+\eqdef
+\operatorname{KL}(\pi|\alpha\otimes\beta).
+```
+
+It is nonnegative and vanishes if and only if $X$ and $Y$ are independent.
+:::
+
+With this terminology, the entropic problem is
+
+```{math}
+\inf_{X\sim\alpha,\;Y\sim\beta}
+\mathbb E(c(X,Y))+\epsilon\mathcal I(X,Y).
+```
+
+Large $\epsilon$ favors nearly independent endpoints, while small $\epsilon$
+suppresses endpoint randomness and recovers an optimal Monge--Kantorovich
+coupling in the limit.
+
+## Dual of Sinkhorn
+
+The dual point of view replaces couplings by potentials and soft
+$c$-transforms. It is the right formulation for stabilized implementations
+and differentiation.
+
+### Discrete Dual
+
+The KL-normalized problem has the dual
+
+```{math}
+:label: eq-dual-sinkhorn-discrete-web
+\min_{P\in\mathbf U(a,b)}
+\langle P,C\rangle+\epsilon\operatorname{KL}(P|a\otimes b)
+=
+\max_{f,g}
+\left[
+\langle f,a\rangle+\langle g,b\rangle
+-
+\epsilon\sum_{i,j}
+\exp\left(\frac{f_i+g_j-C_{i,j}}{\epsilon}\right)a_i b_j
++
+\epsilon
+\right].
+```
+
+The optimal potentials are linked to the scaling variables through
+
+```{math}
+u_i=a_i e^{f_i/\epsilon},
+\qquad
+v_j=b_j e^{g_j/\epsilon}.
+```
+
+### Discrete Soft $c$-Transforms
+
+For fixed $g$, maximizing the dual with respect to $f$ gives
+
+```{math}
+f_i
+=
+-\epsilon\log
+\sum_j
+\exp\left(\frac{g_j-C_{i,j}}{\epsilon}\right)b_j.
+```
+
+This is a smoothed minimum.
+
+:::{admonition} Definition: Soft-Min and Discrete Soft $c$-Transform
+:class: important
+For $h\in\RR^m$ and weights $b\in\simplex_m$,
+
+```{math}
+\min_b^\epsilon(h)
+\eqdef
+-\epsilon\log\sum_j e^{-h_j/\epsilon}b_j.
+```
+
+It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $C$, the
+discrete soft $c$-transforms are
+
+```{math}
+f_i=\min_b^\epsilon(C_{i,\cdot}-g),
+\qquad
+g_j=\min_a^\epsilon(C_{\cdot,j}-f).
+```
+:::
+
+Exponentiating the alternating soft-transform iterations recovers Sinkhorn's
+algorithm. For small $\epsilon$, one must compute the log-sum-exp terms with
+the usual stabilization trick: subtract the minimum before exponentiating and
+add it back afterward.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-soft-c-transform-epsilon")
+```
+
+*Soft $c$-transforms for decreasing temperatures. A positive $\epsilon$
+replaces the hard lower envelope by a log-sum-exp soft minimum.*
+<iframe class="ot4ml-live-frame" title="Sinkhorn soft c-transform controls" src="../live/sinkhorn-soft-c.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
+
+### Continuous Dual and Soft-Transforms
+
+For compact spaces and continuous cost, the KL-regularized problem has the
+concave dual
+
+```{math}
+:label: eq-dual-sinkhorn-cont-web
+\mathcal{L}_{c}^{\epsilon}(\alpha,\beta)
+=
+\sup_{f,g}
+\mathcal D_\epsilon(f,g),
+```
+
+where
+
+```{math}
+\mathcal D_\epsilon(f,g)
+=
+\int f\,\d\alpha+\int g\,\d\beta
+-
+\epsilon
+\int
+\left(
+e^{(f(x)+g(y)-c(x,y))/\epsilon}
+-
+1
+\right)
+\d\alpha(x)\d\beta(y).
+```
+
+This is the smooth counterpart of the hard feasibility constraint
+$f\oplus g\le c$ from the Kantorovich dual.
+
+:::{admonition} Definition: Continuous Soft $c$-Transforms
+:class: important
+For $f\in\Cc(\X)$ and $g\in\Cc(\Y)$,
+
+```{math}
+f^{c,\epsilon}(y)
+\eqdef
+-\epsilon\log
+\int_\X
+e^{(f(x)-c(x,y))/\epsilon}
+\d\alpha(x),
+```
+
+and
+
+```{math}
+g^{\bar c,\epsilon}(x)
+\eqdef
+-\epsilon\log
+\int_\Y
+e^{(g(y)-c(x,y))/\epsilon}
+\d\beta(y).
+```
+:::
+
+:::{admonition} Proposition: Existence and Uniqueness of Entropic Dual Potentials
+:class: important
+Assume $\X$ and $\Y$ are compact and $c$ is continuous. The dual problem has
+solutions, and the set of solutions is
+
+```{math}
+(f^\star+\lambda,g^\star-\lambda),
+\qquad
+\lambda\in\RR .
+```
+:::
+
+:::{dropdown} Proof Sketch
+Normalize potentials by imposing $\int f\,\d\alpha=0$. Replacing a pair of
+potentials by the corresponding soft transforms does not decrease the dual
+objective. The transformed potentials have oscillations bounded by the
+oscillation of $c$, and their modulus of continuity is controlled by the
+modulus of continuity of $c$. Arzela--Ascoli gives existence.
+
+Uniqueness up to constants follows from strict convexity of
+$H\mapsto\int e^{H/\epsilon}\d(\alpha\otimes\beta)$ on the image of
+$(f,g)\mapsto f\oplus g-c$, modulo constants.
+:::
+
+:::{admonition} Remark: Convexity Properties of Soft Transforms
+For the bilinear cost $c(x,y)=-\langle x,y\rangle$, the soft transform
+preserves concavity. For the quadratic cost
+$c(x,y)=\norm{x-y}^2/2$, optimal potentials have the form
+$f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and
+$g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and
+$\psi^\star$ are convex.
+:::
+
+:::{admonition} Remark: Gaussian Marginals
+For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, soft transforms preserve
+quadratic functions because products and convolutions of Gaussian functions
+remain Gaussian. Hence the optimal entropic potentials are quadratic and the
+optimal entropic coupling is Gaussian.
+:::
+
+## Other Convex Regularizers
+
+KL regularization is the case that leads to multiplicative Sinkhorn scalings.
+Replacing KL by another density-ratio penalty keeps the same transport
+constraints but changes the scalar law linking the optimal density to the
+dual potentials.
+
+Let $\phi$ be an entropy function and define
+
+```{math}
+:label: eq-phi-regularized-ot-web
+\mathcal L_{c,\phi}^{\epsilon}(\alpha,\beta)
+\eqdef
+\min_{\pi\in\Couplings(\alpha,\beta)}
+\int c(x,y)\,\d\pi(x,y)
++
+\epsilon D_\phi(\pi|\alpha\otimes\beta).
+```
+
+:::{admonition} Proposition: Dual and Density Law for $\phi$-Regularized OT
+:class: important
+Under standard Fenchel--Rockafellar qualification assumptions,
+
+```{math}
+\mathcal L_{c,\phi}^{\epsilon}(\alpha,\beta)
+=
+\sup_{f,g}
+\int f\,\d\alpha+\int g\,\d\beta
+-
+\epsilon
+\int
+\phi^{*,\ge0}
+\left(
+\frac{f(x)+g(y)-c(x,y)}{\epsilon}
+\right)
+\d\alpha(x)\d\beta(y).
+```
+
+If the optimal plan has density
+$r^\star=\d\pi^\star/\d(\alpha\otimes\beta)$ and the solution is smooth and
+interior, then
+
+```{math}
+r^\star(x,y)
+=
+(\phi')^{-1}
+\left(
+\frac{f^\star(x)+g^\star(y)-c(x,y)}{\epsilon}
+\right).
+```
+:::
+
+For KL, $\phi(r)=r\log r-r+1$ and
+$\phi^{*,\ge0}(s)=e^s-1$, recovering the Sinkhorn dual. Other choices replace
+the exponential law by another scalar transfer function:
+
+```{math}
+\begin{array}{lll}
+\phi(r)=r\log r-r+1 &\Rightarrow& r^\star=e^s,\\
+\phi(r)=r-\log r-1 &\Rightarrow& r^\star=(1-s)^{-1}\quad(s<1),\\
+\phi(r)=\frac12(r-1)^2 &\Rightarrow& r^\star=(1+s)_+,
+\end{array}
+\qquad
+s=\frac{f^\star\oplus g^\star-c}{\epsilon}.
+```
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-entropic-versus-quadratic-regularization")
+```
+
+*Density-ratio regularizers and coupling support. KL gives the usual diffuse
+positive plan, the Burg barrier keeps positive but differently tailed support,
+and the quadratic density penalty can set entries exactly to zero through its
+positive-part law.*
+
+The interactive demo below separates the two effects. The left plot shows the
+pointwise law $r=h(s)$, while the right plot recomputes a coupling after
+enforcing the marginals with that law. Changing $\epsilon$ controls how much
+the cost score is softened; changing the regularizer changes whether mass is
+spread everywhere, protected by a barrier, or clipped to a sparse support.
+<iframe class="ot4ml-live-frame" title="Sinkhorn regularizer controls" src="../live/sinkhorn-regularizers.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+
+### Bregman vs. $\phi$-Divergence Regularization
+
+The previous construction regularizes OT by a density-ratio divergence. This
+differs from using a Bregman divergence generated by a convex functional on
+the space of measures.
+
+:::{admonition} Definition: Measure Bregman Divergence
+:class: important
+If $\Phi$ is a differentiable convex functional on a convex class of
+nonnegative measures and $\xi$ is a reference measure, the Bregman divergence
+generated by $\Phi$ is
+
+```{math}
+B_\Phi(\pi|\xi)
+\eqdef
+\Phi(\pi)-\Phi(\xi)
+-
+\int\delta\Phi(\xi)\,\d(\pi-\xi),
+```
+
+where $\delta\Phi(\xi)$ is the first variation.
+:::
+
+:::{admonition} Proposition: Dual Comparison
+For a fixed product reference $\xi=\alpha\otimes\beta$, Bregman regularization
+has a dual involving the global conjugate $\Phi^*$ and the translated dual
+coordinate
+$\delta\Phi(\xi)+(f\oplus g-c)/\epsilon$. In contrast,
+$\phi$-regularization has the scalar-integral dual above and the pointwise
+density law
+
+```{math}
+\frac{f^\star\oplus g^\star-c}{\epsilon}
+\in
+\partial\phi
+\left(
+\frac{\d\pi^\star}{\d(\alpha\otimes\beta)}
+\right).
+```
+:::
+
+:::{dropdown} Main Idea of the Proof
+Write the Bregman-regularized objective, up to constants independent of
+$\pi$, as
+
+```{math}
+\epsilon\Phi(\pi)
++
+\int(c-\epsilon\delta\Phi(\xi))\,\d\pi .
+```
+
+Dualizing the marginal constraints and minimizing over $\pi$ produces the
+global conjugate $\Phi^*$. Equality in Fenchel's inequality gives the
+Bregman optimality condition. The density-ratio dual follows instead from the
+scalar Legendre formula for $D_\phi(\cdot|\alpha\otimes\beta)$.
+:::
+
+:::{admonition} Proposition: KL is the Common Bregman and $\phi$ Case
+Under natural smoothness assumptions, if a Bregman divergence
+$B_\Phi(\alpha|\beta)$ equals a $\phi$-divergence
+$D_\phi(\alpha|\beta)$ for all positive probability densities, then
+
+```{math}
+\phi(t)=c\,t\log t+a(t-1)
+```
+
+for some $c\ge0$ and $a\in\RR$. Hence the common divergence is a multiple of
+KL, up to an irrelevant affine term.
+:::
+
+Thus the two generalizations lead to different duals and different
+algorithms. Only for KL do density-ratio regularization and Bregman
+projection geometry coincide and reduce to multiplicative Sinkhorn scalings.
+
+## Sinkhorn Divergences
+
+Sinkhorn divergences remove the entropic self-bias while retaining
+smoothness. They interpolate between OT-like geometry and kernel-like norms,
+which explains their statistical behavior.
+
+### Entropic Bias
+
+The raw Sinkhorn cost is biased: for $\epsilon>0$, minimizing
+$\mathcal L_c^\epsilon(\alpha,\beta)$ over $\beta$ does not generally return
+$\beta=\alpha$. In the large-temperature limit, the raw value behaves like a
+product interaction:
+
+:::{admonition} Proposition: Large-Temperature Entropic Bias
+Assume $c$ is bounded and continuous. Then
+
+```{math}
+\mathcal L_c^\epsilon(\alpha,\beta)
+\to
+\iint c(x,y)\,\d\alpha(x)\d\beta(y)
+\qquad
+\text{as }\epsilon\to+\infty.
+```
+:::
+
+For $c(x,y)=\norm{x-y}^2$, minimizing this large-temperature limit over
+$\beta$ collapses toward a Dirac at the mean of $\alpha$.
+
+### Sinkhorn Divergences
+
+The standard debiasing subtracts the two self-interaction energies.
+This cancellation removes the large-temperature attraction toward the
+independent coupling; positivity is a separate property, proved below through
+the positive-definite kernel associated with $e^{-c/\epsilon}$.
+
+:::{admonition} Definition: Sinkhorn Divergence
+:class: important
+For $\epsilon>0$, the debiased Sinkhorn divergence is
+
+```{math}
+:label: eq-sinkhorn-divergence-web
+\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
+\eqdef
+\mathcal L_c^\epsilon(\alpha,\beta)
+-
+\frac12\mathcal L_c^\epsilon(\alpha,\alpha)
+-
+\frac12\mathcal L_c^\epsilon(\beta,\beta).
+```
+:::
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-divergence-debiasing")
+```
+
+*Debiasing by point optimization. For large $\epsilon$, minimizing the raw
+entropic cost collapses atoms toward the barycenter, whereas the self-cost
+subtraction keeps a bimodal cloud.*
+
+The interactive demo below shows the same mechanism in a one-dimensional toy
+setting. Move the model cloud relative to the target and compare the raw
+entropic objective with its debiased version.
+<iframe class="ot4ml-live-frame" title="Sinkhorn debiasing controls" src="../live/sinkhorn-debias.html" loading="lazy" style="width:100%;height:460px;border:0;display:block;"></iframe>
+
+:::{admonition} Lemma: Entropic Dual Cost at Optimum
+Let $(f_{\alpha,\beta},g_{\alpha,\beta})$ be optimal dual potentials. Then
+
+```{math}
+\mathcal L_c^\epsilon(\alpha,\beta)
+=
+\int f_{\alpha,\beta}\,\d\alpha
++
+\int g_{\alpha,\beta}\,\d\beta.
+```
+:::
+
+:::{dropdown} Proof
+At optimality,
+
+```{math}
+1
+=
+\int
+e^{(f_{\alpha,\beta}(x)+g_{\alpha,\beta}(y)-c(x,y))/\epsilon}
+\d\beta(y)
+```
+
+for $\alpha$-almost every $x$. Therefore the exponential penalty term in the
+dual integrates to zero, and the dual value reduces to the two linear
+potential terms.
+:::
+
+:::{admonition} Proposition: Asymptotics of Sinkhorn Divergences
+:class: important
+Assume the two measures are supported on the same space and that $c$ is
+bounded, continuous, nonnegative, and satisfies $c(x,x)=0$. Then
+
+```{math}
+\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
+\to
+\mathcal L_c(\alpha,\beta)
+\qquad
+(\epsilon\to0),
+```
+
+and
+
+```{math}
+\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
+\to
+-
+\frac12
+\int c\,\d(\alpha-\beta)\otimes\d(\alpha-\beta)
+\qquad
+(\epsilon\to+\infty).
+```
+:::
+
+:::{admonition} Remark: Large-Temperature Hilbertian Limit
+If $-c$ defines a conditionally positive definite kernel, the
+large-temperature limit is the square of a Hilbertian kernel norm. A typical
+example is $c(x,y)=\norm{x-y}^p$ for $0<p<2$, which corresponds to the
+energy-distance kernel.
+:::
+
+:::{admonition} Proposition: Non-Negativity of Sinkhorn Divergences
+If $k(x,y)=e^{-c(x,y)/\epsilon}$ is positive definite, then
+$\overline{\mathcal L}_c^\epsilon(\alpha,\beta)\ge0$.
+:::
+
+:::{dropdown} Proof Sketch
+Use the optimal self-potentials for $(\alpha,\alpha)$ and $(\beta,\beta)$ as
+a suboptimal pair in the dual problem between $\alpha$ and $\beta$. After
+rewriting with
+$\tilde\alpha=e^{f_{\alpha,\alpha}/\epsilon}\alpha$ and
+$\tilde\beta=e^{f_{\beta,\beta}/\epsilon}\beta$, one obtains
+
+```{math}
+\frac{1}{\epsilon}
+\overline{\mathcal L}_c^\epsilon(\alpha,\beta)
+\ge
+1-\langle \tilde\alpha,\tilde\beta\rangle_k.
+```
+
+The self Sinkhorn fixed-point equations imply
+$\norm{\tilde\alpha}_k=\norm{\tilde\beta}_k=1$, so Cauchy--Schwarz gives the
+result.
+:::
+
+:::{admonition} Remark: Strict Positivity
+Under additional assumptions on the kernel,
+$\overline{\mathcal L}_c^\epsilon(\alpha,\beta)=0$ implies
+$\alpha=\beta$, and the debiased divergence metrizes convergence in law.
+:::

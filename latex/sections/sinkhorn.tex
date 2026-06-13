@@ -211,26 +211,26 @@ initialized with an arbitrary positive vector, for instance $\init{\vD} = \ones_
 The alternating normalization can be read directly on the coupling matrix: a row update enforces the source marginal and generally perturbs the target marginal, while the next column update does the converse.
 
 \begin{alg}[Sinkhorn scaling]\label{alg:sinkhorn-scaling}
-\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Entropic coupling $\P$.
 
-\textbf{Initialize:} Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$ and $\vD^{(0)}=\ones_m$.
+\textbf{Initialize:} Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$, $\vD^{(0)}=\ones_m$, \(r_0=+\infty\), and \(k=0\).
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
-\begin{algblock}
-\(\uD^{(k+1)}=\frac{\a}{\K\vD^{(k)}}.\)
-
-\(\vD^{(k+1)}=\frac{\b}{\transp{\K}\uD^{(k+1)}}.\)
-
-\textbf{If} marginal residuals are below $\mathrm{tol}$ \textbf{then}:
+\textbf{While} \(r_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
-\textbf{Return}
-\(\P^{(k+1)}=\diag(\uD^{(k+1)})\K\diag(\vD^{(k+1)}).\)
+\textbf{Set} \(k\leftarrow k+1\).
 
+\(\uD^{(k)}=\frac{\a}{\K\vD^{(k-1)}}.\)
+
+\(\vD^{(k)}=\frac{\b}{\transp{\K}\uD^{(k)}}.\)
+
+\(\P^{(k)}=\diag(\uD^{(k)})\K\diag(\vD^{(k)}).\)
+
+\textbf{Set} \(r_k=\max\{\norm{\P^{(k)}\ones_m-\a}_1,\norm{(\P^{(k)})^\top\ones_n-\b}_1\}\).
 \end{algblock}
-\end{algblock}
+\textbf{Return} \(\P^{(k)}\).
 \end{alg}
 
 \begin{figure}[H]
@@ -1077,30 +1077,27 @@ Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These i
 and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
 
 \begin{alg}[Log-domain Sinkhorn by soft transforms]\label{alg:log-domain-sinkhorn}
-\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$.
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Entropic coupling $\P$ computed from stabilized potentials.
 
-\textbf{Initialize:} Set $\gD^{(0)}=0$.
+\textbf{Initialize:} Set $\gD^{(0)}=0$, \(\eta_0=+\infty\), and \(k=0\).
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
+
+\textbf{Set} \(k\leftarrow k+1\).
 
 \textbf{Compute} stabilized soft transform:
-\(\fD_i^{(k+1)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k)}-\C_{ij}}{\epsilon}\right)\b_j.\)
+\(\fD_i^{(k)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k-1)}-\C_{ij}}{\epsilon}\right)\b_j.\)
 
 \textbf{Compute} stabilized reverse soft transform:
-\(\gD_j^{(k+1)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k+1)}-\C_{ij}}{\epsilon}\right)\a_i.\)
+\(\gD_j^{(k)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k)}-\C_{ij}}{\epsilon}\right)\a_i.\)
 
-\textbf{If} potential changes are below $\mathrm{tol}$ \textbf{then}:
-\begin{algblock}
-
-\textbf{Break}.
-
-\end{algblock}
+\textbf{Set} \(\eta_k=\max\{\norm{\fD^{(k)}-\fD^{(k-1)}}_\infty,\norm{\gD^{(k)}-\gD^{(k-1)}}_\infty\}\), with the first term ignored for \(k=1\).
 \end{algblock}
 \textbf{Return}
-\(\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right).\)
+\(\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij}}{\epsilon}\right).\)
 \end{alg}
 
 \begin{figure}[ht]
