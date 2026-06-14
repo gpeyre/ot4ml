@@ -7,19 +7,19 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX source: all 76 live
-`latex/figures/<figure-name>/` directories referenced by
-`\includegraphics{figures/...}` have a matching notebook card below, a live
-`.ipynb` file, a thumbnail in [`thumbnails/`](thumbnails/), and generated PDF
-panels in `../latex/figures/`. The book currently has 78 LaTeX figure labels
-because two notebooks generate two labeled figures each, for example the
-Gaussian W2 notebook provides both the one-dimensional and two-dimensional
-Gaussian figures. The contact sheet below is built from the same active
-thumbnail set.
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 76
+live `latex/figures/<figure-name>/` directories referenced by
+`\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
+in [`thumbnails/`](thumbnails/), and generated PDF panels in
+`../latex/figures/`. The searchable gallery currently exposes 77 figure views,
+because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
+schedule-comparison view. The book currently has 78 LaTeX figure labels because
+two figure directories generate two labeled figures each. The contact sheet
+below is built from the same active thumbnail set.
 
-This README intentionally lists only notebooks integrated in the current LaTeX
-source through live `\includegraphics{figures/...}` references. Retired or
-exploratory notebooks live in [`removed/`](removed/), with their matching
+This README intentionally lists only figure views integrated in the current
+LaTeX or MyST sources. Retired or exploratory notebooks live in
+[`removed/`](removed/), with their matching
 generated panels in [`../latex/figures/removed/`](../latex/figures/removed/).
 They are kept for provenance but omitted from this paper gallery.
 
@@ -697,16 +697,32 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="generative-diffusion-versus-ot-2d.ipynb"><img src="thumbnails/generative-diffusion-schedule-comparison.png" alt="Diffusion schedule comparison" width="210"></a><br>
+  <strong>Diffusion schedule comparison</strong><br>
+  <a href="generative-diffusion-versus-ot-2d.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/generative-diffusion-versus-ot-2d.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="generative-drifting-model-trajectories.ipynb"><img src="thumbnails/generative-drifting-model-trajectories.png" alt="Drifting fields for a small particle generator" width="210"></a><br>
   <strong>Drifting fields for a small particle generator</strong><br>
   <a href="generative-drifting-model-trajectories.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/generative-drifting-model-trajectories.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+</tr>
+</table>
+
+<table>
+<tr>
 
 <td width="33%" align="center" valign="top">
   <a href="gradflow-gaussian-closure.ipynb"><img src="thumbnails/gradflow-gaussian-closure.png" alt="Gaussian closure of a Wasserstein flow" width="210"></a><br>
   <strong>Gaussian closure of a Wasserstein flow</strong><br>
   <a href="gradflow-gaussian-closure.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-gaussian-closure.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+<td width="33%"></td>
+
+<td width="33%"></td>
 
 </tr>
 </table>
