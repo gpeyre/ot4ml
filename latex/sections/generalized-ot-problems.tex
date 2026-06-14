@@ -589,12 +589,100 @@ is nonnegative by Fenchel's inequality and vanishes exactly when $\widehat\pi\in
 \index{entropic!regularization}% strictindex
 \index{unbalanced!OT}% strictindex
 
+In the discrete unregularized case, this loss reduces to the optimality gap of the observed coupling. For $\widehat P\in\CouplingsD(\a,\b)$ and a cost matrix $C$, denote it by
+\[
+	\mathcal L_{\mathrm{iOT}}(C;\widehat P)
+	=
+	\dotp{C}{\widehat P}
+	-
+	\umin{P\in\CouplingsD(\a,\b)} \dotp{C}{P}.
+\]
+This inverse-OT gap loss is nonnegative and vanishes exactly when $\widehat P$ is optimal for $C$.
+\index{inverse OT!gap loss}% strictindex
+
 In practice, one restricts the cost to a finite-dimensional model class, often affine:
 \[
 	C_\theta=\sum_{r=1}^R \theta_r C^{(r)},
 	\qquad \theta\in\Theta,
 \]
 where $\Theta$ is convex and the matrices $C^{(r)}$ encode features, graph distances or a Mahalanobis parameterization. This viewpoint appears in low-rank and sparse inverse OT models~\cite{dupuy2016estimating,andrade2024sparsistency} and in convex formulations for learning OT costs from observed plans~\cite{ma2020learning,peyre2026curvature}.
+
+\index{inverse OT}% strictindex
+A minimal finite-dimensional model is obtained by learning a bilinear cost on $\RR^d$,
+\[
+	c_A(x,y)=\dotp{Ax}{y},
+	\qquad A\in\RR^{d\times d}.
+\]
+For empirical measures $\al=\frac1n\sum_i\de_{x_i}$ and $\be=\frac1n\sum_j\de_{y_j}$, this gives the cost matrix
+\[
+	C(A)_{i,j}=\dotp{Ax_i}{y_j},
+\]
+so both maps $A\mapsto C(A)$ and $A\mapsto c_A$ are linear. Inverse OT within this model asks which matrix $A$ makes an observed matching or coupling look optimal; learning the cost is thus reduced to estimating a linear parameter.
+\index{bilinear!cost}% strictindex
+
+For a fixed matrix $A$, the forward prediction is the optimal face
+\[
+	\mathcal P_A\eqdef
+	\uargmin{P\in\CouplingsD(\ones_n/n,\ones_n/n)}
+	\dotp{C(A)}{P}.
+\]
+When this face is a singleton, write its element as $P_A$; otherwise $P_A$ denotes a deterministic tie-broken selection. Although $A\mapsto C(A)$ is linear, the solution correspondence $A\mapsto\mathcal P_A$ is polyhedral: changing $A$ changes the direction in which the transport polytope is probed, and a tie-broken selection is constant on normal-cone cells. Figure~\ref{fig:inverse-ot-forward-logo} illustrates this correspondence on the OT4ML point clouds. The construction follows the visual idea of the Python Optimal Transport logo~\cite{flamary2021pot}: red source atoms, blue target atoms and straight segments show the selected optimal bijection. The rank-one matrices $A=-e_1e_1^\top$ and $A=-e_2e_2^\top$ only score horizontal or vertical correlations. The matrix $A=-I$ gives the usual quadratic $\Wass_2$ assignment, up to the marginal-only terms discussed below, while $A=+I$ reverses the correlation and produces an anti-$\Wass_2$ matching.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.48\linewidth]{figures/inverse-ot-bilinear-logo-map/horizontal.pdf} &
+\includegraphics[width=.48\linewidth]{figures/inverse-ot-bilinear-logo-map/vertical.pdf}
+\\[-.1em]
+\small horizontal rank one, $A=-e_1e_1^\top$ &
+\small vertical rank one, $A=-e_2e_2^\top$
+\\[.35em]
+\includegraphics[width=.48\linewidth]{figures/inverse-ot-bilinear-logo-map/w2.pdf} &
+\includegraphics[width=.48\linewidth]{figures/inverse-ot-bilinear-logo-map/anti.pdf}
+\\[-.1em]
+\small quadratic $\Wass_2$, $A=-I$ &
+\small anti-$\Wass_2$, $A=+I$
+\end{tabular}
+\caption{Forward solutions of the bilinear cost $c_A(x,y)=\dotp{Ax}{y}$ on the OT4ML logo point clouds. Each panel solves the equal-weight assignment problem with a different matrix $A$; the source atoms are red, the target atoms are blue, and the gray segments give one deterministic optimal bijection.}
+\label{fig:inverse-ot-forward-logo}
+\end{figure}
+
+This elementary model already contains the quadratic Wasserstein assignment. Adding to a cost matrix a term depending only on $x_i$ or only on $y_j$ shifts all feasible couplings by the same constant, and therefore does not change the optimizer. Since
+\[
+	\norm{x-y}^2=\norm{x}^2+\norm{y}^2-2\dotp{x}{y},
+\]
+the usual quadratic Wasserstein assignment has the same optimizer as the bilinear cost with $A_\star=-I$, up to these marginal-only terms and an irrelevant positive factor. The inverse problem goes in the opposite direction: after observing a coupling, one asks which matrices $A$ could have generated it. Figure~\ref{fig:inverse-ot-gap-loss} generates an observed coupling $\widehat P$ from this cost on two empirical mixtures of Gaussians, and then evaluates $\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)$ along the anisotropic path
+\[
+	A_t=-\diag(1+t,1-t),
+	\qquad -1\leq t\leq 1,
+\]
+so that $t=0$ recovers the matrix that generated the observed coupling. Equivalently, with equal weights, $\widehat P\in\CouplingsD(\ones_n/n,\ones_n/n)=\mathcal B_n/n$ and the plotted loss is the Kantorovich gap
+\[
+	\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)
+	=
+	\dotp{C(A_t)}{\widehat P}
+	-
+	\umin{P\in\CouplingsD(\ones_n/n,\ones_n/n)}
+	\dotp{C(A_t)}{P},
+	\qquad
+	C(A_t)_{i,j}=\dotp{A_t x_i}{y_j}.
+\]
+Because $t\mapsto C(A_t)$ is affine and the Kantorovich value is a minimum of affine functions over the fixed polytope $\CouplingsD(\ones_n/n,\ones_n/n)$, this one-dimensional gap is convex and piecewise affine. Its zero set can contain an interval for a small sample, reflecting the fact that the same observed coupling remains optimal for a cone of nearby costs.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.35\linewidth]{figures/inverse-ot-gap-loss/observed-map-n20.pdf} &
+\includegraphics[width=.29\linewidth]{figures/inverse-ot-gap-loss/gap-loss-n20.pdf} &
+\includegraphics[width=.29\linewidth]{figures/inverse-ot-gap-loss/gap-loss-n100.pdf}
+\\[-.1em]
+\small observed map, $n=20$ &
+\small loss curve, $n=20$ &
+\small loss curve, $n=100$
+\end{tabular}
+\caption{Inverse-OT gap loss for a bilinear cost. Panel (a): two empirical mixtures of two Gaussians are matched with the cost $c_{A_\star}(x,y)=\dotp{A_\star x}{y}$ for $A_\star=-I$, which gives the same optimizer as the quadratic $\Wass_2$ cost; the faint ellipses indicate the sampling components. Panels (b,c): the unregularized Fenchel--Young Kantorovich gap $\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)$ along $A_t=-\diag(1+t,1-t)$ for $n=20$ and $n=100$, using the same vertical scale. The red dot marks the generating parameter $t=0$; the curves are convex and piecewise affine.}
+\label{fig:inverse-ot-gap-loss}
+\end{figure}
 
 \begin{prop}[Convex dual-gap formulation of inverse OT]\label{prop-inverse-ot-convex}
 \index{dual!gap}% strictindex

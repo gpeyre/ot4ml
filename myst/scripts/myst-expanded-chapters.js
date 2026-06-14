@@ -4,9 +4,11 @@ const { spawn, spawnSync } = require('child_process');
 
 const mode = process.argv[2] || 'build';
 const root = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(root, '..');
 const htmlRoot = path.join(root, '_build', 'html');
 const buildRoot = path.join(root, '_build');
 const sidebarScriptFile = path.join(root, 'ot4ml-sidebar.js');
+const faviconRoot = path.join(repoRoot, 'assets', 'favicon');
 const faviconFiles = ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'];
 const marker = 'data-ot4ml-expanded-chapters';
 const serverPatchMarker = 'ot4ml-expanded-chapters-server-patch';
@@ -148,13 +150,14 @@ function copySidebarScript() {
 function copyFaviconFiles() {
   let changed = 0;
   const destinations = [
+    root,
     htmlRoot,
     path.join(buildRoot, 'templates', 'site', 'myst', 'book-theme', 'public'),
     path.join(buildRoot, 'templates', 'site', 'myst', 'book-theme', 'book-theme-main', 'public'),
   ];
 
   for (const name of faviconFiles) {
-    const sourceFile = path.join(root, name);
+    const sourceFile = path.join(faviconRoot, name);
     if (!fs.existsSync(sourceFile)) continue;
     const source = fs.readFileSync(sourceFile);
     for (const destinationRoot of destinations) {
