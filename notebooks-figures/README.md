@@ -7,11 +7,11 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX source: all 74 live
+**Gallery status.** Checked against the current LaTeX source: all 76 live
 `latex/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching notebook card below, a live
 `.ipynb` file, a thumbnail in [`thumbnails/`](thumbnails/), and generated PDF
-panels in `../latex/figures/`. The book currently has 76 LaTeX figure labels
+panels in `../latex/figures/`. The book currently has 78 LaTeX figure labels
 because two notebooks generate two labeled figures each, for example the
 Gaussian W2 notebook provides both the one-dimensional and two-dimensional
 Gaussian figures. The contact sheet below is built from the same active
@@ -507,14 +507,22 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="inverse-ot-bilinear-logo-map.ipynb"><img src="thumbnails/inverse-ot-bilinear-logo-map.png" alt="Forward OT solutions for bilinear logo costs" width="210"></a><br>
+  <strong>Forward OT solutions for bilinear logo costs</strong><br>
+  <a href="inverse-ot-bilinear-logo-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/inverse-ot-bilinear-logo-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="inverse-ot-gap-loss.ipynb"><img src="thumbnails/inverse-ot-gap-loss.png" alt="Inverse OT gap loss on Gaussian mixtures" width="210"></a><br>
+  <strong>Inverse OT gap loss on Gaussian mixtures</strong><br>
+  <a href="inverse-ot-gap-loss.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/inverse-ot-gap-loss.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="weak-ot-barycentric-projection.ipynb"><img src="thumbnails/weak-ot-barycentric-projection.png" alt="Weak OT and barycentric projection" width="210"></a><br>
   <strong>Weak OT and barycentric projection</strong><br>
   <a href="weak-ot-barycentric-projection.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/weak-ot-barycentric-projection.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
-
-<td width="33%"></td>
-
-<td width="33%"></td>
 
 </tr>
 </table>
