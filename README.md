@@ -29,11 +29,12 @@ is available on arXiv.
 ## Figures of the book
 
 The book figures are generated from executable notebooks and assembled by the
-LaTeX source. The current gallery has been checked against the live LaTeX
-`\includegraphics{figures/...}` references: all 74 referenced figure directories
-have a matching notebook card, notebook file, thumbnail, and generated PDF
-directory. The manuscript contains 76 LaTeX figure labels because two notebooks
-generate two labeled figures each. Browse the rendered web gallery at
+LaTeX source. The current searchable gallery has been checked against the live
+LaTeX and MyST figure references: it exposes 77 figure views, covers all 76
+referenced `latex/figures/<figure-name>/` directories, and every active view has
+a notebook link, thumbnail, and generated PDF panels. The manuscript contains
+78 LaTeX figure labels because two figure directories generate two labeled
+figures each. Browse the rendered web gallery at
 [www.gpeyre.com/ot4ml/notebooks-figures/index.html](https://www.gpeyre.com/ot4ml/notebooks-figures/index.html)
 or the Markdown version in
 [`notebooks-figures/README.md`](notebooks-figures/README.md), with thumbnails,
