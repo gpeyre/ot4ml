@@ -131,6 +131,32 @@ The multi-marginal formulation replaces a coupling between two measures by a joi
 \(\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)} \int_{\X_1\times\cdots\times\X_S} c(x_1,\ldots,x_S)\d\pi(x_1,\ldots,x_S),\)
 where $\Couplings(\al_1,\ldots,\al_S)$ is the set of probability measures whose $s$-th marginal is $\al_s$. This is still a linear program in the discrete setting, but its ambient tensor has size $\prod_s n_s$.
 
+\paragraph{Monge structure.}
+A $c$-splitting set at a fixed $x_1$ is a set $M\subset\X_2\times\cdots\times\X_S$ on which
+\(\sum_{s=2}^S u_s(x_s)=c(x_1,\ldots,x_S)\)
+for some functions satisfying the opposite inequality everywhere. If \(c\) is differentiable in \(x_1\), it is twisted on splitting sets when
+\((x_2,\ldots,x_S)\mapsto\nabla_{x_1}c(x_1,\ldots,x_S)\)
+is injective on every such set. Under this condition, if \(\al_1\) is absolutely continuous and the first dual potential is differentiable \(\al_1\)-a.e., every optimizer is a Monge plan
+\[
+\pi^\star=(\Id,\T_2,\ldots,\T_S)_\sharp\al_1.
+\]
+Indeed, on the support, dual equality makes each fiber over \(x_1\) a splitting set; differentiating the contact relation gives the same value of \(\nabla_{x_1}c\) for all points in the fiber, hence a singleton by twist. Uniqueness follows by applying the same argument to the average of two optimizers.
+
+\paragraph{Coulomb cost and DFT.}
+For \(N\) electrons in \(\RR^3\), the repulsive Coulomb cost is
+\[
+c_{\mathrm{Coul}}(x_1,\ldots,x_N)=\sum_{1\leq i<j\leq N}\frac{1}{\norm{x_i-x_j}},
+\]
+with value \(+\infty\) on collisions. This singularity makes the preceding smooth Monge theorem only a guide. If \(\rho\) is an electron density with \(\int\rho=N\) and \(\mu=\rho/N\), the strictly-correlated-electrons functional is the equal-marginal problem
+\[
+V_{\mathrm{ee}}^{\mathrm{SCE}}[\rho]
+=
+\inf_{\pi\in\Couplings(\mu,\ldots,\mu)}
+\int c_{\mathrm{Coul}}\d\pi .
+\]
+It gives the minimal electron--electron repulsion compatible with the one-particle density and is the multi-marginal OT formulation used in the strong-interaction limit of density-functional theory. A deterministic co-motion ansatz writes
+\(\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\mu\), \((\T_i)_\sharp\mu=\mu\). A common cyclic form uses a measure-preserving map \(\T\) with \(\T^N=\Id\) and \(\pi_\T=(\Id,\T,\ldots,\T^{N-1})_\sharp\mu\); symmetrizing \(\pi_\T\) over coordinate permutations keeps the same Coulomb value. For Coulomb costs this graph structure is delicate and special; general minimizers should be viewed as genuinely multi-marginal plans.
+
 \paragraph{Multi-marginal formulation of barycenters.}
 \(c_{\mathrm{bar}}(x_1,\ldots,x_S) = \min_{x\in\RR^d} \sum_{s=1}^S\la_s\norm{x-x_s}^2.\)
 \begin{prop}[Multi-marginal formula for quadratic barycenters]\label{prop-multimarginal-barycenter}
@@ -158,23 +184,82 @@ with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Ther
 \d\pi^\star(x_1,\ldots,x_S)
 =
 \exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
-\prod_s\d\al_s(x_s),
+\prod_s\d\al_s(x_s).
 \]
+\subsection{Low-rank OT}
+\label{sec-low-rank-ot}
+A rank-$r$ coupling factors through a latent measure with $r$ atoms; this constrains the plan itself, not only a Sinkhorn kernel approximation. For $\a\in\simplex_n$, $\b\in\simplex_m$, set
+\[
+\mathcal U_r(\a,\b)=\{(Q,R,g): Q\ones_r=\a,
+R\ones_r=\b,
+Q^\top\ones_n=R^\top\ones_m=g\in\simplex_r\}.
+\]
+It induces
+\[
+P(Q,R,g)=Q\diag(g)^{-1}R^\top,
+\qquad
+P_{ij}=\sum_{k=1}^r Q_{ik}R_{jk}/g_k.
+\]
+Columns with $g_k=0$ are discarded. Then $P\in\CouplingsD(\a,\b)$ and has nonnegative rank at most $r$. Conversely, every coupling of nonnegative rank at most $r$ can be written this way: if $P=UV^\top$, set $q_k=\sum_iU_{ik}$, $s_k=\sum_jV_{jk}$, $g_k=q_ks_k$, $Q_{ik}=U_{ik}s_k$ and $R_{jk}=V_{jk}q_k$, discarding zero components. Thus a low-rank coupling is the law of $(X,Y)$ obtained by sampling a latent $Z\sim g$ and then sampling $X$ and $Y$ conditionally independently given $Z$; the latent atoms are labels and do not enter the original cost.
+
+For a cost matrix $C$, a regularized low-rank objective, with zero latent components removed so that $g_k>0$, is
+\[
+\min_{(Q,R,g)\in\mathcal U_r(\a,\b)}
+\sum_{k=1}^r \frac{Q_{:,k}^\top C R_{:,k}}{g_k}
++\epsilon\KLD(Q|\a\otimes g)+\epsilon\KLD(R|\b\otimes g).
+\]
+This non-convex problem is optimized by alternating entropic OT updates. With fixed positive $g$, each block is an ordinary entropic OT problem with an effective cost:
+\[
+Q\leftarrow\argmin_{Q\ones=\a,\,Q^\top\ones=g}
+\langle C R\diag(g)^{-1},Q\rangle+\epsilon\KLD(Q|\a\otimes g),
+\]
+then
+\[
+R\leftarrow\argmin_{R\ones=\b,\,R^\top\ones=g}
+\langle C^\top Q\diag(g)^{-1},R\rangle+\epsilon\KLD(R|\b\otimes g),
+\]
+and return $P=Q\diag(g)^{-1}R^\top$. Optimizing $g$ adds a small simplex block.
+
+
 \subsection{Metric learning and inverse OT}
-\paragraph{Metric learning and derivatives of OT.}
-\begin{prop}[Derivative with respect to the cost]
-In the discrete setting, assume that the optimal coupling for $\MKD_\C(\a,\b)$ is unique and denote it by $\P^\star(\C)$. Then $\C \mapsto \MKD_\C(\a,\b)$ is differentiable at $\C$ and
-\(\nabla_\C \MKD_\C(\a,\b)=\P^\star(\C).\)
+\paragraph{Differentiating OT losses.}
+The derivative of an OT value is represented by its optimality certificates: potentials for marginal perturbations and plans for cost perturbations. Non-uniqueness gives directional derivatives; entropic regularization restores smoothness on positive finite simplices.
+\begin{prop}[First variations of unregularized OT]\label{prop-ot-first-variations-unregularized}
+Let \(\mathcal V_c(\alpha,\beta)=\inf_{\pi\in\Couplings(\alpha,\beta)}\int c\d\pi\). Let \(\mathcal O_c\) be the set of optimal couplings and \(\mathcal D_c\) the set of optimal dual potentials. For a signed perturbation \(\chi(\Xx)=0\), with \(\alpha_t=\alpha+t\chi\) feasible for \(t\geq0\), and for \(c_t=c+th\),
+\[
+\left.\frac{\d}{\d t}\right|_{0^+}\mathcal V_c(\alpha_t,\beta)
+=\sup_{(f,g)\in\mathcal D_c}\int f\d\chi,
+\qquad
+\left.\frac{\d}{\d t}\right|_{0^+}\mathcal V_{c_t}(\alpha,\beta)
+=\inf_{\pi\in\mathcal O_c}\int h\d\pi.
+\]
+If \(f^\star\) and \(\pi^\star\) are unique, then \(\delta\mathcal V_c/\delta\alpha=f^\star\) and \(\delta\mathcal V_c/\delta c=\pi^\star\). Discretely, \(f^\star\in\partial_\a\MKD_\C(\a,\b)\) and, since the value is concave in \(\C\), \(\P^\star\in\partial_\C^{\mathrm{sup}}\MKD_\C(\a,\b)\).
 \end{prop}
 \begin{proof}
-The value is the minimum of affine functions of $\C$, \(\MKD_\C(\a,\b)=\min_{\P\in\CouplingsD(\a,\b)}\dotp{\C}{\P}.\)
-The envelope theorem, or equivalently Danskin's theorem, states that the subdifferential with respect to $\C$ is the convex hull of the optimal couplings. If the optimizer is unique, this subdifferential is the singleton $\{\P^\star(\C)\}$, hence the value is differentiable with the displayed gradient.
+Use Kantorovich duality for the measure derivative, since the value is a supremum of affine functions of \(\alpha\). Use the primal formulation for the cost derivative, since the value is an infimum of affine functions of \(c\). Danskin's theorem gives the displayed active-potential and active-plan formulas; without uniqueness, the cost formula is a supergradient statement and the exact directional derivative minimizes over the optimal face.
 \end{proof}
-Thus, if the cost is parameterized as $\C_\theta$, gradients of losses involving OT values are obtained by backpropagating through the inner product $\dotp{\P^\star(\C_\theta)}{\partial_\theta \C_\theta}$. The difficulty is not differentiating a solved OT problem, but learning a cost for which the resulting matching has the desired semantic behavior; this is a bilevel and usually non-convex optimization problem.
+\begin{prop}[First variations of entropic OT]\label{prop-ot-first-variations-entropic}
+Let \(\mathcal V_{c,\epsilon}(\alpha,\beta)=\inf_{\pi\in\Couplings(\alpha,\beta)}\int c\d\pi+\epsilon\KL(\pi|\alpha\otimes\beta)\). If
+\[
+\d\pi_\epsilon(x,y)=
+\exp\!\left(\frac{f_\epsilon(x)+g_\epsilon(y)-c(x,y)}{\epsilon}\right)
+\d\alpha(x)\d\beta(y),
+\]
+then
+\[
+\left.\frac{\d}{\d t}\right|_{0^+}\mathcal V_{c,\epsilon}(\alpha+t\chi,\beta)=\int f_\epsilon\d\chi,
+\qquad
+\left.\frac{\d}{\d t}\right|_{0^+}\mathcal V_{c+th,\epsilon}(\alpha,\beta)=\int h\d\pi_\epsilon.
+\]
+For positive finite histograms, these are ordinary derivatives in the relative interior.
+\end{prop}
+\begin{proof}
+The cost formula is the primal envelope theorem. For the measure formula, differentiate the dual objective~\eqref{eq-dual-sinkhorn-objective}; the extra term involving \(e^{(f_\epsilon+g_\epsilon-c)/\epsilon}-1\) cancels because the soft-transform normalization gives \(\int e^{(f_\epsilon(x)+g_\epsilon(y)-c(x,y))/\epsilon}\d\beta(y)=1\).
+\end{proof}
+For \(c_\theta\), \(\partial_\theta\mathcal V_{c_\theta,\epsilon}=\int\partial_\theta c_\theta\,\d\pi_\epsilon\). For \(\mathcal V_{c_\theta}\), replace \(\pi_\epsilon\) by the unique optimal plan if it exists; otherwise minimize \(\int \dot\theta\cdot\partial_\theta c_\theta\,\d\pi\) over the optimal face for directional derivatives. For the entropy-only discrete value~\eqref{eq-regularized-discr}, \(\MKD_\C^\epsilon=\mathcal V_{\C,\epsilon}-\epsilon\HD(\a)-\epsilon\HD(\b)\), so, for positive \(\a\), the source derivative is \(f_\epsilon+\epsilon\log\a\) on the simplex tangent space, up to constants.
 
 \paragraph{Inverse Optimal Transport.}
-\(\inf_{\pi\in\Couplings(\alpha,\beta)}\int c(x,y)\d\pi(x,y).\)
-A useful statistical methodology is to measure the suboptimality of the observed plan through a Fenchel--Young loss. Write the score as $s=-c$ and define the convex regularized prediction value
+Inverse OT asks for a ground cost \(c\) that makes an observed plan \(\widehat\pi\) nearly optimal for \(\inf_{\pi\in\Couplings(\alpha,\beta)}\int c(x,y)\d\pi(x,y)\). A useful statistical methodology is to measure this suboptimality through a Fenchel--Young loss. Write the score as \(s=-c\) and define the convex regularized prediction value
 
 \(G_\epsilon(s)= \sup_{\pi\in\Couplings(\alpha,\beta)} \int s\d\pi-\epsilon\KL(\pi|\alpha\otimes\beta).\)
 \(\mathcal L_\epsilon(c;\widehat\pi) = G_\epsilon(-c)+G_\epsilon^*(\widehat\pi)+\int c\d\widehat\pi\)
@@ -204,8 +289,8 @@ It vanishes if and only if $\widehat P$ reaches the dual value and is therefore 
 \label{sec-weak-ot}
 \paragraph{Barycentric projection of a coupling.}
 \begin{defn}[Barycentric projection of a coupling]\label{def-barycentric-projection}
-Let $\alpha,\beta\in\Pp_2(\RR^d)$ and let $\pi\in\Couplings(\alpha,\beta)$. Disintegrate $\pi$ with respect to its first marginal as
-$\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. The barycentric projection of $\pi$ is the map
+Let $\alpha,\beta\in\Pp_1(\RR^d)$ and let $\pi\in\Couplings(\alpha,\beta)$. Disintegrate $\pi$ with respect to its first marginal as
+$\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. Since $\beta$ has finite first moment, the conditional mean is finite for $\alpha$-a.e. $x$, and the barycentric projection of $\pi$ is the map
 \begin{equation}\label{eq-barycentric-projection}
 \bar T_\pi(x)
 \eqdef
@@ -273,3 +358,25 @@ Let $\pi$ be any coupling and disintegrate it as $\pi_x\alpha$. By Jensen's ineq
 Integrating in $x$ gives $\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x)\leq\int\norm{x-y}^2\d\pi(x,y)$. Taking the infimum over $\pi$ proves the claim.
 \end{proof}
 The barycentric cost is the canonical example to keep in mind: admissibility still constrains the full conditional laws to have second marginal $\beta$, but the objective only charges the displacement from $x$ to $\bar T_\pi(x)$ and ignores the conditional variance around this barycenter.
+\subsection{Martingale Optimal Transport}
+Martingale OT imposes the barycentric constraint as hard feasibility. For $\alpha,\beta\in\Pp_1(\RR^d)$,
+\[
+\Couplings_{\mathrm{mart}}(\alpha,\beta)
+\eqdef
+\enscond{\pi\in\Couplings(\alpha,\beta)}
+{\int y\d\pi_x(y)=x\quad\alpha\text{-a.e.}}
+\]
+where $\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$. Equivalently, $\bar T_\pi=\Id$. The martingale OT problem is
+\(\inf_{\pi\in\Couplings_{\mathrm{mart}}(\alpha,\beta)}\int c(x,y)\d\pi(x,y)\).
+If $(X,Y)\sim\pi$, the constraint is $\EE[Y|X]=X$. Equivalently, the barycentric projected coupling $(\Id,\bar T_\pi)_\sharp\alpha$ is the diagonal coupling $(\Id,\Id)_\sharp\alpha$, which is stronger than the marginal identity $(\bar T_\pi)_\sharp\alpha=\alpha$.
+\paragraph{Stochastic orders.}
+On $\RR$, $\alpha\preceq_{\mathrm{st}}\beta$ means
+\(\int\varphi\d\alpha\leq\int\varphi\d\beta\) for every increasing $\varphi$; by Strassen this is equivalent to a coupling with $X\leq Y$ a.s. For finite-first-moment measures, the martingale analogue is convex order:
+\[
+\alpha\preceq_{\mathrm{cx}}\beta
+\quad\Longleftrightarrow\quad
+\int\varphi\d\alpha\leq\int\varphi\d\beta
+\quad\text{for every convex }\varphi\text{ with finite integrals}.
+\]
+It means that $\beta$ is more spread out than $\alpha$ and has the same mean. For Gaussians with the same mean,
+\(\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1)\) iff \(\Sigma_1-\Sigma_0\succeq0\): add independent centered Gaussian noise for one direction, and test $x\mapsto\dotp{u}{x}^2$ for the converse. Strassen's martingale theorem says that \(\Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset\) iff \(\alpha\preceq_{\mathrm{cx}}\beta\).

@@ -384,6 +384,126 @@ The second crucial aspect of Sinkhorn is that matrix-vector multiplication strea
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Heat Kernels and Hopf--Cole Transforms}
+\index{heat!kernel}% strictindex
+\index{Hopf-Cole transform}% strictindex
+\index{geodesics in heat}% strictindex
+\label{sec-sinkhorn-heat-hopf-cole}
+
+The Gaussian kernel used by Sinkhorn is also the Euclidean heat kernel. This viewpoint clarifies when entropic OT admits fast grid and surface implementations, and it places soft minima and Hopf--Cole transforms in the same heat-kernel calculus.
+
+\paragraph{Geodesics in heat.}
+\index{geodesics in heat}% strictindex
+\index{Varadhan formula}% strictindex
+\index{Laplace-Beltrami operator}% strictindex
+
+On $\RR^d$, the heat kernel for $\partial_t u=\Delta u$ is
+\[
+	h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
+\]
+Up to normalization, the Sinkhorn Gibbs kernel for the quadratic cost is therefore a Gaussian heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct construction uses the resolvent of the positive Laplacian. On the line, the kernel of $(I-\tau\Delta)^{-1}$ is exactly proportional to $\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa-type smoothing, while the heat semigroup gives the Gaussian kernel $\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or a surface $M$, the Euclidean distance is replaced by the geodesic distance $d_M$, and Varadhan's formula gives
+\[
+	-4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
+	\qquad (t\downarrow0).
+\]
+This is the analytical basis of geodesics-in-heat methods~\cite{varadhan-1967,Crane2013}. In operator form, writing $L=-\Delta_M$ for the positive Laplace--Beltrami operator,
+\[
+	e^{-tL}
+	=
+	\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
+\]
+Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a Laplace/Yukawa smoothing, while repeated resolvent steps approximate the Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than dense Gaussian matrices. This is attractive computationally, but the small-scale limit is delicate: the smoothing length, of order $\sqrt t$ for heat and $\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this length is sent to zero faster than the grid spacing, metrication artifacts and inconsistent discretizations can dominate the intended geodesic limit.
+\index{mesh!size}% strictindex
+\index{discrete!Laplacian}% strictindex
+\index{resolvent}% strictindex
+\index{geodesic!distance}% strictindex
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cccc@{}}
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat/exact.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat/tau-small.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat/tau-medium.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat/tau-large.pdf} \\[-.1em]
+\small exact distance &
+\small small $\tau$ &
+\small medium $\tau$ &
+\small larger $\tau$
+\end{tabular}
+\caption{Geodesics-in-heat approximation of the distance to three red source points on a two-dimensional grid. The first panel shows the exact Euclidean distance. The other panels diffuse each source by one backward-Euler resolvent step with Neumann boundary conditions, recover a distance by the normalized-gradient Poisson solve, and take the lower envelope over the three sources. Each panel is robustly normalized to emphasize the geometry of its level sets. Increasing the resolvent scale $\tau$ stabilizes the sparse linear solves but rounds and merges small-scale distance features.}
+\index{geodesics in heat}% strictindex
+\index{Poisson equation}% strictindex
+\label{fig:sinkhorn-geodesics-in-heat}
+\end{figure}
+
+\paragraph{Soft Hopf--Lax and Hopf--Cole.}
+\index{Hopf-Lax formula}% strictindex
+\index{Hopf-Cole transform}% strictindex
+\index{log-sum-exp}% strictindex
+
+The same heat kernel also explains why log-sum-exp is the entropic version of a hard transform. For $t>0$, the quadratic Hopf--Lax transform is
+\[
+	Q_t f(x)=\inf_y \left\{ f(y)+\frac{\norm{x-y}^2}{2t}\right\}.
+\]
+After completing the square, this is equivalent to the Legendre--Fenchel transform
+\[
+	Q_t f(x)=\frac{\norm{x}^2}{2t}-
+	\left(f+\frac{\norm{\cdot}^2}{2t}\right)^*\!\left(\frac{x}{t}\right).
+\]
+Its entropic version replaces the supremum in this transform by a log-sum-exp, or equivalently by a Gaussian convolution at heat time $\epsilon t/2$:
+\[
+	Q_t^\epsilon f(x)
+	=
+	-\epsilon\log
+	\int
+	\exp\!\left(
+	-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}
+	\right)\d y .
+\]
+Laplace's principle gives $Q_t^\epsilon f\to Q_t f$ as $\epsilon\to0$, up to an additive constant. Equivalently,
+\[
+	Q_t^\epsilon f(x)
+	=
+	-\epsilon\log\Big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\Big)(x)
+	+\text{\upshape cst},
+\]
+where $G_s$ denotes the normalized heat kernel at time $s$; the additive constant absorbs its normalization and depends only on $t$, $\epsilon$ and the dimension. This formula is the continuous analogue of the soft $c$-transform used later in the Sinkhorn dual.
+\index{Legendre-Fenchel transform}% strictindex
+\index{soft!c-transform}% strictindex
+
+The Hopf--Cole transform gives the corresponding PDE linearization. If $\nu>0$ and
+\[
+	\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi,
+\]
+then $u=e^{-\phi/(2\nu)}$ solves the linear heat equation $\partial_tu=\nu\Delta u$. Hence $v=\nabla\phi=-2\nu\nabla\log u$ solves the viscous Burgers equation
+\[
+	\partial_t v+(v\cdot\nabla)v=\nu\Delta v .
+\]
+Thus nonlinear Hamilton--Jacobi/Burgers dynamics can be computed through a Laplacian-generated heat flow followed by a logarithmic change of variables. This is also the conceptual bridge between soft-minimum formulas, Gaussian convolution and entropic transport potentials.
+\index{Burgers equation}% strictindex
+\index{Hamilton-Jacobi equation}% strictindex
+\index{heat!equation}% strictindex
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/soft-hopf-lax.pdf} &
+\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/heat-variable.pdf} &
+\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/burgers-velocity.pdf} \\[-.1em]
+\small soft Hopf--Lax &
+\small heat variable $u_t$ &
+\small Burgers velocity $v_t$
+\end{tabular}
+\caption{Hopf--Cole and heat-kernel numerics in one dimension. Left: the hard Hopf--Lax/Legendre transform is approximated by Gaussian log-sum-exp transforms at two temperatures; the pale curve is the input potential shifted downward for reference. Middle: the Hopf--Cole variable $u=e^{-\phi/(2\nu)}$ evolves linearly by the heat equation. Right: the Burgers velocity $v=-2\nu\,\partial_x\log u$ recovered from the same heat evolution smooths shocks while preserving the red-to-blue time ordering.}
+\index{Hopf-Cole transform}% strictindex
+\index{Burgers equation}% strictindex
+\label{fig:sinkhorn-hopf-cole-transform}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Reformulation using relative entropy}
@@ -499,7 +619,7 @@ The tensor-product reference is nevertheless useful when supports vary, because 
 \small $\epsilon=0.045$ &
 \small $\epsilon=0.20$
 \end{tabular}
-\caption{KL-normalized Sinkhorn dual potentials for the same one-dimensional Gaussian-mixture histograms. The bottom silhouettes show both the source histogram $\a$ in red and the target histogram $\b$ in blue. The red and blue curves are the logarithmic scalings $\fD_i^\epsilon=\epsilon\log u_i^\epsilon$ and $\gD_j^\epsilon=\epsilon\log v_j^\epsilon$, with gauge $\dotp{\fD^\epsilon}{\a}=0$, computed from $\P_{i,j}=u_i\,\a_i\b_j e^{-\C_{i,j}/\epsilon}\,v_j$. The squared Euclidean cost is normalized by its median positive entry, and all panels use the same axes; increasing $\epsilon$ turns the hard $c$-transform geometry into smoother log-sum-exp potentials.}
+\caption{KL-normalized Sinkhorn dual potentials for the same one-dimensional Gaussian-mixture histograms. The bottom silhouettes show both the source histogram $\a$ in red and the target histogram $\b$ in blue. The red and blue curves are the logarithmic scalings $\fD_i^\epsilon=\epsilon\log u_i^\epsilon$ and $\gD_j^\epsilon=\epsilon\log v_j^\epsilon$, with gauge $\dotp{\fD^\epsilon}{\a}=0$, computed from $\P_{i,j}=u_i\,\a_i\b_j e^{-\C_{i,j}/\epsilon}\,v_j$. The squared Euclidean cost is normalized by its median positive entry, and all panels use the same axes. For $\epsilon=0.010$ the curves are already close to the unregularized one-dimensional Kantorovich potentials; increasing $\epsilon$ turns this hard $c$-transform geometry into smoother log-sum-exp potentials.}
 \index{Gaussian mixture}% strictindex
 \index{log-sum-exp}% strictindex
 \index{dual!potential}% strictindex
@@ -738,6 +858,49 @@ Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian o
 \end{equation}
 This is the dynamic Schr\"odinger bridge problem. It asks for the most likely path law, relative to the prior dynamics $\Rr^\epsilon$, among all path laws matching the observed endpoint marginals. This viewpoint goes back to Schr\"odinger's reciprocal problem~\cite{Schroedinger31} and is surveyed in modern OT language in~\cite{leonard2012schrodinger,LeonardSchroedinger}; stochastic-control formulations are developed in~\cite{chen2016relation}.
 \index{Schrodinger!bridge}% strictindex
+
+\paragraph{Stochastic-control interpretation.}
+\index{stochastic control}% strictindex
+\index{Girsanov theorem}% strictindex
+\index{Doob transform}% strictindex
+For Brownian references, the entropy projection has a direct control meaning. To fix constants, suppose that $\Rr^\epsilon$ is the law of
+\[
+	\d X_t = \sqrt{\epsilon}\,\d B_t,
+	\qquad
+	X_0\sim\al ,
+\]
+so that the generator is $(\epsilon/2)\Delta$. Under the standard finite-entropy assumptions, a path law $M$ with the same initial marginal and $M\ll \Rr^\epsilon$ can be represented, in the weak sense, by an adapted drift $u_t$ of finite energy,
+\[
+	\d X_t = u_t\,\d t+\sqrt{\epsilon}\,\d B_t,
+	\qquad
+	X_0\sim\al .
+\]
+Conversely, such a drift defines an absolutely continuous change of law when the usual Girsanov integrability conditions hold. Girsanov's formula then gives
+\[
+	\KL(M|\Rr^\epsilon)
+	=
+	\frac{1}{2\epsilon}\EE_M\int_0^1 \norm{u_t}^2\,\d t,
+	\qquad
+	\epsilon\KL(M|\Rr^\epsilon)=\frac12\EE_M\int_0^1 \norm{u_t}^2\,\d t .
+\]
+If the reference initial law is not $\al$, an additional term $\epsilon\KL(\al|\Rr^\epsilon_0)$ appears, but it is fixed by the endpoint constraint. Hence, up to this fixed endpoint cost, the Schr\"odinger bridge can be read as
+\[
+	\inf_u
+	\enscond{
+		\frac12\EE\int_0^1\norm{u_t}^2\,\d t
+	}{
+		\d X_t=u_t\,\d t+\sqrt{\epsilon}\,\d B_t,\quad
+		X_0\sim\al,\ X_1\sim\be
+	},
+\]
+namely as the least energetic change of drift that steers the Brownian prior from $\al$ to $\be$. The optimizer may be chosen Markovian. If $h_t$ denotes the positive space-time harmonic Schr\"odinger factor associated with the terminal constraint, then the optimal feedback drift has the Doob-transform form
+\[
+	u_t^\star(x)=\epsilon\nabla\log h_t(x).
+\]
+Equivalently, with the value potential $\phi_t=\epsilon\log h_t$, one has $u_t^\star=\nabla\phi_t$ and $\phi_t$ solves the viscous Hamilton--Jacobi equation $\partial_t\phi_t+\frac12\norm{\nabla\phi_t}^2+\frac{\epsilon}{2}\Delta\phi_t=0$. This control viewpoint and the endpoint-coupling reduction below are two faces of the same object: the controlled diffusion describes the whole path law, whereas the static Sinkhorn coupling records only its two endpoints.
+\index{Schrodinger!bridge}% strictindex
+\index{bridge!Brownian}% strictindex
+\index{Hamilton-Jacobi equation}% strictindex
 
 \paragraph{Viscous Benamou--Brenier formulations.}
 \index{viscous Benamou-Brenier formulation}% strictindex
@@ -1222,6 +1385,21 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} a
 \index{cost!quadratic}% strictindex
 \index{c-concavity}% strictindex
 \end{rem}
+
+\paragraph{Neural dual solvers.}
+\index{neural!Sinkhorn solver}% strictindex
+\index{input convex neural network}% strictindex
+\index{convex!neural network}% strictindex
+The convex-potential structure of the preceding remark suggests a sample-based alternative to evaluating soft transforms on a grid or on all pairs of samples. For the bilinear cost \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: writing \(\Phi=-f\) and \(\Psi=-g\), the zero-temperature constraint \(f(x)+g(y)\leq-\dotp{x}{y}\) becomes the Fenchel-type inequality
+\[
+	\Phi(x)+\Psi(y)\geq \dotp{x}{y}.
+\]
+For the quadratic cost this is the same statement after subtracting the quadratic terms, as in Remark~\ref{rem-soft-transform-convexity}. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
+
+A useful parameterization is given by input-convex neural networks (ICNNs)~\cite{amos2017input,makkuva2020optimal}. The construction mirrors elementary closure rules for convex functions: nonnegative linear combinations preserve convexity, composition with a convex nondecreasing scalar nonlinearity preserves convexity, and the ReLU \(r\mapsto\max(r,0)\) is both convex and nondecreasing. Thus a feed-forward network with nonnegative hidden-to-hidden weights and affine skip connections from the input defines a convex function of its input. This gives a flexible cone of convex trial potentials, although the finite-dimensional optimization over the network weights is not a convex optimization problem. Universal-approximation statements must also be read with this distinction in mind: max-affine functions are dense among continuous convex functions on compact convex sets, and ICNN-type architectures are designed to inherit this approximation principle. General ReLU universal approximation results, such as the width \(d+1\) theorem on compact subsets of \(\RR^d\)~\cite{hanin2019universal}, provide useful background but do not by themselves enforce convexity. In practice, neural dual solvers trade exact Sinkhorn scaling for amortized stochastic optimization of the dual potentials.
+\index{Fenchel!inequality}% strictindex
+\index{input convex neural network}% strictindex
+\index{convex!potential}% strictindex
 
 \begin{rem}[Gaussian marginals]\label{rem-sinkhorn-gaussian-marginals}
 \index{Gaussian!marginals}% strictindex

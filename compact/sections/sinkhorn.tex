@@ -74,6 +74,23 @@ initialized with an arbitrary positive vector, for instance $\init{\vD} = \ones_
 
 A chief computational advantage of Sinkhorn's algorithm, besides its simplicity, is that the only expensive step is multiplication by the Gibbs kernel. Its complexity therefore scales like $Cnm$, where $C$ is the number of Sinkhorn iterations.
 
+\subsection{Heat Kernels and Hopf--Cole Transforms}
+For \(c(x,y)=\norm{x-y}^2\) on \(\RR^d\), the Gibbs kernel is a heat kernel up to normalization:
+\[
+e^{-\norm{x-y}^2/\epsilon}\quad\leftrightarrow\quad h_t(x,y)=(4\pi t)^{-d/2}e^{-\norm{x-y}^2/(4t)},\qquad t=\epsilon/4.
+\]
+On a manifold \(M\), Varadhan's formula gives \(-4t\log h_t(x,y)\to d_M(x,y)^2\). With \(L=-\Delta_M\), the resolvent \((I+\tau L)^{-1}\) gives a Laplace/Yukawa-type kernel, exactly exponential on \(\RR\) and with exponential tail in higher dimension, while \(e^{-tL}=\lim_{q\to\infty}(I+tL/q)^{-q}\) gives the Gaussian heat kernel. Thus one sparse inverse shifted Laplacian gives resolvent smoothing, while repeated sparse solves approximate heat smoothing and geodesic distances. On meshes or grids, the heat scale \(\sqrt t\) or the resolvent scale \(\sqrt\tau\) must be resolved by the grid size, otherwise metrication and consistency errors dominate.
+
+The same heat-kernel calculus gives the soft Hopf--Lax transform
+\[
+Q_t^\epsilon f(x)=-\epsilon\log\int
+\exp\!\left(-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}\right)\d y
+=-\epsilon\log\big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\big)(x)+\mathrm{cst},
+\]
+where \(G_s\) is the normalized heat kernel and the constant absorbs its normalization. It converges to \(Q_t f(x)=\inf_y\{f(y)+\norm{x-y}^2/(2t)\}=\norm{x}^2/(2t)-(f+\norm{\cdot}^2/(2t))^*(x/t)\). The Hopf--Cole change \(u=e^{-\phi/(2\nu)}\) maps
+\(\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi\)
+to the heat equation \(\partial_tu=\nu\Delta u\), and \(v=\nabla\phi=-2\nu\nabla\log u\) solves viscous Burgers.
+
 \subsection{Reformulation using relative entropy}
 \begin{defn}[Discrete relative entropy]\label{def-discrete-relative-entropy}
 For nonnegative matrices $\P,\Q$ of the same size, the generalized relative entropy, or Kullback--Leibler divergence, is
@@ -245,6 +262,25 @@ Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian o
 (e_0)_\sharp M=\al,\ (e_1)_\sharp M=\be
 }.
 \end{equation}
+\paragraph{Stochastic-control interpretation.}
+For the Brownian reference \(\d X_t=\sqrt\epsilon\,\d B_t\), \(X_0\sim\alpha\), with generator \((\epsilon/2)\Delta\), any finite-entropy law \(M\ll\Rr^\epsilon\) with the same initial marginal can be written, under standard assumptions and in weak form, as
+\[
+\d X_t=u_t\,\d t+\sqrt\epsilon\,\d B_t,\qquad X_0\sim\alpha .
+\]
+Girsanov's formula gives
+\[
+\KL(M|\Rr^\epsilon)
+=\frac{1}{2\epsilon}\EE_M\int_0^1\|u_t\|^2\,\d t,
+\qquad
+\epsilon\KL(M|\Rr^\epsilon)
+=\frac12\EE_M\int_0^1\|u_t\|^2\,\d t,
+\]
+up to the fixed initial entropy if the Brownian prior does not start from \(\alpha\). Hence, modulo this fixed endpoint cost, the bridge is the least-energy control steering Brownian motion from \(\alpha\) to \(\beta\):
+\[
+\inf_u\left\{\frac12\EE\int_0^1\|u_t\|^2\,\d t:
+\d X_t=u_t\,\d t+\sqrt\epsilon\,\d B_t,\ X_0\sim\alpha,\ X_1\sim\beta\right\}.
+\]
+The optimal drift is Markovian and has Doob-transform form \(u_t^\star=\epsilon\nabla\log h_t=\nabla\phi_t\), where \(\phi_t=\epsilon\log h_t\) solves \(\partial_t\phi_t+\frac12\|\nabla\phi_t\|^2+\frac{\epsilon}{2}\Delta\phi_t=0\).
 \paragraph{Viscous Benamou--Brenier formulations.}
 \(\partial_t\rho_t+\diverg(\rho_t v_t) = \frac{\sigma}{2}\Delta\rho_t,\)
 \(\int_0^1\!\int \frac12\norm{v_t(x)}^2\rho_t(x)\d x\d t.\)
@@ -463,6 +499,8 @@ For uniqueness, use strict convexity of
 \(H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)\)
 on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
 \end{proof}
+\paragraph{Neural dual solvers.}
+For \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: with \(\Phi=-f\) and \(\Psi=-g\), the constraint \(f+g\leq-\dotp{x}{y}\) reads \(\Phi(x)+\Psi(y)\geq\dotp{x}{y}\). For the quadratic cost, the same convexity appears after subtracting the quadratic terms. This motivates sampled dual solvers in which \(\Phi,\Psi\) are parameterized by input-convex neural networks: ReLU is convex and nondecreasing, nonnegative hidden weights preserve convexity, and affine input skips keep the model expressive. This is a convexity constraint on the represented functions, not a convex optimization problem in the network weights; neural dual solvers replace exact Sinkhorn scaling by stochastic optimization over a structured class of convex potentials.
 \subsection{Other Convex Regularizers}
 \label{sec-sinkhorn-other-regularizers}
 Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, and recall the $\phi$-divergence $\Divergm_\phi$ from Definition~\ref{def_divergence}. For $\epsilon>0$, define the $\phi$-regularized transport value
