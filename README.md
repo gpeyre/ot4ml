@@ -106,7 +106,7 @@ Computational references and long reviews cited in the book:
 - [*A Review of Matrix Scaling and Sinkhorn's Normal Form for Matrices and Positive Maps*](https://arxiv.org/abs/1609.06349), Martin Idel, 2016.
 - [*Scalable Optimal Transport Methods in Machine Learning: A Contemporary Survey*](https://doi.org/10.1109/TPAMI.2024.3379571), Abdelwahed Khamis, Russell Tsuchida, Mohamed Tarek, Vivien Rolland & Lars Petersson, IEEE TPAMI, 2024.
 - [*Recent Advances in Optimal Transport for Machine Learning*](https://arxiv.org/abs/2306.16156), Eduardo F. Montesuma, Fred Ngolè Mboula & Antoine Souloumiac, 2023.
-- [*A Survey of Optimal Transport for Computer Graphics and Computer Vision*](https://doi.org/10.1111/cgf.14778), Nicolas Bonneel, Julie Digne, Jean Feydy & Gabriel Peyré, Computer Graphics Forum, 2023.
+- [*A Survey of Optimal Transport for Computer Graphics and Computer Vision*](https://doi.org/10.1111/cgf.14778), Nicolas Bonneel & Julie Digne, Computer Graphics Forum, 2023.
 
 ### Software
 

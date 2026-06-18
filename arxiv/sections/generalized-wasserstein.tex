@@ -308,7 +308,7 @@ Its dual is
 	-
 	\epsilon\Dd_\phi^*\left(\frac{f\oplus g-c}{\epsilon}\middle|\al\otimes\be\right).
 \]
-For $\Dd_\phi=\KL$, the primal-dual relation is $\d\pi=e^{(f\oplus g-c)/\epsilon}\d\al\d\be$. If in addition $\Dd_{\psi_1}=\Dd_{\psi_2}=\tau\KL$, the dual specializes to
+For $\Dd_\phi=\KL$, the primal-dual relation is $\d\pi=e^{(f\oplus g-c)/\epsilon}\d\al\d\be$. If, in addition, $\Dd_{\psi_1}=\Dd_{\psi_2}=\tau\KL$, the dual specializes to
 \[
 	\sup_{f,g}
 	-\tau\int(e^{-f/\tau}-1)\d\al
@@ -717,6 +717,71 @@ For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycen
 \]
 This is exact in one dimension, where quantile functions linearize $\Wass_2$, and it is especially useful when many barycenters with changing weights must be evaluated quickly.
 \index{quantile!function}% strictindex
+
+\paragraph{Principal components in linear OT coordinates.}
+\index{principal component analysis}% strictindex
+\index{linear!OT}% strictindex
+
+The preceding embedding turns probability measures into displacement fields in a fixed Hilbert chart, so ordinary principal component analysis can be applied to deformations rather than to densities. Given training measures \((\alpha_i)_{i=1}^N\), set
+\[
+	z_i \eqdef T_{\alpha_i}-\Id,
+	\qquad
+	\bar z \eqdef \frac1N\sum_{i=1}^N z_i .
+\]
+The map \(\Id+\bar z\) defines the linear OT mean \((\Id+\bar z)_\sharp\rho\). The empirical covariance operator on \(L^2(\rho;\RR^d)\) is the finite-rank operator
+\[
+	\mathcal C_{\LOT} h
+	\eqdef
+	\frac1N\sum_{i=1}^N
+	\dotp{z_i-\bar z}{h}_{L^2(\rho)}
+	(z_i-\bar z),
+\]
+and its leading orthonormal eigenvectors \(e_k\) define the principal linear OT modes. Equivalently, one diagonalizes the \(N\times N\) Gram matrix \(G_{ij}=\frac1N\dotp{z_i-\bar z}{z_j-\bar z}_{L^2(\rho)}\). If \(Gv^{(k)}=\lambda_k v^{(k)}\) with \(\lambda_k>0\) and \(\norm{v^{(k)}}=1\), then
+\[
+	e_k=\frac{1}{\sqrt{N\lambda_k}}\sum_{i=1}^N v_i^{(k)}(z_i-\bar z)
+\]
+is the corresponding unit eigenvector of \(\mathcal C_{\LOT}\). The score of \(\alpha_i\) along mode \(e_k\) is
+\[
+	a_{i,k} \eqdef \dotp{z_i-\bar z}{e_k}_{L^2(\rho)} .
+\]
+A low-rank reconstruction, or a synthetic excursion with prescribed coefficients \(a=(a_1,\ldots,a_m)\), is then obtained by pushing the reference through
+\[
+	T_a(x) \eqdef x+\bar z(x)+\sum_{k=1}^m a_k e_k(x),
+	\qquad
+	\alpha_a \eqdef (T_a)_\sharp\rho .
+\]
+For small excursions around the mean displacement, this gives a practical tangent-space PCA for probability measures: it captures dominant modes of deformation while avoiding repeated pairwise OT computations. For large coefficients, \(T_a\) may fail to be the Brenier map from \(\rho\) to \(\alpha_a\), and may even leave the regular chart where \(T_a\) is a gradient of a convex function. Thus \(a\mapsto \alpha_a\) should be read as a chart-dependent linearized visualization rather than as an intrinsic Wasserstein geodesic. This LOT-PCA viewpoint was introduced for image variability analysis in~\cite{wang2013linear} and developed in transport-based signal analysis~\cite{thorpe2017transportation,kolouri2017optimal}; it complements intrinsic principal-geodesic or geodesic-PCA approaches, which optimize directly in the curved Wasserstein space~\cite{SeguyCuturi,bigot2017geodesic}.
+\index{covariance!operator}% strictindex
+\index{principal component analysis}% strictindex
+\index{Brenier!map}% strictindex
+\index{Wasserstein!geodesic}% strictindex
+
+Figure~\ref{fig:linear-ot-mnist-pca} illustrates this construction on MNIST digit-zero images. Each image is normalized as a probability measure on the pixel grid. A Sinkhorn barycenter is used as the reference \(\rho\), entropic couplings from \(\rho\) to the training images are converted into barycentric-projection maps, and PCA is applied to the resulting displacement fields.
+\index{Sinkhorn!barycenter}% strictindex
+\index{principal component analysis}% strictindex
+\index{barycentric!projection}% strictindex
+
+\begin{figure}[htbp]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.16\linewidth]{figures/linear-ot-mnist-pca--barycenter.pdf} &
+\includegraphics[width=.39\linewidth]{figures/linear-ot-mnist-pca--mode-1.pdf} &
+\includegraphics[width=.39\linewidth]{figures/linear-ot-mnist-pca--mode-2.pdf}
+\\[-.1em]
+\small Sinkhorn barycenter & \small first LOT-PCA mode & \small second LOT-PCA mode
+\\[.35em]
+\multicolumn{1}{c}{} &
+\includegraphics[width=.39\linewidth]{figures/linear-ot-mnist-pca--mode-3.pdf} &
+\includegraphics[width=.39\linewidth]{figures/linear-ot-mnist-pca--mode-4.pdf}
+\\[-.1em]
+\multicolumn{1}{c}{} & \small third LOT-PCA mode & \small fourth LOT-PCA mode
+\end{tabular}
+\caption{Principal components in linear OT coordinates for MNIST digit-zero histograms. The left panel shows the Sinkhorn barycenter reference \(\rho\). Each mode panel is a triptych obtained by pushing \(\rho\) through \(x\mapsto x+\bar z(x)+a e_k(x)\) with a negative, zero, and positive coefficient \(a\). The displayed densities use black for zero mass and white for high mass. The modes capture rotations, aspect-ratio changes, and stroke-thickness deformations in the tangent chart around the barycenter.}
+\index{linear!OT}% strictindex
+\index{principal component analysis}% strictindex
+\label{fig:linear-ot-mnist-pca}
+\end{figure}
 
 \begin{rem}[Three Hilbertian embeddings of measures]\label{rem-three-hilbertian-measure-embeddings}
 \index{Hilbertian!embedding}% strictindex
