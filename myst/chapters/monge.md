@@ -460,9 +460,11 @@ space $(\Omega,\Ff,\PP)$. Its law, or probability distribution, is the
 push-forward of $\PP$ by $X$, namely $\al=X_\sharp\PP$.
 
 Applying another push-forward $\be = \T_\sharp\al$ for $\T : \X \rightarrow \Y$, following {eq}`eq-push-fwd-web`, is equivalent to defining another random variable $Y=\T(X)$, namely $\omega \in \Om \mapsto \T(X(\omega)) \in \Y$. Indeed
+
 ```{math}
 \be=\T_\sharp\al=\T_\sharp(X_\sharp\PP)=(\T\circ X)_\sharp\PP,
 ```
+
 so $\be$ is the law of $Y$.
 
 Drawing a random sample $y$ from $Y$ is thus simply achieved by computing $y=\T(x)$ where $x$ is drawn from $X$.
@@ -670,6 +672,43 @@ The Monge value defines the directed quantity
 If the constraint set is empty, then
 $\widetilde{\Wass}_p(\al,\be)=+\infty$.
 
+(ex-monge-book-shifting-w1)=
+:::{admonition} Example: Book-shifting in the Monge problem
+:class: ot4ml-example
+
+Let
+
+```{math}
+\al=\frac12\mathds{1}_{[0,2]}(x)\d x,
+\qquad
+\be=\frac12\mathds{1}_{[1,3]}(y)\d y.
+```
+
+The monotone translation $T_{\rm tr}(x)=x+1$ pushes $\al$ to $\be$. For the cost $|x-y|$, it is not the only optimal Monge map. The book-shifting map
+
+```{math}
+T_{\rm book}(x)=
+\begin{cases}
+x+2, & 0\leq x\leq1,\\
+x, & 1<x\leq2,
+\end{cases}
+```
+
+also satisfies $(T_{\rm book})_\sharp\al=\be$: it keeps the overlapping interval $[1,2]$ fixed and sends the left interval $[0,1]$ to the uncovered interval $[2,3]$. For any admissible map $T_\sharp\al=\be$,
+
+```{math}
+\int |T(x)-x|\d\al(x)
+\geq
+\int (T(x)-x)\d\al(x)
+=
+\int y\d\be(y)-\int x\d\al(x)
+=1.
+```
+
+Both $T_{\rm tr}$ and $T_{\rm book}$ satisfy $T(x)\geq x$ for $\al$-almost every $x$, hence both saturate this lower bound and are optimal for the Monge value $\tilde\Wass_1$. More generally, one may replace the map $x\mapsto x+2$ on $[0,1]$ by any measure-preserving map from $[0,1]$ to $[2,3]$, while keeping the identity on $[1,2]$. The flatness is specific to the linear cost: for $p>1$, strict convexity selects the monotone translation.
+:::
+
+
 (prop-directed-monge-distance)=
 :::{admonition} Proposition: Directed Monge Distance
 :class: important
@@ -724,6 +763,7 @@ asymmetric. Kantorovich's formulation remedies both issues by replacing maps
 with couplings.
 
 (sec-monge-existence-uniqueness)=
+
 ## Existence And Uniqueness Of The Monge Map
 
 This section records the main regimes where Monge's deterministic formulation
@@ -768,81 +808,7 @@ relaxed optimizer is therefore induced by the map $\T=\nabla\phi$, and
 uniqueness follows from concentration on the same graph.
 :::
 
-(defn-not-charging-hypersurfaces)=
-:::{admonition} Definition: Measures Not Charging Hypersurfaces
-:class: important
-A Borel measure $\al$ on $\RR^d$ does not charge hypersurfaces if $\al(S)=0$
-for every countably $(d-1)$-rectifiable set $S$, i.e. every set that can be
-covered, up to a $\mathcal{H}^{d-1}$-null set, by countably many $C^1$
-hypersurfaces.
-:::
-
-:::{admonition} Remark: A sharp source hypothesis
-:class: ot4ml-remark
-
-The absolute-continuity assumption in Brenier's theorem can be weakened: for the quadratic cost, it is enough that $\al$ does not charge hypersurfaces {cite:p}`gangbo1996geometry,Villani09,SantambrogioBook`. The reason is that the set where a convex potential has a genuinely multi-valued subdifferential is contained in a countable union of lower-dimensional pieces. This condition is close to sharp. If the source gives positive mass to a segment or a hypersurface, the subdifferential may be multi-valued on a set of positive $\al$-mass, and the optimal relaxed plan may need to split mass, as in Example {ref}`ex-splitting-obstruction`.
-:::
-
-
-:::{admonition} Remark: Beyond the quadratic Euclidean cost
-:class: ot4ml-remark
-
-Brenier's theorem is the cleanest statement because the squared Euclidean cost turns optimal maps into gradients of convex functions. For costs $c(x,y)=\norm{x-y}^p$ with $p>1$, or more generally costs $c(x,y)=h(x-y)$ with $h$ smooth and strictly convex, the same strategy gives a unique optimal map under absolute continuity of the source, but the map is written in terms of a $c$-convex potential. On a Riemannian manifold, the local analogue for the cost $d_M(x,y)^2/2$ uses the exponential map
-
-```{math}
-\T(x)=\exp_x(-\nabla\phi(x)),
-```
-
-where $\phi$ is $c$-convex. The main additional issues are the cut locus and regularity of geodesics, which is why the Euclidean statement is usually presented first. These extensions are part of McCann's displacement convexity theory and the general theory of optimal maps on manifolds {cite:p}`mccann1997convexity,Villani09`.
-:::
-
-
-#### Twist Condition
-
-The preceding extensions rely on a non-degeneracy property of the cost. It is
-the mechanism that turns the first-order optimality condition of Kantorovich
-duality into a single target point.
-
-(def-twist-condition)=
-:::{admonition} Definition: Twist Condition
-:class: important
-Let $X,Y\subset\RR^d$ and let $c\in C^1(X\times Y)$. The cost $c$ satisfies
-the twist condition from $X$ to $Y$ if, for every fixed $x\in X$, the map
-
-```{math}
-y\in Y \longmapsto \nabla_x c(x,y)\in\RR^d
-```
-
-is injective. The dual twist condition is the analogous injectivity of
-$x\mapsto\nabla_y c(x,y)$ for every fixed $y$.
-:::
-
-To see why this is useful, let $(f,g)$ be optimal Kantorovich potentials and
-let $\pi$ be an optimal plan. On $\supp(\pi)$ one has
-$f(x)+g(y)=c(x,y)$, while dual feasibility gives
-$f(z)+g(y)\leq c(z,y)$ for all $z$. Thus, for each contact pair $(x,y)$, the
-function $z\mapsto c(z,y)-g(y)$ touches $f$ from above at $x$. At a point where
-$f$ is differentiable, this gives
-
-```{math}
-\nabla f(x)=\nabla_x c(x,y).
-```
-
-If the cost is twisted, this equation determines at most one $y$. Thus, under
-the usual absolute-continuity hypotheses ensuring differentiability of the
-potential almost everywhere, an optimal Kantorovich plan cannot split mass from
-a typical source point: it is concentrated on the graph of a Monge map. The
-quadratic cost satisfies twist since $\nabla_x\norm{x-y}^2=2(x-y)$; the
-bilinear cost $c(x,y)=-\dotp{x}{y}$ satisfies twist since
-$\nabla_x c(x,y)=-y$; more generally $c(x,y)=h(x-y)$ is twisted when $h$ is
-smooth strictly convex and $\nabla h$ is injective. On a Riemannian manifold,
-the squared geodesic cost is twisted locally away from the cut locus. By
-contrast, a separated cost $a(x)+b(y)$ is never twisted, since $\nabla_xc$
-does not see $y$.
-
-Brenier's theorem should be read through the analogy between convex gradients
-and increasing functions. The gradient of a convex function is a monotone
-field:
+Brenier's theorem is the higher-dimensional analogue of the one-dimensional monotone rearrangement theorem. In one dimension, the derivative of a convex function is an increasing map; in several dimensions, the corresponding object is the gradient of a convex function. Such gradients are monotone fields:
 
 ```{math}
 \langle \nabla\phi(x)-\nabla\phi(x'),x-x'\rangle\geq0.
@@ -871,6 +837,22 @@ The linear map $x\mapsto R_\theta x$ is monotone as soon as $|\theta|\leq\pi/2$,
 ```
 
 However, for $\theta\neq0$, $R_\theta$ is not symmetric and therefore cannot be the gradient of a scalar potential. Indeed, if a linear field $Ax$ equals $\nabla\phi(x)$, then its Jacobian $A$ must be symmetric; equivalently, a quadratic potential $\phi(x)=\dotp{Bx}{x}/2$ has gradient $((B+B^\top)/2)x$. Thus monotonicity is weaker than Brenier optimality in dimension $d\geq2$.
+:::
+
+
+(defn-not-charging-hypersurfaces)=
+:::{admonition} Definition: Measures Not Charging Hypersurfaces
+:class: important
+A Borel measure $\al$ on $\RR^d$ does not charge hypersurfaces if $\al(S)=0$
+for every countably $(d-1)$-rectifiable set $S$, i.e. every set that can be
+covered, up to a $\mathcal{H}^{d-1}$-null set, by countably many $C^1$
+hypersurfaces.
+:::
+
+:::{admonition} Remark: A sharp source hypothesis
+:class: ot4ml-remark
+
+The absolute-continuity assumption in Brenier's theorem can be weakened: for the quadratic cost, it is enough that $\al$ does not charge hypersurfaces {cite:p}`gangbo1996geometry,Villani09,SantambrogioBook`. The reason is that the set where a convex potential has a genuinely multi-valued subdifferential is contained in a countable union of lower-dimensional pieces. This condition is close to sharp. If the source gives positive mass to a segment or a hypersurface, the subdifferential may be multi-valued on a set of positive $\al$-mass, and the optimal relaxed plan may need to split mass, as in Example {ref}`ex-splitting-obstruction`.
 :::
 
 
@@ -1097,59 +1079,6 @@ map is a classical smooth deformation rather than only an almost-everywhere
 gradient. For quadratic costs this becomes the regularity theory of the
 Monge--Ampere equation.
 
-#### Ma--Trudinger--Wang Curvature
-
-Twist gives a map, but it does not by itself make this map continuous or
-smooth. For a general smooth cost, the relevant structural hypothesis is the
-Ma--Trudinger--Wang (MTW) condition, introduced for a priori estimates of the
-generated Jacobian equation associated with optimal transport
-{cite:p}`ma2005regularity,trudinger2001monge`.
-
-(def-mtw-condition)=
-:::{admonition} Definition: Weak MTW Condition
-:class: important
-Assume that $c\in C^4(X\times Y)$, that $X,Y\subset\RR^d$, that $c$ is
-twisted, and that the mixed Hessian $\nabla^2_{xy}c(x,y)$ is invertible. Let
-$Y(x,p)$ be defined, for $(x,p)$ in the image of the change of variables
-$(x,y)\mapsto(x,\nabla_xc(x,y))$, by
-
-```{math}
-\nabla_x c(x,Y(x,p))=p,
-```
-
-and set
-
-```{math}
-A_{ij}(x,p)\eqdef \partial^2_{x_i x_j}c(x,Y(x,p)).
-```
-
-The cost satisfies the weak MTW condition if
-
-```{math}
-\sum_{i,j,k,l}\partial^2_{p_kp_l} A_{ij}(x,p)\,\xi_i\xi_j\eta_k\eta_l\geq0
-\qquad\text{whenever }\dotp{\xi}{\eta}=0.
-```
-
-A strong MTW condition asks for a positive lower bound, proportional to
-$\norm{\xi}^2\norm{\eta}^2$, on the same orthogonal directions.
-:::
-
-The tensor above is often called the cost-sectional curvature. It measures how
-the $x$-Hessian of the cost bends when the target point is varied through the
-dual momentum $p$. Its role is analogous to convexity for the standard
-Monge--Ampere equation: together with suitable $c$-convexity of the domains and
-positive smooth densities, it keeps the contact sets of $c$-convex potentials
-well behaved and yields continuity, Hölder estimates, and higher regularity of
-optimal maps. Loeper showed that a nonnegative MTW curvature is essentially
-necessary for continuity of optimal maps for arbitrary smooth positive data
-{cite:p}`loeper2009regularity,Villani09`. The flat quadratic and bilinear
-costs have zero MTW curvature, hence satisfy the weak condition. For the
-squared Riemannian distance, the MTW tensor is a refined curvature condition on
-the cost: near the diagonal it recovers sectional curvature, negative sectional
-curvature gives an obstruction, and global regularity also depends on cut-locus
-and domain-convexity issues. Many smooth strictly convex costs fail MTW, which
-is why twist is enough for existence of a map but not for regularity.
-
 (prop-caffarelli-regularity)=
 :::{admonition} Proposition: Caffarelli Regularity
 :class: important
@@ -1182,10 +1111,11 @@ then yields the $C^{2,\alpha}_{\mathrm{loc}}$ estimates
 
 Figure {ref}`fig:monge-caffarelli-nonconvex-map` illustrates the geometric role
 of the convexity assumption. It should be read as a finite-sample visualization
-rather than as a counterexample: a quadratic assignment sends a nearly
-area-uniform concentric-ring sample of the disk to a non-convex bean-shaped
-target. The images of initially smooth circles remain visible, but they bend
-and bunch near the inward dent of the target.
+rather than as a counterexample: a quadratic assignment transports a
+farthest-point sample of a non-convex banana-shaped source to a farthest-point
+sample of the disk. The target dual potential defines a c-transform extension,
+so the level curves drawn in the banana can be pushed through the induced
+Laguerre map and displayed inside the disk.
 
 (fig:monge-caffarelli-nonconvex-map)=
 :::{div}
@@ -1196,13 +1126,13 @@ and bunch near the inward dent of the target.
 show_book_figure("monge-caffarelli-nonconvex-map")
 ```
 
-*Empirical quadratic OT map from a disk to a non-convex bean-shaped domain. The
-left panel shows a nearly area-uniform source sampling by concentric circles.
-The right panel shows the equal-weight target samples matched by the optimal
-assignment; colors record the source radius, and thin curves connect the
-matched images of each source circle in angular order. The bunching along the
-inward dent visualizes the target-geometry obstruction that Caffarelli's
-convexity assumptions rule out.*
+*Empirical quadratic OT map from a non-convex banana-shaped domain to a disk.
+The left panel shows level curves inside the banana-shaped source. The right
+panel shows their images under the c-transform extension `T(z)=y_{j(z)}`, where
+`j(z)` minimizes `||z-y_j||^2-v_j` and `v` is an optimal target dual potential.
+On the sampled source points, the assigned target belongs to this argmin set up
+to numerical precision; away from the samples, the panel displays the
+corresponding Laguerre-cell extrapolation of the empirical map.*
 :::
 
 :::{admonition} Remark: Regularity, weak maps, and splitting
@@ -1229,30 +1159,14 @@ to an additive constant among convex solutions. The convexity constraint forces
 $\det(\nabla^2\phi(x))\geq0$ and is necessary for this fully nonlinear elliptic
 equation to be well posed.
 
-:::{admonition} Remark: Numerical Monge--Ampere solvers
+:::{admonition} Remark: Numerical Monge--Amp\`ere solvers
 :class: ot4ml-remark
 
-The Monge--Ampere operator should be viewed as a fully nonlinear, degenerate
-elliptic analogue of the Laplacian. Proposition
-{ref}`prop-linearized-monge-ampere` makes this analogy literal at first order,
-where the equation becomes a weighted Poisson equation. The nonlinear operator
-$\phi\mapsto\det(\nabla^2\phi)$, however, is elliptic only on the convex branch,
-together with the second boundary condition $\nabla\phi(\Omega)=\Lambda$. This
-is the numerical difficulty: a scheme is not reliable merely because it
-approximates the determinant of the Hessian. It must also select the convex
-Alexandrov/viscosity solution and discretize the boundary condition
-consistently.
+The Monge--Amp\`ere operator should be viewed as a fully nonlinear, degenerate elliptic analogue of the Laplacian. Proposition {ref}`prop-linearized-monge-ampere` makes this analogy literal at first order, where the equation becomes a weighted Poisson equation. The nonlinear operator $\phi\mapsto\det(\nabla^2\phi)$, however, is elliptic only on the convex branch, together with the second boundary condition $\nabla\phi(\Omega)=\Lambda$. This is the numerical difficulty: a scheme is not reliable merely because it approximates the determinant of the Hessian. It must also select the convex Alexandrov/viscosity solution and discretize the boundary condition consistently.
 
-Several complementary approaches have been developed. Geometric discretizations
-go back to Oliker--Prussner and reflector-design methods; PDE-based solvers
-include Newton methods, monotone wide-stencil finite differences and variational
-discretizations; semi-discrete and power-diagram methods exploit the
-convex-cell structure of the transport map. Representative references include
-{cite:p}`oliker1989numerical,caffarelli1999problem,Loeper:2005fn,benamou2014numerical,froese2011convergent,benamou2016monotone,mirebeau2015discretization,sulman2011efficient`.
-We do not describe these schemes here; the point is that numerical
-Monge--Ampere transport is primarily a problem of consistent discretization of
-this nonlinear Laplacian-like operator.
+Several complementary approaches have been developed. Geometric discretizations go back to Oliker--Prussner and reflector-design methods; PDE-based solvers include Newton methods, monotone wide-stencil finite differences and variational discretizations; semi-discrete and power-diagram methods exploit the convex-cell structure of the transport map. Representative references include {cite:p}`oliker1989numerical,caffarelli1999problem,Loeper:2005fn,benamou2014numerical,froese2011convergent,benamou2016monotone,mirebeau2015discretization,sulman2011efficient`. We do not describe these schemes here; the point is that numerical Monge--Amp\`ere transport is primarily a problem of consistent discretization of this nonlinear Laplacian-like operator.
 :::
+
 
 The following proposition records the infinitesimal form.
 
@@ -1304,6 +1218,101 @@ o(\epsilon).
 
 The first-order term must vanish.
 :::
+
+(sec-beyond-quadratic-euclidean-cost)=
+## Beyond The Quadratic Euclidean Cost
+
+The quadratic Euclidean cost is the model case, but optimal-map theory also covers many non-quadratic costs. The key point is to separate three roles: a convexity-like structure gives potentials, a twist condition prevents splitting, and curvature-type conditions give regularity.
+
+:::{admonition} Remark: Non-quadratic convex costs
+:class: ot4ml-remark
+
+Brenier's theorem is the cleanest statement because the squared Euclidean cost turns optimal maps into gradients of convex functions. For costs $c(x,y)=\norm{x-y}^p$ with $p>1$, or more generally costs $c(x,y)=h(x-y)$ with $h$ smooth and strictly convex, the same strategy gives a unique optimal map under absolute continuity of the source, but the map is written in terms of a $c$-convex potential. On a Riemannian manifold, the local analogue for the cost $d_M(x,y)^2/2$ uses the exponential map
+
+```{math}
+\T(x)=\exp_x(-\nabla\phi(x)),
+```
+
+where $\phi$ is $c$-convex. The main additional issues are the cut locus and regularity of geodesics, which is why the Euclidean statement is usually presented first. These extensions are part of McCann's displacement convexity theory and the general theory of optimal maps on manifolds {cite:p}`mccann1997convexity,Villani09`.
+:::
+
+
+### Twist Condition
+
+The first non-degeneracy condition asks that the first-order information at a source point identifies at most one target point. This is the structural hypothesis that turns an optimal relation into a map.
+
+(def-twist-condition)=
+:::{admonition} Definition: Twist Condition
+:class: important
+Let $X,Y\subset\RR^d$ and let $c\in C^1(X\times Y)$. The cost $c$ satisfies the twist condition from $X$ to $Y$ if, for every fixed $x\in X$, the map
+
+```{math}
+y\in Y \longmapsto \nabla_x c(x,y)\in\RR^d
+```
+
+is injective. The dual twist condition is the analogous injectivity of $x\mapsto\nabla_y c(x,y)$ for every fixed $y$.
+:::
+
+(prop-twist-prevents-splitting)=
+:::{admonition} Proposition: Twist Prevents Splitting
+:class: important
+Assume that $c\in C^1(X\times Y)$ satisfies the twist condition from $X$ to $Y$. Suppose that optimal pairs for the cost $c$ admit a source potential $f$ with the following first-order certificate: $f$ is differentiable on a full $\al$-measure subset of $X$, and whenever $x$ belongs to this differentiability set and $y$ can be paired optimally with $x$, one has $\nabla f(x)=\nabla_xc(x,y)$. Then, for $\al$-almost every source point $x$, there is at most one target point $y$ that can be paired optimally with $x$. Consequently, any optimal transport relation satisfying these hypotheses is single-valued $\al$-almost everywhere, hence is induced by a Monge map.
+:::
+
+:::{dropdown} Proof
+The proof uses the Kantorovich duality formalism developed later in Chapter {ref}`sec-dual`. Let $(f,g)$ be optimal Kantorovich potentials and let $\pi$ be an optimal plan. On $\supp(\pi)$ one has $f(x)+g(y)=c(x,y)$, while dual feasibility gives $f(z)+g(y)\leq c(z,y)$ for all $z$. Thus, for each contact pair $(x,y)$, the function $z\mapsto c(z,y)-g(y)$ touches $f$ from above at $x$. At a point where $f$ is differentiable, this gives
+
+```{math}
+\nabla f(x)=\nabla_x c(x,y).
+```
+
+If the cost is twisted, this equation determines at most one $y$. Hence no optimal plan can split the mass of such an $x$ between several target points. Since differentiability holds on a full $\al$-measure set, the plan is concentrated on the graph of a measurable map there.
+:::
+
+The quadratic cost satisfies twist since $\nabla_x\norm{x-y}^2=2(x-y)$; the bilinear cost $c(x,y)=-\dotp{x}{y}$ satisfies twist since $\nabla_x c(x,y)=-y$; more generally $c(x,y)=h(x-y)$ is twisted when $h$ is smooth strictly convex and $\nabla h$ is injective. On a Riemannian manifold, the squared geodesic cost is twisted locally away from the cut locus. By contrast, a separated cost $a(x)+b(y)$ is never twisted, since $\nabla_xc$ does not see $y$.
+
+### Ma--Trudinger--Wang Curvature
+
+Twist gives a map, but it does not by itself make this map continuous or smooth. For a general smooth cost, the relevant structural hypothesis is the Ma--Trudinger--Wang (MTW) condition, introduced for a priori estimates of the generated Jacobian equation associated with optimal transport {cite:p}`ma2005regularity,trudinger2001monge`.
+
+(def-mtw-condition)=
+:::{admonition} Definition: Weak MTW Condition
+:class: important
+Assume that $c\in C^4(X\times Y)$, that $X,Y\subset\RR^d$, that $c$ is twisted, and that the mixed Hessian $\nabla^2_{xy}c(x,y)$ is invertible. For $(x,p)$ in the image of the change of variables $(x,y)\mapsto(x,\nabla_xc(x,y))$, let $Y(x,p)$ be defined by
+
+```{math}
+\nabla_x c(x,Y(x,p))=p,
+```
+
+and set
+
+```{math}
+A_{ij}(x,p)\eqdef \partial^2_{x_i x_j}c(x,Y(x,p)).
+```
+
+The cost satisfies the weak MTW condition if
+
+```{math}
+\sum_{i,j,k,l}\partial^2_{p_kp_l} A_{ij}(x,p)\,\xi_i\xi_j\eta_k\eta_l\geq0
+\qquad\text{whenever }\dotp{\xi}{\eta}=0.
+```
+
+A strong MTW condition asks for a positive lower bound, proportional to $\norm{\xi}^2\norm{\eta}^2$, on the same orthogonal directions.
+:::
+
+The tensor above is often called the cost-sectional curvature. It measures how the $x$-Hessian of the cost bends when the target point is varied through the dual momentum $p$.
+
+(prop-mtw-regularity-implication)=
+:::{admonition} Proposition: MTW Condition and Regularity
+:class: important
+Assume that $c$ is smooth, twisted and non-degenerate, that the source and target domains satisfy the usual $c$-convexity assumptions, and that the source and target densities are positive and bounded above and below. Under the weak MTW condition, optimal maps are continuous for smooth positive data. Under the corresponding strong MTW condition and higher smoothness of the data and domains, one obtains higher regularity estimates for the optimal map.
+:::
+
+:::{dropdown} Proof
+This is the regularity theorem of Ma--Trudinger--Wang and Loeper, stated here in its structural form. The $c$-convex potential solves a generated Jacobian equation. Twist and non-degeneracy turn the potential into a single-valued map, while the weak MTW inequality controls the convexity of contact sets of $c$-convex functions. This prevents the contact set from tearing apart and yields continuity. Strong MTW gives a quantitative curvature lower bound; combined with smooth densities, boundary geometry and elliptic estimates for the generated Jacobian equation, it yields the usual higher regularity. Loeper also proved that nonnegative MTW curvature is essentially necessary for continuity for arbitrary smooth positive data {cite:p}`loeper2009regularity,Villani09`.
+:::
+
+The flat quadratic and bilinear costs have zero MTW curvature, hence satisfy the weak condition. For the squared Riemannian distance, the MTW tensor is a refined curvature condition on the cost: near the diagonal it recovers sectional curvature, negative sectional curvature gives an obstruction, and global regularity also depends on cut-locus and domain-convexity issues. Many smooth strictly convex costs fail MTW, which is why twist is enough for existence of a map but not for regularity.
 
 (sec-1d-transport-quantiles)=
 ## One-Dimensional Transport And Quantiles
@@ -1929,14 +1938,11 @@ second-moment constraints, and Proposition {ref}`prop-gaussian-w2-bures` gives
 equality, again by continuity in the singular case.
 :::
 
+(rem-elliptical-bures)=
 :::{admonition} Remark: Common-generator elliptical laws
 :class: ot4ml-remark
 
-The Gaussian formula has a useful, but deliberately limited, extension beyond
-Gaussian tails. Fix an absolutely continuous, centered, radial probability
-measure $\rho$ on $\RR^d$ with covariance $\Id$. For positive definite matrices
-$\cov_\al,\cov_\be$, define two elliptically contoured laws with this same
-radial generator by
+The Gaussian formula has a useful, but deliberately limited, extension beyond Gaussian tails. Fix an absolutely continuous, centered, radial probability measure $\rho$ on $\RR^d$ with covariance $\Id$. For positive definite matrices $\cov_\al,\cov_\be$, define two elliptically contoured laws with this same radial generator by
 
 ```{math}
 \al=(z\mapsto \mean_\al+\cov_\al^{1/2}z)_\sharp\rho,
@@ -1944,21 +1950,9 @@ radial generator by
 \be=(z\mapsto \mean_\be+\cov_\be^{1/2}z)_\sharp\rho.
 ```
 
-For this pair, the same Brenier matrix {eq}`eq-bures-map-web` gives the
-optimal map $\T(x)=\mean_\be+A(x-\mean_\al)$, and the same formula
-{eq}`eq-dist-gauss-web` holds. Indeed, if
-$X=\mean_\al+\cov_\al^{1/2}Z$ with $Z\sim\rho$, then
-$A\cov_\al A=\cov_\be$, hence
-$A\cov_\al^{1/2}=\cov_\be^{1/2}Q$ for some orthogonal matrix $Q$. Since $\rho$
-is radial, $QZ$ has the same law as $Z$, so $\T_\sharp\al=\be$. Since $A$ is
-symmetric positive definite, $\T$ is the gradient of a convex quadratic
-potential and Brenier's theorem gives optimality. Finally, because $\rho$ is
-centered with covariance $\Id$, the transport cost depends only on the means
-and covariance matrices and gives the Bures expression. The common-generator
-assumption is the point: for two elliptical laws with different radial
-profiles, one must also transport the radial variable, and the covariance/Bures
-term is no longer the full transport cost.
+For this pair, the same Brenier matrix {eq}`eq-bures-map-web` gives the optimal map $\T(x)=\mean_\be+A(x-\mean_\al)$, and the same formula {eq}`eq-dist-gauss-web` holds. Indeed, if $X=\mean_\al+\cov_\al^{1/2}Z$ with $Z\sim\rho$, then $A\cov_\al A=\cov_\be$, hence $A\cov_\al^{1/2}=\cov_\be^{1/2}Q$ for some orthogonal matrix $Q$. Since $\rho$ is radial, $QZ$ has the same law as $Z$, so $\T_\sharp\al=\be$. Since $A$ is symmetric positive definite, $\T$ is the gradient of a convex quadratic potential and Brenier's theorem gives optimality. Finally, because $\rho$ is centered with covariance $\Id$, the transport cost depends only on the means and covariance matrices and gives the Bures expression. The common-generator assumption is the point: for two elliptical laws with different radial profiles, one must also transport the radial variable, and the covariance/Bures term is no longer the full transport cost.
 :::
+
 
 The covariance term $\Bb$ is the Bures--Wasserstein metric on positive
 semidefinite matrices {cite:p}`bures1969extension,gelbrich1990formula,bhatia2018bures`.
@@ -2022,14 +2016,11 @@ $u$ and $v$ horizontal, $t$ vertical, and faint gray chords showing the ambient
 Euclidean segments for comparison.*
 :::
 
-
 (rem-fisher-rao-gaussian-mean)=
-:::{admonition} Remark: Comparison With The Fisher--Rao Metric With Mean Variation
-:class: note
-The Wasserstein geometry of one-dimensional Gaussians is Euclidean in
-$(m,\sigma)$. The Fisher--Rao geometry obtained from the local expansion of the
-Kullback--Leibler divergence is different once the mean is allowed to vary. For
-$\sigma,\sigma'>0$,
+:::{admonition} Remark: Comparison with the Fisher--Rao metric with mean variation
+:class: ot4ml-remark
+
+The previous formula shows that the Wasserstein geometry of one-dimensional Gaussians is Euclidean in $(m,\sigma)$. The Fisher--Rao geometry obtained from the local expansion of the Kullback--Leibler divergence is different as soon as the mean is allowed to vary. For $\sigma,\sigma'>0$,
 
 ```{math}
 \KL\big(\Gaussian(m,\sigma^2)\mid\Gaussian(m',(\sigma')^2)\big)
@@ -2041,7 +2032,7 @@ $\sigma,\sigma'>0$,
 \frac12 .
 ```
 
-Expanding the first argument around $(m,\sigma)$ gives
+Expanding the first argument around $(m,\sigma)$ gives, for increments $(h,s)$,
 
 ```{math}
 \KL\big(\Gaussian(m+\varepsilon h,(\sigma+\varepsilon s)^2)
@@ -2052,7 +2043,7 @@ Expanding the first argument around $(m,\sigma)$ gives
 +o(\varepsilon^2).
 ```
 
-Thus
+Thus the Fisher--Rao metric on the Gaussian half-plane is
 
 ```{math}
 g_{(m,\sigma)}^{\mathrm{FR}}((h,s),(h',s'))
@@ -2060,10 +2051,7 @@ g_{(m,\sigma)}^{\mathrm{FR}}((h,s),(h',s'))
 \frac{hh'+2ss'}{\sigma^2}.
 ```
 
-Setting $z=m/\sqrt2+i\sigma$ identifies this metric with twice the usual
-hyperbolic metric on the upper half-plane. Its geodesics are therefore vertical
-lines or Euclidean semicircles orthogonal to the boundary $\sigma=0$ after this
-horizontal rescaling. Consequently
+Setting $z=m/\sqrt2+i\sigma$ identifies this metric with twice the usual hyperbolic metric on the upper half-plane. Its geodesics are therefore vertical lines or Euclidean semicircles orthogonal to the boundary $\sigma=0$ after this horizontal rescaling. Consequently
 
 ```{math}
 d_{\mathrm{FR}}\big(\Gaussian(m,\sigma^2),\Gaussian(m',(\sigma')^2)\big)
@@ -2073,11 +2061,9 @@ d_{\mathrm{FR}}\big(\Gaussian(m,\sigma^2),\Gaussian(m',(\sigma')^2)\big)
 \right).
 ```
 
-In contrast, $\Wass_2^2=(m-m')^2+(\sigma-\sigma')^2$. Wasserstein geodesics are
-straight segments in the $(m,\sigma)$ half-plane and reach $\sigma=0$ at finite
-distance, whereas Fisher--Rao geodesics bend away from the boundary and the
-boundary $\sigma=0$ is infinitely far away.
+In contrast, $\Wass_2^2=(m-m')^2+(\sigma-\sigma')^2$. Wasserstein geodesics are straight segments in the $(m,\sigma)$ half-plane and reach $\sigma=0$ at finite distance, whereas Fisher--Rao geodesics bend away from the boundary and the boundary $\sigma=0$ is infinitely far away. Figure {ref}`fig:monge-gaussian-fr-mean-geodesic` displays the resulting difference in both parameter space and density space.
 :::
+
 
 (fig:monge-gaussian-fr-mean-geodesic)=
 :::{div}
@@ -2109,12 +2095,10 @@ same covariance paths drawn in cone coordinates.
 <iframe class="ot4ml-live-frame" title="Gaussian Wasserstein geodesic controls" src="../live/monge-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 (rem-fisher-rao-bures-gaussian)=
-:::{admonition} Remark: Comparison With The Fisher--Rao Metric For Zero-Mean Gaussians
-:class: note
-The Bures metric is the covariance geometry induced by quadratic optimal
-transport. A different, information-geometric metric is obtained by expanding
-the Kullback--Leibler divergence between centered Gaussians. For
-$\Sigma,\Sigma'\in\mathbb S_{++}^d$, write
+:::{admonition} Remark: Comparison with the Fisher--Rao metric for zero-mean Gaussians
+:class: ot4ml-remark
+
+The Bures metric is the covariance geometry induced by quadratic optimal transport. A different, information-geometric metric is obtained by expanding the Kullback--Leibler divergence between centered Gaussians. For $\Sigma,\Sigma'\in\mathbb S_{++}^d$, write
 
 ```{math}
 \KL(\Sigma\mid\Sigma')
@@ -2133,17 +2117,16 @@ If $D=D^\top$ and $\Sigma+\varepsilon D$ remains positive definite, then
 =
 \frac{\varepsilon^2}{2}\langle Q_\Sigma(D),D\rangle_F+o(\varepsilon^2),
 \qquad
-Q_\Sigma(D)=\frac12\Sigma^{-1}D\Sigma^{-1}.
+Q_\Sigma(D)=\frac12\Sigma^{-1}D\Sigma^{-1},
 ```
 
-Thus the local quadratic form is
+where $\langle A,B\rangle_F=\tr(A^\top B)$ is the Frobenius pairing. Thus the local quadratic form is
 
 ```{math}
 g_\Sigma(D,E)=\frac12\tr(\Sigma^{-1}D\Sigma^{-1}E).
 ```
 
-With this normalization, the Fisher--Rao, or affine-invariant, geodesic
-distance on $\mathbb S_{++}^d$ is
+With this normalization, the Fisher--Rao, or affine-invariant, geodesic distance on $\mathbb S_{++}^d$ is
 
 ```{math}
 d_{\mathrm{FR}}(\Sigma,\Sigma')^2
@@ -2152,7 +2135,7 @@ d_{\mathrm{FR}}(\Sigma,\Sigma')^2
 \norm{\log(\Sigma^{-1/2}\Sigma'\Sigma^{-1/2})}_F^2,
 ```
 
-where $\log$ is the principal matrix logarithm, and the corresponding geodesic is
+where $\log$ denotes the principal matrix logarithm, and the corresponding geodesic is
 
 ```{math}
 \Sigma_t^{\mathrm{FR}}
@@ -2162,15 +2145,9 @@ where $\log$ is the principal matrix logarithm, and the corresponding geodesic i
 \Sigma^{1/2}.
 ```
 
-The contrast with Bures is visible near the boundary of the covariance cone.
-For example, $\Bb^2(\Sigma,0)=\tr(\Sigma)$, and more generally Bures extends
-continuously to $\mathbb S_+^d$. Rank-deficient covariance matrices are thus at
-finite distance. Fisher--Rao is different: if an eigenvalue of
-$\Sigma^{-1/2}\Sigma'\Sigma^{-1/2}$ tends to zero, the corresponding logarithm
-in $d_{\mathrm{FR}}$ diverges. The boundary, made of degenerate covariance
-matrices and representing infinitely anisotropic Gaussian limits on fixed-trace
-sections, is therefore at infinite distance.
+The contrast with Bures is especially visible near the boundary of the covariance cone. For example, $\Bb^2(\Sigma,0)=\tr(\Sigma)$, and more generally the Bures formula extends continuously to $\mathbb S_+^d$; rank-deficient covariance matrices are therefore at finite distance and the closed cone is part of the metric completion. Fisher--Rao is different. If an eigenvalue of $\Sigma^{-1/2}\Sigma'\Sigma^{-1/2}$ tends to zero, then the corresponding logarithm diverges in $d_{\mathrm{FR}}$. Hence the boundary, made of degenerate covariance matrices and representing infinitely anisotropic Gaussian limits on fixed-trace sections, is at infinite distance. Figure {ref}`fig:monge-gaussian-fr-vs-bures-cone` shows this in the $2\times2$ ice-cream cone coordinates: the Bures path reaches a rank-one covariance, while the Fisher--Rao path is drawn only to a small positive-definite regularization of the same rank-one limit.
 :::
+
 
 (fig:monge-gaussian-fr-vs-bures-cone)=
 :::{div}

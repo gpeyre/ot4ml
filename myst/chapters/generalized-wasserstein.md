@@ -1040,6 +1040,40 @@ intrinsic principal-geodesic or geodesic-PCA approaches, which optimize
 directly in the curved Wasserstein space
 {cite:p}`SeguyCuturi,bigot2017geodesic`.
 
+(fig:linear-ot-1d-pca)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("linear-ot-1d-pca", width=760)
+```
+
+*One-dimensional linear OT PCA for synthetic two-Gaussian mixtures. The dataset
+panel displays representative training densities and the quantile average in
+violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\),
+with \(a\) increasing from red to blue. Since the embedding is the exact
+quantile parametrization \(Q_\alpha\in L^2(0,1)\), this is PCA in exact
+Wasserstein coordinates.*
+:::
+
+(fig:linear-ot-mnist-pca)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("linear-ot-mnist-pca", width=760)
+```
+
+*Principal components in linear OT coordinates for MNIST digit-zero histograms.
+The reference is a Sinkhorn barycenter, and each mode panel displays negative,
+zero, and positive excursions in a tangent displacement direction. The panels
+use white for zero displayed mass and black for high displayed mass; this is only
+a rendering convention. The modes capture rotations, aspect-ratio changes, and
+stroke-thickness deformations in the chart around the barycenter.*
+:::
+
 (rem-three-hilbertian-measure-embeddings)=
 :::{admonition} Remark: Three Hilbertian embeddings of measures
 :class: ot4ml-remark

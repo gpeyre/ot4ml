@@ -42,6 +42,7 @@ const knownKinds = [
   "sinkhornsoftc",
   "sinkhornregularizers",
   "sinkhorndebias",
+  "sinkhorncontinuous",
   "sinkhornadvancedconvergence",
   "sinkhornadvancedgaussian",
   "sinkhornadvancedsamples",
@@ -57,6 +58,8 @@ const knownKinds = [
   "dynamicunbalanced",
   "gradflowjko",
   "gradflowdiffusion",
+  "gradflowconstraint",
+  "gradflowmultispecies",
   "gradflowmmd",
   "gradflowinteraction",
   "gradflowobjective",
@@ -3974,6 +3977,92 @@ function drawSinkhornDebias() {
   setStatus(`raw ${cross.toFixed(3)}; debiased ${debiased.toFixed(3)}; epsilon ${epsilon.toFixed(3)}; model shift ${shift.toFixed(2)}`);
 }
 
+function logSumExp(values) {
+  const maxv = Math.max(...values);
+  let total = 0;
+  for (const v of values) total += Math.exp(v - maxv);
+  return maxv + Math.log(Math.max(total, 1e-300));
+}
+
+function centeredPotential(values) {
+  const mean = values.reduce((a, b) => a + b, 0) / Math.max(values.length, 1);
+  return values.map((v) => v - mean);
+}
+
+function continuousSinkhornFlow(cost, a, b, epsilon, flowTime) {
+  const n = a.length;
+  const eps = Math.max(epsilon, 1e-4);
+  let f = Array(n).fill(0);
+  let g = Array(n).fill(0);
+  const steps = Math.max(1, Math.round(30 + 46 * flowTime));
+  const dt = Math.min(0.24, flowTime / steps + 0.035);
+  for (let step = 0; step < steps; step += 1) {
+    const targetF = Array(n);
+    for (let i = 0; i < n; i += 1) {
+      const row = Array(n);
+      for (let j = 0; j < n; j += 1) row[j] = (g[j] - cost[i][j]) / eps;
+      targetF[i] = eps * (Math.log(Math.max(a[i], 1e-300)) - logSumExp(row));
+    }
+    for (let i = 0; i < n; i += 1) f[i] += dt * (targetF[i] - f[i]);
+    const targetG = Array(n);
+    for (let j = 0; j < n; j += 1) {
+      const col = Array(n);
+      for (let i = 0; i < n; i += 1) col[i] = (f[i] - cost[i][j]) / eps;
+      targetG[j] = eps * (Math.log(Math.max(b[j], 1e-300)) - logSumExp(col));
+    }
+    for (let j = 0; j < n; j += 1) g[j] += dt * (targetG[j] - g[j]);
+    const shift = f.reduce((x, y) => x + y, 0) / n;
+    for (let i = 0; i < n; i += 1) f[i] -= shift;
+    for (let j = 0; j < n; j += 1) g[j] += shift;
+  }
+  const plan = cost.map((row, i) => row.map((c, j) => Math.exp((f[i] + g[j] - c) / eps)));
+  const row = plan.map((r) => r.reduce((sum, z) => sum + z, 0));
+  const col = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) col[j] += plan[i][j];
+  const err = 0.5 * (
+    row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0) +
+    col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0)
+  );
+  return { f: centeredPotential(f), g: centeredPotential(g), row, col, error: err, steps };
+}
+
+function drawContinuousSinkhorn() {
+  const epsilon = val("sceEps");
+  const flowTime = val("sceTime");
+  const n = Math.round(val("sceBins"));
+  const source = val("sceSource");
+  const target = val("sceTarget");
+  const data = sinkhornGrid(n, source, target);
+  const state = continuousSinkhornFlow(data.cost, data.a, data.b, epsilon, flowTime);
+  const exact = sinkhornState(data.cost, data.a, data.b, epsilon, 260);
+  const exactF = centeredPotential(exact.u.map((u) => epsilon * Math.log(Math.max(u, 1e-300))));
+  const exactG = centeredPotential(exact.v.map((v) => epsilon * Math.log(Math.max(v, 1e-300))));
+  const { ctx, w, h } = resizeCanvas(455);
+  const gap = 24;
+  const top = { x: 22, y: 38, w: w - 44, h: 126 };
+  const bottom = { x: 22, y: 38 + top.h + gap, w: w - 44, h: h - 38 - top.h - gap - 38 };
+  drawFrame(ctx, top, "marginals along the flow");
+  drawFrame(ctx, bottom, "dual potentials");
+  const densityMax = 1.08 * Math.max(...data.a, ...data.b, ...state.row, ...state.col);
+  drawCurve(ctx, data.xs, data.a, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, RED, 1.7);
+  drawCurve(ctx, data.xs, data.b, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, BLUE, 1.7);
+  drawCurve(ctx, data.xs, state.row, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, mixColor(0.45, RED, BLUE, 0.95), 2.0);
+  drawCurve(ctx, data.xs, state.col, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, mixColor(0.75, RED, BLUE, 0.95), 2.0);
+  const pMin = Math.min(...state.f, ...state.g, ...exactF, ...exactG);
+  const pMax = Math.max(...state.f, ...state.g, ...exactF, ...exactG);
+  drawDashedCurve(ctx, data.xs, exactF, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, RED, 1.15, [4, 4]);
+  drawDashedCurve(ctx, data.xs, exactG, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, BLUE, 1.15, [4, 4]);
+  drawCurve(ctx, data.xs, state.f, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, RED, 2.2);
+  drawCurve(ctx, data.xs, state.g, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, BLUE, 2.2);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(bottom.x + 8, bottom.y + 8, 205, 50);
+  ctx.fillStyle = RED;
+  ctx.fillText("f(t), dashed = fixed point", bottom.x + 14, bottom.y + 25);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("g(t), same gauge", bottom.x + 14, bottom.y + 43);
+  setStatus(`continuous relaxation time ${flowTime.toFixed(2)}; epsilon ${epsilon.toFixed(3)}; marginal L1 error ${state.error.toExponential(2)}`);
+}
+
 function sinkhornTrace(cost, a, b, epsilon, maxHalfSteps) {
   const n = a.length;
   const m = b.length;
@@ -5619,6 +5708,160 @@ function drawGradflowDiffusion() {
   setStatus(`time ${time.toFixed(2)}; porous exponent m=${m.toFixed(1)}; compact front radius grows slowly as m increases`);
 }
 
+function normalizePdfArray(values, xs) {
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const mass = values.reduce((sum, z) => sum + Math.max(z, 0), 0) * dx;
+  return values.map((z) => Math.max(z, 0) / Math.max(mass, 1e-12));
+}
+
+function capAndRedistributeDensity(values, xs, cap) {
+  let density = normalizePdfArray(values, xs);
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  for (let iter = 0; iter < 14; iter += 1) {
+    let excess = 0;
+    let free = 0;
+    for (let i = 0; i < density.length; i += 1) {
+      if (density[i] > cap) {
+        excess += (density[i] - cap) * dx;
+        density[i] = cap;
+      } else {
+        free += Math.max(cap - density[i], 0) * dx;
+      }
+    }
+    if (excess < 1e-8 || free < 1e-10) break;
+    for (let i = 0; i < density.length; i += 1) {
+      const room = Math.max(cap - density[i], 0);
+      density[i] += (excess * room) / Math.max(free, 1e-12);
+    }
+  }
+  return normalizePdfArray(density, xs);
+}
+
+function densityAtConstrainedTime(xs, time, cap, attraction) {
+  const center = -1.25 + (1 - Math.exp(-attraction * time)) * 2.15;
+  const sigma = Math.max(0.18, 0.65 * Math.exp(-0.7 * time));
+  const raw = xs.map((x) => normalPdf(x, center, sigma));
+  return capAndRedistributeDensity(raw, xs, cap);
+}
+
+function drawDensityRibbon(ctx, box, xs, density, xMin, xMax, yCenter, height, maxDensity, color) {
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (z) => yCenter - (z / Math.max(maxDensity, 1e-12)) * height;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]), yCenter);
+  for (let i = 0; i < xs.length; i += 1) ctx.lineTo(X(xs[i]), Y(density[i]));
+  ctx.lineTo(X(xs[xs.length - 1]), yCenter);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = color.replace(/, ?0\.[0-9]+\)$/, ",.95)");
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+}
+
+function drawGradflowConstraint() {
+  const cap = val("gfcCap");
+  const attraction = val("gfcAttraction");
+  const finalTime = val("gfcTime");
+  const { ctx, w, h } = resizeCanvas(420);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, "density-constrained Wasserstein flow");
+  const xs = Array.from({ length: 560 }, (_, i) => lerp(-3.1, 3.1, i / 559));
+  const times = [0, 0.16, 0.34, 0.58, 0.82, 1].map((s) => s * finalTime);
+  const densities = times.map((t) => densityAtConstrainedTime(xs, t, cap, attraction));
+  const maxDensity = Math.max(cap, ...densities.flat()) * 1.05;
+  const rowGap = box.h / (times.length + 0.35);
+  ctx.strokeStyle = "rgba(95,102,112,.18)";
+  ctx.lineWidth = 1;
+  for (let k = 0; k < times.length; k += 1) {
+    const y = box.y + rowGap * (k + 0.9);
+    ctx.beginPath();
+    ctx.moveTo(box.x, y);
+    ctx.lineTo(box.x + box.w, y);
+    ctx.stroke();
+    drawDensityRibbon(ctx, box, xs, densities[k], -3.1, 3.1, y, rowGap * 0.72, maxDensity, mixColor(k / (times.length - 1), RED, BLUE, 0.42));
+    ctx.fillStyle = "#5f6670";
+    ctx.fillText(`t=${times[k].toFixed(2)}`, box.x + 8, y - rowGap * 0.52);
+  }
+  const capY = box.y + 11;
+  ctx.strokeStyle = "rgba(123,50,148,.55)";
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(box.x + 12, capY);
+  ctx.lineTo(box.x + box.w - 12, capY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(`cap kappa=${cap.toFixed(2)}`, box.x + 18, capY - 5);
+  setStatus(`projected toy flow with density cap kappa=${cap.toFixed(2)}; attraction ${attraction.toFixed(2)}; final time ${finalTime.toFixed(2)}`);
+}
+
+function circularDistance01(x, c) {
+  let d = Math.abs(x - c);
+  d = Math.min(d, 1 - d);
+  return d;
+}
+
+function speciesProfile(xs, species, time, diffusion) {
+  const centers = [0.12, 0.33, 0.55, 0.73, 0.88];
+  const width = 0.045 + diffusion * Math.sqrt(time + 0.015);
+  const raw = [];
+  for (let i = 0; i < species; i += 1) {
+    raw.push(xs.map((x) => 0.08 + Math.exp(-(circularDistance01(x, centers[i]) ** 2) / (2 * width * width))));
+  }
+  const profiles = raw.map(() => Array(xs.length).fill(0));
+  for (let k = 0; k < xs.length; k += 1) {
+    const total = raw.reduce((sum, arr) => sum + arr[k], 0);
+    for (let i = 0; i < species; i += 1) profiles[i][k] = raw[i][k] / Math.max(total, 1e-12);
+  }
+  return profiles;
+}
+
+function drawStackedSpecies(ctx, box, xs, profiles, yBase, rowHeight) {
+  const X = (x) => box.x + x * box.w;
+  const colors = [RED, VIOLET, BLUE, "#f46d43", "#3288bd"];
+  let bottom = Array(xs.length).fill(yBase);
+  for (let s = 0; s < profiles.length; s += 1) {
+    const top = profiles[s].map((z, i) => bottom[i] - z * rowHeight);
+    ctx.beginPath();
+    ctx.moveTo(X(xs[0]), bottom[0]);
+    for (let k = 0; k < xs.length; k += 1) ctx.lineTo(X(xs[k]), top[k]);
+    for (let k = xs.length - 1; k >= 0; k -= 1) ctx.lineTo(X(xs[k]), bottom[k]);
+    ctx.closePath();
+    ctx.fillStyle = transparentColor(colors[s % colors.length], 0.55);
+    ctx.fill();
+    ctx.strokeStyle = transparentColor(colors[s % colors.length], 0.9);
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+    bottom = top;
+  }
+}
+
+function drawGradflowMultispecies() {
+  const species = Math.round(val("gmsSpecies"));
+  const diffusion = val("gmsDiffusion");
+  const finalTime = val("gmsTime");
+  const { ctx, w, h } = resizeCanvas(420);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, "multi-species entropy flow with fixed total density");
+  const xs = Array.from({ length: 360 }, (_, i) => i / 359);
+  const times = [0, 0.18, 0.42, 0.7, 1].map((s) => s * finalTime);
+  const rowGap = box.h / (times.length + 0.15);
+  for (let r = 0; r < times.length; r += 1) {
+    const yBase = box.y + rowGap * (r + 0.9);
+    ctx.strokeStyle = "rgba(95,102,112,.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(box.x, yBase);
+    ctx.lineTo(box.x + box.w, yBase);
+    ctx.stroke();
+    drawStackedSpecies(ctx, box, xs, speciesProfile(xs, species, times[r], diffusion), yBase, rowGap * 0.74);
+    ctx.fillStyle = "#5f6670";
+    ctx.fillText(`t=${times[r].toFixed(2)}`, box.x + 8, yBase - rowGap * 0.55);
+  }
+  setStatus(`${species} positive species; independent heat-like smoothing followed by the pointwise constraint sum_i rho_i=1`);
+}
+
 function gfInitialCloud(n, seed, cx = -1.15, cy = -0.72, spread = 0.18) {
   const random = rng(seed);
   const pts = [];
@@ -6660,6 +6903,15 @@ function init() {
       slider("sdSpread", "model spread", 1, 0.65, 1.45, 0.05),
     ].join("");
     bind(drawSinkhornDebias);
+  } else if (kind === "sinkhorncontinuous") {
+    controls.innerHTML = [
+      slider("sceEps", "epsilon", 0.18, 0.03, 0.55, 0.005),
+      slider("sceTime", "flow time", 1.2, 0, 4, 0.02),
+      slider("sceBins", "bins", 38, 18, 62, 2),
+      select("sceSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("sceTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawContinuousSinkhorn);
   } else if (kind === "sinkhornadvancedconvergence") {
     controls.innerHTML = [
       slider("sacEps", "epsilon", 0.24, 0.03, 0.55, 0.005),
@@ -6784,6 +7036,20 @@ function init() {
       slider("gfdWidth", "initial width", 0.62, 0.3, 1.1, 0.01),
     ].join("");
     bind(drawGradflowDiffusion);
+  } else if (kind === "gradflowconstraint") {
+    controls.innerHTML = [
+      slider("gfcCap", "density cap", 0.62, 0.28, 1.6, 0.01),
+      slider("gfcAttraction", "attraction", 1.25, 0.35, 2.4, 0.05),
+      slider("gfcTime", "final time", 1.35, 0.25, 2.8, 0.01),
+    ].join("");
+    bind(drawGradflowConstraint);
+  } else if (kind === "gradflowmultispecies") {
+    controls.innerHTML = [
+      slider("gmsSpecies", "species", 3, 2, 5, 1),
+      slider("gmsDiffusion", "diffusion", 0.11, 0.04, 0.22, 0.005),
+      slider("gmsTime", "final time", 1.4, 0.25, 3.2, 0.01),
+    ].join("");
+    bind(drawGradflowMultispecies);
   } else if (kind === "gradflowmmd") {
     controls.innerHTML = [
       slider("gfmParticles", "particles", 64, 10, 180, 2),
