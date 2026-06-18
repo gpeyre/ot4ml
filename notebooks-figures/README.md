@@ -129,8 +129,8 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="monge-caffarelli-nonconvex-map.ipynb"><img src="thumbnails/monge-caffarelli-nonconvex-map.png" alt="Caffarelli regularity and non-convex target geometry" width="210"></a><br>
-  <strong>Caffarelli regularity and non-convex target geometry</strong><br>
+  <a href="monge-caffarelli-nonconvex-map.ipynb"><img src="thumbnails/monge-caffarelli-nonconvex-map.png" alt="Caffarelli regularity and a non-convex source" width="210"></a><br>
+  <strong>Caffarelli regularity and a non-convex source</strong><br>
   <a href="monge-caffarelli-nonconvex-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-caffarelli-nonconvex-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -517,9 +517,9 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="linear-ot-mnist-pca.ipynb"><img src="thumbnails/linear-ot-mnist-pca.png" alt="Linear OT PCA on MNIST zeros" width="210"></a><br>
-  <strong>Linear OT PCA on MNIST zeros</strong><br>
-  <a href="linear-ot-mnist-pca.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/linear-ot-mnist-pca.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="linear-ot-1d-pca.ipynb"><img src="thumbnails/linear-ot-1d-pca.png" alt="One-dimensional linear OT PCA" width="210"></a><br>
+  <strong>One-dimensional linear OT PCA</strong><br>
+  <a href="linear-ot-1d-pca.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/linear-ot-1d-pca.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -529,12 +529,17 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="linear-ot-mnist-pca.ipynb"><img src="thumbnails/linear-ot-mnist-pca.png" alt="Linear OT PCA on MNIST zeros" width="210"></a><br>
+  <strong>Linear OT PCA on MNIST zeros</strong><br>
+  <a href="linear-ot-mnist-pca.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/linear-ot-mnist-pca.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="spectral-wasserstein-gauge.ipynb"><img src="thumbnails/spectral-wasserstein-gauge.png" alt="Spectral gauges of displacement covariances" width="210"></a><br>
   <strong>Spectral gauges of displacement covariances</strong><br>
   <a href="spectral-wasserstein-gauge.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/spectral-wasserstein-gauge.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
 <td width="33%"></td>
 
 </tr>
