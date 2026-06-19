@@ -2,7 +2,9 @@
 \label{sec-generative-models-transportation}
 \subsection{Generative Models via Flow Matching}
 \paragraph{Stochastic interpolant.}
-We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of a latent distribution $\pi \in \Pp(\RR^{d'})$, using an operator $P_t: \RR^{d'} \to \RR^d$ where $d' \gg d$, i.e.
+The first construction below is deterministic once the latent variable has been sampled: the randomness is in $U\sim\pi$, while $t\mapsto P_t(U)$ is differentiable. Thus $\alpha_t$ is a push-forward curve and satisfies a continuity equation. Genuine temporal noise is a different extension; it leads to a Fokker--Planck equation, as recalled after Proposition~\ref{prop-flow-matching-vector-field}.
+
+We assume first that $\alpha_t$ is obtained by pushing a latent distribution $\pi \in \Pp(\RR^{d'})$ through a time-dependent map $P_t: \RR^{d'} \to \RR^d$, i.e.
 
 \begin{equation}\label{eq:interp-coupling}
 \forall t \in [0,1], \quad \alpha_t:= (P_t)_\sharp \pi.
@@ -16,11 +18,11 @@ If $\pi = (\Id, T)_\sharp \alpha$ is a Brenier-type coupling, then $\alpha_t = (
 
 \paragraph{Flow matching formula.}
 \begin{prop}[Flow matching vector field]\label{prop-flow-matching-vector-field}
-For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. The solution of the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
+For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. Consider the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
 \begin{equation}
 \min_{v_t} \int_{\RR^{d'}} \norm{v_t(P_t(u)) - [\partial_t P_t](u)}^2 \, \d\pi(u). \label{eq:flow-matching}
 \end{equation}
-Equivalently, the minimizer is characterized $\alpha_t$-almost everywhere by the conditional expectation
+Its minimizer is characterized $\alpha_t$-almost everywhere by the conditional expectation
 \begin{equation}\label{eq:flow-match-conditional}
 v_t(z) = \EE_{u \sim \pi} \big( [\partial_t P_t](u) \, \big| \, z = P_t(u) \big).
 \end{equation}
@@ -76,6 +78,35 @@ In the language of Lebesgue decomposition, the flux measure $m_t$ has only an ab
 Thus the solution of \eqref{eq:flow-matching} is the conditional expectation of the velocities $\partial_t P_t$: intuitively, $v_t(z)$ is the average velocity of all trajectories passing through $z$.
 
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$.
+
+\begin{rem}[Static-noise stochastic interpolants]\label{rem-static-noise-stochastic-interpolants}
+In the terminology of Albergo--Boffi--Vanden-Eijnden, a stochastic interpolant is not first an SDE. It is an explicit random bridge
+\[
+X_t=I_t(X_0,X_1,Z),\qquad X_0\sim\alpha_0,\quad X_1\sim\alpha_1,
+\]
+with $Z$ an auxiliary, often Gaussian, random variable and $I_0(X_0,X_1,Z)=X_0$, $I_1(X_0,X_1,Z)=X_1$. For instance \(X_t=a(t)X_0+b(t)X_1+\gamma(t)Z\), with $\gamma(0)=\gamma(1)=0$. The noise is static: conditionally on $(X_0,X_1,Z)$, the path is differentiable. This is the previous push-forward setting with $u=(X_0,X_1,Z)$ and $P_t=I_t$, hence
+\[
+v_t(x)=\EE[\partial_t I_t(X_0,X_1,Z)\mid X_t=x]
+\]
+and $\partial_t\alpha_t+\diverg(\alpha_t v_t)=0$. SDEs are alternative dynamics realizing the same marginals, not the definition of the interpolant.
+\end{rem}
+
+\begin{rem}[Brownian realizations of interpolant marginals]\label{rem-noisy-stochastic-interpolants}
+One can also realize an interpolating marginal curve by Brownian-in-time dynamics. This should not be confused with the static-noise bridge of Remark~\ref{rem-static-noise-stochastic-interpolants}. If
+\(\d Z_t=r_t(U,Z_t)\d t+\Sigma_t(U,Z_t)\d B_t\), $\alpha_t=\operatorname{Law}(Z_t)$, then the Eulerian drift and diffusion matrix defined by
+\[
+ v_t(z)=\EE[r_t(U,Z_t)|Z_t=z], \qquad
+ D_t(z)=\EE[\Sigma_t(U,Z_t)\Sigma_t(U,Z_t)^\top|Z_t=z]
+\]
+satisfy
+\[
+\partial_t\alpha_t+\diverg(\alpha_t v_t)
+=\frac12\sum_{i,j}\partial_{ij}^2\bigl((D_t)_{ij}\alpha_t\bigr).
+\]
+Thus the noisy regression estimates the drift in a Fokker--Planck equation, not a pure continuity equation. If $\alpha_t=\rho_t\d x$, an equivalent probability-flow ODE uses
+\(\bar v_t=v_t-(2\rho_t)^{-1}\diverg(\rho_tD_t)\), hence
+\(\bar v_t=v_t-\frac{\sigma_t^2}{2}\nabla\log\rho_t\) when $D_t=\sigma_t^2\Id$.
+\end{rem}
 
 \paragraph{Connection with diffusion models.}
 In the special case where $P_t(x,y)=(1-t)x+ty$ is a linear interpolation and $\pi = \alpha \otimes \beta$, the curve $\alpha_t$ is a convolution of rescaled versions of $\alpha_0$ and $\alpha_1$. The flow-matching problem~\eqref{eq:flow-matching} becomes
@@ -274,6 +305,43 @@ Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, 
 By Proposition~\ref{prop-formal-wass-gradient}, \(\Wgrad \mathcal R_t(\alpha|\mu_t) = \nabla\delta_\alpha \mathcal R_t(\alpha|\mu_t) = -\nabla\phi_t = -u_t.\)
 The Wasserstein gradient-descent velocity is the negative of this gradient, namely $u_t$. Substituting this velocity in the continuity equation gives the claimed flow.
 \end{proof}
+\subsection{Moment Measures}
+Moment measures encode a target law by a single convex potential: the same $u$ defines the log-concave source and the Brenier map. The useful point is hidden convexity: after rewriting the problem with OT, a nonlinear equation on convex potentials becomes a convex minimization over densities. If $u:\RR^d\to\RR\cup\{+\infty\}$ is proper convex and \(Z_u=\int e^{-u(x)}\d x<+\infty,\) set
+\[
+\rho_u=Z_u^{-1}e^{-u(x)}\d x,
+\qquad
+\mathfrak M(u)=(\nabla u)_\sharp\rho_u .
+\]
+The normalization removes additive constants, and translations of the argument do not change $\mathfrak M(u)$. Integration by parts gives \(\int y\,\d\mathfrak M(u)(y)=0\), so moment measures are centered. The Cordero--Erausquin--Klartag theorem states that a probability $\mu\in\Pp_1(\RR^d)$ is a moment measure iff it is centered and its support is not contained in a hyperplane; the convex potential is unique up to translations and additive constants. For example, if \(u(x)=x^\top A x/2+c\) with $A\succ0$, then \(\rho_u=\Nn(0,A^{-1})\) and \(\mathfrak M(u)=\Nn(0,A)\).
+
+Santambrogio's OT formulation fixes centered $\mu$ and minimizes
+\[
+\min_{\rho\in\Pp_1(\RR^d)} \mathcal H(\rho)+\mathcal C_\mu(\rho),
+\qquad
+\mathcal C_\mu(\rho)=\sup_{\pi\in\Couplings(\rho,\mu)}
+\int x\cdot y\,\d\pi(x,y),
+\]
+where \(\mathcal H(r\d x)=\int r\log r\). Duality gives
+\[
+\mathcal C_\mu(\rho)=
+\inf_{v\ {\rm convex}}
+\left\{\int v\,\d\rho+\int v^*\,\d\mu\right\},
+\]
+and, when second moments are finite,
+\[
+\mathcal C_\mu(\rho)
+=
+\frac12\int\norm{x}^2\d\rho
++
+\frac12\int\norm{y}^2\d\mu
+-
+\frac12\Wass_2^2(\rho,\mu).
+\]
+The centering of $\mu$ makes the objective invariant under translations of $\rho$. The hidden convexity is that, on \(\Pp_2\), both \(\mathcal H\) and \(\mathcal C_\mu\) are displacement convex; for \(\mathcal C_\mu\), this follows from the identity above and the convexity of the quadratic moment combined with the semiconvexity of \(-\Wass_2^2(\cdot,\mu)/2\). The minimizer has the form \(\rho=Z_u^{-1}e^{-u}\d x\) and satisfies \(\mu=(\nabla u)_\sharp\rho\). Conversely, if this equation holds, then along a geodesic from $\rho$ to a competitor the derivative of entropy is \(-\int\dotp{T-\Id}{\nabla u}\d\rho\), while the derivative of \(\mathcal C_\mu\) is bounded below by the opposite quantity; displacement convexity gives global minimality. Eliminating $\rho$ instead gives \(u\mapsto \int u^*\d\mu-\log\int e^{-u}\d x\), whose convexity is hidden until one passes to the conjugate potential. For generative modeling, the conjugate variant uses
+\[
+\beta=(\nabla w^*)_\sharp\left(Z_w^{-1}e^{-w(z)}\d z\right),
+\]
+so sampling and mapping are still controlled by a single convex potential, but the map is placed on the Brenier-conjugate side.
 \subsection{Evolution in Depth of Transformers}
 \paragraph{Attention as a context-dependent velocity.}
 After tokenization, embedding, and positional encoding, each input (from a set of tokens) is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ points in the space of vectorized tokens. An attention layer with skip connection and rescaling by $1/T$ (where $T$ is the depth) defines a transformation of the tokens:

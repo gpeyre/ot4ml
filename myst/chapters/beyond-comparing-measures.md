@@ -731,6 +731,67 @@ points. Solving this easier OT problem gives a geometry-aware initialization
 for the non-convex GW iterations; it is the same idea used above as a useful
 initialization principle for a non-convex solver.
 
+### Relation With Wasserstein-Procrustes
+
+The profile lower bound is intrinsic. In Euclidean applications, it is naturally
+paired with an extrinsic upper certificate obtained by registering the two
+measures before applying the ordinary Wasserstein distance.
+
+(prop-gw-procrustes-upper-certificate)=
+:::{admonition} Proposition: Wasserstein-Procrustes Upper Certificate
+:class: important
+Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the
+Euclidean distance, and take $\Delta(u,v)=|u-v|$. If
+$\Wass_{p,\mathrm E(d)}$ denotes the quotient Wasserstein distance under the
+Euclidean group, then
+
+```{math}
+:label: eq-gw-procrustes-upper-gw-section
+\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+\leq
+2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
+```
+:::
+
+:::{dropdown} Proof
+Let $g,h\in\mathrm E(d)$ be rigid motions. They preserve all pairwise
+Euclidean distances, so
+$(\RR^d,\norm{\cdot},\alpha)$ is isometric to
+$(\RR^d,\norm{\cdot},g_\sharp\alpha)$, and similarly for $\beta$ and
+$h_\sharp\beta$. Hence $\operatorname{GW}$ is unchanged by pushing the two
+measures forward by $g$ and $h$. Applying
+{ref}`prop-gw-controlled-by-wasserstein` to $g_\sharp\alpha$ and
+$h_\sharp\beta$ gives
+
+```{math}
+\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+\leq
+2\,\Wass_p(g_\sharp\alpha,h_\sharp\beta).
+```
+
+Taking the infimum over $g,h\in\mathrm E(d)$ proves the result.
+:::
+
+Wasserstein-Procrustes therefore gives an extrinsic certificate that a Euclidean
+GW distance is small. The converse need not hold, because a small GW value may
+be achieved by an intrinsic correspondence that is not induced by any ambient
+rigid motion. Combining the profile lower bound with the Procrustes upper
+certificate gives the sandwich
+
+```{math}
+:label: eq-gw-profile-procrustes-sandwich
+\Wass_p(\mathsf E_\mathbb X,\mathsf E_\mathbb Y)
+\leq
+\operatorname{GW}(\mathbb X,\mathbb Y)
+\leq
+2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]),
+```
+
+where
+$\mathbb X=(\RR^d,\norm{\cdot},\alpha)$ and
+$\mathbb Y=(\RR^d,\norm{\cdot},\beta)$. The left term is intrinsic and
+inexpensive; the right term is an ambient rigid-registration certificate.
+
 ### Entropic Regularization and Fused GW
 
 For the common squared distortion $\Delta(u,v)^2=(u-v)^2$, one often computes

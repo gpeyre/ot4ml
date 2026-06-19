@@ -10,6 +10,7 @@ The last group leaves the setting of scalar measures on a common ambient space. 
 \index{quantum!OT}% strictindex
 \index{metric-measure space}% strictindex
 \index{Gromov-Wasserstein}% strictindex
+\index{Gromov-Wasserstein distance}% strictindex
 
 \section{Vector and Matrix-Valued Measures}
 \index{vector-valued measure}% strictindex
@@ -21,6 +22,7 @@ Scalar OT transports a nonnegative density. In imaging, color processing, spectr
 
 \paragraph{Positive vector-valued measures.}
 \index{positive!vector-valued measure}% strictindex
+\index{positive vector-valued measure}% strictindex
 
 \begin{defn}[Positive vector-valued measure]\label{def-positive-vector-valued-measure}
 \index{vector-valued measure}% strictindex
@@ -131,6 +133,7 @@ The conservative positive-cone model above is the basic extension of Benamou--Br
 \paragraph{Positive matrix-valued measures.}
 \index{matrix-valued measure}% strictindex
 \index{positive!matrix-valued measure}% strictindex
+\index{positive matrix-valued measure}% strictindex
 The next simplest fiber is the positive matrix cone. This is the simplest tensor-valued model beyond vectors: the diagonal entries behave like positive channels, while the eigenvectors encode local orientations.
 
 \begin{defn}[Positive matrix-valued measure]\label{def-positive-matrix-valued-measure}
@@ -217,6 +220,7 @@ The restriction to a fixed diagonal basis gives eigenvalue transport; it should 
 
 \section{Gromov--Wasserstein}
 \index{Gromov-Wasserstein}% strictindex
+\index{Gromov-Wasserstein distance}% strictindex
 \label{sec-gromov-wasserstein}
 
 Gromov--Wasserstein compares spaces through their internal distance structures rather than through a fixed ambient ground cost. This is the right extension for graphs, shapes and point clouds whose points are not pre-aligned.
@@ -512,8 +516,53 @@ We now record the profile lower bound used above as a useful initialization prin
 \end{proof}
 
 This lower bound is useful computationally because the profile cost matrix $C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
+
+\paragraph{Relation with Wasserstein--Procrustes.}
+\index{Wasserstein-Procrustes}% strictindex
+\index{quotient Wasserstein distance}% strictindex
+\index{Wasserstein-Procrustes}% strictindex
+The profile lower bound is intrinsic. In Euclidean applications, it is naturally paired with an extrinsic upper certificate obtained by registering the two measures before applying the ordinary Wasserstein distance.
+
+\begin{prop}[Wasserstein--Procrustes upper certificate]\label{prop-gw-procrustes-upper-certificate}
+\index{Wasserstein-Procrustes}% strictindex
+\index{Gromov-Wasserstein}% strictindex
+	Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the Euclidean distance, and take $\De(u,v)=|u-v|$ in~\eqref{eq-gw-generic}. If $\Wass_{p,\mathrm E(d)}$ denotes the quotient Wasserstein distance of Definition~\ref{def-quotient-wasserstein} for the Euclidean group, then
+	\begin{equation}\label{eq-gw-procrustes-upper-gw-section}
+	\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+	\leq
+	2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
+	\end{equation}
+\end{prop}
+
+\begin{proof}
+	Let $g,h\in\mathrm E(d)$ be rigid motions. They preserve all pairwise Euclidean distances, so
+	\[
+	(\RR^d,\norm{\cdot},\alpha)
+	\quad\text{is isometric to}\quad
+	(\RR^d,\norm{\cdot},g_\sharp\alpha),
+	\]
+	and similarly for $\beta$ and $h_\sharp\beta$. Hence $\GW$ is unchanged by pushing the two measures forward by $g$ and $h$. Applying Proposition~\ref{prop-gw-controlled-by-wasserstein} to $g_\sharp\alpha$ and $h_\sharp\beta$ gives
+	\[
+	\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+	\leq
+	2\,\Wass_p(g_\sharp\alpha,h_\sharp\beta).
+	\]
+	Taking the infimum over $g,h\in\mathrm E(d)$ gives~\eqref{eq-gw-procrustes-upper-gw-section}.
+\end{proof}
+
+Wasserstein--Procrustes therefore gives an extrinsic certificate that a Euclidean GW distance is small. The converse need not hold, because a small GW value may be achieved by an intrinsic correspondence that is not induced by any ambient rigid motion. Combining Proposition~\ref{prop-memoli-gw-profile-lower-bound} with Proposition~\ref{prop-gw-procrustes-upper-certificate} gives the Euclidean sandwich
+\index{Wasserstein-Procrustes}% strictindex
+\begin{equation}\label{eq-gw-profile-procrustes-sandwich}
+\Wass_p(\mathsf E_\XX,\mathsf E_\YY)
+\leq
+\GW(\XX,\YY)
+\leq
+2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]),
+\end{equation}
+where $\XX=(\RR^d,\norm{\cdot},\alpha)$ and $\YY=(\RR^d,\norm{\cdot},\beta)$. The left term is intrinsic and inexpensive, while the right term is an extrinsic rigid-registration certificate.
 \index{distortion}% strictindex
 \index{cost matrix}% strictindex
+\index{Wasserstein-Procrustes}% strictindex
 
 \paragraph{Entropic regularization and iterative solver.}
 \index{entropic!regularization}% strictindex
@@ -632,12 +681,14 @@ Equivalently, it is half the minimal distortion of a correspondence between $\X$
 
 \section{Quantum Optimal Transport}
 \index{quantum!optimal transport}% strictindex
+\index{quantum optimal transport}% strictindex
 \label{sec-quantum-ot}
 
 Quantum optimal transport replaces probability vectors by density matrices and scalar couplings by positive operators on a tensor product space. This is the right language when the transported objects are matrix-valued signals, covariance-like descriptors or quantum states, and it exposes a precise bridge between OT, non-commutative entropy and operator scaling. The finite-dimensional formulation below follows the semidefinite viewpoint developed in matrix-valued and quantum OT~\cite{Ning2014metrics,Chen2016,ChenGangbo17,2016-peyre-qot,caglioti2019quantum,chakrabarti2019quantum}.
 \index{positive operator}% strictindex
 \index{quantum!OT}% strictindex
 \index{operator scaling}% strictindex
+\index{density matrix}% strictindex
 
 \paragraph{Finite-dimensional states and couplings.}
 \index{density!matrix}% strictindex
@@ -657,6 +708,7 @@ Quantum optimal transport replaces probability vectors by density matrices and s
 		\enscond{A\in\mathbb H_n^+}{\tr(A)=1}.
 	\]
 	Elements of $\mathbb H_n^{+,1}$ are density matrices.
+\index{density matrix}% strictindex
 \end{defn}
 A joint quantum state between $\CC^n$ and $\CC^m$ is a matrix $T\in\mathbb H_{nm}^+$ acting on $\CC^n\otimes\CC^m$. Its marginals are the partial traces, defined by duality through
 \index{density!matrix}% strictindex
@@ -673,6 +725,7 @@ for all $F\in\mathbb H_n$ and $G\in\mathbb H_m$. Thus $\operatorname{Tr}_B(T)\in
 	Let $A\in\mathbb H_n^{+,1}$, $B\in\mathbb H_m^{+,1}$ and let $C\in\mathbb H_{nm}$ be a Hermitian cost observable. The quantum OT value is the semidefinite program
 \index{semidefinite program}% strictindex
 \index{Hermitian matrix}% strictindex
+\index{quantum optimal transport}% strictindex
 	\begin{equation}\label{eq-qot-primal}
 		\mathrm{QOT}_C(A,B)
 		\eqdef
@@ -734,6 +787,7 @@ As in scalar OT, one obtains a smoother problem by adding the convex quantum ent
 \begin{defn}[von Neumann quantum entropy]\label{def-von-neumann-quantum-entropy}
 \index{von Neumann entropy}% strictindex
 	For a density matrix or positive semidefinite matrix $T$, the shifted von Neumann entropy functional used here is
+\index{density!matrix}% strictindex
 	\[
 		H(T)=\tr\!\left(T(\log T-\Id)\right),
 		\qquad
@@ -756,7 +810,7 @@ For $\epsilon>0$ define
 This is the non-commutative analogue of entropic OT~\cite{2016-peyre-qot,chakrabarti2019quantum}: the Shannon entropy of a coupling is replaced by the trace entropy of a density matrix.
 \index{trace entropy}% strictindex
 \index{entropic!OT}% strictindex
-\index{Shannon!entropy}% strictindex
+\index{Shannon entropy}% strictindex
 \index{density!matrix}% strictindex
 
 \begin{prop}[Entropic quantum OT duality]\label{prop-qot-entropic-duality}
@@ -851,6 +905,7 @@ Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-co
 
 \begin{alg}[Exact quantum Bregman projections]\label{alg:quantum-exact-bregman}
 \index{quantum!Bregman projection}% strictindex
+\index{Bregman!projection}% strictindex
 \textbf{Input:} Density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Quantum entropic coupling $T$ with partial traces $A$ and $B$.
@@ -881,6 +936,7 @@ Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-co
 \paragraph{Gurvits scaling and quantum Sinkhorn.}
 \index{Gurvits scaling}% strictindex
 \index{quantum!Sinkhorn}% strictindex
+\index{quantum Sinkhorn}% strictindex
 The algorithm often called quantum Sinkhorn comes from the operator-scaling literature of Gurvits and subsequent developments~\cite{gurvits2003classical,gurvits2004classical,georgiou2015positive,garg2018recent}. It replaces the true Gibbs coupling~\eqref{eq-qot-gibbs-coupling} by the symmetric factorization
 \index{operator scaling}% strictindex
 \index{Gibbs!coupling}% strictindex
@@ -921,6 +977,7 @@ They can be enforced by the explicit congruence normalizations
 \end{aligned}
 \end{equation}
 \begin{alg}[Gurvits/operator scaling for quantum Sinkhorn]\label{alg:quantum-gurvits-scaling}
+\index{operator scaling}% strictindex
 \textbf{Input:} Positive marginals $A,B$, positive kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Symmetrically scaled coupling $T_s$.
@@ -961,6 +1018,8 @@ These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. 
 \index{Baker-Campbell-Hausdorff formula}% strictindex
 \index{operator scaling}% strictindex
 \index{KL!projection}% strictindex
+\index{Hausdorff distance}% strictindex
+\index{Gurvits scaling}% strictindex
 \end{rem}
 
 \begin{rem}[Operator-valued couplings]

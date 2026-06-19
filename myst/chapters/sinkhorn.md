@@ -369,111 +369,6 @@ instead of $O(N^2)$. With FFT-based or truncated Gaussian convolutions, the same
 :::
 
 
-(sec-sinkhorn-heat-hopf-cole)=
-## Heat Kernels and Hopf--Cole Transforms
-
-The Gaussian kernel used by Sinkhorn is also the Euclidean heat kernel. This
-viewpoint clarifies when entropic OT admits fast grid and surface
-implementations, and it places soft minima and Hopf--Cole transforms in the
-same heat-kernel calculus.
-
-### Geodesics in Heat
-
-On $\mathbb R^d$, the heat kernel for $\partial_t u=\Delta u$ is
-
-```{math}
-h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
-```
-
-Up to normalization, the quadratic Sinkhorn Gibbs kernel is therefore a Gaussian
-heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct
-construction uses the resolvent of the positive Laplacian. On the line, the kernel of
-$(I-\tau\Delta)^{-1}$ is exactly proportional to
-$\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel
-with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa
-smoothing, while the heat semigroup gives the Gaussian kernel
-$\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or surface $M$,
-Varadhan's formula gives
-
-```{math}
--4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
-\qquad (t\downarrow0).
-```
-
-This underlies geodesics-in-heat methods {cite:p}`varadhan-1967,Crane2013`.
-Writing $L=-\Delta_M$ for the positive Laplace--Beltrami operator, one has
-
-```{math}
-e^{-tL}=\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
-```
-
-Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a
-Laplace/Yukawa smoothing, while repeated resolvent steps approximate the
-Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced
-by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than
-dense Gaussian matrices. This is attractive computationally, but the small-scale
-limit is delicate: the smoothing length, of order $\sqrt t$ for heat and
-$\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this
-length is sent to zero faster than the grid spacing, metrication artifacts and
-inconsistent discretizations can dominate the intended geodesic limit.
-
-(fig:sinkhorn-geodesics-in-heat)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-geodesics-in-heat")
-```
-
-*Geodesics-in-heat approximation of the distance to three source points. One
-backward-Euler resolvent step with Neumann boundary conditions is followed by a
-normalized-gradient Poisson solve. Larger resolvent scales stabilize the linear solve
-but visibly round and merge level-set features.*
-:::
-
-### Soft Hopf--Lax and Hopf--Cole
-
-For $t>0$, the quadratic Hopf--Lax transform is
-
-```{math}
-Q_t f(x)=\inf_y \left\{ f(y)+\frac{\norm{x-y}^2}{2t}\right\}.
-```
-
-Completing the square gives $Q_t f(x)=\norm{x}^2/(2t)-(f+\norm{\cdot}^2/(2t))^*(x/t)$. The entropic version replaces the associated Legendre supremum by a Gaussian log-sum-exp formula, equivalently a heat-kernel convolution at time $\epsilon t/2$.
-
-```{math}
-Q_t^\epsilon f(x)
-= -\epsilon\log\int
-\exp\!\left(-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}\right)\,dy
-= -\epsilon\log\big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\big)(x)+\text{cst},
-```
-
-where $G_s$ is the normalized heat kernel and the constant absorbs its
-normalization. Laplace's principle gives $Q_t^\epsilon f\to Q_t f$ as
-$\epsilon\to0$, up to an additive constant. The Hopf--Cole transform is the PDE version of the same
-idea: if
-
-```{math}
-\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi,
-```
-
-then $u=e^{-\phi/(2\nu)}$ solves $\partial_tu=\nu\Delta u$, and
-$v=\nabla\phi=-2\nu\nabla\log u$ solves viscous Burgers,
-$\partial_t v+(v\cdot\nabla)v=\nu\Delta v$.
-
-(fig:sinkhorn-hopf-cole-transform)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-hopf-cole-transform")
-```
-
-*Hopf--Cole numerics in one dimension: Gaussian soft Hopf--Lax/Legendre smoothing, heat evolution of the transformed variable, and the recovered viscous Burgers velocity.*
-:::
-
 (alg:sinkhorn-scaling)=
 :::{admonition} Algorithm: Sinkhorn scaling
 :class: ot4ml-algorithm
@@ -1264,6 +1159,399 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 **Return** $\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij}}{\epsilon}\right).$
 :::
 
+
+
+(sec-sinkhorn-marginal-dependent)=
+## Marginal-Dependent Problems
+
+The balanced Sinkhorn problem fixes both marginals exactly. Many nearby models
+instead optimize the transported marginals, but only through penalties or
+constraints applied separately to each marginal. The useful point, emphasized by
+the generalized scaling algorithms of Chizat, Peyré, Schmitzer and Vialard
+{cite:p}`2016-chizat-sinkhorn`, is that entropic OT remains a diagonal-scaling
+problem whenever these marginal terms admit simple KL-proximal maps.
+
+Let $\mathcal F$ and $\mathcal G$ be proper convex lower semicontinuous
+functionals on finite nonnegative measures on $\Xx$ and $\Yy$. The
+unregularized marginal-dependent transport problem is
+
+```{math}
+:label: eq-marginal-dependent-unregularized-cont
+\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+\int c(x,y)\,\d\pi(x,y)
++
+\mathcal F(\pi_1)
++
+\mathcal G(\pi_2),
+```
+
+where $\pi_1=(\mathrm p_{\Xx})_\sharp\pi$ and
+$\pi_2=(\mathrm p_{\Yy})_\sharp\pi$ are the two marginals of $\pi$. Entropic
+regularization turns this problem into the scaling-friendly form
+
+```{math}
+:label: eq-marginal-dependent-cont
+\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+\int c(x,y)\,\d\pi(x,y)
++
+\mathcal F(\pi_1)
++
+\mathcal G(\pi_2)
++
+\epsilon\operatorname{KL}(\pi|\alpha\otimes\beta),
+```
+
+where $\alpha$ and $\beta$ are reference measures. In this subsection, when the
+total mass of $\pi$ is not fixed, the KL term is understood in the generalized
+sense associated with $\varphi(s)=s\log s-s+1$. Thus, if
+$\lambda=\alpha\otimes\beta$ and $\pi=\rho\lambda+\pi^\perp$ is the Lebesgue
+decomposition of $\pi$ with respect to $\lambda$, then
+
+```{math}
+\operatorname{KL}(\pi|\lambda)
+=
+\int \bigl(\rho\log\rho-\rho+1\bigr)\,\mathrm d\lambda
+```
+
+with value $+\infty$ when $\pi^\perp\ne0$. On probability couplings this
+coincides with the usual relative entropy.
+
+Balanced OT is recovered by taking $\mathcal F=\iota_{\{\alpha\}}$ and
+$\mathcal G=\iota_{\{\beta\}}$. Unbalanced OT replaces these hard indicators by
+marginal divergences, as developed later in Section {ref}`sec-unbalanced`. An
+entropic JKO step fixes the first marginal to the previous iterate and puts the
+energy on the second marginal, for instance
+$\mathcal F=\iota_{\{\alpha_t\}}$ and $\mathcal G=E$, with cost $c/(2\tau)$;
+this is the static counterpart of the minimizing-movement schemes of Chapter
+{ref}`sec-wasserstein-gradient-flows`. Barycenters are the multi-coupling
+extension: several couplings share one unknown marginal and are treated by the
+generalized Sinkhorn updates of Section {ref}`sec-barycenters`.
+
+In finite dimension, with reference weights satisfying $a_i,b_j>0$ and proper
+convex functions
+$\mathsf F:\RR_+^n\to\RR\cup\{+\infty\}$,
+$\mathsf G:\RR_+^m\to\RR\cup\{+\infty\}$, the entropic version becomes
+
+```{math}
+:label: eq-marginal-dependent-discrete
+\inf_{\P\in\RR_+^{n\times m}}
+\langle\C,\P\rangle
++
+\mathsf F(\P\ones_m)
++
+\mathsf G(\P^\top\ones_n)
++
+\epsilon\KLD(\P|\a\otimes\b).
+```
+
+Equivalently, if $\K_{ij}=a_i b_j e^{-\C_{ij}/\epsilon}$, the terms involving
+$\C$ can be absorbed into the Gibbs reference and the problem is, up to the
+additive constant $\epsilon\sum_{i,j}(a_i b_j-\K_{ij})$,
+
+```{math}
+\inf_{\P\ge0}
+\mathsf F(\P\ones_m)
++
+\mathsf G(\P^\top\ones_n)
++
+\epsilon\KLD(\P|\K).
+```
+
+(prop-marginal-dependent-dual-scaling)=
+:::{admonition} Proposition: Dual and scaling for marginal penalties
+:class: important
+Assume $a_i,b_j>0$, $\epsilon>0$, and a Fenchel qualification condition, for
+instance the existence of a matrix $\P>0$ such that $\P\ones_m$ and
+$\P^\top\ones_n$ belong to the relative interiors of $\operatorname{dom}(\mathsf F)$
+and $\operatorname{dom}(\mathsf G)$. The Fenchel dual of the discrete
+marginal-dependent problem is
+
+```{math}
+:label: eq-marginal-dependent-dual
+\sup_{\mathbf f\in\RR^n,\mathbf g\in\RR^m}
+-
+\mathsf F^*(-\mathbf f)
+-
+\mathsf G^*(-\mathbf g)
+-
+\epsilon\sum_{i,j}a_i b_j
+\left[
+\exp\left(\frac{\mathbf f_i+\mathbf g_j-\C_{ij}}{\epsilon}\right)-1
+\right].
+```
+
+Equivalently, up to the additive constant $\epsilon\sum_{i,j}a_i b_j$, the last
+term is
+
+```{math}
+-
+\epsilon\sum_{i,j}\K_{ij}
+\exp\left(\frac{\mathbf f_i+\mathbf g_j}{\epsilon}\right).
+```
+
+If $\mathbf u=e^{\mathbf f/\epsilon}$ and
+$\mathbf v=e^{\mathbf g/\epsilon}$, exact block ascent in the two dual
+variables is the generalized Sinkhorn cycle
+
+```{math}
+:label: eq-generalized-sinkhorn-kl-prox
+\begin{aligned}
+r &\leftarrow \operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(\K\mathbf v),
+&\qquad
+\mathbf u &\leftarrow r\oslash(\K\mathbf v),\\
+s &\leftarrow \operatorname{prox}_{\mathsf G/\epsilon}^{\KLD}(\K^\top\mathbf u),
+&\qquad
+\mathbf v &\leftarrow s\oslash(\K^\top\mathbf u),\\
+\P&=\operatorname{diag}(\mathbf u)\K\operatorname{diag}(\mathbf v),
+\end{aligned}
+```
+
+where divisions are entrywise and
+
+```{math}
+:label: eq-kl-prox-marginal
+\operatorname{prox}^{\KLD}_{\mathsf h}(z)
+\eqdef
+\operatorname*{arg\,min}_{r\in\RR_+^d}
+\mathsf h(r)+\KLD(r|z).
+```
+
+In particular, $\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)$ is the
+minimizer of $\mathsf F(r)+\epsilon\KLD(r|z)$.
+:::
+
+:::{dropdown} Proof
+Introduce independent variables $r$ and $s$ for the two marginals and use dual
+variables $\mathbf f,\mathbf g$ for the constraints $r=\P\ones_m$ and
+$s=\P^\top\ones_n$. The Lagrangian contains
+
+```{math}
+\mathsf F(r)+\langle\mathbf f,r\rangle
++
+\mathsf G(s)+\langle\mathbf g,s\rangle
++
+\langle\C,\P\rangle
++
+\epsilon\KLD(\P|\a\otimes\b)
+-
+\langle\mathbf f\oplus\mathbf g,\P\rangle.
+```
+
+Minimizing over $r$ and $s$ gives $-\mathsf F^*(-\mathbf f)$ and
+$-\mathsf G^*(-\mathbf g)$. For each scalar entry, the convex conjugate of
+$p\mapsto C_{ij}p+\epsilon(p\log(p/(a_i b_j))-p+a_i b_j)$ is
+$q\mapsto\epsilon a_i b_j(e^{(q-C_{ij})/\epsilon}-1)$. Minimizing over $\P$
+with $q=\mathbf f_i+\mathbf g_j$ gives the displayed dual.
+
+For the scaling form, fix $\mathbf v>0$, set
+$\widetilde{\K}=\K\operatorname{diag}(\mathbf v)$ and
+$z=\widetilde{\K}\ones_m=\K\mathbf v$. Updating the row scaling means looking
+for $\P=\operatorname{diag}(\mathbf u)\widetilde{\K}$, so its row marginal is
+$r=\P\ones_m=\mathbf u\odot z$. The row-wise chain rule gives
+
+```{math}
+\KLD(\operatorname{diag}(\mathbf u)\widetilde{\K}|\widetilde{\K})
+=
+\sum_i \bigl(r_i\log(r_i/z_i)-r_i+z_i\bigr)
+=
+\KLD(r|z).
+```
+
+Thus exact optimization of this block is equivalent to minimizing
+$\mathsf F(r)+\epsilon\KLD(r|z)$ over $r\ge0$, hence
+$r=\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)$ and
+$\mathbf u=r\oslash z$. The column update is identical with
+$w=\K^\top\mathbf u$.
+:::
+
+When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two
+dual terms are $\langle\mathbf f,\a\rangle+\langle\mathbf g,\b\rangle$, and one
+recovers the usual entropic dual. The classical Sinkhorn update is the special
+case in which the KL proximal maps return the prescribed marginals $\a$ and
+$\b$.
+
+(alg-generalized-sinkhorn-marginal-penalties)=
+:::{admonition} Algorithm: Generalized Sinkhorn for Marginal Penalties
+:class: ot4ml-algorithm
+
+**Input:** reference weights $\a,\b$, cost $\C$, convex marginal penalties
+$\mathsf F,\mathsf G$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+**Output:** coupling $\P$ and optimized marginals $r=\P\ones_m$,
+$s=\P^\top\ones_n$.
+
+**Set** $\K_{ij}=a_i b_j e^{-\C_{ij}/\epsilon}$.
+
+**Initialize:** $\mathbf u=\ones_n$, $\mathbf v=\ones_m$, $\eta=+\infty$.
+
+**While** $\eta>\mathrm{tol}$ **do**:
+
+> **Store** $\mathbf u_{\mathrm{old}}=\mathbf u$ and
+> $\mathbf v_{\mathrm{old}}=\mathbf v$.
+>
+> **Set** $z=\K\mathbf v$.
+>
+> **Compute** $r=\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)$.
+>
+> **Set** $\mathbf u=r\oslash z$.
+>
+> **Set** $w=\K^\top\mathbf u$.
+>
+> **Compute** $s=\operatorname{prox}_{\mathsf G/\epsilon}^{\KLD}(w)$.
+>
+> **Set** $\mathbf v=s\oslash w$.
+>
+> **Set** $\eta=\max\{\norm{\mathbf u-\mathbf u_{\mathrm{old}}}_\infty,
+> \norm{\mathbf v-\mathbf v_{\mathrm{old}}}_\infty\}$.
+
+**Return** $\P=\operatorname{diag}(\mathbf u)\K\operatorname{diag}(\mathbf v)$,
+$r=\P\ones_m$, and $s=\P^\top\ones_n$.
+:::
+
+The usefulness of this formulation is that many KL-proximal maps are explicit.
+
+- **Hard marginal constraint.** If $\mathsf F=\iota_{\{\a\}}$, then
+  $\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)=\a$.
+- **KL marginal relaxation.** If $\mathsf F(r)=\tau\KLD(r|\a)$ with $\tau>0$,
+  then, coordinatewise,
+
+```{math}
+\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)
+=
+z^{\epsilon/(\tau+\epsilon)}\odot \a^{\tau/(\tau+\epsilon)},
+```
+
+so $\mathbf u\leftarrow(\a\oslash z)^{\tau/(\tau+\epsilon)}$, the damped scaling
+of unbalanced Sinkhorn.
+
+- **Pointwise bounds.** If $\mathsf F=\iota_{\{\ell\le r\le u\}}$, then the
+  proximal map is the coordinatewise clipping
+  $\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)_i=\min\{u_i,\max\{\ell_i,z_i\}\}$.
+- **Total-variation marginal relaxation.** If
+  $\mathsf F(r)=\tau\norm{r-\a}_1$ and $\lambda=\tau/\epsilon$, then
+
+```{math}
+\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)_i
+=
+\begin{cases}
+z_i e^{\lambda}, & z_i<a_i e^{-\lambda},\\
+a_i, & a_i e^{-\lambda}\le z_i\le a_i e^{\lambda},\\
+z_i e^{-\lambda}, & z_i>a_i e^{\lambda}.
+\end{cases}
+```
+
+- **Fixed total mass.** If $\mathsf F=\iota_{\{\langle r,\ones\rangle=m\}}$,
+  then
+  $\operatorname{prox}_{\mathsf F/\epsilon}^{\KLD}(z)=m z/\langle z,\ones\rangle$.
+
+These examples explain why generalized Sinkhorn algorithms remain practical:
+the expensive operation is still multiplication by $\K$ or $\K^\top$, while the
+model-specific part is a low-dimensional KL-proximal update on a marginal.
+
+(sec-sinkhorn-heat-hopf-cole)=
+## Heat Kernels and Hopf--Cole Transforms
+
+The Gaussian kernel used by Sinkhorn is also the Euclidean heat kernel. This
+viewpoint clarifies when entropic OT admits fast grid and surface
+implementations, and it places soft minima and Hopf--Cole transforms in the
+same heat-kernel calculus.
+
+### Geodesics in Heat
+
+On $\mathbb R^d$, the heat kernel for $\partial_t u=\Delta u$ is
+
+```{math}
+h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
+```
+
+Up to normalization, the quadratic Sinkhorn Gibbs kernel is therefore a Gaussian
+heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct
+construction uses the resolvent of the positive Laplacian. On the line, the kernel of
+$(I-\tau\Delta)^{-1}$ is exactly proportional to
+$\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel
+with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa
+smoothing, while the heat semigroup gives the Gaussian kernel
+$\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or surface $M$,
+Varadhan's formula gives
+
+```{math}
+-4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
+\qquad (t\downarrow0).
+```
+
+This underlies geodesics-in-heat methods {cite:p}`varadhan-1967,Crane2013`.
+Writing $L=-\Delta_M$ for the positive Laplace--Beltrami operator, one has
+
+```{math}
+e^{-tL}=\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
+```
+
+Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a
+Laplace/Yukawa smoothing, while repeated resolvent steps approximate the
+Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced
+by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than
+dense Gaussian matrices. This is attractive computationally, but the small-scale
+limit is delicate: the smoothing length, of order $\sqrt t$ for heat and
+$\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this
+length is sent to zero faster than the grid spacing, metrication artifacts and
+inconsistent discretizations can dominate the intended geodesic limit.
+
+(fig:sinkhorn-geodesics-in-heat)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-geodesics-in-heat")
+```
+
+*Geodesics-in-heat approximation of the distance to three source points. One
+backward-Euler resolvent step with Neumann boundary conditions is followed by a
+normalized-gradient Poisson solve. Larger resolvent scales stabilize the linear solve
+but visibly round and merge level-set features.*
+:::
+
+### Soft Hopf--Lax and Hopf--Cole
+
+For $t>0$, the quadratic Hopf--Lax transform is
+
+```{math}
+Q_t f(x)=\inf_y \left\{ f(y)+\frac{\norm{x-y}^2}{2t}\right\}.
+```
+
+Completing the square gives $Q_t f(x)=\norm{x}^2/(2t)-(f+\norm{\cdot}^2/(2t))^*(x/t)$. The entropic version replaces the associated Legendre supremum by a Gaussian log-sum-exp formula, equivalently a heat-kernel convolution at time $\epsilon t/2$.
+
+```{math}
+Q_t^\epsilon f(x)
+= -\epsilon\log\int
+\exp\!\left(-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}\right)\,dy
+= -\epsilon\log\big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\big)(x)+\text{cst},
+```
+
+where $G_s$ is the normalized heat kernel and the constant absorbs its
+normalization. Laplace's principle gives $Q_t^\epsilon f\to Q_t f$ as
+$\epsilon\to0$, up to an additive constant. The Hopf--Cole transform is the PDE version of the same
+idea: if
+
+```{math}
+\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi,
+```
+
+then $u=e^{-\phi/(2\nu)}$ solves $\partial_tu=\nu\Delta u$, and
+$v=\nabla\phi=-2\nu\nabla\log u$ solves viscous Burgers,
+$\partial_t v+(v\cdot\nabla)v=\nu\Delta v$.
+
+(fig:sinkhorn-hopf-cole-transform)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-hopf-cole-transform")
+```
+
+*Hopf--Cole numerics in one dimension: Gaussian soft Hopf--Lax/Legendre smoothing, heat evolution of the transformed variable, and the recovered viscous Burgers velocity.*
+:::
 
 (sec-sinkhorn-other-regularizers)=
 ## Other Convex Regularizers

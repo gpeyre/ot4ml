@@ -1955,3 +1955,516 @@ directional support assumption by propagation and overparameterization
 hypotheses ensuring that a negative descent direction would be present in the
 support and would contradict stationarity.
 :::
+
+## Functional Inequalities via Optimal Transport
+
+Optimal transport is also a proof technique for sharp inequalities. The common
+mechanism is simple: push one density to another by a monotone or Brenier map,
+interpolate along the transport rays, and convert convexity of the determinant,
+entropy, or the cost into an integral inequality. This section records a few
+representative examples. To keep the presentation readable, the proofs are
+written in the smooth Euclidean setting; the usual regularization and
+approximation arguments give the standard Borel or Sobolev versions. The
+transport viewpoint is developed systematically in McCann's displacement
+convexity principle, the Riemannian interpolation inequalities of
+Cordero-Erausquin, McCann and Schmuckenschläger, and Villani's account of
+concentration and functional inequalities
+{cite:p}`mccann1997convexity,cordero2001riemannian,Villani09`.
+
+### Brunn-Minkowski and Isoperimetry
+
+The most geometric use of OT is to prove that transporting two uniform measures
+and looking at the interpolated support increases volume at least concavely.
+The perimeter inequality is then obtained by differentiating this volume
+estimate after adding a small ball.
+
+(prop-ot-brunn-minkowski-isoperimetric)=
+:::{admonition} Proposition: Brunn-Minkowski and Euclidean Isoperimetry
+:class: important
+Let $A,B\subset\RR^d$ be bounded Borel sets with positive Lebesgue measure. For
+$t\in[0,1]$, set
+
+```{math}
+(1-t)A+tB\eqdef\{(1-t)x+ty:x\in A,\ y\in B\}.
+```
+
+Then
+
+```{math}
+\operatorname{Vol}((1-t)A+tB)^{1/d}
+\geq
+(1-t)\operatorname{Vol}(A)^{1/d}
++
+t\,\operatorname{Vol}(B)^{1/d}.
+```
+
+Consequently, if $A$ is smooth and bounded and
+$\omega_d=\operatorname{Vol}(B_1)$, then
+
+```{math}
+\operatorname{Per}(A)
+\geq
+d\,\omega_d^{1/d}\operatorname{Vol}(A)^{(d-1)/d}.
+```
+:::
+
+:::{dropdown} Proof
+We first give the argument for regular sets, the general Borel case following
+by approximation from inside and outside. Let $\alpha$ and $\beta$ be the
+uniform probability measures on $A$ and $B$, and let $T=\nabla\phi$ be the
+Brenier map with $T_\sharp\alpha=\beta$. The interpolating map
+$T_t=(1-t)\operatorname{Id}+tT$ sends $\alpha$ to a measure $\alpha_t$
+supported in $(1-t)A+tB$. At points where $T$ is differentiable,
+
+```{math}
+\det DT_t
+=
+\det((1-t)\operatorname{Id}+tDT).
+```
+
+Since $DT$ is symmetric positive semidefinite and $\det^{1/d}$ is concave on
+the positive semidefinite cone,
+
+```{math}
+\det(DT_t)^{1/d}
+\geq
+(1-t)+t\det(DT)^{1/d}.
+```
+
+The change-of-variables identity for the uniform measures gives
+$\det(DT)=\operatorname{Vol}(B)/\operatorname{Vol}(A)$ almost everywhere. Hence
+the density $\rho_t$ of $\alpha_t$ satisfies
+
+```{math}
+\rho_t^{-1/d}
+\geq
+(1-t)\operatorname{Vol}(A)^{1/d}
++
+t\operatorname{Vol}(B)^{1/d}.
+```
+
+This means that $\rho_t\leq c_t^{-d}$ on its support, where
+$c_t=(1-t)\operatorname{Vol}(A)^{1/d}+t\operatorname{Vol}(B)^{1/d}$. Since
+$\alpha_t$ has total mass one and is supported in $(1-t)A+tB$, this gives
+$\operatorname{Vol}((1-t)A+tB)\geq c_t^d$, which is the displayed
+Brunn-Minkowski inequality.
+
+For isoperimetry, apply Brunn-Minkowski with $B=B_1$ and write
+$A+\epsilon B_1$ for the parallel set. Then
+
+```{math}
+\operatorname{Vol}(A+\epsilon B_1)^{1/d}
+\geq
+\operatorname{Vol}(A)^{1/d}+\epsilon\omega_d^{1/d}.
+```
+
+Using
+$\operatorname{Vol}(A+\epsilon B_1)
+=\operatorname{Vol}(A)+\epsilon\,\operatorname{Per}(A)+o(\epsilon)$ and
+differentiating at $\epsilon=0$ yields the claimed perimeter bound.
+:::
+
+Figure {ref}`fig:gradflow-brunn-minkowski-ot` isolates the
+determinant-concavity step in the special case where the optimal map is affine.
+
+(fig:gradflow-brunn-minkowski-ot)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("gradflow-brunn-minkowski-ot")
+```
+
+*Brunn-Minkowski through an affine optimal-transport interpolation between two
+ellipses. For ellipses, the Brenier map is affine, so the transported support
+$T_t(A)$ remains an ellipse and its area is computed exactly from the
+determinant of $(1-t)\operatorname{Id}+tDT$. The right panel shows that
+$|T_t(A)|^{1/2}$ lies above the linear interpolation of the endpoint
+square-root areas, which is the two-dimensional determinant concavity behind
+the proof of Brunn-Minkowski.*
+:::
+
+### Prékopa-Leindler
+
+The functional analogue of Brunn-Minkowski replaces sets by densities. The
+transport proof is the same argument with the Jacobian no longer constant.
+
+(prop-ot-prekopa-leindler)=
+:::{admonition} Proposition: Prékopa-Leindler Inequality
+:class: important
+Let $u,v,w:\RR^d\to[0,+\infty)$ be integrable, and let $t\in[0,1]$. Assume that
+
+```{math}
+w((1-t)x+ty)\geq u(x)^{1-t}v(y)^t
+\qquad
+\text{for all }x,y\in\RR^d.
+```
+
+Then
+
+```{math}
+\int_{\RR^d} w
+\geq
+\left(\int_{\RR^d}u\right)^{1-t}
+\left(\int_{\RR^d}v\right)^t .
+```
+:::
+
+:::{dropdown} Proof
+Set $U=\int u$ and $V=\int v$, and assume $U,V>0$. Let
+$\alpha=(u/U)\d x$ and $\beta=(v/V)\d x$, and let $T$ be the Brenier map from
+$\alpha$ to $\beta$. Put $T_t=(1-t)\operatorname{Id}+tT$. The change of
+variables gives
+
+```{math}
+\int w
+\geq
+\int w(T_t(x))\det(DT_t(x))\d x .
+```
+
+By the assumption on $w$ and by
+$\det((1-t)\operatorname{Id}+tDT)\geq\det(DT)^t$ for positive semidefinite
+$DT$,
+
+```{math}
+\int w
+\geq
+\int u(x)^{1-t}v(T(x))^t\det(DT(x))^t\d x.
+```
+
+Since $T_\sharp\alpha=\beta$, the Monge-Ampère identity gives
+
+```{math}
+\det(DT(x))=\frac{u(x)V}{v(T(x))U}
+```
+
+almost everywhere. Substitution yields
+
+```{math}
+\int w
+\geq
+\left(\frac{V}{U}\right)^t\int u(x)\d x
+=
+U^{1-t}V^t.
+```
+
+Approximation removes the smoothness and positivity assumptions.
+:::
+
+### Gaussian Logarithmic Sobolev Inequality
+
+Transport also gives a short proof of the sharp Gaussian logarithmic Sobolev
+inequality. The key point is that the Jacobian equation for the Brenier map can
+be bounded by $\log\det A\leq\operatorname{tr}(A-\operatorname{Id})$, and
+Gaussian integration by parts converts the trace term into a Fisher information.
+
+(prop-gaussian-log-sobolev-ot)=
+:::{admonition} Proposition: Gaussian Logarithmic Sobolev Inequality
+:class: important
+Let $\gamma_d$ be the standard Gaussian measure on $\RR^d$. If $f$ is smooth,
+positive, has sufficient decay, and $\int f\d\gamma_d=1$, then
+
+```{math}
+\operatorname{Ent}_{\gamma_d}(f)
+\eqdef
+\int f\log f\,\d\gamma_d
+\leq
+\frac12\int \frac{\norm{\nabla f}^2}{f}\,\d\gamma_d.
+```
+:::
+
+:::{dropdown} Proof
+Let $\mu=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with
+$T_\sharp\mu=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge-Ampère equation
+reads
+
+```{math}
+f(x)e^{-\norm{x}^2/2}
+=
+e^{-\norm{T(x)}^2/2}\det(DT(x)).
+```
+
+Thus
+
+```{math}
+\log f(x)
+=
+-\dotp{x}{\theta(x)}
+-\frac12\norm{\theta(x)}^2
++
+\log\det(\operatorname{Id}+D\theta(x)).
+```
+
+Since $DT$ is positive semidefinite,
+$\log\det(\operatorname{Id}+D\theta)\leq\operatorname{tr}(D\theta)
+=\operatorname{div}\theta$. Multiplying by $f$ and integrating with respect to
+$\gamma_d$ gives
+
+```{math}
+\operatorname{Ent}_{\gamma_d}(f)
+\leq
+\int f(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
+-\frac12\int f\norm{\theta}^2\,\d\gamma_d.
+```
+
+Gaussian integration by parts gives
+
+```{math}
+\int f(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
+=
+-\int\dotp{\nabla f}{\theta}\,\d\gamma_d.
+```
+
+Completing the square pointwise,
+
+```{math}
+-\dotp{\nabla f}{\theta}-\frac12 f\norm{\theta}^2
+\leq
+\frac12\frac{\norm{\nabla f}^2}{f}.
+```
+
+This proves the inequality. The general Sobolev-class statement follows by
+approximation.
+:::
+
+### Talagrand's Transport-Entropy Inequality
+
+The same Jacobian estimate gives the sharp quadratic transport-entropy
+inequality for the Gaussian. This result is due to Talagrand
+{cite:p}`Talagrand1996Transport`; the link with logarithmic Sobolev
+inequalities and the Otto calculus is one of the starting points of the
+Otto-Villani theory {cite:p}`OttoVillani2000Generalization,Villani09`.
+
+(prop-gaussian-talagrand-t2)=
+:::{admonition} Proposition: Gaussian $T_2$ Inequality
+:class: important
+Let $\mu=f\gamma_d$ be a probability measure with finite second moment. Then
+
+```{math}
+\frac12\Wass_2^2(\mu,\gamma_d)
+\leq
+\KL(\mu|\gamma_d)
+=
+\int f\log f\,\d\gamma_d .
+```
+:::
+
+:::{dropdown} Proof
+Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier
+map with $T_\sharp\gamma_d=\mu$, and write $T(x)=x+\theta(x)$. The change of
+variables gives
+
+```{math}
+f(T(x))e^{-\norm{T(x)}^2/2}\det(DT(x))
+=
+e^{-\norm{x}^2/2}.
+```
+
+Hence
+
+```{math}
+\log f(T(x))
+=
+\dotp{x}{\theta(x)}
++
+\frac12\norm{\theta(x)}^2
+-
+\log\det(\operatorname{Id}+D\theta(x)).
+```
+
+Using again
+$\log\det(\operatorname{Id}+D\theta)\leq\operatorname{div}\theta$ and
+integrating with respect to $\gamma_d$,
+
+```{math}
+\KL(\mu|\gamma_d)
+\geq
+\frac12\int\norm{\theta}^2\,\d\gamma_d
++
+\int(\dotp{x}{\theta}-\operatorname{div}\theta)\,\d\gamma_d.
+```
+
+The last integral vanishes by Gaussian integration by parts. Since $T$ is
+optimal,
+
+```{math}
+\int\norm{\theta}^2\,\d\gamma_d=\Wass_2^2(\gamma_d,\mu),
+```
+
+which proves the claim. Approximation gives the general case.
+:::
+
+### The HWI Bridge
+
+The previous two Gaussian inequalities are not isolated facts. The HWI
+inequality of Otto and Villani {cite:p}`OttoVillani2000Generalization` compares
+three quantities at once: the entropy $H$, the Wasserstein distance $W$, and
+the Fisher information $I$. It is one of the cleanest examples where
+displacement convexity turns into a functional inequality.
+
+(prop-hwi-inequality)=
+:::{admonition} Proposition: Otto-Villani HWI Inequality
+:class: important
+Let $\beta=\rho_\beta\d x=e^{-V}\d x/Z$ be a smooth probability measure in
+$\Pp_2(\RR^d)$, and assume that
+$\nabla^2 V\succeq \lambda \operatorname{Id}$ for some $\lambda\in\RR$. For an
+absolutely continuous probability measure $\alpha=\rho_\alpha\d x$ in
+$\Pp_2(\RR^d)$, define the relative Fisher information
+
+```{math}
+\mathcal I_\beta(\alpha)
+\eqdef
+\int \norm{\nabla\log\frac{\rho_\alpha}{\rho_\beta}}^2\,\d\alpha,
+```
+
+with the convention $\mathcal I_\beta(\alpha)=+\infty$ if $\alpha$ is not
+absolutely continuous or if the expression is not defined. Then
+
+```{math}
+\KL(\alpha|\beta)
+\leq
+\Wass_2(\alpha,\beta)\sqrt{\mathcal I_\beta(\alpha)}
+-\frac{\lambda}{2}\Wass_2^2(\alpha,\beta).
+```
+:::
+
+:::{dropdown} Proof
+If $\mathcal I_\beta(\alpha)=+\infty$, there is nothing to prove. Assume first
+that $\rho_\alpha$ is smooth and positive. Let $T$ be the Brenier map from
+$\alpha$ to $\beta$, set $v=T-\operatorname{Id}$, and let
+$\alpha_t=((1-t)\operatorname{Id}+tT)_\sharp\alpha$. By Proposition
+{ref}`prop-basic-geodesic-convexity`, $F(\eta)=\KL(\eta|\beta)$ is
+$\lambda$-geodesically convex. Thus the one-dimensional function
+$f(t)=F(\alpha_t)$ satisfies
+
+```{math}
+f(1)\geq f(0)+f'(0)+\frac{\lambda}{2}\Wass_2^2(\alpha,\beta).
+```
+
+Since $f(1)=F(\beta)=0$, it remains to compute the initial derivative. The
+continuity equation for the geodesic gives
+$\partial_t\alpha_t+\nabla\cdot(\alpha_t v_t)=0$ and $v_0=v$. Hence
+
+```{math}
+f'(0)
+=
+\int \dotp{\nabla\log\frac{\rho_\alpha}{\rho_\beta}}{v}\,\d\alpha.
+```
+
+Therefore
+
+```{math}
+\KL(\alpha|\beta)
+\leq
+-\int \dotp{\nabla\log\frac{\rho_\alpha}{\rho_\beta}}{T-\operatorname{Id}}\,\d\alpha
+-\frac{\lambda}{2}\Wass_2^2(\alpha,\beta).
+```
+
+Cauchy's inequality and
+$\int\norm{T-\operatorname{Id}}^2\d\alpha=\Wass_2^2(\alpha,\beta)$ give the
+announced bound. The general case follows by the standard approximation and
+lower-semicontinuity of entropy, Fisher information, and $\Wass_2$.
+:::
+
+When $\lambda>0$, Young's inequality $rs-\lambda r^2/2\leq s^2/(2\lambda)$
+gives the logarithmic Sobolev estimate
+$\KL(\alpha|\beta)\leq \mathcal I_\beta(\alpha)/(2\lambda)$. Thus HWI explains
+why the same curvature assumption controls both the static inequality and the
+exponential decay of the associated Fokker-Planck flow below.
+
+Figure {ref}`fig:gradflow-hwi-entropy-decay` shows these inequalities on an
+exact one-dimensional Ornstein-Uhlenbeck relaxation, where all quantities can be
+evaluated accurately by grid quadrature and quantile inversion.
+
+(fig:gradflow-hwi-entropy-decay)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("gradflow-hwi-entropy-decay")
+```
+
+*Functional inequalities along the Ornstein-Uhlenbeck flow from a
+one-dimensional Gaussian mixture to the standard Gaussian. The left panel shows
+the density relaxation, with the Gaussian target as a dashed curve. The middle
+panel compares the entropy $H=\KL(\alpha_t|\gamma)$ with the HWI upper bound
+$W\sqrt I-W^2/2$, the logarithmic-Sobolev upper bound $I/2$, and the Talagrand
+lower bound $W^2/2$. The right panel displays the dynamic consequence of
+log-Sobolev, namely exponential entropy decay below $H(0)e^{-2t}$.*
+:::
+
+### Back to Gradient Flows
+
+Functional inequalities become convergence rates once they are combined with
+the energy-dissipation identity of a Wasserstein gradient flow. This is why the
+previous inequalities are not merely static estimates: they quantify relaxation
+of the Fokker-Planck equation.
+
+The logarithmic Sobolev assumption below is the same curvature-controlled
+mechanism as in the HWI discussion. With the convention used here, the standard
+Gaussian $\gamma=\mathcal N(0,\Id)$ satisfies it with $\lambda=1$, exactly as in
+{ref}`prop-gaussian-log-sobolev-ot`. More generally, if
+$\beta=Z^{-1}e^{-V}\d x$ and $\nabla^2V\succeq\lambda\Id$, then the
+Bakry--Emery criterion gives the logarithmic Sobolev inequality with constant
+$\lambda$. Thus the hypothesis covers strongly log-concave targets, and it is
+the functional-inequality counterpart of the $\lambda$-geodesic convexity of
+$\KL(\cdot|\beta)$ discussed in {ref}`sec-geodesic-convexity`.
+
+(prop-lsi-entropy-decay)=
+:::{admonition} Proposition: Log-Sobolev Inequality Implies Entropy Decay
+:class: important
+Let $\beta=e^{-V}\d x/Z$ be a smooth probability measure on $\RR^d$. Assume
+that $\beta$ satisfies the logarithmic Sobolev inequality with constant
+$\lambda>0$,
+
+```{math}
+\KL(\alpha|\beta)
+\leq
+\frac{1}{2\lambda}
+\int \norm{\nabla\log\frac{\d\alpha}{\d\beta}}^2\,\d\alpha .
+```
+
+Let $\alpha_t$ solve the Wasserstein gradient flow of
+$F(\alpha)=\KL(\alpha|\beta)$, namely
+
+```{math}
+\partial_t\rho_t
+=
+\nabla\cdot(\rho_t\nabla V)+\Delta\rho_t,
+\qquad
+\alpha_t=\rho_t\d x .
+```
+
+Then
+
+```{math}
+\KL(\alpha_t|\beta)
+\leq
+e^{-2\lambda t}\KL(\alpha_0|\beta).
+```
+:::
+
+:::{dropdown} Proof
+The first variation of $F$ is $\log(\rho/\rho_\beta)$ up to an additive
+constant.
+Along the smooth Wasserstein gradient flow,
+
+```{math}
+\frac{\d}{\d t}\KL(\alpha_t|\beta)
+=
+-\int \norm{\nabla\log\frac{\d\alpha_t}{\d\beta}}^2\,\d\alpha_t.
+```
+
+The logarithmic Sobolev inequality bounds the Fisher information below by
+$2\lambda\KL(\alpha_t|\beta)$. Hence
+
+```{math}
+\frac{\d}{\d t}\KL(\alpha_t|\beta)
+\leq
+-2\lambda\KL(\alpha_t|\beta),
+```
+
+and Gronwall's lemma gives the result.
+:::

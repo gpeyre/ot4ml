@@ -9,6 +9,7 @@ The preceding gradient-flow calculus is variational. Modern machine-learning mod
 \index{gradient!flow}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 \index{token measure}% strictindex
+\index{one-step generative model}% strictindex
 
 \section{Generative Models via Flow Matching}
 \index{flow!matching}% strictindex
@@ -18,6 +19,7 @@ Flow matching constructs a generative map by learning the velocity field of an i
 \index{velocity field}% strictindex
 \index{continuity equation}% strictindex
 \index{flow!matching}% strictindex
+\index{flow matching}% strictindex
 
 Generative models aim to build a transportation map $T$ between a reference distribution $\alpha$ (typically an isotropic Gaussian) and the target data distribution $\beta$. Since such reference measures are non-atomic, a measurable map with $T_\sharp\alpha=\beta$ exists on standard Borel spaces, for instance by identifying both probability spaces with the unit interval and using a quantile-type rearrangement. This abstract existence statement is much weaker than having an explicit and numerically stable construction of $T$.
 \index{reference!distribution}% strictindex
@@ -38,6 +40,9 @@ Optimal transport is one approach to achieving this, but it is computationally e
 \index{regression loss}% strictindex
 \index{flow!rectified}% strictindex
 \index{flow!matching}% strictindex
+\index{stochastic interpolant}% strictindex
+\index{stochastic!interpolant}% strictindex
+\index{flow!rectified}% strictindex
 %
 This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ and then finding $v_t$ using the least-squares formula~\eqref{eq:least-square-field-explicit}. As we will explain, for a specific class of interpolation (obtained by a parametric push-forward), this $v_t$ can be obtained by avoiding explicitly inverting a Laplacian and instead computing a simple conditional expectation. This conditional expectation can itself be estimated by solving another least-squares problem, but this time unconstrained, making the estimation feasible from finite samples of $\alpha$ and $\beta$.
 \index{conditional!expectation}% strictindex
@@ -46,21 +51,23 @@ This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ 
 \paragraph{Stochastic interpolant.}
 \index{stochastic!interpolant}% strictindex
 
+The word ``stochastic'' can hide two different levels of randomness. We first use the simpler one: after drawing a latent variable $U\sim\pi$, the path $t\mapsto P_t(U)$ is deterministic and differentiable. The randomness only comes from the initial draw of $U$; after taking the push-forward law, $\alpha_t=(P_t)_\sharp\pi$ is a deterministic curve of measures and obeys an ordinary continuity equation. This is the setting behind the stochastic-interpolant construction recalled in Remark~\ref{rem-static-noise-stochastic-interpolants}, and behind the flow-matching and rectified-flow regressions below. Genuine temporal noise, where the path itself has Brownian fluctuations, is different and is discussed in Remark~\ref{rem-noisy-stochastic-interpolants}.
 
-We assume that $\alpha_t$ is defined via a ``projection'' (in a loose sense) of a latent distribution $\pi \in \Pp(\RR^{d'})$, using an operator $P_t : \RR^{d'} \to \RR^d$ where $d' \gg d$, i.e.
+We assume first that $\alpha_t$ is obtained by pushing a latent distribution $\pi \in \Pp(\RR^{d'})$ through a time-dependent map $P_t : \RR^{d'} \to \RR^d$; the latent dimension $d'$ may be larger than the data dimension $d$, i.e.
 \begin{equation}\label{eq:interp-coupling}
 	\forall t \in [0,1], \quad \alpha_t := (P_t)_\sharp \pi.
 \end{equation}
 The basic two-endpoint construction already covers most flow-matching paths used in practice.
 
-\begin{example}[Linear two-endpoint stochastic interpolants]
+\begin{example}[Linear two-endpoint deterministic interpolants]
 	Set $d'=2d$, write $(x,y)\in\RR^d\times\RR^d$, and choose $P_0(x,y)=x$ and $P_1(x,y)=y$. If $\pi$ has marginals $(\alpha_0,\alpha_1)$, then $\alpha_t=(P_t)_\sharp\pi$ interpolates between the two endpoint laws. The simplest choices are the independent coupling $\pi=\alpha_0\otimes\alpha_1$ and the straight path
 	\[
 		P_t(x,y)=(1-t)x+ty.
 	\]
 	With this linear path and an arbitrary coupling $\pi$, the regression below is the common core of flow matching and rectified flow: Lipman et al. emphasize conditional probability paths and simulation-free training of continuous normalizing flows, while rectified flow emphasizes straight couplings, reflow, and the possibility of reducing transport costs and discretization error~\cite{Lipman2022FlowMatching,Liu2023RectifiedFlow}.
+\index{flow matching}% strictindex
 
-	More complex constructions are possible when sampling from $\pi$ remains simple; stochastic interpolants add latent variables or noise, connecting deterministic flows, probability-flow ODEs and diffusion SDEs~\cite{Albergo2025StochasticInterpolants}.
+	More complex constructions are possible when sampling from $\pi$ remains simple. Static auxiliary randomness is still handled by enlarging the latent variable, while Brownian noise leads to the diffusion correction described below; this is the broader stochastic-interpolant viewpoint connecting deterministic flows, probability-flow ODEs and diffusion SDEs~\cite{Albergo2025StochasticInterpolants}.
 \end{example}
 \index{continuous normalizing flow}% strictindex
 \index{reflow}% strictindex
@@ -75,11 +82,7 @@ The basic two-endpoint construction already covers most flow-matching paths used
 \index{flow!rectified}% strictindex
 \index{flow!probability ODE}% strictindex
 \index{probabilistic coupling}% strictindex
-\index{stochastic!interpolant}% strictindex
-\index{probability path}% strictindex
 \index{trivial coupling}% strictindex
-\index{flow!rectified}% strictindex
-\index{flow!matching}% strictindex
 
 If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses
 \index{Dirac mass}% strictindex
@@ -112,13 +115,13 @@ This flow field is computed by solving an unconstrained least-squares problem, o
 
 \begin{prop}[Flow matching vector field]\label{prop-flow-matching-vector-field}
 \index{flow!matching}% strictindex
-	For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. The solution of the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
+	For each fixed $t$, assume $\partial_tP_t\in L^2(\pi;\RR^d)$. Consider the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
 \index{assignment problem}% strictindex
 \index{flow!matching}% strictindex
 	\begin{equation}
 		\min_{v_t} \int_{\RR^{d'}} \norm{v_t(P_t(u)) - [\partial_t P_t](u)}^2 \, \d\pi(u). \label{eq:flow-matching}
 	\end{equation}
-	Equivalently, the minimizer is characterized $\alpha_t$-almost everywhere by the conditional expectation
+	Its minimizer is characterized $\alpha_t$-almost everywhere by the conditional expectation
 \index{conditional!expectation}% strictindex
 	\begin{equation}\label{eq:flow-match-conditional}
 		v_t(z) = \EE_{u \sim \pi} \big( [\partial_t P_t](u) \, \big| \, z = P_t(u) \big).
@@ -239,6 +242,81 @@ For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transp
 \index{continuity equation}% strictindex
 The sampling procedure consists in first drawing $X_0 \sim \alpha$, and then integrating the ODE $\dot{X}_t = v_t(X_t)$ starting with $X_{t=0} = X_0$.
 In the ideal exact-field limit, the resulting $X_{t=1}$ is distributed according to $\alpha_1 = \beta$.
+
+\begin{rem}[Static-noise stochastic interpolants]\label{rem-static-noise-stochastic-interpolants}
+\index{stochastic!interpolant}% strictindex
+\index{latent variable}% strictindex
+\index{probability-flow ODE}% strictindex
+In the terminology of Albergo--Boffi--Vanden-Eijnden~\cite{Albergo2025StochasticInterpolants}, a stochastic interpolant is not first defined as an SDE. It is an explicit random bridge
+\index{stochastic interpolant}% strictindex
+\[
+    X_t = I_t(X_0,X_1,Z),
+    \qquad X_0\sim\alpha_0,\quad X_1\sim\alpha_1,
+\]
+where $Z$ is an auxiliary random variable, usually Gaussian and independent of the endpoints, and where
+\[
+    I_0(x_0,x_1,z)=x_0,
+    \qquad
+    I_1(x_0,x_1,z)=x_1.
+\]
+A typical spatially linear example is
+\[
+    X_t=a(t)X_0+b(t)X_1+\gamma(t)Z,
+    \qquad
+    \gamma(0)=\gamma(1)=0.
+\]
+The noise $Z$ is static: conditionally on $(X_0,X_1,Z)$, the path $t\mapsto X_t$ is differentiable. Thus this construction is exactly the previous push-forward framework with $u=(X_0,X_1,Z)$, $\pi=\operatorname{Law}(X_0,X_1,Z)$, and $P_t=I_t$. Its Eulerian velocity is therefore
+\[
+    v_t(x)=\EE\bigl[\partial_t I_t(X_0,X_1,Z)\mid X_t=x\bigr],
+\]
+and the interpolant density satisfies the continuity equation. The associated SDEs in the stochastic-interpolant framework are alternative sampling dynamics having the same one-time marginals; they are not the definition of the interpolant itself.
+\end{rem}
+
+\begin{rem}[Brownian realizations of interpolant marginals]\label{rem-noisy-stochastic-interpolants}
+\index{stochastic!interpolant}% strictindex
+\index{Fokker-Planck equation}% strictindex
+\index{probability-flow ODE}% strictindex
+One can also represent an interpolating marginal curve by Brownian-in-time dynamics. This is a different construction from the static-noise bridge of Remark~\ref{rem-static-noise-stochastic-interpolants}. Let $Z_t$ solve the It\^o equation
+\[
+    \d Z_t = r_t(U,Z_t)\d t + \Sigma_t(U,Z_t)\d B_t,
+    \qquad \alpha_t=\operatorname{Law}(Z_t),
+\]
+where $U\sim\pi$ is static and $B_t$ is Brownian motion. Define the Eulerian drift and diffusion matrix by conditioning on the observed state,
+\[
+    v_t(z)=\EE\bigl[r_t(U,Z_t)\mid Z_t=z\bigr],
+    \qquad
+    D_t(z)=\EE\bigl[\Sigma_t(U,Z_t)\Sigma_t(U,Z_t)^\top\mid Z_t=z\bigr].
+\]
+Then, for smooth test functions $\varphi$,
+\[
+    \frac{\d}{\d t}\int \varphi\d\alpha_t
+    = \int \dotp{\nabla\varphi}{v_t}\d\alpha_t
+      + \frac12\int \Tr\bigl(D_t\nabla^2\varphi\bigr)\d\alpha_t,
+\]
+or, in distributional form,
+\begin{equation}\label{eq:noisy-interpolant-fokker-planck}
+    \partial_t\alpha_t + \diverg(\alpha_t v_t)
+    = \frac12\sum_{i,j}\partial_{ij}^2\bigl((D_t)_{ij}\alpha_t\bigr).
+\end{equation}
+Thus the natural noisy analogue of~\eqref{eq:flow-matching} regresses the instantaneous drift,
+\[
+    \min_w \EE\bigl[\norm{w_t(Z_t)-r_t(U,Z_t)}^2\bigr],
+\]
+and learns the drift term of a Fokker--Planck equation, not a pure continuity equation unless the diffusion tensor vanishes. When $\alpha_t=\rho_t\d x$ has a smooth positive density, the same marginal curve can be represented, at least formally, by a probability-flow ODE
+\index{probability-flow ODE}% strictindex
+\[
+    \partial_t\rho_t+\diverg(\rho_t\bar v_t)=0,
+    \qquad
+    \bar v_t
+    = v_t - \frac{1}{2\rho_t}\diverg(\rho_t D_t),
+\]
+where the divergence of the matrix field $\rho_tD_t$ is taken row-wise. In the scalar spatially homogeneous case $D_t=\sigma_t^2\Id$, this reduces to
+\[
+    \bar v_t = v_t - \frac{\sigma_t^2}{2}\nabla\log\rho_t,
+\]
+which is the familiar score correction relating diffusion SDEs to probability-flow ODEs.
+\index{probability-flow ODE}% strictindex
+\end{rem}
 
 \paragraph{Connection with diffusion models.}
 \index{diffusion model}% strictindex
@@ -683,6 +761,7 @@ After many training updates, the accumulated generator is evaluated once at test
 \index{Wasserstein!gradient flow}% strictindex
 \index{Sinkhorn!divergence}% strictindex
 \index{drifting!model}% strictindex
+\index{attention}% strictindex
 
 \paragraph{Self-corrected drifting fields.}
 \index{drifting!field}% strictindex
@@ -838,12 +917,224 @@ The first term pulls samples toward data, while the second term corrects self-at
 	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\mu_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
 \end{rem}
 
+\section{Moment Measures}
+\label{sec-moment-measures}
+\index{moment measure}% strictindex
+\index{convex!potential}% strictindex
+
+Moment measures give another way to make a whole distribution from one convex potential. Instead of first fixing a simple source law and then learning a transport map, one asks for a convex function whose own log-concave density is pushed forward by its gradient. This couples sampling and mapping in a rigid way: the same potential defines both the source density and the Brenier map. The reward is a hidden convex structure: after a suitable optimal-transport reformulation, a nonlinear equation on convex functions becomes a convex minimization problem for probability densities. This is one of the cleanest places where optimal transport, Pr\'ekopa-type inequalities and convex geometry meet.
+\index{log-concave!density}% strictindex
+\index{displacement convexity}% strictindex
+
+\begin{defn}[Moment measure of a convex function]\label{def-moment-measure}
+\index{moment measure}% strictindex
+\index{convex!function}% strictindex
+	Let $u:\RR^d\to\RR\cup\{+\infty\}$ be a proper lower-semicontinuous convex function such that
+	\[
+		Z_u\eqdef \int_{\RR^d} e^{-u(x)}\,\d x <+\infty.
+	\]
+	The normalized log-concave measure associated with $u$ is
+	\[
+		\rho_u \eqdef Z_u^{-1} e^{-u(x)}\,\d x.
+	\]
+	Whenever $\nabla u$ is defined $\rho_u$-almost everywhere, the moment measure of $u$ is
+\index{moment measure}% strictindex
+	\[
+		\mathfrak M(u)\eqdef (\nabla u)_\sharp \rho_u .
+	\]
+\end{defn}
+
+The normalization removes additive constants in $u$. Translations of the argument are another invariance: if $u_a(x)=u(x-a)$, then $\rho_{u_a}$ is the translate of $\rho_u$, while $\nabla u_a(x)=\nabla u(x-a)$, hence $\mathfrak M(u_a)=\mathfrak M(u)$. A first obstruction is immediate. Formally, if $u$ is smooth and $e^{-u}$ decays fast enough for the boundary term to vanish, then
+\[
+	\int y\,\d\mathfrak M(u)(y)
+	=
+	Z_u^{-1}\int \nabla u(x)e^{-u(x)}\,\d x
+	=
+	-Z_u^{-1}\int \nabla(e^{-u(x)})\,\d x
+	=0.
+\]
+Thus moment measures are necessarily centered. The non-smooth theory uses essentially continuous convex functions, meaning convex functions whose restriction to the closure of their effective domain is continuous except possibly on a boundary set of zero $\mathcal H^{d-1}$ measure.
+\index{essentially continuous convex function}% strictindex
+\index{barycenter}% strictindex
+\index{moment measure}% strictindex
+
+Figure~\ref{fig:moment-measure-forward-map} shows the forward construction in one dimension. Even before solving the inverse problem, one sees the two coupled effects of the same convex potential: $e^{-u}$ chooses the source law, while $u'$ transports it to the moment measure.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--quadratic-source.pdf} &
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--quadratic-map.pdf} &
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--quadratic-moment.pdf} \\[-.2em]
+{\small source $\rho_u$} &
+{\small map $u'$} &
+\index{moment measure}% strictindex
+{\small moment measure $\mathfrak M(u)$} \\[.35em]
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--asymmetric-source.pdf} &
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--asymmetric-map.pdf} &
+\includegraphics[width=.30\linewidth]{figures/moment-measure-forward-map--asymmetric-moment.pdf} \\[-.2em]
+{\small tilted log-concave source} &
+{\small nonlinear gradient map} &
+{\small centered push-forward}
+\end{tabular}
+\caption{Forward moment-measure construction in one dimension. The top row uses $u(x)=x^2/2$, so $\rho_u$ and $\mathfrak M(u)$ are both standard Gaussian and $u'(x)=x$. The bottom row uses $u(x)=x^2/2+0.18\,x^4/4+0.92\,x$, which tilts the log-concave source and produces a nonlinear monotone map. In both cases the blue push-forward has barycenter zero, illustrating the identity $\int y\,\d\mathfrak M(u)(y)=0$.}
+\label{fig:moment-measure-forward-map}
+\end{figure}
+
+\begin{thm}[Cordero--Erausquin--Klartag]\label{thm-moment-measure-characterization}
+\index{moment measure}% strictindex
+\index{barycenter}% strictindex
+	Let $\mu\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\mu=\mathfrak M(u)$ if and only if
+	\[
+		\int y\,\d\mu(y)=0
+		\qquad\text{and}\qquad
+		\supp(\mu)\text{ is not contained in a hyperplane.}
+	\]
+	Under these conditions, $u$ is unique up to translations of the argument and additive constants.
+\end{thm}
+
+This theorem is due to Cordero--Erausquin and Klartag~\cite{CorderoErausquinKlartag2015MomentMeasures}. It is a functional analogue of a Minkowski-type problem: the target measure prescribes how the gradient image of a log-concave density should be distributed. The hyperplane condition is the natural non-degeneracy assumption; otherwise the prescribed gradient image lives in a lower-dimensional affine direction and no coercive full-dimensional convex potential can be recovered.
+\index{Minkowski problem}% strictindex
+\index{log-concave!measure}% strictindex
+
+\begin{example}[Quadratic potentials]\label{ex-moment-measure-gaussian}
+\index{Gaussian!measure}% strictindex
+\index{moment measure}% strictindex
+	Let $A\in\RR^{d\times d}$ be symmetric positive definite and
+	\[
+		u(x)=\frac12 x^\top A x + c .
+	\]
+	Then $\rho_u=\Nn(0,A^{-1})$ and $\nabla u(x)=Ax$, so
+	\[
+		\mathfrak M(u)=\Nn(0,A).
+	\]
+	Thus centered non-degenerate Gaussians are moment measures. This example also shows the self-dual flavor of the construction: the covariance of the log-concave source is inverted by the linear gradient map.
+\end{example}
+
+\paragraph{Optimal-transport variational formulation.}
+\index{maximal correlation}% strictindex
+\index{entropy}% strictindex
+Santambrogio~\cite{Santambrogio2015MomentMeasures} reformulates the moment-measure problem as a minimization over probability densities. For a centered $\mu\in\Pp_1(\RR^d)$, define the maximal-correlation transport functional, with values in $\RR\cup\{+\infty\}$,
+\begin{equation}\label{eq-moment-max-correlation}
+	\mathcal C_\mu(\rho)
+	\eqdef
+	\sup_{\pi\in\Couplings(\rho,\mu)}
+	\int_{\RR^d\times\RR^d} x\cdot y\,\d\pi(x,y).
+\end{equation}
+By Kantorovich duality for the scalar-product cost,
+\begin{equation}\label{eq-moment-max-correlation-dual}
+	\mathcal C_\mu(\rho)
+	=
+	\inf_{v\ \mathrm{convex}}
+	\left\{
+		\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\mu(y)
+	\right\},
+\end{equation}
+where $v^*$ is the Legendre transform. If $\rho,\mu\in\Pp_2(\RR^d)$, then
+\index{Legendre transform}% strictindex
+\begin{equation}\label{eq-moment-correlation-w2}
+	\mathcal C_\mu(\rho)
+	=
+	\frac12\int \norm{x}^2\,\d\rho(x)
+	+
+	\frac12\int \norm{y}^2\,\d\mu(y)
+	-
+	\frac12\Wass_2^2(\rho,\mu).
+\end{equation}
+The variational problem attached to a centered target $\mu$ is
+\begin{equation}\label{eq-moment-measure-variational}
+	\min_{\rho\in\Pp_1(\RR^d)}
+	\left\{
+		\mathcal H(\rho)+\mathcal C_\mu(\rho)
+	\right\},
+	\qquad
+	\mathcal H(r\,\d x)\eqdef \int r(x)\log r(x)\,\d x,
+\end{equation}
+with $\mathcal H(\rho)=+\infty$ when $\rho$ is not absolutely continuous.
+The centering of $\mu$ makes this functional invariant under translations of $\rho$, since translating $\rho$ by a vector $a$ changes $\int x\cdot y\,\d\pi$ by $a\cdot\int y\,\d\mu(y)=0$.
+\index{Kantorovich!duality}% strictindex
+\index{Legendre transform}% strictindex
+\index{Wasserstein!distance}% strictindex
+
+\begin{prop}[Variational characterization of moment measures]\label{prop-moment-hidden-convexity}
+\index{moment measure}% strictindex
+\index{hidden convexity}% strictindex
+\index{displacement convexity}% strictindex
+	Let $\mu\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
+	\[
+		\rho=Z_u^{-1}e^{-u}\,\d x,
+	\]
+	where $u$ is convex, essentially continuous, and satisfies the moment-measure equation
+	\[
+		\mu=(\nabla u)_\sharp \rho .
+	\]
+	Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\mu\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\mu(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\mu\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
+\end{prop}
+
+\begin{proof}
+	The existence proof has two ingredients. First, since $\mu$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\mu(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\mu$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\mu(\rho)\geq c_\mu\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\mu>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer~\cite{Santambrogio2015MomentMeasures}.
+
+	Let $\rho=r\,\d x$ be a minimizer and let $u$ be a convex optimizer in the dual formula~\eqref{eq-moment-max-correlation-dual}. Keeping $u$ fixed and varying $\rho$ in~\eqref{eq-moment-measure-variational} gives the Euler equation
+	\[
+		\log r(x)+1+u(x)=\mathrm{constant}
+		\qquad\text{on }\{r>0\},
+	\]
+	so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\mu=(\nabla u)_\sharp\rho$.
+
+	Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\mu=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
+	\[
+		\frac{\d}{\d t}\mathcal H(\rho_t)\Big|_{t=0^+}
+		=
+		-\int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),
+	\]
+	where the identity follows by differentiating the Jacobian formula and integrating by parts. Santambrogio's derivative estimate for the maximal-correlation functional gives
+	\[
+		\frac{\d}{\d t}\mathcal C_\mu(\rho_t)\Big|_{t=0^+}
+		\geq
+		\int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),
+	\]
+	because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\mu$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\mu$ because $\mu$ is centered.
+
+	It remains to justify the convexity assertion. The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\mu$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\mu$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\mu)$, hence $\mathcal C_\mu$ is displacement convex. For merely finite first moment $\mu$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
+\end{proof}
+
+\begin{rem}[Where the convexity is hidden]\label{rem-moment-hidden-convexity}
+\index{Toland duality}% strictindex
+\index{Prekopa inequality}% strictindex
+	If one eliminates $\rho$ first, the problem becomes the convex-potential functional
+	\[
+		u\mapsto
+		\int u^*(y)\,\d\mu(y)
+		-
+		\log\!\left(\int e^{-u(x)}\,\d x\right).
+	\]
+	This is not visibly convex as a function of $u$: the first term is convex, while the logarithmic partition term is concave in this parametrization. Cordero--Erausquin and Klartag reveal convexity after passing to the dual potential $u^*$ and using a Pr\'ekopa-type argument. Santambrogio's formulation reveals the same mechanism in transport language: the difficult convexity becomes the displacement convexity of an entropy-plus-maximal-correlation functional in the density variable $\rho$.
+\end{rem}
+
+\paragraph{Conjugate moment measures for generation.}
+\index{generative model}% strictindex
+\index{input-convex neural network}% strictindex
+\index{conjugate moment measure}% strictindex
+\index{moment measure}% strictindex
+The moment-measure factorization suggests a generative recipe: sample $X$ from the log-concave law $Z_u^{-1}e^{-u}$ and output $\nabla u(X)$. This ties sampling and mapping through the same convex potential. Vesseron, B\'ethune and Cuturi~\cite{VesseronBethuneCuturi2025ConjugateMomentMeasures} argue that this direct factorization can be poorly adapted to practical generative modeling, and propose instead the conjugate factorization
+\begin{equation}\label{eq-conjugate-moment-measure}
+	\beta
+	=
+	(\nabla w^*)_\sharp
+	\left(Z_w^{-1}e^{-w(z)}\,\d z\right).
+\end{equation}
+Here $\nabla w^*$ is the Brenier map from the learned log-concave source to the target distribution $\beta$. This keeps the single-convex-potential philosophy, but places the transport map on the conjugate side; it can be parameterized by input-convex neural networks and trained using OT solvers. From the viewpoint of this chapter, moment measures are therefore a rigorous convex-analytic prototype for one-step generators based on gradients of convex potentials.
+\index{Brenier!map}% strictindex
+\index{one-step!generative model}% strictindex
+\index{convex!conjugate}% strictindex
+
 \section{Evolution in Depth of Transformers}
 \index{transformer}% strictindex
 \index{depth evolution}% strictindex
 
 Deep residual architectures can be read as time discretizations of ODEs or PDEs. For transformers, the transported objects are token measures and the velocity is induced by attention.
 \index{token measure}% strictindex
+\index{attention}% strictindex
 
 Transformers were introduced as sequence-to-sequence architectures driven by self-attention~\cite{Vaswani2017Attention} and have since become a central architecture for language and vision models~\cite{Brown2020LanguageModels,Dosovitskiy2021Image}. Their distinctive feature is that each token is updated by a data-dependent average of all other tokens. This makes an attention layer permutation-equivariant before positional encoding, context dependent after conditioning on the input sequence, and naturally compatible with a measure viewpoint in which a prompt is regarded as an empirical distribution of tokens.
 \index{transformer}% strictindex
@@ -904,9 +1195,11 @@ As $\tau \to 0$, this converges formally to the conservation equation
 \begin{alg}[Residual attention depth evolution]\label{alg:residual-attention-depth-evolution}
 \index{attention!self-attention}% strictindex
 \index{transformer}% strictindex
+\index{attention}% strictindex
 \textbf{Input:} Tokens $(x_i^0)_{i=1}^n$, depth $T$, layer parameters $(Q_k,K_k,V_k)$.
 
 \textbf{Output:} Final token measure $\alpha_T$.
+\index{token measure}% strictindex
 
 \textbf{Initialize:}
 \(\alpha_0=\frac1n\sum_{i=1}^n\delta_{x_i^0}, \qquad \tau=1/T.\)
@@ -957,6 +1250,7 @@ This is an instantaneous gradient in $x$. It is not, however, the gradient of th
 \index{gradient!flow}% strictindex
 \index{transformer}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
+\index{attention}% strictindex
 
 \section{Flows over the Gaussian Manifold}
 \index{Gaussian!manifold}% strictindex
@@ -1161,7 +1455,7 @@ The next examples show that many familiar energies already have affine Wasserste
 		The mean is unchanged and the covariance contracts or expands according to the signs of $G$.
 
 		\item \emph{Relative entropy to a Gaussian.} For $\bar\alpha=\Gaussian(\bar\mean,\bar\cov)$,
-\index{entropy!relative}% strictindex
+\index{relative entropy}% strictindex
 		\[
 			f(\alpha)=\KL(\alpha|\bar\alpha)
 		\]
@@ -1416,6 +1710,8 @@ The last examples are not ordinary gradient flows of a fixed scalar energy on th
 	\]
 	When $V_t=Q_t^\top K_t$, the matrix $B_t=Q_t^\top K_t\cov_tK_t^\top Q_t$ is symmetric positive semidefinite, matching the gradient-field case mentioned above.
 	This closure is not a convergence theorem for trained transformers. It is instead a tractable model of how attention can shear, amplify or contract a cloud of tokens through its covariance.
+\index{transformer}% strictindex
+\index{attention}% strictindex
 \end{example}
 
 \paragraph{Contractive Gaussian projection.}
@@ -1424,6 +1720,7 @@ The last examples are not ordinary gradient flows of a fixed scalar energy on th
 
 The preceding examples show when Gaussianity is preserved or imposed by projection. Gelbrich's inequality~\cite{gelbrich1990formula} gives a useful variational explanation: replacing a measure by the Gaussian with the same first two moments cannot increase its Wasserstein distance to another similarly projected measure.
 \index{Wasserstein!distance}% strictindex
+\index{Gelbrich inequality}% strictindex
 
 \begin{thm}[Gelbrich theorem]\label{thm-gelbrich-projection}
 \index{Gelbrich theorem}% strictindex
@@ -1463,6 +1760,7 @@ The following preservation criterion is a direct consequence of Gelbrich's theor
 \index{Gaussian!projection}% strictindex
 \index{minimizing movement}% strictindex
 \index{Gelbrich theorem}% strictindex
+\index{Gelbrich inequality}% strictindex
 
 \begin{thm}[Hugo Lavenant Gaussian-preservation criterion]\label{thm-lavenant-gaussian-preserving-jko}
 \index{Lavenant criterion}% strictindex
@@ -1473,6 +1771,7 @@ The following preservation criterion is a direct consequence of Gelbrich's theor
 		\qquad\forall\mu\in\Pp_2(\RR^d),
 	\]
 	with $\mathcal R$ defined in Theorem~\ref{thm-gelbrich-projection}. If $\gamma$ is Gaussian and $\nu$ minimizes the JKO step
+\index{Gelbrich inequality}% strictindex
 	\[
 		\eta\mapsto F(\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\eta),
 	\]
