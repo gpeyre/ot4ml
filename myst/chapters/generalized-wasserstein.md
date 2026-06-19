@@ -99,6 +99,61 @@ the total masses are compatible. Small $\tau$ makes creation and destruction
 cheap; after rescaling by $\tau$, the zero-transport part reveals the pure
 divergence geometry.
 
+The two immediate numerical displays make the penalty roles explicit.
+{numref}`fig:unbalanced-mass-relaxation` fixes a KL marginal penalty and varies
+$\tau$: the transported marginals, shown in violet, are allowed to differ from
+the prescribed red and blue marginals, and the gaps are precisely the created or
+destroyed mass. {numref}`fig:unbalanced-divergence-choice` then keeps the
+geometry, entropic plan regularization and relaxation strength fixed, and
+changes only the marginal divergence. This isolates the effect of the penalty:
+KL gives smooth rescaling, Burg discourages complete deletion of prescribed
+modes, while total variation produces sharper active-mass selection.
+
+(fig:unbalanced-mass-relaxation)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("unbalanced-mass-relaxation")
+```
+
+*KL unbalanced OT on one-dimensional Gaussian-mixture densities. The central
+matrix is the transported coupling. The side curves compare the prescribed
+marginals with the transported marginals; increasing $\tau$ makes marginal
+mismatch more expensive, so more mass is moved rather than created or
+destroyed.*
+:::
+
+The entropy used in the marginal relaxation also changes the qualitative
+behavior. A KL penalty leads to smooth multiplicative rescaling. The
+reverse-KL, or Burg, penalty blows up when a transported marginal vanishes
+where the prescribed marginal is positive, so it discourages complete deletion
+of small modes. Total variation has a linear kink and behaves closer to
+partial transport: mass is either kept active or created and destroyed at
+nearly constant marginal price.
+
+(fig:unbalanced-divergence-choice)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("unbalanced-divergence-choice")
+```
+
+*Effect of the marginal divergence in unbalanced entropic OT. The geometric
+cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$
+are fixed; only the marginal penalty changes. KL allows smooth mass
+variation, Burg keeps transported marginals from vanishing on prescribed
+modes, and total variation gives a sharper active-mass selection.*
+:::
+
+These figures should be read as pictures of a single relaxed plan $\pi$: the
+same nonnegative measure determines both the transported coupling and its two
+relaxed marginals. The small-$\tau$ result below formalizes the opposite regime,
+where transport becomes negligible compared with local mass variation.
+
 (prop-unbalanced-small-scale-limit)=
 :::{admonition} Proposition: Small-Transport-Scale Limit
 :class: important
@@ -238,6 +293,124 @@ Exchanging the infimum and supremum gives
 
 The last infimum is $0$ when $f\oplus g\leq c$ and $-\infty$ otherwise.
 :::
+
+### Partial Optimal Transport
+
+Total variation gives a sharp active-mass selection and connects unbalanced OT
+with the classical partial-transport problem. The latter fixes in advance the
+amount of transported mass. For
+
+```{math}
+0\leq m\leq \min\{\alpha(\X),\beta(\Y)\},
+```
+
+define
+
+```{math}
+\operatorname{POT}_m(\alpha,\beta)
+\eqdef
+\inf_{\substack{\pi\in\mathcal M_+(\X\times\Y)\\
+\pi_1\leq\alpha,\ \pi_2\leq\beta\\
+\pi(\X\times\Y)=m}}
+\int c\,\d\pi .
+```
+
+Thus only a submeasure of $\alpha$ is transported onto a submeasure of $\beta$;
+the remaining mass is left unmatched. The corresponding Lagrangian form is
+obtained by adding total-variation penalties. For a price $\lambda>0$ for
+discarding or creating one unit of mass, consider
+
+```{math}
+\inf_{\pi\in\mathcal M_+(\X\times\Y)}
+\int c\,\d\pi
++
+\lambda\|\alpha-\pi_1\|_{\TV}
++
+\lambda\|\beta-\pi_2\|_{\TV}.
+```
+
+Assume $c\geq0$. Allowing transported marginals larger than the available
+marginals does not improve the value: excess transported mass can be trimmed,
+which decreases the transport cost and cannot increase the sum of the two
+total-variation penalties. Hence an optimal plan may be chosen with
+$\pi_1\leq\alpha$ and
+$\pi_2\leq\beta$. If $m=\pi(\X\times\Y)$, the penalty then reduces to
+
+```{math}
+\lambda\big(\alpha(\X)-m\big)+\lambda\big(\beta(\Y)-m\big),
+```
+
+and minimizing first over plans of fixed mass gives
+
+```{math}
+\inf_{\pi\geq0}
+\left\{\int c\,\d\pi
++
+\lambda\|\alpha-\pi_1\|_{\TV}
++
+\lambda\|\beta-\pi_2\|_{\TV}\right\}
+=
+\inf_{0\leq m\leq \min\{\alpha(\X),\beta(\Y)\}}
+\left\{
+\operatorname{POT}_m(\alpha,\beta)
++
+\lambda\big(\alpha(\X)+\beta(\Y)-2m\big)
+\right\}.
+```
+
+Thus the TV-penalized formulation is the Lagrangian envelope of constrained
+partial OT: increasing $\lambda$ rewards transporting more mass, while small
+$\lambda$ makes deletion and creation cheaper. Conversely, if $2\lambda$ is a
+supporting slope of the convex value function
+$m\mapsto\operatorname{POT}_m(\alpha,\beta)$ at a prescribed mass $m$, then
+minimizers of the constrained problem solve the penalized one; on flat pieces,
+one value of $\lambda$ can select an interval of transported masses. The
+constrained theory, including active regions and free boundaries, was developed
+by Caffarelli--McCann and
+Figalli {cite}`CaffarelliMcCannPartial,FigalliPartial`. Modern computational and
+learning applications include partial Wasserstein and partial
+Gromov--Wasserstein variants, for instance in
+Chapel--Alaya--Gasso {cite}`ChapelAlayaGassoPartial`.
+
+(fig:partial-ot-active-mass)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("partial-ot-active-mass")
+```
+
+*Partial optimal transport with prescribed transported mass. The central image is
+the optimal subcoupling, with contrast normalized independently in each panel to
+keep the low-mass plans readable. The pale red and blue side curves are the
+original source and target densities, while the violet curves are the active
+truncated marginals. As the transported mass decreases, only the lowest-cost
+overlapping parts remain matched and the remaining mass is left unmatched.*
+:::
+
+The same mechanism becomes a geometric active-region selection in higher
+dimension. {numref}`fig:partial-ot-shape-active-mass` shows a two-dimensional
+shape example: the partial plan selects the closest pieces of the two supports,
+while leaving distant regions unmatched.
+
+(fig:partial-ot-shape-active-mass)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("partial-ot-shape-active-mass")
+```
+
+*Two-dimensional partial optimal transport between a red cat-shaped indicator
+measure and a blue annulus indicator measure. Both supports are sampled by
+farthest-point sampling. Saturated points are the active source and target
+marginals of the optimal partial plan, while pale points are available mass left
+unmatched. As the prescribed mass decreases, the active regions contract to the
+nearest compatible pieces of the two shapes.*
+:::
+
 
 ### Reverse and Homogeneous Formulations
 
@@ -503,26 +676,10 @@ P=\diag(u)K\diag(v).
 The exponent $\rho<1$ is the visible difference with balanced Sinkhorn:
 marginal corrections are damped because violating the marginals is allowed.
 
-(fig:unbalanced-mass-relaxation)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("unbalanced-mass-relaxation")
-```
-
-*KL unbalanced OT on one-dimensional Gaussian-mixture densities. The central
-matrix is the transported coupling. The side curves compare the prescribed
-marginals with the transported marginals; increasing $\tau$ makes marginal
-mismatch more expensive, so more mass is moved rather than created or
-destroyed.*
-:::
-
-The interactive demo below exposes the two most important regularization scales.
-Increasing $\tau$ pushes the transported marginals closer to the prescribed
-ones; increasing $\epsilon$ spreads the coupling itself.
-
+The KL case in {numref}`fig:unbalanced-mass-relaxation` is obtained from these
+damped updates. The interactive demo below exposes the two most important
+regularization scales. Increasing $\tau$ pushes the transported marginals closer
+to the prescribed ones; increasing $\epsilon$ spreads the coupling itself.
 
 :::{div}
 :class: ot4ml-interactive-note
@@ -531,29 +688,6 @@ ones; increasing $\epsilon$ spreads the coupling itself.
 
 <iframe class="ot4ml-live-frame" title="Unbalanced Sinkhorn controls" src="../live/generalized-unbalanced.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
-The entropy used in the marginal relaxation also changes the qualitative
-behavior. A KL penalty leads to smooth multiplicative rescaling. The
-reverse-KL, or Burg, penalty blows up when a transported marginal vanishes
-where the prescribed marginal is positive, so it discourages complete deletion
-of small modes. Total variation has a linear kink and behaves closer to
-partial transport: mass is either kept active or created and destroyed at
-nearly constant marginal price.
-
-(fig:unbalanced-divergence-choice)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("unbalanced-divergence-choice")
-```
-
-*Effect of the marginal divergence in unbalanced entropic OT. The geometric
-cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$
-are fixed; only the marginal penalty changes. KL allows smooth mass
-variation, Burg keeps transported marginals from vanishing on prescribed
-modes, and total variation gives a sharper active-mass selection.*
-:::
 
 (alg:unbalanced-sinkhorn)=
 :::{admonition} Algorithm: Unbalanced Sinkhorn scaling
@@ -898,6 +1032,264 @@ quadratic $W_2$ matching shown on the right.*
 :::
 
 
+(sec-quotient-wasserstein-procrustes)=
+## Quotient Wasserstein and Wasserstein-Procrustes
+
+Many comparison problems contain nuisance transformations: two shapes, images
+or point clouds should be considered close after translating, rotating or
+otherwise reparametrizing one of them. Quotient Wasserstein distances encode
+this idea by computing transport after optimizing over a group action. This
+construction is the metric analogue of passing from objects to shapes modulo
+symmetries, and connects OT with shape spaces, metamorphosis models and
+global-invariance variants of transport
+{cite:p}`Metamorphosis2005,trouve2005metamorphoses,zemel2017fr,alvarez2018towards`.
+
+(def-quotient-wasserstein)=
+:::{admonition} Definition: Quotient Wasserstein Distance
+:class: important
+
+Let a group $\mathcal G$ act on a metric space $(\Xx,d)$ by isometries, and
+assume that the action preserves finite $p$th moments. Write
+$g_\sharp\alpha$ for the push-forward of a measure $\alpha$ by
+$g\in\mathcal G$, and write
+$[\alpha]\eqdef\{g_\sharp\alpha:g\in\mathcal G\}$ for its orbit. The quotient
+$p$-Wasserstein distance between the orbits of
+$\alpha,\beta\in\Pp_p(\Xx)$ is
+
+```{math}
+\Wass_{p,\mathcal G}([\alpha],[\beta])
+\eqdef
+\inf_{g,h\in\mathcal G}\Wass_p(g_\sharp\alpha,h_\sharp\beta)
+=
+\inf_{g\in\mathcal G}\Wass_p(\alpha,g_\sharp\beta).
+```
+:::
+
+:::{admonition} Proposition: Metric Property on the Quotient
+:class: theorem
+:label: prop-quotient-wasserstein-metric
+
+If $\mathcal G$ acts by isometries and preserves $\Pp_p(\Xx)$, then
+$\Wass_{p,\mathcal G}$ is a pseudo-distance on $\Pp_p(\Xx)$. If, in addition,
+the infimum is attained between any two orbits and all orbits are closed, then
+it is a distance on the orbit space $\Pp_p(\Xx)/\mathcal G$. This applies in
+particular to continuous actions of compact groups.
+:::
+
+:::{dropdown} Proof
+Isometry of the action gives
+$\Wass_p(g_\sharp\mu,g_\sharp\nu)=\Wass_p(\mu,\nu)$, which proves the second
+formula above. Non-negativity and symmetry are inherited from $\Wass_p$. For
+the triangle inequality, choose $g_1,g_2\in\mathcal G$ and write
+
+```{math}
+\Wass_p(\alpha,(g_1)_\sharp\beta)
++
+\Wass_p(\beta,(g_2)_\sharp\gamma)
+=
+\Wass_p(\alpha,(g_1)_\sharp\beta)
++
+\Wass_p((g_1)_\sharp\beta,(g_1g_2)_\sharp\gamma).
+```
+
+The triangle inequality for $\Wass_p$, followed by the infimum over
+$g_1,g_2$, gives the result. If the infimum is attained and the quotient
+distance is zero, there exist $g,h\in\mathcal G$ such that
+$\Wass_p(g_\sharp\alpha,h_\sharp\beta)=0$, hence
+$g_\sharp\alpha=h_\sharp\beta$. Closed orbits then imply equality of orbits.
+For compact groups, continuity of the action and compactness give the required
+attainment.
+:::
+
+### Rigid Motions and Wasserstein-Procrustes
+
+The most common example is the Euclidean group
+$\mathrm E(d)=\mathrm O(d)\ltimes\RR^d$. For measures on $\RR^d$,
+quotienting by rotations and translations gives the Wasserstein-Procrustes
+problem
+
+```{math}
+\inf_{R\in\mathrm O(d),\,t\in\RR^d,\,\pi\in\Couplings(\alpha,\beta)}
+\int\norm{Rx+t-y}^2\d\pi(x,y).
+```
+
+Replacing $\mathrm O(d)$ by $\mathrm{SO}(d)$ enforces orientation
+preservation.
+This is the case $p=2$ of the quotient distance; for a general exponent $p$,
+one replaces the quadratic cost by the $p$th power of the Euclidean distance.
+Although the translation group is noncompact, the quadratic problem is well
+behaved: for fixed $R$ and $\pi$, the optimal translation aligns $R\bar x$ with
+$\bar y$. The remaining rigid step is therefore an orthogonal Procrustes
+problem over the compact group $\mathrm O(d)$.
+
+For empirical measures, this couples a transport problem with a rigid
+registration problem. Classical iterative closest point methods alternate
+nearest-neighbor assignment and rigid least squares {cite:p}`BeslMcKay1992ICP`.
+Wasserstein-Procrustes replaces these hard many-to-one nearest-neighbor
+correspondences by a mass-preserving OT plan. This makes the registration
+less tied to sampling density and better suited to ambiguous correspondences;
+closely related Wasserstein-Procrustes objectives are used for unsupervised
+alignment of embeddings {cite:p}`grave2018unsupervised`.
+
+This is an extrinsic counterpart of the Gromov--Wasserstein viewpoint
+developed in {ref}`sec-gromov-wasserstein`. Procrustes alignment searches only
+over ambient rigid motions, whereas GW is invariant under intrinsic
+measure-preserving isometries. If both spaces are Euclidean and
+$\Delta(u,v)=|u-v|$, then rigid motions preserve all within-space distances and
+do not change the metric-measure isometry class. Applying the Euclidean
+GW/Wasserstein estimate to the aligned pair, and then taking the infimum over
+rigid motions, gives
+
+```{math}
+\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+\leq
+2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
+```
+
+Thus a good Wasserstein-Procrustes registration certifies small GW distortion.
+The converse need not hold: GW may be small because of an intrinsic
+correspondence that is not induced by an ambient rigid motion. The Mémoli
+profile lower bound in {ref}`prop-memoli-gw-profile-lower-bound` gives the
+complementary intrinsic lower certificate.
+
+The empirical problem naturally suggests an alternating minimization. Given a
+current rigid motion $(R^{(k)},t^{(k)})$, first compute the OT coupling between
+the registered source cloud and the target cloud,
+
+```{math}
+:label: eq-wasserstein-procrustes-coupling-update
+\P^{(k)}
+\in
+\argmin_{\P\in\CouplingsD(\a,\b)}
+\sum_{i,j}\P_{ij}\norm{R^{(k)}x_i+t^{(k)}-y_j}^2 .
+```
+
+Then freeze this coupling and update the rigid motion by
+
+```{math}
+:label: eq-wasserstein-procrustes-rigid-update
+(R^{(k+1)},t^{(k+1)})
+\in
+\argmin_{R\in\mathrm O(d),\,t\in\RR^d}
+\sum_{i,j}\P^{(k)}_{ij}\norm{Rx_i+t-y_j}^2 ,
+```
+
+or by the same formula with $R\in\mathrm{SO}(d)$ if orientation should be
+preserved. The first step is an ordinary discrete OT problem with the current
+registered cost matrix; the next proposition shows that the second step is an
+orthogonal Procrustes problem with an explicit singular-value formula.
+
+:::{admonition} Proposition: Rigid Update for a Fixed Coupling
+:class: theorem
+:label: prop-wasserstein-procrustes-rigid-update
+
+Let $\alpha=\sum_i a_i\delta_{x_i}$ and
+$\beta=\sum_j b_j\delta_{y_j}$, and fix
+$\P\in\CouplingsD(\a,\b)$. Define
+
+```{math}
+\bar x=\sum_i a_i x_i,\qquad
+\bar y=\sum_j b_j y_j,\qquad
+M_\P=\sum_{i,j}\P_{ij}(y_j-\bar y)(x_i-\bar x)^\top .
+```
+
+If $M_\P=U\Sigma V^\top$ is a singular value decomposition, then the
+minimizers over the full orthogonal group of
+
+```{math}
+\min_{R\in\mathrm O(d),\,t\in\RR^d}
+\sum_{i,j}\P_{ij}\norm{Rx_i+t-y_j}^2
+```
+
+are given by $R^\star=UV^\top$ and
+$t^\star=\bar y-R^\star\bar x$, up to the usual non-uniqueness when $M_\P$ is
+rank deficient. If one imposes $R\in\mathrm{SO}(d)$, set
+
+```{math}
+D=\operatorname{diag}(1,\ldots,1,\det(UV^\top)),
+\qquad
+R^\star=UDV^\top,
+\qquad
+t^\star=\bar y-R^\star\bar x .
+```
+:::
+
+:::{dropdown} Proof
+For fixed $R$, differentiating with respect to $t$ gives
+$t=\bar y-R\bar x$. Substituting this value centers the variables and leaves
+
+```{math}
+\sum_{i,j}\P_{ij}\norm{R(x_i-\bar x)-(y_j-\bar y)}^2.
+```
+
+The two quadratic terms independent of $R$ are fixed, so the problem is
+equivalent to maximizing
+$\sum_{i,j}\P_{ij}\dotp{R(x_i-\bar x)}{y_j-\bar y}
+=\tr(R^\top M_\P)$. Von Neumann's trace inequality gives the maximum for
+$R=UV^\top$. Under the constraint $R\in\mathrm{SO}(d)$, the same argument
+applies with the additional determinant constraint on $U^\top R V$, which
+gives the displayed diagonal correction.
+:::
+
+Equations {eq}`eq-wasserstein-procrustes-coupling-update`--{eq}`eq-wasserstein-procrustes-rigid-update`
+give a block-coordinate method. The objective is not jointly convex, so the
+scheme should be read as a registration heuristic for the quotient problem
+rather than as a global solver. The exact block update moves the rigid motion
+fully; for visualization or continuation, one may damp the displayed motion
+between two successive poses.
+
+(alg:wasserstein-procrustes)=
+:::{admonition} Algorithm: Alternating Wasserstein-Procrustes Alignment
+:class: ot4ml-algorithm
+
+**Input:** Weighted point clouds $(x_i,\a_i)_{i=1}^n$, $(y_j,\b_j)_{j=1}^m$, initial rigid motion $(R^{(0)},t^{(0)})$, tolerance $\mathrm{tol}$, choice $\mathrm O(d)$ or $\mathrm{SO}(d)$.
+
+**Output:** Last coupling $\P$ and rigid motion $(R,t)$.
+
+**Set** $\bar x=\sum_i\a_i x_i$, $\bar y=\sum_j\b_j y_j$, $k=0$ and $\eta_0=+\infty$.
+
+**While** $\eta_k>\mathrm{tol}$ **do**:
+
+>
+> **Set** $C_{ij}^{(k)}=\norm{R^{(k)}x_i+t^{(k)}-y_j}^2$.
+>
+> **Solve** $\P^{(k)}\in\argmin_{\P\in\CouplingsD(\a,\b)}\sum_{i,j}\P_{ij}C_{ij}^{(k)}$.
+>
+> **Compute** $M_{\P^{(k)}}=\sum_{i,j}\P^{(k)}_{ij}(y_j-\bar y)(x_i-\bar x)^\top$.
+>
+> **Factorize** $M_{\P^{(k)}}=U\Sigma V^\top$.
+>
+> **Set** $D=\Id$ for $\mathrm O(d)$; set $D=\operatorname{diag}(1,\ldots,1,\det(UV^\top))$ for $\mathrm{SO}(d)$.
+>
+> **Set** $R^{(k+1)}=UDV^\top$ and $t^{(k+1)}=\bar y-R^{(k+1)}\bar x$.
+>
+> **Set** $\eta_{k+1}=\norm{R^{(k+1)}-R^{(k)}}_{\mathrm F}+\norm{t^{(k+1)}-t^{(k)}}$.
+>
+> **Set** $k\leftarrow k+1$.
+
+**Return** $\P^{(k-1)},R^{(k)},t^{(k)}$.
+:::
+
+(fig:wasserstein-procrustes-rigid-motion)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("wasserstein-procrustes-rigid-motion")
+```
+
+*Wasserstein-Procrustes alignment of two bunny silhouettes under a strong
+translation and a moderate rotation. The target silhouette is shown in black.
+The moving source silhouette is sampled by farthest-point sampling and colored
+from red to blue at iterations \(1,2,3,5,10\). Each step solves an equal-weight
+OT assignment, then updates the rigid motion by the closed-form Procrustes
+formula; faint segments show selected correspondences of the current OT
+assignment. The displayed motion is damped only to make the registration path
+visible, while the underlying update is the block-coordinate method above.*
+:::
+
+
 (sec-linear-ot)=
 ## Vector Quantiles and Linear Optimal Transport
 
@@ -1049,12 +1441,7 @@ directly in the curved Wasserstein space
 show_book_figure("linear-ot-1d-pca", width=760)
 ```
 
-*One-dimensional linear OT PCA for synthetic two-Gaussian mixtures. The dataset
-panel displays representative training densities and the quantile average in
-violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\),
-with \(a\) increasing from red to blue. Since the embedding is the exact
-quantile parametrization \(Q_\alpha\in L^2(0,1)\), this is PCA in exact
-Wasserstein coordinates.*
+*One-dimensional linear OT PCA for well-separated synthetic two-Gaussian mixtures. The PCA is fit on a large training ensemble, while the dataset panel displays only representative densities and the quantile average in violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\), using slightly extrapolated coefficients \(a\) increasing from red to blue. Since the embedding is the exact quantile parametrization \(Q_\alpha\in L^2(0,1)\), this is PCA in exact Wasserstein coordinates.*
 :::
 
 (fig:linear-ot-mnist-pca)=

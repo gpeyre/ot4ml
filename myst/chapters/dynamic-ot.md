@@ -569,8 +569,7 @@ separate the path $\alpha_t$ from the underlying displacement field.
 <iframe class="ot4ml-live-frame" title="Benamou-Brenier geodesic controls" src="../live/dynamic-bb.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 (rem-bb-path-space)=
-:::{admonition} Remark: Path-space formulation
-:class: ot4ml-remark
+### Path-Space Formulation
 
 Let $\Ss=C([0,1];\RR^d)$ be the space of continuous paths endowed with the uniform topology. For $t\in[0,1]$ define the evaluation map
 
@@ -602,10 +601,9 @@ If $\alpha_0$ has a density, the minimizer $M^*$ is unique. Its time marginals r
 ```
 
 where $v_t^*$ is the optimal velocity field in the Benamou--Brenier formulation. Hence $M^*$ concentrates on straight-line geodesics and, for a.e. $t$, assigns exactly one direction at $\alpha_t$-a.e. spatial point.
-:::
 
 
-### Extensions of the Dynamic Formulation
+## Extensions of the Dynamic Formulation
 
 The same variational grammar extends beyond the quadratic Wasserstein
 distance. One changes either the kinetic exponent, the mobility or the
@@ -613,8 +611,7 @@ balance equation, while keeping a continuity-type constraint and a convex
 perspective action.
 
 (rem-generalized-bb)=
-:::{admonition} Remark: Generalized Benamou--Brenier distances
-:class: ot4ml-remark
+### Generalized Benamou--Brenier Distances
 
 The dynamic formulation is not specific to $\Wass_2$. For measures with finite $p$-th moments and $p>1$, one has the analogous action formula
 
@@ -637,8 +634,7 @@ When $\alpha_t=\rho_t\,\d x$ and $m_t=\rho_t v_t$, this becomes the convex persp
 
 with the usual convention that the integrand is $0$ if $(\rho,m)=(0,0)$ and $+\infty$ if $\rho=0$ but $m\neq0$.
 
-A second class of variants changes the mobility of the medium: the quadratic action $|m|^2/\rho$ is replaced by $|m|^2/\theta(\rho)$ for a suitable concave mobility $\theta$. Under appropriate structural assumptions, this produces transport metrics adapted to nonlinear diffusions and finite-volume discretizations {cite:p}`dolbeault2009new`. On finite graphs and Markov chains, the analogous action uses an edge mobility, often the logarithmic mean of the endpoint densities, and leads to discrete Wasserstein geometries {cite:p}`Maas2011,MielkeCVPDE`. These extensions keep the same variational grammar as Benamou--Brenier: a continuity-type constraint, an action density, and geodesics obtained by minimizing an integrated kinetic cost.
-:::
+A second class of variants changes the mobility of the medium: the quadratic action $|m|^2/\rho$ is replaced by $|m|^2/\theta(\rho)$ for a suitable concave mobility $\theta$. Under appropriate structural assumptions, this produces transport metrics adapted to nonlinear diffusions and finite-volume discretizations {cite:p}`dolbeault2009new`. The finite-state version, where the mobility is dictated by a reversible Markov chain, is developed in {ref}`sec-discrete-wasserstein-markov`. These extensions keep the same variational grammar as Benamou--Brenier: a continuity-type constraint, an action density, and geodesics obtained by minimizing an integrated kinetic cost.
 
 
 ### Dynamic Unbalanced OT
@@ -797,4 +793,251 @@ must carry mass through space.
 > **If** $\norm{U^{k+1}-\widetilde U^{k+1}}\leq\mathrm{tol}$ **then**:
 
 >> **Return** $U^{k+1}$.
+:::
+
+(sec-discrete-wasserstein-markov)=
+## Discrete Wasserstein Geometries on Markov Chains
+
+The Benamou--Brenier construction also has a finite-state analogue, but not the
+naive one obtained by putting the Euclidean metric on the simplex. The key idea,
+introduced by Maas and independently developed in related forms by Mielke and by
+Chow--Huang--Li--Zhou, is to use the transition graph of a reversible Markov
+chain to define the admissible directions and the mobility of the mass
+{cite:p}`Maas2011,MielkeCVPDE,ChowHuangLiZhou2012`. The resulting distance
+turns the heat flow of the chain into the gradient flow of the discrete Shannon
+entropy. This is the finite-dimensional counterpart of the fact that the heat
+equation on $\RR^d$ is the Wasserstein gradient flow of entropy, and it is also
+the geometric structure used in numerical work on discrete metric-measure spaces
+{cite:p}`ErbarDCDS,erbar2017computation`.
+
+Let $\mathcal X=\{1,\ldots,n\}$ and let $K=(K_{ij})$ denote the off-diagonal transition rates of an
+irreducible continuous-time Markov chain which is reversible with respect to a
+probability vector $\pi$, so that $\pi_iK_{ij}=\pi_jK_{ji}$ for $i\neq j$.
+We write a probability $p\in\Sigma_n$ in density form $p_i=\pi_i\rho_i$, where
+
+```{math}
+\Sigma_n\eqdef\left\{p\in\RR_+^n:\sum_i p_i=1\right\}.
+```
+
+The entropy relative to $\pi$ is
+
+```{math}
+\operatorname{Ent}_\pi(\rho)\eqdef\sum_i\pi_i\rho_i\log\rho_i.
+```
+
+The logarithmic mean
+
+```{math}
+\theta(a,b)\eqdef
+\begin{cases}
+\displaystyle\frac{a-b}{\log a-\log b}, & a\neq b,\\[.4em]
+a, & a=b,
+\end{cases}
+```
+
+is the specific mobility which makes the entropy gradient exactly coincide with
+the Markov evolution. For a potential $\psi\in\RR^n$, define the Onsager operator
+
+```{math}
+:label: eq-discrete-markov-onsager
+(\mathcal K_\rho\psi)_i
+\eqdef
+\sum_j K_{ij}\theta(\rho_i,\rho_j)(\psi_i-\psi_j).
+```
+
+Its associated action is
+
+```{math}
+:label: eq-discrete-markov-action
+\mathcal A(\rho,\psi)
+\eqdef
+\frac12\sum_{i,j}\pi_iK_{ij}\theta(\rho_i,\rho_j)(\psi_i-\psi_j)^2.
+```
+
+The discrete transport distance is the least action
+
+```{math}
+:label: eq-discrete-markov-distance
+\mathcal W_K^2(\rho^0,\rho^1)
+\eqdef
+\inf_{\rho_t,\psi_t}
+\int_0^1\mathcal A(\rho_t,\psi_t)\,\d t,
+\qquad
+\dot\rho_t+\mathcal K_{\rho_t}\psi_t=0,
+```
+
+with endpoints $\rho_0=\rho^0$, $\rho_1=\rho^1$. Equivalently, one can write
+the same formula in edge-flux variables, exactly as in a finite-volume
+discretization: the flux is only allowed along edges where $K_{ij}>0$, and the
+denominator in the kinetic energy is the logarithmic mean of the two endpoint
+densities.
+
+(prop-discrete-markov-entropy-gradient)=
+:::{admonition} Proposition: Entropy Gradient Flow of a Reversible Markov Chain
+:class: important
+Let $K$ be reversible with invariant law $\pi$. The gradient flow of
+$\operatorname{Ent}_\pi$ for the metric $\mathcal W_K$ is the forward equation
+of the Markov chain,
+
+```{math}
+:label: eq-discrete-markov-gradient-flow
+\dot\rho_i(t)=\sum_jK_{ij}\bigl(\rho_j(t)-\rho_i(t)\bigr).
+```
+
+Equivalently, for the masses $p_i(t)=\pi_i\rho_i(t)$, this is
+$\dot p_i(t)=\sum_j(p_j(t)K_{ji}-p_i(t)K_{ij})$.
+:::
+
+:::{dropdown} Proof
+The first variation of the entropy, with respect to the weighted pairing
+$\sum_i\pi_i\xi_i\varphi_i$, is $\log\rho_i+1$. Constants do not contribute to
+$\mathcal K_\rho$, hence the metric gradient-flow equation is
+
+```{math}
+\dot\rho=-\mathcal K_\rho\log\rho.
+```
+
+Using the identity
+
+```{math}
+\theta(a,b)(\log a-\log b)=a-b,
+```
+
+one obtains, componentwise,
+
+```{math}
+\dot\rho_i
+=-\sum_jK_{ij}\theta(\rho_i,\rho_j)(\log\rho_i-\log\rho_j)
+=
+\sum_jK_{ij}(\rho_j-\rho_i),
+```
+
+which is the density form of the Kolmogorov forward equation. Multiplying by
+$\pi_i$ and using detailed balance gives the equation for the probability masses.
+:::
+
+Although the minimizing-movement construction is introduced only in {ref}`sec-wasserstein-gradient-flows`, it is useful to keep its intuition in mind here. If one formally
+performs one JKO step for the metric $\mathcal W_K$,
+
+```{math}
+:label: eq-discrete-markov-jko
+\rho^{k+1}\in\argmin_\rho
+\frac{1}{2\tau}\mathcal W_K^2(\rho,\rho^k)+\operatorname{Ent}_\pi(\rho),
+```
+
+then the first-order optimality condition gives, for small $\tau$,
+
+```{math}
+\frac{\rho^{k+1}-\rho^k}{\tau}
+=-\mathcal K_{\rho^k}\log\rho^k+O(\tau)
+=K\rho^k+O(\tau),
+```
+
+where $(K\rho)_i=\sum_jK_{ij}(\rho_j-\rho_i)$. Thus the discrete Wasserstein
+geometry is engineered so that the implicit Euler step for entropy is, to first
+order, the Markov semigroup. This is precisely the finite-state analogue of the
+JKO interpretation of the heat equation.
+
+### Closed Forms in Dimensions Two and Three
+
+For the two- and three-state examples below, take the uniform random walk on
+the complete neighbor graph, i.e. every pair of distinct states is declared
+neighboring. Thus $\pi_i=1/n$, and $K_{ij}=1/(n-1)$ for $i\neq j$. On
+$\Sigma_2$, write $p=(r,1-r)$ and $q=(s,1-s)$. Since there is only
+one edge, the distance reduces to the scalar Riemannian length
+
+```{math}
+:label: eq-two-state-markov-distance
+\mathcal W_K(p,q)
+=
+\left|\int_s^r \frac{\d u}{\sqrt{\theta(u,1-u)}}\right|,
+\qquad
+0<r,s<1.
+```
+
+This formula is closed but not Euclidean: the logarithmic mean changes the cost
+of moving mass depending on the current split between the two states.
+
+On $\Sigma_3$, the complete-neighbor graph is a triangle. For
+$p\in\operatorname{int}(\Sigma_3)$, set
+
+```{math}
+a_{ij}(p)\eqdef\frac12\theta(p_i,p_j),
+\qquad 1\leq i<j\leq3.
+```
+
+For a tangent vector $u\in\RR^3$ with $u_1+u_2+u_3=0$, orient the edges as
+$1\to2$, $1\to3$, $2\to3$. The squared norm induced by the discrete
+Wasserstein metric is
+
+```{math}
+:label: eq-three-state-markov-norm
+\|u\|_p^2
+=
+\min_{q_{12},q_{13},q_{23}}
+\left\{
+\frac{q_{12}^2}{a_{12}}+
+\frac{q_{13}^2}{a_{13}}+
+\frac{q_{23}^2}{a_{23}}
+\right\},
+```
+
+subject to
+
+```{math}
+u_1+q_{12}+q_{13}=0,
+\qquad
+u_2-q_{12}+q_{23}=0,
+\qquad
+u_3-q_{13}-q_{23}=0.
+```
+
+Eliminating the three edge fluxes gives an explicit formula. With
+$D=a_{12}^{-1}+a_{13}^{-1}+a_{23}^{-1}$,
+
+```{math}
+q_{12}^*=\frac{u_2/a_{23}-u_1/a_{13}}{D},
+\qquad
+q_{13}^*=-u_1-q_{12}^*,
+\qquad
+q_{23}^*=q_{12}^*-u_2,
+```
+
+and $\|u\|_p^2$ is obtained by inserting these values in
+{eq}`eq-three-state-markov-norm`. Therefore
+
+```{math}
+:label: eq-three-state-markov-distance
+\mathcal W_K^2(p^0,p^1)
+=
+\inf_{p_t\in\operatorname{int}(\Sigma_3)}
+\int_0^1\|\dot p_t\|_{p_t}^2\,\d t,
+\qquad
+p_0=p^0,
+\quad p_1=p^1.
+```
+
+Thus the three-state distance is an explicit two-dimensional Riemannian
+geodesic problem on the open triangle. The formula is simple enough to compute
+directly, but it already shows the main difference with Euclidean geometry on
+the simplex: the local metric depends nonlinearly on the current density through
+logarithmic edge mobilities.
+
+(fig:discrete-markov-simplex-distances)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("discrete-markov-simplex-distances")
+```
+
+*Discrete Wasserstein distances on small Markov-chain simplices. The left panel shows
+the closed-form profiles $p\mapsto \mathcal W_K(a_p,a_{p_0})$, with
+$a_p=(p,1-p)$, for several anchors $p_0$ on $\Sigma_2$. The middle panel shows
+numerical level sets of $\mathcal W_K(a,\bar a)$ on $\Sigma_3$, where
+$\bar a=(1/3,1/3,1/3)$, using the local Riemannian norm induced by the
+complete-neighbor Markov chain. The right panel shows the corresponding level
+sets for the ordinary $W_2$ distance with $d(i,j)=1$ for $i\neq j$, so that
+$W_2^2(a,\bar a)=\norm{a-\bar a}_{\mathrm{TV}}$.*
 :::

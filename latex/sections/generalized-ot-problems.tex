@@ -5,7 +5,8 @@
 
 The second family changes the optimization problem rather than only the ground distance. Barycenters average several measures, multi-marginal OT couples many measures at once, inverse OT learns the cost from observed transport, and weak OT allows randomized conditional responses. These formulations remain close to Kantorovich linear programming, but the object being optimized is richer than a single two-marginal coupling.
 \index{linear programming}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
+\index{barycenter}% strictindex
 
 \section{OT Barycenters}
 \index{Wasserstein!barycenter}% strictindex
@@ -29,6 +30,7 @@ where the cost matrices $\C_s \in \RR^{n \times n_s}$ are prescribed.
 This barycenter problem was originally introduced by~\cite{Carlier_wasserstein_barycenter} following earlier ideas of~\cite{carlierekelandmatching}. For the quadratic cost on $\X=\RR^d$, their theory gives existence and uniqueness when at least one input measure is absolutely continuous, and more generally under hypotheses ensuring that the relevant optimal maps are well defined. Discrete existence, consistency and fixed-point constructions are further studied in~\cite{anderes2016discrete,alvarez2016fixed,leGouic2016existence}.
 \index{Wasserstein!barycenter}% strictindex
 \index{cost!quadratic}% strictindex
+\index{barycenter}% strictindex
 
 Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the barycenter problem becomes
 \eql{\label{eq-barycenter-generic}
@@ -79,7 +81,7 @@ For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, th
 	}
 	Indeed, the squared Wasserstein distance decomposes into a squared distance between means plus a centered Wasserstein term. Minimizing the resulting quadratic function of the barycenter mean gives the displayed identity. If the input measures have compact support, the usual multi-marginal barycentric construction also gives a barycenter supported in the convex hull of the input supports.
 \index{Wasserstein!distance}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 \end{rem}
 
 The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a convex optimization problem over measures. The difficulty is not convexity, but the fact that the unknown is itself a measure whose support is not known in advance.
@@ -106,8 +108,7 @@ The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a 
 \end{proof}
 
 Even when all input measures are discrete, the support of a barycenter is not known a priori. The multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that a discrete barycenter can be supported on all weighted averages of one support point from each input. This gives at most $\prod_s n_s$ candidate points if the $s$-th input has $n_s$ atoms, which is prohibitive when the number of inputs is large. A common numerical compromise is therefore to prescribe a smaller support for the barycenter and solve a fixed-support problem.
-\index{multi-marginal!OT}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \paragraph{One-dimensional case.}
@@ -168,7 +169,7 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 
 \begin{alg}[Gaussian barycenter fixed point]\label{alg:gaussian-barycenter-fixed-point}
 \index{Gaussian!barycenter}% strictindex
-\index{fixed point!iteration}% strictindex
+\index{fixed-point iteration}% strictindex
 \textbf{Input:} Gaussian measures $\Gaussian(\mean_s,\cov_s)$, weights $\lambda_s$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Gaussian barycenter $\Gaussian(\mean,\cov)$.
@@ -366,17 +367,17 @@ Classical applications include two-dimensional image interpolation, three-dimens
 \index{ground cost}% strictindex
 
 \section{Multimarginal OT}
-\index{multi-marginal!OT}% strictindex
+\index{multimarginal OT}% strictindex
 \label{sec-multimarginal-ot}
 \label{subsec:multi-marginal}
 
 Multi-marginal OT couples more than two measures at once. It is the natural language for barycenters, matching with teams and several-body costs, but its tensor dimension is the main computational obstacle.
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 
 \paragraph{Definition and basic structure.}
 
 The multi-marginal formulation replaces a coupling between two measures by a joint distribution with several prescribed marginals. Given measures $(\al_s)_{s=1}^S$ on spaces $(\X_s)_{s=1}^S$ and a cost $c:\X_1\times\cdots\times\X_S\to\RR$, the problem reads
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 \[
 	\inf_{\pi\in\Couplings(\al_1,\ldots,\al_S)}
 	\int_{\X_1\times\cdots\times\X_S}
@@ -386,14 +387,15 @@ where $\Couplings(\al_1,\ldots,\al_S)$ is the set of probability measures whose 
 \index{probability measure}% strictindex
 
 \paragraph{Monge structure and splitting-set twist.}
-\index{multi-marginal!Monge map}% strictindex
+\index{twist on splitting sets}% strictindex
+\index{multimarginal Monge map}% strictindex
 \index{splitting set}% strictindex
 
 As in the two-marginal case, one would like to know when the optimal joint law is induced by deterministic maps from one marginal. The relevant non-degeneracy assumption is stronger than pairwise twist, because the other $S-1$ variables have to be recovered simultaneously. The condition below is the standard multi-marginal analogue used in the Monge-structure theory of Gangbo--Swiech and Pass~\cite{GangboSciech,Pass2,PassMultiMarginalStructure,PassMultiReview}.
 \index{twist condition}% strictindex
 
 \begin{defn}[Twist on splitting sets]\label{def-twist-splitting-sets}
-\index{twist!on splitting sets}% strictindex
+\index{twist on splitting sets}% strictindex
 	Fix $x_1\in\X_1$. A set $M\subset\X_2\times\cdots\times\X_S$ is a $c$-splitting set at $x_1$ if there exist functions $u_s:\X_s\to\RR\cup\{-\infty\}$, for $s=2,\ldots,S$, such that
 	\[
 		\sum_{s=2}^S u_s(x_s)\leq c(x_1,x_2,\ldots,x_S)
@@ -409,9 +411,10 @@ As in the two-marginal case, one would like to know when the optimal joint law i
 \end{defn}
 
 \begin{prop}[Multi-marginal Monge structure]\label{prop-multimarginal-monge-structure}
-\index{multi-marginal!Monge map}% strictindex
-\index{twist!on splitting sets}% strictindex
+\index{multimarginal Monge map}% strictindex
+\index{twist on splitting sets}% strictindex
 	Assume that $\X_s\subset\RR^d$, that $c$ is continuous and differentiable with respect to $x_1$, and that $c$ is twisted on splitting sets. Suppose that Kantorovich dual maximizers $(\varphi_s)_{s=1}^S$ exist and that $\varphi_1$ is differentiable $\al_1$-a.e. If $\al_1$ is absolutely continuous, then every optimal plan $\pi^\star\in\Couplings(\al_1,\ldots,\al_S)$ is concentrated on the graph of maps
+\index{splitting set}% strictindex
 	\[
 		\pi^\star=(\Id,\T_2,\ldots,\T_S)_\sharp\al_1,
 		\qquad
@@ -450,6 +453,7 @@ A second canonical example, besides barycenters, comes from electronic structure
 	\sum_{1\leq i<j\leq N}\frac{1}{\norm{x_i-x_j}},
 \]
 with the value $+\infty$ on the collision set. This lower-semicontinuous singularity is not a harmless detail: finite-energy plans avoid electron collisions, and the smooth structure theorem above should be read as a guide rather than as a global theorem for the Coulomb cost. If $\rho$ is an electron density with $\int_{\RR^3}\rho(x)\d x=N$ and $\mu=\rho/N$ is the associated probability density, the strictly-correlated-electrons relaxation of density-functional theory is the equal-marginal problem
+\index{Coulomb cost}% strictindex
 \[
 	V_{\mathrm{ee}}^{\mathrm{SCE}}[\rho]
 	\eqdef
@@ -459,6 +463,8 @@ with the value $+\infty$ on the collision set. This lower-semicontinuous singula
 	\d\pi(x_1,\ldots,x_N).
 \]
 Since the cost and constraints are permutation invariant, symmetrizing any admissible plan does not change its value, so one may equivalently minimize over symmetric plans. This functional gives the smallest possible electron--electron repulsion compatible with the prescribed one-particle density; it appears as the strong-interaction limit in density-functional theory and was connected to optimal transport in~\cite{GorSeiVig,BuDePGor,CotarDFT,DiMarinoGerolinNennaRepulsiveCosts}. The deterministic ansatz writes a plan through co-motion maps
+\index{density-functional theory}% strictindex
+\index{co-motion function}% strictindex
 \[
 	\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\mu,
 	\qquad
@@ -495,13 +501,16 @@ so that the position of one electron determines the positions of the others. The
 \end{prop}
 \begin{proof}
 	Since $\T_\sharp\mu=\mu$, all iterates $\T^i$ preserve $\mu$, so every marginal of $\pi_\T$ is $\mu$. The plan $\bar\pi_\T$ is an average of coordinate permutations of $\pi_\T$, hence has the same marginals and is invariant under coordinate permutations. The Coulomb cost is symmetric in its arguments, so its integral is unchanged by each $R_\sigma$. The last identity follows by evaluating $c_{\mathrm{Coul}}$ on the graph $(x,\T(x),\ldots,\T^{N-1}(x))$.
+\index{Coulomb cost}% strictindex
 \index{symmetric plan}% strictindex
 \end{proof}
 
 Proposition~\ref{prop-multimarginal-monge-structure} explains the general mechanism that can force graph solutions, while Proposition~\ref{prop-cyclic-comotion-plans} records the additional equal-marginal symmetry used by co-motion maps. For the Coulomb cost, however, the singular repulsion and permutation symmetry make the structure delicate: co-motion maps are optimal in special geometries, but they are not universally optimal, and counterexamples are known~\cite{ColomboStraCoulombCounterexamples,BindiniDePascaleKausamoDeterministicCoulomb}. Thus the DFT problem is both a central application and a warning that multi-marginal OT is richer than a naive deterministic matching problem.
+\index{co-motion map}% strictindex
 \index{counterexample}% strictindex
 
 Figure~\ref{fig:multimarginal-coulomb-sinkhorn} shows the same phenomenon in a deliberately small one-dimensional model. Three identical marginals interact through a softened pairwise Coulomb cost, and the displayed object is the two-particle marginal of the entropic three-marginal optimizer. As $\epsilon$ decreases, mass is pushed away from the collision diagonal $x_1=x_2$, revealing the repulsive geometry that underlies the strictly-correlated-electrons model.
+\index{Coulomb cost}% strictindex
 
 \begin{figure}[H]
 \centering
@@ -514,18 +523,18 @@ Figure~\ref{fig:multimarginal-coulomb-sinkhorn} shows the same phenomenon in a d
 \end{tabular}
 \caption{Entropic three-marginal Coulomb transport in one dimension. The three marginals are equal and the pairwise cost is $((x_r-x_s)^2+\delta^2)^{-1/2}$. Each panel shows the $(X_1,X_2)$ marginal of the tensor Sinkhorn solution. Small regularization concentrates the plan away from the collision diagonal, while larger regularization blurs the repulsive arrangement toward the independent reference.}
 \index{Coulomb cost}% strictindex
-\index{multi-marginal!Sinkhorn}% strictindex
+\index{multimarginal Sinkhorn}% strictindex
 \index{density-functional theory}% strictindex
 \label{fig:multimarginal-coulomb-sinkhorn}
 \end{figure}
 
 \paragraph{Multi-marginal formulation of barycenters.}
-\index{multi-marginal}% strictindex
-\index{multi-marginal!formulation}% strictindex
+\index{multimarginal OT}% strictindex
+\index{multimarginal formulation}% strictindex
 
 Wasserstein barycenters are the central example. For the squared Euclidean cost, one can introduce a latent barycenter point and eliminate it explicitly, leading to the multi-marginal cost
-\index{multi-marginal}% strictindex
-\index{multi-marginal!cost}% strictindex
+\index{multimarginal OT}% strictindex
+\index{multimarginal cost}% strictindex
 \index{Wasserstein!barycenter}% strictindex
 \[
 	c_{\mathrm{bar}}(x_1,\ldots,x_S)
@@ -535,8 +544,7 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 \]
 
 \begin{prop}[Multi-marginal formula for quadratic barycenters]\label{prop-multimarginal-barycenter}
-\index{multi-marginal}% strictindex
-\index{multi-marginal!OT}% strictindex
+\index{multimarginal OT}% strictindex
 \index{quadratic!barycenter}% strictindex
 	Let $\be_1,\ldots,\be_S\in\Pp_2(\RR^d)$ and $\la\in\simplex_S$. Define
 	\[
@@ -546,7 +554,7 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 	\]
 	If $\pi^\star$ solves the multi-marginal OT problem with marginals $(\be_s)_s$ and cost $c_{\mathrm{bar}}$, then $\al^\star=B_\sharp\pi^\star$ is a Wasserstein barycenter. Conversely, every barycenter is obtained this way from an optimal multi-marginal plan.
 \index{Wasserstein!barycenter}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 \end{prop}
 
 \begin{proof}
@@ -560,10 +568,10 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 		\EE c_{\mathrm{bar}}(Y_1,\ldots,Y_S).
 	\]
 	Taking the infimum over the couplings gives that the barycenter value is at least the multi-marginal value. Conversely, from an optimal multi-marginal plan $\pi^\star$, set $X=B(Y_1,\ldots,Y_S)$. The couplings between $X$ and each $Y_s$ are feasible for the barycenter problem and attain exactly the multi-marginal cost, proving equality and the formula.
-\index{multi-marginal!cost}% strictindex
+\index{multimarginal cost}% strictindex
 	If $\al^\star$ is any barycenter, choose optimal couplings between $\al^\star$ and each $\be_s$ and glue them along the common $\al^\star$ marginal. Since the barycenter and multi-marginal values are equal, the conditional minimization inequality above must be an equality. Thus $X=B(Y_1,\ldots,Y_S)$ almost surely for the induced optimal multi-marginal plan, and $\al^\star=B_\sharp\pi^\star$.
 \index{optimal coupling}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 \end{proof}
 
 \begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
@@ -584,12 +592,12 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 	with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by the Gaussian measure with the minimizing mean and covariance. Hence at least one barycenter is Gaussian, and uniqueness in the usual nondegenerate setting gives the Gaussian barycenter mentioned above. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
 \index{Gaussian!barycenter}% strictindex
 \index{Gaussian!measure}% strictindex
-\index{multi-marginal}% strictindex
+\index{multimarginal OT}% strictindex
 \end{proof}
 
 \paragraph{Entropic regularization of multi-marginal OT.}
 \index{entropic!regularization}% strictindex
-\index{multi-marginal!OT}% strictindex
+\index{multimarginal OT}% strictindex
 
 As in the two-marginal case, adding an entropic penalty with respect to the product measure $\al_1\otimes\cdots\otimes\al_S$ leads to scaling algorithms:
 \index{scaling!algorithm}% strictindex
@@ -607,6 +615,7 @@ The optimizer has the generalized Gibbs form
 \]
 and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
 \index{Sinkhorn!iteration}% strictindex
+\index{low-rank OT}% strictindex
 
 In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn.
 
@@ -641,18 +650,19 @@ In finite dimension, the direct generalized scaling scheme is the tensor version
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Low-Rank Optimal Transport}
+\index{low-rank OT}% strictindex
 \label{sec-low-rank-ot}
 \index{low-rank!optimal transport}% strictindex
 \index{factored coupling}% strictindex
 
 Low-rank OT reduces the size of a transport plan by forcing the coupling itself to pass through a small latent measure. This is useful when the mass exchange is expected to be organized by a few hidden clusters or prototypes, and it is distinct from approximating the Sinkhorn kernel by a low-rank matrix. The idea was introduced statistically through factored couplings by Forrow, H\"utter, Nitzan, Rigollet, Schiebinger and Weed~\cite{forrow2019factored}, and developed algorithmically for arbitrary costs by Scetbon, Cuturi and Peyr\'e~\cite{scetbon2021lowrank}.
-\index{latent!measure}% strictindex
+\index{latent measure}% strictindex
 \index{Sinkhorn!low-rank}% strictindex
 
 \Needspace{18\baselineskip}
 \begin{defn}[Low-rank factored couplings]\label{def-low-rank-couplings}
 \index{low-rank!coupling}% strictindex
-\index{nonnegative!rank}% strictindex
+\index{nonnegative rank}% strictindex
 	Let $\a\in\simplex_n$, $\b\in\simplex_m$ and let $r\geq1$. A rank-$r$ factored coupling is a triple $(Q,R,g)$ such that
 	\[
 		Q\in\RR_+^{n\times r},\qquad
@@ -679,12 +689,14 @@ Low-rank OT reduces the size of a transport plan by forcing the coupling itself 
 \end{defn}
 
 The latent interpretation is immediate. The vector $g$ is the law of an intermediate variable $Z\in\range{1,r}$; $Q$ is a coupling of the source index $X$ with $Z$; $R$ is a coupling of the target index $Y$ with the same $Z$. Formula~\eqref{eq-low-rank-coupling-factor} is the law of $(X,Y)$ obtained by sampling $Z\sim g$, then sampling $X$ and $Y$ conditionally independently given $Z$. Equivalently, OT is replaced by a succession of two transports through an abstract intermediate measure $\eta=\sum_{k=1}^r g_k\de_{z_k}$ on an $r$-point space. The locations $z_k$ only label the latent atoms and do not enter the original cost.
+\index{intermediate measure}% strictindex
 \index{conditional!independence}% strictindex
 \index{Dirac mass}% strictindex
 
 \begin{prop}[Factored couplings and nonnegative rank]\label{prop-low-rank-factorization}
-\index{nonnegative!rank}% strictindex
+\index{nonnegative rank}% strictindex
 	For every feasible triple $(Q,R,g)$ in Definition~\ref{def-low-rank-couplings}, the matrix $P(Q,R,g)$ belongs to $\CouplingsD(\a,\b)$ and has nonnegative rank at most $r$. Conversely, every coupling $P\in\CouplingsD(\a,\b)$ with nonnegative rank at most $r$ admits a representation of the form~\eqref{eq-low-rank-coupling-factor}, after possibly deleting zero latent components.
+\index{nonnegative rank}% strictindex
 \end{prop}
 
 \begin{proof}
@@ -721,7 +733,7 @@ This problem is non-convex, but each factor block has a familiar structure. A co
 \end{equation}
 where the constraints are those of Definition~\ref{def-low-rank-couplings}. The full low-rank Sinkhorn factorization of~\cite{scetbon2021lowrank} applies block-coordinate updates to $(Q,R,g)$. The following fixed-$g$ version is the simplest way to see the mechanism: each block update is an ordinary entropic OT problem with an effective cost, and this is the variant used in Figure~\ref{fig:low-rank-ot-factorization}.
 \index{entropic!regularization}% strictindex
-\index{block-coordinate!descent}% strictindex
+\index{block-coordinate descent}% strictindex
 
 \begin{algH}[Alternating low-rank Sinkhorn with fixed latent mass]\label{alg-low-rank-sinkhorn-fixed-g}
 \index{Sinkhorn!low-rank}% strictindex
@@ -777,6 +789,132 @@ where the constraints are those of Definition~\ref{def-low-rank-couplings}. The 
 \label{fig:low-rank-ot-factorization}
 \end{figure}
 
+\section{Capacity-Constrained Optimal Transport}
+\index{capacity-constrained OT}% strictindex
+\label{sec-capacity-constrained-ot}
+\index{capacity-constrained OT}% strictindex
+
+Classical Kantorovich transport only fixes the marginals: if a pair $(x,y)$ is cheap, the optimizer may concentrate as much mass as the marginal constraints allow on this pair. Capacity-constrained OT adds a local congestion rule on the coupling itself. It is useful when edges, facilities or matchings have limited throughput, and it also gives a clean mathematical way to interpolate between a sparse OT plan and the independent product coupling. The systematic study of the continuous problem, including existence and the geometry of active saturated regions, was developed by Korman and McCann~\cite{km1}.
+\index{Kantorovich!problem}% strictindex
+\index{product!coupling}% strictindex
+\index{congestion}% strictindex
+
+Let $\alpha\in\Mm_+^1(\Xx)$, $\beta\in\Mm_+^1(\Yy)$ and let $\kappa:\Xx\times\Yy\to[0,+\infty]$ be a measurable capacity. The capacity-constrained transport value is
+\begin{equation}\label{eq-capacity-constrained-ot}
+	\MK_c^\kappa(\alpha,\beta)
+	\eqdef
+	\inf_{\pi\in\Couplings(\alpha,\beta)}
+	\enscond{
+		\int_{\Xx\times\Yy} c(x,y)\d\pi(x,y)
+	}{
+		\pi\ll\alpha\otimes\beta,\quad
+		\frac{\d\pi}{\d(\alpha\otimes\beta)}(x,y)\leq\kappa(x,y)
+	}.
+\end{equation}
+The product coupling $\alpha\otimes\beta$ is feasible whenever $\kappa\geq1$. Thus the constraint is not meant to promote the product plan; rather, it prevents the optimizer from using any pair more than the prescribed density ratio. Large $\kappa$ recovers the usual Kantorovich value, while $\kappa=1$ forces the independent coupling itself, and values close to $1$ favor diffuse plans close to this reference.
+\index{density!ratio}% strictindex
+\index{product!coupling}% strictindex
+
+For discrete measures $\alpha=\sum_i a_i\de_{x_i}$ and $\beta=\sum_j b_j\de_{y_j}$, a capacity is an upper matrix $U\in\RR_+^{n\times m}$. The density-ratio discretization of~\eqref{eq-capacity-constrained-ot} is $U_{i,j}=\kappa_{i,j}a_i b_j$, and the finite-dimensional problem is the linear program
+\index{capacity-constrained OT}% strictindex
+\begin{equation}\label{eq-discrete-capacity-constrained-ot}
+	\min_{P\in\CouplingsD(\a,\b)}
+	\dotp{C}{P}
+	\quad\text{subject to}\quad
+	0\leq P_{i,j}\leq U_{i,j}\quad\forall(i,j).
+\end{equation}
+Feasibility is now a genuine issue: the upper matrix must contain enough mass in every row-column cut to support the prescribed marginals. In particular, the usual transport polytope is recovered when $U_{i,j}=+\infty$, while small capacities select a smaller capped transportation polytope.
+\index{transport polytope}% strictindex
+\index{linear programming}% strictindex
+
+Entropic smoothing gives a direct Sinkhorn-like algorithm. With $K_{i,j}=a_i b_j e^{-C_{i,j}/\epsilon}$, the regularized problem is
+\begin{equation}\label{eq-entropic-capacity-constrained-ot}
+	\min_{P\in\CouplingsD(\a,\b),\,0\leq P\leq U}
+	\dotp{C}{P}
+	+
+	\epsilon\KLD(P|\a\otimes\b).
+\end{equation}
+Equivalently, up to additive constants, the objective is $\epsilon\KLD(P|K)$. The problem is therefore the KL projection of $K$ onto the intersection of three convex sets: the row constraints, the column constraints and the box $P\leq U$. Alternating KL projections with Dykstra correction factors~\cite{Dykstra85,bauschke-lewis}, in the same spirit as the Bregman projection formulation of Sinkhorn~\cite{2015-benamou-cisc}, gives a simple capacity-constrained scaling scheme.
+\index{entropic!regularization}% strictindex
+\index{KL!projection}% strictindex
+\index{Bregman!projection}% strictindex
+\index{Dykstra algorithm}% strictindex
+
+\begin{algH}[Capacity-constrained Sinkhorn by KL-Dykstra]\label{alg-capacity-constrained-sinkhorn}
+\index{Sinkhorn!capacity-constrained}% strictindex
+\index{Dykstra algorithm}% strictindex
+\textbf{Input:} Marginals $\a\in\simplex_n$, $\b\in\simplex_m$, cost $C$, capacity $U$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Entropic capped coupling $P$.
+
+\textbf{Convention:} All divisions are entrywise; ratios $0/0$ in correction updates are set to $1$.
+
+\textbf{Set} $K_{i,j}=a_i b_j e^{-C_{i,j}/\epsilon}$.
+
+\textbf{Initialize:} Set $P=K$, correction matrices $R_1=R_2=R_3=\ones_{n\times m}$ and $r=+\infty$.
+
+\textbf{While} $r>\mathrm{tol}$ \textbf{do}:
+\begin{algblock}
+\textbf{Set} $Z=P\odot R_1$.
+
+\textbf{Project rows:} $P= \diag\!\left(\a/(Z\ones_m)\right) Z$.
+
+\textbf{Update} $R_1=Z\oslash P$.
+
+\textbf{Set} $Z=P\odot R_2$.
+
+\textbf{Project columns:} $P= Z\diag\!\left(\b/(Z^\top\ones_n)\right)$.
+
+\textbf{Update} $R_2=Z\oslash P$.
+
+\textbf{Set} $Z=P\odot R_3$.
+
+\textbf{Project capacity:} $P=\min\{Z,U\}$ entrywise.
+
+\textbf{Update} $R_3=Z\oslash P$.
+
+\textbf{Set} $r=\max\{\|P\ones_m-\a\|_\infty,\|P^\top\ones_n-\b\|_\infty,\|(P-U)_+\|_\infty\}$.
+\end{algblock}
+
+\textbf{Return} $P$.
+\end{algH}
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.29\linewidth]{figures/capacity-constrained-ot-1d/large.pdf} &
+\includegraphics[width=.29\linewidth]{figures/capacity-constrained-ot-1d/medium.pdf} &
+\includegraphics[width=.29\linewidth]{figures/capacity-constrained-ot-1d/small.pdf}
+\\[-.1em]
+\small large capacity, $\kappa=80$ &
+\small medium capacity, $\kappa=10$ &
+\small small capacity, $\kappa=2.6$
+\end{tabular}
+\caption{Capacity-constrained entropic OT between two one-dimensional Gaussian-mixture histograms. Each matrix solves~\eqref{eq-entropic-capacity-constrained-ot} with the same marginals, the same squared-distance cost and the density-ratio cap $U_{ij}=\kappa a_i b_j$. The red side strip is the source marginal and the blue top strip is the target marginal. Large capacity leaves a nearly Monge-like graph, whereas small capacity saturates many entries and forces the coupling to spread.}
+\index{Gaussian mixture}% strictindex
+\index{capacity-constrained OT}% strictindex
+\label{fig:capacity-constrained-ot-1d}
+\end{figure}
+
+For the empirical self-coupling in Figure~\ref{fig:capacity-constrained-ot-2d}, the cap is chosen to prescribe a minimum number of outgoing connections per source point. With uniform weights $a_i=1/n$, imposing $P_{ij}\leq 1/(qn)$ is equivalent to the conditional bound $P_{ij}/a_i\leq 1/q$. Since each row has total mass $1/n$, this forces each source row to use at least $q$ target atoms, up to the small extra spreading introduced by entropic smoothing.
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.30\linewidth]{figures/capacity-constrained-ot-2d/cap-1.pdf} &
+\includegraphics[width=.30\linewidth]{figures/capacity-constrained-ot-2d/cap-3.pdf} &
+\includegraphics[width=.30\linewidth]{figures/capacity-constrained-ot-2d/cap-5.pdf}
+\\[-.1em]
+\small one connection, $q=1$ &
+\small three connections, $q=3$ &
+\small five connections, $q=5$
+\end{tabular}
+\caption{Capacity-constrained local self-couplings on a two-dimensional empirical Gaussian mixture. The source and target are the same semi-regular uniform empirical measure on $n$ atoms, but the diagonal is removed to avoid the trivial identity plan and reveal the local graph selected by the capped problem. Each panel solves~\eqref{eq-entropic-capacity-constrained-ot} with the off-diagonal cap $U_{ij}=1/(qn)$, equivalently $P_{ij}/a_i\leq 1/q$ since $a_i=1/n$. The three panels therefore impose at least one, three and five outgoing connections per source atom; increasing $q$ forces the local matching to spread over more neighbors.}
+\index{empirical!measure}% strictindex
+\index{capacity-constrained OT}% strictindex
+\label{fig:capacity-constrained-ot-2d}
+\end{figure}
+
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -785,6 +923,7 @@ where the constraints are those of Definition~\ref{def-low-rank-couplings}. The 
 \section{Metric learning and inverse OT}
 \index{metric!learning}% strictindex
 \index{inverse OT}% strictindex
+\index{inverse optimal transport}% strictindex
 
 This final section points to inverse problems where the ground cost itself is learned. Such problems are typically bilevel and non-convex, but OT provides useful gradients with respect to the cost.
 \index{ground cost}% strictindex
@@ -832,6 +971,7 @@ Inverse OT and metric learning repeatedly differentiate a forward OT value with 
 		\frac{\delta \mathcal V_c}{\delta c}=\pi^\star .
 	\]
 	The second identity means that the first variation with respect to the function $c$ is represented by the optimal measure $\pi^\star$ on $\Xx\times\Yy$.
+\index{first variation}% strictindex
 \end{prop}
 \begin{proof}
 	Kantorovich duality writes
@@ -851,6 +991,7 @@ Inverse OT and metric learning repeatedly differentiate a forward OT value with 
 		\int c\d\pi+t\int h\d\pi
 	\]
 	is an infimum of affine functions of $t$. Danskin's theorem for a minimum gives the right directional derivative as the infimum of $\int h\d\pi$ over the active minimizers. If the active dual potential or coupling is unique, the corresponding directional derivative is linear in the perturbation, which is the displayed first variation.
+\index{first variation}% strictindex
 \index{Danskin theorem}% strictindex
 \index{envelope theorem}% strictindex
 \index{dual!potential}% strictindex
@@ -905,6 +1046,7 @@ Here $\partial_{\C}^{\mathrm{sup}}$ denotes the superdifferential of the concave
 \end{prop}
 \begin{proof}
 	The cost derivative follows directly from the primal envelope theorem, because the entropic optimizer is unique. For the measure derivative, use the dual formula~\eqref{eq-dual-sinkhorn-objective}. At an optimal pair, the soft-transform equations imply the row normalization
+\index{envelope theorem}% strictindex
 	\[
 		\int_{\Yy}
 		\exp\pa{\frac{f_\epsilon(x)+g_\epsilon(y)-c(x,y)}{\epsilon}}
@@ -962,6 +1104,7 @@ so its derivative with respect to $\a$ is represented on the simplex tangent spa
 %%%
 \paragraph{Inverse Optimal Transport}
 \index{inverse OT}% strictindex
+\index{inverse optimal transport}% strictindex
 
 Inverse OT asks for a ground cost that explains observed matchings or flows as optimal transport plans. In its most direct form, one observes a plan $\widehat\pi$ with marginals $(\alpha,\beta)$ and seeks a cost $c$ such that $\widehat\pi$ is optimal for
 \index{ground cost}% strictindex
@@ -1000,7 +1143,7 @@ In the discrete unregularized case, this loss reduces to the optimality gap of t
 	\umin{P\in\CouplingsD(\a,\b)} \dotp{C}{P}.
 \]
 This inverse-OT gap loss is nonnegative and vanishes exactly when $\widehat P$ is optimal for $C$.
-\index{inverse OT!gap loss}% strictindex
+\index{inverse OT gap loss}% strictindex
 
 In practice, one restricts the cost to a finite-dimensional model class, often affine:
 \[
@@ -1020,7 +1163,7 @@ For empirical measures $\al=\frac1n\sum_i\de_{x_i}$ and $\be=\frac1n\sum_j\de_{y
 	C(A)_{i,j}=\dotp{Ax_i}{y_j},
 \]
 so both maps $A\mapsto C(A)$ and $A\mapsto c_A$ are linear. Inverse OT within this model asks which matrix $A$ makes an observed matching or coupling look optimal; learning the cost is thus reduced to estimating a linear parameter.
-\index{bilinear!cost}% strictindex
+\index{bilinear cost}% strictindex
 
 For a fixed matrix $A$, the forward prediction is the optimal face
 \[
@@ -1166,6 +1309,7 @@ which leads to likelihood-based or KL-based convex objectives when $C_\theta$ is
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Weak Optimal Transport}
 \index{weak!optimal transport}% strictindex
+\index{weak OT}% strictindex
 \label{sec-weak-ot}
 
 Weak OT relaxes the cost so that it depends on the conditional distribution of destinations rather than only on pointwise pairs. It is useful when a source point is allowed to choose a randomized response and the model only penalizes an aggregate of that response, such as its conditional mean.
@@ -1173,6 +1317,7 @@ Weak OT relaxes the cost so that it depends on the conditional distribution of d
 
 \paragraph{Barycentric projection of a coupling.}
 \index{barycentric!projection}% strictindex
+\index{barycentric projection}% strictindex
 The first object to isolate is therefore the map obtained by collapsing each conditional law to its barycenter.
 
 \begin{defn}[Barycentric projection of a coupling]\label{def-barycentric-projection}
@@ -1234,6 +1379,7 @@ Weak transport costs use the same disintegration but allow the objective to depe
 \index{barycentric!projection}% strictindex
 \index{weak!transport}% strictindex
 \index{Polish space}% strictindex
+\index{barycentric projection}% strictindex
 \begin{equation}\label{eq-weak-ot}
 	\WOT_C(\alpha,\beta)
 	\eqdef
@@ -1337,6 +1483,7 @@ The barycentric cost is the canonical example to keep in mind: admissibility sti
 \subsection{Martingale Optimal Transport}
 \index{martingale!optimal transport}% strictindex
 \index{barycentric!projection}% strictindex
+\index{martingale OT}% strictindex
 \label{sec-martingale-ot}
 
 Martingale OT is the extreme barycentric version of the weak viewpoint: a source point may split randomly, but the average destination must remain equal to the source point. This turns the barycentric projection from an object used in the cost into a hard constraint.
@@ -1358,6 +1505,7 @@ Martingale OT is the extreme barycentric version of the weak viewpoint: a source
 \end{defn}
 
 For a cost $c$, the martingale OT problem minimizes $\int c\d\pi$ over $\Couplings_{\mathrm{mart}}(\alpha,\beta)$, with value $+\infty$ when the admissible set is empty.
+\index{martingale OT}% strictindex
 
 The terminology comes from probability: if $(X,Y)\sim\pi$, then~\eqref{eq-martingale-coupling} is exactly $\EE[Y|X]=X$. Hence martingale OT is a Kantorovich problem with the usual two marginal constraints plus a barycentric constraint on the conditional laws. Equivalently, the barycentric projected coupling
 \[
@@ -1371,6 +1519,7 @@ must be the diagonal coupling $(\Id,\Id)_\sharp\alpha$. This is stronger than me
 \paragraph{Stochastic orders.}
 \index{stochastic order}% strictindex
 The admissibility of martingale couplings is governed by stochastic order. For measures on $\RR$, the classical stochastic order is
+\index{martingale!coupling}% strictindex
 \[
 	\alpha\preceq_{\mathrm{st}}\beta
 	\quad\Longleftrightarrow\quad
@@ -1379,9 +1528,10 @@ The admissibility of martingale couplings is governed by stochastic order. For m
 \]
 Strassen's theorem~\cite{Strassen1965} says that this is equivalent to the existence of a coupling $(X,Y)$ with $X\leq Y$ almost surely. Thus an order inequality between laws is represented by a pathwise constraint on a coupling.
 \index{Strassen theorem}% strictindex
-\index{coupling!order constrained}% strictindex
+\index{order-constrained coupling}% strictindex
 
 For martingale OT the relevant order is the convex order. For measures with finite first moments,
+\index{convex order}% strictindex
 \[
 	\alpha\preceq_{\mathrm{cx}}\beta
 	\quad\Longleftrightarrow\quad
@@ -1396,6 +1546,7 @@ Testing affine functions gives equality of means, while convex test functions sa
 \]
 Indeed, if $\Sigma_1-\Sigma_0\succeq0$, then $\Gaussian(m,\Sigma_1)$ is obtained from $\Gaussian(m,\Sigma_0)$ by adding independent centered Gaussian noise; the converse follows by testing the convex quadratic functions $x\mapsto\dotp{u}{x}^2$.
 Strassen's martingale theorem states that $\alpha\preceq_{\mathrm{cx}}\beta$ if and only if $\Couplings_{\mathrm{mart}}(\alpha,\beta)$ is nonempty. Hence convex order is exactly the feasibility condition for martingale OT.
+\index{Strassen theorem}% strictindex
 \index{convex order}% strictindex
 \index{Gaussian!measure}% strictindex
 \index{covariance!Loewner order}% strictindex
