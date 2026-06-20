@@ -7,13 +7,13 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 101
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 104
 live `latex/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
 in [`thumbnails/`](thumbnails/), and generated PDF panels in
-`../latex/figures/`. The searchable gallery currently exposes 102 figure views,
+`../latex/figures/`. The searchable gallery currently exposes 105 figure views,
 because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 103 LaTeX figure labels because
+schedule-comparison view. The book currently has 107 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet
 below is built from the same active thumbnail set.
 
@@ -129,8 +129,8 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="monge-caffarelli-nonconvex-map.ipynb"><img src="thumbnails/monge-caffarelli-nonconvex-map.png" alt="Caffarelli regularity and a non-convex source" width="210"></a><br>
-  <strong>Caffarelli regularity and a non-convex source</strong><br>
+  <a href="monge-caffarelli-nonconvex-map.ipynb"><img src="thumbnails/monge-caffarelli-nonconvex-map.png" alt="Disk-to-dumbbell empirical McCann interpolation" width="210"></a><br>
+  <strong>Disk-to-dumbbell empirical McCann interpolation</strong><br>
   <a href="monge-caffarelli-nonconvex-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-caffarelli-nonconvex-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -307,10 +307,30 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="semidiscrete-lloyd-flow-mixtures.ipynb"><img src="thumbnails/semidiscrete-lloyd-flow-mixtures.png" alt="Continuous Lloyd flow between Gaussian mixtures" width="210"></a><br>
+  <strong>Continuous Lloyd flow between Gaussian mixtures</strong><br>
+  <a href="semidiscrete-lloyd-flow-mixtures.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-lloyd-flow-mixtures.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="semidiscrete-quantile-quantization-rates.ipynb"><img src="thumbnails/semidiscrete-quantile-quantization-rates.png" alt="One-dimensional quantile quantization rates" width="210"></a><br>
+  <strong>One-dimensional quantile quantization rates</strong><br>
+  <a href="semidiscrete-quantile-quantization-rates.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-quantile-quantization-rates.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="w1-graph-transport-flow.ipynb"><img src="thumbnails/w1-graph-transport-flow.png" alt="Graph Beckmann flow for W1" width="210"></a><br>
   <strong>Graph Beckmann flow for W1</strong><br>
   <a href="w1-graph-transport-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/w1-graph-transport-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+<td width="33%"></td>
 
 </tr>
 </table>
@@ -391,14 +411,14 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="sinkhorn-geodesics-in-heat.ipynb"><img src="thumbnails/sinkhorn-geodesics-in-heat.png" alt="Geodesics in heat on a grid" width="210"></a><br>
-  <strong>Geodesics in heat on a grid</strong><br>
+  <a href="sinkhorn-geodesics-in-heat.ipynb"><img src="thumbnails/sinkhorn-geodesics-in-heat.png" alt="Geodesics in heat for a curve" width="210"></a><br>
+  <strong>Geodesics in heat for a curve</strong><br>
   <a href="sinkhorn-geodesics-in-heat.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-geodesics-in-heat.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="sinkhorn-hopf-cole-transform.ipynb"><img src="thumbnails/sinkhorn-hopf-cole-transform.png" alt="Hopf-Cole heat transform and Burgers flow" width="210"></a><br>
-  <strong>Hopf-Cole heat transform</strong><br>
+  <a href="sinkhorn-hopf-cole-transform.ipynb"><img src="thumbnails/sinkhorn-hopf-cole-transform.png" alt="Soft biconjugates and Hopf-Cole Burgers evolution" width="210"></a><br>
+  <strong>Soft biconjugates and Burgers</strong><br>
   <a href="sinkhorn-hopf-cole-transform.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-hopf-cole-transform.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -899,18 +919,22 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-gaussian-closure.ipynb"><img src="thumbnails/gradflow-gaussian-closure.png" alt="Gaussian closure of a Wasserstein flow" width="210"></a><br>
-  <strong>Gaussian closure of a Wasserstein flow</strong><br>
-  <a href="gradflow-gaussian-closure.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-gaussian-closure.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
   <a href="moment-measure-forward-map.ipynb"><img src="thumbnails/moment-measure-forward-map.png" alt="Forward moment-measure construction" width="210"></a><br>
   <strong>Forward moment-measure construction</strong><br>
   <a href="moment-measure-forward-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/moment-measure-forward-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="generative-mean-shift-pde.ipynb"><img src="thumbnails/generative-mean-shift-pde.png" alt="Mean-shift PDE for Gaussian-kernel attention" width="210"></a><br>
+  <strong>Mean-shift PDE for Gaussian-kernel attention</strong><br>
+  <a href="generative-mean-shift-pde.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/generative-mean-shift-pde.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-gaussian-closure.ipynb"><img src="thumbnails/gradflow-gaussian-closure.png" alt="Gaussian closure of a Wasserstein flow" width="210"></a><br>
+  <strong>Gaussian closure of a Wasserstein flow</strong><br>
+  <a href="gradflow-gaussian-closure.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-gaussian-closure.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 </tr>
 </table>

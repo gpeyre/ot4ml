@@ -1505,41 +1505,165 @@ inconsistent discretizations can dominate the intended geodesic limit.
 show_book_figure("sinkhorn-geodesics-in-heat")
 ```
 
-*Geodesics-in-heat approximation of the distance to three source points. One
-backward-Euler resolvent step with Neumann boundary conditions is followed by a
-normalized-gradient Poisson solve. Larger resolvent scales stabilize the linear solve
-but visibly round and merge level-set features.*
+*Geodesics-in-heat approximation of the distance to a dense non-convex source
+curve. One backward-Euler resolvent step with Neumann boundary conditions is
+followed by a normalized-gradient Poisson solve. Larger resolvent scales stabilize
+the linear solve but progressively round the non-convex level-set geometry.*
 :::
 
 ### Soft Hopf--Lax and Hopf--Cole
 
-For $t>0$, the quadratic Hopf--Lax transform is
+The Hopf--Lax formula is the Hamilton--Jacobi incarnation of the hard
+$c$-transform. We use the normalized quadratic cost
 
 ```{math}
-Q_t f(x)=\inf_y \left\{ f(y)+\frac{\norm{x-y}^2}{2t}\right\}.
+c(x,y)=\frac12\norm{x-y}^2,
 ```
 
-Completing the square gives $Q_t f(x)=\norm{x}^2/(2t)-(f+\norm{\cdot}^2/(2t))^*(x/t)$. The entropic version replaces the associated Legendre supremum by a Gaussian log-sum-exp formula, equivalently a heat-kernel convolution at time $\epsilon t/2$.
+so that the Hopf--Lax operator applied to an initial datum $h$ is precisely
 
 ```{math}
-Q_t^\epsilon f(x)
-= -\epsilon\log\int
-\exp\!\left(-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}\right)\,dy
-= -\epsilon\log\big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\big)(x)+\text{cst},
+(-h)^{\bar c}(x)=\inf_y\left\{h(y)+\frac12\norm{x-y}^2\right\}.
 ```
 
-where $G_s$ is the normalized heat kernel and the constant absorbs its
-normalization. Laplace's principle gives $Q_t^\epsilon f\to Q_t f$ as
-$\epsilon\to0$, up to an additive constant. The Hopf--Cole transform is the PDE version of the same
-idea: if
+The sign only reflects the convention of {ref}`def-c-transform`. This is the
+usual Hopf--Lax formula for the Hamiltonian $\norm{p}^2/2$
+{cite:p}`evans2010pde,Villani09`; other quadratic scalings amount to multiplying
+the cost by a constant. In the present entropic setting, the parameter of
+interest is instead the temperature $\epsilon$.
+
+The soft version replaces the infimum by a log-sum-exp soft minimum. In the
+notation of {ref}`def-continuous-soft-c-transform`, and using Lebesgue measure
+on $\RR^d$,
 
 ```{math}
-\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi,
+:label: eq-soft-hopf-lax-heat-web
+(-h)^{\bar c,\epsilon}(x)
+= -\epsilon\log \int
+\exp\!\left(-\frac{h(y)+\norm{x-y}^2/2}{\epsilon}\right)\,dy .
 ```
 
-then $u=e^{-\phi/(2\nu)}$ solves $\partial_tu=\nu\Delta u$, and
-$v=\nabla\phi=-2\nu\nabla\log u$ solves viscous Burgers,
-$\partial_t v+(v\cdot\nabla)v=\nu\Delta v$.
+This is a soft $c$-transform of the function $-h$, and Laplace's principle gives
+$(-h)^{\bar c,\epsilon}\to(-h)^{\bar c}$ as $\epsilon\to0$ under the usual
+compactness assumptions on near-minimizers. The same formula is also a
+heat-kernel formula. If
+
+```{math}
+G_\epsilon(z)=(2\pi\epsilon)^{-d/2}
+\exp\!\left(-\frac{\norm{z}^2}{2\epsilon}\right),
+```
+
+then
+
+```{math}
+:label: eq-soft-c-transform-gaussian-convolution-web
+(-h)^{\bar c,\epsilon}(x)
+= -\epsilon\log\big(G_\epsilon\ast e^{-h/\epsilon}\big)(x)
+-\frac{\epsilon d}{2}\log(2\pi\epsilon).
+```
+
+Thus a soft quadratic $c$-transform is a Gaussian convolution followed by a
+logarithm, up to an explicit additive constant independent of $x$. This is the
+bridge between soft-minimum operators, heat kernels and entropic transport
+potentials.
+
+(prop-soft-legendre-convolution)=
+:::{admonition} Proposition: Soft Quadratic $c$-Transform and Legendre Approximation
+:class: important
+Let $f:\RR^d\to\RR\cup\{+\infty\}$ be such that the integrals below are finite,
+and introduce the quadratic shift
+$\mathsf S f(y)=f(y)-\norm{y}^2/2$. For $\epsilon>0$, define the soft conjugate
+by applying the soft $\bar c$-transform to the shifted function:
+
+```{math}
+:label: eq-soft-legendre-definition-web
+f^{*,\epsilon}(p)
+=\frac12\norm{p}^2-\big(-\mathsf S f\big)^{\bar c,\epsilon}(p).
+```
+
+Then
+
+```{math}
+:label: eq-soft-legendre-logsumexp-web
+f^{*,\epsilon}(p)
+=\epsilon\log\int_{\RR^d}
+\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right)\,dy,
+```
+
+and equivalently
+
+```{math}
+:label: eq-soft-legendre-convolution-web
+f^{*,\epsilon}(p)
+=\frac12\norm{p}^2
++\epsilon\log\big(G_\epsilon\ast e^{-\mathsf S f/\epsilon}\big)(p)
++\frac{\epsilon d}{2}\log(2\pi\epsilon).
+```
+
+If, for instance, $f$ is proper, lower semicontinuous and superlinear, then
+$f^{*,\epsilon}(p)\to f^*(p)$ for every $p$ as $\epsilon\to0$.
+:::
+
+The proof is just completion of squares. Since
+
+```{math}
+\inf_y\left\{\mathsf S f(y)+\frac12\norm{p-y}^2\right\}
+=\frac12\norm{p}^2-f^*(p),
+```
+
+this shift turns the Legendre--Fenchel transform into a quadratic
+$\bar c$-transform. Replacing the hard transform by its soft version gives the
+definition of $f^{*,\epsilon}$. Expanding the square yields the log-sum-exp
+formula, the Gaussian-convolution expression follows from the normalized kernel
+$G_\epsilon$, and the convergence follows from Laplace's principle.
+
+:::{admonition} Fast Soft Legendre--Fenchel Transforms
+:class: tip
+On a periodic, or sufficiently padded, grid, the term
+$G_\epsilon\ast e^{-\mathsf S f/\epsilon}$ is a Gaussian convolution. It can
+therefore be evaluated in $O(N\log N)$ operations for $N$ grid samples using an
+FFT. This is a regularized approximation, not an exact hard discrete Legendre
+transform; exact discrete conjugation and lower-envelope algorithms exploit
+convex-analytic and computational-geometry structure instead
+{cite:p}`Lucet2010ComputationalConvexAnalysis,FelzenszwalbHuttenlocher2012DistanceTransforms`.
+
+The convolutional route is delicate when $\epsilon$ is small because exponentials
+can underflow or overflow. Practical implementations use shifts, log-domain
+evaluations, stabilized FFT convolutions, or the separability of the Gaussian
+kernel already used in grid Sinkhorn.
+:::
+
+The first figure below isolates the biconjugation effect.  It compares the hard
+lower convex envelope with finite-temperature soft biconjugates for both a simple
+and a more oscillatory non-convex profile.
+
+(fig:sinkhorn-soft-biconjugates)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-soft-biconjugates", width=760)
+```
+
+*Soft Legendre biconjugates as approximations of lower convex envelopes.  The dashed gray curve is the original non-convex function, the red curve is $f^{**}$, and the purple-to-blue curves show $(f^{*,\epsilon})^{*,\epsilon}$ for increasing $\epsilon$.*
+:::
+
+The nonlinear PDEs are linearized by the Hopf--Cole transform. With the same
+temperature normalization, $u_s=e^{-\phi_s/\epsilon}$ converts
+
+```{math}
+\partial_s\phi_s+\frac12\norm{\nabla\phi_s}^2=\frac{\epsilon}{2}\Delta\phi_s
+```
+
+into $\partial_su_s=(\epsilon/2)\Delta u_s$. Conversely,
+$\phi_s=-\epsilon\log u_s$ gives a Hamilton--Jacobi solution, while
+$v_s=\nabla\phi_s=-\epsilon\nabla\log u_s$ solves the gradient viscous Burgers
+equation $\partial_s v_s+(v_s\cdot\nabla)v_s=(\epsilon/2)\Delta v_s$. In one
+dimension this is the classical Cole--Hopf transform; in higher dimension this
+scalar reduction applies to irrotational velocity fields.
+The figure below keeps only the PDE content: the same initial potential is
+evolved through the Hopf--Cole transform for three values of the viscosity.
 
 (fig:sinkhorn-hopf-cole-transform)=
 :::{div}
@@ -1547,10 +1671,10 @@ $\partial_t v+(v\cdot\nabla)v=\nu\Delta v$.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-show_book_figure("sinkhorn-hopf-cole-transform")
+show_book_figure("sinkhorn-burgers-hopf-cole", width=760)
 ```
 
-*Hopf--Cole numerics in one dimension: Gaussian soft Hopf--Lax/Legendre smoothing, heat evolution of the transformed variable, and the recovered viscous Burgers velocity.*
+*Hopf--Cole numerics for viscous Hamilton--Jacobi and Burgers dynamics.  The upper row shows the potentials $\phi_t$, the lower row shows the velocities $v_t=\partial_x\phi_t$, and colors encode time from red to blue.*
 :::
 
 (sec-sinkhorn-other-regularizers)=

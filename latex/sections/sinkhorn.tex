@@ -5,35 +5,32 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Entropic Regularization: Sinkhorn Algorithm}
-\index{entropic!regularization}% strictindex
-\index{Sinkhorn!algorithm}% strictindex
+\index{entropic regularization}% strictindex
 \index{Sinkhorn algorithm}% strictindex
 \label{sec-sinkhorn}
 
 Entropic regularization makes optimal transport smooth, strictly convex and scalable. This chapter first explains the discrete KL-regularized problem, derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the same construction as a relative-entropy projection problem. It then records the general continuous formulation, explains the path-space Schr\"odinger problem behind the static coupling formulation, develops the dual soft-transform picture, and presents the main convex regularization variants and the debiased Sinkhorn divergence. The presentation connects the older matrix-scaling literature~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67} with modern entropic OT~\cite{CuturiSinkhorn,peyre2019computational}.
 \index{matrix!scaling}% strictindex
 \index{entropic!OT}% strictindex
-\index{path-space!formulation}% strictindex
+\index{path-space formulation}% strictindex
 \index{Schrodinger!problem}% strictindex
-\index{entropic!regularization}% strictindex
-\index{Sinkhorn!divergence}% strictindex
+\index{entropic regularization}% strictindex
+\index{Sinkhorn divergence}% strictindex
 \index{scaling!algorithm}% strictindex
 \index{relative entropy}% strictindex
-\index{matrix!scaling}% strictindex
 \index{soft!transform}% strictindex
 \index{Sinkhorn!scaling}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Entropic Regularization for Discrete Measures}
-\index{entropic!regularization}% strictindex
-\index{discrete!measure}% strictindex
+\index{entropic regularization}% strictindex
+\index{discrete measure}% strictindex
 \label{sec-entropic-discrete}
 
 Entropy turns a possibly non-unique linear program into a unique smooth problem. The price is bias, but the reward is differentiability and fast scaling algorithms.
 \index{scaling!algorithm}% strictindex
 
 The idea of the entropic regularization of optimal transport is to penalize concentrated couplings by adding the negative of the discrete Shannon--Boltzmann entropy.
-\index{entropic!regularization}% strictindex
 \index{Shannon-Boltzmann entropy}% strictindex
 
 \begin{defn}[Discrete Shannon--Boltzmann entropy]\label{def-discrete-shannon-boltzmann-entropy}
@@ -106,7 +103,7 @@ The effect of the entropy is to act as a barrier function for the positivity con
 \small barrier path
 \end{tabular}
 \caption{Entropic regularization and slack barriers. The first row shows the penalized objective $\dotp{c}{p}+\epsilon\sum_i p_i(\log p_i-1)$ on a triangular face of the transport polytope; color and level sets represent the regularized functional itself, not only the linear part. The second row shows the analogous entropy-on-slacks objective $\ell^\top z+\epsilon H(b-Az)$ on a two-dimensional polyhedron $Az\leq b$, with $H(s)=\sum_i s_i(\log s_i-1)$. Large $\epsilon$ selects an interior reference point, while small $\epsilon$ moves the minimizer toward a low-cost face.}
-\index{entropic!regularization}% strictindex
+\index{entropic regularization}% strictindex
 \index{transportation!polytope}% strictindex
 \label{fig:sinkhorn-entropy-lp-geometry}
 \end{figure}
@@ -131,7 +128,6 @@ For a generic linear program $\min_z \ell^\top z$ subject to $Az\leq b$, one can
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sinkhorn's Algorithm}
-\index{Sinkhorn!algorithm}% strictindex
 
 
 Sinkhorn's algorithm is alternating normalization of rows and columns. This section derives the scaling form of the optimizer and explains why each iteration only needs matrix-vector products.
@@ -139,7 +135,7 @@ Sinkhorn's algorithm is alternating normalization of rows and columns. This sect
 \index{Sinkhorn!scaling}% strictindex
 
 The underlying matrix-scaling iteration has a long history, including iterative proportional fitting and the work of Sinkhorn and Knopp~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67}. Its modern role in OT was transformed by Cuturi's entropic formulation~\cite{CuturiSinkhorn}: the algorithm became a practical large-scale tool for machine learning, and also changed the way OT is viewed in ML, from a mostly geometric distance to a differentiable computational primitive.
-\index{scaling!iterative proportional fitting}% strictindex
+\index{iterative proportional fitting}% strictindex
 \index{matrix!scaling}% strictindex
 
 The following proposition shows that the solution of~\eqref{eq-regularized-discr} has a specific form, which can be parameterized using $n+m$ variables. That parameterization is therefore essentially dual, in the sense that a coupling $\P$ in $\CouplingsD(\a,\b)$ has $nm$ variables but $n+m$ constraints.
@@ -149,7 +145,6 @@ The following proposition shows that the solution of~\eqref{eq-regularized-discr
 \index{entropic!OT}% strictindex
 $\P$ is the unique solution to~\eqref{eq-regularized-discr} if and only if there exists $(\uD,\vD) \in \RR_+^n \times \RR_+^m$ such that
 \eql{\label{eq-scaling-form}
-\index{scaling!form}% strictindex
 	\foralls (i,j) \in \range{n} \times \range{m}, \quad \P_{i,j} = \uD_i \K_{i,j} \vD_j
 		\qwhereq \K_{i,j} \eqdef e^{-\frac{\C_{i,j}}{\epsilon}},
 }
@@ -198,14 +193,14 @@ where $\odot$ corresponds to the entry-wise multiplication of vectors. This prob
 \index{matrix!scaling}% strictindex
 
 The problem of normalizing a positive matrix $\K$ has a long history, from iterative proportional fitting in statistics and economics~\cite{kruithof,yule1912methods,Galichon-Entropic} to modern matrix balancing algorithms~\cite{ReviewSinkhorn,cohen2017matrix}.
-\index{scaling!iterative proportional fitting}% strictindex
+\index{iterative proportional fitting}% strictindex
 %
 The problem of normalizing a positive matrix $\K$ by diagonal scaling is well known, in particular when $n=m$ and $\a$ and $\b$ are uniform. This corresponds to diagonal scaling toward bistochasticity, which is a very old problem. The previous result shows that there is a unique such scaled matrix $\P$, thanks to the strong convexity of the regularized problem. The remaining question is how to compute this scaled matrix in practice. If some entries of $\K$ vanish (equivalently, if the cost matrix $\C$ can have infinite values), additional support conditions are needed; here we focus on the strictly positive case.
 \index{cost matrix}% strictindex
 
 
 An intuitive way to try to solve these equations is to solve them iteratively, by modifying first $\uD$ so that it satisfies the left-hand side of Equation~\eqref{eq-dualsinkhorn-constraints2} and then $\vD$ to satisfy its right-hand side. These two updates define Sinkhorn's algorithm
-\index{Sinkhorn!algorithm}% strictindex
+\index{Sinkhorn algorithm}% strictindex
 \eql{\label{eq-sinkhorn}
 	\itt{\uD} \eqdef \frac{\a}{\K \it{\vD}}
 	\qandq
@@ -280,8 +275,6 @@ The same alternating projection mechanism is clearer on a dense one-dimensional 
 \small after 12 cycles
 \end{tabular}
 \caption{Dense Sinkhorn scaling for one-dimensional Gaussian-mixture marginals. The grayscale matrix is the current coupling, with a thin box delimiting only the matrix and not the side marginal plots. The red and blue side curves are the prescribed source and target marginals, while the violet side curves are the current row and column sums. A row scaling makes the violet curve coincide with the red source marginal, a column scaling makes it coincide with the blue target marginal, and the alternation rapidly stabilizes both sides.}
-\index{scaling!row}% strictindex
-\index{scaling!column}% strictindex
 \index{Sinkhorn!scaling}% strictindex
 \index{Gaussian mixture}% strictindex
 \label{fig:sinkhorn-continuous-marginal-scaling}
@@ -337,11 +330,10 @@ Complexity bounds for Sinkhorn and comparisons with accelerated first-order meth
 A chief computational advantage of Sinkhorn's algorithm, besides its simplicity, is that the only expensive step is multiplication by the Gibbs kernel. Its complexity therefore scales like $Cnm$, where $C$ is the number of Sinkhorn iterations. Chapter~\ref{sec-convergence-dual} gives a more precise convergence statement: for a fixed regularization strength $\epsilon$, the entropic dual gap has an $O(1/k)$ bound with constants proportional to $1/\epsilon$, while Hilbert-metric arguments give eventual linear convergence when the Gibbs kernel is uniformly positive. To approximate the unregularized OT value to accuracy $\delta$, one must also balance the entropic bias, which is typically $O(\epsilon)$ in finite dimension. Choosing $\epsilon$ proportional to $\delta$ and solving the entropic problem to accuracy $O(\delta)$ leads to the familiar iteration scaling of order $1/\delta^2$ for the unregularized value, up to logarithmic and cost-range factors~\cite{altschuler2017near,pmlr-v80-dvurechensky18a}.
 \index{dual!gap}% strictindex
 \index{Sinkhorn!iteration}% strictindex
-\index{Sinkhorn!algorithm}% strictindex
+\index{Sinkhorn algorithm}% strictindex
 \index{linear!convergence}% strictindex
 \index{entropic!bias}% strictindex
 \index{Gibbs!kernel}% strictindex
-\index{dual!gap}% strictindex
 
 \begin{figure}[H]
 \centering
@@ -381,9 +373,9 @@ The second crucial aspect of Sinkhorn is that matrix-vector multiplication strea
 	Multiplication by $K$ can therefore be applied by successively multiplying along each coordinate direction, equivalently by applying one-dimensional Gaussian kernel operators along the axes. On a periodic or sufficiently padded uniform grid these are literal discrete convolutions. A direct dense one-dimensional multiplication costs $O(q^2)$ on each of the $q^{d-1}$ coordinate lines, and this is repeated for $d$ axes. Hence one Sinkhorn half-step costs
 \index{Sinkhorn!half-step}% strictindex
 \index{kernel!Gaussian}% strictindex
-	\[
+	\begin{equation}\label{eq-separable-gaussian-half-step}
 		O(d\,q^{d+1})=O(d\,N^{1+1/d})
-	\]
+	\end{equation}
 	instead of $O(N^2)$. With FFT-based or truncated Gaussian convolutions, the same separability can be pushed further, but the simple tensor-product estimate already explains why grid-based Sinkhorn can scale much better than a generic dense coupling.
 \end{rem}
 
@@ -419,9 +411,8 @@ For the reference matrix $\Q=\ones_{n \times m}$, one has
 }
 On fixed-mass couplings the last two terms are constant, so KL regularization with reference $\ones_{n\times m}$ is equivalent to subtracting Shannon--Boltzmann entropy.
 $\KLD$ is a particular instance of both a $\phi$-divergence (as defined in Section~\ref{sec-phi-div}) and a Bregman divergence; up to standard affine rescalings, it is the canonical overlap between these two families. This special property is at the heart of the fact that this regularization leads to elegant algorithms and a tractable mathematical analysis.
-\index{Bregman!divergence}% strictindex
-\index{phi-divergence}% strictindex
 \index{Bregman divergence}% strictindex
+\index{phi-divergence}% strictindex
 
 \begin{prop}[Relative entropy is distance-like]\label{prop-kl-distance-like}
 \index{relative entropy}% strictindex
@@ -454,8 +445,7 @@ For instance, one can use as reference measure the tensor product $\a \otimes \b
 		\dotp{\P}{\C} + \epsilon \KLD(\P|\a \otimes \b).
 }
 This normalization will matter again for unbalanced OT, where changing the reference measure is no longer merely a harmless notational choice.
-\index{reference!measure}% strictindex
-\index{unbalanced!OT}% strictindex
+\index{unbalanced OT}% strictindex
 
 For the balanced problem with fixed positive marginals, however, the choice of tensor-product reference does not affect the selected coupling: it only adds a constant to the objective, as shown in the following proposition. In particular,~\eqref{eq-regularized-discr-rescaled} and~\eqref{eq-regularized-discr} have the same unique solution.
 
@@ -615,16 +605,16 @@ For fixed balanced marginals, the specific product reference in the entropy only
 %
 The path-space meaning of this static problem is developed next. The main point is that a noisy reference dynamics first defines a probability law on trajectories; after optimizing out the conditional law of the path given its endpoints, only the endpoint coupling remains.
 \index{conditional law}% strictindex
-\index{path-space!formulation}% strictindex
+\index{path-space formulation}% strictindex
 \index{endpoint coupling}% strictindex
-\index{path!space}% strictindex
+\index{path space}% strictindex
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Path-Space Schr\"odinger Problem}
-\index{path-space!formulation}% strictindex
+\index{path-space formulation}% strictindex
 \index{Schrodinger!problem}% strictindex
 \index{Schrodinger bridge}% strictindex
 \label{sec-path-space-schrodinger}
@@ -632,8 +622,6 @@ The path-space meaning of this static problem is developed next. The main point 
 Schr\"odinger's reciprocal problem is naturally posed on paths rather than on endpoint pairs. The Sinkhorn problem appears after the path law is reduced to its two endpoint marginals.
 
 \paragraph{Unregularized path-space transport.}
-\index{path-space!formulation}% strictindex
-\index{path-space!transport}% strictindex
 \index{path-space transport}% strictindex
 
 Throughout this section, both endpoint measures live on the same state space $\X$; this is the setting relevant to dynamic transport and Brownian bridges. The static coupling formulation above also makes sense between two different spaces $\X$ and $\Y$.
@@ -641,7 +629,7 @@ Throughout this section, both endpoint measures live on the same state space $\X
 \index{Brownian bridge}% strictindex
 %
 Let $\Om=C([0,1];\X)$ be a path space and denote by
-\index{path!space}% strictindex
+\index{path space}% strictindex
 \[
 	e_t:\Om\to\X,\qquad e_t(\omega)=\omega_t
 \]
@@ -652,8 +640,8 @@ the evaluation maps. A probability $M\in\Pp(\Om)$ is a law of random trajectorie
 	(e_1)_\sharp M=\be
 \]
 means that the random path starts with law $\al$ and ends with law $\be$. Given a path action $\Aa:\Om\to[0,+\infty]$, the unregularized path-space problem is
-\index{path-space!formulation}% strictindex
-\index{path!space}% strictindex
+\index{path-space formulation}% strictindex
+\index{path space}% strictindex
 \begin{equation}\label{eq-path-space-ot}
 	\inf_{M\in\Pp(\Om)}
 	\enscond{
@@ -673,8 +661,8 @@ For the quadratic Wasserstein geometry on $\RR^d$, one takes
 \]
 This is the Lagrangian version of the Benamou--Brenier formulation recalled in the path-space formulation of Section~\ref{rem-bb-path-space}.
 \index{Benamou-Brenier}% strictindex
-\index{Benamou-Brenier!formulation}% strictindex
-\index{path!space}% strictindex
+\index{Benamou-Brenier formulation}% strictindex
+\index{path space}% strictindex
 
 The endpoint cost induced by the action is
 \begin{equation}\label{eq-path-action-endpoint-cost}
@@ -687,12 +675,12 @@ For the quadratic action above, the minimizing path is the straight segment
 $\omega_t=(1-t)x+ty$, and $c_\Aa(x,y)=\norm{x-y}^2$.
 
 \begin{prop}[Endpoint reduction of path-space transport]\label{prop-path-space-ot-endpoint-reduction}
-\index{path-space!formulation}% strictindex
-\index{path-space!transport}% strictindex
+\index{path-space formulation}% strictindex
+\index{path-space transport}% strictindex
 	Assume that minimizing paths in~\eqref{eq-path-action-endpoint-cost} can be selected measurably, or more generally that the infimum can be approximated by measurable selections. Then~\eqref{eq-path-space-ot} has the same value as the Kantorovich problem
 \index{measurable selection}% strictindex
 \index{Kantorovich!problem}% strictindex
-\index{path!space}% strictindex
+\index{path space}% strictindex
 	\[
 		\inf_{\pi\in\Couplings(\al,\be)}
 		\int_{\X\times\X} c_\Aa(x,y)\,\d\pi(x,y).
@@ -716,8 +704,8 @@ $\omega_t=(1-t)x+ty$, and $c_\Aa(x,y)=\norm{x-y}^2$.
 	\]
 	This proves that the path-space value is at least the Kantorovich value. Conversely, given a coupling $\pi$ and a measurable selection $(x,y)\mapsto\omega^{x,y}$ with action arbitrarily close to $c_\Aa(x,y)$, the mixture of Dirac path laws
 \index{measurable selection}% strictindex
-\index{path-space!formulation}% strictindex
-\index{path!space}% strictindex
+\index{path-space formulation}% strictindex
+\index{path space}% strictindex
 	\[
 		M=\int\delta_{\omega^{x,y}}\,\d\pi(x,y)
 	\]
@@ -729,13 +717,12 @@ Thus the classical coupling problem can be read as a path problem where the endp
 \index{Schrodinger bridge}% strictindex
 
 \paragraph{Entropic path-space problem.}
-\index{path-space!formulation}% strictindex
-\index{path-space!problem}% strictindex
+\index{path-space formulation}% strictindex
+\index{path-space problem}% strictindex
 
 Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian or Langevin dynamics at noise level $\epsilon$. Schr\"odinger's dynamic problem is the entropy projection
 \index{Langevin dynamics}% strictindex
 \begin{equation}\label{eq-schrodinger-path-space}
-\index{path-space!formulation}% strictindex
 	\mathrm{SB}_\epsilon(\al,\be)
 	\eqdef
 	\inf_{M\in\Pp(\Om)}
@@ -746,7 +733,7 @@ Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian o
 	}.
 \end{equation}
 This is the dynamic Schr\"odinger bridge problem. It asks for the most likely path law, relative to the prior dynamics $\Rr^\epsilon$, among all path laws matching the observed endpoint marginals. This viewpoint goes back to Schr\"odinger's reciprocal problem~\cite{Schroedinger31} and is surveyed in modern OT language in~\cite{leonard2012schrodinger,LeonardSchroedinger}; stochastic-control formulations are developed in~\cite{chen2016relation}.
-\index{Schrodinger!bridge}% strictindex
+\index{Schrodinger bridge}% strictindex
 
 \paragraph{Stochastic-control interpretation.}
 \index{stochastic control}% strictindex
@@ -788,12 +775,12 @@ namely as the least energetic change of drift that steers the Brownian prior fro
 	u_t^\star(x)=\epsilon\nabla\log h_t(x).
 \]
 Equivalently, with the value potential $\phi_t=\epsilon\log h_t$, one has $u_t^\star=\nabla\phi_t$ and $\phi_t$ solves the viscous Hamilton--Jacobi equation $\partial_t\phi_t+\frac12\norm{\nabla\phi_t}^2+\frac{\epsilon}{2}\Delta\phi_t=0$. This control viewpoint and the endpoint-coupling reduction below are two faces of the same object: the controlled diffusion describes the whole path law, whereas the static Sinkhorn coupling records only its two endpoints.
-\index{Schrodinger!bridge}% strictindex
+\index{Schrodinger bridge}% strictindex
 \index{bridge!Brownian}% strictindex
 \index{Hamilton-Jacobi equation}% strictindex
 
 \paragraph{Viscous Benamou--Brenier formulations.}
-\index{viscous Benamou-Brenier formulation}% strictindex
+\index{viscous Benamou-Brenier}% strictindex
 The Schr\"odinger interpolation also admits dynamic optimal-control descriptions, which are viscous analogues of the Benamou--Brenier formula. Write $\sigma$ for the diffusion normalization in this paragraph; it is independent of the entropic temperature $\epsilon$ used elsewhere. Formally, for smooth positive densities and with the convention
 \index{Schrodinger!interpolation}% strictindex
 \index{Benamou-Brenier}% strictindex
@@ -848,7 +835,7 @@ Since the entropy term depends only on the prescribed endpoints, the same minimi
 \]
 Thus the Schr\"odinger bridge is a least-action interpolation with both transport kinetic energy and a Fisher-information penalty. If one instead writes the viscous equation with diffusion coefficient $\sigma\Delta\rho_t$, the same formula is obtained after replacing $\sigma$ above by $2\sigma$, so the Fisher coefficient becomes $\sigma^2/2$.
 \index{Fisher information}% strictindex
-\index{Schrodinger!bridge}% strictindex
+\index{Schrodinger bridge}% strictindex
 
 The reduction to endpoint couplings follows from disintegration. We write
 \index{disintegration}% strictindex
@@ -890,8 +877,8 @@ where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,
 		\int \Rr^{\epsilon,x,y}\,\d\pi(x,y).
 	\end{equation}
 	Consequently, if $\pi^\star$ solves~\eqref{eq-schrodinger-static-endpoint}, then $M^{\pi^\star}$ solves the path-space problem~\eqref{eq-schrodinger-path-space}.
-\index{path-space!formulation}% strictindex
-\index{path!space}% strictindex
+\index{path-space formulation}% strictindex
+\index{path space}% strictindex
 \end{prop}
 
 \begin{proof}
@@ -907,14 +894,14 @@ where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,
 			\,\d\pi(x,y).
 	\end{equation}
 	The second term is nonnegative and vanishes exactly when $M^{x,y}=\Rr^{\epsilon,x,y}$ for $\pi$-almost every $(x,y)$. Thus, once an endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{01})$ is fixed, the best path law is~\eqref{eq-schrodinger-bridge-mixture}, and the remaining minimization is precisely~\eqref{eq-schrodinger-static-endpoint}. If no such endpoint coupling exists, both sides are $+\infty$.
-\index{Schrodinger!bridge}% strictindex
+\index{Schrodinger bridge}% strictindex
 \index{endpoint coupling}% strictindex
 \end{proof}
 
 This proposition makes the connection between the dynamic and static views precise. The static Schr\"odinger problem stores only the endpoints of the optimal random trajectories; the full bridge is recovered by filling each transported endpoint pair with the corresponding reference bridge. In the zero-noise limit, these bridges concentrate on least-action paths and one recovers the unregularized path-space transport problem, hence the Monge--Kantorovich problem~\cite{leonard2012schrodinger}.
 \index{Kantorovich!problem}% strictindex
-\index{path-space!formulation}% strictindex
-\index{path-space!transport}% strictindex
+\index{path-space formulation}% strictindex
+\index{path-space transport}% strictindex
 \index{Schrodinger!problem}% strictindex
 
 \paragraph{Brownian bridges and Sinkhorn couplings.}
@@ -952,18 +939,15 @@ where the constant does not depend on $\pi$. Hence~\eqref{eq-schrodinger-static-
 	\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).
 \]
 In words, Sinkhorn computes which endpoints should be paired; the path-space Schr\"odinger bridge then connects each paired endpoint by a Brownian bridge rather than by a deterministic straight line.
-\index{path-space!formulation}% strictindex
-\index{Schrodinger!bridge}% strictindex
+\index{path-space formulation}% strictindex
+\index{Schrodinger bridge}% strictindex
 \index{bridge!Brownian}% strictindex
-\index{path!space}% strictindex
+\index{path space}% strictindex
 
 Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path lifting on a small discrete example. The red atoms form a compact source cloud and the blue atoms surround them. The first panel uses the unregularized OT coupling and zero bridge noise; the next panels increase $\epsilon$, which simultaneously softens the endpoint coupling and amplifies the Brownian fluctuations between paired endpoints.
-\index{path-space!formulation}% strictindex
 \index{endpoint coupling}% strictindex
 
 \begin{alg}[Endpoint-to-path Schr\"odinger lift]\label{alg:schrodinger-endpoint-path-lift}
-\index{Schrodinger!bridge}% strictindex
-\index{bridge!Brownian}% strictindex
 \textbf{Input:} Endpoint laws $\alpha,\beta$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
 
 \textbf{Output:} Schr\"odinger path law $M_\epsilon^\star$.
@@ -986,7 +970,7 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 \setlength{\tabcolsep}{2pt}
 \begin{tabular}{@{}cccc@{}}
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges/eps-0.pdf} &
-\index{path!space}% strictindex
+\index{path space}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges/eps-0p035.pdf} &
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges/eps-0p10.pdf} &
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges/eps-0p28.pdf} \\[-.1em]
@@ -1010,13 +994,12 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 	It is nonnegative and vanishes if and only if $X$ and $Y$ are independent.
 \end{defn}
 With this terminology, the entropic problem~\eqref{eq-entropic-generic} is equivalent to
-\index{mutual information}% strictindex
 \[
 	\inf_{X\sim\al,\;Y\sim\be}
 	\EE\bigl(c(X,Y)\bigr)+\epsilon\Ii(X,Y).
 \]
 Large $\epsilon$ therefore favors nearly independent endpoints, while small $\epsilon$ suppresses endpoint randomness and recovers an optimal Monge--Kantorovich coupling in the limit. When the unregularized quadratic problem has a Brenier map, this limiting coupling is deterministic.
-\index{Brenier!map}% strictindex
+\index{Brenier map}% strictindex
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1026,7 +1009,6 @@ Large $\epsilon$ therefore favors nearly independent endpoints, while small $\ep
 \index{Sinkhorn!dual}% strictindex
 
 The dual point of view replaces couplings by potentials and soft $c$-transforms. It is the right formulation for stabilized implementations and differentiation.
-\index{soft!c-transform}% strictindex
 \index{soft c-transform}% strictindex
 
 %%%
@@ -1092,7 +1074,6 @@ We introduce Lagrange multipliers and consider
 
 %%%
 \paragraph{Discrete soft $c$-transforms.}
-\index{soft!c-transform}% strictindex
 \index{soft c-transform}% strictindex
 
 Since the dual problem~\eqref{eq-dual-formulation} is smooth and concave, one can perform alternating block maximization. For a fixed $\gD$, maximizing with respect to $\fD$ leads to the following equation after zeroing the derivative with respect to $\fD$:
@@ -1110,7 +1091,7 @@ The log-sum-exp form is best read as a smoothed minimum. This gives the entropic
 
 \begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
 \index{soft!minimum}% strictindex
-\index{soft!c-transform}% strictindex
+\index{soft c-transform}% strictindex
 \index{c-transform}% strictindex
 		For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is
 		\[
@@ -1127,7 +1108,7 @@ The log-sum-exp form is best read as a smoothed minimum. This gives the entropic
 \end{defn}
 Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These iterations, however, become unstable for small $\epsilon$. To apply the algorithm in this regime, one needs to stabilize it using the celebrated log-sum-exp trick. This follows from noticing that, similarly to the minimum operator, one has
 \index{log-sum-exp}% strictindex
-\index{Sinkhorn!algorithm}% strictindex
+\index{Sinkhorn algorithm}% strictindex
 \eq{
 	{\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}
 }
@@ -1163,15 +1144,13 @@ and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized ve
 \begin{tabular}{@{}cccc@{}}
 \small hard transform & \small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ \\[-.15em]
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/hard.pdf} &
-\index{soft!c-transform}% strictindex
+\index{soft c-transform}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p55.pdf} &
 \index{c-transform}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p14.pdf} &
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p035.pdf}
 \end{tabular}
 \caption{Soft $c$-transforms for decreasing temperatures. The hard transform is the lower envelope of shifted cost functions, while a positive $\epsilon$ replaces the pointwise minimum by a log-sum-exp soft minimum. As $\epsilon$ decreases, the soft transform sharpens and approaches the non-smooth hard envelope.}
-\index{soft!c-transform}% strictindex
-\index{c-transform}% strictindex
 \index{log-sum-exp}% strictindex
 \index{soft!transform}% strictindex
 \index{soft!minimum}% strictindex
@@ -1181,7 +1160,6 @@ and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized ve
 %%%
 \paragraph{Continuous dual and soft-transforms.}
 \index{continuous!dual}% strictindex
-\index{soft!transform}% strictindex
 
 For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
 \eql{\label{eq-dual-sinkh-cont}
@@ -1210,7 +1188,7 @@ This is the smooth counterpart of the hard feasibility constraint $f\oplus g\leq
 The corresponding soft $c$-transforms are the exact block maximizers of this dual objective. They are the continuous log-integral counterparts of Definition~\ref{def-discrete-soft-c-transform}.
 
 \begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
-\index{soft!c-transform}% strictindex
+\index{soft c-transform}% strictindex
 \index{soft!transform}% strictindex
 	For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
 	\begin{align}
@@ -1246,7 +1224,7 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} a
 
 \begin{proof}
 	Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
-\index{soft!c-transform}% strictindex
+\index{soft c-transform}% strictindex
 \index{soft!transform}% strictindex
 	\[
 		\norm{f}_V+\norm{g}_V
@@ -1254,7 +1232,6 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} a
 		2(\sup c-\inf c).
 	\]
 	Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
-\index{soft!transform}% strictindex
 	\[
 		\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')}
 		\leq
@@ -1268,21 +1245,20 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} a
 		H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)
 	\]
 	on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
-\index{strict!convexity}% strictindex
 \end{proof}
 
 \begin{rem}[Convexity properties of soft transforms]\label{rem-soft-transform-convexity}
 \index{soft!transform}% strictindex
 	The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
 \index{log-sum-exp}% strictindex
-\index{cost!quadratic}% strictindex
+\index{quadratic cost}% strictindex
 \index{c-concavity}% strictindex
 \end{rem}
 
 \paragraph{Neural dual solvers.}
 \index{neural!dual solver}% strictindex
 \index{neural!Sinkhorn solver}% strictindex
-\index{input convex neural network}% strictindex
+\index{input-convex neural network}% strictindex
 \index{convex!neural network}% strictindex
 The convex-potential structure of the preceding remark suggests a sample-based alternative to evaluating soft transforms on a grid or on all pairs of samples. For the bilinear cost \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: writing \(\Phi=-f\) and \(\Psi=-g\), the zero-temperature constraint \(f(x)+g(y)\leq-\dotp{x}{y}\) becomes the Fenchel-type inequality
 \[
@@ -1292,10 +1268,9 @@ For the quadratic cost this is the same statement after subtracting the quadrati
 
 A useful parameterization is given by input-convex neural networks (ICNNs)~\cite{amos2017input,makkuva2020optimal}. The construction mirrors elementary closure rules for convex functions: nonnegative linear combinations preserve convexity, composition with a convex nondecreasing scalar nonlinearity preserves convexity, and the ReLU \(r\mapsto\max(r,0)\) is both convex and nondecreasing. Thus a feed-forward network with nonnegative hidden-to-hidden weights and affine skip connections from the input defines a convex function of its input. This gives a flexible cone of convex trial potentials, although the finite-dimensional optimization over the network weights is not a convex optimization problem. Universal-approximation statements must also be read with this distinction in mind: max-affine functions are dense among continuous convex functions on compact convex sets, and ICNN-type architectures are designed to inherit this approximation principle. General ReLU universal approximation results, such as the width \(d+1\) theorem on compact subsets of \(\RR^d\)~\cite{hanin2019universal}, provide useful background but do not by themselves enforce convexity. In practice, neural dual solvers trade exact Sinkhorn scaling for amortized stochastic optimization of the dual potentials.
 \index{neural!dual solver}% strictindex
-\index{Fenchel!inequality}% strictindex
-\index{input convex neural network}% strictindex
-\index{convex!potential}% strictindex
+\index{Fenchel inequality}% strictindex
 \index{input-convex neural network}% strictindex
+\index{convex!potential}% strictindex
 
 \begin{rem}[Gaussian marginals]\label{rem-sinkhorn-gaussian-marginals}
 \index{Gaussian!marginals}% strictindex
@@ -1312,14 +1287,12 @@ A useful parameterization is given by input-convex neural networks (ICNNs)~\cite
 \section{Marginal-Dependent Problems}
 \index{marginal-dependent problem}% strictindex
 \label{sec-sinkhorn-marginal-dependent}
-\index{marginal-dependent problem}% strictindex
-\index{generalized!Sinkhorn algorithm}% strictindex
+\index{generalized Sinkhorn algorithm}% strictindex
 
 The balanced Sinkhorn problem fixes both marginals exactly. Many nearby models instead optimize the transported marginals, but only through penalties or constraints applied separately to each marginal. The useful point, emphasized by the generalized scaling algorithms of Chizat, Peyr\'e, Schmitzer and Vialard~\cite{2016-chizat-sinkhorn}, is that entropic OT remains a diagonal-scaling problem whenever these marginal terms admit simple KL-proximal maps.
-\index{KL!proximal operator}% strictindex
-\index{Sinkhorn!scaling}% strictindex
-\index{unbalanced!OT}% strictindex
 \index{KL proximal operator}% strictindex
+\index{Sinkhorn!scaling}% strictindex
+\index{unbalanced OT}% strictindex
 
 Let $\mathcal F$ and $\mathcal G$ be proper convex lower semicontinuous functionals on finite nonnegative measures on $\Xx$ and $\Yy$. The unregularized marginal-dependent transport problem is
 \index{marginal-dependent problem}% strictindex
@@ -1349,7 +1322,7 @@ where $\al$ and $\be$ are reference measures. In this subsection, when the total
 	\int \bigl(\rho\log\rho-\rho+1\bigr)\d\lambda
 \]
 with value $+\infty$ when $\pi^\perp\ne0$. On probability couplings this coincides with the usual relative entropy.
-\index{marginal!penalty}% strictindex
+\index{marginal penalty}% strictindex
 \index{relative entropy}% strictindex
 \index{Kullback-Leibler divergence}% strictindex
 
@@ -1450,7 +1423,7 @@ For the scaling form, fix $\vD>0$, set $\widetilde{\K}=\K\diag(\vD)$ and $z=\wid
 \]
 Thus exact optimization of this block is equivalent to minimizing $\mathsf F(r)+\epsilon\KLD(r|z)$ over $r\geq0$, hence $r=\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ and $\uD=r\oslash z$. The column update is identical with $w=\transp{\K}\uD$.
 \end{proof}
-\index{Fenchel!duality}% strictindex
+\index{Fenchel duality}% strictindex
 \index{dual!Sinkhorn}% strictindex
 \index{KL!proximal map}% strictindex
 \index{dual!ascent}% strictindex
@@ -1459,7 +1432,7 @@ Thus exact optimization of this block is equivalent to minimizing $\mathsf F(r)+
 When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two dual terms are $\dotp{\fD}{\a}+\dotp{\gD}{\b}$, and one recovers the usual entropic dual~\eqref{eq-dual-sinkhorn-objective}. The classical Sinkhorn update is the special case in which the KL proximal maps return the prescribed marginals $\a$ and $\b$.
 
 \begin{alg}[Generalized Sinkhorn for marginal penalties]\label{alg-generalized-sinkhorn-marginal-penalties}
-\index{generalized!Sinkhorn algorithm}% strictindex
+\index{generalized Sinkhorn algorithm}% strictindex
 \textbf{Input:} Reference weights $\a,\b$, cost $\C$, convex marginal penalties $\mathsf F,\mathsf G$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Coupling $\P$ and optimized marginals $r=\P\ones_m$, $s=\transp{\P}\ones_n$.
@@ -1491,7 +1464,7 @@ When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two du
 \end{alg}
 
 The usefulness of this formulation is that many KL-proximal maps are explicit.
-\index{KL!proximal operator}% strictindex
+\index{KL proximal operator}% strictindex
 \index{KL!proximal map}% strictindex
 \begin{itemize}
 	\item \textbf{Hard marginal constraint.} If $\mathsf F=\iota_{\{\a\}}$, then $\prox_{\mathsf F/\epsilon}^{\KLD}(z)=\a$.
@@ -1516,32 +1489,29 @@ The usefulness of this formulation is that many KL-proximal maps are explicit.
 	\item \textbf{Fixed total mass.} If $\mathsf F=\iota_{\{\dotp{r}{\ones}=m\}}$, then $\prox_{\mathsf F/\epsilon}^{\KLD}(z)=m z/\dotp{z}{\ones}$.
 \end{itemize}
 These examples explain why generalized Sinkhorn algorithms remain practical: the expensive operation is still multiplication by $\K$ or $\transp{\K}$, while the model-specific part is a low-dimensional KL-proximal update on a marginal.
-\index{KL!proximal operator}% strictindex
-\index{total variation!marginal penalty}% strictindex
+\index{KL proximal operator}% strictindex
+\index{marginal penalty}% strictindex
 \index{unbalanced!Sinkhorn}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Heat Kernels and Hopf--Cole Transforms}
-\index{heat!kernel}% strictindex
+\index{heat kernel}% strictindex
 \index{Hopf-Cole transform}% strictindex
 \index{geodesics in heat}% strictindex
-\index{heat kernel}% strictindex
 \label{sec-sinkhorn-heat-hopf-cole}
 
 The Gaussian kernel used by Sinkhorn is also the Euclidean heat kernel. This viewpoint clarifies when entropic OT admits fast grid and surface implementations, and it places soft minima and Hopf--Cole transforms in the same heat-kernel calculus.
 
 \paragraph{Geodesics in heat.}
-\index{geodesics in heat}% strictindex
 \index{Varadhan formula}% strictindex
 \index{Laplace-Beltrami operator}% strictindex
 
 On $\RR^d$, the heat kernel for $\partial_t u=\Delta u$ is
-\index{heat!kernel}% strictindex
+\index{heat kernel}% strictindex
 \[
 	h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
 \]
 Up to normalization, the Sinkhorn Gibbs kernel for the quadratic cost is therefore a Gaussian heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct construction uses the resolvent of the positive Laplacian. On the line, the kernel of $(I-\tau\Delta)^{-1}$ is exactly proportional to $\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa-type smoothing, while the heat semigroup gives the Gaussian kernel $\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or a surface $M$, the Euclidean distance is replaced by the geodesic distance $d_M$, and Varadhan's formula gives
-\index{heat kernel}% strictindex
 \[
 	-4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
 	\qquad (t\downarrow0).
@@ -1553,7 +1523,7 @@ This is the analytical basis of geodesics-in-heat methods~\cite{varadhan-1967,Cr
 	\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
 \]
 Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a Laplace/Yukawa smoothing, while repeated resolvent steps approximate the Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than dense Gaussian matrices. This is attractive computationally, but the small-scale limit is delicate: the smoothing length, of order $\sqrt t$ for heat and $\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this length is sent to zero faster than the grid spacing, metrication artifacts and inconsistent discretizations can dominate the intended geodesic limit.
-\index{heat!kernel}% strictindex
+\index{heat kernel}% strictindex
 \index{mesh size}% strictindex
 \index{discrete!Laplacian}% strictindex
 \index{resolvent}% strictindex
@@ -1572,75 +1542,160 @@ Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a Laplace/Yukawa
 \small medium $\tau$ &
 \small larger $\tau$
 \end{tabular}
-\caption{Geodesics-in-heat approximation of the distance to three red source points on a two-dimensional grid. The first panel shows the exact Euclidean distance. The other panels diffuse each source by one backward-Euler resolvent step with Neumann boundary conditions, recover a distance by the normalized-gradient Poisson solve, and take the lower envelope over the three sources. Each panel is robustly normalized to emphasize the geometry of its level sets. Increasing the resolvent scale $\tau$ stabilizes the sparse linear solves but rounds and merges small-scale distance features.}
+\caption{Geodesics-in-heat approximation of the distance to a dense red non-convex source curve on a two-dimensional grid. The first panel shows the exact Euclidean distance to the curve. The other panels diffuse a narrow band around the same curve by one backward-Euler resolvent step with Neumann boundary conditions, then recover an approximate distance by the normalized-gradient Poisson solve. Each panel is robustly normalized, and the contour values are chosen from quantiles of the displayed field so that level lines are distributed evenly across the image. Increasing the resolvent scale $\tau$ stabilizes the sparse linear solves but progressively rounds the non-convex geometry of the level sets.}
 \index{geodesics in heat}% strictindex
 \index{Poisson equation}% strictindex
 \label{fig:sinkhorn-geodesics-in-heat}
 \end{figure}
+
 
 \paragraph{Soft Hopf--Lax and Hopf--Cole.}
 \index{Hopf-Lax formula}% strictindex
 \index{Hopf-Cole transform}% strictindex
 \index{log-sum-exp}% strictindex
 
-The same heat kernel also explains why log-sum-exp is the entropic version of a hard transform. For $t>0$, the quadratic Hopf--Lax transform is
+The Hopf--Lax formula is the Hamilton--Jacobi incarnation of the hard $c$-transform. We use the normalized quadratic cost
 \[
-	Q_t f(x)=\inf_y \left\{ f(y)+\frac{\norm{x-y}^2}{2t}\right\}.
+	c(x,y)=\frac12\norm{x-y}^2,
 \]
-After completing the square, this is equivalent to the Legendre--Fenchel transform
+so that the Hopf--Lax operator applied to an initial datum $h$ is precisely
 \[
-	Q_t f(x)=\frac{\norm{x}^2}{2t}-
-	\left(f+\frac{\norm{\cdot}^2}{2t}\right)^*\!\left(\frac{x}{t}\right).
+	(-h)^{\bar c}(x)=\inf_y\left\{h(y)+\frac12\norm{x-y}^2\right\},
 \]
-Its entropic version replaces the supremum in this transform by a log-sum-exp, or equivalently by a Gaussian convolution at heat time $\epsilon t/2$:
-\[
-	Q_t^\epsilon f(x)
+where the sign only reflects the convention of Definition~\ref{def-c-transform}. This is the usual Hopf--Lax formula for the Hamiltonian $\norm{p}^2/2$~\cite{evans2010pde,Villani09}; other quadratic scalings amount to multiplying the cost by a constant. In the present entropic setting, the parameter of interest is instead the temperature $\epsilon$.
+
+The soft version replaces the infimum by a log-sum-exp soft minimum. In the notation of Definition~\ref{def-continuous-soft-c-transform}, and using Lebesgue measure on $\RR^d$,
+\begin{equation}\label{eq-soft-hopf-lax-heat}
+	(-h)^{\bar c,\epsilon}(x)
 	=
 	-\epsilon\log
 	\int
 	\exp\!\left(
-	-\frac{f(y)+\norm{x-y}^2/(2t)}{\epsilon}
+	-\frac{h(y)+\norm{x-y}^2/2}{\epsilon}
 	\right)\d y .
-\]
-Laplace's principle gives $Q_t^\epsilon f\to Q_t f$ as $\epsilon\to0$, up to an additive constant. Equivalently,
+	\end{equation}
+This is a soft $c$-transform of the function $-h$, and Laplace's principle gives $(-h)^{\bar c,\epsilon}\to(-h)^{\bar c}$ as $\epsilon\to0$ under the usual compactness assumptions on near-minimizers. The same formula is also a heat-kernel formula. If
 \[
-	Q_t^\epsilon f(x)
+	G_\epsilon(z)\eqdef (2\pi\epsilon)^{-d/2}\exp\!\left(-\frac{\norm{z}^2}{2\epsilon}\right)
+\]
+is the normalized Gaussian kernel with covariance $\epsilon\Id$, then~\eqref{eq-soft-hopf-lax-heat} is exactly
+\begin{equation}\label{eq-soft-c-transform-gaussian-convolution}
+	(-h)^{\bar c,\epsilon}(x)
 	=
-	-\epsilon\log\Big(G_{\epsilon t/2}\ast e^{-f/\epsilon}\Big)(x)
-	+\text{\upshape cst},
-\]
-where $G_s$ denotes the normalized heat kernel at time $s$; the additive constant absorbs its normalization and depends only on $t$, $\epsilon$ and the dimension. This formula is the continuous analogue of the soft $c$-transform used later in the Sinkhorn dual.
-\index{heat!kernel}% strictindex
-\index{Legendre-Fenchel transform}% strictindex
-\index{soft!c-transform}% strictindex
+	-\epsilon\log\Big(G_\epsilon\ast e^{-h/\epsilon}\Big)(x)
+	-\frac{\epsilon d}{2}\log(2\pi\epsilon).
+\end{equation}
+Thus a soft quadratic $c$-transform is a Gaussian convolution followed by a logarithm, up to an explicit additive constant independent of $x$. This is the bridge between soft-minimum operators, heat kernels and entropic transport potentials.
+\index{heat kernel}% strictindex
+\index{Gaussian convolution}% strictindex
+\index{soft c-transform}% strictindex
 
-The Hopf--Cole transform gives the corresponding PDE linearization. If $\nu>0$ and
-\index{Hopf-Cole transform}% strictindex
+\begin{prop}[Soft quadratic $c$-transform and Legendre approximation]\label{prop-soft-legendre-convolution}
+\index{Legendre-Fenchel transform}% strictindex
+\index{fast Legendre transform}% strictindex
+Let $f:\RR^d\to\RR\cup\{+\infty\}$ be such that the integrals below are finite, and introduce the quadratic shift
 \[
-	\partial_t\phi+\frac12\norm{\nabla\phi}^2=\nu\Delta\phi,
+	\mathsf S f(y)\eqdef f(y)-\frac12\norm{y}^2.
 \]
-then $u=e^{-\phi/(2\nu)}$ solves the linear heat equation $\partial_tu=\nu\Delta u$. Hence $v=\nabla\phi=-2\nu\nabla\log u$ solves the viscous Burgers equation
+For $\epsilon>0$, define the soft conjugate by applying the soft $\bar c$-transform to the shifted function:
+\begin{equation}\label{eq-soft-legendre-definition}
+	f^{*,\epsilon}(p)
+	\eqdef
+	\frac12\norm{p}^2-\big(-\mathsf S f\big)^{\bar c,\epsilon}(p).
+\end{equation}
+Then
+\begin{equation}\label{eq-soft-legendre-logsumexp}
+	f^{*,\epsilon}(p)
+	=
+	\epsilon\log\int_{\RR^d}
+	\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right)\d y,
+\end{equation}
+and equivalently
+\begin{equation}\label{eq-soft-legendre-convolution}
+	f^{*,\epsilon}(p)
+	=
+	\frac12\norm{p}^2
+	+\epsilon\log\Big(G_\epsilon\ast e^{-\mathsf S f/\epsilon}\Big)(p)
+	+\frac{\epsilon d}{2}\log(2\pi\epsilon).
+\end{equation}
+If, for instance, $f$ is proper, lower semicontinuous and superlinear, then $f^{*,\epsilon}(p)\to f^*(p)$ for every $p$ as $\epsilon\to0$.
+\end{prop}
+
+\begin{proof}
+The hard identity follows by completing the square:
 \[
-	\partial_t v+(v\cdot\nabla)v=\nu\Delta v .
+	\inf_y\left\{\mathsf S f(y)+\frac12\norm{p-y}^2\right\}
+	=
+	\frac12\norm{p}^2-
+	\sup_y\{\dotp{p}{y}-f(y)\}
+	=
+	\frac12\norm{p}^2-f^*(p).
 \]
-Thus nonlinear Hamilton--Jacobi/Burgers dynamics can be computed through a Laplacian-generated heat flow followed by a logarithmic change of variables. This is also the conceptual bridge between soft-minimum formulas, Gaussian convolution and entropic transport potentials.
-\index{Burgers equation}% strictindex
-\index{Hamilton-Jacobi equation}% strictindex
-\index{heat!equation}% strictindex
+This explains the shift: it turns the Legendre--Fenchel transform into a quadratic $\bar c$-transform. Replacing the hard transform by its soft version gives~\eqref{eq-soft-legendre-definition}. Expanding the square in~\eqref{eq-soft-hopf-lax-heat} with the function $\mathsf S f$ gives
+\[
+	\exp\!\left(-\frac{\mathsf S f(y)+\norm{p-y}^2/2}{\epsilon}\right)
+	=
+	\exp\!\left(-\frac{\norm{p}^2}{2\epsilon}\right)
+	\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right),
+\]
+which proves~\eqref{eq-soft-legendre-logsumexp}. Formula~\eqref{eq-soft-legendre-convolution} is the Gaussian-convolution identity~\eqref{eq-soft-c-transform-gaussian-convolution} applied to $\mathsf S f$. Under the stated superlinearity assumption, the functions $y\mapsto\dotp{p}{y}-f(y)$ have compact upper level sets, so Laplace's principle applied to~\eqref{eq-soft-legendre-logsumexp} gives the convergence to $f^*(p)$.
+\end{proof}
+
+\begin{rem}[Fast soft Legendre--Fenchel transforms]\label{rem-soft-legendre-fft}
+\index{Legendre-Fenchel transform}% strictindex
+\index{fast Legendre transform}% strictindex
+\index{FFT}% strictindex
+\index{Gaussian convolution}% strictindex
+	Proposition~\ref{prop-soft-legendre-convolution} gives a computational recipe for a smoothed Legendre--Fenchel transform. On a periodic, or sufficiently padded, grid, the term $G_\epsilon\ast e^{-\mathsf S f/\epsilon}$ in~\eqref{eq-soft-legendre-convolution} is a Gaussian convolution. It can therefore be evaluated in $O(N\log N)$ operations for $N$ grid samples using an FFT. This is not an exact hard discrete Legendre transform, but a regularized approximation whose zero-temperature limit recovers the hard transform by Laplace's principle. Exact discrete conjugation and lower-envelope algorithms exploit convex-analytic and computational-geometry structure instead; see Lucet's survey of computational convex analysis and the distance-transform algorithm of Felzenszwalb and Huttenlocher~\cite{Lucet2010ComputationalConvexAnalysis,FelzenszwalbHuttenlocher2012DistanceTransforms}.
+
+	The convolutional route is nevertheless delicate when $\epsilon$ is small. In fixed precision, the factors $e^{-f/\epsilon}$ or $e^{-\mathsf S f/\epsilon}$ can underflow or overflow, and the logarithm can amplify small relative convolution errors. Practical implementations therefore use shifts, log-domain evaluations, or stabilized FFT convolutions. In dimension $d$, one can also use the same separability of the Gaussian kernel as in grid Sinkhorn: direct one-dimensional passes give the tensor-product cost~\eqref{eq-separable-gaussian-half-step}, namely $O(d\,N^{1+1/d})$, while FFT convolutions provide an additional acceleration when boundary conditions and conditioning permit it.
+\end{rem}
+
+Figure~\ref{fig:sinkhorn-soft-biconjugates} illustrates the biconjugation viewpoint directly. The red curve is the hard lower convex envelope $f^{**}$, while the blue curves are smoother finite-temperature biconjugates. The two examples show that the same mechanism convexifies both a simple double-well profile and a quadratic oscillatory landscape.
+\index{Legendre-Fenchel transform}% strictindex
+\index{convex envelope}% strictindex
 
 \begin{figure}[H]
 \centering
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}ccc@{}}
-\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/soft-hopf-lax.pdf} &
-\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/heat-variable.pdf} &
-\includegraphics[width=.30\linewidth]{figures/sinkhorn-hopf-cole-transform/burgers-velocity.pdf} \\[-.1em]
-\small soft Hopf--Lax &
-\index{Hopf-Lax formula}% strictindex
-\small heat variable $u_t$ &
-\small Burgers velocity $v_t$
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}cc@{}}
+\includegraphics[width=.47\linewidth]{figures/sinkhorn-hopf-cole-transform/biconjugate-simple.pdf} &
+\includegraphics[width=.47\linewidth]{figures/sinkhorn-hopf-cole-transform/biconjugate-oscillatory.pdf} \\[-.1em]
+\small smooth double well &
+\small quadratic oscillatory profile
 \end{tabular}
-\caption{Hopf--Cole and heat-kernel numerics in one dimension. Left: the hard Hopf--Lax/Legendre transform is approximated by Gaussian log-sum-exp transforms at two temperatures; the pale curve is the input potential shifted downward for reference. Middle: the Hopf--Cole variable $u=e^{-\phi/(2\nu)}$ evolves linearly by the heat equation. Right: the Burgers velocity $v=-2\nu\,\partial_x\log u$ recovered from the same heat evolution smooths shocks while preserving the red-to-blue time ordering.}
+\caption{Soft Legendre biconjugates as approximations of lower convex envelopes. In each panel, the dashed gray curve is a non-convex function $f$, the red curve is the hard biconjugate $f^{**}$, and the purple-to-blue curves show $(f^{*,\epsilon})^{*,\epsilon}$ for increasing $\epsilon$. The pale gray area marks the part of $f$ lying above its convex envelope, which is progressively filled in by the soft convexification.}
+\label{fig:sinkhorn-soft-biconjugates}
+\end{figure}
+
+The nonlinear PDEs are linearized by the Hopf--Cole transform. With the same temperature normalization, the change of variables $u_s=e^{-\phi_s/\epsilon}$ converts the viscous Hamilton--Jacobi equation
+\index{Hopf-Cole transform}% strictindex
+\[
+	\partial_s\phi_s+\frac12\norm{\nabla\phi_s}^2=\frac{\epsilon}{2}\Delta\phi_s,
+\]
+into the linear heat equation $\partial_su_s=(\epsilon/2)\Delta u_s$. Conversely, starting from a positive heat solution $u_s$ and setting $\phi_s=-\epsilon\log u_s$ gives a Hamilton--Jacobi solution, while
+$v_s=\nabla\phi_s=-\epsilon\nabla\log u_s$ solves the gradient viscous Burgers equation
+\[
+	\partial_s v_s+(v_s\cdot\nabla)v_s=\frac{\epsilon}{2}\Delta v_s .
+\]
+Thus nonlinear Hamilton--Jacobi/Burgers dynamics can be computed through a Laplacian-generated heat flow followed by a logarithmic change of variables. In one dimension this is the classical Cole--Hopf transform for viscous Burgers; in higher dimension this scalar reduction applies to irrotational velocity fields. Figure~\ref{fig:sinkhorn-hopf-cole-transform} starts from a Gaussian velocity bump, whose inviscid evolution would form a shock on its decreasing flank, and shows how the viscosity parameter $\epsilon/2$ regularizes this steepening. Together with Figure~\ref{fig:sinkhorn-soft-biconjugates}, it gives the two complementary viewpoints behind soft-minimum formulas, Gaussian convolution and entropic transport potentials.
+\index{Burgers equation}% strictindex
+\index{Hamilton-Jacobi equation}% strictindex
+\index{heat equation}% strictindex
+\index{Hopf-Lax formula}% strictindex
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.318\linewidth]{figures/sinkhorn-hopf-cole-transform/burgers-epsilon-small.pdf} &
+\includegraphics[width=.318\linewidth]{figures/sinkhorn-hopf-cole-transform/burgers-epsilon-medium.pdf} &
+\includegraphics[width=.318\linewidth]{figures/sinkhorn-hopf-cole-transform/burgers-epsilon-large.pdf} \\[-.1em]
+\small $\epsilon=.045$ &
+\small $\epsilon=.10$ &
+\small $\epsilon=.24$
+\end{tabular}
+\caption{Hopf--Cole numerics for viscous Hamilton--Jacobi and Burgers dynamics in one dimension. Each panel fixes $\epsilon$ and evolves the same initial Gaussian-shaped Burgers velocity. The upper curves show the potential $\phi_t$ obtained from the heat solution by $\phi_t=-\epsilon\log u_t$, while the lower curves show the Burgers velocity $v_t=\partial_x\phi_t=-\epsilon\,\partial_x\log u_t$. Colors encode time from red to blue; small $\epsilon$ lets the Gaussian bump develop a sharp shock-like front, while larger $\epsilon$ gives stronger heat smoothing and viscous damping.}
 \index{Hopf-Cole transform}% strictindex
 \index{Burgers equation}% strictindex
 \label{fig:sinkhorn-hopf-cole-transform}
@@ -1772,14 +1827,12 @@ s\eqdef\frac{f^\star\oplus g^\star-c}{\epsilon}.
 
 The previous construction regularizes OT by a density-ratio divergence. This differs from using a Bregman divergence generated by a convex functional on the space of measures.
 \index{convex!function}% strictindex
-\index{Bregman!divergence}% strictindex
+\index{Bregman divergence}% strictindex
 \index{reference!measure}% strictindex
 \index{density!ratio}% strictindex
-\index{Bregman divergence}% strictindex
 
 \Needspace{7\baselineskip}
 \begin{defn}[Measure Bregman divergence]\label{def-measure-bregman-divergence}
-\index{Bregman!divergence}% strictindex
 \index{first variation}% strictindex
 	If $\Phi$ is a differentiable convex functional on a convex class of nonnegative measures and $\xi$ is a reference measure in its domain, the measure Bregman divergence generated by $\Phi$ is
 	\begin{equation}\label{eq-measure-bregman-divergence}
@@ -1794,7 +1847,7 @@ The previous construction regularizes OT by a density-ratio divergence. This dif
 In finite dimension this reduces to Definition~\ref{def-bregman-divergence}. The KL divergence is special because it is simultaneously a density-ratio divergence and a Bregman divergence.
 \index{first variation}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
-\index{Bregman!divergence}% strictindex
+\index{Bregman divergence}% strictindex
 \index{density!ratio}% strictindex
 
 \begin{prop}[Dual comparison: Bregman vs. density-ratio penalties]\label{prop-bregman-phi-dual-comparison}
@@ -1854,7 +1907,7 @@ In finite dimension this reduces to Definition~\ref{def-bregman-divergence}. The
 
 \begin{proof}
 	Using~\eqref{eq-measure-bregman-divergence}, the Bregman-regularized objective can be written, up to a constant independent of $\pi$, as
-\index{Bregman!divergence}% strictindex
+\index{Bregman divergence}% strictindex
 	\[
 		\epsilon\Phi(\pi)
 		+
@@ -1950,13 +2003,11 @@ Thus the two generalizations lead to different duals and different algorithms. B
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sinkhorn Divergences}
-\index{Sinkhorn!divergence}% strictindex
+\index{Sinkhorn divergence}% strictindex
 \label{sec-sinkhorn-div}
 
 
 Sinkhorn divergences remove the entropic self-bias while retaining smoothness. They interpolate between OT-like geometry and kernel-like norms, which explains their statistical behavior.
-\index{Sinkhorn!divergence}% strictindex
-\index{Sinkhorn divergence}% strictindex
 
 %%%
 \paragraph{Entropic bias.}
@@ -1967,7 +2018,6 @@ A major issue with the value of the Sinkhorn problem~\eqref{eq-entropic-generic}
 	\al_\epsilon = \uargmin{\be} \MK_\c^\epsilon(\al,\be)
 }
 does not satisfy $\al_\epsilon=\al$ unless $\epsilon=0$. The following proposition shows that the bias induced by this entropic regularization dominates the large $\epsilon$ limit.
-\index{entropic!regularization}% strictindex
 \index{entropic regularization}% strictindex
 
 \begin{prop}[Large-temperature entropic bias]
@@ -1976,7 +2026,7 @@ does not satisfy $\al_\epsilon=\al$ unless $\epsilon=0$. The following propositi
 \end{prop}
 \begin{proof}
 	Let $(f_\epsilon,g_\epsilon)$ be optimal dual potentials, normalized by $\int g_\epsilon\d\beta=0$. The soft $c$-transform equation gives
-\index{soft!c-transform}% strictindex
+\index{soft c-transform}% strictindex
 \index{dual!potential}% strictindex
 	\[
 		f_\epsilon(x)
@@ -2025,7 +2075,6 @@ So in the large $\epsilon$ limit, $\MK_\c^\epsilon$ behaves like an inner produc
 
 %%%
 \paragraph{Sinkhorn divergences.}
-\index{Sinkhorn!divergence}% strictindex
 \index{Sinkhorn divergence}% strictindex
 
 The raw entropic OT value has a large-temperature attraction toward the product coupling. The standard debiasing subtracts the two self-interaction energies, in the same spirit as passing from a positive kernel value to the associated squared distance.
@@ -2035,7 +2084,7 @@ The raw entropic OT value has a large-temperature attraction toward the product 
 \index{kernel!positive}% strictindex
 
 \begin{defn}[Sinkhorn divergence]\label{def-sinkhorn-divergence}
-\index{Sinkhorn!divergence}% strictindex
+\index{Sinkhorn divergence}% strictindex
 	For $\epsilon>0$, the debiased Sinkhorn divergence associated with the entropic OT value $\MK_\c^\epsilon$ is
 	\eql{\label{eq-sinkhorn-divergence}
 		\bar\MK_\c^\epsilon(\al,\be) \eqdef
@@ -2049,7 +2098,7 @@ Although this formula is a debiasing by self-costs, its non-negativity is not au
 \setlength{\tabcolsep}{1.5pt}
 \begin{tabular}{@{}cccc@{}}
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-divergence-debiasing/raw-small.pdf} &
-\index{Sinkhorn!divergence}% strictindex
+\index{Sinkhorn divergence}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-divergence-debiasing/debiased-small.pdf} &
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-divergence-debiasing/raw-large.pdf} &
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-divergence-debiasing/debiased-large.pdf} \\[-.1em]
@@ -2059,7 +2108,7 @@ Although this formula is a debiasing by self-costs, its non-negativity is not au
 \small $\bar\MK_\c^\epsilon$, large $\epsilon$
 \end{tabular}
 \caption{Visualization of the debiasing effect by point optimization. The red level sets show a fixed two-Gaussian target density $\beta$, while the blue atoms are an optimized empirical measure $\alpha_n$ initialized in the same way in all panels. For small $\epsilon$, the entropic cost $\MK_\c^\epsilon$ and the debiased Sinkhorn divergence $\bar\MK_\c^\epsilon$ both keep the two overlapping modes. For large $\epsilon$, minimizing $\MK_\c^\epsilon$ collapses the atoms toward the barycenter predicted by the large-temperature bias, whereas the self-cost subtraction in~\eqref{eq-sinkhorn-divergence} keeps a bimodal cloud.}
-\index{Sinkhorn!divergence}% strictindex
+\index{Sinkhorn divergence}% strictindex
 \index{empirical!measure}% strictindex
 \label{fig:sinkhorn-divergence-debiasing}
 \end{figure}
@@ -2091,7 +2140,7 @@ We first record a fundamental lemma: at an optimal dual pair, the exponential re
 The next proposition records the two limiting regimes of this debiased quantity.
 
 \begin{prop}[Asymptotics of Sinkhorn divergences]\label{prop-sinkhorn-divergence-asymptotics}
-\index{Sinkhorn!divergence}% strictindex
+\index{Sinkhorn divergence}% strictindex
 	Assume that the two measures are supported on the same space and that $c$ is bounded, continuous, nonnegative and satisfies $c(x,x)=0$.
 	Then $\bar\MK_\c^\epsilon(\al,\be) \rightarrow \MK_\c(\al,\be)$ when $\epsilon\rightarrow 0$ and
 	\eq{
@@ -2140,14 +2189,13 @@ The next proposition records the two limiting regimes of this debiased quantity.
 \index{kernel!norm}% strictindex
 \index{kernel!positive definite}% strictindex
 \index{large-temperature limit}% strictindex
-\index{Sinkhorn!divergence}% strictindex
-\index{energy!distance}% strictindex
+\index{Sinkhorn divergence}% strictindex
+\index{energy distance}% strictindex
 \end{rem}
 
 We now show that this debiased Sinkhorn divergence is positive.
 
 \begin{prop}[Non-negativity of Sinkhorn divergences]\label{prop-sinkhorn-positive}
-\index{Sinkhorn!divergence}% strictindex
 	If $k(x,y)=e^{-c(x,y)/\epsilon}$ is positive definite, then $\bar\MK_\c^\epsilon(\al,\be) \geq 0$.
 \end{prop}
 

@@ -1,0 +1,563 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\title{Substitutability, Nonlinear Jacobi, and Sinkhorn as a Special Case}
+\author{A short pedagogical note}
+\date{\today}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\e}{\mathrm{e}}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\braces}[1]{\left\{#1\right\}}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{example}[definition]{Example}
+\newtheorem{remark}[definition]{Remark}
+
+\theoremstyle{plain}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Sinkhorn's algorithm is usually introduced as a variational algorithm: alternating Bregman projections, or coordinate ascent/descent on the dual of entropically regularized optimal transport. There is another point of view, emphasized in recent work around Galichon's equilibrium-flow program: Sinkhorn is a special case of a nonlinear Jacobi market-clearing algorithm. This second point of view does not require the equilibrium equations to be the gradient of a convex potential. The relevant structure is substitutability, formalized through \emph{Z-functions}, \emph{M-functions}, and \emph{$M_0$-functions}. A familiar linear sufficient condition is a nonsingular M-matrix condition; in sign-uncertain formulations this is often expressed through an H-matrix condition. A worked lossy-transport example illustrates how the same Sinkhorn-like scaling formulas can remain convergent even when no convex OT potential exists.
+\end{abstract}
+
+\tableofcontents
+
+\section{The basic fixed-point problem}
+
+Let $Z$ be a finite set of coordinates, and let
+\[
+        Q : D \subseteq \R^Z \longrightarrow \R^Z
+\]
+be a continuous map. In economic applications, $p\in \R^Z$ is a price vector and $Q_z(p)$ is excess supply in market $z$. The equilibrium problem is
+\begin{equation}\label{eq:Qzero}
+        Q(p)=0.
+\end{equation}
+
+The nonlinear Jacobi update clears each coordinate separately, holding the other coordinates fixed at their old values. Formally, for $p^t\in D$, define $p^{t+1}=T(p^t)$ by
+\begin{equation}\label{eq:jacobi}
+        Q_z\bigl(p^{t+1}_z,p^t_{-z}\bigr)=0,\qquad z\in Z,
+\end{equation}
+where $p_{-z}$ denotes all coordinates except $z$.
+
+\begin{assumption}[Responsiveness]
+For every $z$ and every $p_{-z}$, the one-dimensional equation
+\[
+        Q_z(\pi,p_{-z})=0
+\]
+has at least one solution in $\pi$. When there is more than one solution, we select the smallest one:
+\[
+        T_z(p)=\min\braces{\pi:Q_z(\pi,p_{-z})=0}.
+\]
+\end{assumption}
+
+\begin{remark}[Jacobi versus Gauss--Seidel]
+Equation \eqref{eq:jacobi} is the parallel Jacobi version. The familiar implementation of Sinkhorn often uses a Gauss--Seidel order: update rows using the old columns, then update columns using the new rows. Both are coordinate-clearing schemes; the order-theoretic hypotheses below are most transparent for Jacobi, and analogous monotone arguments apply to ordered coordinate updates.
+\end{remark}
+
+\section{Subsolutions and the first monotonicity argument}
+
+\begin{definition}[Subsolution and supersolution]
+A vector $p$ is a subsolution if $Q(p)\leq 0$ componentwise. It is a supersolution if $Q(p)\geq 0$.
+\end{definition}
+
+The intended interpretation is that subsolution prices are too low and supersolution prices are too high. For this interpretation to be valid, own-price effects and cross-price effects need the right signs.
+
+\begin{definition}[Diagonal isotonicity and Z-functions]
+The map $Q$ is diagonally isotone if, for each $z$, $Q_z(p_z,p_{-z})$ is nondecreasing in $p_z$.
+
+It is a Z-function if, for each $z$, $Q_z(p_z,p_{-z})$ is antitone in $p_{-z}$: whenever $p_{-z}\leq p'_{-z}$,
+\[
+        Q_z(p_z,p_{-z})\geq Q_z(p_z,p'_{-z}).
+\]
+For $C^1$ maps, this means
+\[
+        \frac{\partial Q_z}{\partial p_{z'}}(p)\leq 0,\qquad z'\neq z.
+\]
+\end{definition}
+
+\begin{proposition}[Monotone preservation of subsolutions]\label{prop:sub}
+Assume $Q$ is diagonally isotone and a Z-function. If $p^t$ is a subsolution, then
+\[
+        p^t\leq p^{t+1}\quad\text{and}\quad p^{t+1}\text{ is again a subsolution}.
+\]
+The analogous statement holds for supersolutions, with inequalities reversed.
+\end{proposition}
+
+\begin{proof}
+Since $p^t$ is a subsolution,
+\[
+        Q_z(p_z^t,p^t_{-z})\leq 0=Q_z(p_z^{t+1},p^t_{-z}).
+\]
+By diagonal isotonicity, $p_z^t\leq p_z^{t+1}$ for every $z$. Hence $p^t\leq p^{t+1}$. Now, using the Z-property,
+\[
+        Q_z(p_z^{t+1},p_{-z}^{t+1})\leq Q_z(p_z^{t+1},p_{-z}^{t})=0.
+\]
+Thus $p^{t+1}$ is a subsolution.
+\end{proof}
+
+The preceding proposition is useful but not sufficient for convergence.
+
+\begin{example}[Why Z-structure alone is not enough]
+Let
+\[
+        Q(p)=\begin{pmatrix}1&-2\\-2&1\end{pmatrix}p.
+\]
+Then $Q$ is diagonally isotone and a Z-function, but the Jacobi update is
+\[
+        p_1^{t+1}=2p_2^t,
+        \qquad
+        p_2^{t+1}=2p_1^t.
+\]
+Except from the fixed point $p=0$, the iterates diverge. The problem is that cross-effects dominate own-effects.
+\end{example}
+
+\section{Nonreversingness, M-functions, and inverse isotonicity}
+
+The missing condition says that an increase in all prices cannot make all excess supplies fall. This is the nonlinear counterpart of the linear M-matrix idea.
+
+\begin{definition}[Nonreversingness]
+Let $Q:D\to\R^Z$.
+\begin{enumerate}[label=(\roman*)]
+\item $Q$ is strongly nonreversing if
+\[
+        p\geq p',\quad Q(p)\leq Q(p')
+        \quad\Longrightarrow\quad p=p'.
+\]
+\item $Q$ is weakly nonreversing if
+\[
+        p\geq p',\quad Q(p)\leq Q(p')
+        \quad\Longrightarrow\quad Q(p)=Q(p').
+\]
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[M- and $M_0$-functions]
+An M-function is a Z-function that is strongly nonreversing. An $M_0$-function is a Z-function that is weakly nonreversing.
+\end{definition}
+
+Thus an M-function has two ingredients:
+\begin{enumerate}[label=(\alph*)]
+\item substitutes: increasing other prices lowers excess supply for a given good;
+\item own-price dominance: substitution effects cannot reverse the direction of the total price movement.
+\end{enumerate}
+
+\begin{theorem}[Inverse isotonicity]\label{thm:inverse}
+Let $Q$ be a Z-function. Then:
+\begin{enumerate}[label=(\roman*)]
+\item $Q$ is an M-function if and only if it is inverse isotone:
+\[
+        Q(p)\leq Q(p')\quad\Longrightarrow\quad p\leq p'.
+\]
+\item $Q$ is an $M_0$-function if and only if its inverse is isotone as a set-valued map. In the single-valued notation, a convenient equivalent statement is
+\[
+        Q(p)\leq Q(p')
+        \quad\Longrightarrow\quad
+        Q(p\wedge p')=Q(p),\qquad Q(p\vee p')=Q(p'),
+\]
+where $p\wedge p'$ and $p\vee p'$ denote componentwise minimum and maximum.
+\end{enumerate}
+\end{theorem}
+
+This theorem is the order-theoretic reason the algorithm works. It replaces convexity of a potential by monotonicity of the inverse equilibrium map.
+
+\section{Convergence of nonlinear Jacobi}
+
+\begin{theorem}[Global monotone convergence for M-functions]\label{thm:Mconv}
+Assume $Q$ is continuous, responsive, diagonally isotone, and an M-function. Assume also that there exist a subsolution $\underline p$ and a supersolution $\overline p$. Then the equation $Q(p)=0$ has a unique solution $p^*$, and Jacobi iterates starting from any subsolution or any supersolution converge monotonically to $p^*$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Starting from a subsolution, Proposition \ref{prop:sub} gives an increasing sequence of subsolutions. Starting from a supersolution gives a decreasing sequence of supersolutions. By inverse isotonicity, every subsolution lies below every supersolution: indeed, if $Q(\underline p)\leq0\leq Q(\overline p)$, then Theorem \ref{thm:inverse} yields $\underline p\leq\overline p$. Hence the lower and upper Jacobi sequences are monotone and bounded. Their limits solve $Q(p)=0$ by continuity and responsiveness. If two solutions $p,p'$ existed, then both $Q(p)\leq Q(p')$ and $Q(p')\leq Q(p)$; inverse isotonicity gives $p\leq p'$ and $p'\leq p$, hence $p=p'$.
+\end{proof}
+
+\begin{theorem}[The $M_0$ case]
+If $Q$ is an $M_0$-function, uniqueness may fail. Under the same continuity, responsiveness, and lower-upper solution hypotheses, the solution set is a lattice. Jacobi started from the meet or the join of a subsolution and a supersolution converges to an extremal solution.
+\end{theorem}
+
+\begin{remark}[Why $M_0$ matters for Sinkhorn]
+Balanced optimal transport is invariant under adding the same constant to all dual potentials of one sign convention. Therefore the price-clearing map is typically $M_0$, not M, before a normalization is imposed. Fixing one potential, or imposing a gauge such as $\sum p_z=0$, removes the null direction and turns the reduced system into an M-system under the usual connectivity assumptions.
+\end{remark}
+
+\section{A differentiable M-matrix/H-matrix certificate}
+
+Suppose $Q$ is $C^1$ on an order-convex domain, and write $J(p)=DQ(p)$.
+
+\begin{definition}[Z-, M-, and H-matrices]
+A matrix $A$ is a Z-matrix if $A_{ij}\leq0$ for $i\neq j$. A nonsingular M-matrix is a Z-matrix whose inverse is nonnegative; equivalently, $A=sI-B$ with $B\geq0$ and $s>\rho(B)$.
+
+The comparison matrix of $A$ is
+\[
+        \langle A\rangle_{ii}=|A_{ii}|,
+        \qquad
+        \langle A\rangle_{ij}=-|A_{ij}|\quad(i\neq j).
+\]
+The matrix $A$ is an H-matrix if $\langle A\rangle$ is an M-matrix. If $A$ has positive diagonal entries, one often says $A$ is an $H_+$-matrix. For Z-matrices with positive diagonal, the $H_+$ and nonsingular M-matrix conditions coincide.
+\end{definition}
+
+The following criterion is often the easiest way to recognize the condition informally remembered as an ``H-matrix'' condition.
+
+\begin{proposition}[Weighted diagonal dominance implies an M-function]\label{prop:H}
+Assume $Q$ is $C^1$ and satisfies
+\begin{equation}\label{eq:zpartials}
+        \frac{\partial Q_i}{\partial p_j}(p)\leq0,
+        \qquad i\neq j,
+\end{equation}
+for all $p$. Suppose there exists a vector $\lambda\gg0$ such that
+\begin{equation}\label{eq:weightedDD}
+        \lambda^\top J(p)\gg0
+        \qquad\text{for every }p.
+\end{equation}
+Equivalently, for each column $j$,
+\begin{equation}\label{eq:columnDD}
+        \lambda_j\,\frac{\partial Q_j}{\partial p_j}(p)
+        >
+        \sum_{i\neq j}\lambda_i\left|\frac{\partial Q_i}{\partial p_j}(p)\right|.
+\end{equation}
+Then $Q$ is an M-function. If the strict inequalities are weakened to non-strict inequalities and $\lambda^\top J(p)\geq0$, then $Q$ is an $M_0$-function.
+\end{proposition}
+
+\begin{proof}
+Condition \eqref{eq:zpartials} says that $Q$ is a Z-function. Let $p\geq p'$ and set $\delta=p-p'\geq0$. If $\delta\neq0$, then
+\[
+        \lambda^\top\bigl(Q(p)-Q(p')\bigr)
+        =\int_0^1 \lambda^\top J(p'+t\delta)\,\delta\,\dd t
+        >0
+\]
+by \eqref{eq:weightedDD}. Hence it is impossible to have $Q(p)\leq Q(p')$, because then the left side would be nonpositive. This proves strong nonreversingness. The weak version is the same argument with $\geq0$: if $Q(p)-Q(p')\leq0$ and its positive weighted sum is nonnegative, then the vector must be zero.
+\end{proof}
+
+\begin{remark}[Relation to H-matrices]
+When $J(p)$ is a Z-matrix, strict weighted diagonal dominance such as \eqref{eq:columnDD} implies that $J(p)$ is a nonsingular M-matrix, hence an $H_+$-matrix. The H-matrix language is useful in numerical analysis because it survives some sign changes. The economic/substitution theory usually keeps the Z-sign pattern explicit and then speaks of M-functions.
+\end{remark}
+
+\section{Sinkhorn as the canonical special case}
+
+Let $X$ and $Y$ be finite sets. Let $a=(a_x)_{x\in X}$ and $b=(b_y)_{y\in Y}$ be positive masses with equal total mass, and let $K_{xy}>0$ be a positive kernel. Entropically regularized optimal transport seeks a coupling $\pi$ with row sums $a$ and column sums $b$ of the form
+\begin{equation}\label{eq:scalingform}
+        \pi_{xy}=r_x K_{xy}s_y,
+        \qquad r_x>0,\qquad s_y>0.
+\end{equation}
+The row and column constraints are
+\[
+        r_x\sum_y K_{xy}s_y=a_x,
+        \qquad
+        s_y\sum_x K_{xy}r_x=b_y.
+\]
+Sinkhorn's scaling updates are
+\begin{equation}\label{eq:sinkhorn-rs}
+        r_x^{t+1}=\frac{a_x}{\sum_y K_{xy}s_y^t},
+        \qquad
+        s_y^{t+1}=\frac{b_y}{\sum_x K_{xy}r_x^t}.
+\end{equation}
+The common alternating implementation uses the new $r^{t+1}$ in the second equation; \eqref{eq:sinkhorn-rs} is the parallel Jacobi version.
+
+To put this into the M-function notation, set
+\[
+        u_x=\log r_x,
+        \qquad
+        v_y=-\log s_y,
+        \qquad
+        \pi_{xy}(u,v)=K_{xy}\e^{u_x-v_y}.
+\]
+Define $Q:\R^X\times\R^Y\to\R^X\times\R^Y$ by
+\begin{align}
+        Q_x(u,v) &= \sum_{y\in Y}\pi_{xy}(u,v)-a_x,\label{eq:Qsinkx}\\
+        Q_y(u,v) &= b_y-\sum_{x\in X}\pi_{xy}(u,v).\label{eq:Qsinky}
+\end{align}
+Then $Q(u,v)=0$ is exactly the row-column marginal system. The Jacobi equations $Q_x(u_x^{t+1},v^t)=0$ and $Q_y(u^t,v_y^{t+1})=0$ give
+\begin{align*}
+        u_x^{t+1}
+        &=\log a_x-\log\sum_yK_{xy}\e^{-v_y^t},\\
+        v_y^{t+1}
+        &=\log\sum_xK_{xy}\e^{u_x^t}-\log b_y.
+\end{align*}
+Exponentiating gives exactly \eqref{eq:sinkhorn-rs}.
+
+\subsection*{The Z- and $M_0$-structure}
+The Jacobian of \eqref{eq:Qsinkx}--\eqref{eq:Qsinky} has entries
+\begin{align*}
+        \frac{\partial Q_x}{\partial u_x}&=\sum_y\pi_{xy},
+        &\frac{\partial Q_x}{\partial v_y}&=-\pi_{xy},\\
+        \frac{\partial Q_y}{\partial v_y}&=\sum_x\pi_{xy},
+        &\frac{\partial Q_y}{\partial u_x}&=-\pi_{xy}.
+\end{align*}
+All off-diagonal derivatives are nonpositive, so $Q$ is a Z-function. Moreover, every column sum of $J=DQ$ is zero:
+\[
+        \one^\top J=0.
+\]
+Therefore the map is weakly nonreversing but not strongly nonreversing. The missing strong condition is exactly the additive gauge invariance
+\[
+        (u,v)\longmapsto (u+c\one_X,v+c\one_Y),
+\]
+under which $u_x-v_y$ and hence $\pi_{xy}$ are unchanged. Thus balanced Sinkhorn is naturally an $M_0$ example. After fixing one potential or imposing a normalization, the reduced Jacobian is a weighted graph Laplacian minor; if the support graph of $K$ is connected, that minor is a nonsingular M-matrix.
+
+\subsection*{Why Sinkhorn is also variational}
+For entropic OT there is additionally a convex dual potential. In one sign convention,
+\[
+        \Phi(u,v)
+        =\sum_{x,y}K_{xy}\e^{u_x-v_y}
+          -\sum_xa_xu_x+\sum_yb_yv_y,
+\]
+up to irrelevant constants and sign choices. The first-order conditions are precisely $Q(u,v)=0$. Sinkhorn can therefore be interpreted as coordinate descent/ascent on a convex objective. The order-theoretic point is different: the coordinate update only needs the market-clearing equations $Q_z=0$ and the M- or $M_0$-structure. It does not need $Q$ to be a gradient.
+
+
+\section{A concrete OT-inspired non-variational example}\label{sec:lossy}
+
+The preceding Sinkhorn example is perfectly conservative: one unit leaving an origin arrives as one unit at a destination. Here is a small modification which keeps the same transport geometry and the same scaling form, but is generally not variational.
+
+Let $X$ and $Y$ be finite sets, let $K_{xy}>0$, and introduce positive outside-option coefficients $\sigma_x,\tau_y>0$. We write
+\[
+        r_x=\e^{u_x},\qquad s_y=\e^{-v_y},\qquad
+        \pi_{xy}=r_xK_{xy}s_y .
+\]
+Think of $\pi_{xy}$ as the physical amount shipped from $x$ to $y$. Suppose, however, that only a fraction $\eta_{xy}\in(0,1]$ is effective at the destination. The equilibrium equations are
+\begin{align}
+        \sigma_x r_x+\sum_{y\in Y}\pi_{xy}&=a_x,
+        &&x\in X,\label{eq:lossy-row}\\
+        \tau_y s_y+\sum_{x\in X}\eta_{xy}\pi_{xy}&=b_y,
+        &&y\in Y.\label{eq:lossy-col}
+\end{align}
+The first equation says that the mass available at origin $x$ is split between the transport network and an outside sink. The second says that destination $y$ can be served either by effective arrivals or by a local outside option. This is not meant to be a standard OT model; it is a deliberately simple OT-shaped market-clearing system.
+
+In the signed logarithmic variables $(u,v)$ define
+\begin{align*}
+        Q_x(u,v)
+        &=\sigma_x\e^{u_x}+\sum_y K_{xy}\e^{u_x-v_y}-a_x,\\
+        Q_y(u,v)
+        &=b_y-\tau_y\e^{-v_y}-\sum_x\eta_{xy}K_{xy}\e^{u_x-v_y}.
+\end{align*}
+Then $Q=0$ is exactly \eqref{eq:lossy-row}--\eqref{eq:lossy-col}. Clearing one coordinate at a time gives the Sinkhorn-like update
+\begin{equation}\label{eq:lossy-update}
+        r_x^{t+1}
+        =\frac{a_x}{\sigma_x+\sum_yK_{xy}s_y^t},
+        \qquad
+        s_y^{t+1}
+        =\frac{b_y}{\tau_y+\sum_x\eta_{xy}K_{xy}r_x^t}.
+\end{equation}
+Thus the algorithm still alternately rescales rows and columns. The only difference from Sinkhorn is that the marginal equations contain outside terms and the column equation sees the distorted arrivals $\eta_{xy}\pi_{xy}$.
+
+\subsection*{The M-matrix certificate}
+
+The Jacobian has the same Z-sign pattern as Sinkhorn:
+\begin{align*}
+        \frac{\partial Q_x}{\partial u_x}
+        &=\sigma_xr_x+\sum_y\pi_{xy},
+        &\frac{\partial Q_x}{\partial v_y}
+        &=-\pi_{xy},\\
+        \frac{\partial Q_y}{\partial u_x}
+        &=-\eta_{xy}\pi_{xy},
+        &\frac{\partial Q_y}{\partial v_y}
+        &=\tau_ys_y+\sum_x\eta_{xy}\pi_{xy}.
+\end{align*}
+Assume $0<\eta_{xy}\leq1$ and
+\begin{equation}\label{eq:lossy-condition}
+        \tau_y>
+        \sum_x(1-\eta_{xy})K_{xy}\frac{a_x}{\sigma_x},
+        \qquad y\in Y.
+\end{equation}
+After one update, $r_x\leq a_x/\sigma_x$. On the invariant domain where these inequalities hold, the vector $\lambda=\one$ certifies weighted diagonal dominance. Indeed, the column sum corresponding to $u_x$ is
+\[
+        \sigma_xr_x+
+        \sum_y(1-\eta_{xy})\pi_{xy}>0,
+\]
+while the column sum corresponding to $v_y$ is
+\[
+        \tau_ys_y-
+        \sum_x(1-\eta_{xy})\pi_{xy}
+        =s_y\left[\tau_y-
+        \sum_x(1-\eta_{xy})K_{xy}r_x\right]>0
+\]
+by \eqref{eq:lossy-condition}. Hence $\one^\top DQ\gg0$ on the invariant domain. By Proposition~\ref{prop:H}, this is an M-function there, so the coordinate-clearing iteration converges monotonically once initialized from a subsolution or supersolution in that domain.
+
+The system is generally not variational. If $Q=\nabla\Phi$ for a $C^2$ potential $\Phi$, then the cross-partials would have to agree:
+\[
+        \frac{\partial Q_x}{\partial v_y}
+        =\frac{\partial Q_y}{\partial u_x}.
+\]
+Here this would require $-\pi_{xy}=-\eta_{xy}\pi_{xy}$ for every active arc, hence $\eta_{xy}=1$. Losses with $\eta_{xy}\neq1$ therefore break exactness of the one-form $\sum_z Q_z\,\dd p_z$, even though the M-structure and the Sinkhorn-shaped update remain.
+
+\subsection*{Numerical instance}
+
+Take two origins and two destinations,
+\[
+        K=\begin{pmatrix}
+        1&\e^{-1}\\
+        \e^{-1}&1
+        \end{pmatrix},\qquad
+        a=b=\begin{pmatrix}1\\1\end{pmatrix},
+        \qquad
+        \sigma=\tau=\begin{pmatrix}1\\1\end{pmatrix},
+\]
+with loss factors
+\[
+        \eta=\begin{pmatrix}
+        0.80&0.90\\
+        0.70&0.85
+        \end{pmatrix}.
+\]
+Condition \eqref{eq:lossy-condition} is immediate:
+\[
+        0.20+0.30\e^{-1}\simeq0.310<1,
+        \qquad
+        0.10\e^{-1}+0.15\simeq0.187<1.
+\]
+Starting from $r^0=s^0=(1,1)$, the parallel update \eqref{eq:lossy-update} gives
+\[
+\begin{array}{c|cccc}
+        t&r_1^t&r_2^t&s_1^t&s_2^t\\
+        \hline
+        0&1.0000&1.0000&1.0000&1.0000\\
+        1&0.4223&0.4223&0.4860&0.4585\\
+        2&0.6043&0.6108&0.6913&0.6672\\
+        3&0.5163&0.5204&0.6095&0.5817\\
+        6&0.5391&0.5441&0.6388&0.6119
+\end{array}
+\]
+The limit is approximately
+\[
+        r^*=(0.5371,0.5421),
+        \qquad
+        s^*=(0.6372,0.6103).
+\]
+The corresponding transport matrix is
+\[
+        \pi^*\simeq
+        \begin{pmatrix}
+        0.3423&0.1206\\
+        0.1271&0.3308
+        \end{pmatrix}.
+\]
+One can check the clearing equations directly:
+\begin{align*}
+        r_1^*+\pi_{11}^*+\pi_{12}^*&\simeq1,
+        &r_2^*+\pi_{21}^*+\pi_{22}^*&\simeq1,\\
+        s_1^*+0.80\pi_{11}^*+0.70\pi_{21}^*&\simeq1,
+        &s_2^*+0.90\pi_{12}^*+0.85\pi_{22}^*&\simeq1.
+\end{align*}
+This is the closest finite-dimensional analogue of Sinkhorn in the note: positive kernel, multiplicative scalings, marginal-clearing equations, and closed-form row/column updates. The reason it converges, however, is the M-function condition, not a convex OT potential.
+
+\section{A minimal algebraic non-variational example}
+
+Let $a,b>0$ and $0\leq\lambda,\mu<1$. Consider
+\begin{align*}
+        Q_1(p_1,p_2)&=\e^{p_1}-\lambda\e^{p_2}-a,\\
+        Q_2(p_1,p_2)&=\e^{p_2}-\mu\e^{p_1}-b.
+\end{align*}
+Then
+\[
+        J(p)=
+        \begin{pmatrix}
+        \e^{p_1} & -\lambda\e^{p_2}\\
+        -\mu\e^{p_1} & \e^{p_2}
+        \end{pmatrix},
+        \qquad
+        \one^\top J(p)=\bigl((1-\mu)\e^{p_1},(1-\lambda)\e^{p_2}\bigr)\gg0.
+\]
+Thus Proposition \ref{prop:H} applies: $Q$ is an M-function. However, unless the cross-partials happen to agree everywhere,
+\[
+        \frac{\partial Q_1}{\partial p_2}=-\lambda\e^{p_2}
+        \neq
+        -\mu\e^{p_1}=\frac{\partial Q_2}{\partial p_1},
+\]
+so $Q$ is not the gradient of any scalar potential. The Jacobi update is nevertheless simple and convergent:
+\[
+        p_1^{t+1}=\log\bigl(a+\lambda\e^{p_2^t}\bigr),
+        \qquad
+        p_2^{t+1}=\log\bigl(b+\mu\e^{p_1^t}\bigr).
+\]
+The unique solution is obtained by solving the linear equations in $x=\e^{p_1}$ and $y=\e^{p_2}$:
+\[
+        x=a+\lambda y,
+        \qquad y=b+\mu x,
+\]
+so
+\[
+        x^*=\frac{a+\lambda b}{1-\lambda\mu},
+        \qquad
+        y^*=\frac{b+\mu a}{1-\lambda\mu}.
+\]
+This example is deliberately elementary, but it isolates the important point: the Jacobi/Sinkhorn-type update can converge for structural reasons that are not variational.
+
+\section{Equilibrium flows and imperfect transferability}
+
+The broader Galichon--Samuelson--Vernet framework replaces the additive OT inequality
+\[
+        p_x-p_y\geq -c_{xy}
+\]
+by a nonlinear arc condition
+\[
+        p_x\geq G_{xy}(p_y),
+\]
+where $G_{xy}$ is increasing. An equilibrium flow consists of a node price vector $p$, nonnegative arc flows $\mu_{xy}$, and net node flows $q$ such that
+\begin{align*}
+        \nabla^\top\mu&=q,\\
+        p_x&\geq G_{xy}(p_y),\qquad xy\in A,\\
+        \mu_{xy}>0&\Longrightarrow p_x=G_{xy}(p_y).
+\end{align*}
+The additive case $G_{xy}(p_y)=p_y-c_{xy}$ is the usual min-cost-flow/transport duality. Nonlinear $G_{xy}$ accommodates time-dependent routing, nonlinear taxes, and imperfectly transferable utility in matching. In these cases, there need not be a convex objective whose gradient is the equilibrium equation. What remains is substitutability: increasing the relevant price at one node makes neighboring opportunities less attractive in the appropriate signed coordinates. The resulting equilibrium correspondence has inverse-isotone/lattice structure, and coordinate-clearing price updates are the natural generalization of Sinkhorn.
+
+\section{Takeaway}
+
+Sinkhorn sits at the intersection of two structures:
+\begin{enumerate}[label=(\arabic*)]
+\item a variational structure: entropic OT is a convex optimization problem;
+\item an order structure: the marginal equations form an $M_0$-system, and Sinkhorn is a coordinate-clearing Jacobi/Gauss--Seidel method.
+\end{enumerate}
+Galichon's more general viewpoint keeps the second structure and drops the first. The lossy-transport example in Section~\ref{sec:lossy} makes this separation concrete: the update has the same multiplicative scaling form as Sinkhorn, but asymmetric effective arrivals destroy the cross-partial symmetry required by a potential. The matrix condition to remember is best described as a nonlinear M-function condition. In smooth finite-dimensional problems, a practical certificate is a Z-Jacobian plus weighted diagonal dominance, equivalently an M-matrix or $H_+$-matrix condition after the relevant sign convention and normalization.
+
+\begin{thebibliography}{9}
+
+\bibitem{GalichonJacquet2024}
+A. Galichon and A. Jacquet.
+\newblock \emph{Substitutability, equilibrium transport, and matching models}.
+\newblock arXiv:2405.07628, 2024.
+
+\bibitem{GSV2025}
+A. Galichon, L. Samuelson, and L. Vernet.
+\newblock Unified gross substitutes and inverse isotonicity for equilibrium problems.
+\newblock \emph{Theoretical Economics}, 20(3):941--971, 2025.
+
+\bibitem{GSV2022flows}
+A. Galichon, L. Samuelson, and L. Vernet.
+\newblock \emph{The existence of equilibrium flows}.
+\newblock arXiv:2209.04426, 2022.
+
+\bibitem{OrtegaRheinboldt1970}
+J. M. Ortega and W. C. Rheinboldt.
+\newblock \emph{Iterative Solution of Nonlinear Equations in Several Variables}.
+\newblock Academic Press, 1970.
+
+\bibitem{SinkhornKnopp1967}
+R. Sinkhorn and P. Knopp.
+\newblock Concerning nonnegative matrices and doubly stochastic matrices.
+\newblock \emph{Pacific Journal of Mathematics}, 21(2):343--348, 1967.
+
+\bibitem{QuGalichonGaoUgander2025}
+Z. Qu, A. Galichon, W. Gao, and J. Ugander.
+\newblock On Sinkhorn's algorithm and choice modeling.
+\newblock \emph{Operations Research}, 2025.
+
+\end{thebibliography}
+
+\end{document}

@@ -503,7 +503,7 @@ Drifting methods need not start from an exact Wasserstein gradient. They often p
     =
     \epsilon\nabla\log
     \frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-         {\int K_\epsilon(x,y)\,\d\mu_t(y)}.$$ The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator {cite:p}`He2026SinkhornDrifting`.
+         {\int K_\epsilon(x,y)\,\d\mu_t(y)}.$$ The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. For a fixed reference measure, $B_\epsilon[\nu]$ is precisely the Gaussian mean-shift displacement in {eq}`eq-l2-attention-mean-shift`: it moves $x$ toward the local kernel barycenter of $\nu$. Hence self-corrected drifting can be read as the difference between a target mean-shift field and the current model's own mean-shift field. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator {cite:p}`He2026SinkhornDrifting`.
 
 (fig:generative-drifting-model-trajectories)=
 :::{div}
@@ -882,6 +882,66 @@ After tokenization, embedding, and positional encoding, each input (from a set o
 To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$ as the empirical measure of tokens and rewrite the transformer mapping as: $$x_i \mapsto x_i + \frac{1}{T} \Gamma_\theta[\alpha](x_i),$$ where $$\Gamma_\theta[\alpha](x) :=
     \frac{\int e^{\langle Q x, K y \rangle} V y \, \d \alpha(y)}
     {\int e^{\langle Q x, K z \rangle} \, \d \alpha(z)}.$$ At the level of the token distribution, the layer pushes $\alpha$ forward by the "in-context" mapping $\Gamma_{\theta_t}[\alpha]$, which depends on the context $\alpha$, the tokens, and the depth-dependent parameters $\theta_t$. Denoting $t \in [0, 1]$ as the depth and $\tau = 1/T$ as the step size, this gives: $$\alpha_{t+\tau} = (\Id + \tau \Gamma_{\theta_t}[\alpha_t])_\sharp \alpha_t.$$ As $\tau \to 0$, this converges formally to the conservation equation $$\partial_t \alpha_t + \operatorname{div}(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.$$
+
+
+### $L^2$ attention and mean shift.
+
+A particularly geometric variant replaces the dot-product score $\langle Qx,Ky\rangle$ by a negative squared Euclidean score $s_\epsilon(x,y)=-\norm{x-y}^2/(2\epsilon)$. Take, for simplicity, the same token space for queries, keys and values, and set
+
+```{math}
+K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon)),
+\qquad
+\rho_\epsilon[\alpha](x)=\int K_\epsilon(x,y)\d\alpha(y),
+\qquad
+m_\epsilon[\alpha](x)
+=
+\frac{\int yK_\epsilon(x,y)\d\alpha(y)}
+     {\rho_\epsilon[\alpha](x)}.
+```
+
+The map $x\mapsto m_\epsilon[\alpha](x)$ is exactly Gaussian-kernel attention, i.e. normalized kernel regression over tokens; such $L^2$ or Gaussian-kernel scores are used explicitly in transformer variants motivated by Lipschitz control and projection-free attention {cite:p}`KimPapamakariosMnih2020L2SelfAttention,KunduGhoshGhoshHonavar2026GaussianKernelAttention`. Classical mean shift, however, uses the displacement from the current point to this local barycenter. This gives
+
+```{math}
+:label: eq-l2-attention-mean-shift
+M_\epsilon[\alpha](x)
+\eqdef
+m_\epsilon[\alpha](x)-x
+=
+\frac{\int (y-x)K_\epsilon(x,y)\d\alpha(y)}
+     {\rho_\epsilon[\alpha](x)}
+=
+\epsilon\nabla\log\rho_\epsilon[\alpha](x)
+```
+
+and, when $\alpha$ is empirical, $\rho_\epsilon[\alpha]$ is a Gaussian kernel density estimate up to normalization. Thus $M_\epsilon[\alpha]$ is the classical Gaussian mean-shift vector {cite:p}`FukunagaHostetler1975,Cheng1995MeanShift,ComaniciuMeer2002MeanShift`. Consequently, the barycentric residual update
+
+```{math}
+x_i^{k+1}
+=
+(1-\tau)x_i^k+\tau m_\epsilon[\alpha_k](x_i^k)
+=
+x_i^k+\tau M_\epsilon[\alpha_k](x_i^k)
+```
+
+is an explicit Euler step of the continuous-time mean-shift equation
+
+```{math}
+\partial_t\alpha_t+\operatorname{div}\bigl(\alpha_tM_\epsilon[\alpha_t]\bigr)=0.
+```
+
+With time step one this recovers the usual mean-shift iteration $x\leftarrow m_\epsilon[\alpha](x)$; with small residual steps it becomes a transport PDE that moves each token uphill along the log of the smoothed token density. This distinction between the raw barycentric attention output $m_\epsilon$ and the velocity $M_\epsilon=m_\epsilon-\Id$ is important: adding $m_\epsilon$ directly as a residual would produce a different drift. The mean-shift form isolates a purely metric attention mechanism from the learned bilinear geometry of $\dotp{Qx}{Ky}$.
+
+(fig:generative-mean-shift-pde)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("generative-mean-shift-pde", width=760)
+```
+
+Continuous-time mean shift for a densely sampled three-Gaussian mixture. Left: initial density level sets, in red, and representative particle paths of $\dot x=M_\epsilon[\alpha_t](x)$, colored from red to blue. Right: four later kernel-density renderings of $\alpha_t$ at increasing times, with the same red-to-blue time palette; the initial density is omitted because it is shown on the left. The flow advects mass uphill along $\log\rho_\epsilon[\alpha_t]$ and sharpens the overlapping modes.
+:::
 
 ### Gradient structure and limitations.
 
@@ -1266,7 +1326,7 @@ B_\epsilon[\mu_t](x)
 -\epsilon(\cov_t+\epsilon\Id)^{-1}(x-\mean_t).
 ```
 
-Thus the drifting velocity {eq}`eq-cross-minus-self-drift` is affine and preserves Gaussianity. With
+Indeed the smoothed density $x\mapsto\int K_\epsilon(x,y)\d\mu_t(y)$ is proportional to the Gaussian density with mean $\mean_t$ and covariance $\cov_t+\epsilon\Id$. Thus $B_\epsilon[\mu_t]$ is the mean-shift vector of a Gaussian density: it points linearly toward the Gaussian mode, with strength set by the bandwidth. The drifting velocity {eq}`eq-cross-minus-self-drift` is therefore the difference of two affine mean-shift fields; it is affine and preserves Gaussianity. With
 
 ```{math}
 A_t=(\cov_t+\epsilon\Id)^{-1},

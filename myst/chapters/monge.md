@@ -1110,12 +1110,12 @@ then yields the $C^{2,\alpha}_{\mathrm{loc}}$ estimates
 :::
 
 Figure {ref}`fig:monge-caffarelli-nonconvex-map` illustrates the geometric role
-of the convexity assumption. It should be read as a finite-sample visualization
-rather than as a counterexample: a quadratic assignment transports a
-farthest-point sample of a non-convex banana-shaped source to a farthest-point
-sample of the disk. The target dual potential defines a c-transform extension,
-so the level curves drawn in the banana can be pushed through the induced
-Laguerre map and displayed inside the disk.
+of the convexity assumption through a finite-sample stress test rather than a
+counterexample. A quadratic assignment transports a dense farthest-point sample
+of the disk to a dense farthest-point sample of a connected non-convex target
+made of two disks joined by a thin rectangle. The panels show the corresponding
+empirical McCann interpolation, so the loss of convex target geometry is visible
+directly along the transported particles.
 
 (fig:monge-caffarelli-nonconvex-map)=
 :::{div}
@@ -1126,13 +1126,13 @@ Laguerre map and displayed inside the disk.
 show_book_figure("monge-caffarelli-nonconvex-map")
 ```
 
-*Empirical quadratic OT map from a non-convex banana-shaped domain to a disk.
-The left panel shows level curves inside the banana-shaped source. The right
-panel shows their images under the c-transform extension `T(z)=y_{j(z)}`, where
-`j(z)` minimizes `||z-y_j||^2-v_j` and `v` is an optimal target dual potential.
-On the sampled source points, the assigned target belongs to this argmin set up
-to numerical precision; away from the samples, the panel displays the
-corresponding Laguerre-cell extrapolation of the empirical map.*
+*Empirical quadratic OT interpolation from a disk to a connected non-convex
+two-disk domain. A 5200-point farthest-point sample of the disk is matched to a
+5200-point farthest-point sample of two disks connected by a thin rectangle. The
+panels display $(1-t)x_i+tT_N(x_i)$ for the empirical optimal assignment $T_N$.
+Colors are inherited from the horizontal coordinate of $x_i$ in the initial
+disk, making the transported material regions visible throughout the
+interpolation.*
 :::
 
 :::{admonition} Remark: Regularity, weak maps, and splitting
