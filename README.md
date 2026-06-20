@@ -30,10 +30,10 @@ is available on arXiv.
 
 The book figures are generated from executable notebooks and assembled by the
 LaTeX source. The current searchable gallery has been checked against the live
-LaTeX and MyST figure references: it exposes 103 figure views, covers all 102
+LaTeX and MyST figure references: it exposes 113 figure views, covers all 112
 referenced `latex/figures/<figure-name>/` directories, and every active view has
 a notebook link, thumbnail, and generated PDF panels. The manuscript contains
-105 LaTeX figure labels because some figure directories generate several labeled
+115 LaTeX figure labels because some figure directories generate several labeled
 figures. Browse the rendered web gallery at
 [www.gpeyre.com/ot4ml/notebooks-figures/index.html](https://www.gpeyre.com/ot4ml/notebooks-figures/index.html)
 or the Markdown version in

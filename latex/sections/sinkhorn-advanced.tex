@@ -323,6 +323,130 @@ There is another, older way to understand convergence, going back to Fortet's pr
 This proof is qualitative rather than quantitative, but it is conceptually useful: Sinkhorn is not only alternating projection or projective contraction; it is also a monotone fixed-point iteration on potential classes once constants are quotiented out.
 \index{alternating!projection}% strictindex
 
+\paragraph{Extension beyond KL.}
+\index{phi-divergence regularized OT}% strictindex
+\index{soft c-transform}% strictindex
+The monotone argument is not specific to the exponential law of KL regularization. For the $\phi$-divergence regularized problems of Section~\ref{sec-sinkhorn-other-regularizers}, write
+\[
+	\Phi\eqdef \phi^{*,\geq0}.
+\]
+The Fenchel dual ascent updates are the generalized soft $c$-transforms. For fixed $g$, the update of $f$ is the function
+\[
+	g^{\bar c,\epsilon,\phi}(x)
+	\in
+	\uargmin{u\in\RR}
+	\left\{
+		\epsilon
+		\int_{\Yy}
+		\Phi\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
+		\d\be(y)
+		-u
+	\right\},
+\]
+which is the same formula as~\eqref{eq-phi-soft-c-transform}. The update $f^{c,\epsilon,\phi}$ is obtained by exchanging $(x,\al,f)$ and $(y,\be,g)$. In nonsmooth cases the scalar optimality condition is the subgradient normalization
+\[
+	1\in
+	\int_{\Yy}
+	\partial\Phi\!\left(\frac{g^{\bar c,\epsilon,\phi}(x)+g(y)-c(x,y)}{\epsilon}\right)
+	\d\be(y),
+	\qquad
+	1\in
+	\int_{\Xx}
+	\partial\Phi\!\left(\frac{f(x)+f^{c,\epsilon,\phi}(y)-c(x,y)}{\epsilon}\right)
+	\d\al(x),
+\]
+where the integral of intervals is understood in the usual Aumann sense. When $\Phi$ is differentiable and $\rho_\phi\eqdef\Phi'$, this becomes the normalization relations
+\[
+	\int_{\Yy}
+	\rho_\phi\!\left(\frac{g^{\bar c,\epsilon,\phi}(x)+g(y)-c(x,y)}{\epsilon}\right)
+	\d\be(y)
+	=1,
+	\qquad
+	\int_{\Xx}
+	\rho_\phi\!\left(\frac{f(x)+f^{c,\epsilon,\phi}(y)-c(x,y)}{\epsilon}\right)
+	\d\al(x)
+	=1.
+\]
+For KL, $\rho_\phi(s)=e^s$ and these are exactly Sinkhorn row and column normalizations. For Burg or quadratic penalties, the same equations hold with $\rho_\phi(s)=(1-s)^{-1}$ or $\rho_\phi(s)=(1+s)_+$, respectively, on the appropriate domains.
+\index{dual!ascent}% strictindex
+\index{row normalization}% strictindex
+\index{column normalization}% strictindex
+
+\begin{prop}[Monotonicity of generalized double soft transforms]\label{prop-phi-double-soft-transform-monotone}
+\index{soft c-transform}% strictindex
+\index{order-preserving map}% strictindex
+\index{phi-divergence regularized OT}% strictindex
+	Assume that the scalar minimizer sets defining $g^{\bar c,\epsilon,\phi}$ and $f^{c,\epsilon,\phi}$ are nonempty compact intervals, and choose either the minimal or the maximal minimizer in every scalar problem. Then each selected generalized soft $c$-transform is order reversing and additively anti-homogeneous:
+	\[
+		g\leq g'
+		\Rightarrow
+		g^{\bar c,\epsilon,\phi}\geq {g'}^{\bar c,\epsilon,\phi},
+		\qquad
+		(g+\lambda)^{\bar c,\epsilon,\phi}
+		=
+		g^{\bar c,\epsilon,\phi}-\lambda .
+	\]
+	The same statements hold for $f\mapsto f^{c,\epsilon,\phi}$. Consequently the double transform
+	\[
+		\mathcal A_\phi(f)
+		\eqdef
+		(f^{c,\epsilon,\phi})^{\bar c,\epsilon,\phi}
+	\]
+	is order preserving and additively homogeneous:
+	\[
+		f\leq f'
+		\Rightarrow
+		\mathcal A_\phi(f)\leq \mathcal A_\phi(f'),
+		\qquad
+		\mathcal A_\phi(f+\lambda)=\mathcal A_\phi(f)+\lambda .
+	\]
+	In particular, this applies without mentioning selections whenever the scalar minimizers are unique.
+\end{prop}
+
+\begin{proof}
+	Since
+	\[
+		\Phi(s)=\sup_{r\geq0}\{sr-\phi(r)\},
+	\]
+	the function $\Phi$ is convex and nondecreasing. For fixed $x$, set
+	\[
+		H_g^x(u)
+		\eqdef
+		\epsilon
+		\int_{\Yy}
+		\Phi\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
+		\d\be(y)
+		-u .
+	\]
+	If $g\leq g'$, write $\Delta(y)=g'(y)-g(y)\geq0$. The difference
+	\[
+		H_{g'}^x(u)-H_g^x(u)
+		=
+		\epsilon
+		\int_{\Yy}
+		\left[
+		\Phi\!\left(\frac{u+g(y)+\Delta(y)-c(x,y)}{\epsilon}\right)
+		-
+		\Phi\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
+		\right]\d\be(y)
+	\]
+	is nondecreasing in $u$: for every $\delta\geq0$, the function $s\mapsto \Phi(s+\delta)-\Phi(s)$ is nondecreasing by convexity of $\Phi$. Let $I=\argmin H_g^x$ and $I'=\argmin H_{g'}^x$. If $a=\min I$ and $a'=\min I'$ with $a'>a$, then the two optimality inequalities
+	\[
+		H_g^x(a)\leq H_g^x(a'),
+		\qquad
+		H_{g'}^x(a')\leq H_{g'}^x(a)
+	\]
+	imply $H_{g'}^x(a')-H_g^x(a')\leq H_{g'}^x(a)-H_g^x(a)$, contradicting monotonicity unless equality holds throughout. In the equality case $a$ is also a minimizer of $H_{g'}^x$, contradicting the definition of $a'=\min I'$. Hence $\min I'\leq \min I$. The same argument with $b=\max I$ and $b'=\max I'$ shows $\max I'\leq \max I$. Thus both extremal selections are order reversing. Finally,
+	\[
+		H_{g+\lambda}^x(u)=H_g^x(u+\lambda)+\lambda,
+	\]
+	so the minimizer interval is shifted by $-\lambda$, which proves additive anti-homogeneity. The proof for $f\mapsto f^{c,\epsilon,\phi}$ is identical. Composing two order-reversing anti-homogeneous selections gives an order-preserving additively homogeneous double transform.
+\index{convex!conjugate}% strictindex
+\index{subdifferential}% strictindex
+\end{proof}
+
+Thus the Fortet-type convergence mechanism is a structural property of dual block-coordinate ascent with convex density-ratio penalties. What is special to KL is the closed log-sum-exp formula and the associated positive-kernel projective contraction, not the underlying order preservation.
+
 \begin{defn}[Variation seminorm]\label{def-variation-seminorm}
 \index{variation seminorm}% strictindex
 	For a bounded real-valued function $h$, the variation seminorm is
@@ -386,10 +510,25 @@ This is the natural size for Sinkhorn potentials because adding constants change
 \begin{rem}[Topical maps and projective geometry]\label{rem-topical-maps}
 \index{topical map}% strictindex
 \index{projective!geometry}% strictindex
-	Order-preserving additively homogeneous maps are called topical maps in nonlinear Perron--Frobenius theory~\cite{lemmens2012nonlinear}. Proposition~\ref{prop-topical-variation-nonexpansive} is the basic nonexpansiveness mechanism behind Fortet's monotone argument. The Hilbert-metric analysis in Section~\ref{sec-sinkhorn-hilbert} is stronger: under strict positivity assumptions on the kernel it upgrades nonexpansiveness to a genuine projective contraction.
+	Order-preserving additively homogeneous maps are called topical maps in nonlinear Perron--Frobenius theory~\cite{lemmens2012nonlinear}. Proposition~\ref{prop-topical-variation-nonexpansive} is the basic nonexpansiveness mechanism behind Fortet's monotone argument.
+
+	Proposition~\ref{prop-phi-double-soft-transform-monotone} shows that the generalized double soft transform
+	\[
+		\mathcal A_\phi(f)=(f^{c,\epsilon,\phi})^{\bar c,\epsilon,\phi}
+	\]
+	is also topical for any admissible extremal selection, and in particular whenever the scalar updates are unique. Equivalently, the double transform commutes with translations,
+	$\mathcal A_\phi(f+\lambda)=\mathcal A_\phi(f)+\lambda$, and preserves the pointwise order. Hence
+	\[
+		\norm{\mathcal A_\phi(f)-\mathcal A_\phi(h)}_V
+		\leq
+		\norm{f-h}_V .
+	\]
+	This is only a nonexpansiveness statement. To obtain a linear convergence rate for the fixed-point iteration, one needs a genuine contraction estimate with a constant strictly smaller than one in a suitable projective metric. For KL regularization, the Hilbert-metric analysis in Section~\ref{sec-sinkhorn-hilbert} supplies such a contraction under strict positivity assumptions on the Gibbs kernel. For general non-KL $\phi$-regularizers, an analogous broadly applicable contraction principle seems, to the best of our knowledge, open.
 \index{Perron-Frobenius theorem}% strictindex
 \index{additively homogeneous map}% strictindex
 \index{strict!positivity}% strictindex
+\index{phi-divergence regularized OT}% strictindex
+\index{linear!convergence}% strictindex
 \end{rem}
 
 

@@ -1,0 +1,2229 @@
+---
+title: Monge Problem between Measures
+kernelspec:
+  name: python3
+  display_name: Python 3
+  language: python
+---
+(sec-monge)=
+
+The goal of this chapter is to pass from finite matching to transport between
+arbitrary probability laws. The central stakes are to define measures,
+push-forwards and Monge maps carefully enough that the discrete picture
+survives, while exposing why deterministic maps can fail to exist. Monge's
+original formulation {cite:p}`Monge1781` and modern treatments
+{cite:p}`Villani03,Villani09,SantambrogioBook,rachev1998mass` are the
+conceptual background for this transition.
+
+The previous chapter handled two sets with the same number of points. To relax
+this to a more general setting, one needs probability distributions, so that
+points may carry unequal masses and continuous densities can be treated in the
+same language as finite clouds.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+from pathlib import Path
+import sys
+
+from IPython.display import Image as DisplayImage
+from IPython.display import display
+
+here = Path.cwd()
+myst_dir = None
+for candidate in [here, here.parent, here / "myst", here.parent / "myst", here.parent.parent / "myst"]:
+    if (candidate / "ot4ml_web.py").exists():
+        myst_dir = candidate.resolve()
+        sys.path.insert(0, str(myst_dir))
+        break
+
+if myst_dir is None:
+    raise RuntimeError("Could not locate myst/ot4ml_web.py")
+
+repo_root = myst_dir.parent
+thumbnails = repo_root / "notebooks-figures" / "thumbnails"
+
+def show_book_figure(name, width=760):
+    display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
+```
+
+(sec-measures)=
+## Measures
+
+Measures are the language that lets point clouds, densities and singular
+objects be handled uniformly. We only recall the facts needed later:
+integration, total variation, densities and probabilistic laws.
+
+### Histograms
+
+(def-probability-simplex)=
+:::{admonition} Definition: Probability Simplex
+:class: important
+The probability simplex of length $n$ is
+
+```{math}
+\simplex_n
+\eqdef
+\left\{a \in \RR_+^n \;:\; \sum_{i=1}^n a_i=1\right\}.
+```
+
+Its elements are also called probability vectors or histograms.
+:::
+
+### Discrete And Empirical Measures
+
+(def-discrete-measure)=
+:::{admonition} Definition: Discrete Measure
+:class: important
+A discrete measure with weights $a$ and locations $x_1,\ldots,x_n\in\X$ is
+
+```{math}
+:label: eq-discr-meas
+\al = \sum_{i=1}^n a_i \delta_{x_i},
+```
+
+where $\delta_x$ is the Dirac mass at position $x$. It is a probability
+measure if $a\in\simplex_n$, and a positive measure if all weights $a_i$ are
+nonnegative.
+:::
+
+The Dirac mass should be thought of as a unit of mass infinitely concentrated
+at one location.
+
+An empirical probability distribution is uniform on a point cloud,
+
+```{math}
+\al=\frac1n\sum_{i=1}^n\delta_{x_i}.
+```
+
+In applications, it is useful to manipulate both the positions $x_i$ and the
+weights $a_i$. Moving the positions is a Lagrangian discretization; changing
+the weights is an Eulerian one. The Lagrangian view is often more adaptive, but
+it tends to break convexity.
+
+### General Measures
+
+We consider Borel measures $\al\in\Mm(\X)$ on a metric space $(\Xx,d)$. This
+means that $\al(A)$ is defined for every Borel set $A$, obtained from open sets
+by countable unions, intersections and complements. Unless otherwise stated,
+the measures are finite.
+
+A Dirac measure is defined by $\delta_x(A)=1$ if $x\in A$ and $0$ otherwise.
+For the discrete measure above,
+
+```{math}
+\al(A)=\sum_{x_i\in A} a_i .
+```
+
+We denote by $\Mm_+(\X)$ the set of positive finite measures on $\X$ and by
+$\Mm_+^1(\X)$ the set of probability measures, i.e. positive measures of total
+mass one.
+
+### Polish Metric Spaces
+
+Many measure-theoretic statements used later require a mild regularity
+assumption on the underlying space. The point is not to restrict applications,
+since Euclidean spaces, complete separable manifolds and separable Hilbert
+spaces are covered, but to exclude pathological measurable spaces where
+disintegration, tightness or weak convergence can fail to behave properly.
+
+(def-polish-metric-space)=
+:::{admonition} Definition: Polish Metric Space
+:class: important
+A metric space $(\X,d)$ is Polish if it is complete and separable: every Cauchy
+sequence converges in $\X$, and $\X$ contains a countable dense subset. More
+generally, a topological space is called Polish if its topology can be induced
+by some complete separable metric.
+:::
+
+This assumption already includes genuinely infinite-dimensional spaces. In the
+Euclidean dynamical formulations used later, the path space
+
+```{math}
+\Ss=C([0,1];\RR^d),\qquad
+d_\infty(\gamma,\eta) \eqdef
+\sup_{t\in[0,1]}\|\gamma(t)-\eta(t)\|.
+```
+
+is Polish. Completeness follows because a uniformly Cauchy sequence of
+continuous paths converges uniformly to a continuous path, and separability
+follows by approximating paths uniformly by piecewise-linear paths with
+rational breakpoints and rational values. This example is used later as the
+state space for laws of trajectories: the endpoint evaluation maps are
+continuous on $\Ss$, which makes endpoint constraints well behaved for
+dynamical optimal plans and Schrodinger bridges; see the path-space formulation in
+{ref}`rem-bb-path-space` and Section {ref}`sec-path-space-schrodinger`.
+
+Polish spaces are the natural ambient category for probability measures. Borel
+probability measures on them are regular, tightness gives compactness
+criteria, regular conditional probabilities and disintegrations exist under
+standard assumptions, and Wasserstein spaces remain Polish; see Proposition
+{ref}`prop-wasserstein-space-polish`.
+
+(def:support)=
+:::{admonition} Definition: Support Of A Measure
+:class: important
+The support $\supp(\al)$ of a Borel measure $\al$ on a metric space $\Xx$ is
+the smallest closed set of full $\al$-mass. Equivalently, $x\in\supp(\al)$ if
+every open ball centered at $x$ has positive $\al$-mass.
+:::
+
+### Radon Measures
+
+Using Lebesgue integration, a Borel measure computes integrals of measurable
+functions. We write the duality pairing as
+
+```{math}
+\langle f,\al\rangle \eqdef \int f(x)\d\al(x).
+```
+
+For a discrete measure this becomes
+
+```{math}
+\int_\X f(x)\d\al(x)=\sum_{i=1}^n a_i f(x_i).
+```
+
+Integration against a finite measure on a compact space defines a continuous
+linear form on the Banach space $(\Cc(\Xx),\|\cdot\|_\infty)$, since
+$|\int f\d\al|\leq \|f\|_\infty |\al|(\Xx)$. Conversely, the
+Riesz--Markov--Kakutani representation theorem identifies every continuous
+linear form on $\Cc(\Xx)$ with integration against a finite signed Radon
+measure {cite:p}`rudin1987realcomplex,bogachev2007measure`. This is the
+duality $\Mm(\Xx)=\Cc(\Xx)^*$ that later supports convex duality.
+
+### Relative Densities
+
+(def-relative-density)=
+:::{admonition} Definition: Relative Density
+:class: important
+If $\al$ is absolutely continuous with respect to a reference measure
+$\lambda$, its relative density is the Radon--Nikodym derivative
+
+```{math}
+\d\al(x)=\density{\al}(x)\d\lambda(x),
+\qquad
+\density{\al}=\frac{\d\al}{\d\lambda}.
+```
+
+Equivalently, for all $h\in\Cc(\Xx)$,
+
+```{math}
+\int_{\Xx} h(x)\d\al(x)
+=
+\int_{\Xx} h(x)\density{\al}(x)\d\lambda(x).
+```
+:::
+
+On $\RR^d$ the reference $\lambda$ is often Lebesgue measure $\d x$.
+
+### Total Variation
+
+The norm inherited from the duality $\Mm(\Xx)=\Cc(\Xx)^*$ is the total
+variation norm.
+
+(defn-total-variation)=
+:::{admonition} Definition: Total Variation
+:class: important
+For a finite signed Radon measure $\al$ on a compact space $\Xx$,
+
+```{math}
+\|\al\|_{\TV}
+\eqdef
+\sup_{\|f\|_\infty\leq 1}\langle f,\al\rangle .
+```
+:::
+
+The absolute value of a signed measure is
+
+```{math}
+|\al|(A)
+\eqdef
+\sup_{A=\cup_i B_i}\sum_i |\al(B_i)|,
+```
+
+where the supremum is over finite or countable measurable partitions of $A$.
+If $\al=\sum_i a_i\delta_{x_i}$ with distinct atoms, then
+$|\al|=\sum_i |a_i|\delta_{x_i}$. If
+$\d\al(x)=\rho(x)\d\lambda(x)$, then
+$\d|\al|(x)=|\rho(x)|\d\lambda(x)$.
+
+(prop-tv-dual-measure)=
+:::{admonition} Proposition: Dual And Measure Definitions Of Total Variation
+:class: important
+For a finite signed Radon measure $\al$ on a compact space $\Xx$,
+
+```{math}
+\|\al\|_{\TV}=|\al|(\Xx).
+```
+
+Consequently $(\Mm(\Xx),\|\cdot\|_{\TV})$ is isometrically the Banach dual of
+$(\Cc(\Xx),\|\cdot\|_\infty)$.
+:::
+
+:::{dropdown} Proof
+The inequality $\|\al\|_{\TV}\leq|\al|(\Xx)$ follows from
+
+```{math}
+\left|\int f\d\al\right|
+\leq
+\int |f|\d|\al|
+\leq
+\|f\|_\infty |\al|(\Xx).
+```
+
+For the reverse inequality, write the Jordan decomposition
+$\al=\al^+-\al^-$. The measurable sign
+$s=\d\al/\d|\al|$ takes values in $\{-1,1\}$ outside a null set and satisfies
+$\d\al=s\d|\al|$. By regularity of Radon measures on compact spaces, $s$ can
+be approximated in $L^1(|\al|)$ by continuous functions $f_k$ with
+$\|f_k\|_\infty\leq1$. Hence
+$\int f_k\d\al\to\int s\d\al=|\al|(\Xx)$.
+:::
+
+For absolutely continuous measures
+$\d\al=\rho_\al\d\lambda$ and $\d\be=\rho_\be\d\lambda$,
+
+```{math}
+\|\al-\be\|_{\TV}
+=
+\int_\Xx |\rho_\al(x)-\rho_\be(x)|\d\lambda(x).
+```
+
+For two discrete measures, one first recasts both measures as weight vectors on
+the same finite support. If
+
+```{math}
+\al=\sum_{i=1}^n \tilde a_i\delta_{x_i},
+\qquad
+\be=\sum_{j=1}^m \tilde b_j\delta_{y_j},
+```
+
+let $z_1,\ldots,z_r$ be the distinct points in the union
+$\{x_i\}_i\cup\{y_j\}_j$ and set
+
+```{math}
+a_k=\sum_{i:x_i=z_k}\tilde a_i,
+\qquad
+b_k=\sum_{j:y_j=z_k}\tilde b_j.
+```
+
+Then $\al=\sum_{k=1}^r a_k\delta_{z_k}$ and
+$\be=\sum_{k=1}^r b_k\delta_{z_k}$.
+This convention merges masses located at the same point before comparing the two
+measures. If the two input supports are already enumerated without repetitions
+and are disjoint, this simply amounts to taking
+$(z_k)_k=(x_1,\ldots,x_n,y_1,\ldots,y_m)$ and padding the weights as
+$a=(\tilde a,0_m)$ and $b=(0_n,\tilde b)$. With this common-support notation,
+
+```{math}
+\|\al-\be\|_{\TV}=\sum_{k=1}^r |a_k-b_k|.
+```
+
+### Probabilistic Interpretation
+
+Radon probability measures represent laws of random variables. Let
+$(\Omega,\Ff,\PP)$ be an abstract probability space. A random variable with
+values in $\X$ is a measurable map
+$X:(\Omega,\Ff)\to(\X,\Bb(\X))$, or simply $X:\Omega\to\X$ once the measurable
+structures are understood. Its law is the Radon probability measure $\al$
+defined by
+
+```{math}
+\al(A)=\PP\{\omega\in\Omega : X(\omega)\in A\}.
+```
+
+Integrals with respect to the law are expectations:
+
+```{math}
+\int_\X f(x)\d\al(x)=\mathbb{E}[f(X)].
+```
+
+(sec-push-forward)=
+## Push Forward
+
+Push-forwards encode how maps move mass. This short section is the bridge
+between deterministic maps and linear operations on measures.
+
+For a continuous map $\T:\X\to\Y$, the push-forward operator
+$\T_\sharp:\Mm(\X)\to\Mm(\Y)$ sends a Dirac mass to
+$\T_\sharp\delta_x=\delta_{\T(x)}$. For discrete measures,
+
+```{math}
+\T_\sharp\al=\sum_i a_i\delta_{\T(x_i)}.
+```
+
+Moving from $\T$ to $\T_\sharp$ linearizes the action of a map at the price of
+moving from the space $\Xx$ to the measure space $\Mm(\Xx)$.
+
+(defn-pushfwd)=
+:::{admonition} Definition: Push-Forward
+:class: important
+For $\T:\X\to\Y$, the push-forward measure
+$\be=\T_\sharp\al\in\Mm(\Y)$ satisfies
+
+```{math}
+:label: eq-push-fwd-web
+\forall h\in\Cc(\Y),\qquad
+\int_\Y h(y)\d\be(y)
+=
+\int_\X h(\T(x))\d\al(x).
+```
+
+Equivalently, for any measurable set $B\subset\Y$,
+
+```{math}
+\be(B)=\al(\{x\in\X : \T(x)\in B\}).
+```
+
+The operator $\T_\sharp$ preserves positivity and total mass.
+:::
+
+(rem-pullback-pushforward)=
+:::{admonition} Remark: Pullback and push-forward
+:class: ot4ml-remark
+
+If $\T:\X\to\Y$ is continuous, the pullback by $\T$ is the linear operator
+
+```{math}
+\T^\sharp:\Cc(\Y)\to\Cc(\X),
+\qquad
+\T^\sharp g=g\circ\T .
+```
+
+The definition of the push-forward is exactly the dual relation between this pullback on functions and the action of $\T_\sharp$ on measures:
+
+```{math}
+\int_\X \T^\sharp g(x)\d\mu(x)
+=
+\int_\Y g(y)\d(\T_\sharp\mu)(y).
+```
+
+In pairing notation,
+
+```{math}
+\left\langle \T^\sharp g,\mu\right\rangle_{\Cc(\X),\Mm(\X)}
+=
+\left\langle g,\T_\sharp\mu\right\rangle_{\Cc(\Y),\Mm(\Y)}.
+```
+
+Thus push-forward is the adjoint operation to pullback, with the direction reversed. The two arrows should not be confused: $\T_\sharp$ transports mass from $\X$ to $\Y$, whereas $\T^\sharp$ transports test functions from $\Y$ back to $\X$.
+:::
+
+
+(prop-push-forward-densities)=
+:::{admonition} Proposition: Push-Forward Formula For Densities
+:class: important
+Let $\al$ and $\be$ have densities $\density{\al}$ and $\density{\be}$ on open
+subsets of $\RR^d$. Assume that $\T$ is a $C^1$ diffeomorphism and
+$\be=\T_\sharp\al$. Then
+
+```{math}
+:label: eq-pfwd-density-web
+\density{\al}(x)
+=
+|\det(\T'(x))|\density{\be}(\T(x)).
+```
+
+Equivalently, for $y=\T(x)$,
+
+```{math}
+\rho_\beta(y)
+=
+\rho_\alpha(\T^{-1}y)
+\frac{1}{|\det(\T'(\T^{-1}y))|}.
+```
+:::
+
+:::{dropdown} Proof
+Using the change of variables $y=\T(x)$ in the push-forward identity gives, for
+all $h\in\Cc(\Yy)$,
+
+```{math}
+\begin{aligned}
+\int_\Yy h(y)\rho_\be(y)\d y
+&=
+\int_\Xx h(\T(x))\rho_\al(x)\d x \\
+&=
+\int_\Yy h(y)\rho_\al(\T^{-1}y)
+\frac{\d y}{|\det(\T'(\T^{-1}y))|}.
+\end{aligned}
+```
+
+Since this holds for all test functions, the densities agree. Rewriting with
+$y=\T(x)$ gives the displayed formula.
+:::
+
+:::{admonition} Remark: Probabilistic interpretation
+:class: ot4ml-remark
+
+Let $X:\Omega\to\X$ be a random variable defined on an abstract probability
+space $(\Omega,\Ff,\PP)$. Its law, or probability distribution, is the
+push-forward of $\PP$ by $X$, namely $\al=X_\sharp\PP$.
+
+Applying another push-forward $\be = \T_\sharp\al$ for $\T : \X \rightarrow \Y$, following {eq}`eq-push-fwd-web`, is equivalent to defining another random variable $Y=\T(X)$, namely $\omega \in \Om \mapsto \T(X(\omega)) \in \Y$. Indeed
+
+```{math}
+\be=\T_\sharp\al=\T_\sharp(X_\sharp\PP)=(\T\circ X)_\sharp\PP,
+```
+
+so $\be$ is the law of $Y$.
+
+Drawing a random sample $y$ from $Y$ is thus simply achieved by computing $y=\T(x)$ where $x$ is drawn from $X$.
+:::
+
+
+(sec-monge-formulation)=
+## Monge's Formulation
+
+Monge's problem asks for a deterministic map transporting one law onto another
+while minimizing a prescribed cost. It is geometrically direct, because every
+source point is assigned one destination, but analytically fragile: the
+feasible set is non-convex, it can be empty, and a map cannot split mass. These
+limitations motivate Kantorovich's relaxation in the next chapter.
+
+### Monge Problem
+
+Given $\al\in\Mm_+^1(\Xx)$, $\be\in\Mm_+^1(\Yy)$ and a cost
+$c:\Xx\times\Yy\to\RR_+$, the Monge problem is
+
+```{math}
+:label: eq-monge-continuous-web
+\Monge_c(\al,\be)
+\eqdef
+\inf_{\T:\Xx\to\Yy}
+\left\{
+\int_\Xx c(x,\T(x))\d\al(x)
+\;:\;
+\T_\sharp\al=\be
+\right\}.
+```
+
+The constraint $\T_\sharp\al=\be$ means that $\T$ pushes the mass of $\al$ onto
+$\be$.
+
+(prop-empirical-monge-matching)=
+:::{admonition} Proposition: Empirical Monge Maps And Matchings
+:class: important
+Assume that the source atoms $x_1,\ldots,x_n$ are distinct and
+
+```{math}
+\al=\frac1n\sum_{i=1}^n\delta_{x_i},
+\qquad
+\be=\frac1n\sum_{j=1}^n\delta_{y_j}.
+```
+
+If $\T_\sharp\al=\be$, then for each distinct target value $z$ in the support
+of $\be$, exactly $n\be(\{z\})$ source atoms are mapped to $z$. In particular,
+if the $y_j$ are distinct, then there is a permutation
+$\sigma\in\Perm(n)$ such that $\T(x_i)=y_{\sigma(i)}$.
+
+Conversely, every assignment of source atoms to target atoms with the correct
+masses defines a feasible Monge map on the support of $\al$, and in the
+distinct-target case
+
+```{math}
+\int_\Xx c(x,\T(x))\d\al(x)
+=
+\frac1n\sum_{i=1}^n c(x_i,y_{\sigma(i)}).
+```
+
+If source locations are repeated, they should first be merged into atoms with
+larger masses; such atoms cannot be split by a Monge map.
+:::
+
+:::{dropdown} Proof
+The push-forward condition implies that all images $\T(x_i)$ belong to the
+support of $\be$. For any target atom $z$,
+
+```{math}
+\be(\{z\})
+=
+\al(\T^{-1}(\{z\}))
+=
+\frac1n\#\{i:\T(x_i)=z\}.
+```
+
+This proves the counting statement. If every target atom has mass $1/n$, each
+target receives exactly one source atom, hence a permutation. The converse and
+the cost identity follow by direct substitution.
+:::
+
+(prop-existence-transport-map-atomless)=
+:::{admonition} Proposition: Existence Of Transport Maps From Atomless Sources
+:class: important
+Let $\al$ and $\be$ be Borel probability measures on Polish spaces, and assume
+that $\al$ is atomless. Then there exists a measurable map $\T$ such that
+$\T_\sharp\al=\be$.
+:::
+
+:::{dropdown} Proof
+A standard measure-isomorphism theorem identifies the atomless probability
+space generated by $\al$ with Lebesgue measure on $[0,1]$, modulo null sets
+{cite:p}`bogachev2007measure`. It is therefore enough to construct a map from
+$[0,1]$ to the target law $\be$. Choose a Borel isomorphism from the support of
+$\be$ onto a Borel subset of $[0,1]$, push $\be$ through it, and use the
+generalized inverse of the corresponding cumulative distribution function.
+Composing back gives a measurable transport map from $\al$ to $\be$.
+:::
+
+:::{admonition} Remark: Feasibility versus optimality
+:class: ot4ml-remark
+
+An optimal map solving {eq}`eq-monge-continuous-web` might fail to exist for two distinct reasons. First, the constraint set can be empty, for instance if $\al=\de_x$ and $\be$ is not a single Dirac mass. Proposition {ref}`prop-existence-transport-map-atomless` shows that non-atomicity of the source removes this feasibility obstruction. Second, even when feasible maps exist, the infimum may fail to be attained because the class of maps is not closed under weak limits.
+:::
+
+(ex-splitting-obstruction)=
+:::{admonition} Example: A splitting obstruction
+:class: ot4ml-example
+
+A classical example, discussed for instance in {cite:p}`SantambrogioBook`, takes $\al$ uniform on a vertical segment and $\be$ equal to the average of the uniform measures on two parallel vertical segments placed symmetrically to the left and to the right. For the quadratic cost, the relaxed Kantorovich optimizer splits each source point into its two symmetric targets. A deterministic Monge map cannot split one point into two destinations, so minimizing sequences must oscillate between the two sides and the Monge problem has no optimizer.
+:::
+
+
+:::{admonition} Example: Semi-discrete Monge maps
+:class: ot4ml-example
+
+The Monge formulation is not symmetric in $\al$ and $\be$. It makes sense, for instance, when $\al$ has a density with respect to Lebesgue measure and $\be$ is discrete. On $\Xx=\Yy=\RR^d$, let $\be=\sum_j b_j\delta_{y_j}$ be supported on $\{y_1,\ldots,y_m\}$. A map $\T$ such that $\T_\sharp\al=\be$ defines a segmentation of the space into cells
+
+```{math}
+C_j\eqdef \T^{-1}(y_j),
+\qquad
+\al(C_j)=b_j.
+```
+
+This is the semi-discrete setting. Chapter {ref}`sec-semidiscr-w1` explains how the cells become Laguerre cells for prescribed masses and ordinary Voronoi cells when the masses are free. Figure {ref}`fig:monge-semidiscrete-maps` shows two such equal-mass piecewise-constant maps: the color of each target atom matches the Laguerre cell that is sent to it. If one exchanges the roles of $\al$ and $\be$ so that $\al$ is discrete, then no valid $\T$ exists in general: it is not possible to push forward a discrete measure to a measure with density.
+:::
+
+
+(fig:monge-semidiscrete-maps)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-semidiscrete-maps")
+```
+
+*Semi-discrete Monge maps. The red contours show the continuous source density
+$\al$. The colored regions are numerical Laguerre cells, restricted to the
+visible support of $\al$, with approximately equal $\al$-mass. The circular atoms
+form the discrete target $\be$. Their colors are tied to horizontal position,
+with a small random perturbation, and are reused for the cells. Faint segments
+connect cell barycenters to their images under the piecewise-constant Monge
+map.*
+:::
+
+
+The next figure shows a finite-dimensional instance of this deterministic
+viewpoint. The source and target measures are empirical color clouds in RGB
+space, and the map transports colors while leaving pixel positions fixed.
+Grayscale equalization is one-dimensional, but full palette transfer requires
+transporting empirical measures in a three-dimensional color space. Early
+methods used affine statistics or iterated one-dimensional projections
+{cite:p}`reinhard2001color,pitie2005n`; replacing these projections by a
+three-dimensional OT map gives a more intrinsic palette match
+{cite:p}`rabin-ssvm-11`.
+
+(fig:monge-color-transfer-rgb)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-color-transfer-rgb")
+```
+
+*Color transfer as a Monge map in RGB space, from a beach photograph to a
+flower photograph. The top row applies the palette map to the source image; the
+bottom row shows the empirical color clouds in the RGB cube. Only colors are
+transported here, not pixel locations.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the interpolation, resolution, target palette, and contrast controls to replay the RGB color transport while keeping pixel locations fixed.
+:::
+
+<iframe class="ot4ml-live-frame" title="Monge color transfer controls" src="../live/monge-color.html" loading="lazy" style="width:100%;height:450px;border:0;display:block;"></iframe>
+
+### Monge Distance
+
+When $\Xx=\Yy$ and $c(x,y)=d(x,y)^p$ for a metric $d$, set
+
+```{math}
+\mathcal{E}_\al(\T)
+\eqdef
+\int_\Xx d(x,\T(x))^p\d\al(x).
+```
+
+The Monge value defines the directed quantity
+
+```{math}
+:label: eq-monge-distance-web
+\widetilde{\Wass}_p(\al,\be)^p
+\eqdef
+\inf_{\T:\Xx\to\Xx}
+\left\{
+\mathcal{E}_\al(\T)
+\;:\;
+\T_\sharp\al=\be
+\right\}.
+```
+
+If the constraint set is empty, then
+$\widetilde{\Wass}_p(\al,\be)=+\infty$.
+
+(ex-monge-book-shifting-w1)=
+:::{admonition} Example: Book-shifting in the Monge problem
+:class: ot4ml-example
+
+Let
+
+```{math}
+\al=\frac12\mathds{1}_{[0,2]}(x)\d x,
+\qquad
+\be=\frac12\mathds{1}_{[1,3]}(y)\d y.
+```
+
+The monotone translation $T_{\rm tr}(x)=x+1$ pushes $\al$ to $\be$. For the cost $|x-y|$, it is not the only optimal Monge map. The book-shifting map
+
+```{math}
+T_{\rm book}(x)=
+\begin{cases}
+x+2, & 0\leq x\leq1,\\
+x, & 1<x\leq2,
+\end{cases}
+```
+
+also satisfies $(T_{\rm book})_\sharp\al=\be$: it keeps the overlapping interval $[1,2]$ fixed and sends the left interval $[0,1]$ to the uncovered interval $[2,3]$. For any admissible map $T_\sharp\al=\be$,
+
+```{math}
+\int |T(x)-x|\d\al(x)
+\geq
+\int (T(x)-x)\d\al(x)
+=
+\int y\d\be(y)-\int x\d\al(x)
+=1.
+```
+
+Both $T_{\rm tr}$ and $T_{\rm book}$ satisfy $T(x)\geq x$ for $\al$-almost every $x$, hence both saturate this lower bound and are optimal for the Monge value $\tilde\Wass_1$. More generally, one may replace the map $x\mapsto x+2$ on $[0,1]$ by any measure-preserving map from $[0,1]$ to $[2,3]$, while keeping the identity on $[1,2]$. The flatness is specific to the linear cost: for $p>1$, strict convexity selects the monotone translation.
+:::
+
+
+(prop-directed-monge-distance)=
+:::{admonition} Proposition: Directed Monge Distance
+:class: important
+Assume that $\Xx=\Yy$ is a metric space. The quantity
+$\widetilde{\Wass}_p$ is nonnegative, vanishes only on the diagonal, and
+satisfies the triangle inequality. It is therefore a directed extended
+distance: it need not be symmetric and may take the value $+\infty$.
+:::
+
+:::{dropdown} Proof
+Nonnegativity is immediate. If $\widetilde{\Wass}_p(\al,\be)=0$, choose
+feasible maps $\T_k$ with
+$\int d(x,\T_k(x))^p\d\al(x)\to0$. For every bounded $1$-Lipschitz function
+$h$,
+
+```{math}
+\left|\int h\d\be-\int h\d\al\right|
+=
+\left|\int h(\T_k(x))-h(x)\d\al(x)\right|
+\leq
+\left(\int d(x,\T_k(x))^p\d\al(x)\right)^{1/p}
+\to0.
+```
+
+Since bounded Lipschitz functions separate probability measures on metric
+spaces, $\al=\be$.
+
+For the triangle inequality, take $\epsilon$-minimizers
+$S_\sharp\al=\ga$ and $T_\sharp\ga=\be$. The composition
+$T\circ S$ is feasible from $\al$ to $\be$, and Minkowski's inequality gives
+
+```{math}
+\widetilde{\Wass}_p(\al,\be)
+\leq
+\mathcal{E}_\al(S)^{1/p}
++
+\mathcal{E}_\ga(T)^{1/p}
+\leq
+\widetilde{\Wass}_p(\al,\ga)
++
+\widetilde{\Wass}_p(\ga,\be)
++
+2\epsilon .
+```
+
+Letting $\epsilon\to0$ proves the result.
+:::
+
+The directed value $\widetilde{\Wass}_p$ is useful conceptually, but it is too
+rigid to be the main distance between measures: it can be infinite and
+asymmetric. Kantorovich's formulation remedies both issues by replacing maps
+with couplings.
+
+(sec-monge-existence-uniqueness)=
+
+## Existence And Uniqueness Of The Monge Map
+
+This section records the main regimes where Monge's deterministic formulation
+becomes well posed. Brenier's theorem is the central result: for the squared
+Euclidean cost, absolute continuity of the source restores existence,
+uniqueness and convex-potential structure.
+
+### Brenier's Theorem
+
+Brenier's theorem {cite:p}`MR923203,Brenier91` ensures that in $\RR^d$, for the
+quadratic cost, absolute continuity of the source is enough for Monge's problem
+to have a unique solution. It also gives the decisive structural description:
+the optimal map is the gradient of a convex potential.
+
+(thm-brenier)=
+:::{admonition} Theorem: Brenier
+:class: important
+Let $\al,\be\in\Mm_+^1(\RR^d)$ have finite second moments, and assume that
+$\al$ is absolutely continuous with respect to Lebesgue measure. For
+$c(x,y)=\|x-y\|^2$, there exists a convex function
+$\phi:\RR^d\to\RR\cup\{+\infty\}$ such that
+
+```{math}
+\T=\nabla\phi,
+\qquad
+\T_\sharp\al=\be,
+```
+
+and $\T$ is the unique optimal Monge map $\al$-almost everywhere. The optimal
+Kantorovich plan is $(\Id,\T)_\sharp\al$.
+:::
+
+:::{dropdown} Proof Sketch
+The proof uses Kantorovich relaxation and duality, developed later in the book.
+For the quadratic cost, dual optimality gives potentials whose equality set is
+equivalent, after subtracting quadratic terms, to the Fenchel equality
+$\phi(x)+\phi^*(y)=\langle x,y\rangle$ for a convex function $\phi$. Therefore
+the support of every optimal plan lies in the graph of $\partial\phi$. Since
+$\al$ has a density and convex functions are differentiable Lebesgue-almost
+everywhere, $\partial\phi(x)$ is a singleton for $\al$-almost every $x$. The
+relaxed optimizer is therefore induced by the map $\T=\nabla\phi$, and
+uniqueness follows from concentration on the same graph.
+:::
+
+Brenier's theorem is the higher-dimensional analogue of the one-dimensional monotone rearrangement theorem. In one dimension, the derivative of a convex function is an increasing map; in several dimensions, the corresponding object is the gradient of a convex function. Such gradients are monotone fields:
+
+```{math}
+\langle \nabla\phi(x)-\nabla\phi(x'),x-x'\rangle\geq0.
+```
+
+:::{admonition} Remark: Monotone fields need not be gradients
+:class: ot4ml-remark
+
+In dimensions larger than one, not all monotone fields are gradients of convex functions. Consider in $\RR^2$ the rotation matrix
+
+```{math}
+R_\theta=\begin{pmatrix}
+\cos\theta & -\sin\theta\\
+\sin\theta & \cos\theta
+\end{pmatrix}.
+```
+
+The linear map $x\mapsto R_\theta x$ is monotone as soon as $|\theta|\leq\pi/2$, because
+
+```{math}
+\dotp{R_\theta x-R_\theta x'}{x-x'}
+=
+\dotp{R_\theta(x-x')}{x-x'}
+=
+\cos(\theta)\norm{x-x'}^2\geq0.
+```
+
+However, for $\theta\neq0$, $R_\theta$ is not symmetric and therefore cannot be the gradient of a scalar potential. Indeed, if a linear field $Ax$ equals $\nabla\phi(x)$, then its Jacobian $A$ must be symmetric; equivalently, a quadratic potential $\phi(x)=\dotp{Bx}{x}/2$ has gradient $((B+B^\top)/2)x$. Thus monotonicity is weaker than Brenier optimality in dimension $d\geq2$.
+:::
+
+
+(defn-not-charging-hypersurfaces)=
+:::{admonition} Definition: Measures Not Charging Hypersurfaces
+:class: important
+A Borel measure $\al$ on $\RR^d$ does not charge hypersurfaces if $\al(S)=0$
+for every countably $(d-1)$-rectifiable set $S$, i.e. every set that can be
+covered, up to a $\mathcal{H}^{d-1}$-null set, by countably many $C^1$
+hypersurfaces.
+:::
+
+:::{admonition} Remark: A sharp source hypothesis
+:class: ot4ml-remark
+
+The absolute-continuity assumption in Brenier's theorem can be weakened: for the quadratic cost, it is enough that $\al$ does not charge hypersurfaces {cite:p}`gangbo1996geometry,Villani09,SantambrogioBook`. The reason is that the set where a convex potential has a genuinely multi-valued subdifferential is contained in a countable union of lower-dimensional pieces. This condition is close to sharp. If the source gives positive mass to a segment or a hypersurface, the subdifferential may be multi-valued on a set of positive $\al$-mass, and the optimal relaxed plan may need to split mass, as in Example {ref}`ex-splitting-obstruction`.
+:::
+
+
+### Radial Measures
+
+Radial symmetry gives a useful higher-dimensional case where the Brenier map
+reduces to a one-dimensional monotone rearrangement. A measure $\mu$ on
+$\RR^d$ is radial if $Q_\sharp\mu=\mu$ for every orthogonal map $Q$. Such a
+measure is determined by the law of the radius $\norm{x}$, and the optimal map
+transports this radius while keeping the angular direction fixed.
+
+(prop-radial-transport)=
+:::{admonition} Proposition: Optimal Transport Between Radial Measures
+:class: important
+Let $\al,\be\in\Mm_+^1(\RR^d)$ be radial probability measures with finite
+second moments, and assume that $\al$ is absolutely continuous with respect to
+Lebesgue measure. Define their radial distribution functions
+
+```{math}
+F_\al(r)\eqdef \al(\{x:\norm{x}\leq r\}),
+\qquad
+F_\be(r)\eqdef \be(\{y:\norm{y}\leq r\}),
+\qquad r\geq0,
+```
+
+and let $F_\be^{-1}(u)\eqdef\inf\{r\geq0:F_\be(r)\geq u\}$ be the generalized
+inverse. Set $\tau(r)\eqdef F_\be^{-1}(F_\al(r))$. Then the quadratic Brenier
+map from $\al$ to $\be$ is the radial map
+
+```{math}
+\T(0)=0,
+\qquad
+\T(x)=\frac{\tau(\norm{x})}{\norm{x}}x
+\quad\text{for }x\neq0.
+```
+
+Moreover, if $\mu_\al=(x\mapsto\norm{x})_\sharp\al$ is the law of the source
+radius, then
+
+```{math}
+\Wass_2^2(\al,\be)
+=
+\int_0^\infty |r-\tau(r)|^2\,\d\mu_\al(r).
+```
+:::
+
+:::{dropdown} Proof
+Let $\mu_\al=(\norm{\cdot})_\sharp\al$ and
+$\mu_\be=(\norm{\cdot})_\sharp\be$ be the radial laws. Since $\al$ is
+absolutely continuous, $\mu_\al$ has no atoms. The map
+$\tau=F_\be^{-1}\circ F_\al$ is therefore the monotone one-dimensional
+transport from $\mu_\al$ to $\mu_\be$. If $X\sim\al$ and $R=\norm{X}$, then
+$\tau(R)$ has law $\mu_\be$. Moreover, by radiality, the conditional direction
+$X/\norm{X}$ given $R=r$ is uniform on the sphere for $\mu_\al$-a.e. $r>0$.
+Thus $\T$ changes only the radius, from $R$ to $\tau(R)$, and keeps the uniform
+angular distribution. It follows that $\T_\sharp\al$ is radial with radial law
+$\mu_\be$, hence $\T_\sharp\al=\be$.
+
+It remains to check optimality. The function $\tau$ is nondecreasing and
+nonnegative. Define $\psi(r)\eqdef\int_0^r\tau(s)\d s$ on $\RR_+$. Then
+$\psi$ is convex and nondecreasing, so $\phi(x)\eqdef\psi(\norm{x})$ is convex
+on $\RR^d$. Since $\al$ is absolutely continuous, it does not charge the origin
+nor the radii where the monotone function $\tau$ is discontinuous. Thus
+
+```{math}
+\nabla\phi(x)=\frac{\tau(\norm{x})}{\norm{x}}x
+=\T(x)
+\qquad\text{for }\al\text{-a.e. }x.
+```
+
+The map $\T$ is therefore a gradient of a convex potential and pushes $\al$ to
+$\be$. Brenier's theorem identifies it as the unique quadratic optimal Monge
+map. The displayed cost formula follows by substituting $\T(x)$ in
+$\int\norm{x-\T(x)}^2\d\al(x)$.
+:::
+
+If $\al$ is not absolutely continuous, the same radial idea is still useful but
+has to be interpreted at the level of couplings of the radial variables: atoms
+on spheres may have to be split, so a Monge map need not exist.
+
+
+### Polar Factorization
+
+Brenier's theorem provides a canonical way to extract the monotone part of an
+arbitrary map. Suppose one starts from a square-integrable deformation
+$u:\Omega\to\RR^d$. Its law $\nu=u_\sharp\lambda$ records where the mass ends
+up, but forgets how the points of $\Omega$ were labelled. Brenier's polar
+factorization {cite:p}`MR923203,Brenier91` separates these effects: a
+measure-preserving rearrangement $s$ changes labels without changing mass, then
+the unique convex-gradient map $\nabla\phi$ sends the uniform source to the
+output law.
+
+(prop-polar-factorization)=
+:::{admonition} Proposition: Polar Factorization
+:class: important
+Let $\Omega\subset\RR^d$ be endowed with normalized Lebesgue measure $\lambda$,
+and let $u\in L^2(\Omega;\RR^d)$. Assume that the law
+$\nu=u_\sharp\lambda$ has finite second moment. Then there exist a
+measure-preserving map $s:\Omega\to\Omega$ and a convex function $\phi$ such
+that
+
+```{math}
+u=\nabla\phi\circ s
+\qquad \lambda\text{-a.e.}
+```
+
+The Brenier factor $\nabla\phi$ is unique $\lambda$-almost everywhere.
+:::
+
+:::{dropdown} Proof
+By Brenier's theorem there is a unique gradient of a convex function
+$\T=\nabla\phi$ transporting $\lambda$ to $\nu$. The maps $u$ and $\T$ have the
+same image law. The rearrangement theorem for non-atomic probability spaces
+gives a measure-preserving map $s$ such that $u=\T\circ s$. Uniqueness of the
+Brenier factor follows from Brenier's theorem.
+:::
+
+For linear maps under a Gaussian reference, this reduces to the usual matrix
+polar decomposition. If $X\sim\Gaussian(0,\Id)$ and $u(x)=Ax$, then
+$u_\sharp\Gaussian(0,\Id)=\Gaussian(0,AA^\top)$. The Brenier map from
+$\Gaussian(0,\Id)$ to this Gaussian is $x\mapsto Sx$, where
+$S=(AA^\top)^{1/2}$ is symmetric positive semidefinite. Hence
+
+```{math}
+A=SO,
+\qquad
+O=S^\dagger A.
+```
+
+The factor $Sx$ is the convex-gradient transport part, while $Ox$ preserves the
+standard Gaussian law.
+
+(def-monge-mccann-interpolation)=
+### Displacement Interpolation
+
+An optimal map does not only match two endpoint measures; it tells how to draw
+a path between them. Each particle keeps its identity and travels at constant
+speed from its initial position to its image.
+
+:::{admonition} Definition: Monge And McCann Displacement Interpolation
+:class: important
+If $\T_\sharp\al=\be$, the Monge interpolation generated by $\T$ is the curve
+
+```{math}
+\T_t(x)\eqdef(1-t)x+t\T(x),
+\qquad
+\al_t\eqdef(\T_t)_\sharp\al,
+\qquad
+t\in[0,1].
+```
+
+For the quadratic cost, when $\T$ is the Brenier map, this is McCann's
+displacement interpolation {cite:p}`mccann1997convexity`.
+:::
+
+(prop-monge-displacement-geodesic)=
+:::{admonition} Proposition: Directed Monge Displacement Geodesics
+:class: important
+Let $p\geq1$, let $\al,\be\in\Mm_+^1(\RR^d)$ have finite $p$-th moments, and
+let $\T$ be an optimal map for
+$\widetilde{\Wass}_p(\al,\be)$. Set
+$\al_t=(\T_t)_\sharp\al$ with $\T_t=(1-t)\Id+t\T$. Assume that, for every
+$t<1$, $\T_t$ is one-to-one on a full $\al$-measure Borel set. Then, for
+$0\leq s\leq t\leq1$,
+
+```{math}
+\widetilde{\Wass}_p(\al_s,\al_t)
+=
+(t-s)\widetilde{\Wass}_p(\al,\be).
+```
+
+Thus $t\mapsto\al_t$ is an oriented constant-speed geodesic for the directed
+Monge distance. For $p=2$, this applies to the Brenier map under the hypotheses
+of Brenier's theorem.
+:::
+
+:::{dropdown} Proof
+For $s<t$, define $S_{s,t}=\T_t\circ\T_s^{-1}$ along transported particles.
+Then $(S_{s,t})_\sharp\al_s=\al_t$ and
+
+```{math}
+\widetilde{\Wass}_p(\al_s,\al_t)^p
+\leq
+\int \|\T_t(x)-\T_s(x)\|^p\d\al(x)
+=
+(t-s)^p\widetilde{\Wass}_p(\al,\be)^p.
+```
+
+The reverse inequality follows by applying the triangle inequality to the
+three legs $\al\to\al_s\to\al_t\to\be$. For a Brenier map
+$\T=\nabla\phi$, $\T_t$ is the gradient of
+$(1-t)\|x\|^2/2+t\phi(x)$, which is strongly convex for every $t<1$ and hence
+injective on the differentiability set of $\phi$.
+:::
+
+(fig:monge-shape-mccann-interpolation)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-shape-mccann-interpolation")
+```
+
+*McCann displacement interpolation between a cat silhouette and a heart
+silhouette. The first row displays a small farthest-point subset of transported
+particles along $T_t(x)=(1-t)x+tT(x)$. The second row renders kernel-smoothed
+densities from a denser transported cloud as color images: white means zero
+density, while high density saturates in the red-to-blue interpolation color of
+the corresponding time.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the interpolation and particle controls to compare the particle motion with the evolving density during McCann displacement interpolation.
+:::
+
+<iframe class="ot4ml-live-frame" title="McCann interpolation controls" src="../live/monge-shape.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
+
+### Regularity And The Monge-Ampere Equation
+
+The previous results identify the optimal map. Regularity theory asks when this
+map is a classical smooth deformation rather than only an almost-everywhere
+gradient. For quadratic costs this becomes the regularity theory of the
+Monge--Ampere equation.
+
+(prop-caffarelli-regularity)=
+:::{admonition} Proposition: Caffarelli Regularity
+:class: important
+Let $\Omega,\Lambda\subset\RR^d$ be bounded uniformly convex domains with
+$C^2$ boundaries. Let $\al=\rho(x)\d x$ be supported on $\Omega$ and
+$\be=\eta(y)\d y$ be supported on $\Lambda$, with
+$0<m\leq\rho,\eta\leq M<+\infty$. If
+$\rho,\eta\in C^\alpha$ for some $\alpha\in(0,1)$, then the Brenier potential
+$\phi$ transporting $\al$ to $\be$ is strictly convex and satisfies
+$\phi\in C^{2,\alpha}_{\mathrm{loc}}(\Omega)$. Under corresponding boundary
+compatibility and smoothness assumptions, the regularity holds up to the
+boundary.
+:::
+
+:::{dropdown} Proof Sketch
+The potential solves the Monge--Ampere equation
+
+```{math}
+\det(\nabla^2\phi(x))
+=
+\frac{\rho(x)}{\eta(\nabla\phi(x))}
+```
+
+in the Alexandrov sense, with second boundary condition
+$\nabla\phi(\Omega)=\Lambda$. Density bounds and convexity of the domains give
+strict convexity and localization of sections. Caffarelli's interior theory
+then yields the $C^{2,\alpha}_{\mathrm{loc}}$ estimates
+{cite:p}`caffarelli2003monge,Villani09`.
+:::
+
+Figure {ref}`fig:monge-caffarelli-nonconvex-map` illustrates the geometric role
+of the convexity assumption through a finite-sample stress test rather than a
+counterexample. A quadratic assignment transports a dense farthest-point sample
+of the disk to a dense farthest-point sample of a connected non-convex target
+made of two disks joined by a thin rectangle. The panels show the corresponding
+empirical McCann interpolation, so the loss of convex target geometry is visible
+directly along the transported particles.
+
+(fig:monge-caffarelli-nonconvex-map)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-caffarelli-nonconvex-map")
+```
+
+*Empirical quadratic OT interpolation from a disk to a connected non-convex
+two-disk domain. A 5200-point farthest-point sample of the disk is matched to a
+5200-point farthest-point sample of two disks connected by a thin rectangle. The
+panels display $(1-t)x_i+tT_N(x_i)$ for the empirical optimal assignment $T_N$.
+Colors are inherited from the horizontal coordinate of $x_i$ in the initial
+disk, making the transported material regions visible throughout the
+interpolation.*
+:::
+
+:::{admonition} Remark: Regularity, weak maps, and splitting
+:class: ot4ml-remark
+
+Caffarelli's theorem should be read as a warning as well as a theorem. Brenier's theorem gives existence and uniqueness under mild assumptions, but smoothness requires density bounds, smoothness and convex geometry that are rarely satisfied by empirical, manifold-supported or neural generative distributions. In such applications, the exact OT map is often only weakly defined, possibly unstable, and better represented by a coupling, an entropic approximation or a learned parametric surrogate.
+
+Even without smoothness, the convex potential is locally Lipschitz on the interior of its domain, so $\nabla\phi$ is defined Lebesgue-almost everywhere. If the source measure does not satisfy the non-splitting hypotheses of Brenier's theorem, the correct relaxed object is instead an optimal Kantorovich plan concentrated on the graph of the set-valued map $\partial\phi$. At points where $\partial\phi(x)$ contains several target locations, the plan may split the mass starting from $x$. Thus the subdifferential still describes the geometry of optimality, but the transport object is a coupling rather than a single-valued map.
+:::
+
+
+For smooth densities, the change-of-variables formula gives the
+Monge--Ampere equation
+
+```{math}
+:label: eq-monge-ampere-web
+\det(\nabla^2\phi(x))\density{\be}(\nabla\phi(x))
+=
+\density{\al}(x).
+```
+
+With suitable boundary conditions, this characterizes the Brenier potential up
+to an additive constant among convex solutions. The convexity constraint forces
+$\det(\nabla^2\phi(x))\geq0$ and is necessary for this fully nonlinear elliptic
+equation to be well posed.
+
+:::{admonition} Remark: Numerical Monge--Amp\`ere solvers
+:class: ot4ml-remark
+
+The Monge--Amp\`ere operator should be viewed as a fully nonlinear, degenerate elliptic analogue of the Laplacian. Proposition {ref}`prop-linearized-monge-ampere` makes this analogy literal at first order, where the equation becomes a weighted Poisson equation. The nonlinear operator $\phi\mapsto\det(\nabla^2\phi)$, however, is elliptic only on the convex branch, together with the second boundary condition $\nabla\phi(\Omega)=\Lambda$. This is the numerical difficulty: a scheme is not reliable merely because it approximates the determinant of the Hessian. It must also select the convex Alexandrov/viscosity solution and discretize the boundary condition consistently.
+
+Several complementary approaches have been developed. Geometric discretizations go back to Oliker--Prussner and reflector-design methods; PDE-based solvers include Newton methods, monotone wide-stencil finite differences and variational discretizations; semi-discrete and power-diagram methods exploit the convex-cell structure of the transport map. Representative references include {cite:p}`oliker1989numerical,caffarelli1999problem,Loeper:2005fn,benamou2014numerical,froese2011convergent,benamou2016monotone,mirebeau2015discretization,sulman2011efficient`. We do not describe these schemes here; the point is that numerical Monge--Amp\`ere transport is primarily a problem of consistent discretization of this nonlinear Laplacian-like operator.
+:::
+
+
+The following proposition records the infinitesimal form.
+
+(prop-linearized-monge-ampere)=
+:::{admonition} Proposition: Linearization Of The Monge-Ampere Equation
+:class: important
+Let $\rho_\epsilon=\rho_0+\epsilon r+o(\epsilon)$ be a smooth perturbation of a
+positive reference density $\rho_0$ on a smooth bounded domain, with
+$\int r=0$. If
+$\T_\epsilon(x)=x+\epsilon\nabla u(x)+o(\epsilon)$ transports $\rho_0$ to
+$\rho_\epsilon$, then, to first order,
+
+```{math}
+-\nabla\cdot(\rho_0\nabla u)=r.
+```
+
+When $\rho_0$ is constant, the linearized equation is
+$-\Delta u=r/\rho_0$.
+:::
+
+:::{dropdown} Proof
+The change-of-variables equation for $\T_\epsilon$ is
+
+```{math}
+\rho_0(x)
+=
+\rho_\epsilon(\T_\epsilon(x))\det(\nabla\T_\epsilon(x)).
+```
+
+Expanding
+$\rho_\epsilon(x+\epsilon\nabla u)=\rho_0(x)+\epsilon r(x)+
+\epsilon\langle\nabla\rho_0,\nabla u\rangle+o(\epsilon)$ and
+
+```{math}
+\det(I+\epsilon\nabla^2u)=1+\epsilon\Delta u+o(\epsilon)
+```
+
+gives
+
+```{math}
+\rho_0
+=
+\rho_0
++
+\epsilon\left(r+\nabla\cdot(\rho_0\nabla u)\right)
++
+o(\epsilon).
+```
+
+The first-order term must vanish.
+:::
+
+(sec-beyond-quadratic-euclidean-cost)=
+## Beyond The Quadratic Euclidean Cost
+
+The quadratic Euclidean cost is the model case, but optimal-map theory also covers many non-quadratic costs. The key point is to separate three roles: a convexity-like structure gives potentials, a twist condition prevents splitting, and curvature-type conditions give regularity.
+
+:::{admonition} Remark: Non-quadratic convex costs
+:class: ot4ml-remark
+
+Brenier's theorem is the cleanest statement because the squared Euclidean cost turns optimal maps into gradients of convex functions. For costs $c(x,y)=\norm{x-y}^p$ with $p>1$, or more generally costs $c(x,y)=h(x-y)$ with $h$ smooth and strictly convex, the same strategy gives a unique optimal map under absolute continuity of the source, but the map is written in terms of a $c$-convex potential. On a Riemannian manifold, the local analogue for the cost $d_M(x,y)^2/2$ uses the exponential map
+
+```{math}
+\T(x)=\exp_x(-\nabla\phi(x)),
+```
+
+where $\phi$ is $c$-convex. The main additional issues are the cut locus and regularity of geodesics, which is why the Euclidean statement is usually presented first. These extensions are part of McCann's displacement convexity theory and the general theory of optimal maps on manifolds {cite:p}`mccann1997convexity,Villani09`.
+:::
+
+
+### Twist Condition
+
+The first non-degeneracy condition asks that the first-order information at a source point identifies at most one target point. This is the structural hypothesis that turns an optimal relation into a map.
+
+(def-twist-condition)=
+:::{admonition} Definition: Twist Condition
+:class: important
+Let $X,Y\subset\RR^d$ and let $c\in C^1(X\times Y)$. The cost $c$ satisfies the twist condition from $X$ to $Y$ if, for every fixed $x\in X$, the map
+
+```{math}
+y\in Y \longmapsto \nabla_x c(x,y)\in\RR^d
+```
+
+is injective. The dual twist condition is the analogous injectivity of $x\mapsto\nabla_y c(x,y)$ for every fixed $y$.
+:::
+
+(prop-twist-prevents-splitting)=
+:::{admonition} Proposition: Twist Prevents Splitting
+:class: important
+Assume that $c\in C^1(X\times Y)$ satisfies the twist condition from $X$ to $Y$. Suppose that optimal pairs for the cost $c$ admit a source potential $f$ with the following first-order certificate: $f$ is differentiable on a full $\al$-measure subset of $X$, and whenever $x$ belongs to this differentiability set and $y$ can be paired optimally with $x$, one has $\nabla f(x)=\nabla_xc(x,y)$. Then, for $\al$-almost every source point $x$, there is at most one target point $y$ that can be paired optimally with $x$. Consequently, any optimal transport relation satisfying these hypotheses is single-valued $\al$-almost everywhere, hence is induced by a Monge map.
+:::
+
+:::{dropdown} Proof
+The proof uses the Kantorovich duality formalism developed later in Chapter {ref}`sec-dual`. Let $(f,g)$ be optimal Kantorovich potentials and let $\pi$ be an optimal plan. On $\supp(\pi)$ one has $f(x)+g(y)=c(x,y)$, while dual feasibility gives $f(z)+g(y)\leq c(z,y)$ for all $z$. Thus, for each contact pair $(x,y)$, the function $z\mapsto c(z,y)-g(y)$ touches $f$ from above at $x$. At a point where $f$ is differentiable, this gives
+
+```{math}
+\nabla f(x)=\nabla_x c(x,y).
+```
+
+If the cost is twisted, this equation determines at most one $y$. Hence no optimal plan can split the mass of such an $x$ between several target points. Since differentiability holds on a full $\al$-measure set, the plan is concentrated on the graph of a measurable map there.
+:::
+
+The quadratic cost satisfies twist since $\nabla_x\norm{x-y}^2=2(x-y)$; the bilinear cost $c(x,y)=-\dotp{x}{y}$ satisfies twist since $\nabla_x c(x,y)=-y$; more generally $c(x,y)=h(x-y)$ is twisted when $h$ is smooth strictly convex and $\nabla h$ is injective. On a Riemannian manifold, the squared geodesic cost is twisted locally away from the cut locus. By contrast, a separated cost $a(x)+b(y)$ is never twisted, since $\nabla_xc$ does not see $y$.
+
+### Ma--Trudinger--Wang Curvature
+
+Twist gives a map, but it does not by itself make this map continuous or smooth. For a general smooth cost, the relevant structural hypothesis is the Ma--Trudinger--Wang (MTW) condition, introduced for a priori estimates of the generated Jacobian equation associated with optimal transport {cite:p}`ma2005regularity,trudinger2001monge`.
+
+(def-mtw-condition)=
+:::{admonition} Definition: Weak MTW Condition
+:class: important
+Assume that $c\in C^4(X\times Y)$, that $X,Y\subset\RR^d$, that $c$ is twisted, and that the mixed Hessian $\nabla^2_{xy}c(x,y)$ is invertible. For $(x,p)$ in the image of the change of variables $(x,y)\mapsto(x,\nabla_xc(x,y))$, let $Y(x,p)$ be defined by
+
+```{math}
+\nabla_x c(x,Y(x,p))=p,
+```
+
+and set
+
+```{math}
+A_{ij}(x,p)\eqdef \partial^2_{x_i x_j}c(x,Y(x,p)).
+```
+
+The cost satisfies the weak MTW condition if
+
+```{math}
+\sum_{i,j,k,l}\partial^2_{p_kp_l} A_{ij}(x,p)\,\xi_i\xi_j\eta_k\eta_l\geq0
+\qquad\text{whenever }\dotp{\xi}{\eta}=0.
+```
+
+A strong MTW condition asks for a positive lower bound, proportional to $\norm{\xi}^2\norm{\eta}^2$, on the same orthogonal directions.
+:::
+
+The tensor above is often called the cost-sectional curvature. It measures how the $x$-Hessian of the cost bends when the target point is varied through the dual momentum $p$.
+
+(prop-mtw-regularity-implication)=
+:::{admonition} Proposition: MTW Condition and Regularity
+:class: important
+Assume that $c$ is smooth, twisted and non-degenerate, that the source and target domains satisfy the usual $c$-convexity assumptions, and that the source and target densities are positive and bounded above and below. Under the weak MTW condition, optimal maps are continuous for smooth positive data. Under the corresponding strong MTW condition and higher smoothness of the data and domains, one obtains higher regularity estimates for the optimal map.
+:::
+
+:::{dropdown} Proof
+This is the regularity theorem of Ma--Trudinger--Wang and Loeper, stated here in its structural form. The $c$-convex potential solves a generated Jacobian equation. Twist and non-degeneracy turn the potential into a single-valued map, while the weak MTW inequality controls the convexity of contact sets of $c$-convex functions. This prevents the contact set from tearing apart and yields continuity. Strong MTW gives a quantitative curvature lower bound; combined with smooth densities, boundary geometry and elliptic estimates for the generated Jacobian equation, it yields the usual higher regularity. Loeper also proved that nonnegative MTW curvature is essentially necessary for continuity for arbitrary smooth positive data {cite:p}`loeper2009regularity,Villani09`.
+:::
+
+The flat quadratic and bilinear costs have zero MTW curvature, hence satisfy the weak condition. For the squared Riemannian distance, the MTW tensor is a refined curvature condition on the cost: near the diagonal it recovers sectional curvature, negative sectional curvature gives an obstruction, and global regularity also depends on cut-locus and domain-convexity issues. Many smooth strictly convex costs fail MTW, which is why twist is enough for existence of a map but not for regularity.
+
+(sec-1d-transport-quantiles)=
+## One-Dimensional Transport And Quantiles
+
+In one dimension, optimal transport is completely explicit. The cumulative
+distribution function orders the mass, and the optimal coupling is obtained by
+matching equal quantile levels. This case is both a computational tool and the
+template for several linearized constructions used later.
+
+(def-cdf-quantile)=
+:::{admonition} Definition: Cumulative And Quantile Functions
+:class: important
+For $\al\in\Mm_+^1(\RR)$, its cumulative distribution function is
+
+```{math}
+:label: eq-cumul-defn-web
+\cumul{\al}(x)\eqdef \al((-\infty,x]).
+```
+
+Its generalized inverse, or quantile function, is
+
+```{math}
+:label: eq-OT-map-1d-web
+\cumul{\al}^{-1}(r)
+\eqdef
+\inf\{x\in\RR:\cumul{\al}(x)\geq r\},
+\qquad r\in(0,1).
+```
+:::
+
+(prop-quantile-pushforward)=
+:::{admonition} Proposition: Quantile Push-Forward
+:class: important
+One has
+$(\cumul{\al}^{-1})_\sharp\mathrm{Leb}_{[0,1]}=\al$. If $\al$ has no atoms,
+then $(\cumul{\al})_\sharp\al=\mathrm{Leb}_{[0,1]}$.
+:::
+
+:::{dropdown} Proof
+Assume first that $\al$ has a strictly positive density, so that
+$\cumul{\al}$ is strictly increasing and continuous. Let
+$\ga=(\cumul{\al}^{-1})_\sharp\mathrm{Leb}_{[0,1]}$. For every $x$,
+
+```{math}
+\cumul{\ga}(x)
+=
+\int_0^1 \mathbf{1}_{(-\infty,x]}(\cumul{\al}^{-1}(z))\d z
+=
+\int_0^1 \mathbf{1}_{[0,\cumul{\al}(x)]}(z)\d z
+=
+\cumul{\al}(x).
+```
+
+General measures follow from the same argument with generalized inverses and
+right-continuity. If $\al$ has no atoms, the probability integral transform
+gives $(\cumul{\al})_\sharp\al=\mathrm{Leb}_{[0,1]}$.
+:::
+
+If $\al$ has no atoms, the map
+
+```{math}
+:label: eq-1d-monge-map-web
+\T=\cumul{\be}^{-1}\circ\cumul{\al}
+```
+
+satisfies $\T_\sharp\al=\be$. For the cost $c(x,y)=|x-y|^2$, this map is
+nondecreasing and therefore the derivative of a convex function in dimension
+one.
+
+(prop-1d-quantile-map)=
+:::{admonition} Proposition: Monotone Rearrangement On The Line
+:class: important
+Let $\al,\be\in\Mm_+^1(\RR)$ have finite $p$-th moments, with $p\geq1$. The
+coupling
+
+```{math}
+\pi^\star
+=
+(\cumul{\al}^{-1},\cumul{\be}^{-1})_\sharp\mathrm{Leb}_{[0,1]}
+```
+
+minimizes $\int |x-y|^p\d\pi(x,y)$ among couplings. If $\al$ has no atoms, it
+is induced by the monotone Monge map above.
+:::
+
+:::{dropdown} Proof
+The displayed measure is a coupling by the quantile push-forward proposition.
+Its support is monotone: equal quantile levels cannot create crossing pairs.
+If a coupling had two crossed pairs $x<x'$ and $y>y'$ with positive mass,
+exchanging the targets decreases the cost for strictly convex powers and does
+not increase it for $p=1$, by the two-point inequality from the matching
+chapter. Eliminating crossings gives the quantile coupling. If $\al$ has no
+atoms, the map formula follows from
+$(\cumul{\al})_\sharp\al=\mathrm{Leb}_{[0,1]}$.
+:::
+
+(rem-1d-composition-optimal)=
+:::{admonition} Remark: Composition is one-dimensional
+:class: ot4ml-remark
+
+In dimension one, optimal maps compose. Assume for simplicity that the intermediate laws have no atoms, so that the monotone rearrangements
+
+```{math}
+\T_{\al\to\be}=\cumul{\be}^{-1}\circ\cumul{\al},
+\qquad
+\T_{\be\to\ga}=\cumul{\ga}^{-1}\circ\cumul{\be}
+```
+
+are well defined $\al$- and $\be$-almost everywhere. Then
+
+```{math}
+\T_{\be\to\ga}\circ\T_{\al\to\be}
+=
+\T_{\al\to\ga}
+\qquad \al\text{-a.e.}
+```
+
+Indeed, each map is nondecreasing and sends quantile level $r$ to the same quantile level of the target law. This semigroup property is special to the ordered line.
+:::
+
+
+(prop-wass-quantile-1d)=
+:::{admonition} Proposition: One-Dimensional Wasserstein Formulas
+:class: important
+Let $\al,\be\in\Mm_+^1(\RR)$ have finite $p$-th moments. For $p\geq1$,
+
+```{math}
+:label: eq-wass-cumul-web
+\Wass_p(\al,\be)^p
+=
+\int_0^1
+\left|\cumul{\al}^{-1}(r)-\cumul{\be}^{-1}(r)\right|^p\d r
+=
+\|\cumul{\al}^{-1}-\cumul{\be}^{-1}\|_{L^p([0,1])}^p.
+```
+
+For $p=1$,
+
+```{math}
+:label: eq-w1-1d-web
+\Wass_1(\al,\be)
+=
+\|\cumul{\al}-\cumul{\be}\|_{L^1(\RR)}
+=
+\int_\RR |\cumul{\al}(x)-\cumul{\be}(x)|\d x .
+```
+:::
+
+:::{dropdown} Proof
+The first formula follows because the optimal coupling is obtained by taking
+the same quantile level $r$ for both measures. For $p=1$, use the layer-cake
+identity. If $q_\al$ and $q_\be$ are the quantile functions, then
+
+```{math}
+\int_0^1 |q_\al(r)-q_\be(r)|\d r
+=
+\int_\RR
+\lambda\{r:q_\al(r)\leq x<q_\be(r)\ \text{or}\ q_\be(r)\leq x<q_\al(r)\}
+\d x,
+```
+
+and the measure of the set inside the integral is
+$|\cumul{\al}(x)-\cumul{\be}(x)|$ for almost every $x$.
+:::
+
+The quantile formula above means that
+$\al\mapsto\cumul{\al}^{-1}$ embeds one-dimensional Wasserstein geometry
+isometrically into a linear $L^p$ space. For $p=2$, Wasserstein geometry on
+probability measures over the real line is Hilbertian.
+
+(fig:monge-1d-quantile-geodesic)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-1d-quantile-geodesic")
+```
+
+*One-dimensional transport through quantiles. The same two smooth laws are
+shown as densities, cumulative functions and quantile functions. The last
+panel displays the displacement interpolation obtained by the linear quantile
+path $Q_t=(1-t)Q_\alpha+tQ_\beta$, which is the explicit one-dimensional
+$\Wass_2$ geodesic.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the time and endpoint controls to follow the one-dimensional Wasserstein geodesic through quantiles, CDFs, and densities.
+:::
+
+<iframe class="ot4ml-live-frame" title="One-dimensional quantile geodesic controls" src="../live/monge-quantile.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+In quantile coordinates, the interpolating measure is characterized by
+
+```{math}
+\cumul{\al_t}^{-1}(r)
+=
+(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r),
+\qquad r\in(0,1).
+```
+
+For $p=1$, the cumulative formula above shows that $\Wass_1$ is a norm on signed
+measures with zero total mass once they are identified with their cumulative
+primitives.
+
+### Triangular Rearrangements
+
+There is another canonical way to build transport maps in several dimensions:
+transport one coordinate at a time by conditional one-dimensional quantiles.
+This construction is not usually cost-optimal, but it gives a deterministic
+rearrangement under weak assumptions.
+
+(prop-knothe-rosenblatt)=
+:::{admonition} Proposition: Knothe--Rosenblatt Triangular Rearrangement
+:class: important
+Let $\al,\be\in\Mm_+^1(\RR^d)$. Assume, for simplicity, that the first marginal
+of $\al$ and the one-dimensional conditional laws of $\al$ used below are
+atomless. There is a triangular map
+
+```{math}
+\T(x_1,\ldots,x_d)
+=
+(\T_1(x_1),\T_2(x_1,x_2),\ldots,\T_d(x_1,\ldots,x_d))
+```
+
+such that $\T_\sharp\al=\be$ and, for each $k$, the function
+$x_k\mapsto\T_k(x_1,\ldots,x_k)$ is nondecreasing for $\al$-almost every value
+of $(x_1,\ldots,x_{k-1})$.
+:::
+
+:::{dropdown} Proof
+The construction is recursive. For $k=1$, let $\T_1$ be the monotone
+rearrangement between the first marginals of $\al$ and $\be$. Suppose
+$\T_1,\ldots,\T_{k-1}$ have been constructed. Write
+$x_{<k}=(x_1,\ldots,x_{k-1})$ and
+$\T_{<k}=(\T_1,\ldots,\T_{k-1})$. Let $\al^k_{x_{<k}}$ and
+$\be^k_{y_{<k}}$ be regular conditional laws of the $k$-th coordinate given
+the previous coordinates. Define $\T_k(x_{<k},\cdot)$ as the one-dimensional
+monotone rearrangement from $\al^k_{x_{<k}}$ to
+$\be^k_{\T_{<k}(x_{<k})}$. The chain rule for disintegrations shows that after
+step $k$ the first $k$ coordinates of $\T_\sharp\al$ match those of $\be$.
+:::
+
+(fig:monge-triangular-rearrangement)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-triangular-rearrangement")
+```
+
+*Triangular rearrangement between the same cat and heart densities as in the
+McCann interpolation figure. The panels are computed directly on image
+histograms. The first three transitions move mass horizontally by the monotone
+rearrangement between the $x$-marginals; the pivot has the target horizontal
+marginal. The last three transitions keep each column fixed and move mass
+vertically by one-dimensional monotone rearrangements between conditional
+laws.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the horizontal and vertical interpolation sliders to inspect the Knothe triangular rearrangement one coordinate update at a time.
+:::
+
+<iframe class="ot4ml-live-frame" title="Triangular rearrangement controls" src="../live/monge-triangular.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
+
+This construction transports successively along coordinate axes and is often
+called axis-wise transport. It depends on the chosen ordering of coordinates
+and is not generally optimal for the quadratic cost. It is nevertheless a
+useful limiting object: Brenier maps for increasingly anisotropic quadratic
+costs converge to triangular rearrangements under suitable assumptions
+{cite:p}`carlier2010knothe`.
+
+(prop-knothe-limit-anisotropic-brenier)=
+:::{admonition} Proposition: Anisotropic Brenier Maps Converge To Knothe--Rosenblatt
+:class: important
+Let $\alpha,\beta$ be compactly supported probability measures on $\RR^d$ with
+densities bounded above and below on rectangular supports, and assume that the
+conditional laws entering the triangular rearrangement are atomless. For
+$\epsilon>0$, set
+
+```{math}
+c_\epsilon(x,y)
+\eqdef
+\sum_{k=1}^d \epsilon^{k-1}|x_k-y_k|^2 .
+```
+
+Let $T_\epsilon$ be the Monge map from $\alpha$ to $\beta$ for $c_\epsilon$,
+and let $T_{\mathrm{KR}}$ be the triangular Knothe--Rosenblatt rearrangement
+with the same coordinate order. Then
+
+```{math}
+T_\epsilon \longrightarrow T_{\mathrm{KR}}
+\qquad\text{in }L^2(\alpha;\RR^d)
+\qquad\text{as }\epsilon\to0 .
+```
+:::
+
+:::{dropdown} Proof Sketch
+Let $\pi_\epsilon=(\Id,T_\epsilon)_\sharp\alpha$. Compactness gives a weakly
+convergent subsequence. Optimality for
+
+```{math}
+F_\epsilon(\gamma)
+=
+\sum_{k=1}^d \epsilon^{k-1}
+\int |x_k-y_k|^2\d\gamma(x,y)
+```
+
+first forces any weak limit to minimize the one-dimensional quadratic cost in
+the first coordinate, hence to realize the first monotone rearrangement.
+Subtract that common minimum, divide by $\epsilon$, and let
+$\epsilon\to0$ to identify the second coordinate as a conditional monotone
+rearrangement. Repeating gives the triangular graph coupling. Since the graph
+coupling is unique, all weak limits agree. A Lusin and Portmanteau argument
+then upgrades convergence in law to convergence in $L^2(\alpha)$ because the
+maps take values in a common compact set.
+:::
+
+:::{admonition} Example: Linear obstruction to composing Brenier maps
+:class: ot4ml-example
+
+In higher dimension, Brenier maps for the quadratic cost are gradients of convex functions, and such maps do not generally remain gradients after composition. The simplest obstruction is linear. If $\T_1(x)=A_1x$ and $\T_2(x)=A_2x$ with $A_1,A_2$ symmetric positive definite, then $\T_2\circ\T_1$ has matrix $A_2A_1$. It is a gradient field only when this product is symmetric, equivalently $A_1A_2=A_2A_1$. Gaussian transport gives a concrete instance: between nondegenerate Gaussian laws, the Brenier map is affine with symmetric positive definite linear part. Compositions of Gaussian optimal maps are therefore optimal only in special commuting situations, for instance when all covariance matrices are simultaneously diagonalizable. Otherwise the composition contains a rotational or shearing component and is not the Brenier map between the initial and final Gaussians.
+:::
+
+(alg:quantile-rearrangement-geodesic)=
+:::{admonition} Algorithm: Quantile rearrangement and one-dimensional geodesic
+:class: ot4ml-algorithm
+
+**Input:** One-dimensional probability measures $\alpha,\beta$; time $t\in[0,1]$.
+
+**Output:** Quantile coupling, Monge map when defined, and geodesic point $\alpha_t$.
+
+**Compute** $\cumul{\al}$, $\cumul{\be}$ and generalized inverses.
+
+**Couple** equal quantile levels:
+$X=\cumul{\al}^{-1}(r), \qquad Y=\cumul{\be}^{-1}(r), \qquad r\in(0,1).$
+
+**If** $\alpha$ has no atoms **then**:
+
+>
+> **Set**
+> $T(x)=\cumul{\be}^{-1}(\cumul{\al}(x)).$
+
+**Interpolate** quantiles:
+$Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r), \qquad \al_t=(Q_t)_\sharp\mathrm{Leb}_{[0,1]}.$
+**Return** $(X,Y)$, $T$ if defined, and $\alpha_t$.
+:::
+
+(alg:triangular-rearrangement)=
+:::{admonition} Algorithm: Knothe--Rosenblatt triangular rearrangement
+:class: ot4ml-algorithm
+
+**Input:** Probability measures $\alpha,\beta$ on $\RR^d$ with conditional laws.
+
+**Output:** Knothe--Rosenblatt triangular map $\T$.
+
+**Compute** first-coordinate rearrangement:
+$\T_1=(F_{\be_1})^{-1}\circ F_{\al_1}.$
+
+**For** $k=2,\ldots,d$ **do**:
+
+>
+> **Set** $x_{<k}=(x_1,\ldots,x_{k-1})$.
+>
+> **Compute** conditional laws $\al^k_{x_{<k}}$ and $\be^k_{\T_{<k}(x_{<k})}$.
+>
+> **Set**
+> $\T_k(x_{<k},x_k) = \bigl(F_{\be^k_{\T_{<k}(x_{<k})}}\bigr)^{-1} \circ F_{\al^k_{x_{<k}}}(x_k).$
+
+**Return** $\T(x)=(\T_1(x_1),\T_2(x_1,x_2),\ldots,\T_d(x_1,\ldots,x_d)).$
+:::
+
+
+(sec-gaussian-bures)=
+## Gaussian Measures And The Bures Metric
+
+Gaussian measures form the most important finite-dimensional family preserved
+by quadratic optimal transport. The mean moves linearly, while the covariance
+follows the Bures--Wasserstein geometry of positive semidefinite matrices.
+
+### One-Dimensional Gaussians
+
+Let $\al=\Gaussian(m_\al,\sigma_\al^2)$ and
+$\be=\Gaussian(m_\be,\sigma_\be^2)$ be nondegenerate Gaussians on $\RR$. Then
+
+```{math}
+\T(x)=\frac{\sigma_\be}{\sigma_\al}(x-m_\al)+m_\be
+```
+
+satisfies $\T_\sharp\al=\be$. It is the derivative of the convex function
+
+```{math}
+\phi(x)=\frac{\sigma_\be}{2\sigma_\al}(x-m_\al)^2+m_\be x,
+```
+
+so Brenier's theorem shows that it is the optimal quadratic transport. The
+distance is
+
+```{math}
+\Wass_2(\al,\be)^2
+=
+(m_\al-m_\be)^2+(\sigma_\al-\sigma_\be)^2.
+```
+
+Thus the OT geometry of one-dimensional Gaussians is the Euclidean geometry of
+the half-plane $(m,\sigma)\in\RR\times\RR_+$.
+
+### Multivariate Gaussians
+
+If
+
+```{math}
+:label: eq-gauss-pf-web
+\al=\Gaussian(\mean_\al,\cov_\al),
+\qquad
+\be=\Gaussian(\mean_\be,\cov_\be),
+\qquad
+\T(x)=\mean_\be+A(x-\mean_\al),
+```
+
+then $\T$ is the gradient of a convex quadratic potential if and only if $A$ is
+symmetric positive semidefinite.
+
+(prop-gaussian-affine-push-forward)=
+:::{admonition} Proposition: Affine Push-Forward Of Gaussians
+:class: important
+One has $\T_\sharp\al=\be$ if and only if
+
+```{math}
+:label: eq-gauss-covariance-pushforward-web
+A\cov_\al A^\top=\cov_\be .
+```
+:::
+
+:::{dropdown} Proof
+An affine function maps a Gaussian to a Gaussian, so the law of $\T(X)$ is
+determined by mean and covariance. If $X\sim\al$ and $Y=\T(X)$, then
+
+```{math}
+\mathbb{E}(Y)=\mean_\be,
+\qquad
+\mathbb{E}((Y-\mean_\be)(Y-\mean_\be)^\top)
+=
+A\cov_\al A^\top.
+```
+:::
+
+(def-bures-metric)=
+:::{admonition} Definition: Bures Metric
+:class: important
+For positive semidefinite covariance matrices $\Sigma$ and $\Lambda$, the Bures
+metric is
+
+```{math}
+:label: eq-bure-defn
+\Bb(\Sigma,\Lambda)^2
+\eqdef
+\tr\left(
+\Sigma+\Lambda
+-2(\Sigma^{1/2}\Lambda\Sigma^{1/2})^{1/2}
+\right).
+```
+:::
+
+(prop-gaussian-w2-bures)=
+:::{admonition} Proposition: Gaussian $\Wass_2$ Formula And Bures Covariance Term
+:class: important
+Assume that $\cov_\al$ and $\cov_\be$ are positive definite. The unique
+symmetric positive-definite solution of
+$A\cov_\al A=\cov_\be$ is
+
+```{math}
+:label: eq-bures-map-web
+A=
+\cov_\al^{-1/2}
+\left(\cov_\al^{1/2}\cov_\be\cov_\al^{1/2}\right)^{1/2}
+\cov_\al^{-1/2}.
+```
+
+The affine map $\T(x)=\mean_\be+A(x-\mean_\al)$ is the optimal quadratic-cost
+transport from $\Gaussian(\mean_\al,\cov_\al)$ to
+$\Gaussian(\mean_\be,\cov_\be)$, and
+
+```{math}
+:label: eq-dist-gauss-web
+\Wass_2(\al,\be)^2
+=
+\|\mean_\al-\mean_\be\|^2+\Bb(\cov_\al,\cov_\be)^2,
+```
+
+where $\Bb$ is the Bures metric of Definition {ref}`def-bures-metric`.
+:::
+
+:::{dropdown} Proof
+Multiplying $A\cov_\al A=\cov_\be$ on the left and right by
+$\cov_\al^{1/2}$ gives
+
+```{math}
+(\cov_\al^{1/2}A\cov_\al^{1/2})^2
+=
+\cov_\al^{1/2}\cov_\be\cov_\al^{1/2}.
+```
+
+The positive square root gives the displayed formula for $A$. This map pushes
+$\al$ to $\be$ and is a gradient of a convex quadratic potential, hence is
+optimal by Brenier. If $X\sim\al$,
+
+```{math}
+\begin{aligned}
+\mathbb{E}\|X-\T(X)\|^2
+&=
+\|\mean_\al-\mean_\be\|^2
++
+\tr((I-A)\cov_\al(I-A)^\top) \\
+&=
+\|\mean_\al-\mean_\be\|^2
++
+\tr(\cov_\al)+\tr(\cov_\be)
+-2\tr((\cov_\al^{1/2}\cov_\be\cov_\al^{1/2})^{1/2}).
+\end{aligned}
+```
+:::
+
+(prop-bures-second-moment-lift)=
+:::{admonition} Proposition: Bures metric as a second-moment quotient
+:class: important
+For $\mu\in\Pp_2(\RR^d)$, set its raw second-moment matrix to be
+
+```{math}
+\Phi_2(\mu)\eqdef \int_{\RR^d} uu^\top \d\mu(u)\in\mathbb S_+^d .
+```
+
+For $\Sigma,\Lambda\in\mathbb S_+^d$, define
+
+```{math}
+D_{\Phi_2}(\Sigma,\Lambda)^2
+\eqdef
+\inf_{\Phi_2(\mu)=\Sigma,\ \Phi_2(\nu)=\Lambda}
+\Wass_2(\mu,\nu)^2 .
+```
+
+Then
+
+```{math}
+D_{\Phi_2}(\Sigma,\Lambda)=\Bb(\Sigma,\Lambda).
+```
+
+Thus the Bures metric is the Wasserstein quotient distance induced on positive
+semidefinite matrices by identifying all probability measures with the same
+raw second-moment matrix. On centered laws, this is the covariance map.
+:::
+
+:::{dropdown} Proof
+Assume first that $\Sigma$ and $\Lambda$ are positive definite. Fix two
+admissible laws $\mu,\nu$ and an arbitrary coupling $\pi$ between them, and write
+
+```{math}
+K\eqdef \int_{\RR^d\times\RR^d}uv^\top \d\pi(u,v).
+```
+
+Its transport cost is
+
+```{math}
+\int\norm{u-v}^2\d\pi(u,v)
+=
+\tr(\Sigma)+\tr(\Lambda)-2\tr(K).
+```
+
+The block second-moment matrix
+
+```{math}
+\int
+\begin{pmatrix}u\\ v\end{pmatrix}
+\begin{pmatrix}u\\ v\end{pmatrix}^{\!\top}
+\d\pi(u,v)
+=
+\begin{pmatrix}
+\Sigma & K\\
+K^\top & \Lambda
+\end{pmatrix}
+```
+
+is positive semidefinite. Block positivity and the Schur complement give
+
+```{math}
+R\eqdef\Sigma^{-1/2}K\Lambda^{-1/2},
+\qquad
+RR^\top\preceq I .
+```
+
+Thus $K=\Sigma^{1/2}R\Lambda^{1/2}$ with
+$\norm{R}_{\mathrm{op}}\leq1$. By duality between the nuclear and operator
+norms,
+
+```{math}
+\tr(K)
+\leq
+\sup_{\norm{R}_{\mathrm{op}}\leq1}\tr(\Sigma^{1/2}R\Lambda^{1/2})
+=
+\norm{\Lambda^{1/2}\Sigma^{1/2}}_*
+=
+\tr\big((\Sigma^{1/2}\Lambda\Sigma^{1/2})^{1/2}\big).
+```
+
+For singular matrices, fix $\eta>0$. Adding $\eta I$ to the two diagonal blocks
+preserves block positivity, so the same Schur-complement argument gives
+
+```{math}
+\tr(K)
+\leq
+\tr\big(((\Sigma+\eta I)^{1/2}(\Lambda+\eta I)(\Sigma+\eta I)^{1/2})^{1/2}\big).
+```
+
+Letting $\eta\downarrow0$ and using continuity of the matrix square root gives
+the same trace bound with $\Sigma,\Lambda$. Hence every admissible coupling has
+cost at least $\Bb(\Sigma,\Lambda)^2$. Conversely, the centered Gaussian laws
+$\Gaussian(0,\Sigma)$ and $\Gaussian(0,\Lambda)$ satisfy the prescribed raw
+second-moment constraints, and Proposition {ref}`prop-gaussian-w2-bures` gives
+equality, again by continuity in the singular case.
+:::
+
+(rem-elliptical-bures)=
+:::{admonition} Remark: Common-generator elliptical laws
+:class: ot4ml-remark
+
+The Gaussian formula has a useful, but deliberately limited, extension beyond Gaussian tails. Fix an absolutely continuous, centered, radial probability measure $\rho$ on $\RR^d$ with covariance $\Id$. For positive definite matrices $\cov_\al,\cov_\be$, define two elliptically contoured laws with this same radial generator by
+
+```{math}
+\al=(z\mapsto \mean_\al+\cov_\al^{1/2}z)_\sharp\rho,
+\qquad
+\be=(z\mapsto \mean_\be+\cov_\be^{1/2}z)_\sharp\rho.
+```
+
+For this pair, the same Brenier matrix {eq}`eq-bures-map-web` gives the optimal map $\T(x)=\mean_\be+A(x-\mean_\al)$, and the same formula {eq}`eq-dist-gauss-web` holds. Indeed, if $X=\mean_\al+\cov_\al^{1/2}Z$ with $Z\sim\rho$, then $A\cov_\al A=\cov_\be$, hence $A\cov_\al^{1/2}=\cov_\be^{1/2}Q$ for some orthogonal matrix $Q$. Since $\rho$ is radial, $QZ$ has the same law as $Z$, so $\T_\sharp\al=\be$. Since $A$ is symmetric positive definite, $\T$ is the gradient of a convex quadratic potential and Brenier's theorem gives optimality. Finally, because $\rho$ is centered with covariance $\Id$, the transport cost depends only on the means and covariance matrices and gives the Bures expression. The common-generator assumption is the point: for two elliptical laws with different radial profiles, one must also transport the radial variable, and the covariance/Bures term is no longer the full transport cost.
+:::
+
+
+The covariance term $\Bb$ is the Bures--Wasserstein metric on positive
+semidefinite matrices {cite:p}`bures1969extension,gelbrich1990formula,bhatia2018bures`.
+It separates Euclidean displacement of the mean from the intrinsic transport
+geometry of covariance ellipsoids.
+For $2\times2$ covariance matrices, this geometry can be seen inside a familiar
+cone. The useful coordinates separate trace, anisotropy and correlation. Writing
+
+```{math}
+\Sigma=\begin{pmatrix} a & c \\ c & b \end{pmatrix},
+\qquad
+t=\frac{a+b}{\sqrt2},\qquad
+u=\frac{a-b}{\sqrt2},\qquad
+v=\sqrt2\,c,
+```
+
+identifies the vector space of symmetric $2\times2$ matrices with $\RR^3$
+through an orthonormal change of coordinates for the Frobenius inner product;
+the inverse map is
+
+```{math}
+a=\frac{t+u}{\sqrt2},\qquad
+b=\frac{t-u}{\sqrt2},\qquad
+c=\frac{v}{\sqrt2}.
+```
+
+Moreover,
+
+```{math}
+t^2-u^2-v^2=2(ab-c^2)=2\det(\Sigma).
+```
+
+The condition $\Sigma\succeq0$ is therefore equivalent to
+
+```{math}
+t\geq \sqrt{u^2+v^2}.
+```
+
+Thus the cone of $2\times2$ covariance matrices is the Lorentz, or ice-cream,
+cone. The Bures distance is not the ambient Euclidean distance in these
+coordinates: on the positive definite interior it is the geodesic distance of a
+smooth nonlinear geometry, whose geodesics are the covariance parts of Gaussian
+optimal transport rather than the straight chords inherited from $\RR^3$. The
+cone panel below illustrates this distinction.
+
+(fig:monge-gaussian-w2-geodesic-1d)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-gaussian-w2-geodesic")
+```
+
+*One- and two-dimensional Gaussian $\Wass_2$ geodesics. In one dimension, the
+coordinates $(m,\sigma)$ turn geodesics into Euclidean segments in the upper
+half-plane. In two dimensions, means move linearly while covariance ellipses
+follow the Bures--Wasserstein interpolation. The cone panel displays the same
+two covariance paths inside the $2\times2$ positive-semidefinite cone, with
+$u$ and $v$ horizontal, $t$ vertical, and faint gray chords showing the ambient
+Euclidean segments for comparison.*
+:::
+
+(rem-fisher-rao-gaussian-mean)=
+:::{admonition} Remark: Comparison with the Fisher--Rao metric with mean variation
+:class: ot4ml-remark
+
+The previous formula shows that the Wasserstein geometry of one-dimensional Gaussians is Euclidean in $(m,\sigma)$. The Fisher--Rao geometry obtained from the local expansion of the Kullback--Leibler divergence is different as soon as the mean is allowed to vary. For $\sigma,\sigma'>0$,
+
+```{math}
+\KL\big(\Gaussian(m,\sigma^2)\mid\Gaussian(m',(\sigma')^2)\big)
+=
+\log\frac{\sigma'}{\sigma}
++
+\frac{\sigma^2+(m-m')^2}{2(\sigma')^2}
+-
+\frac12 .
+```
+
+Expanding the first argument around $(m,\sigma)$ gives, for increments $(h,s)$,
+
+```{math}
+\KL\big(\Gaussian(m+\varepsilon h,(\sigma+\varepsilon s)^2)
+\mid \Gaussian(m,\sigma^2)\big)
+=
+\frac{\varepsilon^2}{2}
+\left(\frac{h^2}{\sigma^2}+2\frac{s^2}{\sigma^2}\right)
++o(\varepsilon^2).
+```
+
+Thus the Fisher--Rao metric on the Gaussian half-plane is
+
+```{math}
+g_{(m,\sigma)}^{\mathrm{FR}}((h,s),(h',s'))
+=
+\frac{hh'+2ss'}{\sigma^2}.
+```
+
+Setting $z=m/\sqrt2+i\sigma$ identifies this metric with twice the usual hyperbolic metric on the upper half-plane. Its geodesics are therefore vertical lines or Euclidean semicircles orthogonal to the boundary $\sigma=0$ after this horizontal rescaling. Consequently
+
+```{math}
+d_{\mathrm{FR}}\big(\Gaussian(m,\sigma^2),\Gaussian(m',(\sigma')^2)\big)
+=
+\sqrt2\,\operatorname{arcosh}\left(
+1+\frac{(m-m')^2+2(\sigma-\sigma')^2}{4\sigma\sigma'}
+\right).
+```
+
+In contrast, $\Wass_2^2=(m-m')^2+(\sigma-\sigma')^2$. Wasserstein geodesics are straight segments in the $(m,\sigma)$ half-plane and reach $\sigma=0$ at finite distance, whereas Fisher--Rao geodesics bend away from the boundary and the boundary $\sigma=0$ is infinitely far away. Figure {ref}`fig:monge-gaussian-fr-mean-geodesic` displays the resulting difference in both parameter space and density space.
+:::
+
+
+(fig:monge-gaussian-fr-mean-geodesic)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-gaussian-fr-mean-geodesic")
+```
+
+*Wasserstein and Fisher--Rao geodesics in the one-dimensional Gaussian family.
+The left panel shows the straight Wasserstein chord with neutral gray samples
+and the Fisher--Rao geodesic as a colored hyperbolic arc in the rescaled
+upper-half-plane geometry. The two density panels use the same endpoint
+Gaussians and the same time samples; the Fisher--Rao path expands the standard
+deviation along the hyperbolic arc before returning to the target scale.*
+:::
+
+(fig:monge-gaussian-w2-geodesic-2d)=
+The two-dimensional Gaussian panels in the boxed figure show covariance
+ellipses evolving along the Bures--Wasserstein interpolation, together with the
+same covariance paths drawn in cone coordinates.
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the target mean, variance, and angle controls to see how the Gaussian Wasserstein geodesic moves means and covariance ellipses.
+:::
+
+<iframe class="ot4ml-live-frame" title="Gaussian Wasserstein geodesic controls" src="../live/monge-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+(rem-fisher-rao-bures-gaussian)=
+:::{admonition} Remark: Comparison with the Fisher--Rao metric for zero-mean Gaussians
+:class: ot4ml-remark
+
+The Bures metric is the covariance geometry induced by quadratic optimal transport. A different, information-geometric metric is obtained by expanding the Kullback--Leibler divergence between centered Gaussians. For $\Sigma,\Sigma'\in\mathbb S_{++}^d$, write
+
+```{math}
+\KL(\Sigma\mid\Sigma')
+\eqdef
+\KL\big(\Gaussian(0,\Sigma)\mid\Gaussian(0,\Sigma')\big)
+=
+\frac12\left(
+\tr((\Sigma')^{-1}\Sigma)-d-\log\det((\Sigma')^{-1}\Sigma)
+\right).
+```
+
+If $D=D^\top$ and $\Sigma+\varepsilon D$ remains positive definite, then
+
+```{math}
+\KL(\Sigma+\varepsilon D\mid\Sigma)
+=
+\frac{\varepsilon^2}{2}\langle Q_\Sigma(D),D\rangle_F+o(\varepsilon^2),
+\qquad
+Q_\Sigma(D)=\frac12\Sigma^{-1}D\Sigma^{-1},
+```
+
+where $\langle A,B\rangle_F=\tr(A^\top B)$ is the Frobenius pairing. Thus the local quadratic form is
+
+```{math}
+g_\Sigma(D,E)=\frac12\tr(\Sigma^{-1}D\Sigma^{-1}E).
+```
+
+With this normalization, the Fisher--Rao, or affine-invariant, geodesic distance on $\mathbb S_{++}^d$ is
+
+```{math}
+d_{\mathrm{FR}}(\Sigma,\Sigma')^2
+=
+\frac12
+\norm{\log(\Sigma^{-1/2}\Sigma'\Sigma^{-1/2})}_F^2,
+```
+
+where $\log$ denotes the principal matrix logarithm, and the corresponding geodesic is
+
+```{math}
+\Sigma_t^{\mathrm{FR}}
+=
+\Sigma^{1/2}
+\left(\Sigma^{-1/2}\Sigma'\Sigma^{-1/2}\right)^t
+\Sigma^{1/2}.
+```
+
+The contrast with Bures is especially visible near the boundary of the covariance cone. For example, $\Bb^2(\Sigma,0)=\tr(\Sigma)$, and more generally the Bures formula extends continuously to $\mathbb S_+^d$; rank-deficient covariance matrices are therefore at finite distance and the closed cone is part of the metric completion. Fisher--Rao is different. If an eigenvalue of $\Sigma^{-1/2}\Sigma'\Sigma^{-1/2}$ tends to zero, then the corresponding logarithm diverges in $d_{\mathrm{FR}}$. Hence the boundary, made of degenerate covariance matrices and representing infinitely anisotropic Gaussian limits on fixed-trace sections, is at infinite distance. Figure {ref}`fig:monge-gaussian-fr-vs-bures-cone` shows this in the $2\times2$ ice-cream cone coordinates: the Bures path reaches a rank-one covariance, while the Fisher--Rao path is drawn only to a small positive-definite regularization of the same rank-one limit.
+:::
+
+
+(fig:monge-gaussian-fr-vs-bures-cone)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("monge-gaussian-fr-vs-bures-cone")
+```
+
+*Bures--Wasserstein and Fisher--Rao covariance geodesics in the $2\times2$
+positive-semidefinite cone. The colored curve is the intrinsic geodesic and the
+faint gray chord is the ambient Euclidean segment. The Bures path reaches a
+rank-one covariance on the cone boundary. The Fisher--Rao path uses a
+positive-definite regularization with the same dominant direction; the open
+circle marks the limiting rank-one covariance, which is not at finite
+Fisher--Rao distance.*
+:::
+
+(prop-bures-metric-convex)=
+:::{admonition} Proposition: Metric And Convexity Properties Of The Bures Term
+:class: important
+The function $\Bb$ is a distance on positive semidefinite covariance matrices.
+Moreover, $\Bb^2$ is jointly convex:
+
+```{math}
+\Bb^2((1-t)\Sigma_0+t\Sigma_1,(1-t)\Lambda_0+t\Lambda_1)
+\leq
+(1-t)\Bb^2(\Sigma_0,\Lambda_0)
++
+t\Bb^2(\Sigma_1,\Lambda_1).
+```
+:::
+
+:::{dropdown} Proof
+The key identity is the Procrustes representation
+
+```{math}
+\Bb^2(\Sigma,\Lambda)
+=
+\min_{Q^\top Q=I}\|\Sigma^{1/2}-\Lambda^{1/2}Q\|_F^2.
+```
+
+Symmetry, positivity and separation follow immediately. The triangle
+inequality follows by choosing two almost optimal orthogonal matrices and
+applying the usual triangle inequality for the Frobenius norm.
+
+For convexity, use the factor formulation
+
+```{math}
+\Bb^2(\Sigma,\Lambda)
+=
+\min_{UU^\top=\Sigma,\;VV^\top=\Lambda}\|U-V\|_F^2.
+```
+
+Choose nearly optimal factors $(U_0,V_0)$ and $(U_1,V_1)$, and set
+
+```{math}
+U_t=[\sqrt{1-t}\,U_0,\sqrt t\,U_1],
+\qquad
+V_t=[\sqrt{1-t}\,V_0,\sqrt t\,V_1].
+```
+
+Then $U_tU_t^\top=(1-t)\Sigma_0+t\Sigma_1$ and
+$V_tV_t^\top=(1-t)\Lambda_0+t\Lambda_1$, while the squared Frobenius distance
+is the same convex combination. Taking the infimum proves joint convexity.
+:::
+
+:::{admonition} Remark: Diagonal covariances and Hellinger geometry
+:class: ot4ml-remark
+
+If $\cov_\al=\diag(r_i)_i$ and $\cov_\be=\diag(s_i)_i$ are diagonal, the Bures metric reduces to the Euclidean distance between square roots,
+
+```{math}
+\Bb(\cov_\al,\cov_\be)=\norm{\sqrt r-\sqrt s}_2.
+```
+
+This is the finite-dimensional Hellinger geometry on the nonnegative covariance coordinates: variances are compared after the amplitude change of variables $r_i\mapsto\sqrt{r_i}$.
+:::

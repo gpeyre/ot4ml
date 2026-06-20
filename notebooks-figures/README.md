@@ -7,13 +7,13 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 104
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 112
 live `latex/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
 in [`thumbnails/`](thumbnails/), and generated PDF panels in
-`../latex/figures/`. The searchable gallery currently exposes 105 figure views,
+`../latex/figures/`. The searchable gallery currently exposes 113 figure views,
 because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 107 LaTeX figure labels because
+schedule-comparison view. The book currently has 115 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet
 below is built from the same active thumbnail set.
 
@@ -104,22 +104,28 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="monge-jacobian-pushforward-density.ipynb"><img src="thumbnails/monge-jacobian-pushforward-density.png" alt="Jacobian determinant in the density push-forward formula" width="210"></a><br>
+  <strong>Jacobian density push-forward</strong><br>
+  <a href="monge-jacobian-pushforward-density.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-jacobian-pushforward-density.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
+  <a href="monge-polar-factorization.ipynb"><img src="thumbnails/monge-polar-factorization.png" alt="Polar factorization as relabeling plus a Brenier map" width="210"></a><br>
+  <strong>Polar factorization</strong><br>
+  <a href="monge-polar-factorization.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-polar-factorization.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="monge-semidiscrete-maps.ipynb"><img src="thumbnails/monge-semidiscrete-maps.png" alt="Semi-discrete Monge maps" width="210"></a><br>
   <strong>Semi-discrete Monge maps</strong><br>
   <a href="monge-semidiscrete-maps.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-semidiscrete-maps.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="monge-color-transfer-rgb.ipynb"><img src="thumbnails/monge-color-transfer-rgb.png" alt="RGB color transfer by a Monge map" width="210"></a><br>
   <strong>RGB color transfer by a Monge map</strong><br>
   <a href="monge-color-transfer-rgb.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-color-transfer-rgb.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
-  <a href="monge-shape-mccann-interpolation.ipynb"><img src="thumbnails/monge-shape-mccann-interpolation.png" alt="McCann interpolation between two shapes" width="210"></a><br>
-  <strong>McCann interpolation between two shapes</strong><br>
-  <a href="monge-shape-mccann-interpolation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-shape-mccann-interpolation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -128,19 +134,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="monge-shape-mccann-interpolation.ipynb"><img src="thumbnails/monge-shape-mccann-interpolation.png" alt="McCann interpolation between two shapes" width="210"></a><br>
+  <strong>McCann interpolation between two shapes</strong><br>
+  <a href="monge-shape-mccann-interpolation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-shape-mccann-interpolation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="monge-caffarelli-nonconvex-map.ipynb"><img src="thumbnails/monge-caffarelli-nonconvex-map.png" alt="Disk-to-dumbbell empirical McCann interpolation" width="210"></a><br>
   <strong>Disk-to-dumbbell empirical McCann interpolation</strong><br>
   <a href="monge-caffarelli-nonconvex-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-caffarelli-nonconvex-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="monge-1d-quantile-geodesic.ipynb"><img src="thumbnails/monge-1d-quantile-geodesic.png" alt="One-dimensional quantiles and displacement interpolation" width="210"></a><br>
   <strong>One-dimensional quantiles and displacement interpolation</strong><br>
   <a href="monge-1d-quantile-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-1d-quantile-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="monge-triangular-rearrangement.ipynb"><img src="thumbnails/monge-triangular-rearrangement.png" alt="Triangular rearrangement between two silhouettes" width="210"></a><br>
   <strong>Triangular rearrangement between two silhouettes</strong><br>
   <a href="monge-triangular-rearrangement.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-triangular-rearrangement.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -202,19 +214,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="birkhoff-von-neumann-cycle.ipynb"><img src="thumbnails/birkhoff-von-neumann-cycle.png" alt="Birkhoff-von Neumann cycle certificate" width="210"></a><br>
+  <strong>Birkhoff-von Neumann cycle certificate</strong><br>
+  <a href="birkhoff-von-neumann-cycle.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/birkhoff-von-neumann-cycle.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="kantorovich-log-barrier-lp-geometry.ipynb"><img src="thumbnails/kantorovich-log-barrier-lp-geometry.png" alt="Logarithmic barrier central path" width="210"></a><br>
   <strong>Logarithmic barrier central path</strong><br>
   <a href="kantorovich-log-barrier-lp-geometry.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-log-barrier-lp-geometry.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="kantorovich-plan-interpolation.ipynb"><img src="thumbnails/kantorovich-plan-interpolation.png" alt="McCann interpolation from a transport plan" width="210"></a><br>
   <strong>McCann interpolation from a transport plan</strong><br>
   <a href="kantorovich-plan-interpolation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-plan-interpolation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="kantorovich-discrete-gluing-lemma.ipynb"><img src="thumbnails/kantorovich-discrete-gluing-lemma.png" alt="Discrete gluing lemma" width="210"></a><br>
   <strong>Discrete gluing lemma</strong><br>
   <a href="kantorovich-discrete-gluing-lemma.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-discrete-gluing-lemma.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -238,7 +256,11 @@ Colab from the badge. The Colab links target the `main` branch of
   <a href="kantorovich-wow-mixtures.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-wow-mixtures.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="kantorovich-dro-ambiguity.ipynb"><img src="thumbnails/kantorovich-dro-ambiguity.png" alt="Wasserstein DRO ambiguity set" width="210"></a><br>
+  <strong>Wasserstein DRO ambiguity set</strong><br>
+  <a href="kantorovich-dro-ambiguity.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-dro-ambiguity.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 </tr>
 </table>
@@ -261,9 +283,9 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="dual-c-transform-envelope.ipynb"><img src="thumbnails/dual-c-transform-envelope.png" alt="Discrete c-transform lower envelopes" width="210"></a><br>
-  <strong>Discrete c-transform lower envelopes</strong><br>
-  <a href="dual-c-transform-envelope.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-c-transform-envelope.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="dual-complementary-slackness-contacts.ipynb"><img src="thumbnails/dual-complementary-slackness-contacts.png" alt="Complementary slackness contacts" width="210"></a><br>
+  <strong>Complementary slackness contacts</strong><br>
+  <a href="dual-complementary-slackness-contacts.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-complementary-slackness-contacts.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -271,6 +293,12 @@ Colab from the badge. The Colab links target the `main` branch of
 
 <table>
 <tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="dual-c-transform-envelope.ipynb"><img src="thumbnails/dual-c-transform-envelope.png" alt="Discrete c-transform lower envelopes" width="210"></a><br>
+  <strong>Discrete c-transform lower envelopes</strong><br>
+  <a href="dual-c-transform-envelope.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-c-transform-envelope.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 <td width="33%" align="center" valign="top">
   <a href="dual-alternating-c-transform-failure.ipynb"><img src="thumbnails/dual-alternating-c-transform-failure.png" alt="Concave closures from hard c-transforms" width="210"></a><br>
@@ -284,8 +312,6 @@ Colab from the badge. The Colab links target the `main` branch of
   <a href="dual-auction-progression.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-auction-progression.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
-
 </tr>
 </table>
 
@@ -294,19 +320,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="semidiscrete-laguerre-cells.ipynb"><img src="thumbnails/semidiscrete-laguerre-cells.png" alt="Semi-discrete Laguerre cells" width="210"></a><br>
   <strong>Semi-discrete Laguerre cells</strong><br>
   <a href="semidiscrete-laguerre-cells.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-laguerre-cells.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="semidiscrete-weight-gradient-cells.ipynb"><img src="thumbnails/semidiscrete-weight-gradient-cells.png" alt="Semi-discrete weight-gradient cells" width="210"></a><br>
+  <strong>Semi-discrete weight-gradient cells</strong><br>
+  <a href="semidiscrete-weight-gradient-cells.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-weight-gradient-cells.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="semidiscrete-lloyd-quantization.ipynb"><img src="thumbnails/semidiscrete-lloyd-quantization.png" alt="Lloyd quantization of a continuous density" width="210"></a><br>
   <strong>Lloyd quantization of a continuous density</strong><br>
   <a href="semidiscrete-lloyd-quantization.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-lloyd-quantization.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="semidiscrete-lloyd-flow-mixtures.ipynb"><img src="thumbnails/semidiscrete-lloyd-flow-mixtures.png" alt="Continuous Lloyd flow between Gaussian mixtures" width="210"></a><br>
   <strong>Continuous Lloyd flow between Gaussian mixtures</strong><br>
   <a href="semidiscrete-lloyd-flow-mixtures.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/semidiscrete-lloyd-flow-mixtures.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -459,10 +491,22 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="sinkhorn-phi-soft-c-transforms.ipynb"><img src="thumbnails/sinkhorn-phi-soft-c-transforms.png" alt="Generalized phi-soft c-transforms" width="210"></a><br>
+  <strong>Generalized phi-soft c-transforms</strong><br>
+  <a href="sinkhorn-phi-soft-c-transforms.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-phi-soft-c-transforms.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="sinkhorn-entropic-versus-quadratic-regularization.ipynb"><img src="thumbnails/sinkhorn-entropic-versus-quadratic-regularization.png" alt="Regularized couplings and entropy choice" width="210"></a><br>
   <strong>Regularized couplings and entropy choice</strong><br>
   <a href="sinkhorn-entropic-versus-quadratic-regularization.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-entropic-versus-quadratic-regularization.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+</tr>
+</table>
+
+<table>
+<tr>
 
 <td width="33%" align="center" valign="top">
   <a href="sinkhorn-divergence-debiasing.ipynb"><img src="thumbnails/sinkhorn-divergence-debiasing.png" alt="Sinkhorn debiasing by point optimization" width="210"></a><br>
@@ -470,7 +514,11 @@ Colab from the badge. The Colab links target the `main` branch of
   <a href="sinkhorn-divergence-debiasing.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-divergence-debiasing.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-complex-epsilon-continuation.ipynb"><img src="thumbnails/sinkhorn-complex-epsilon-continuation.png" alt="Complex Sinkhorn potentials near a real epsilon" width="210"></a><br>
+  <strong>Complex Sinkhorn potentials</strong><br>
+  <a href="sinkhorn-complex-epsilon-continuation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-complex-epsilon-continuation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 </tr>
 </table>
