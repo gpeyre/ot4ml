@@ -440,9 +440,149 @@ OT is random, but both display the same curse of dimensionality.
 
 For fixed codepoints $Y$, the problem is convex with respect to the weights
 $b$. The dependence on $Y$ is nonconvex and is generally computationally hard.
-In one dimension, monotonicity fixes the ordering of cells, reducing the
-problem to interval endpoints and centroids; for the uniform law with the
-quadratic cost, the optimal centroids are equally spaced.
+In one dimension, monotonicity fixes the ordering of cells and, when the weights
+are prescribed to be equal, the problem becomes an orthogonal projection in
+quantile coordinates.
+
+### Equal-weight quantization on the line
+
+The following proposition gives the precise form of the inverse-CDF rule for
+equal-weight quadratic quantization. The atoms are not exactly the midpoint
+quantiles in general; they are the averages of the quantile function over equal
+mass bins. Midpoint inverse-CDF samples are nevertheless asymptotically
+equivalent and are often the most convenient rule in numerical examples.
+
+(prop-1d-equal-weight-quantization)=
+:::{admonition} Proposition: One-Dimensional Equal-Weight Quantization
+:class: important
+Let $\alpha\in\mathcal M_+^1(\mathbb R)$ have finite second moment and quantile
+function $Q=F_\alpha^{-1}$. For
+
+```{math}
+\mathcal Q_{m,\mathrm{eq}}(\alpha)^2
+\eqdef
+\min_{y_1\le\cdots\le y_m}
+\mathcal W_2^2
+\left(\alpha,\frac1m\sum_{i=1}^m\delta_{y_i}\right),
+```
+
+set $I_i=((i-1)/m,i/m]$. Then the sorted minimizer is unique and its $i$th
+atom is
+
+```{math}
+y_i^\star
+=
+m\int_{I_i} Q(u)\,\d u,
+```
+
+and
+
+```{math}
+\mathcal Q_{m,\mathrm{eq}}(\alpha)^2
+=
+\sum_{i=1}^m
+\int_{I_i}
+\left|Q(u)-y_i^\star\right|^2\,\d u.
+```
+
+If $Q\in H^1(0,1)$, then
+
+```{math}
+\mathcal Q_{m,\mathrm{eq}}(\alpha)^2
+\le
+\frac{1}{\pi^2m^2}
+\int_0^1 |Q'(u)|^2\,\d u.
+```
+
+If, in addition, $Q\in C^1([0,1])$, then
+
+```{math}
+m^2\mathcal Q_{m,\mathrm{eq}}(\alpha)^2
+\longrightarrow
+\frac1{12}\int_0^1 |Q'(u)|^2\,\d u.
+```
+:::
+
+:::{dropdown} Proof
+After sorting the atoms, the quantile formula for $\mathcal W_2$ gives
+
+```{math}
+\mathcal W_2^2
+\left(\alpha,\frac1m\sum_{i=1}^m\delta_{y_i}\right)
+=
+\sum_{i=1}^m
+\int_{I_i}|Q(u)-y_i|^2\,\d u.
+```
+
+The minimization therefore decouples over the intervals $I_i$, and the best
+constant approximation of $Q$ on $I_i$ in $L^2$ is its average on $I_i$. This
+proves the formula for $y_i^\star$ and the energy.
+
+The bound follows from the sharp one-dimensional Poincare inequality on each
+interval,
+
+```{math}
+\int_{I_i}|Q-\bar Q_{I_i}|^2\,\d u
+\le
+\frac{1}{\pi^2m^2}
+\int_{I_i}|Q'|^2\,\d u,
+```
+
+where $\bar Q_{I_i}$ is the interval average. Summing over $i$ gives the
+estimate. If $Q$ is $C^1$, Taylor expansion on each interval gives
+
+```{math}
+\int_{I_i}|Q(u)-\bar Q_{I_i}|^2\,\d u
+=
+\frac{|Q'(u_i)|^2}{12m^3}
++
+o(m^{-3})
+```
+
+for some $u_i\in I_i$, uniformly in $i$. Summing the Riemann approximation
+yields the stated limit.
+:::
+
+Thus the common deterministic rule
+$m^{-1}\sum_i\delta_{Q((i-1/2)/m)}$ should be read as a midpoint approximation
+of the optimal bin-average formula. It has the same leading squared error under
+the same smoothness assumptions; for the uniform law on $[0,1]$, both rules
+coincide and give the regular grid $y_i=(i-1/2)/m$. By contrast, if
+$\widehat\alpha_m=m^{-1}\sum_i\delta_{X_i}$ is formed from iid samples
+$X_i\sim\alpha$, then classical quantile-process asymptotics give, under
+standard regularity assumptions,
+
+```{math}
+m\,\mathbb E\!\left[
+\mathcal W_2^2(\alpha,\widehat\alpha_m)
+\right]
+\longrightarrow
+\int_0^1 u(1-u)|Q'(u)|^2\,\d u.
+```
+
+Equivalently, in one dimension deterministic inverse-CDF quantization has
+squared error of order $m^{-2}$, hence $\mathcal W_2$ error of order $m^{-1}$,
+while iid empirical sampling has average squared error of order $m^{-1}$, hence
+average $\mathcal W_2$ error of order $m^{-1/2}$; see
+{cite:p}`graf2000foundationsquantization,dereich2013constructive,fournier2015rate,weed2017sharp`.
+
+(fig:semidiscrete-quantile-quantization-rates)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("semidiscrete-quantile-quantization-rates")
+```
+
+*One-dimensional equal-weight quantization in quantile coordinates. Left: for a
+smooth positive density on $[0,1]$, the colored atoms are bin averages of the
+inverse CDF over equal quantile intervals, while the gray atoms show one iid
+empirical draw with the same number of particles. Right: average squared
+$\mathcal W_2$ errors. The deterministic bin averages and midpoint quantiles
+follow the $m^{-2}$ squared-error law, whereas iid empirical measures follow the
+slower $m^{-1}$ average squared-error law.*
+:::
 
 (prop-free-masses-voronoi)=
 :::{admonition} Proposition: Free Masses Give Voronoi Cells
@@ -525,6 +665,133 @@ decreases at each step. Since the problem is nonconvex in $Y$, the iterates
 generally converge only to a local minimum. Good seeding matters; for squared
 Euclidean costs, $k$-means++ gives a logarithmic approximation guarantee in
 expectation {cite:p}`ArthurVassilvitskii2007`.
+
+**Continuous Lloyd flow.** There is also an infinitesimal version of Lloyd's
+fixed point, but it should first be understood on finite labelled
+configurations. Assume that $c(x,y)=\norm{x-y}^2$ and that $\alpha$ does not
+charge Voronoi boundaries. For a configuration $Y$, define, on nonempty cells,
+
+```{math}
+a_j(Y)=\alpha(\mathcal V_j(Y)),
+\qquad
+b_j(Y)=\frac{1}{a_j(Y)}
+\int_{\mathcal V_j(Y)}x\,\d\alpha(x)
+```
+
+as the cell mass and centroid. Empty cells are singular points of the vector
+field; one either freezes them, as in the algorithm below, or reseeds them.
+The relaxed step
+
+```{math}
+y_j^{(k+1)}
+=
+y_j^{(k)}+\tau\big(b_j(Y^{(k)})-y_j^{(k)}\big),
+\qquad 0<\tau\le 1,
+```
+
+formally converges, as $\tau\to0$, to the Lloyd vector field
+
+```{math}
+\dot y_j(t)=b_j(Y_t)-y_j(t).
+```
+
+If $\mu_t=\sum_j w_j\delta_{y_j(t)}$ carries fixed positive weights,
+independent of the Voronoi masses $a_j(Y_t)$, this labelled particle ODE is
+equivalently a weak continuity equation,
+
+```{math}
+\partial_t\mu_t+\operatorname{div}(v_{\mu_t}\mu_t)=0,
+\qquad
+v_{\mu_t}(y_j(t))=b_j(Y_t)-y_j(t),
+```
+
+in the sense of the measure evolutions introduced in
+Chapter {ref}`sec-dynamic-optimal-transport`. The weights $w_j$ in this
+transport equation are auxiliary weights for the moving labelled particles;
+they are not the Voronoi masses used to define the quantization energy. If one
+records instead the free-weight projection
+
+```{math}
+\nu_{Y_t}=\sum_j a_j(Y_t)\delta_{y_j(t)},
+```
+
+then, formally,
+
+```{math}
+\partial_t\nu_{Y_t}+\operatorname{div}(v_t\nu_{Y_t})
+=
+\sum_j\dot a_j(Y_t)\delta_{y_j(t)},
+\qquad
+v_t(y_j(t))=\dot y_j(t).
+```
+
+Thus the free-weight quantizer evolves by a balance equation, not by pure
+transport. This is why the construction is intrinsically finite-dimensional:
+Voronoi cells, centroids and labels define the velocity, and a canonical
+extension to arbitrary measures is not obtained by replacing $Y$ with the
+support of a measure. Indeed, any measure with dense support would have zero
+support-distance quantization error.
+
+At smooth configurations, the boundary terms vanish and
+
+```{math}
+\D\mathcal F(Y)[U]
+=
+2\sum_j a_j(Y)\langle y_j-b_j(Y),U_j\rangle.
+```
+
+Hence, for the Riemannian metric
+
+```{math}
+g_Y(U,V)=2\sum_j a_j(Y)\langle U_j,V_j\rangle,
+```
+
+the continuous Lloyd ODE is exactly
+
+```{math}
+\dot Y_t=-\operatorname{grad}_g\mathcal F(Y_t).
+```
+
+In particular,
+
+```{math}
+\frac{\d}{\d t}\mathcal F(Y_t)
+=
+-2\sum_j a_j(Y_t)\norm{b_j(Y_t)-y_j(t)}^2\le 0.
+```
+
+This should not be confused with an unrestricted $\Wass_2$-gradient flow on
+all of $\Pp_2$. The metric above is Wasserstein-like because it weights
+particle velocities by masses, but it is not the fixed-weight atomic
+$\Wass_2$ metric unless the masses are frozen. Here the masses $a_j(Y)$ are
+recomputed from the Voronoi cells, so the ODE is best read as a preconditioned
+configuration-space gradient flow. Recent semi-discrete
+Wasserstein-gradient-flow work couples a moving density with finitely many
+atoms through a JKO scheme; the limit is a parabolic PDE with singular
+advection coupled to barycentric ODEs for the atoms
+{cite:p}`jordan1998variational,otto2001geometry,ambrosio2006gradient,Machado2026SemiDiscreteGradientFlows`.
+Entropy gives a heat-type term, power internal energies give porous-medium
+equations for exponents $m>1$, and exponents below one correspond formally to
+fast-diffusion equations, with additional admissibility and regularity
+restrictions.
+
+(fig:semidiscrete-lloyd-flow-mixtures)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("semidiscrete-lloyd-flow-mixtures")
+```
+
+*Relaxed Lloyd flow from a source Gaussian-mixture initialization toward a
+different target Gaussian-mixture density. The pale red contours show the
+initialization density, the blue contours and shading show the target density
+$\alpha$, and the colored disks are the moving codepoints. The faint curves
+trace the labelled sites under the explicit-Euler Lloyd ODE. The right panel
+displays the relative quantization energy, illustrating the monotone descent
+predicted by the configuration-space gradient-flow interpretation.*
+:::
 
 (fig:semidiscrete-lloyd-quantization)=
 :::{div}

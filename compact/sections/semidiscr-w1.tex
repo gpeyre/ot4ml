@@ -89,11 +89,41 @@ Let $\Omega\subset\RR^d$ be a bounded Lipschitz domain and assume $\al=\rho\,\d 
 \(c\,m^{-1/d} \leq \Qq_m(\al) \leq C\,m^{-1/d}.\)
 \end{prop}
 \begin{proof}
-For the upper bound, partition $\Omega$ into $m$ cells of diameter at most $Cm^{-1/d}$, up to boundary effects, and put one codepoint in each non-empty cell. Sending each point to the codepoint in its cell gives a transport distance bounded by $Cm^{-1/d}$.
+For the upper bound, partition $\Omega$ into $m$ cells of diameter at most $Cm^{-1/d}$, up to boundary effects, and put one codepoint in each nonempty cell. Sending each point to the codepoint in its cell gives a transport distance bounded by $Cm^{-1/d}$.
 
 For the lower bound, fix any set $Y$ of $m$ codepoints and write $d_Y(x)=\min_j\norm{x-y_j}$. Since the density is bounded above, the mass of the $t$-neighborhood of $Y$ is at most $Cmt^d$. Choosing $t_0\simeq m^{-1/d}$ small enough gives $\al(\{d_Y>t\})\geq c$ for $0<t<t_0$. Hence
 \(\int d_Y(x)^p\d\al(x) = \int_0^{+\infty} p t^{p-1}\al(\{d_Y>t\})\d t \geq c t_0^p \simeq c m^{-p/d}.\)
 Taking the $p$-th root and minimizing over $Y$ proves the lower bound.
+\end{proof}
+\begin{prop}[Equal-weight quantization on the line]\label{prop-1d-equal-weight-quantization}
+Let $\al\in\Mm_+^1(\RR)$ have quantile $Q=\cumul{\al}^{-1}$ and define
+\[
+\Qq_m^{\mathrm{eq}}(\al)^2
+\eqdef
+\min_{y_1\leq\cdots\leq y_m}\Wass_2^2\left(\al,\frac1m\sum_{i=1}^m\de_{y_i}\right).
+\]
+For $I_i=((i-1)/m,i/m]$, the sorted minimizer is \(y_i^\star=m\int_{I_i}Q(u)\d u\); for the uniform law this is \(y_i^\star=(i-1/2)/m\). Moreover,
+\[
+\Qq_m^{\mathrm{eq}}(\al)^2
+=
+\sum_{i=1}^m\int_{I_i}\abs{Q(u)-y_i^\star}^2\d u.
+\]
+If \(Q\in H^1(0,1)\), then
+\(\Qq_m^{\mathrm{eq}}(\al)^2\leq(\pi^2m^2)^{-1}\int_0^1|Q'(u)|^2\d u\);
+if \(Q\in C^1([0,1])\), then
+\[
+m^2\Qq_m^{\mathrm{eq}}(\al)^2\to \frac1{12}\int_0^1|Q'(u)|^2\d u.
+\]
+For iid \(\widehat\al_m=m^{-1}\sum_i\de_{X_i}\), standard one-dimensional quantile-process asymptotics give
+\[
+m\,\EE[\Wass_2^2(\al,\widehat\al_m)]
+\to
+\int_0^1u(1-u)|Q'(u)|^2\d u.
+\]
+Thus deterministic inverse-CDF particles have \(O(m^{-2})\) squared error, while iid particles have \(O(m^{-1})\) average squared error.
+\end{prop}
+\begin{proof}
+By the one-dimensional quantile formula, the objective is \(\sum_i\int_{I_i}|Q(u)-y_i|^2\d u\). The minimizer on each bin is the \(L^2\) projection onto constants, hence the bin average. Poincar\'e on each interval gives the \(H^1\) bound, and Taylor expansion on bins gives the constant \(1/12\). The iid limit is the classical Brownian-bridge quantile-process variance.
 \end{proof}
 \begin{prop}[Free masses give Voronoi cells]\label{prop-free-masses-voronoi}
 For the cost $c(x,y)=d(x,y)^p$, fix distinct codepoints $Y=(y_j)_{j=1}^m$. Duplicate codepoints can be merged beforehand. Minimizing over the weights $\b\in\simplex_m$ gives
@@ -113,6 +143,30 @@ For any coupling between $\al$ and a measure supported on $Y$, the conditional d
 \(\Qq_m(\al)^p = \min_Y \Ff(Y), \qquad \Ff(Y) \eqdef \int_\X \min_{1\leq j\leq m} c(x,y_j)\d\al(x).\)
 \(y_j \in \uargmin{y} \int_{\VV_j(Y)} c(x,y)\d\al(x).\)
 \(y_j = \frac{\int_{\VV_j(Y)} x\d\al(x)} {\int_{\VV_j(Y)} \d\al}.\)
+\paragraph{Continuous Lloyd flow.}
+For \(c(x,y)=\norm{x-y}^2\), assume \(\al\) does not charge Voronoi boundaries and set
+\(a_j(Y)=\al(\VV_j(Y))\), \(b_j(Y)=a_j(Y)^{-1}\int_{\VV_j(Y)}x\d\al(x)\) on nonempty cells.
+The relaxed Lloyd update
+\(y_j^{(k+1)}=y_j^{(k)}+\tau(b_j(Y^{(k)})-y_j^{(k)})\)
+formally gives, as \(\tau\to0\),
+\[
+\dot y_j(t)=b_j(Y_t)-y_j(t).
+\]
+For fixed particle weights \(\mu_t=\sum_jw_j\de_{y_j(t)}\), this is the weak continuity equation
+\(\partial_t\mu_t+\diverg(v_{\mu_t}\mu_t)=0\) with \(v_{\mu_t}(y_j)=b_j(Y)-y_j\).
+These \(w_j\) are auxiliary weights. The free-weight projection \(\nu_Y=\sum_j a_j(Y)\de_{y_j}\) instead satisfies formally
+\[
+\partial_t\nu_{Y_t}+\diverg(v_t\nu_{Y_t})=\sum_j\dot a_j(Y_t)\de_{y_j(t)},
+\qquad v_t(y_j(t))=\dot y_j(t),
+\]
+so varying cell masses create a balance term.
+At smooth configurations,
+\[
+\D\Ff(Y)[U]=2\sum_j a_j(Y)\dotp{y_j-b_j(Y)}{U_j},\qquad
+\frac{\d}{\d t}\Ff(Y_t)=-2\sum_j a_j(Y_t)\norm{b_j(Y_t)-y_j(t)}^2.
+\]
+Thus Lloyd's ODE is the finite-dimensional gradient flow for \(g_Y(U,V)=2\sum_j a_j(Y)\dotp{U_j}{V_j}\).
+This mass-weighted metric is Wasserstein-like, but it is not the fixed-weight atomic \(\Wass_2\) metric because \(a_j(Y)\) is recomputed from the cells. Semi-discrete JKO models with a moving density and finitely many atoms lead instead to coupled PDE/ODE systems, with heat, porous-medium, or formal fast-diffusion terms depending on the chosen internal energy and admissibility range.
 \subsection{Wasserstein-1 norm}
 \label{sec-W1}
 \paragraph{\texorpdfstring{$c$-transform for $\Wass_1$.}{c-transform for W1.}}
@@ -202,5 +256,5 @@ The vector $m_e$ is an oriented edge flow, and the constraint $\operatorname{div
 The edge constraint $|f_i-f_j|\leq\ell_e$ implies, by summing along paths, that $|f_i-f_j|\leq d_G(i,j)$ for all vertices. Conversely, any $1$-Lipschitz function for $d_G$ satisfies the edge constraints because each edge is a path of length $\ell_e$. The first equality is therefore the Kantorovich--Rubinstein formula on the metric space $(V,d_G)$.
 
 For the second equality, write the graph Beckmann problem and dualize its equality constraint with a potential $f$: \(\inf_m \sum_e\ell_e|m_e| +\sup_f \sum_i f_i(r_i-(\operatorname{div}_G m)_i).\)
-Using $\operatorname{div}_G=-\nabla_G^*$, the coupling term is $\sum_e m_e(\nabla_G f)_e$. The minimization over each scalar flow $m_e$ is finite exactly when $|(\nabla_G f)_e|\leq\ell_e$, and is then equal to zero. The dual problem is therefore precisely the graph Lipschitz dual above. Strong duality holds because this is a finite-dimensional linear program with a non-empty feasible set: connectedness and $\sum_i r_i=0$ allow the signed surplus to be routed along paths. This proves the graph Beckmann formula.
+Using $\operatorname{div}_G=-\nabla_G^*$, the coupling term is $\sum_e m_e(\nabla_G f)_e$. The minimization over each scalar flow $m_e$ is finite exactly when $|(\nabla_G f)_e|\leq\ell_e$, and is then equal to zero. The dual problem is therefore precisely the graph Lipschitz dual above. Strong duality holds because this is a finite-dimensional linear program with a nonempty feasible set: connectedness and $\sum_i r_i=0$ allow the signed surplus to be routed along paths. This proves the graph Beckmann formula.
 \end{proof}
