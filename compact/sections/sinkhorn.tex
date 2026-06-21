@@ -246,24 +246,21 @@ Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian o
 }.
 \end{equation}
 \paragraph{Stochastic-control interpretation.}
-For the Brownian reference \(\d X_t=\sqrt\epsilon\,\d B_t\), \(X_0\sim\alpha\), with generator \((\epsilon/2)\Delta\), any finite-entropy law \(M\ll\Rr^\epsilon\) with the same initial marginal can be written, under standard assumptions and in weak form, as
-\[
-\d X_t=u_t\,\d t+\sqrt\epsilon\,\d B_t,\qquad X_0\sim\alpha .
-\]
-Girsanov's formula gives
+For Brownian references, the entropy projection has a direct control meaning. To fix constants, suppose that $\Rr^\epsilon$ is the law of
+
+\(\d X_t = \sqrt{\epsilon}\,\d B_t, \qquad X_0\sim\al,\)
+\(\d X_t = u_t\,\d t+\sqrt{\epsilon}\,\d B_t, \qquad X_0\sim\al.\)
 \[
 \KL(M|\Rr^\epsilon)
-=\frac{1}{2\epsilon}\EE_M\int_0^1\|u_t\|^2\,\d t,
+=
+\frac{1}{2\epsilon}\EE_M\int_0^1 \norm{u_t}^2\,\d t,
 \qquad
-\epsilon\KL(M|\Rr^\epsilon)
-=\frac12\EE_M\int_0^1\|u_t\|^2\,\d t,
+\epsilon\KL(M|\Rr^\epsilon)=\frac12\EE_M\int_0^1 \norm{u_t}^2\,\d t.
 \]
-up to the fixed initial entropy if the Brownian prior does not start from \(\alpha\). Hence, modulo this fixed endpoint cost, the bridge is the least-energy control steering Brownian motion from \(\alpha\) to \(\beta\):
-\[
-\inf_u\left\{\frac12\EE\int_0^1\|u_t\|^2\,\d t:
-\d X_t=u_t\,\d t+\sqrt\epsilon\,\d B_t,\ X_0\sim\alpha,\ X_1\sim\beta\right\}.
-\]
-The optimal drift is Markovian and has Doob-transform form \(u_t^\star=\epsilon\nabla\log h_t=\nabla\phi_t\), where \(\phi_t=\epsilon\log h_t\) solves \(\partial_t\phi_t+\frac12\|\nabla\phi_t\|^2+\frac{\epsilon}{2}\Delta\phi_t=0\).
+If the reference initial law is not $\al$, an additional term $\epsilon\KL(\al|\Rr^\epsilon_0)$ appears, but it is fixed by the endpoint constraint. Hence, up to this fixed endpoint cost, the Schr\"odinger bridge can be read as
+
+\(\inf_u \enscond{ \frac12\EE\int_0^1\norm{u_t}^2\,\d t }{ \d X_t=u_t\,\d t+\sqrt{\epsilon}\,\d B_t,\quad X_0\sim\al,\ X_1\sim\be },\)
+\(u_t^\star(x)=\epsilon\nabla\log h_t(x).\)
 \paragraph{Viscous Benamou--Brenier formulations.}
 \(\partial_t\rho_t+\diverg(\rho_t v_t) = \frac{\sigma}{2}\Delta\rho_t,\)
 \(\int_0^1\!\int \frac12\norm{v_t(x)}^2\rho_t(x)\d x\d t.\)
@@ -483,69 +480,207 @@ For uniqueness, use strict convexity of
 on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
 \end{proof}
 \paragraph{Neural dual solvers.}
-For \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: with \(\Phi=-f\) and \(\Psi=-g\), the constraint \(f+g\leq-\dotp{x}{y}\) reads \(\Phi(x)+\Psi(y)\geq\dotp{x}{y}\). For the quadratic cost, the same convexity appears after subtracting the quadratic terms. This motivates sampled dual solvers in which \(\Phi,\Psi\) are parameterized by input-convex neural networks: ReLU is convex and nondecreasing, nonnegative hidden weights preserve convexity, and affine input skips keep the model expressive. This is a convexity constraint on the represented functions, not a convex optimization problem in the network weights; neural dual solvers replace exact Sinkhorn scaling by stochastic optimization over a structured class of convex potentials.
+\(\Phi(x)+\Psi(y)\geq \dotp{x}{y}.\)
+For the quadratic cost this is the same statement after subtracting the quadratic terms, using the convexity properties of soft transforms. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
 
 \subsection{Marginal-Dependent Problems}
 \label{sec-sinkhorn-marginal-dependent}
-Generalized Sinkhorn algorithms apply when the objective depends on a coupling only through its cost and two separate marginal penalties:
+Let $\mathcal F$ and $\mathcal G$ be proper convex lower semicontinuous functionals on finite nonnegative measures on $\Xx$ and $\Yy$. The unregularized marginal-dependent transport problem is
+
+\begin{equation}\label{eq-marginal-dependent-unregularized-cont}
+\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+\int c(x,y)\d\pi(x,y)
++
+\mathcal F(\pi_1)
++
+\mathcal G(\pi_2),
+\end{equation}
+where $\pi_1=(\mathrm{p}_{\Xx})_\sharp\pi$ and $\pi_2=(\mathrm{p}_{\Yy})_\sharp\pi$ are the two marginals of $\pi$. Entropic regularization turns this problem into the scaling-friendly form
+
+\begin{equation}\label{eq-marginal-dependent-cont}
+\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
+\int c(x,y)\d\pi(x,y)
++
+\mathcal F(\pi_1)
++
+\mathcal G(\pi_2)
++
+\epsilon\KL(\pi|\al\otimes\be),
+\end{equation}
+where $\al$ and $\be$ are reference measures. In this subsection, when the total mass of $\pi$ is not fixed, the KL term is understood in the generalized sense associated with $\varphi(s)=s\log s-s+1$.
+
+\(\KL(\pi|\lambda) = \int \bigl(\rho\log\rho-\rho+1\bigr)\d\lambda\)
+\begin{equation}\label{eq-marginal-dependent-discrete}
+\inf_{\P\in\RR_+^{n\times m}}
+\dotp{\C}{\P}
++
+\mathsf F(\P\ones_m)
++
+\mathsf G(\transp{\P}\ones_n)
++
+\epsilon\KLD(\P|\a\otimes\b).
+\end{equation}
+\(\inf_{\P\geq0} \mathsf F(\P\ones_m) + \mathsf G(\transp{\P}\ones_n) + \epsilon\KLD(\P|\K).\)
+\begin{prop}[Dual and scaling for marginal penalties]\label{prop-marginal-dependent-dual-scaling}
+Assume $a_i,b_j>0$, $\epsilon>0$, and a Fenchel qualification condition, for instance the existence of a matrix $\P>0$ such that $\P\ones_m$ and $\transp{\P}\ones_n$ belong to the relative interiors of $\dom(\mathsf F)$ and $\dom(\mathsf G)$. The Fenchel dual of~\eqref{eq-marginal-dependent-discrete} is
+\begin{equation}\label{eq-marginal-dependent-dual}
+\sup_{\fD\in\RR^n,\gD\in\RR^m}
+-
+\mathsf F^*(-\fD)
+-
+\mathsf G^*(-\gD)
+-
+\epsilon\sum_{i,j}a_i b_j
+\left[
+\exp\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right)-1
+\right].
+\end{equation}
+Equivalently, up to the additive constant $\epsilon\sum_{i,j}a_i b_j$, the last term is
 \[
-\inf_{\pi\ge0}\int c\d\pi+\mathcal F(\pi_1)+\mathcal G(\pi_2).
+-
+\epsilon\sum_{i,j}\K_{ij}
+\exp\left(\frac{\fD_i+\gD_j}{\epsilon}\right).
 \]
-Adding entropy gives
+If $\uD=e^{\fD/\epsilon}$ and $\vD=e^{\gD/\epsilon}$, exact block ascent in the two dual variables is the generalized Sinkhorn cycle
+\begin{equation}\label{eq-generalized-sinkhorn-kl-prox}
+\begin{aligned}
+r &\leftarrow \prox_{\mathsf F/\epsilon}^{\KLD}(\K\vD),
+&\qquad
+\uD &\leftarrow r\oslash(\K\vD),\\
+s &\leftarrow \prox_{\mathsf G/\epsilon}^{\KLD}(\transp{\K}\uD),
+&\qquad
+\vD &\leftarrow s\oslash(\transp{\K}\uD),\\
+\P&=\diag(\uD)\K\diag(\vD),
+\end{aligned}
+\end{equation}
+where divisions are entrywise and
+\begin{equation}\label{eq-kl-prox-marginal}
+\prox_{\mathsf h}^{\KLD}(z)
+\eqdef
+\uargmin{r\in\RR_+^d}
+\mathsf h(r)+\KLD(r|z).
+\end{equation}
+In particular, $\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ is the minimizer of $\mathsf F(r)+\epsilon\KLD(r|z)$.
+\end{prop}
+\begin{proof}
+Introduce independent variables $r$ and $s$ for the two marginals and use dual variables $\fD,\gD$ for the constraints $r=\P\ones_m$ and $s=\transp{\P}\ones_n$. The Lagrangian contains
+\(\mathsf F(r)+\dotp{\fD}{r} + \mathsf G(s)+\dotp{\gD}{s} + \dotp{\C}{\P} + \epsilon\KLD(\P|\a\otimes\b) - \dotp{\fD\oplus\gD}{\P}.\)
+Minimizing over $r$ and $s$ gives $-\mathsf F^*(-\fD)$ and $-\mathsf G^*(-\gD)$. For each scalar entry, the convex conjugate of $p\mapsto C_{ij}p+\epsilon(p\log(p/(a_i b_j))-p+a_i b_j)$ is $q\mapsto \epsilon a_i b_j(e^{(q-C_{ij})/\epsilon}-1)$. Minimizing over $\P$ with $q=\fD_i+\gD_j$ gives~\eqref{eq-marginal-dependent-dual}.
+
+For the scaling form, fix $\vD>0$, set $\widetilde{\K}=\K\diag(\vD)$ and $z=\widetilde{\K}\ones_m=\K\vD$. Updating the row scaling means looking for $\P=\diag(\uD)\widetilde{\K}$, so its row marginal is $r=\P\ones_m=\uD\odot z$. The row-wise chain rule gives
+\(\KLD(\diag(\uD)\widetilde{\K}|\widetilde{\K}) = \sum_i \bigl(r_i\log(r_i/z_i)-r_i+z_i\bigr) = \KLD(r|z).\)
+Thus exact optimization of this block is equivalent to minimizing $\mathsf F(r)+\epsilon\KLD(r|z)$ over $r\geq0$, hence $r=\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ and $\uD=r\oslash z$. The column update is identical with $w=\transp{\K}\uD$.
+\end{proof}
+When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two dual terms are $\dotp{\fD}{\a}+\dotp{\gD}{\b}$, and one recovers the usual entropic dual~\eqref{eq-dual-sinkhorn-objective}. The classical Sinkhorn update is the special case in which the KL proximal maps return the prescribed marginals $\a$ and $\b$.
+
+\begin{itemize}
+\item \textbf{Hard marginal constraint.} If $\mathsf F=\iota_{\{\a\}}$, then $\prox_{\mathsf F/\epsilon}^{\KLD}(z)=\a$.
+\item \textbf{KL marginal relaxation.} If $\mathsf F(r)=\tau\KLD(r|\a)$ with $\tau>0$, then, coordinatewise,
+\(\prox_{\mathsf F/\epsilon}^{\KLD}(z) = z^{\epsilon/(\tau+\epsilon)}\odot \a^{\tau/(\tau+\epsilon)},\)
+and the scaling update becomes $\uD\leftarrow(\a\oslash z)^{\tau/(\tau+\epsilon)}$, the damped scaling of unbalanced Sinkhorn.
+\item \textbf{Pointwise bounds.} If $\mathsf F=\iota_{\{\ell\leq r\leq u\}}$, then the proximal map is the coordinatewise clipping $\prox_{\mathsf F/\epsilon}^{\KLD}(z)_i=\min\{u_i,\max\{\ell_i,z_i\}\}$.
+\item \textbf{Total-variation marginal relaxation.} If $\mathsf F(r)=\tau\norm{r-\a}_1$ and $\lambda=\tau/\epsilon$, then the proximal map is coordinatewise
 \[
-\inf_{\pi\ge0}\int c\d\pi+\mathcal F(\pi_1)+\mathcal G(\pi_2)+\epsilon\KL(\pi|\al\otimes\be),
-\]
-with generalized KL $\int(\rho\log\rho-\rho+1)\d(\al\otimes\be)$ when $\pi=\rho\,\al\otimes\be$ and value $+\infty$ otherwise. Balanced OT uses indicators of prescribed marginals; unbalanced OT uses marginal divergences (Section~\ref{sec-unbalanced}); an entropic JKO step fixes one marginal and puts the energy on the other (Chapter~\ref{sec-wasserstein-gradient-flows}); barycenters are the multi-coupling analogue with a shared marginal (Section~\ref{sec-barycenters}).
-For histograms,
-\[
-\inf_{\P\ge0}\dotp{\C}{\P}+\mathsf F(\P\ones_m)+\mathsf G(\transp{\P}\ones_n)+\epsilon\KLD(\P|\a\otimes\b)
+\prox_{\mathsf F/\epsilon}^{\KLD}(z)_i
 =
-\inf_{\P\ge0}\mathsf F(\P\ones_m)+\mathsf G(\transp{\P}\ones_n)+\epsilon\KLD(\P|\K)+\mathrm{cst},
+\begin{cases}
+z_i e^{\lambda}, & z_i<a_i e^{-\lambda},\\
+a_i, & a_i e^{-\lambda}\leq z_i\leq a_i e^{\lambda},\\
+z_i e^{-\lambda}, & z_i>a_i e^{\lambda}.
+\end{cases}
 \]
-where $\K_{ij}=a_i b_j e^{-C_{ij}/\epsilon}$ and the equality is up to the constant $\epsilon\sum_{ij}(a_i b_j-\K_{ij})$. Under a standard relative-interior Fenchel qualification condition, the dual is
-\[
-\sup_{\fD,\gD}-\mathsf F^*(-\fD)-\mathsf G^*(-\gD)-\epsilon\sum_{ij}a_i b_j\left(e^{(\fD_i+\gD_j-C_{ij})/\epsilon}-1\right).
-\]
-Equivalently, up to constants, the exponential part is $-\epsilon\sum_{ij}\K_{ij}e^{(\fD_i+\gD_j)/\epsilon}$. Define
-\[
-\prox_{\mathsf h}^{\KLD}(z)=\argmin_{r\ge0}\mathsf h(r)+\KLD(r|z),
-\]
-so that $\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ minimizes $\mathsf F(r)+\epsilon\KLD(r|z)$. Block dual ascent reads
-\[
-r\leftarrow\prox_{\mathsf F/\epsilon}^{\KLD}(\K v),\quad u\leftarrow r/(\K v),
-\qquad
-s\leftarrow\prox_{\mathsf G/\epsilon}^{\KLD}(\K^\top u),\quad v\leftarrow s/(\K^\top u),
-\qquad
-P=\diag(u)\K\diag(v).
-\]
-Examples: hard constraints give $\prox_{\iota_{\{a\}}}^{\KLD}(z)=a$; KL relaxation $\mathsf F(r)=\tau\KLD(r|a)$ gives $\prox_{\mathsf F/\epsilon}^{\KLD}(z)=z^{\epsilon/(\tau+\epsilon)}\odot a^{\tau/(\tau+\epsilon)}$; box constraints clip $z$ coordinatewise; TV relaxation gives multiplicative soft-thresholding around $a$; fixed total mass gives $mz/\dotp{z}{\ones}$.
-
+\item \textbf{Fixed total mass.} If $\mathsf F=\iota_{\{\dotp{r}{\ones}=m\}}$, then $\prox_{\mathsf F/\epsilon}^{\KLD}(z)=m z/\dotp{z}{\ones}$.
+\end{itemize}
 \subsection{Heat Kernels and Hopf--Cole Transforms}
-For \(c(x,y)=\norm{x-y}^2\) on \(\RR^d\), the Gibbs kernel is a heat kernel up to normalization:
+\label{sec-sinkhorn-heat-hopf-cole}
+\paragraph{Geodesics in heat.}
 \[
-e^{-\norm{x-y}^2/\epsilon}\quad\leftrightarrow\quad h_t(x,y)=(4\pi t)^{-d/2}e^{-\norm{x-y}^2/(4t)},\qquad t=\epsilon/4.
+h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
 \]
-On a manifold \(M\), Varadhan's formula gives \(-4t\log h_t(x,y)\to d_M(x,y)^2\). With \(L=-\Delta_M\), the resolvent \((I+\tau L)^{-1}\) gives a Laplace/Yukawa-type kernel, exactly exponential on \(\RR\) and with exponential tail in higher dimension, while \(e^{-tL}=\lim_{q\to\infty}(I+tL/q)^{-q}\) gives the Gaussian heat kernel. Thus one sparse inverse shifted Laplacian gives resolvent smoothing, while repeated sparse solves approximate heat smoothing and geodesic distances. On meshes or grids, the heat scale \(\sqrt t\) or the resolvent scale \(\sqrt\tau\) must be resolved by the grid size, otherwise metrication and consistency errors dominate.
+Up to normalization, the Sinkhorn Gibbs kernel for the quadratic cost is therefore a Gaussian heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct construction uses the resolvent of the positive Laplacian.
 
-For the normalized quadratic cost \(\bar c(y,x)=\norm{x-y}^2/2\), the Hopf--Lax operator is the hard \(\bar c\)-transform
+\(-4t\log h_t(x,y)\longrightarrow d_M(x,y)^2 \qquad (t\downarrow0).\)
 \[
-(-f)^{\bar c}(x)=\inf_y\{f(y)+\norm{x-y}^2/2\}.
+e^{-tL}
+=
+\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
 \]
-The entropic soft version is the log-sum-exp relaxation
-\[
-(-f)^{\bar c,\epsilon}(x)
-=-\epsilon\log\int \exp\!\left(-\frac{f(y)+\norm{x-y}^2/2}{\epsilon}\right)\d y
-=-\epsilon\log\big(G_\epsilon\ast e^{-f/\epsilon}\big)(x)+\mathrm{cst},
-\]
-where \(G_\epsilon(z)=(2\pi\epsilon)^{-d/2}e^{-\norm{z}^2/(2\epsilon)}\). Thus a soft quadratic \(c\)-transform is a Gaussian convolution followed by a logarithm. If \(\mathsf Sf(y)=f(y)-\norm{y}^2/2\), the same shift expresses the soft Legendre transform as
-\[
-f^{*,\epsilon}(p)=\frac12\norm{p}^2-\big(-\mathsf Sf\big)^{\bar c,\epsilon}(p)
-=\epsilon\log\int \exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right)\d y,
-\]
-and \(f^{*,\epsilon}(p)\to f^*(p)\) by Laplace's principle, for instance when \(f\) is proper, lower semicontinuous and superlinear. With the same normalization, \(u_s=e^{-\phi_s/\epsilon}\) maps
-\(\partial_s\phi_s+\frac12\norm{\nabla\phi_s}^2=(\epsilon/2)\Delta\phi_s\)
-to the heat equation \(\partial_su_s=(\epsilon/2)\Delta u_s\). Conversely, a positive heat solution gives \(\phi_s=-\epsilon\log u_s\) and the gradient Burgers velocity \(v_s=\nabla\phi_s=-\epsilon\nabla\log u_s\). In several dimensions this scalar Cole--Hopf reduction applies to irrotational fields.
+Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a Laplace/Yukawa smoothing, while repeated resolvent steps approximate the Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than dense Gaussian matrices.
 
+\paragraph{Soft Hopf--Lax and Hopf--Cole.}
+\(c(x,y)=\frac12\norm{x-y}^2,\)
+\[
+(-h)^{\bar c}(x)=\inf_y\left\{h(y)+\frac12\norm{x-y}^2\right\},
+\]
+where the sign only reflects the convention of Definition~\ref{def-c-transform}. In the present entropic setting, the parameter of interest is instead the temperature $\epsilon$.
+
+\begin{equation}\label{eq-soft-hopf-lax-heat}
+(-h)^{\bar c,\epsilon}(x)
+=
+-\epsilon\log
+\int
+\exp\!\left(
+-\frac{h(y)+\norm{x-y}^2/2}{\epsilon}
+\right)\d y.
+\end{equation}
+\[
+G_\epsilon(z)\eqdef (2\pi\epsilon)^{-d/2}\exp\!\left(-\frac{\norm{z}^2}{2\epsilon}\right)
+\]
+\begin{equation}\label{eq-soft-c-transform-gaussian-convolution}
+(-h)^{\bar c,\epsilon}(x)
+=
+-\epsilon\log\Big(G_\epsilon\ast e^{-h/\epsilon}\Big)(x)
+-\frac{\epsilon d}{2}\log(2\pi\epsilon).
+\end{equation}
+Thus a soft quadratic $c$-transform is a Gaussian convolution followed by a logarithm, up to an explicit additive constant independent of $x$. This is the bridge between soft-minimum operators, heat kernels and entropic transport potentials.
+
+\begin{prop}[Soft quadratic $c$-transform and Legendre approximation]\label{prop-soft-legendre-convolution}
+Let $f:\RR^d\to\RR\cup\{+\infty\}$ be such that the integrals below are finite, and introduce the quadratic shift
+\(\mathsf S f(y)\eqdef f(y)-\frac12\norm{y}^2.\)
+For $\epsilon>0$, define the soft conjugate by applying the soft $\bar c$-transform to the shifted function:
+\begin{equation}\label{eq-soft-legendre-definition}
+f^{*,\epsilon}(p)
+\eqdef
+\frac12\norm{p}^2-\big(-\mathsf S f\big)^{\bar c,\epsilon}(p).
+\end{equation}
+Then
+\begin{equation}\label{eq-soft-legendre-logsumexp}
+f^{*,\epsilon}(p)
+=
+\epsilon\log\int_{\RR^d}
+\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right)\d y,
+\end{equation}
+and equivalently
+\begin{equation}\label{eq-soft-legendre-convolution}
+f^{*,\epsilon}(p)
+=
+\frac12\norm{p}^2
++\epsilon\log\Big(G_\epsilon\ast e^{-\mathsf S f/\epsilon}\Big)(p)
++\frac{\epsilon d}{2}\log(2\pi\epsilon).
+\end{equation}
+If, for instance, $f$ is proper, lower semicontinuous and superlinear, then $f^{*,\epsilon}(p)\to f^*(p)$ for every $p$ as $\epsilon\to0$.
+\end{prop}
+\begin{proof}
+The hard identity follows by completing the square:
+\[
+\inf_y\left\{\mathsf S f(y)+\frac12\norm{p-y}^2\right\}
+=
+\frac12\norm{p}^2-
+\sup_y\{\dotp{p}{y}-f(y)\}
+=
+\frac12\norm{p}^2-f^*(p).
+\]
+This explains the shift: it turns the Legendre--Fenchel transform into a quadratic $\bar c$-transform. Replacing the hard transform by its soft version gives~\eqref{eq-soft-legendre-definition}. Expanding the square in~\eqref{eq-soft-hopf-lax-heat} with the function $\mathsf S f$ gives
+\[
+\exp\!\left(-\frac{\mathsf S f(y)+\norm{p-y}^2/2}{\epsilon}\right)
+=
+\exp\!\left(-\frac{\norm{p}^2}{2\epsilon}\right)
+\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right),
+\]
+which proves~\eqref{eq-soft-legendre-logsumexp}. Formula~\eqref{eq-soft-legendre-convolution} is the Gaussian-convolution identity~\eqref{eq-soft-c-transform-gaussian-convolution} applied to $\mathsf S f$. Under the stated superlinearity assumption, the functions $y\mapsto\dotp{p}{y}-f(y)$ have compact upper level sets, so Laplace's principle applied to~\eqref{eq-soft-legendre-logsumexp} gives the convergence to $f^*(p)$.
+\end{proof}
+\(\partial_s\phi_s+\frac12\norm{\nabla\phi_s}^2=\frac{\epsilon}{2}\Delta\phi_s,\)
+\(\partial_s v_s+(v_s\cdot\nabla)v_s=\frac{\epsilon}{2}\Delta v_s.\)
 \subsection{Other Convex Regularizers}
 \label{sec-sinkhorn-other-regularizers}
 Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, and recall the $\phi$-divergence $\Divergm_\phi$ from Definition~\ref{def_divergence}. For $\epsilon>0$, define the $\phi$-regularized transport value
@@ -615,6 +750,27 @@ For the KL entropy $\phi(r)=r\log r-r+1$, one has $\phi^{*,\geq0}(s)=e^s-1$. Tak
 \qquad
 s\eqdef\frac{f^\star\oplus g^\star-c}{\epsilon}.
 \]
+\paragraph{\texorpdfstring{Generalized soft $c$-transforms.}{Generalized soft c-transforms.}}
+\eql{\label{eq-phi-soft-c-transform}
+g^{\bar c,\epsilon,\phi}(x)
+\in
+\uargmin{u\in\RR}
+\left\{
+\epsilon
+\int_{\Yy}
+\phi^{*,\geq0}\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
+\d\be(y)
+-u
+\right\}.
+}
+\[
+\int_{\Yy}
+(\phi^{*,\geq0})'\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
+\d\be(y)
+=1.
+\]
+This equation says that the conditional density induced by the current dual score has unit $\be$-mass, hence it is exactly the row-normalization step in dual variables. The update $f^{c,\epsilon,\phi}$ on $\Yy$ is defined symmetrically by exchanging $(x,\al,f)$ and $(y,\be,g)$.
+
 \paragraph{\texorpdfstring{Bregman vs. $\phi$-divergence regularization.}{Bregman vs. phi-divergence regularization.}}
 \begin{defn}[Measure Bregman divergence]\label{def-measure-bregman-divergence}
 If $\Phi$ is a differentiable convex functional on a convex class of nonnegative measures and $\xi$ is a reference measure in its domain, the measure Bregman divergence generated by $\Phi$ is
@@ -741,11 +897,6 @@ At optimality the exponential penalty in the dual integrates to zero, so
 \(\MK_\c^\epsilon(\alpha,\beta) = \int f_\epsilon\d\alpha+\int g_\epsilon\d\beta = \iint c(x,y)\d\alpha(x)\d\beta(y)+O(\epsilon^{-1}).\)
 This proves the limit.
 \end{proof}
-\eq{
-\al_\epsilon \rightarrow \umin{\be} \dotp{ \int c(x,\cdot) \d\al(x)}{\be} = \de_{y^\star(\al)}
-\qwhereq
-y^\star(\al) = \uargmin{y} \int c(x,y) \d\al(x).
-}
 \paragraph{Sinkhorn divergences.}
 \begin{defn}[Sinkhorn divergence]\label{def-sinkhorn-divergence}
 For $\epsilon>0$, the debiased Sinkhorn divergence associated with the entropic OT value $\MK_\c^\epsilon$ is
@@ -834,4 +985,96 @@ and hence
 \(\norm{\tilde \al}_k^2 = \dotp{k(\tilde\al)}{\tilde\al} = \int e^{f_{\al,\al}(x)/\epsilon} k(\tilde\al)(x)\d\al(x) = 1\)
 and similarly $\norm{\tilde \be}_k^2=1$. Therefore, by Cauchy--Schwarz, one has
 $1 - \dotp{\tilde\al}{\tilde\be}_{k} \geq 0$.
+\end{proof}
+\subsection{Complex Epsilon}
+\label{sec-complex-epsilon}
+\paragraph{Measure fixed point.}
+Let $\al\in\Pp(\X)$ and $\be\in\Pp(\Y)$. Whenever the following integral operators are well defined, set, for $\epsilon\in\CC\setminus\{0\}$,
+
+\(K_\epsilon(x,y)\eqdef \exp(-c(x,y)/\epsilon).\)
+\begin{equation}\label{eq-complex-measure-coupling}
+\d\pi_\epsilon(x,y)
+=
+u(x)K_\epsilon(x,y)v(y)\,\d\al(x)\d\be(y).
+\end{equation}
+\begin{equation}\label{eq-complex-measure-fixed-point}
+u(x)\int_\Y K_\epsilon(x,y)v(y)\,\d\be(y)=1
+\quad \text{for }\al\text{-a.e. }x,
+\qquad
+v(y)\int_\X K_\epsilon(x,y)u(x)\,\d\al(x)=1
+\quad \text{for }\be\text{-a.e. }y.
+\end{equation}
+\begin{equation}\label{eq-complex-measure-iteration}
+u^{(k+1)}(x)=
+\left(\int_\Y K_\epsilon(x,y)v^{(k)}(y)\,\d\be(y)\right)^{-1},
+\qquad
+v^{(k+1)}(y)=
+\left(\int_\X K_\epsilon(x,y)u^{(k+1)}(x)\,\d\al(x)\right)^{-1},
+\end{equation}
+whenever the denominators do not vanish. If a branch of the logarithm is fixed along the local continuation and $u=e^{f/\epsilon}$, $v=e^{g/\epsilon}$, this is equivalently the pair of soft-transform equations
+
+\[
+f(x)=-\epsilon\log\!\int_\Y \exp\!\left(\frac{g(y)-c(x,y)}{\epsilon}\right)\d\be(y),
+\qquad
+g(y)=-\epsilon\log\!\int_\X \exp\!\left(\frac{f(x)-c(x,y)}{\epsilon}\right)\d\al(x).
+\]
+For real positive $\epsilon$, this is the usual Sinkhorn fixed point. For complex $\epsilon$, the same formulas should be read as local analytic identities, not as a positivity statement.
+
+\paragraph{Discrete histograms.}
+If $\al=\sum_i \a_i\delta_{x_i}$ and $\be=\sum_j \b_j\delta_{y_j}$, set $\C_{ij}=c(x_i,y_j)$ and define the complex Gibbs matrix
+
+\(\K_\epsilon(\C)_{ij}\eqdef \exp(-\C_{ij}/\epsilon).\)
+\(\P_{\epsilon,ij}=\a_i\b_j u_i\K_\epsilon(\C)_{ij}v_j,\)
+\(u_i\sum_j \b_j\K_\epsilon(\C)_{ij}v_j=1, \qquad v_j\sum_i \a_i\K_\epsilon(\C)_{ij}u_i=1.\)
+\(\P_\epsilon = \diag(\uD)\K_\epsilon(\C)\diag(\vD), \qquad \P_\epsilon\ones_m=\a, \qquad \P_\epsilon^\top\ones_n=\b.\)
+\begin{equation}\label{eq-complex-sinkhorn-iteration}
+\uD^{(k+1)}
+=
+\a \oslash \bigl(\K_\epsilon(\C)\vD^{(k)}\bigr),
+\qquad
+\vD^{(k+1)}
+=
+\b \oslash \bigl(\K_\epsilon(\C)^\top\uD^{(k+1)}\bigr),
+\end{equation}
+where $\oslash$ denotes entrywise division. For complex $\epsilon$, this iteration should be read as a local analytic parametrization of the fixed point, not as a globally convergent algorithm.
+
+\begin{thm}[Carlier's holomorphic continuation of Sinkhorn]\label{thm-carlier-complex-sinkhorn}
+Fix positive histograms $\a^0\in\simplex_n$, $\b^0\in\simplex_m$, a finite real cost matrix $\C^0$, and a real temperature $\epsilon_0>0$. Let $(\fD^0,\gD^0)$ be the Sinkhorn potentials at this point, normalized by $\sum_i \a_i^0 f_i^0=0$. Then there are complex neighborhoods of $(\epsilon_0,\a^0,\b^0,\C^0)$, inside the affine constraint $\sum_i \a_i=\sum_j \b_j$, and a unique holomorphic map
+\((\epsilon,\a,\b,\C)\mapsto(\fD_\epsilon,\gD_\epsilon)\in\CC^n\times\CC^m\)
+satisfying the fixed gauge $\sum_i \a_i^0 f_{\epsilon,i}=0$ and solving
+\[
+\P_{\epsilon,ij}
+=
+\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-C_{ij}}{\epsilon}\right),
+\qquad
+\P_\epsilon\ones_m=\a,
+\qquad
+\P_\epsilon^\top\ones_n=\b.
+\]
+\end{thm}
+\begin{proof}
+Consider the holomorphic map which sends $(\fD,\gD,\epsilon,\a,\b,\C)$ to the $n$ row residuals, the first $m-1$ column residuals, and the gauge condition,
+\[
+R_i=\sum_j
+\exp\!\left(\frac{f_i+g_j-C_{ij}}{\epsilon}\right)-\a_i,
+\qquad
+S_j=\sum_i
+\exp\!\left(\frac{f_i+g_j-C_{ij}}{\epsilon}\right)-\b_j,
+\qquad
+G=\sum_i \a_i^0 f_i,
+\]
+where $1\leq i\leq n$ and $1\leq j\leq m-1$. At the real base point the associated coupling $\P^0$ is strictly positive. Let $(\delta\fD,\delta\gD)$ belong to its kernel and set
+\(\delta P_{ij} = \frac{1}{\epsilon_0}P^0_{ij}(\delta f_i+\delta g_j).\)
+The linearized row sums vanish. The first $m-1$ linearized column sums vanish by definition of the residuals, and the last one vanishes because the total row sum equals the total column sum. Therefore
+\[
+0
+=
+\sum_i \overline{\delta f_i}\sum_j\delta P_{ij}
++
+\sum_j \overline{\delta g_j}\sum_i\delta P_{ij}
+=
+\frac{1}{\epsilon_0}
+\sum_{i,j}P^0_{ij}\abs{\delta f_i+\delta g_j}^2.
+\]
+Since $P^0_{ij}>0$, one has $\delta f_i+\delta g_j=0$ for all $i,j$. Hence $\delta\fD$ is constant and $\delta\gD$ is the opposite constant. The gauge derivative $\sum_i \a_i^0\delta f_i=0$ forces this constant to vanish. The derivative is thus invertible, and the holomorphic implicit-function theorem gives the local holomorphic potentials. The formulas for $\uD_\epsilon$, $\vD_\epsilon$ and $\P_\epsilon$ are holomorphic compositions of these potentials.
 \end{proof}

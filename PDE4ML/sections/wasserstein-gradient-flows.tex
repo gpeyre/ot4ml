@@ -171,7 +171,7 @@ We now detail examples of such Wasserstein gradient flows.
 \index{gradient!flow}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{tabular}{@{}cc@{}}
 \small density iterates & \small quantile motion \\[-.15em]
@@ -1050,6 +1050,7 @@ This equivalence was developed in the smooth Riemannian setting by Cordero-Eraus
 
 
 \subsection{Training Two-Layer MLPs as Wasserstein Flows}
+\label{sec-wasserstein-flows-mlp}
 
 Mean-field limits recast the training of wide neural networks as transport of a distribution of neurons. This section shows how the particle ODE of gradient descent becomes a Wasserstein flow in parameter space. This viewpoint, often summarized as treating parameters as interacting particles, was developed in closely related forms by Mei, Montanari and Nguyen~\cite{MeiMontanariNguyen2018MeanFieldNN}, Rotskoff and Vanden-Eijnden~\cite{RotskoffVandenEijnden2018Trainability}, and Chizat and Bach~\cite{ChizatBach2018OverparameterizedOT}. These works pass from the finite-width empirical neuron dynamics to a limiting nonlinear PDE for the neuron law.
 \index{particle ODE}% strictindex
@@ -1609,3 +1610,656 @@ The logarithmic Sobolev assumption below is the same curvature-controlled mechan
 	\]
 	and Gronwall's lemma gives the result.
 \end{proof}
+
+\subsection{Second-Order Momentum Flows}
+\label{sec-second-order-momentum-flows}
+\index{momentum flow}% strictindex
+\index{second-order flow}% strictindex
+\index{particle Wasserstein descent}% strictindex
+
+The minimizing-movement viewpoint is intrinsically first order: a JKO step produces the next measure by trading off proximity to the previous measure and decrease of the energy. Momentum adds a memory of velocity. The state is therefore no longer only a measure, but a measure together with a tangent, or equivalently phase-space, variable. This makes a direct implicit JKO construction less natural than for first-order flows. We instead use an explicit construction, in the same spirit as optimization and machine-learning practice: momentum reduces zig-zagging across stiff directions, helps iterates keep a coherent direction through shallow valleys, and can accelerate convergence when the geometry is favorable~\cite{Qian1999Momentum,Sutskever2013Momentum}. The goal is to write this inertial idea in a form compatible with Wasserstein particle flows.
+\index{JKO scheme}% strictindex
+\index{explicit Euler scheme}% strictindex
+
+\paragraph{Finite-dimensional momentum.}
+\index{Polyak momentum}% strictindex
+\index{Nesterov acceleration}% strictindex
+Let $F:\RR^{N}\to\RR$ be a smooth finite-dimensional objective. Polyak's heavy-ball method~\cite{Polyak1964HeavyBall} augments gradient descent with a velocity variable. With step size $h>0$ and damping $\gamma>0$, one convenient velocity form is
+\begin{equation}\label{eq-polyak-momentum}
+	S^{k+1}=(1-\gamma h)S^k-h\nabla F(X^k),
+	\qquad
+	X^{k+1}=X^k+hS^{k+1}.
+\end{equation}
+If $S^k$ approximates $\dot X(kh)$, this is the explicit Euler discretization of the first-order system
+\begin{equation}\label{eq-heavy-ball-first-order-system}
+	\dot X(t)=S(t),
+	\qquad
+	\dot S(t)=-\gamma S(t)-\nabla F(X(t)),
+\end{equation}
+or equivalently the damped second-order equation
+\begin{equation}\label{eq-heavy-ball-ode}
+	\ddot X(t)+\gamma\dot X(t)+\nabla F(X(t))=0.
+\end{equation}
+Nesterov's accelerated method~\cite{Nesterov1983Accelerated} uses a closely related extrapolation but evaluates the gradient at a look-ahead point,
+\begin{equation}\label{eq-nesterov-momentum}
+	Y^k=X^k+\theta_k(X^k-X^{k-1}),
+	\qquad
+	X^{k+1}=Y^k-h\nabla F(Y^k),
+\end{equation}
+with $\theta_k=(k-1)/(k+r-1)$ for the classical convex schedule $r=3$. Its scaling limit is the time-dependent damping equation
+\begin{equation}\label{eq-nesterov-ode}
+	\ddot X(t)+\frac{r}{t}\dot X(t)+\nabla F(X(t))=0.
+\end{equation}
+This ODE interpretation is due to Su, Boyd and Cand{\`e}s~\cite{SuBoydCandes2016ODE}; see also the variational perspective of Wibisono, Wilson and Jordan~\cite{WibisonoWilsonJordan2016Acceleration}, and the inertial dynamics with Hessian-driven damping studied by Attouch, Peypouquet and Redont~\cite{AttouchPeypouquetRedont2016HessianDamping}. High-resolution ODE limits refine this picture by keeping terms that distinguish heavy-ball and Nesterov dynamics beyond their leading continuous-time behavior~\cite{ShiDuJordanSu2018HighResolution}. For the Wasserstein extension below, the autonomous heavy-ball form \eqref{eq-heavy-ball-first-order-system} is the cleanest template.
+\index{heavy-ball method}% strictindex
+\index{damped second-order equation}% strictindex
+
+\paragraph{Empirical Wasserstein lift.}
+\index{Wasserstein gradient}% strictindex
+\index{empirical measure}% strictindex
+We now take a functional $f$ on measures and lift it to particle configurations. For $X=(x_1,\ldots,x_n)\in(\RR^d)^n$, write
+\begin{equation}\label{eq-empirical-momentum-lift}
+	\mu_X \eqdef \frac1n\sum_{i=1}^n \delta_{x_i},
+	\qquad
+	F(X) \eqdef f(\mu_X).
+\end{equation}
+This is the same empirical lift as in \eqref{eq:wassflows-particles}, and is the particle viewpoint underlying mean-field analyses of wide neural networks and Wasserstein gradient methods~\cite{ChizatBach2018OverparameterizedOT,MeiMontanariNguyen2018MeanFieldNN,RotskoffVandenEijnden2018Trainability}. The important point is that the configuration space is not used with the plain Euclidean metric, but with the empirical metric
+\[
+	\norm{\dot X}_n^2
+	\eqdef
+	\frac1n\sum_{i=1}^n\norm{\dot x_i}^2,
+\]
+which is the metric induced by $\Wass_2$ on equally weighted empirical measures with fixed labels. Moving only $x_i$ to $x_i+\varepsilon \xi$ gives
+\[
+	\left.\frac{\d}{\d\varepsilon}\right|_{\varepsilon=0}
+	F(x_1,\ldots,x_i+\varepsilon\xi,\ldots,x_n)
+	=
+	\frac1n\dotp{\nabla\delta f(\mu_X)(x_i)}{\xi}.
+\]
+Thus, if $\nabla^{(n)}F$ denotes the gradient for the metric $\norm{\cdot}_n$, then
+\begin{equation}\label{eq-empirical-lift-gradient}
+	(\nabla^{(n)}F(X))_i
+	=
+	n\nabla_{x_i}F(X)
+	=
+	\nabla\delta f(\mu_X)(x_i)
+	=
+	\Wgrad f(\mu_X)(x_i).
+\end{equation}
+The first-order Wasserstein particle descent is therefore $\dot x_i=v_{\mu_X}(x_i)$ with
+\begin{equation}\label{eq-momentum-wasserstein-velocity}
+	v_\mu(x)\eqdef -\Wgrad f(\mu)(x)=-\nabla\delta f(\mu)(x).
+\end{equation}
+Applying the heavy-ball equation to the empirical metric gives the second-order Wasserstein momentum system
+\begin{equation}\label{eq-wasserstein-momentum-particles}
+	\dot x_i(t)=s_i(t),
+	\qquad
+	\dot s_i(t)=-\gamma s_i(t)+v_{\mu_t}(x_i(t)),
+	\qquad
+	\mu_t=\frac1n\sum_{i=1}^n\delta_{x_i(t)} .
+\end{equation}
+Equivalently,
+\[
+	\ddot x_i(t)+\gamma\dot x_i(t)
+	=
+	v_{\mu_t}(x_i(t))
+	=
+	-\Wgrad f(\mu_t)(x_i(t)).
+\]
+This is an explicit inertial particle method for the measure energy $f$: the Wasserstein steepest-descent field acts as an acceleration rather than as an instantaneous velocity. The statement is deliberately formal at this level; rigorous mean-field limits require stability and regularity assumptions on $v_\mu$, as in propagation-of-chaos arguments for classical Vlasov dynamics and in mean-field analyses of interacting learning systems.
+\index{inertial particle method}% strictindex
+
+\begin{prop}[Discrete mechanical energy dissipation]\label{prop-second-order-energy-dissipation}
+\index{mechanical energy}% strictindex
+\index{energy dissipation}% strictindex
+	Assume that $f$ and the particle solution are smooth enough to justify differentiating the identities above along \eqref{eq-wasserstein-momentum-particles}. Define
+	\[
+		\mathcal H_n(X,S)
+		\eqdef
+		F(X)+\frac1{2n}\sum_{i=1}^n\norm{s_i}^2,
+		\qquad
+		S=(s_1,\ldots,s_n).
+	\]
+	Then along \eqref{eq-wasserstein-momentum-particles},
+	\begin{equation}\label{eq-second-order-energy-dissipation}
+		\frac{\d}{\d t}\mathcal H_n(X(t),S(t))
+		=
+		-\frac{\gamma}{n}\sum_{i=1}^n\norm{s_i(t)}^2
+		\leq 0 .
+	\end{equation}
+\end{prop}
+\begin{proof}
+	By \eqref{eq-empirical-lift-gradient} and the definition $v_\mu=-\Wgrad f(\mu)$, one has $\nabla_{x_i}F(X)=-v_{\mu_X}(x_i)/n$. Hence
+	\[
+		\frac{\d}{\d t}F(X(t))
+		=
+		\sum_{i=1}^n \dotp{\nabla_{x_i}F(X(t))}{s_i(t)}
+		=
+		-\frac1n\sum_{i=1}^n\dotp{v_{\mu_t}(x_i(t))}{s_i(t)}.
+	\]
+	On the other hand,
+	\[
+		\frac{\d}{\d t}\frac1{2n}\sum_i\norm{s_i(t)}^2
+		=
+		\frac1n\sum_i\dotp{s_i(t)}{-\gamma s_i(t)+v_{\mu_t}(x_i(t))}.
+	\]
+	The force terms cancel, leaving \eqref{eq-second-order-energy-dissipation}.
+\end{proof}
+The identity says that friction dissipates exactly the kinetic part of the mechanical energy. In the undamped case $\gamma=0$, the same computation gives conservation of $\mathcal H_n$.
+
+\paragraph{Phase-space formulation.}
+\index{phase space}% strictindex
+Because momentum is part of the state, the mean-field object is not merely a measure on positions. It is a law on phase space $(x,s)$, whose spatial marginal is the current distribution of particles. Here $s$ is a Lagrangian particle velocity; it should not be confused with the Eulerian momentum measure $m=\rho v$ used in the Benamou--Brenier convex formulation~\eqref{eq:benamou-brenier-convex}. The particle ODE then becomes a transport equation in phase space. This is the deterministic analogue of the kinetic mean-field viewpoint used for interacting particle systems; in learning, heavy-ball mean-field limits have recently been used to analyze wide networks trained with momentum~\cite{WuKungurtsevMondelli2022HeavyBallMeanField}.
+
+\begin{prop}[Phase-space Liouville formulation]\label{prop-second-order-liouville}
+\index{Liouville equation}% strictindex
+\index{phase space}% strictindex
+	Let $v_\mu$ be smooth enough that \eqref{eq-wasserstein-momentum-particles} has a classical solution. Define the empirical phase-space measure
+	\[
+		\eta_t^n \eqdef \frac1n\sum_{i=1}^n\delta_{(x_i(t),s_i(t))}
+		\in \Pp(\RR^d_x\times\RR^d_s),
+		\qquad
+		\mu_t^n=(\pi_x)_\sharp\eta_t^n .
+	\]
+	Then $\eta_t^n$ solves, in the sense of distributions,
+	\begin{equation}\label{eq-second-order-liouville-empirical}
+		\partial_t\eta_t^n
+		+
+		\nabla_x\cdot(s\,\eta_t^n)
+		+
+		\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t^n}(x))\,\eta_t^n\bigr)
+		=0 .
+	\end{equation}
+	If, as $n\to\infty$, the empirical phase-space laws converge to a smooth density $\eta_t(x,s)$ and the nonlinear fields converge accordingly, the limiting kinetic equation is
+	\begin{equation}\label{eq-second-order-liouville-density}
+		\partial_t\eta_t
+		+
+		\nabla_x\cdot(s\,\eta_t)
+		+
+		\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t}(x))\,\eta_t\bigr)
+		=0,
+		\qquad
+		\mu_t=(\pi_x)_\sharp\eta_t .
+	\end{equation}
+\end{prop}
+\begin{proof}
+	Let $\varphi\in C_c^\infty(\RR^d_x\times\RR^d_s)$. Along the particle system,
+	\[
+		\frac{\d}{\d t}
+		\int \varphi\,\d\eta_t^n
+		=
+		\frac1n\sum_{i=1}^n
+		\left[
+		\dotp{\nabla_x\varphi(x_i,s_i)}{s_i}
+		+
+		\dotp{\nabla_s\varphi(x_i,s_i)}{-\gamma s_i+v_{\mu_t^n}(x_i)}
+		\right].
+	\]
+	Rewriting the right-hand side as an integral against $\eta_t^n$ and integrating by parts gives \eqref{eq-second-order-liouville-empirical}. Passing formally to the mean-field limit gives \eqref{eq-second-order-liouville-density}.
+\end{proof}
+
+\begin{rem}[Newtonian limit]\label{rem-newtonian-momentum-limit}
+\index{Newtonian dynamics}% strictindex
+\index{inertia}% strictindex
+	If damping is removed, or if inertia dominates friction after rescaling, \eqref{eq-wasserstein-momentum-particles} becomes
+	\[
+		\ddot x_i(t)=v_{\mu_t}(x_i(t)).
+	\]
+	This is Newton's law with acceleration field $v_{\mu_t}$. Thus first-order Wasserstein gradient flow reads the force as a velocity, while second-order momentum flow reads the same force as an acceleration. The price is that the state is no longer just the spatial measure $\mu_t$; it is the phase-space law of position and velocity. In this limit the flow is Hamiltonian rather than dissipative whenever the force comes from a smooth interaction energy and $\gamma=0$.
+\end{rem}
+
+\begin{example}[Quadratic energies and gravitational attraction]\label{ex-quadratic-momentum-gravity}
+\index{quadratic energy}% strictindex
+\index{interaction kernel}% strictindex
+\index{gravity interaction}% strictindex
+	Consider the interaction energy
+	\begin{equation}\label{eq-quadratic-interaction-momentum}
+		f(\mu)
+		=
+		\frac12\iint k(x,y)\,\d\mu(x)\d\mu(y)
+		+
+		\int V(x)\,\d\mu(x),
+	\end{equation}
+	with $k(x,y)=k(y,x)$. Its first variation is
+	\[
+		\delta f(\mu)(x)=\int k(x,y)\,\d\mu(y)+V(x),
+	\]
+	and therefore
+	\begin{equation}\label{eq-quadratic-momentum-force}
+		v_\mu(x)
+		=
+		-\int \nabla_x k(x,y)\,\d\mu(y)-\nabla V(x).
+	\end{equation}
+	For the attractive Newtonian kernel in three dimensions, $k(x,y)=-G/\norm{x-y}$, understood with a short-distance regularization if needed, this gives
+	\[
+		v_\mu(x)
+		=
+		G\int \frac{y-x}{\norm{x-y}^3}\,\d\mu(y)-\nabla V(x),
+	\]
+	the usual mean-field gravitational acceleration. The phase-space equation \eqref{eq-second-order-liouville-density} is then a damped Vlasov-type equation. This kinetic viewpoint is classical in statistical physics: Boltzmann introduced the description of gases through phase-space distributions, the collisionless mean-field limit gives Liouville--Vlasov equations, and adding collision operators leads to the Boltzmann equation~\cite{CercignaniIllnerPulvirenti1994DiluteGases,Villani2002Boltzmann,BraunHepp1977Vlasov}.
+	\index{Vlasov equation}% strictindex
+	\index{Boltzmann equation}% strictindex
+	\index{kinetic equation}% strictindex
+\end{example}
+
+The numerical illustration below uses the energy-distance kernel
+\[
+	k(x,y)=-\norm{x-y},
+	\qquad
+	f(\mu)=\MMD_k^2(\mu,\beta)
+	=
+	\iint k(x,y)\,\d(\mu-\beta)(x)\d(\mu-\beta)(y).
+\]
+This is the usual squared energy distance between $\mu$ and $\beta$. Away from the diagonal, its Wasserstein velocity is
+\[
+	v_\mu(x)
+	=
+	2\int \frac{x-y}{\norm{x-y}}\,\d(\mu-\beta)(y).
+\]
+For numerical stability, Figure~\ref{fig:gradflow-second-order-momentum-mmd} uses the smoothed distance $\sqrt{\norm{x-y}^2+\delta^2}$ with a small $\delta$. It compares the first-order flow with the undamped Newton lift $\ddot x=v_{\mu_t}(x)=-\nabla_W f(\mu_t)(x)$, initialized with zero velocity. The initial measure is a single Gaussian located to the left of a two-Gaussian target mixture. Both the transported measure and the target are discretized by large empirical clouds, and the smooth density views are KDE renderings of these particles. The trajectory panels display only a representative subset of initial particles selected by farthest-point sampling.
+
+\begin{figure}[H]
+\centering
+\def\mmdmomentumpanelheight{.128\linewidth}
+\newcommand{\mmdmomentumrowlabel}[1]{\makebox[.017\linewidth][c]{\raisebox{-.5\height}{\rotatebox[origin=c]{90}{\scriptsize #1}}}}
+\newcommand{\mmdmomentumpanel}[1]{\raisebox{-.5\height}{\includegraphics[height=\mmdmomentumpanelheight]{#1}}}
+\begin{tabular}{@{}c@{\hspace{.003\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{}}
+&
+\scriptsize trajectories
+&
+\scriptsize $t=0$
+&
+\scriptsize $t=.05$
+&
+\scriptsize $t=.14$
+&
+\scriptsize $t=.36$
+&
+\scriptsize $t=1$\\[-.25em]
+\mmdmomentumrowlabel{GF}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-trajectories.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-density-t000.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-density-t005.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-density-t014.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-density-t036.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/first-density-t100.pdf}\\[-.15em]
+\mmdmomentumrowlabel{Newton}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-trajectories.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t000.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t005.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t014.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t036.pdf}
+&
+\mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t100.pdf}
+\end{tabular}
+\caption{\emph{First-order and Newton Wasserstein particle flows for the squared MMD with the energy-distance kernel $k(x,y)=-\norm{x-y}$.} The first row follows the overdamped Wasserstein gradient flow. The second row follows the infinite-momentum Newton dynamics $\ddot x=-\nabla_W f(\mu_t)(x)$, so the same Wasserstein force is read as an acceleration rather than a velocity. Both rows use the same large empirical source cloud and the same empirical two-Gaussian target cloud. Dashed gray contours show a KDE of the target particles, colored panels show KDEs of the evolving transported particles, and the left panels show farthest-point-subsampled trajectories.}
+\label{fig:gradflow-second-order-momentum-mmd}
+\end{figure}
+
+
+\paragraph{Entropy without an empirical energy.}
+The previous interaction example has a genuine value on empirical measures: once the particles are known, the double sum approximates the interaction energy. Entropy gives the complementary situation. Its Wasserstein gradient flow is the simplest diffusion equation, but the entropy itself is finite only on absolutely continuous measures. A particle method must therefore introduce a density, or score, closure before the inertial template can be applied.
+
+\begin{example}[Entropy-driven inertial flow]\label{ex-second-order-entropy-score}
+\index{Shannon entropy}% strictindex
+\index{score function}% strictindex
+\index{KDE score}% strictindex
+\index{phase-space equation}% strictindex
+	Let
+	\[
+		f(\mu)=
+		\begin{cases}
+			\displaystyle \int_{\RR^d} \rho(x)\log\rho(x)\,\d x,
+			& \text{if } \mu=\rho\d x,\\[.4em]
+			+\infty, & \text{otherwise.}
+		\end{cases}
+	\]
+	Thus $f(\mu_X)=+\infty$ for an empirical measure $\mu_X=n^{-1}\sum_i\delta_{x_i}$, and the finite-dimensional lift $F(X)=f(\mu_X)$ is not meaningful. For $\mu=\rho\d x$ with a smooth positive density, however,
+	\[
+		\delta f(\mu)(x)=\log\rho(x)+1,
+			\qquad
+		v_\mu(x)=-\nabla\log\rho(x).
+	\]
+	The first-order Wasserstein gradient flow is therefore the heat equation $\partial_t\rho_t=\Delta\rho_t$. If the spatial marginal remains smooth and positive, the corresponding formal second-order phase-space equation is
+	\begin{equation}\label{eq-second-order-entropy-phase-space}
+		\partial_t\eta_t
+		+
+		\nabla_x\cdot(s\eta_t)
+		+
+		\nabla_s\cdot\bigl((-\gamma s-\nabla\log\rho_t(x))\eta_t\bigr)
+		=0,
+		\qquad
+		\rho_t(x)=\int_{\RR^d}\eta_t(x,s)\,\d s .
+	\end{equation}
+	This is a kinetic, inertial version of entropy diffusion: the entropy score acts as an acceleration rather than as an instantaneous velocity.
+	\end{example}
+
+For the numerical illustration, the empirical density is replaced by the Gaussian kernel estimator $\widehat\rho_h(x)=n^{-1}\sum_i K_h(x-x_i)$ with a relatively small bandwidth $h$. Its score is evaluated directly at the particle locations by the closed formula
+\[
+\nabla\log\widehat\rho_h(x_i)
+=
+\frac{\sum_j \exp(-\norm{x_i-x_j}^2/(2h^2))(x_j-x_i)}{h^2\sum_j \exp(-\norm{x_i-x_j}^2/(2h^2))},
+\]
+implemented by chunked PyTorch tensor operations, rather than by differentiating a density on a grid. To keep the entropy-driven expansion in a fixed display window, the simulation adds the quadratic confinement $V_\kappa(x)=\kappa\norm{x}^2/2$, whose force is $-\kappa x$. The displayed dynamics use a small mobility factor $\tau$ only to choose a readable time scale: either the first-order closure $\dot x_i=-\tau\nabla\log\widehat\rho_h(x_i)-\kappa x_i$, or the Newton closure $\dot x_i=s_i$ and $\dot s_i=-\tau\nabla\log\widehat\rho_h(x_i)-\kappa x_i$.
+This should be read as a regularized particle discretization of the continuum equation, not as the exact heavy-ball flow of the singular empirical entropy. Figure~\ref{fig:gradflow-second-order-momentum-entropy} shows this KDE-score closure for a longer simulation initialized from a Gaussian mixture with non-identical component variances. Each row displays a trajectory panel on the left and density snapshots at increasing times on the right, all computed from the same full particle cloud.
+
+\begin{figure}[H]
+\centering
+\newcommand{\entropyclosurepanelheight}{.112\linewidth}
+\begin{tabular}{@{}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{}}
+\small GF & \small $t=0$ & \small $t=1.05$ & \small $t=2.1$ & \small $t=3.15$ & \small $t=4.2$\\[-.25em]
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-trajectories.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t000.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t025.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t050.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t075.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t100.pdf}\\[.25em]
+\small Newton & \small $t=0$ & \small $t=1.05$ & \small $t=2.1$ & \small $t=3.15$ & \small $t=4.2$\\[-.25em]
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-trajectories.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t000.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t025.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t050.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t075.pdf}
+&
+\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t100.pdf}
+\end{tabular}
+\caption{\emph{KDE-score particle closure for an entropy-driven inertial flow.} Shannon entropy is not finite on empirical Dirac measures, so the particle dynamics estimate the density by a Gaussian KDE and use its direct particle score $\nabla\log\widehat\rho_h$, here with an added quadratic confining force $-\kappa x$. The left panel of each row shows a farthest-point subset of particle trajectories, while the five panels on the right show density snapshots computed from all particles over the longer time interval $[0,4.2]$. The first row is the overdamped Wasserstein gradient flow; the second row is the undamped Newton law $\ddot x=-\tau\nabla\log\widehat\rho_h(x)-\kappa x$.}
+\label{fig:gradflow-second-order-momentum-entropy}
+\end{figure}
+
+\subsection{Normalized Spectral Wasserstein Dynamics}
+\label{sec-normalized-spectral-wasserstein-dynamics}
+\index{normalized gradient flow}% strictindex
+\index{spectral Wasserstein flow}% strictindex
+\index{Muon algorithm}% strictindex
+
+The preceding section added inertia to the usual Wasserstein gradient flow. A different modification, closer to many large-scale optimizers, is to normalize the descent direction itself. Normalized gradient methods replace the Euclidean steepest-descent direction by the solution of a norm-constrained linear minimization problem~\cite{PethickXieAntonakopoulosEtAl2025}; this point of view is useful for ordinary normalized SGD~\cite{MurraySwensonKar2019,CutkoskyMehta2020}, for tensor-aware optimizers such as Shampoo~\cite{GuptaKorenSinger2018}, and for Muon-type spectral normalizations used in large-scale training~\cite{KellerJordan2024,LiuSuYaoEtAl2025}. We now describe the mean-field version developed in~\cite{peyre2026muon}. The trace gauge gives the classical $\Wass_2$ flow, while the operator gauge $\gamma(M)=\lambda_{\max}(M)$ gives the idealized Muon geometry.
+\index{normalized SGD}% strictindex
+\index{Shampoo optimizer}% strictindex
+\index{spectral gauge}% strictindex
+\index{operator gauge}% strictindex
+
+\paragraph{Spectral tangent norm.}
+\index{tangent norm}% strictindex
+\index{velocity covariance}% strictindex
+For this survey, a monotone spectral gauge is a convex, positively $1$-homogeneous map $\gamma:\mathbb S_+^d\to\RR_+$, vanishing only at $0$, invariant under orthogonal conjugation and increasing for the Loewner order. Its polar set is
+\[
+	\mathcal B_\gamma
+	\eqdef
+	\enscond{A\succeq0}{\tr(AM)\leq\gamma(M)\quad\text{for all }M\succeq0},
+\]
+so that $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$ for $M\succeq0$. For a probability measure $\alpha$ and a velocity field $v\in L^2(\alpha;\RR^d)$, define the spectral tangent norm
+\begin{equation}\label{eq-normalized-spectral-tangent-norm}
+	\mathcal N_{\gamma,\alpha}(v)^2
+	\eqdef
+	\gamma\!\left(\int v(x)v(x)^\top\d\alpha(x)\right).
+\end{equation}
+It measures the covariance of the velocity field before applying the gauge. Thus the geometry is global in direction: two velocities with the same pointwise $L^2$ norm may have different costs if their velocity covariance is distributed differently across directions.
+
+\begin{defn}[Spectral steepest-descent direction]\label{def-normalized-spectral-descent}
+\index{linear minimization oracle}% strictindex
+\index{normalized gradient flow}% strictindex
+	For $g\in L^2(\alpha;\RR^d)$, the spectral steepest-descent direction is any minimizer
+	\begin{equation}\label{eq-normalized-spectral-lmo}
+		\mathcal J_{\gamma}^{\alpha}(g)
+		\in
+		\uargmin{v\in L^2(\alpha;\RR^d)}
+		\left\{
+		\int \dotp{g(x)}{v(x)}\d\alpha(x)
+		+
+		\frac12\mathcal N_{\gamma,\alpha}(v)^2
+		\right\}.
+	\end{equation}
+\end{defn}
+The field $g$ should be read as the Wasserstein gradient $g=\Wgrad f(\alpha)=\nabla\delta f(\alpha)$. Since $\mathcal N_{\gamma,\alpha}$ is $1$-homogeneous in $v$, \eqref{eq-normalized-spectral-lmo} is the squared-norm steepest-descent step associated with the spectral tangent norm. Its ray is the norm-constrained linear minimization oracle: after rescaling, $\mathcal J_{\gamma}^{\alpha}(g)$ minimizes $\int\dotp{g}{w}\d\alpha$ over $\mathcal N_{\gamma,\alpha}(w)\leq1$. Thus fixed-speed normalized algorithms keep the same direction but choose a different scalar normalization. In the trace case, $\mathcal N_{\tr,\alpha}(v)^2=\int\norm{v}^2\d\alpha$ and \eqref{eq-normalized-spectral-lmo} gives $\mathcal J_{\tr}^{\alpha}(g)=-g$. For other gauges, the velocity is globally preconditioned by the covariance of $g$ under $\alpha$.
+
+\begin{prop}[Polar formula for the spectral direction]\label{prop-normalized-spectral-lmo-polar}
+\index{polar set}% strictindex
+\index{linear minimization oracle}% strictindex
+	Let
+	\[
+		S_\alpha(g)\eqdef\int g(x)g(x)^\top\d\alpha(x).
+	\]
+	Assume that the inverse-trace problem admits a positive definite minimizer
+	\[
+		A_\alpha^\star
+		\in
+		\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
+		\tr\!\left(A^{-1}S_\alpha(g)\right).
+	\]
+	Then
+	\begin{equation}\label{eq-normalized-spectral-lmo-explicit}
+		\mathcal J_{\gamma}^{\alpha}(g)(x)=-(A_\alpha^\star)^{-1}g(x)
+	\end{equation}
+	is a spectral steepest-descent direction. If the minimizer lies on the boundary of $\mathcal B_\gamma$, the same formula is understood by a limiting argument along positive definite minimizers, or equivalently by replacing the inverse by the corresponding inverse on the range of $S_\alpha(g)$.
+\end{prop}
+\begin{proof}
+	Using the polar formula $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$, the objective in \eqref{eq-normalized-spectral-lmo} can be written as
+	\[
+		\sup_{A\in\mathcal B_\gamma}
+		\left\{
+		\int \dotp{g}{v}\d\alpha
+		+
+		\frac12\int v^\top A v\d\alpha
+		\right\}.
+	\]
+	For a fixed $A\succ0$, the quadratic lower bound
+	\[
+		\int \dotp{g}{v}\d\alpha+\frac12\int v^\top A v\d\alpha
+	\]
+	is minimized by $v_A=-A^{-1}g$, with value $-\frac12\tr(A^{-1}S_\alpha(g))$. Let $v_\star=-(A_\alpha^\star)^{-1}g$ and
+	\[
+		M_\star=\int v_\star(x)v_\star(x)^\top\d\alpha(x)
+		=
+		(A_\alpha^\star)^{-1}S_\alpha(g)(A_\alpha^\star)^{-1}.
+	\]
+	Since $A_\alpha^\star$ minimizes $A\mapsto\tr(A^{-1}S_\alpha(g))$ over the convex polar set, its first-order optimality condition gives
+	\[
+		\tr(AM_\star)\leq \tr(A_\alpha^\star M_\star)
+		\qquad
+		\text{for all } A\in\mathcal B_\gamma.
+	\]
+	Thus $A_\alpha^\star$ is active in the polar representation of $\gamma(M_\star)$, and
+	\[
+		\gamma(M_\star)=\tr(A_\alpha^\star M_\star)
+		=
+		\tr((A_\alpha^\star)^{-1}S_\alpha(g)).
+	\]
+	For any $v$, the polar formula gives
+	\[
+		\int \dotp{g}{v}\d\alpha+\frac12\mathcal N_{\gamma,\alpha}(v)^2
+		\geq
+		\int \dotp{g}{v}\d\alpha+\frac12\int v^\top A_\alpha^\star v\d\alpha,
+	\]
+	and the right-hand side is minimized at $v_\star$. The activity identity above shows that equality holds at $v_\star$, hence $v_\star$ minimizes \eqref{eq-normalized-spectral-lmo}. The boundary case follows by approximation with positive definite matrices in the polar set.
+\end{proof}
+
+For the trace gauge, $\mathcal B_\gamma=\enscond{A}{0\preceq A\preceq\Id}$ and the minimizer is $A_\alpha^\star=\Id$. For the operator gauge $\gamma(M)=\lambda_{\max}(M)$, one has $\mathcal B_\gamma=\enscond{A\succeq0}{\tr(A)\leq1}$; if $S_\alpha(g)\succ0$, then
+\[
+	A_\alpha^\star
+	=
+	\frac{S_\alpha(g)^{1/2}}{\tr(S_\alpha(g)^{1/2})},
+	\qquad
+	\mathcal J_{\gamma}^{\alpha}(g)(x)
+	=
+	-\tr(S_\alpha(g)^{1/2})\,S_\alpha(g)^{-1/2}g(x).
+\]
+This is the continuum covariance-normalization formula that becomes the Muon polar factor for empirical measures.
+
+\paragraph{JKO interpretation.}
+\index{JKO scheme}% strictindex
+\index{minimizing movement}% strictindex
+Let $\Wass_\gamma$ denote the spectral Wasserstein distance generated by the same gauge,
+\[
+	\Wass_\gamma(\alpha,\beta)^2
+	\eqdef
+	\inf_{\pi\in\Couplings(\alpha,\beta)}
+	\gamma\!\left(\int (x-y)(x-y)^\top\d\pi(x,y)\right).
+\]
+The normalized dynamics can be obtained formally from the JKO scheme
+\begin{equation}\label{eq-normalized-spectral-jko}
+	\alpha^{k+1}
+	\in
+	\uargmin{\alpha\in\Pp_2(\RR^d)}
+	\frac{1}{2\tau}\Wass_\gamma(\alpha^k,\alpha)^2+f(\alpha).
+\end{equation}
+For a small displacement $\alpha=(\Id+\tau v)_\sharp\alpha^k$, the dynamic interpretation of $\Wass_\gamma$ developed in~\cite{peyre2026muon} gives the tangent expansion
+\[
+	\Wass_\gamma(\alpha^k,(\Id+\tau v)_\sharp\alpha^k)^2
+	=
+	\tau^2\mathcal N_{\gamma,\alpha^k}(v)^2+o(\tau^2).
+\]
+Combining this with the first-variation expansion of $f$ yields the infinitesimal minimization problem \eqref{eq-normalized-spectral-lmo}.
+
+\begin{prop}[Formal normalized spectral gradient flow]\label{prop-normalized-spectral-gradient-flow}
+\index{spectral Wasserstein flow}% strictindex
+\index{continuity equation}% strictindex
+	Assume that $f$ has a smooth first variation and that the tangent expansion of $\Wass_\gamma$ above is valid along smooth perturbations. Then the formal small-step limit of \eqref{eq-normalized-spectral-jko} solves
+	\begin{equation}\label{eq-normalized-spectral-flow}
+		\partial_t\alpha_t
+		+
+		\diverg\!\left(
+		\alpha_t\,\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))
+		\right)=0.
+	\end{equation}
+	Equivalently, if $A_t^\star$ solves the inverse-trace problem for
+	\[
+		S_t=\int \Wgrad f(\alpha_t)(x)\Wgrad f(\alpha_t)(x)^\top\d\alpha_t(x),
+	\]
+	then the velocity is
+	\[
+		v_t(x)=-(A_t^\star)^{-1}\Wgrad f(\alpha_t)(x).
+	\]
+	Moreover, along smooth solutions,
+	\[
+		\frac{\d}{\d t}f(\alpha_t)
+		=
+		-\mathcal N_{\gamma,\alpha_t}(v_t)^2.
+	\]
+\end{prop}
+\begin{proof}
+	Write $\alpha=(\Id+\tau v)_\sharp\alpha_t$. The spectral JKO objective equals, up to terms independent of $v$ and $o(\tau)$,
+	\[
+		\tau\left[
+		\frac12\mathcal N_{\gamma,\alpha_t}(v)^2
+		+
+		\int\dotp{\Wgrad f(\alpha_t)(x)}{v(x)}\d\alpha_t(x)
+		\right].
+	\]
+	Minimizing the bracket gives $v=\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))$. Substituting this velocity into the transport expansion
+	\[
+		(\Id+\tau v)_\sharp\alpha_t
+		=
+		\alpha_t-\tau\diverg(\alpha_t v)+o(\tau)
+	\]
+	gives \eqref{eq-normalized-spectral-flow}.
+	Finally, the variation formula gives $\frac{\d}{\d t}f(\alpha_t)=\int\dotp{\Wgrad f(\alpha_t)}{v_t}\d\alpha_t$. Since $v_t$ minimizes a $2$-homogeneous penalized objective, the one-dimensional rescaling $s\mapsto sv_t$ has derivative zero at $s=1$, hence
+	\[
+		\int\dotp{\Wgrad f(\alpha_t)}{v_t}\d\alpha_t
+		+
+		\mathcal N_{\gamma,\alpha_t}(v_t)^2
+		=0,
+	\]
+	which proves the dissipation identity.
+\end{proof}
+
+\paragraph{Empirical and Muon limits.}
+\index{empirical measure}% strictindex
+\index{Muon algorithm}% strictindex
+For empirical measures $\alpha_X=n^{-1}\sum_i\delta_{x_i}$, stack the velocities $v(x_i)$ into a matrix $V\in\RR^{n\times d}$ and the gradients $g(x_i)$ into a matrix $G\in\RR^{n\times d}$. By $1$-homogeneity of $\gamma$,
+\[
+	\mathcal N_{\gamma,\alpha_X}(v)^2
+	=
+	\gamma\!\left(\frac1n V^\top V\right)
+	=
+	\frac1n\gamma(V^\top V),
+	\qquad
+	\int\dotp{g}{v}\d\alpha_X
+	=
+	\frac1n\tr(G^\top V).
+\]
+Thus \eqref{eq-normalized-spectral-lmo} is, up to the harmless factor $1/n$, the finite-dimensional matrix LMO
+\begin{equation}\label{eq-normalized-matrix-lmo}
+	J_\gamma(G)
+	\in
+	\uargmin{V\in\RR^{n\times d}}
+	\left\{
+		\tr(G^\top V)+\frac12\gamma(V^\top V)
+	\right\}.
+\end{equation}
+The empirical flow is therefore
+\[
+	\dot X(t)=J_\gamma(G_X(t)),
+	\qquad
+	(G_X(t))_i=\Wgrad f(\alpha_{X(t)})(x_i(t)).
+\]
+Here $G_X$ is the gradient for the empirical Wasserstein metric $\norm{\dot X}_n^2=n^{-1}\sum_i\norm{\dot x_i}^2$, not the ordinary Euclidean gradient of $f(\alpha_X)$. If one rewrites the same rule with the unweighted matrix convention, it corresponds to the lift $X\mapsto n f(\alpha_X)$; using $X\mapsto f(\alpha_X)$ only rescales time by the factor $n$.
+If $G=U\diag(\sigma_i)W^\top$ and $\gamma(M)=\lambda_{\max}(M)$, then
+\begin{equation}\label{eq-normalized-muon-lmo}
+	J_\gamma(G)
+	=
+	-\norm{G}_{S_1}UW^\top
+	=
+	-\tr\!\left((G^\top G)^{1/2}\right)G(G^\top G)^{\dagger/2}.
+\end{equation}
+The ray of this direction is the polar factor $-UW^\top$, and the scalar factor $\norm{G}_{S_1}$ can be absorbed into a time or step-size normalization. This is the exact-polar, full-batch, continuous-time idealization of Muon~\cite{KellerJordan2024,peyre2026muon}. Practical Muon implementations replace the polar factor by a few Newton--Schulz iterations for GPU efficiency~\cite{LiuSuYaoEtAl2025}; this polynomial approximation fits the same spectral-normalization philosophy, although adaptive rescaling and finite momentum make the practical algorithm more than a position-only metric gradient flow.
+\index{Newton--Schulz iteration}% strictindex
+\index{polar factor}% strictindex
+
+The effect of this spectral normalization is visible already in the homogeneous two-layer ReLU model discussed in Section~\ref{sec-wasserstein-flows-mlp}. Figure~\ref{fig:gradflow-mlp-w2-vs-muon} reproduces, in the style of the book figures, the numerical comparison from~\cite{peyre2026muon}: the same teacher network, same initialization and same empirical first variation are evolved either by the $W_2$ particle flow or by the operator-gauge Muon direction.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small $W_2$ trajectories & \small Muon trajectories \\[-.15em]
+\includegraphics[width=.42\linewidth]{figures/gradflow-mlp-w2-vs-muon/trajectories-w2.pdf} &
+\includegraphics[width=.42\linewidth]{figures/gradflow-mlp-w2-vs-muon/trajectories-muon.pdf} \\[-.05em]
+\small risk decay & \small directional concentration \\[-.15em]
+\includegraphics[width=.42\linewidth]{figures/gradflow-mlp-w2-vs-muon/risk-comparison.pdf} &
+\includegraphics[width=.42\linewidth]{figures/gradflow-mlp-w2-vs-muon/angular-comparison.pdf}
+\end{tabular}
+\caption{\emph{Wasserstein versus Muon mean-field training of a homogeneous ReLU model.} The top row displays trajectories in the reduced homogeneous coordinates $(|u|v_1,|u|v_2)$; black dashed rays are the teacher directions. The bottom row compares the empirical square-loss decay and the weighted angular density of neurons. Solid curves correspond to the $W_2$ flow, dashed curves to the operator-gauge Muon flow. Both methods use the same particles and first variation; the spectral normalization produces a more coherent collective alignment and reaches the low-risk regime earlier in normalized time.}
+\index{Muon algorithm}% strictindex
+\index{two-layer neural network}% strictindex
+\index{spectral Wasserstein flow}% strictindex
+\label{fig:gradflow-mlp-w2-vs-muon}
+\end{figure}
+
+\begin{rem}[Relation with momentum]\label{rem-normalized-momentum}
+\index{momentum}% strictindex
+\index{phase space}% strictindex
+	The section above introduced momentum by adding a velocity variable. Practical Muon instead often averages gradients before applying the spectral normalization. In continuous time this leads to a phase-space system for pairs $(x,a)$,
+	\[
+		\tau\dot a_t=\Wgrad f(\alpha_t)(x_t)-a_t,
+		\qquad
+		\dot x_t=-(A_t^\star)^{-1}a_t,
+	\]
+	where $\eta_t$ is the law of $(x_t,a_t)$, $\alpha_t=(\pi_x)_\sharp\eta_t$, and $A_t^\star$ is selected from the covariance of the averaged force,
+	\[
+		A_t^\star
+		\in
+		\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
+		\tr\!\left(A^{-1}\int aa^\top\d\eta_t(x,a)\right).
+	\]
+	When $\tau=0$, the auxiliary force relaxes instantly to $a_t=\Wgrad f(\alpha_t)(x_t)$ and one recovers \eqref{eq-normalized-spectral-flow}. For $\tau>0$, the dynamics is kinetic and is not, in general, a gradient flow of a distance on the spatial marginal alone.
+\end{rem}

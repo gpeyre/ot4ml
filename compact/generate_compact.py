@@ -67,6 +67,8 @@ SKIP_ENVS = {
     "rem2",
     "example",
     "exmp",
+    "alg",
+    "algblock",
 }
 
 COMPACT_ENVS: set[str] = set()
@@ -137,6 +139,14 @@ def strip_citations(text: str) -> str:
     text = text.replace(
         "related spectral Wasserstein gauges are used in.",
         "related spectral Wasserstein gauges give analogous constructions.",
+    )
+    text = text.replace(
+        r"as in Remark~\ref{rem-soft-transform-convexity}",
+        "using the convexity properties of soft transforms",
+    )
+    text = text.replace(
+        r"\begin{prop}[Basic geodesically convex energies]\label{prop-basic-geodesic-convexity}",
+        r"\begin{prop}[Basic geodesically convex energies]\phantomsection\label{prop-basic-geodesic-convexity}",
     )
     text = re.sub(r"\\,\s*([,.;:])", r"\1", text)
     text = re.sub(r"\s+([,.;:])", r"\1", text)
@@ -743,6 +753,7 @@ def write_clean_copy(src: Path, dst: Path) -> None:
         text = text.replace(r"\numberwithin{equation}{chapter}", r"\numberwithin{equation}{section}")
         text = text.replace(r"\numberwithin{figure}{chapter}", r"\numberwithin{figure}{section}")
         text = text.replace(r"\newtheorem{thm}{Theorem}[chapter]", r"\newtheorem{thm}{Theorem}[section]")
+        text = text.replace(r"\newfloat{algfloat}{tbp}{loa}[chapter]", r"\newfloat{algfloat}{tbp}{loa}[section]")
         text = text.replace("innertopmargin=3pt,", "innertopmargin=1.2pt,")
         text = text.replace("innerbottommargin=3pt,", "innerbottommargin=1.2pt,")
         text = text.replace("innerleftmargin=6pt,", "innerleftmargin=3.5pt,")

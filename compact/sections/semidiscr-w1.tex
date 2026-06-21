@@ -10,7 +10,8 @@ where $\Ee(f,g)$ is the dual objective, with value $-\infty$ when the feasibilit
 }
 \subsection{Semi-discrete}
 \paragraph{Discrete target and Laguerre cells.}
-For $\be=\sum_j\b_j\de_{y_j}$, restrict Definition~\ref{def-c-transform} to the finite support of $\be$, equivalently apply it with the discrete target space $\Y=\{y_j\}_j$ and identify $\gD$ with $g:\Y\to\RR$, $g(y_j)=\gD_j$:
+One can adapt Definition~\ref{def-c-transform} of the $\bar c$-transform to this setting by restricting the minimization to the finite support $\{y_j\}_{j=1}^m$ of $\be$. Equivalently, one applies the same definition with the discrete target space $\Y=\{y_j\}_{j=1}^m$ and identifies a vector $\gD\in\RR^m$ with the function $g:\Y\to\RR$ defined by $g(y_j)=\gD_j$:
+
 \eql{\label{eq-disc-c-transfo}
 \foralls \gD \in \RR^m, \;
 \foralls x \in \Xx, \quad
@@ -68,6 +69,8 @@ E(\gD,x)\eqdef \gD^{\bar c}(x)+\dotp{\gD}{\b}.
 \eqdef
 \gD^{(\ell)}+\tau_\ell\nabla_{\gD}E(\gD^{(\ell)},x_\ell).
 }
+\(j_\ell\in\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr),\)
+\(\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).\)
 \eql{\label{eq-step-size-sgd}
 \tau_\ell\eqdef \frac{\tau_0}{1+\ell/\ell_0},
 }
@@ -85,7 +88,6 @@ where $\gD^\star$ is a maximizer and the expectation is over the i.i.d. samples.
 \Wass_p\left(\al,\sum_{j=1}^m \b_j\de_{y_j}\right).
 }
 \paragraph{Free masses and prescribed weights.}
-This free-mass problem optimizes both codepoint positions $Y$ and weights $\b$; prescribing the weights gives a different problem. The equal-weight case $\b_j=1/m$ is used below.
 \begin{prop}[Quantization rate and curse of dimensionality]\label{prop-quantization-rate}
 Let $\Omega\subset\RR^d$ be a bounded Lipschitz domain and assume $\al=\rho\,\d x$ on $\Omega$, with $0<\rho_-\leq\rho\leq\rho_+<+\infty$. Then, for fixed $p\geq1$, there exist constants $0<c\leq C<+\infty$ such that
 \(c\,m^{-1/d} \leq \Qq_m(\al) \leq C\,m^{-1/d}.\)
@@ -98,7 +100,6 @@ For the lower bound, fix any set $Y$ of $m$ codepoints and write $d_Y(x)=\min_j\
 Taking the $p$-th root and minimizing over $Y$ proves the lower bound.
 \end{proof}
 \paragraph{Lloyd algorithm.}
-Quantization becomes computationally useful because fixed sites make the assignment step local: the optimal cells are nearest-site Voronoi cells, and the second step recenters the sites.
 \begin{prop}[Free masses give Voronoi cells]\label{prop-free-masses-voronoi}
 For the cost $c(x,y)=d(x,y)^p$, fix distinct codepoints $Y=(y_j)_{j=1}^m$. Duplicate codepoints can be merged beforehand. Minimizing over the weights $\b\in\simplex_m$ gives
 \[
@@ -117,89 +118,93 @@ For any coupling between $\al$ and a measure supported on $Y$, the conditional d
 \(\Qq_m(\al)^p = \min_Y \Ff(Y), \qquad \Ff(Y) \eqdef \int_\X \min_{1\leq j\leq m} c(x,y_j)\d\al(x).\)
 \(y_j \in \uargmin{y} \int_{\VV_j(Y)} c(x,y)\d\al(x).\)
 \(y_j = \frac{\int_{\VV_j(Y)} x\d\al(x)} {\int_{\VV_j(Y)} \d\al}.\)
-Lloyd's algorithm alternates nearest-cell assignment and centroid update; it decreases the squared Euclidean objective but generally reaches only a local minimum.
 \paragraph{Continuous Lloyd flow.}
-For \(c(x,y)=\norm{x-y}^2\), assume \(\al\) does not charge Voronoi boundaries and set
-\(a_j(Y)=\al(\VV_j(Y))\), \(b_j(Y)=a_j(Y)^{-1}\int_{\VV_j(Y)}x\d\al(x)\) on nonempty cells.
-The relaxed Lloyd update
-\(y_j^{(k+1)}=y_j^{(k)}+\tau(b_j(Y^{(k)})-y_j^{(k)})\)
-formally gives, as \(\tau\to0\), the cell-mass preconditioned gradient flow of \(\Ff\),
-\[
-\dot y_j(t)=b_j(Y_t)-y_j(t).
-\]
-Indeed \(\nabla_{y_j}\Ff(Y)=2a_j(Y)(y_j-b_j(Y))\), hence
-\(\dot y_j=-(2a_j(Y_t))^{-1}\nabla_{y_j}\Ff(Y_t)\). This is the gradient flow for the site metric \(g_Y(U,V)=2\sum_j a_j(Y)\dotp{u_j}{v_j}\), not the unweighted Euclidean metric, and \(\frac{\d}{\d t}\Ff(Y_t)=-2\sum_j a_j(Y_t)\norm{b_j(Y_t)-y_j(t)}^2\leq0\).
-For fixed particle weights \(\mu_t=\sum_jw_j\de_{y_j(t)}\), this is the weak continuity equation
-\(\partial_t\mu_t+\diverg(v_{\mu_t}\mu_t)=0\) with \(v_{\mu_t}(y_j)=b_j(Y)-y_j\).
-These \(w_j\) are auxiliary weights. The free-weight projection \(\nu_Y=\sum_j a_j(Y)\de_{y_j}\) instead satisfies formally
-\[
-\partial_t\nu_{Y_t}+\diverg(v_t\nu_{Y_t})=\sum_j\dot a_j(Y_t)\de_{y_j(t)},
-\qquad v_t(y_j(t))=\dot y_j(t),
-\]
-so varying cell masses create a balance term.
+\(a_j(Y)=\al(\VV_j(Y)), \qquad b_j(Y)=\frac{1}{a_j(Y)}\int_{\VV_j(Y)}x\,\d\al(x)\)
+\(y_j^{(k+1)}=y_j^{(k)}+\tau\big(b_j(Y^{(k)})-y_j^{(k)}\big), \qquad 0<\tau\leq 1,\)
+\(\dot y_j(t)=b_j(Y_t)-y_j(t).\)
+\(\nabla_{y_j}\Ff(Y) = 2\int_{\VV_j(Y)}(y_j-x)\d\al(x) = 2a_j(Y)(y_j-b_j(Y)),\)
+\(\dot y_j(t) = -\frac{1}{2a_j(Y_t)}\nabla_{y_j}\Ff(Y_t).\)
+\(\frac{\d}{\d t}\Ff(Y_t) = -2\sum_j a_j(Y_t)\norm{b_j(Y_t)-y_j(t)}^2 \leq 0.\)
+If \(\mu_t=\sum_j w_j\de_{y_j(t)}\) carries fixed positive weights, independent of the Voronoi masses \(a_j(Y_t)\), Proposition~\ref{prop-lagrangian-flow-continuity} turns this labelled particle ODE into the weak continuity equation
 
+\(\partial_t\mu_t+\diverg(v_{\mu_t}\mu_t)=0, \qquad v_{\mu_t}(y_j(t))=b_j(Y_t)-y_j(t),\)
+in the sense of the measure evolutions of Section~\ref{sec-dynamic-optimal-transport}. The weights \(w_j\) in this transport equation are auxiliary weights for the moving labelled particles; they are not the Voronoi masses used to define the quantization energy.
+
+\(\nu_{Y_t}=\sum_j a_j(Y_t)\de_{y_j(t)},\)
+\(\partial_t\nu_{Y_t}+\diverg(v_t\nu_{Y_t}) = \sum_j \dot a_j(Y_t)\de_{y_j(t)}, \qquad v_t(y_j(t))=\dot y_j(t).\)
 \paragraph{Mean-field limit and ultrafast diffusion.}
-When the number \(M\) of codepoints tends to infinity, the continuum variable is the density \(f\) of sites: about \(M f(x)\d x\) codepoints lie in \(\d x\). For \(p\)-quantization in dimension \(d\), set \(r=p/d\), hence \(r=2/d\) for the quadratic cost. The rescaled high-resolution functional is, up to a cell-shape constant,
+\(\Gg_\rho(f) \eqdef \int_\Omega \rho(x) f(x)^{-r}\d x, \qquad \int_\Omega f\,\d x=1,\)
 \[
-\Gg_\rho(f)=\int_\Omega \rho(x)f(x)^{-r}\d x,\qquad \int_\Omega f\d x=1.
+\partial_t f
+=
+-r\,\diverg\!\left(
+f\nabla\!\left(\frac{\rho}{f^{r+1}}\right)
+\right),
 \]
-Its formal \(\Wass_2\)-gradient flow is the weighted ultrafast diffusion
 \[
-\partial_t f=-r\,\diverg\!\left(f\nabla\!\left(\frac{\rho}{f^{r+1}}\right)\right),
+\partial_t u
+=
+-\frac{r+1}{\omega}\diverg\!\left(\omega\nabla(u^{-r})\right),
 \]
-with periodic or no-flux boundary conditions. The one-dimensional particle-to-continuum limit is due to Caglioti, Golse and Iacobelli, the one-dimensional very-fast-diffusion analysis to Iacobelli, and the weighted Wasserstein/JKO theory to Iacobelli, Patacchini and Santambrogio. With \(\omega=\rho^{1/(r+1)}\) and \(u=f/\omega\), the equation reads
-\[
-\partial_t u=-\frac{r+1}{\omega}\diverg\!\left(\omega\nabla(u^{-r})\right).
-\]
-
 \paragraph{Quantization with fixed equal weights.}
-For fixed equal weights, set \(\nu_Y=m^{-1}\sum_j\de_{y_j}\) and
-\(\Ff_{\rm eq}(Y)=\frac12\Wass_2^2(\al,\nu_Y)\). If \(\al\) has a density and \(C_j(Y)\) are the optimal equal-mass Laguerre cells, define \(\bar x_j(Y)=m\int_{C_j(Y)}x\d\al(x)\). Then
-\(\nabla_{y_j}\Ff_{\rm eq}(Y)=m^{-1}(y_j-\bar x_j(Y))\). For the empirical \(\Wass_2\) metric \(g_Y(U,V)=m^{-1}\sum_j\dotp{u_j}{v_j}\), the gradient flow is
-\[
-\dot y_j(t)=\bar x_j(Y_t)-y_j(t),\qquad j=1,\ldots,m,
-\]
-the so-called finite-particle \(\Wass_2\) gradient flow studied in Section~\ref{sec-wasserstein-gradient-flows}. These fixed-weight cells are Laguerre cells, not the free-mass Voronoi cells of Lloyd's method.
+\(\nu_Y\eqdef \frac1m\sum_{j=1}^m\de_{y_j}, \qquad \Ff_{\rm eq}(Y) \eqdef \frac12\Wass_2^2(\al,\nu_Y),\)
+\(\bar x_j(Y) \eqdef m\int_{C_j(Y)} x\d\al(x).\)
+\(\nabla_{y_j}\Ff_{\rm eq}(Y) = \frac1m\bigl(y_j-\bar x_j(Y)\bigr).\)
+The \(\Wass_2\) metric on equal-weight empirical measures induces the particle metric \(g_Y(U,V)=m^{-1}\sum_j\dotp{u_j}{v_j}\). Hence the associated \(\Wass_2\) gradient flow is the coupled system
+
+\(\dot y_j(t) = \bar x_j(Y_t)-y_j(t), \qquad j=1,\ldots,m.\)
+Equivalently, \(\nu_{Y_t}\) satisfies a continuity equation with velocity \(v_t(y_j(t))=\bar x_j(Y_t)-y_j(t)\). This is the so-called finite-particle \(\Wass_2\) gradient-flow viewpoint developed more systematically in Chapter~\ref{sec-wasserstein-gradient-flows}; the fixed-weight cells are Laguerre cells rather than the free-mass Voronoi cells used by Lloyd's method.
 
 \paragraph{Equal-weight quantization on the line.}
-\begin{prop}[Equal-weight quantization on the line]\label{prop-1d-equal-weight-quantization}
-Let $\al\in\Mm_+^1(\RR)$ have quantile $Q=\cumul{\al}^{-1}$ and define
+\begin{prop}[One-dimensional equal-weight quantization]\label{prop-1d-equal-weight-quantization}
+Let $\al\in\Mm_+^1(\RR)$ have finite second moment and quantile function $Q=\cumul{\al}^{-1}$. For
 \[
-\Qq_m^{\mathrm{eq}}(\al)^2
+\Qq^{\mathrm{eq}}_m(\al)^2
 \eqdef
-\min_{y_1\leq\cdots\leq y_m}\Wass_2^2\left(\al,\frac1m\sum_{i=1}^m\de_{y_i}\right).
+\min_{y_1\leq\cdots\leq y_m}
+\Wass_2^2\left(\al,\frac1m\sum_{i=1}^m\de_{y_i}\right),
 \]
-For $I_i=((i-1)/m,i/m]$, the sorted minimizer is \(y_i^\star=m\int_{I_i}Q(u)\d u\); for the uniform law this is \(y_i^\star=(i-1/2)/m\). Moreover,
+set $I_i=((i-1)/m,i/m]$. Then the sorted minimizer is unique and its $i$th atom is \(y_i^\star = m\int_{I_i} Q(u)\d u,\)
+and
+\(\Qq^{\mathrm{eq}}_m(\al)^2 = \sum_{i=1}^m \int_{I_i} \abs{Q(u)-y_i^\star}^2\d u.\)
+If $Q\in C^1([0,1])$, then
+\(m^2\Qq^{\mathrm{eq}}_m(\al)^2 \longrightarrow \frac1{12}\int_0^1\abs{Q'(u)}^2\d u.\)
+\end{prop}
+\begin{proof}
+After sorting the atoms, the quantile formula for $\Wass_2$ gives
 \[
-\Qq_m^{\mathrm{eq}}(\al)^2
+\Wass_2^2\left(\al,\frac1m\sum_{i=1}^m\de_{y_i}\right)
 =
-\sum_{i=1}^m\int_{I_i}\abs{Q(u)-y_i^\star}^2\d u.
+\sum_{i=1}^m
+\int_{I_i}\abs{Q(u)-y_i}^2\d u.
 \]
-If \(Q\in C^1([0,1])\), then
+The minimization therefore decouples over the intervals $I_i$, and the best constant approximation of $Q$ on $I_i$ in $L^2$ is its average on $I_i$. This proves the formula for $y_i^\star$ and the energy.
+
+Denote by $\bar Q_{I_i}=m\int_{I_i}Q(u)\d u$ the interval average. If $Q$ is $C^1$, set $h=1/m$ and write $I_i=(a_i,a_i+h]$. Uniform Taylor expansion gives, for $v\in[0,1]$,
+\(Q(a_i+hv)=Q(a_i)+hvQ'(a_i)+h\,r_i(v), \qquad \max_i\sup_{v\in[0,1]}\abs{r_i(v)}\to0.\)
+Subtracting the average over $v\in[0,1]$ and integrating gives \(\int_{I_i}\abs{Q(u)-\bar Q_{I_i}}^2\d u = \frac{h^3}{12}\abs{Q'(a_i)}^2+o(h^3),\)
+uniformly in $i$. Summing over $i$ yields a Riemann sum for $\frac1{12}\int_0^1\abs{Q'(u)}^2\d u$.
+\end{proof}
+Thus the common deterministic rule $m^{-1}\sum_i\de_{Q((i-1/2)/m)}$ should be read as a midpoint approximation of the optimal bin-average formula. It has the same leading squared error under the same smoothness assumptions.
+
+\begin{prop}[Quantile-process asymptotics for random placement]\label{prop-1d-random-quantile-process}
+Let $\al\in\Mm_+^1(\RR)$ have quantile $Q\in C^1([0,1])$, and let $\widehat\al_m=m^{-1}\sum_{i=1}^m\de_{X_i}$ with $X_i$ iid with law $\al$. If $B$ denotes the standard Brownian bridge on $[0,1]$, then
+\(m\,\Wass_2^2(\al,\widehat\al_m) \overset{\mathrm{law}}{\longrightarrow} \int_0^1 B(u)^2\abs{Q'(u)}^2\d u,\)
+and, in expectation,
 \[
-m^2\Qq_m^{\mathrm{eq}}(\al)^2\to \frac1{12}\int_0^1|Q'(u)|^2\d u.
+m\,\EE\!\left[\Wass_2^2(\al,\widehat\al_m)\right]
+\longrightarrow
+\int_0^1 u(1-u)\abs{Q'(u)}^2\d u.
 \]
 \end{prop}
 \begin{proof}
-By the one-dimensional quantile formula, the objective is \(\sum_i\int_{I_i}|Q(u)-y_i|^2\d u\). The minimizer on each bin is the \(L^2\) projection onto constants, hence the bin average \(\bar Q_{I_i}\). If \(h=1/m\), uniform Taylor expansion gives \(Q(a+hv)=Q(a)+hvQ'(a)+o(h)\) on all bins, so the bin variance is \(h^3|Q'(a)|^2/12+o(h^3)\); summing gives the Riemann limit.
+Let $\widehat Q_m$ be the empirical quantile function. The one-dimensional formula gives \(\Wass_2^2(\al,\widehat\al_m) = \int_0^1\abs{\widehat Q_m(u)-Q(u)}^2\d u.\)
+Write $X_i=Q(U_i)$ with $U_i$ iid uniform on $[0,1]$, and let $\widehat U_m^{-1}$ be the empirical quantile function of the $U_i$. Then $\widehat Q_m=Q\circ \widehat U_m^{-1}$. The classical uniform quantile-process theorem gives
+\(\sqrt m\,(\widehat U_m^{-1}-\Id) \overset{\mathrm{law}}{\longrightarrow} -B \quad\text{in }L^2(0,1).\)
+Since $Q\in C^1([0,1])$, the map $u\mapsto Q(u)$ is Hadamard differentiable along these perturbations, and therefore
+\(\sqrt m\,(\widehat Q_m-Q) \overset{\mathrm{law}}{\longrightarrow} -B\,Q' \quad\text{in }L^2(0,1).\)
+Since $B$ and $-B$ have the same law, the sign disappears in the squared $L^2$ norm. The continuous mapping theorem gives the distributional convergence. Standard second-moment bounds for the uniform quantile process, together with the boundedness of $Q'$, give uniform integrability, hence convergence of expectations. Since $\EE[B(u)^2]=u(1-u)$, Fubini's theorem gives the displayed expectation limit.
 \end{proof}
-\begin{prop}[Random placement on the line]\label{prop-1d-random-quantile-process}
-Let \(Q\in C^1([0,1])\) and \(\widehat\al_m=m^{-1}\sum_i\de_{X_i}\), \(X_i\sim\al\) iid. If \(B\) is a standard Brownian bridge, then
-\[
-m\,\Wass_2^2(\al,\widehat\al_m)\overset{\mathrm{law}}{\longrightarrow}
-\int_0^1 B(u)^2|Q'(u)|^2\d u,
-\qquad
-m\,\EE[\Wass_2^2(\al,\widehat\al_m)]
-\to
-\int_0^1u(1-u)|Q'(u)|^2\d u.
-\]
-Thus deterministic inverse-CDF particles have \(O(m^{-2})\) squared error, while iid particles have \(O(m^{-1})\) average squared error.
-\end{prop}
-\begin{proof}
-Write \(X_i=Q(U_i)\) with \(U_i\) uniform. The uniform quantile-process theorem gives \(\sqrt m(\widehat U_m^{-1}-\Id)\Rightarrow -B\) in \(L^2\), and the \(C^1\) delta method gives \(\sqrt m(\widehat Q_m-Q)\Rightarrow -BQ'\). Since \(\Wass_2^2(\al,\widehat\al_m)=\|\widehat Q_m-Q\|_{L^2}^2\) and \(B\) is symmetric, the continuous mapping theorem gives the law limit; uniform integrability and \(\EE B(u)^2=u(1-u)\) give the expectation limit.
-\end{proof}
-
-
 \subsection{Wasserstein-1 norm}
 \label{sec-W1}
 \paragraph{\texorpdfstring{$c$-transform for $\Wass_1$.}{c-transform for W1.}}
@@ -236,9 +241,9 @@ If $\Lip(f)\leq1$, then $f(x)\leq f(y)+d(x,y)$, so $d(x,y)-f(x)\geq -f(y)$ for a
 =
 \umax{f}
 \enscond{\int_\X f\d(\al-\be)}{\Lip(f)\leq1}
-=:\norm{\al-\be}_{W_1}.
+=:
+\norm{\al-\be}_{W_1}.
 }
-This defines the Kantorovich--Rubinstein norm $\norm{\cdot}_{W_1}$ on signed measures of total mass zero.
 For a discrete signed measure $\al-\be=\sum_k r_k\de_{z_k}$ with $\sum_k r_k=0$,~\eqref{eq-w1-metric} becomes the finite-dimensional linear program
 
 \eql{\label{eq-w1-discr}
@@ -247,7 +252,8 @@ For a discrete signed measure $\al-\be=\sum_k r_k\de_{z_k}$ with $\sum_k r_k=0$,
 \umax{(f_k)_k}
 \enscond{\sum_k f_k r_k}{\foralls k,\ell,\ |f_k-f_\ell|\leq d(z_k,z_\ell)}.
 }
-This LP has $O(N^2)$ Lipschitz constraints, so the dual form alone does not remove the dense all-pairs structure. For metrics generated by local moves, local inequalities suffice: in $1$-D, after sorting $z_1\leq z_2\leq\cdots$,
+This linear program can be solved by generic interior-point or first-order methods. If $N$ support points are involved, however, it still contains $O(N^2)$ Lipschitz constraints, mirroring the $O(nm)$ coupling variables of the original discrete Kantorovich LP; the dual formulation alone does not remove the all-pairs structure.
+
 \(\Wass_1(\al,\be) = \umax{(f_k)_k} \enscond{\sum_k f_k r_k}{\foralls k,\ |f_{k+1}-f_k|\leq z_{k+1}-z_k}.\)
 \paragraph{\texorpdfstring{$\Wass_1$ on Euclidean spaces.}{W1 on Euclidean spaces.}}
 \eql{\label{eq-w1-cont}
@@ -266,7 +272,7 @@ This LP has $O(N^2)$ Lipschitz constraints, so the dual form alone does not remo
 \Wass_1(\al,\be) =
 \uinf{\flow} \enscond{ \int_{\RR^\dim} \norm{\flow(x)}_{\RR^d} \d x }{ \diverg(\flow)=\al-\be },
 }
-\paragraph{Graph distances.}
+\paragraph{Graph distances and Beckmann flows.}
 \begin{defn}[Graph geodesic distance]\label{def-graph-geodesic-distance}
 Let $G=(V,E)$ be a connected finite graph with positive edge lengths $(\ell_e)_{e\in E}$. The graph geodesic distance between two vertices is \(d_G(i,j)=\min_{\gamma:i\leadsto j}\sum_{e\in\gamma}\ell_e.\)
 The minimum is over all paths $\gamma$ joining $i$ to $j$.
