@@ -1,0 +1,1016 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=blue!55!black,
+  urlcolor=blue!55!black
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rp}{\mathbb{R}_{+}}
+\newcommand{\Pcal}{\mathcal{P}}
+\newcommand{\Bcal}{\mathcal{B}}
+\newcommand{\X}{\mathsf{X}}
+\newcommand{\Y}{\mathsf{Y}}
+\newcommand{\Z}{\mathsf{Z}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\osc}{\operatorname{osc}}
+\newcommand{\TV}{\operatorname{TV}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\Dom}{\operatorname{dom}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\newcommand{\esssup}{\operatorname*{ess\,sup}}
+\newcommand{\essinf}{\operatorname*{ess\,inf}}
+\newcommand{\otimesi}{\mathop{\otimes}}
+\newcommand{\defeq}{\coloneqq}
+
+\title{Contraction Mechanisms for Generalized Sinkhorn Maps\\
+       under \texorpdfstring{$\phi$}{phi}-Divergence Regularization}
+\author{A technical note}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Entropic optimal transport has two useful order properties: the soft
+$c$-transform is order reversing and commutes with additive constants, hence
+the double transform is non-expansive in the variation seminorm.  In the
+Kullback--Leibler case, strict contraction follows in compact bounded-cost
+settings from Hilbert's projective metric and Birkhoff's contraction theorem;
+Carlier's proof gives another route through boundedness of Sinkhorn iterates,
+strong convexity of the exponential on bounded intervals, and a
+Gauss--Seidel/coordinate-descent comparison.  This note explains which parts
+survive when the KL penalty is replaced by a general $\phi$-divergence.
+
+The main message is that monotonicity and non-expansiveness are structural,
+but strict contraction is not.  For a smooth interior generalized transform,
+its derivative is a Markov averaging operator whose transition probabilities
+are proportional to the curvature of the dual integrand
+$\Phi=\eps\phi_+^*(\cdot/\eps)$.  Therefore the correct replacement for
+positivity of the Gibbs kernel is a uniform overlap, or Doeblin, condition on
+these curvature kernels.  A simple sufficient condition is a uniform strip on
+which $0<m\leq \Phi''\leq M<\infty$.  The Carlier argument extends by replacing
+the exponential inequalities with the corresponding strong-convexity and
+Lipschitz estimates for $\Phi$ on that strip.  Without such an interior
+curvature condition, sparse divergences such as quadratic/chi-square
+regularization can have local contraction factor one.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+Let $(\X,\alpha)$ and $(\Y,\beta)$ be probability spaces and let
+$c:\X\times\Y\to\R$ be a measurable cost.  For a convex function
+$\phi:[0,\infty)\to(-\infty,+\infty]$ with $\phi(1)=0$, the
+$\phi$-regularized transport problem is
+\begin{equation}\label{eq:primal}
+  \inf_{\pi\in\Pi(\alpha,\beta)}
+  \left\{
+  \int_{\X\times\Y} c\,\dd\pi
+  +\eps D_\phi(\pi\mid \alpha\otimes\beta)
+  \right\},
+  \qquad \eps>0.
+\end{equation}
+When $\phi(r)=r\log r-r+1$, this is the usual entropy-regularized optimal
+transport problem.  Replacing KL by a general $\phi$ leads to a generalized
+Sinkhorn algorithm: one alternately maximizes the dual in one potential while
+keeping the other fixed.  This generalized transform was introduced and
+studied in the $f$-divergence OT literature; in particular, Terjek and
+Gonzalez-Sanchez formulate the $(c,\eps,\phi)$-transform, its implicit equation,
+and convergence conditions for the generalized Sinkhorn algorithm
+\cite{terjek2022}.  Earlier convergence results for general convex
+regularization also appear in Di Marino--Gerolin \cite{dimarino2020}.
+
+For KL, several contraction analyses are available.  The classical two-marginal
+compact proof uses Hilbert's projective metric and Birkhoff--Hopf contraction
+for positive kernel operators; Carlier instead proves linear convergence of the
+multi-marginal Sinkhorn algorithm by combining boundedness of the iterates,
+strong convexity and Lipschitz continuity of the exponential on bounded
+intervals, and coordinate-descent estimates \cite{carlier2022}.  Recent work
+extends Hilbert-metric methods for KL to certain unbounded settings by changing
+the underlying cone and allowing kernels that are not bounded away from zero
+\cite{eckstein2025}.  These facts suggest the question studied here:
+
+\begin{quote}
+\emph{Which contraction mechanisms extend from KL to a general
+$\phi$-divergence?}
+\end{quote}
+
+The answer is nuanced.  The order-theoretic non-expansiveness extends almost
+verbatim.  Strict contraction requires an additional quantitative interiority
+condition.  The most transparent way to see this is to differentiate the
+generalized transform.  Its derivative is a Markov operator with kernel
+proportional to $\Phi''$, where
+\begin{equation}\label{eq:Phi}
+  \Phi(s) \defeq \eps\,\phi_+^*(s/\eps),
+  \qquad
+  \phi_+(r)\defeq \phi(r)+\iota_{[0,\infty)}(r).
+\end{equation}
+Thus strict variation contraction is equivalent, at the infinitesimal level, to
+a Dobrushin overlap condition for those curvature kernels.  This is automatic
+for KL on compact bounded-cost problems, but it can fail for other divergences.
+A two-point chi-square example in Section~\ref{sec:counterexample} shows that
+one cannot hope for a theorem saying that all generalized Sinkhorn maps are
+strict contractions.
+
+The note is organized as follows.  Section~\ref{sec:dual} recalls the dual and
+the generalized soft $c$-transform.  Section~\ref{sec:order} proves order
+reversal, translation covariance and non-expansiveness in the variation
+seminorm.  Section~\ref{sec:derivative} derives the derivative kernel and the
+Dobrushin contraction criterion.  Section~\ref{sec:kl} explains why the KL case
+has additional Hilbert-metric structure.  Section~\ref{sec:carlier} formulates
+the Carlier-style extension through local strong convexity and smoothness of
+$\Phi$.  Section~\ref{sec:counterexample} gives the obstruction.  The final
+section sketches weighted/noncompact extensions.
+
+\section{Dual problem and generalized soft \texorpdfstring{$c$}{c}-transform}\label{sec:dual}
+
+\subsection{Normalization of the divergence}
+
+The affine part of $\phi$ does not affect the value of
+$D_\phi(\pi\mid \alpha\otimes\beta)$ on probability couplings: adding
+$a(r-1)$ to $\phi(r)$ integrates to zero when $\pi$ and
+$\alpha\otimes\beta$ have the same total mass.  We therefore use the following
+normalization throughout the note.
+
+\begin{assumption}[standing convex-analytic assumptions]\label{ass:phi}
+The function $\phi:[0,\infty)\to(-\infty,+\infty]$ is proper, lower
+semicontinuous and convex, with
+\begin{equation*}
+  \phi(1)=0,\qquad 0\in\partial \phi(1).
+\end{equation*}
+Let $\phi_+=\phi+\iota_{[0,\infty)}$ and let
+$\Phi(s)=\eps\phi_+^*(s/\eps)$.  On intervals where differentiability is
+needed, assume $\Phi\in C^2(I)$ and write
+\begin{equation*}
+  \vartheta(s)\defeq \Phi'(s)=(\phi_+^*)'(s/\eps).
+\end{equation*}
+The normalization gives $\vartheta(0)=1$ whenever $\vartheta$ is defined at
+zero.
+\end{assumption}
+
+The usual generalized $f$-divergence includes a singular part:
+\begin{equation*}
+  D_\phi(\pi\mid m)
+  =\int \phi\!\left(\frac{\dd\pi}{\dd m}\right)\dd m
+  +\phi'_\infty\,\pi^\perp(\X\times\Y),
+  \qquad m=\alpha\otimes\beta,
+\end{equation*}
+where $\pi=\frac{\dd\pi}{\dd m}m+\pi^\perp$ is the Lebesgue decomposition and
+$\phi'_\infty=\lim_{r\to\infty}\phi(r)/r$.  If $\phi'_\infty=+
+\infty$, singular mass is forbidden.  If $\phi'_\infty<\infty$, the dual has a
+corresponding upper constraint.  This is one reason why non-superlinear
+regularizations may partially collapse to the ordinary hard $c$-transform
+\cite{terjek2022}.
+
+\subsection{Fenchel dual}
+
+Formally, and rigorously under the usual compactness/continuity or integrable
+lower-bounded hypotheses, the dual of \eqref{eq:primal} is
+\begin{equation}\label{eq:dual}
+  \sup_{f,g}
+  \left\{
+  \int_\X f\,\dd\alpha+
+  \int_\Y g\,\dd\beta
+  -\int_{\X\times\Y}\Phi\big(f(x)+g(y)-c(x,y)\big)
+  \dd\alpha(x)\dd\beta(y)
+  \right\}.
+\end{equation}
+Equivalently, if one does not absorb the effective domain of $\phi_+^*$ into
+$\Phi$, then $f(x)+g(y)-c(x,y)\leq \eps\phi'_\infty$ is an explicit constraint.
+For KL, $\phi(r)=r\log r-r+1$ and
+\begin{equation*}
+  \phi_+^*(t)=e^t-1,
+  \qquad
+  \Phi(s)=\eps(e^{s/\eps}-1),
+  \qquad
+  \vartheta(s)=e^{s/\eps}.
+\end{equation*}
+The additive constant $-\eps$ in $\Phi$ is irrelevant for optimization but
+convenient for normalization.
+
+\subsection{The generalized transform}
+
+Fix a potential $f$ on $\X$.  The update of the $\Y$-potential is the pointwise
+maximizer of the dual in $g(y)$:
+\begin{equation}\label{eq:Tdef}
+  T_\alpha f(y)
+  \defeq
+  \argmax_{\gamma}
+  \left\{
+  \gamma-
+  \int_\X \Phi\big(f(x)+\gamma-c(x,y)\big)\dd\alpha(x)
+  \right\}.
+\end{equation}
+When the maximizer is interior and unique, it is characterized by
+\begin{equation}\label{eq:implicit}
+  \int_\X
+  \vartheta\big(f(x)+T_\alpha f(y)-c(x,y)\big)
+  \dd\alpha(x)=1.
+\end{equation}
+This is the generalized soft $c$-transform.  The analogous map
+$T_\beta$ sends functions on $\Y$ to functions on $\X$:
+\begin{equation}\label{eq:Tbeta}
+  \int_\Y
+  \vartheta\big(T_\beta g(x)+g(y)-c(x,y)\big)
+  \dd\beta(y)=1.
+\end{equation}
+The generalized Sinkhorn map on $\X$-potentials is
+\begin{equation}\label{eq:double}
+  S\defeq T_\beta T_\alpha.
+\end{equation}
+
+\begin{remark}[boundary cases]
+If $\Phi$ is finite only on a half-line or if $\vartheta$ has a finite plateau,
+Equation~\eqref{eq:implicit} may fail to have an interior solution.  Then the
+maximizer in \eqref{eq:Tdef} occurs at the boundary and the update becomes a
+hard $c$-transform plus the endpoint constant.  Terjek--Gonzalez-Sanchez call
+out precisely this phenomenon in the non-superlinear case \cite{terjek2022}.
+All differential contraction statements below are made on the interior region
+where \eqref{eq:implicit} is valid.
+\end{remark}
+
+\section{Order structure and variation non-expansiveness}\label{sec:order}
+
+For a bounded measurable function $h$ on a probability space, define the
+variation seminorm
+\begin{equation*}
+  \|h\|_{\mathrm{var}}
+  \defeq \osc(h)
+  \defeq \esssup h-\essinf h.
+\end{equation*}
+This is the quotient norm on $L^\infty/\R$.
+
+\begin{proposition}[order reversal and translations]\label{prop:order}
+Assume the transform $T_\alpha$ is single-valued.  Then
+\begin{align}
+  f\leq \tilde f
+  &\quad\Longrightarrow\quad
+  T_\alpha \tilde f\leq T_\alpha f,
+  \label{eq:orderreversal}\\
+  T_\alpha(f+a)&=T_\alpha f-a,
+  \qquad a\in\R.\label{eq:translation}
+\end{align}
+Consequently $S=T_\beta T_\alpha$ is order preserving and satisfies
+$S(f+a)=Sf+a$.
+\end{proposition}
+
+\begin{proof}
+The translation identity follows directly from \eqref{eq:Tdef} or
+\eqref{eq:implicit}.  For order reversal, suppose $f\leq \tilde f$.  For a fixed
+$y$, the function
+\begin{equation*}
+  \gamma\mapsto
+  \int_\X \vartheta(f(x)+\gamma-c(x,y))\dd\alpha(x)
+\end{equation*}
+is nondecreasing in both $f$ and $\gamma$.  If
+$\gamma_f=T_\alpha f(y)$ solves \eqref{eq:implicit}, then at the same value
+$\gamma_f$ the corresponding integral for $\tilde f$ is at least one.  To make
+it equal to one, the value of $\gamma$ must be no larger.  The same argument can
+be written at the level of the concave maximization problem \eqref{eq:Tdef}; in
+nonsmooth cases one uses monotonicity of the subdifferential of $\Phi$.
+\end{proof}
+
+\begin{proposition}[non-expansiveness in variation]\label{prop:nonexp}
+Let $T$ be an order-reversing map with $T(f+a)=Tf-a$.  Then
+\begin{equation}\label{eq:Tnonexp}
+  \osc(Tf-T\tilde f)\leq \osc(f-\tilde f).
+\end{equation}
+If $S$ is order preserving and $S(f+a)=Sf+a$, then
+\begin{equation}\label{eq:Snonexp}
+  \osc(Sf-S\tilde f)\leq \osc(f-\tilde f).
+\end{equation}
+In particular, the generalized double transform is non-expansive in
+$L^\infty/\R$ whenever the transforms are single-valued.
+\end{proposition}
+
+\begin{proof}
+Let
+\begin{equation*}
+  m\defeq \essinf(f-\tilde f),
+  \qquad
+  M\defeq \esssup(f-\tilde f).
+\end{equation*}
+Then $\tilde f+m\leq f\leq \tilde f+M$.  Applying an order-reversing $T$ and
+using translation covariance gives
+\begin{equation*}
+  T\tilde f-M\leq Tf\leq T\tilde f-m.
+\end{equation*}
+Therefore $Tf-T\tilde f\in[-M,-m]$ a.e., proving \eqref{eq:Tnonexp}.  The
+order-preserving case is identical, with
+$S\tilde f+m\leq Sf\leq S\tilde f+M$.
+\end{proof}
+
+\begin{remark}
+This argument gives non-expansiveness only.  It contains no mechanism forcing a
+strict improvement of the oscillation.  Strictness depends on how much averaging
+is performed by the transform.  The next section identifies the averaging
+kernel.
+\end{remark}
+
+\section{Derivative kernels and Dobrushin contraction}\label{sec:derivative}
+
+\subsection{Derivative of a generalized transform}
+
+Assume for this section that the update is interior, that $\Phi\in C^2$ on the
+range of all quantities involved, and that
+\begin{equation*}
+  \int_\X \Phi''\big(f(x)+T_\alpha f(y)-c(x,y)\big)\dd\alpha(x)>0
+\end{equation*}
+for every $y$.  Put
+\begin{equation}\label{eq:zy}
+  z_y^f(x)
+  \defeq f(x)+T_\alpha f(y)-c(x,y).
+\end{equation}
+
+\begin{proposition}[linearization]\label{prop:derivative}
+The Frechet derivative of $T_\alpha$ at $f$ is
+\begin{equation}\label{eq:derivative}
+  D T_\alpha(f)[h](y)
+  =-
+  \int_\X h(x)\,P_y^f(\dd x),
+\end{equation}
+where $P_y^f$ is the probability measure
+\begin{equation}\label{eq:curvaturekernel}
+  P_y^f(\dd x)
+  =p_y^f(x)\alpha(\dd x),
+  \qquad
+  p_y^f(x)
+  =
+  \frac{\Phi''(z_y^f(x))}
+       {\int_\X \Phi''(z_y^f(x'))\dd\alpha(x')}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Differentiate the identity
+\begin{equation*}
+  \int_\X \Phi'\big(f(x)+T_\alpha f(y)-c(x,y)\big)\dd\alpha(x)=1
+\end{equation*}
+in the direction $h$.  This gives
+\begin{equation*}
+  \int_\X \Phi''(z_y^f(x))
+  \big(h(x)+D T_\alpha(f)[h](y)\big)\dd\alpha(x)=0,
+\end{equation*}
+which is exactly \eqref{eq:derivative}.
+\end{proof}
+
+Thus the derivative of $T_\alpha$ is the negative of a Markov averaging
+operator.  The minus sign is harmless for oscillations.
+
+\subsection{Dobrushin coefficient}
+
+For a Markov kernel $P=(P_y)_{y\in\Y}$ from $\Y$ to $\X$, define its Dobrushin
+coefficient
+\begin{equation}\label{eq:dobrushin}
+  \delta(P)
+  \defeq
+  \sup_{y,y'} \|P_y-P_{y'}\|_{\TV}
+  =1-\inf_{y,y'}\int_\X \min(p_y,p_{y'})\dd\alpha,
+\end{equation}
+whenever $P_y=p_y\alpha$.  Here
+$\|\mu-\nu\|_{\TV}=\sup_A|\mu(A)-\nu(A)|=\frac12\int |p-q|\dd\alpha$.
+The standard Dobrushin estimate says
+\begin{equation}\label{eq:dobrushin-est}
+  \osc\left(y\mapsto \int h\dd P_y\right)
+  \leq \delta(P)\,\osc(h).
+\end{equation}
+
+Combining this estimate with Proposition~\ref{prop:derivative} gives the
+infinitesimal contraction factor of the generalized transform.
+
+\begin{corollary}[local variation contraction]\label{cor:local}
+At an interior smooth point $f$,
+\begin{equation}\label{eq:localfactor}
+  \osc(DT_\alpha(f)[h])
+  \leq \delta(P^f)\,\osc(h),
+\end{equation}
+where $P^f$ is the curvature kernel \eqref{eq:curvaturekernel}.  In particular,
+$T_\alpha$ is strictly contracting at $f$ only if the family
+$(P_y^f)_{y\in\Y}$ has nontrivial overlap:
+\begin{equation}\label{eq:overlap}
+  \lambda(f)
+  \defeq
+  \inf_{y,y'}\int_\X \min(p_y^f,p_{y'}^f)\dd\alpha>0.
+\end{equation}
+The corresponding infinitesimal factor is at most $1-\lambda(f)$.
+\end{corollary}
+
+\subsection{A nonlinear contraction criterion}
+
+The previous statement is infinitesimal.  A uniform estimate along line
+segments gives a genuine Lipschitz contraction.
+
+\begin{theorem}[Dobrushin criterion for the generalized transform]\label{thm:dobrushin}
+Let $\mathcal{U}$ be a convex class of potentials on $\X$ such that
+$T_\alpha$ is interior and $C^1$ on $\mathcal{U}$.  Assume that
+\begin{equation}\label{eq:uniform-dob}
+  \delta(P^f)\leq \kappa_X<1,
+  \qquad f\in\mathcal{U}.
+\end{equation}
+Then
+\begin{equation}\label{eq:Tcontract}
+  \osc(T_\alpha f-T_\alpha \tilde f)
+  \leq \kappa_X\,\osc(f-\tilde f),
+  \qquad f,\tilde f\in\mathcal{U}.
+\end{equation}
+If, similarly, along the corresponding $\Y$-potentials one has
+\begin{equation*}
+  \delta(Q^g)\leq \kappa_Y<1
+\end{equation*}
+for the derivative kernels of $T_\beta$, then the double transform satisfies
+\begin{equation}\label{eq:Scontract}
+  \osc(Sf-S\tilde f)
+  \leq \kappa_X\kappa_Y\,\osc(f-\tilde f).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For $f_t=(1-t)f+t\tilde f$,
+\begin{equation*}
+  T_\alpha\tilde f-T_\alpha f
+  =\int_0^1 DT_\alpha(f_t)[\tilde f-f]\dd t.
+\end{equation*}
+Using \eqref{eq:localfactor} and \eqref{eq:uniform-dob} yields
+\eqref{eq:Tcontract}.  The estimate for $S=T_\beta T_\alpha$ follows by applying
+the one-block estimate twice.
+\end{proof}
+
+\subsection{Uniform curvature strip}
+
+The Dobrushin overlap condition is conceptually exact but may be hard to check.
+A crude, useful sufficient condition is uniform curvature on a strip.
+
+\begin{corollary}[curvature strip implies contraction]\label{cor:strip}
+Assume that for every potential under consideration and every $x,y$,
+\begin{equation}\label{eq:strip}
+  z_y^f(x)=f(x)+T_\alpha f(y)-c(x,y)\in I,
+\end{equation}
+where $I\subset\R$ is an interval on which
+\begin{equation}\label{eq:muL}
+  0<\mu_I\defeq\inf_{s\in I}\Phi''(s)
+  \leq
+  L_I\defeq\sup_{s\in I}\Phi''(s)<\infty.
+\end{equation}
+Then
+\begin{equation}\label{eq:stripfactor}
+  \osc(T_\alpha f-T_\alpha\tilde f)
+  \leq
+  \left(1-\frac{\mu_I}{L_I}\right)
+  \osc(f-\tilde f)
+\end{equation}
+provided the same strip condition holds along the segment between $f$ and
+$\tilde f$.
+\end{corollary}
+
+\begin{proof}
+For each $y$,
+\begin{equation*}
+  \int_\X \Phi''(z_y^f(x))\dd\alpha(x)\leq L_I,
+\end{equation*}
+while $\Phi''(z_y^f(x))\geq \mu_I$.  Hence the density
+$p_y^f$ in \eqref{eq:curvaturekernel} satisfies
+$p_y^f(x)\geq \mu_I/L_I$ for $\alpha$-a.e. $x$.  Therefore
+\begin{equation*}
+  \int \min(p_y^f,p_{y'}^f)\dd\alpha\geq \mu_I/L_I,
+\end{equation*}
+and Theorem~\ref{thm:dobrushin} applies.
+\end{proof}
+
+\begin{remark}[the strip estimate is not sharp]
+For KL, $\Phi''(s)=\eps^{-1}e^{s/\eps}$.  On a strip of width $R$ one gets the
+rough factor $1-e^{-R/\eps}$.  Hilbert-metric estimates exploit the special
+multiplicative structure of the exponential and typically produce sharper or
+more intrinsic constants.  For a general $\phi$, however, the curvature-kernel
+criterion is the natural replacement.
+\end{remark}
+
+\section{What is special about KL?}\label{sec:kl}
+
+For KL,
+\begin{equation*}
+  \vartheta(s)=e^{s/\eps}.
+\end{equation*}
+The optimal density associated with dual potentials is
+\begin{equation}\label{eq:KLdensity}
+  \rho(x,y)
+  =e^{(f(x)+g(y)-c(x,y))/\eps}
+  =a(x)K(x,y)b(y),
+\end{equation}
+where
+\begin{equation*}
+  a(x)=e^{f(x)/\eps},\qquad
+  b(y)=e^{g(y)/\eps},\qquad
+  K(x,y)=e^{-c(x,y)/\eps}.
+\end{equation*}
+Sinkhorn updates are therefore positive linear kernel operations followed by
+diagonal rescalings.  Hilbert's projective metric is built precisely to study
+positive homogeneous maps on cones.  If $K$ is bounded above and below on a
+compact domain, Birkhoff--Hopf gives strict projective contraction.  Recent work
+extends this strategy for KL by changing the cone and allowing controlled decay
+of $K$ in unbounded settings \cite{eckstein2025}.
+
+For a general divergence,
+\begin{equation}\label{eq:general-density}
+  \rho(x,y)=\vartheta(f(x)+g(y)-c(x,y)).
+\end{equation}
+There is no factorization of the form $a(x)K(x,y)b(y)$ unless
+$\vartheta$ is exponential.  Indeed, a positive function satisfying
+$\vartheta(r+s)=A(r)B(s)$, under minimal regularity, is exponential up to
+constants.  Thus the direct Hilbert-metric proof is a KL-specific argument.
+
+The derivative formula shows what remains.  Even though the nonlinear map is no
+longer a projective positive linear map, its linearization is still a Markov
+averaging operator, now with weights proportional to $\Phi''$.  Consequently:
+\begin{equation*}
+  \text{KL Hilbert positivity}
+  \quad\leadsto\quad
+  \text{uniform overlap of curvature kernels for general }\phi.
+\end{equation*}
+This is the main structural replacement.
+
+\section{Carlier-style extension through strong convexity}\label{sec:carlier}
+
+Carlier's proof of linear convergence for entropic multi-marginal Sinkhorn is
+based on three ingredients: bounded Sinkhorn iterates, strong convexity of the
+exponential on the bounded range reached by the iterates, and a standard
+cyclic-coordinate-descent comparison \cite{carlier2022}.  This mechanism is not
+specific to the exponential.  It extends to any $\Phi$ satisfying uniform
+strong convexity and smoothness on the relevant range.
+
+\subsection{Multi-marginal dual functional}
+
+Let $(\X_i,m_i)$, $i=1,\ldots,N$, be probability spaces and let
+$m=m_1\otimes\cdots\otimes m_N$.  Write
+$x=(x_1,\ldots,x_N)$ and let $c:\prod_i\X_i\to\R$.  For potentials
+$u=(u_1,\ldots,u_N)$, define
+\begin{equation}\label{eq:multiF}
+  F(u)
+  \defeq
+  \int_{\prod_i\X_i}
+  \Phi\left(\sum_{i=1}^N u_i(x_i)-c(x)\right)
+  \dd m(x)
+  -
+  \sum_{i=1}^N\int_{\X_i} u_i\dd m_i.
+\end{equation}
+Maximizing the dual is equivalent to minimizing $F$.  The functional is
+invariant under adding constants $a_i$ to the blocks whenever
+$\sum_i a_i=0$, so one works on a gauge-fixed affine space, for example
+\begin{equation*}
+  E=\left\{u:\int u_i\dd m_i=0\text{ for }i=1,
+  \ldots,N-1\right\}.
+\end{equation*}
+Cyclic generalized Sinkhorn is exact block minimization of $F$ over
+$u_1,u_2,\ldots,u_N$, repeated.
+
+The block optimality condition for the $i$-th update is
+\begin{equation}\label{eq:blockcondition}
+  \int_{\prod_{j\ne i}\X_j}
+  \vartheta\left(
+  u_i(x_i)+\sum_{j\ne i}u_j(x_j)-c(x)
+  \right)
+  \dd m_{-i}(x_{-i})=1
+\end{equation}
+for $m_i$-a.e. $x_i$, with the other blocks fixed.  For $N=2$ this is exactly
+\eqref{eq:implicit} or \eqref{eq:Tbeta}.
+
+\subsection{The two scalar inequalities that replace KL}
+
+Let $I\subset\R$ be an interval and suppose
+\begin{equation}\label{eq:scalar-mu-L}
+  0<\mu_I\leq \Phi''(s)\leq L_I<\infty,
+  \qquad s\in I.
+\end{equation}
+Then for all $a,b\in I$,
+\begin{align}
+  \Phi(b)-\Phi(a)-\Phi'(a)(b-a)
+  &\geq \frac{\mu_I}{2}(b-a)^2,\label{eq:strongPhi}\\
+  |\Phi'(b)-\Phi'(a)|
+  &\leq L_I|b-a|.\label{eq:smoothPhi}
+\end{align}
+In Carlier's KL proof these are used with $\Phi(s)=e^s$ on a bounded interval:
+\begin{equation*}
+  e^b-e^a-e^a(b-a)\geq \frac{e^{-M}}{2}(b-a)^2,
+  \qquad
+  |e^b-e^a|\leq e^M|b-a|,
+  \qquad a,b\in[-M,M].
+\end{equation*}
+Thus \eqref{eq:strongPhi}--\eqref{eq:smoothPhi} are the only replacements
+needed at the scalar level.
+
+\subsection{A reusable sufficient theorem}
+
+The following theorem is deliberately stated as a sufficient criterion, not as
+an optimal convergence theorem.  Its purpose is to isolate what must be checked
+for a given divergence and a given class of costs.
+
+\begin{theorem}[Carlier-type linear convergence for general $\phi$]\label{thm:carlier-general}
+Consider the functional $F$ in \eqref{eq:multiF} on a gauge-fixed space $E$.
+Assume:
+\begin{enumerate}[label=(A\arabic*)]
+  \item \label{A1} The cyclic block minimizers are well-defined and remain in an
+  interior region.
+  \item \label{A2} There exists an interval $I$ such that, for every iterate
+  $u^t$, every intermediate Gauss--Seidel state in the cycle, and an optimal
+  potential $u^\star$,
+  \begin{equation}\label{eq:iterates-strip}
+    \sum_{i=1}^N u_i(x_i)-c(x)\in I
+  \end{equation}
+  for $m$-a.e. $x$.
+  \item \label{A3} On $I$, $\Phi$ satisfies
+  $0<\mu_I\leq \Phi''\leq L_I<\infty$.
+  \item \label{A4} On the chosen gauge $E$, the minimizer $u^\star$ is unique.
+\end{enumerate}
+Then the generalized Sinkhorn/Gauss--Seidel iterates converge to $u^\star$ in
+$L^2$ block norm, and the objective values converge linearly.  More precisely,
+one obtains a non-optimized estimate of the form
+\begin{equation}\label{eq:generic-rate}
+  F(u^t)-F(u^\star)
+  \leq
+  \left(1-\frac{1}{N}\left(\frac{\mu_I}{L_I}\right)^2\right)^t
+  \big(F(u^0)-F(u^\star)\big),
+\end{equation}
+up to harmless changes of the numerical constant depending on the precise gauge
+and block norm convention.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Let $u^{t,i}$ be the intermediate state after blocks $1,\ldots,i$ have been
+updated during cycle $t$, with $u^{t,0}=u^t$ and $u^{t,N}=u^{t+1}$.  Since block
+$i$ is exactly minimized, the first variation in that block vanishes at
+$u^{t,i}$.  Applying \eqref{eq:strongPhi} to the change from $u^{t,i-1}$ to
+$u^{t,i}$ and summing over the blocks yields the sufficient-decrease estimate
+\begin{equation}\label{eq:suff-dec}
+  F(u^t)-F(u^{t+1})
+  \geq
+  \frac{\mu_I}{2}
+  \sum_{i=1}^N
+  \|u_i^{t+1}-u_i^t\|_{L^2(m_i)}^2 .
+\end{equation}
+This is the direct analogue of Carlier's Lemma 3.2.
+
+To compare the current gap with the step size, use convexity at $u^t$ and insert
+intermediate states $u^{t,i}$ for which the block gradients vanish.  The
+difference between the gradient at $u^t$ and the gradient at $u^{t,i}$ is
+controlled by \eqref{eq:smoothPhi}; Young's inequality and
+\eqref{eq:strongPhi} give an estimate of the type
+\begin{equation}\label{eq:gap-step}
+  F(u^t)-F(u^\star)
+  \leq
+  \frac{N L_I^2}{2\mu_I}
+  \sum_{i=1}^N
+  \|u_i^{t+1}-u_i^t\|_{L^2(m_i)}^2 .
+\end{equation}
+Combining \eqref{eq:suff-dec} and \eqref{eq:gap-step} gives
+\begin{equation*}
+  F(u^t)-F(u^{t+1})
+  \geq
+  \frac{1}{N}\left(\frac{\mu_I}{L_I}\right)^2
+  \big(F(u^t)-F(u^\star)\big),
+\end{equation*}
+which is \eqref{eq:generic-rate}.  The $L^2$ convergence follows from summing
+\eqref{eq:suff-dec}, compactness or weak compactness of bounded iterates, and
+uniqueness on the gauge-fixed quotient, as in the KL proof.
+\end{proof}
+
+\subsection{How to obtain the strip}
+
+For bounded costs and normalized $\vartheta(0)=1$, the transform itself gives
+useful oscillation estimates.  Fix $y$ and write
+$a_y(x)=f(x)-c(x,y)$.  Equation~\eqref{eq:implicit} is
+\begin{equation*}
+  \int \vartheta(a_y(x)+\gamma)\dd\alpha(x)=1.
+\end{equation*}
+Since $\vartheta$ is increasing and $\vartheta(0)=1$, the solution satisfies
+\begin{equation}\label{eq:gamma-range}
+  -\esssup_x a_y(x)
+  \leq \gamma
+  \leq
+  -\essinf_x a_y(x).
+\end{equation}
+Equivalently,
+\begin{equation}\label{eq:zrange}
+  z_y^f(x)=a_y(x)+\gamma
+  \in
+  [-\osc(a_y),\osc(a_y)]
+  \quad \text{a.e.}
+\end{equation}
+Moreover, comparing two points $y,y'$ gives
+\begin{equation}\label{eq:Lip-cost}
+  |T_\alpha f(y)-T_\alpha f(y')|
+  \leq
+  \esssup_x |c(x,y)-c(x,y')|.
+\end{equation}
+Thus after one block update the oscillation of the updated potential is
+controlled by the oscillation of the cost, independently of the incoming
+potential.  In bounded-cost settings this usually gives bounded potentials
+after fixing a gauge, hence a bounded interval containing the values of
+$\sum_i u_i-c$.
+
+This bounded interval is not yet enough: it must lie in a region where
+$\Phi''$ is bounded above and below.  KL satisfies this on every bounded
+interval.  Many other divergences satisfy it only in a proper interior region.
+For sparse regularizers, the lower bound may fail because $\Phi''$ vanishes on
+inactive parts of the domain.
+
+\section{A counterexample: chi-square can have contraction factor one}\label{sec:counterexample}
+
+The obstruction is not merely technical.  Some $\phi$-divergences generate
+sparse couplings, and sparse active sets can destroy strict contraction.
+
+Consider
+\begin{equation*}
+  \phi(r)=\frac12(r-1)^2,
+  \qquad r\geq 0.
+\end{equation*}
+Then
+\begin{equation*}
+  \phi_+^*(t)=
+  \begin{cases}
+  t+\frac12t^2, & t\geq -1,\\
+  -\frac12, & t<-1,
+  \end{cases}
+  \qquad
+  \vartheta(s)=\Phi'(s)=\left(1+\frac{s}{\eps}\right)_+,
+\end{equation*}
+so
+\begin{equation*}
+  \Phi''(s)=\frac1\eps\one_{\{s>-\eps\}}
+\end{equation*}
+away from the kink.  The curvature kernel is uniform on the active set
+$\{s>-\eps\}$ and zero outside it.
+
+Let
+\begin{equation*}
+  \X=\Y=\{1,2\},
+  \qquad
+  \alpha=\beta=\left(\frac12,\frac12\right),
+\end{equation*}
+and choose the cost matrix
+\begin{equation}\label{eq:chicost}
+  c=
+  \begin{pmatrix}
+  0 & L\\
+  L & 0
+  \end{pmatrix},
+  \qquad L>2\eps.
+\end{equation}
+Start from $f=(0,0)$.  For $y=1$, the update $g_1=T_\alpha f(1)$ solves
+\begin{equation*}
+  \frac12\left(1+\frac{g_1}{\eps}\right)_+
+  +
+  \frac12\left(1+\frac{g_1-L}{\eps}\right)_+
+  =1.
+\end{equation*}
+Because $L>2\eps$, the solution is $g_1=\eps$, and only $x=1$ is active.
+Similarly $g_2=\eps$, and only $x=2$ is active.  Hence the derivative kernels
+are
+\begin{equation*}
+  P_1=\delta_1,
+  \qquad
+  P_2=\delta_2.
+\end{equation*}
+By Proposition~\ref{prop:derivative},
+\begin{equation*}
+  DT_\alpha(0)[h]=(-h_1,-h_2).
+\end{equation*}
+Applying the second block update gives the same derivative structure, hence
+\begin{equation*}
+  D(T_\beta T_\alpha)(0)=\id.
+\end{equation*}
+The local contraction factor of the double transform in variation seminorm is
+therefore exactly one.
+
+\begin{remark}
+This example shows that strict contraction cannot be true for arbitrary
+$\phi$-divergences without an overlap/interiority assumption.  It also explains
+the mechanism: different target points see disjoint active source sets, so the
+Markov kernels $P_y$ have zero common mass.
+\end{remark}
+
+\section{Noncompact and weighted extensions}\label{sec:noncompact}
+
+The compact bounded-cost theory obtains strict contraction from a uniform
+minorization: all derivative kernels share a fixed amount of mass.  On
+noncompact spaces with unbounded costs, this is usually false globally.  There
+are two natural ways to proceed.
+
+\subsection{Weighted variation and Harris-type estimates}
+
+Replace the oscillation seminorm by a weighted quotient seminorm, for example
+\begin{equation}\label{eq:weightedosc}
+  \|h\|_{V,\mathrm{var}}
+  \defeq
+  \inf_{a\in\R}
+  \left\|\frac{h-a}{V}\right\|_\infty,
+  \qquad V\geq 1.
+\end{equation}
+The derivative kernels $P_y^f$ then need not satisfy a global Doeblin
+condition.  It is enough to prove a Harris-type combination of
+\begin{enumerate}[label=(\roman*)]
+  \item a minorization on a large set where the cost is controlled and
+  $\Phi''$ is bounded away from zero;
+  \item a drift estimate showing that $P_y^f$ does not place too much mass in
+  the tails relative to $V$;
+  \item a priori weighted bounds for the potentials and for
+  $f\oplus g-c$.
+\end{enumerate}
+This is the natural general-$\phi$ analogue of the way KL Hilbert-metric
+arguments have been adapted to unbounded kernels by modifying the cone and
+controlling tail growth \cite{eckstein2025}.  The difference is that the kernel
+to control is not the Gibbs kernel $e^{-c/\eps}$ itself, but the curvature
+kernel $\Phi''(f\oplus g-c)$ normalized in each fiber.
+
+\subsection{Weighted Carlier estimates}
+
+The Carlier route asks for a different set of estimates.  One needs weighted
+versions of
+\begin{equation*}
+  \mu_I\leq \Phi''\leq L_I
+\end{equation*}
+not necessarily on a bounded interval, but on the region reached by the
+iterates.  A typical assumption would be that for some weights $V_i$,
+\begin{equation*}
+  |u_i^t(x_i)|\lesssim V_i(x_i),
+  \qquad
+  \sum_i u_i^t(x_i)-c(x)\in I(x)
+\end{equation*}
+with
+\begin{equation*}
+  0<\mu(x)\leq \Phi''(s)\leq L(x)<\infty,
+  \qquad s\in I(x),
+\end{equation*}
+and with the weighted ratios integrable enough to reproduce the two scalar
+estimates \eqref{eq:strongPhi}--\eqref{eq:smoothPhi} in a weighted $L^2$ norm.
+This is plausible for divergences whose curvature behaves regularly in the
+tails, but it is no longer automatic.  The key task is always the same:
+prevent the iterates from approaching a region where $\Phi''$ either vanishes
+or explodes too fast.
+
+\section{Checklist for extending a KL proof to a given divergence}
+
+Given a specific $\phi$, the following checklist isolates the work needed to
+obtain strict contraction or linear convergence.
+
+\begin{enumerate}[label=\textbf{Step \arabic*.},leftmargin=2.8cm]
+  \item \textbf{Dual integrand.} Compute
+  $\Phi(s)=\eps\phi_+^*(s/\eps)$, its derivative $\vartheta=\Phi'$, and its
+  curvature $\Phi''$ on the interior of its domain.
+
+  \item \textbf{Interior transform.} Show that the block equation
+  \begin{equation*}
+    \int \vartheta(f+\gamma-c)\dd\alpha=1
+  \end{equation*}
+  has a unique interior solution along the iterates.  If the solution can hit
+  the boundary, strict contraction may fail.
+
+  \item \textbf{A priori range.} Prove that $f\oplus g-c$ remains in a region
+  $I$ or in a weighted region where the curvature is controlled.
+
+  \item \textbf{Variation contraction route.} Verify a uniform overlap
+  condition for the curvature kernels
+  \begin{equation*}
+    P_y^f(\dd x)\propto \Phi''(f(x)+T_\alpha f(y)-c(x,y))\alpha(\dd x).
+  \end{equation*}
+  A sufficient condition is $0<\inf_I\Phi''\leq \sup_I\Phi''<\infty$.
+
+  \item \textbf{$L^2$ coordinate-descent route.} Verify the scalar inequalities
+  \eqref{eq:strongPhi}--\eqref{eq:smoothPhi} on the same region and reproduce
+  the sufficient-decrease and gap-to-step estimates.
+
+  \item \textbf{Gauge and compactness.} Fix the additive constants and prove
+  convergence of subsequences or compactness in the relevant topology.  Strict
+  convexity on the quotient then identifies the limit.
+\end{enumerate}
+
+\section{Conclusion}
+
+The order-theoretic part of Sinkhorn is robust.  For a broad class of
+$\phi$-divergences, the generalized transform is order reversing and
+translation covariant; the double transform is therefore non-expansive in the
+variation seminorm.  Strict contraction is a different matter.  In KL it is
+supported by the exponential factorization, which makes the algorithm a
+projective positive-kernel iteration.  General $\phi$-regularization loses this
+multiplicative structure.
+
+The replacement principle is:
+\begin{equation*}
+  \boxed{\text{strict contraction comes from overlap of the curvature kernels}}
+\end{equation*}
+with kernels proportional to $\Phi''(f\oplus g-c)$.  If the iterates stay in an
+interior strip where $0<\mu\leq \Phi''\leq L<\infty$, then the variation and
+Carlier-style $L^2$ analyses extend with constants depending on $\mu/L$.  If
+that interiority fails, sparse divergences can have disjoint active sets and
+local contraction factor one.
+
+\begin{thebibliography}{99}
+
+\bibitem{beck2013}
+A.~Beck and L.~Tetruashvili.
+\newblock On the convergence of block coordinate descent type methods.
+\newblock \emph{SIAM Journal on Optimization}, 23(4):2037--2060, 2013.
+
+\bibitem{birkhoff1957}
+G.~Birkhoff.
+\newblock Extensions of Jentzsch's theorem.
+\newblock \emph{Transactions of the American Mathematical Society},
+85(1):219--227, 1957.
+
+\bibitem{carlier2022}
+G.~Carlier.
+\newblock On the linear convergence of the multi-marginal Sinkhorn algorithm.
+\newblock \emph{SIAM Journal on Optimization}, 32(2):786--794, 2022.
+\newblock Preprint version: \url{https://mathtube.org/sites/default/files/lecture-extra-files/linear-sinkhorn.pdf}.
+
+\bibitem{cuturi2013}
+M.~Cuturi.
+\newblock Sinkhorn distances: Lightspeed computation of optimal transport.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2013.
+
+\bibitem{dimarino2020}
+S.~Di Marino and A.~Gerolin.
+\newblock Optimal transport losses and Sinkhorn algorithm with general convex regularization.
+\newblock \emph{arXiv:2007.00976}, 2020.
+
+\bibitem{dobrushin1956}
+R.~L. Dobrushin.
+\newblock Central limit theorem for nonstationary Markov chains. I, II.
+\newblock \emph{Theory of Probability and its Applications}, 1:65--80, 329--383, 1956.
+
+\bibitem{eckstein2025}
+S.~Eckstein.
+\newblock Hilbert's projective metric for functions of bounded growth and exponential convergence of Sinkhorn's algorithm.
+\newblock \emph{Probability Theory and Related Fields}, 2025.
+\newblock See also \emph{arXiv:2311.04041}.
+
+\bibitem{eveson1995}
+S.~P. Eveson and R.~D. Nussbaum.
+\newblock An elementary proof of the Birkhoff--Hopf theorem.
+\newblock \emph{Mathematical Proceedings of the Cambridge Philosophical Society}, 117(1):31--55, 1995.
+
+\bibitem{franklin1989}
+J.~Franklin and J.~Lorenz.
+\newblock On the scaling of multidimensional matrices.
+\newblock \emph{Linear Algebra and its Applications}, 114/115:717--735, 1989.
+
+\bibitem{ghosal2025}
+P.~Ghosal and M.~Nutz.
+\newblock On the convergence rate of Sinkhorn's algorithm.
+\newblock Preprint, 2025.
+\newblock \url{https://www.math.columbia.edu/~mnutz/docs/Sinkhorn_rate.pdf}.
+
+\bibitem{nutz2022}
+M.~Nutz.
+\newblock Introduction to entropic optimal transport.
+\newblock Lecture notes, 2022.
+\newblock \url{https://www.math.columbia.edu/~mnutz/docs/EOT_lecture_notes.pdf}.
+
+\bibitem{peyre2019}
+G.~Peyre and M.~Cuturi.
+\newblock Computational optimal transport.
+\newblock \emph{Foundations and Trends in Machine Learning}, 11(5--6):355--607, 2019.
+
+\bibitem{sinkhorn1967}
+R.~Sinkhorn and P.~Knopp.
+\newblock Concerning nonnegative matrices and doubly stochastic matrices.
+\newblock \emph{Pacific Journal of Mathematics}, 21(2):343--348, 1967.
+
+\bibitem{terjek2022}
+D.~Terjek and D.~Gonzalez-Sanchez.
+\newblock Optimal transport with $f$-divergence regularization and generalized Sinkhorn algorithm.
+\newblock In \emph{Proceedings of AISTATS 2022}, PMLR 151:5135--5165, 2022.
+\newblock \url{https://proceedings.mlr.press/v151/terjek22a.html}.
+
+\bibitem{villani2009}
+C.~Villani.
+\newblock \emph{Optimal Transport: Old and New}.
+\newblock Springer, 2009.
+
+\end{thebibliography}
+
+\end{document}
