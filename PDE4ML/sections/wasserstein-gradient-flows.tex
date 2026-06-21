@@ -1945,45 +1945,45 @@ The previous interaction example has a genuine value on empirical measures: once
 	This is a kinetic, inertial version of entropy diffusion: the entropy score acts as an acceleration rather than as an instantaneous velocity.
 	\end{example}
 
-For the numerical illustration, the empirical density is replaced by the Gaussian kernel estimator $\widehat\rho_h(x)=n^{-1}\sum_i K_h(x-x_i)$ with a relatively small bandwidth $h$. Its score is evaluated directly at the particle locations by the closed formula
+For the numerical illustration, we add the quadratic confinement $V(x)=\norm{x}^2/2$. In one dimension the overdamped equation becomes the Ornstein--Uhlenbeck Fokker--Planck equation
 \[
-\nabla\log\widehat\rho_h(x_i)
-=
-\frac{\sum_j \exp(-\norm{x_i-x_j}^2/(2h^2))(x_j-x_i)}{h^2\sum_j \exp(-\norm{x_i-x_j}^2/(2h^2))},
+\partial_t\rho_t=\partial_{xx}\rho_t+\partial_x(x\rho_t),
 \]
-implemented by chunked PyTorch tensor operations, rather than by differentiating a density on a grid. To keep the entropy-driven expansion in a fixed display window, the simulation adds the quadratic confinement $V_\kappa(x)=\kappa\norm{x}^2/2$, whose force is $-\kappa x$. The displayed dynamics use a small mobility factor $\tau$ only to choose a readable time scale: either the first-order closure $\dot x_i=-\tau\nabla\log\widehat\rho_h(x_i)-\kappa x_i$, or the Newton closure $\dot x_i=s_i$ and $\dot s_i=-\tau\nabla\log\widehat\rho_h(x_i)-\kappa x_i$.
-This should be read as a regularized particle discretization of the continuum equation, not as the exact heavy-ball flow of the singular empirical entropy. Figure~\ref{fig:gradflow-second-order-momentum-entropy} shows this KDE-score closure for a longer simulation initialized from a Gaussian mixture with non-identical component variances. Each row displays a trajectory panel on the left and density snapshots at increasing times on the right, all computed from the same full particle cloud.
+whose stationary law is the centered Gaussian $\mathcal N(0,1)$. The Newton lift is discretized directly in phase space: for a density $\eta_t(x,s)$ with spatial marginal $\rho_t(x)=\int\eta_t(x,s)\,\d s$, it reads
+\[
+\partial_t\eta_t+\partial_x(s\eta_t)+\partial_s\bigl((-\partial_x\log\rho_t(x)-x)\eta_t\bigr)=0.
+\]
+Both equations are solved by finite differences on fixed grids, with a mild grid smoothing only to evaluate the logarithmic derivative in the Newton row. The first row of Figure~\ref{fig:gradflow-second-order-momentum-entropy} shows only the spatial density of the Wasserstein gradient flow. The second and third rows show, for the Newton equation, respectively the spatial marginal and the full phase-space density; the latter uses white for zero mass and black for high mass.
 
 \begin{figure}[H]
 \centering
-\newcommand{\entropyclosurepanelheight}{.112\linewidth}
-\begin{tabular}{@{}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{\hspace{.006\linewidth}}c@{}}
-\small GF & \small $t=0$ & \small $t=1.05$ & \small $t=2.1$ & \small $t=3.15$ & \small $t=4.2$\\[-.25em]
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-trajectories.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t000.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t025.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t050.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t075.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/no-momentum-density-t100.pdf}\\[.25em]
-\small Newton & \small $t=0$ & \small $t=1.05$ & \small $t=2.1$ & \small $t=3.15$ & \small $t=4.2$\\[-.25em]
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-trajectories.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t000.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t025.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t050.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t075.pdf}
-&
-\includegraphics[height=\entropyclosurepanelheight]{figures/gradflow-second-order-momentum-entropy/newton-density-t100.pdf}
+\newcommand{\entropyclosurespatialheight}{.088\linewidth}
+\newcommand{\entropyclosurephaseheight}{.101\linewidth}
+\begin{tabular}{@{}r@{\hspace{.006\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{\hspace{.004\linewidth}}c@{}}
+& \small $t=0$ & \small $t=.05$ & \small $t=.12$ & \small $t=.24$ & \small $t=.4$ & \small $t=.6$\\[-.25em]
+\small GF spatial
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t00.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t01.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t02.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t03.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t04.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/gf-spatial-t05.pdf}\\[.18em]
+\small Newton spatial
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t00.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t01.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t02.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t03.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t04.pdf}
+& \includegraphics[height=\entropyclosurespatialheight]{figures/gradflow-second-order-momentum-entropy/newton-spatial-t05.pdf}\\[.18em]
+\small Newton phase
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t00.pdf}
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t01.pdf}
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t02.pdf}
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t03.pdf}
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t04.pdf}
+& \includegraphics[height=\entropyclosurephaseheight]{figures/gradflow-second-order-momentum-entropy/newton-phase-t05.pdf}
 \end{tabular}
-\caption{\emph{KDE-score particle closure for an entropy-driven inertial flow.} Shannon entropy is not finite on empirical Dirac measures, so the particle dynamics estimate the density by a Gaussian KDE and use its direct particle score $\nabla\log\widehat\rho_h$, here with an added quadratic confining force $-\kappa x$. The left panel of each row shows a farthest-point subset of particle trajectories, while the five panels on the right show density snapshots computed from all particles over the longer time interval $[0,4.2]$. The first row is the overdamped Wasserstein gradient flow; the second row is the undamped Newton law $\ddot x=-\tau\nabla\log\widehat\rho_h(x)-\kappa x$.}
+\caption{\emph{Finite-difference entropy and inertial entropy flows in one dimension.} The initial spatial density is a three-Gaussian mixture with different widths and overlapping components. The top row solves the confined entropy Wasserstein gradient flow, i.e. the OU/Fokker--Planck equation, whose stationary density is the dashed centered Gaussian. The two lower rows solve the undamped Newton lift on a grid in $(x,s)$, initialized with a narrow centered speed distribution: its spatial marginal is shown in color and the full phase-space density below in grayscale.}
 \label{fig:gradflow-second-order-momentum-entropy}
 \end{figure}
 

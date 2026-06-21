@@ -464,6 +464,67 @@ def inline_short_displays(text: str) -> str:
     return "\n".join(out)
 
 
+def polish_compact_text(text: str) -> str:
+    """Repair small artifacts caused by compacting away narrative context."""
+    replacements = {
+        (
+            r"\(\norm{\al-\be}_{\TV} = \int_\Xx |\rho_\al(x)-\rho_\be(x)|\,\d\lambda(x).\)"
+            "\n"
+            r"\(\al=\sum_{i=1}^n \tilde a_i\delta_{x_i}, \qquad \be=\sum_{j=1}^m \tilde b_j\delta_{y_j},\)"
+        ): (
+            r"\(\norm{\al-\be}_{\TV} = \int_\Xx |\rho_\al(x)-\rho_\be(x)|\,\d\lambda(x).\)"
+            "\n"
+            r"For discrete measures on the union support \(z_k\), write"
+            "\n"
+            r"\(\al=\sum_{i=1}^n \tilde a_i\delta_{x_i}, \qquad \be=\sum_{j=1}^m \tilde b_j\delta_{y_j},\)"
+        ),
+        (
+            r"Radon probability measures represent the laws of random variables. Let $(\Omega,\Ff,\PP)$ be an abstract probability space."
+            "\n\n"
+            r"\(\al(A)=\PP(\enscond{\omega\in\Omega}{X(\omega)\in A}) \qquad\text{for Borel sets } A\subset \X.\)"
+        ): (
+            r"Let $(\Omega,\Ff,\PP)$ be an abstract probability space. If \(X:\Omega\to\X\) is measurable, its law is \(\al=X_\sharp\PP\), i.e."
+            "\n"
+            r"\(\al(A)=\PP(\enscond{\omega\in\Omega}{X(\omega)\in A}) \qquad\text{for Borel sets } A\subset \X.\)"
+        ),
+        (
+            r"For some continuous map $\T: \X \rightarrow \Y$, we define the pushforward operator $\T_\sharp: \Mm(\X) \rightarrow \Mm(\Y)$."
+            "\n\n"
+            r"For a Dirac mass, one has $\T_\sharp \de_{x} = \de_{\T(x)}$, and this formula is extended to arbitrary measures by linearity. In some sense, moving from $\T$ to $\T_\sharp$ is a way to linearize any map at the price of moving from a (possibly) finite-dimensional space $\Xx$ to the infinite-dimensional space $\Mm(\Xx)$, and this idea is central to many convex relaxation methods, most notably Lasserre's relaxation."
+        ): (
+            r"For a continuous map $\T: \X \rightarrow \Y$, the push-forward operator is $\T_\sharp: \Mm(\X) \rightarrow \Mm(\Y)$."
+            "\n\n"
+            r"For a Dirac mass, $\T_\sharp \de_x=\de_{\T(x)}$, and the formula extends to arbitrary measures by linearity."
+        ),
+        (
+            r"\int_\Yy h(y)\rho_\be(y) \d y &= \int_\Yy h(y) \d \be(y) = \int_\Xx h(\T(x)) \d \al(x) = \int_\Xx h(\T(x)) \rho_\al(x) \d x \\"
+            "\n"
+            r"&= \int_\Yy h(y) \rho_\al(\T^{-1}y) \frac{\d y}{|\det(\T'(\T^{-1} y))|},"
+        ): (
+            r"\int_\Yy h(y)\rho_\be(y) \d y"
+            "\n"
+            r"&= \int_\Xx h(\T(x)) \rho_\al(x) \d x \\"
+            "\n"
+            r"&= \int_\Yy h(y) \rho_\al(\T^{-1}y) \frac{\d y}{|\det(\T'(\T^{-1} y))|},"
+        ),
+        (
+            r"Define the Bregman-regularized value, using the same product reference as the density-ratio penalty, \(\MK_{\c,\Phi}^{\epsilon}(\alpha,\beta) \eqdef \inf_{\pi\in\Couplings(\alpha,\beta)} \int c\,\d\pi+\epsilon B_\Phi(\pi|\xi).\)"
+        ): (
+            r"Set"
+            "\n"
+            r"\(\MK_{\c,\Phi}^{\epsilon}(\alpha,\beta) \eqdef \inf_{\pi\in\Couplings(\alpha,\beta)} \int c\,\d\pi+\epsilon B_\Phi(\pi|\xi).\)"
+        ),
+        (
+            r"The logarithmic Sobolev assumption below is the same curvature-controlled mechanism as in the HWI discussion. With the convention used here, the standard Gaussian $\gamma=\mathcal N(0,\Id)$ satisfies it with $\lambda=1$, exactly as in Proposition~\ref{prop-gaussian-log-sobolev-ot}."
+        ): (
+            r"For the standard Gaussian $\gamma=\mathcal N(0,\Id)$, Proposition~\ref{prop-gaussian-log-sobolev-ot} gives $\lambda=1$."
+        ),
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
 def brace_delta(line: str) -> int:
     # Counts braces well enough for custom \eq{...} blocks after comments have
     # been stripped. Escaped braces are rare in these sources and harmless here.
@@ -640,6 +701,7 @@ def compact_section(path: Path) -> str:
     text = re.sub(r"(\\qifq[^\n]*),(\s*\\\\)", r"\1\2", text)
     text = re.sub(r"(\\qifq[^\n]*),\n(\})", r"\1\n\2", text)
     text = inline_short_displays(text)
+    text = polish_compact_text(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text
 
