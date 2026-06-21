@@ -929,8 +929,8 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-second-order-momentum-entropy.ipynb"><img src="thumbnails/gradflow-second-order-momentum-entropy.png" alt="Entropy-driven inertial KDE-score flow" width="210"></a><br>
-  <strong>Entropy-driven inertial KDE-score flow</strong><br>
+  <a href="gradflow-second-order-momentum-entropy.ipynb"><img src="thumbnails/gradflow-second-order-momentum-entropy.png" alt="Finite-difference inertial entropy flow" width="210"></a><br>
+  <strong>Finite-difference inertial entropy flow</strong><br>
   <a href="gradflow-second-order-momentum-entropy.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-second-order-momentum-entropy.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
