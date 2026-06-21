@@ -1,0 +1,112 @@
+- Reworked Figure 7.13 Hopf-Cole numerics to run longer and show clearer viscous Hamilton-Jacobi/Burgers dynamics.
+- Split the former Hopf-Cole composite into separate soft Legendre biconjugate and Burgers dynamics figures.
+- Improved soft Legendre biconjugate examples with more informative nonconvex functions.
+- Rewrote the soft Hopf-Lax/Hopf-Cole paragraph using epsilon-only notation and c-transform language.
+- Added the Gaussian-convolution formula for the soft Legendre transform with proof.
+- Added fast approximate Legendre-transform discussion with FFT/separability remarks and citations.
+- Corrected the Hopf-Cole PDE interpretation and epsilon notation.
+- Improved the geodesics-in-heat figure using a nonconvex curve and many source points.
+- Improved the multimarginal Coulomb figure with glued marginals and asymmetric mixture marginals.
+- Redid Figure 2.4 as a disk-to-nonconvex connected shape McCann interpolation with colored splatting.
+- Polished the Figure 2.4 notebook, rendering, PDFs, and caption.
+- Added 1D optimal quantization discussion comparing inverse-CDF quantization with iid sampling.
+- Added W2 quantization error decay comparison for deterministic quantiles versus random samples.
+- Added a continuous Lloyd-flow paragraph and gradient-flow interpretation for quantization.
+- Added Lloyd-flow numerical figure with mixture evolution and quantization-energy decay.
+- Polished Lloyd-flow mathematics, wording, code, and display.
+- Added L2 attention and mean-shift paragraph in the transformer mean-field section.
+- Linked Gaussian drifting generative models to mean-shift-type dynamics.
+- Added mean-shift PDE figure with trajectories and density snapshots.
+- Polished the mean-shift figure and accompanying text.
+- Added a Complex epsilon Sinkhorn section.
+- Wrote complex Sinkhorn fixed-point equations for general measures and discrete histograms.
+- Added holomorphic-continuation theorem statement credited to Guillaume Carlier.
+- Added Gaussian example for complex Sinkhorn fixed points.
+- Added complex Sinkhorn figure showing real and imaginary dual potentials as epsilon varies.
+- Polished and checked the complex Sinkhorn mathematics and figure.
+- Added Birkhoff-von Neumann proof illustration with matrix, support graph, and minimal cycle.
+- Polished the Birkhoff-von Neumann figure and proof placement.
+- Added Jacobian determinant density-pushforward figure with deformed grid and density levels.
+- Polished the density-pushforward figure and caption.
+- Added polar factorization figure showing relabeling plus Brenier stretch.
+- Polished the polar factorization figure and caption.
+- Added Wasserstein DRO ambiguity-set figure.
+- Polished the Wasserstein DRO figure and its explanatory caption.
+- Added complementary-slackness contact figure for 1D dual potentials and transported pairs.
+- Polished the complementary-slackness contact figure.
+- Added semi-discrete weight-gradient Laguerre-cell figure.
+- Polished the semi-discrete Laguerre-cell figure.
+- Added soft c-transform paragraph for general phi-divergence regularizers.
+- Added phi-divergence soft concave-transform figure comparing three regularizers.
+- Polished the phi-divergence figure and text.
+- Extended monotone Sinkhorn convergence arguments to general convex regularizers.
+- Added proof of monotonicity for double soft c-transforms under general phi-divergences.
+- Added variation-seminorm non-expansiveness remark via topical maps.
+- Added discussion that contraction for non-KL regularizers remains open.
+- Added an M-functions section for monotone non-variational fixed-point systems.
+- Synced M-function notation with the Sinkhorn scaling/dual-variable notation.
+- Added M-function monotone convergence theorem and M-matrix certificate.
+- Added lossy Sinkhorn as a concrete OT-inspired non-variational example.
+- Added and polished M-function numerical figure with two 2D Gaussian-mixture examples.
+- Improved M-function figure samples, centered log-scalings, effective-plan links, and stacked layout.
+- Performed global polish/check passes on recent mathematics, writing, figures, and notebooks.
+- Restored remark and example environments to body-size font.
+- Iterated through corrections.md updates and applied requested paper corrections.
+- Updated the MyST interactive book to track the current manuscript.
+- Added or refreshed interactive MyST material for recent content and figures.
+- Updated MNIST figure rendering to show background white and ink black while preserving mass convention.
+- Added 1D linear OT PCA figure using quantile-function embeddings.
+- Renamed Continuous Epsilon-Sinkhorn Flow to Continuous epsilon-Sinkhorn Flow in the manuscript.
+- Clarified deterministic versus stochastic interpolants in the flow-matching section.
+- Added remark on noisy stochastic interpolants in the stochastic-interpolant sense.
+- Added capacity-constrained OT subsection with continuous and discrete formulations.
+- Added entropic capacity-constrained solver and KL-Dykstra/Sinkhorn-type algorithm.
+- Added capacity-constrained 1D figure with decreasing capacity.
+- Added capacity-constrained 2D local self-coupling figure.
+- Adjusted 2D capacity constraints to impose 1, 3, and 5 connections per point.
+- Polished capacity-constrained OT mathematics, code, figures, and captions.
+- Moved Continuous epsilon-Sinkhorn Flow before Sample Complexity.
+- Added Gaussian special case discussion for continuous epsilon-Sinkhorn flow.
+- Added Marginal-Dependent Problems subsection before Other Convex Regularizers.
+- Developed dual ascent and KL-prox formulas for marginal-dependent entropic problems.
+- Added balanced OT, unbalanced OT, JKO, and constraint examples for marginal-dependent problems.
+- Renamed marginal-dependent energies from lowercase f,g to uppercase F,G.
+- Added quotient Wasserstein and Wasserstein-Procrustes section.
+- Added group-action quotient distance definition and rigid-registration motivation.
+- Added alternating Wasserstein-Procrustes algorithm and closed-form rigid update.
+- Added proposition relating Wasserstein-Procrustes and Gromov-Wasserstein.
+- Added pointer from Procrustes to the Gromov-Wasserstein section.
+- Added and polished Wasserstein-Procrustes bunny alignment figure.
+- Adjusted Procrustes figure to use stronger translation, smaller rotation, and iterations 1,2,3,5,10.
+- Moved Heat Kernels and Hopf-Cole Transforms before Other Convex Regularizers.
+- Reorganized dynamic OT so Extensions of the dynamic formulation is an independent subsection.
+- Turned path-space and generalized Benamou-Brenier remarks into prose paragraphs.
+- Added functional inequalities via OT section at the end of the gradient-flow chapter.
+- Added representative geometric and functional inequality propositions with proofs.
+- Added numerical illustrations for geometric/functional inequalities.
+- Polished the functional-inequality mathematics and figures.
+- Added moment-measures section with Cordero-Erausquin--Klartag and Santambrogio variational references.
+- Explained moment-measure hidden convexity, existence, and conjugate moment measures.
+- Added and polished a moment-measure numerical illustration.
+- Added partial OT paragraph before reverse/homogeneous unbalanced formulations.
+- Related TV-penalized unbalanced OT to fixed-mass partial OT.
+- Added proposition linking penalized and fixed-mass partial OT by a Lagrange multiplier.
+- Added distance discussion for partial OT when applicable.
+- Added partial OT 1D figure with prescribed transported mass.
+- Added partial OT 2D cat-to-annulus figure with active/inactive transported points.
+- Moved early unbalanced OT figures nearer the penalized marginal formulation and commented them in text.
+- Adjusted partial OT figures: ring placed right of cat, and 1D mixtures shifted left/right.
+- Added finite-state Wasserstein geometries on Markov chains to the dynamic OT chapter.
+- Explained Mass/Mielke/Erbar-style discrete transport metrics and entropy gradient-flow intuition.
+- Added simplex formulas and intuition for small Markov-chain geometries.
+- Added and polished discrete Markov simplex distance figure.
+- Added examples for the logarithmic Sobolev inequality assumption.
+- Added cross-reference to earlier logarithmic Sobolev discussion.
+- Enlarged the dataset used for the 1D linear OT PCA figure.
+- Centered the MNIST Sinkhorn barycenter label vertically.
+- Synced and polished the manuscript index after the new additions.
+- Added many missing technical index entries while keeping index hygiene.
+- Simplified and corrected index entries across several passes.
+- Created figure-prospective.md with curated future-figure ideas.
+- Added further rounds of prospective figure brainstorming with placement notes.
+- Updated associated notebooks, generated PDF panels, thumbnails, README/gallery entries, and MyST pages where relevant.

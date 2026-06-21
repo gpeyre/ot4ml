@@ -257,8 +257,8 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="kantorovich-dro-ambiguity.ipynb"><img src="thumbnails/kantorovich-dro-ambiguity.png" alt="Wasserstein DRO ambiguity set" width="210"></a><br>
-  <strong>Wasserstein DRO ambiguity set</strong><br>
+  <a href="kantorovich-dro-ambiguity.ipynb"><img src="thumbnails/kantorovich-dro-ambiguity.png" alt="Wasserstein DRO logistic boundaries" width="210"></a><br>
+  <strong>Wasserstein DRO logistic boundaries</strong><br>
   <a href="kantorovich-dro-ambiguity.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-dro-ambiguity.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -538,6 +538,12 @@ Colab from the badge. The Colab links target the `main` branch of
   <a href="sinkhorn-bias-variance-tradeoff.ipynb"><img src="thumbnails/sinkhorn-bias-variance-tradeoff.png" alt="Empirical fluctuations of regularized losses" width="210"></a><br>
   <strong>Empirical fluctuations of regularized losses</strong><br>
   <a href="sinkhorn-bias-variance-tradeoff.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-bias-variance-tradeoff.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-mfunctions-nonvariational-scaling.ipynb"><img src="thumbnails/sinkhorn-mfunctions-nonvariational-scaling.png" alt="Monotone non-variational Sinkhorn scaling" width="210"></a><br>
+  <strong>Monotone non-variational scaling</strong><br>
+  <a href="sinkhorn-mfunctions-nonvariational-scaling.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-mfunctions-nonvariational-scaling.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>

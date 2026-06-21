@@ -8,6 +8,8 @@
 <p align="center">
   <a href="https://www.gpeyre.com/ot4ml/"><strong>Project homepage</strong></a>
   &nbsp;·&nbsp;
+  <a href="PDE4ML/PDE4ML.pdf"><strong>PDE4ML survey</strong></a>
+  &nbsp;·&nbsp;
   <a href="https://www.gpeyre.com/ot4ml/myst/_build/html/index.html"><strong>Interactive book</strong></a>
   &nbsp;·&nbsp;
   <a href="https://www.gpeyre.com/ot4ml/notebooks-figures/index.html"><strong>Rendered figure gallery</strong></a>
@@ -17,9 +19,25 @@
   <a href="https://github.com/gpeyre/ot4ml"><strong>GitHub source</strong></a>
 </p>
 
-This repository gathers the OT4ML book, the executable notebooks used to
-reproduce its figures, a shorter set of teaching notebooks, and an experimental
-MyST web prototype.
+This repository gathers the OT4ML book, the PDE4ML survey, the executable
+notebooks used to reproduce the figures, a shorter set of teaching notebooks,
+and an experimental MyST web prototype.
+
+## PDE4ML Survey
+
+**[*PDEs for Machine Learning*](PDE4ML/PDE4ML.pdf)** is a long survey of PDE
+tools for machine learning, written with an optimal-transport bias. It
+reorganizes the OT4ML material most relevant to dynamic optimal transport,
+Wasserstein gradient flows, particle limits, diffusion models, flow matching,
+mean-field training, and transportation views of modern architectures.
+
+<p align="center">
+  <a href="PDE4ML/PDE4ML.pdf">
+    <img src="assets/home/snippet-pde4ml.jpg" alt="PDE4ML survey visual" width="70%">
+  </a>
+</p>
+
+Sources and build notes live in [`PDE4ML/`](PDE4ML/).
 
 ## Book
 
