@@ -7,13 +7,13 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 112
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 116
 live `latex/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
 in [`thumbnails/`](thumbnails/), and generated PDF panels in
-`../latex/figures/`. The searchable gallery currently exposes 113 figure views,
+`../latex/figures/`. The searchable gallery currently exposes 117 figure views,
 because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 115 LaTeX figure labels because
+schedule-comparison view. The book currently has 119 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet
 below is built from the same active thumbnail set.
 
@@ -833,15 +833,15 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-density-constrained-flow.ipynb"><img src="thumbnails/gradflow-density-constrained-flow.png" alt="Density-constrained gradient flow" width="210"></a><br>
-  <strong>Density-constrained gradient flow</strong><br>
-  <a href="gradflow-density-constrained-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-density-constrained-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="gradflow-heat-versus-porous-medium.ipynb"><img src="thumbnails/gradflow-heat-versus-porous-medium.png" alt="Heat flow and porous-medium powers" width="210"></a><br>
+  <strong>Heat flow and porous-medium powers</strong><br>
+  <a href="gradflow-heat-versus-porous-medium.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-heat-versus-porous-medium.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-multispecies-entropy-flow.ipynb"><img src="thumbnails/gradflow-multispecies-entropy-flow.png" alt="Multi-species entropy flow" width="210"></a><br>
-  <strong>Multi-species entropy flow</strong><br>
-  <a href="gradflow-multispecies-entropy-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-multispecies-entropy-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="gradflow-mmd-particle-count.ipynb"><img src="thumbnails/gradflow-mmd-particle-count.png" alt="Particle count for squared-MMD flow" width="210"></a><br>
+  <strong>Particle count for squared-MMD flow</strong><br>
+  <a href="gradflow-mmd-particle-count.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mmd-particle-count.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -851,15 +851,15 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-heat-versus-porous-medium.ipynb"><img src="thumbnails/gradflow-heat-versus-porous-medium.png" alt="Heat flow and porous-medium powers" width="210"></a><br>
-  <strong>Heat flow and porous-medium powers</strong><br>
-  <a href="gradflow-heat-versus-porous-medium.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-heat-versus-porous-medium.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
   <a href="gradflow-interaction-particles.ipynb"><img src="thumbnails/gradflow-interaction-particles.png" alt="Interaction-energy particle flow" width="210"></a><br>
   <strong>Interaction-energy particle flow</strong><br>
   <a href="gradflow-interaction-particles.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-interaction-particles.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-particle-objective-geometries.ipynb"><img src="thumbnails/gradflow-particle-objective-geometries.png" alt="Particle trajectories for different discrepancy geometries" width="210"></a><br>
+  <strong>Particle trajectories for different discrepancy geometries</strong><br>
+  <a href="gradflow-particle-objective-geometries.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-particle-objective-geometries.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%" align="center" valign="top">
@@ -875,21 +875,21 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="gradflow-density-constrained-flow.ipynb"><img src="thumbnails/gradflow-density-constrained-flow.png" alt="Density-constrained gradient flow" width="210"></a><br>
+  <strong>Density-constrained gradient flow</strong><br>
+  <a href="gradflow-density-constrained-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-density-constrained-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-multispecies-entropy-flow.ipynb"><img src="thumbnails/gradflow-multispecies-entropy-flow.png" alt="Multi-species entropy flow" width="210"></a><br>
+  <strong>Multi-species entropy flow</strong><br>
+  <a href="gradflow-multispecies-entropy-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-multispecies-entropy-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="gradflow-wfr-unbalanced-flow.ipynb"><img src="thumbnails/gradflow-wfr-unbalanced-flow.png" alt="Balanced and unbalanced WFR gradient flows" width="210"></a><br>
   <strong>Balanced and unbalanced WFR gradient flows</strong><br>
   <a href="gradflow-wfr-unbalanced-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-wfr-unbalanced-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
-  <a href="gradflow-mmd-particle-count.ipynb"><img src="thumbnails/gradflow-mmd-particle-count.png" alt="Particle count for squared-MMD flow" width="210"></a><br>
-  <strong>Particle count for squared-MMD flow</strong><br>
-  <a href="gradflow-mmd-particle-count.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mmd-particle-count.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
-</td>
-
-<td width="33%" align="center" valign="top">
-  <a href="gradflow-particle-objective-geometries.ipynb"><img src="thumbnails/gradflow-particle-objective-geometries.png" alt="Particle trajectories for different discrepancy geometries" width="210"></a><br>
-  <strong>Particle trajectories for different discrepancy geometries</strong><br>
-  <a href="gradflow-particle-objective-geometries.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-particle-objective-geometries.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -905,15 +905,39 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-brunn-minkowski-ot.ipynb"><img src="thumbnails/gradflow-brunn-minkowski-ot.png" alt="Brunn-Minkowski through affine optimal transport" width="210"></a><br>
+  <a href="gradflow-brunn-minkowski-ot.ipynb"><img src="thumbnails/gradflow-brunn-minkowski-ot.png" alt="Brunn-Minkowski through affine OT" width="210"></a><br>
   <strong>Brunn-Minkowski through affine OT</strong><br>
   <a href="gradflow-brunn-minkowski-ot.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-brunn-minkowski-ot.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="gradflow-hwi-entropy-decay.ipynb"><img src="thumbnails/gradflow-hwi-entropy-decay.png" alt="HWI and entropy decay along the OU flow" width="210"></a><br>
+  <a href="gradflow-hwi-entropy-decay.ipynb"><img src="thumbnails/gradflow-hwi-entropy-decay.png" alt="HWI and entropy decay" width="210"></a><br>
   <strong>HWI and entropy decay</strong><br>
   <a href="gradflow-hwi-entropy-decay.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-hwi-entropy-decay.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-second-order-momentum-mmd.ipynb"><img src="thumbnails/gradflow-second-order-momentum-mmd.png" alt="First-order and Newton MMD particle flows" width="210"></a><br>
+  <strong>First-order and Newton MMD particle flows</strong><br>
+  <a href="gradflow-second-order-momentum-mmd.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-second-order-momentum-mmd.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-second-order-momentum-entropy.ipynb"><img src="thumbnails/gradflow-second-order-momentum-entropy.png" alt="Entropy-driven inertial KDE-score flow" width="210"></a><br>
+  <strong>Entropy-driven inertial KDE-score flow</strong><br>
+  <a href="gradflow-second-order-momentum-entropy.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-second-order-momentum-entropy.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="gradflow-mlp-w2-vs-muon.ipynb"><img src="thumbnails/gradflow-mlp-w2-vs-muon.png" alt="W2 versus Muon ReLU mean-field flow" width="210"></a><br>
+  <strong>W2 versus Muon ReLU mean-field flow</strong><br>
+  <a href="gradflow-mlp-w2-vs-muon.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mlp-w2-vs-muon.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>

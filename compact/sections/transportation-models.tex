@@ -2,15 +2,13 @@
 \label{sec-generative-models-transportation}
 \subsection{Generative Models via Flow Matching}
 \paragraph{Stochastic interpolant.}
-The first construction below is deterministic once the latent variable has been sampled: the randomness is in $U\sim\pi$, while $t\mapsto P_t(U)$ is differentiable. Thus $\alpha_t$ is a push-forward curve and satisfies a continuity equation. Genuine temporal noise is a different extension; it leads to a Fokker--Planck equation, as recalled after Proposition~\ref{prop-flow-matching-vector-field}.
+The word ``stochastic'' can hide two different levels of randomness. We first use the simpler one: after drawing a latent variable $U\sim\pi$, the path $t\mapsto P_t(U)$ is deterministic and differentiable.
 
-We assume first that $\alpha_t$ is obtained by pushing a latent distribution $\pi \in \Pp(\RR^{d'})$ through a time-dependent map $P_t: \RR^{d'} \to \RR^d$, i.e.
+We assume first that $\alpha_t$ is obtained by pushing a latent distribution $\pi \in \Pp(\RR^{d'})$ through a time-dependent map $P_t: \RR^{d'} \to \RR^d$; the latent dimension $d'$ may be larger than the data dimension $d$, i.e.
 
 \begin{equation}\label{eq:interp-coupling}
 \forall t \in [0,1], \quad \alpha_t:= (P_t)_\sharp \pi.
 \end{equation}
-A common case is $d'=2d$. We write $(x,y) \in \RR^{d'} = \RR^d \times \RR^d$ and assume $P_0(x,y)=x$ and $P_1(x,y)=y$, so that $\pi$ is a probabilistic coupling between $\alpha_0$ and $\alpha_1$, i.e. $\pi$ has marginals $(\alpha_0, \alpha_1)$.
-
 If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses
 
 \(\alpha_t = \frac{1}{nm} \sum_{i,j} \delta_{P_t(x_i,y_j)}.\)
@@ -78,35 +76,6 @@ In the language of Lebesgue decomposition, the flux measure $m_t$ has only an ab
 Thus the solution of \eqref{eq:flow-matching} is the conditional expectation of the velocities $\partial_t P_t$: intuitively, $v_t(z)$ is the average velocity of all trajectories passing through $z$.
 
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$.
-
-\begin{rem}[Static-noise stochastic interpolants]\label{rem-static-noise-stochastic-interpolants}
-In the terminology of Albergo--Boffi--Vanden-Eijnden, a stochastic interpolant is not first an SDE. It is an explicit random bridge
-\[
-X_t=I_t(X_0,X_1,Z),\qquad X_0\sim\alpha_0,\quad X_1\sim\alpha_1,
-\]
-with $Z$ an auxiliary, often Gaussian, random variable and $I_0(X_0,X_1,Z)=X_0$, $I_1(X_0,X_1,Z)=X_1$. For instance \(X_t=a(t)X_0+b(t)X_1+\gamma(t)Z\), with $\gamma(0)=\gamma(1)=0$. The noise is static: conditionally on $(X_0,X_1,Z)$, the path is differentiable. This is the previous push-forward setting with $u=(X_0,X_1,Z)$ and $P_t=I_t$, hence
-\[
-v_t(x)=\EE[\partial_t I_t(X_0,X_1,Z)\mid X_t=x]
-\]
-and $\partial_t\alpha_t+\diverg(\alpha_t v_t)=0$. SDEs are alternative dynamics realizing the same marginals, not the definition of the interpolant.
-\end{rem}
-
-\begin{rem}[Brownian realizations of interpolant marginals]\label{rem-noisy-stochastic-interpolants}
-One can also realize an interpolating marginal curve by Brownian-in-time dynamics. This should not be confused with the static-noise bridge of Remark~\ref{rem-static-noise-stochastic-interpolants}. If
-\(\d Z_t=r_t(U,Z_t)\d t+\Sigma_t(U,Z_t)\d B_t\), $\alpha_t=\operatorname{Law}(Z_t)$, then the Eulerian drift and diffusion matrix defined by
-\[
- v_t(z)=\EE[r_t(U,Z_t)|Z_t=z], \qquad
- D_t(z)=\EE[\Sigma_t(U,Z_t)\Sigma_t(U,Z_t)^\top|Z_t=z]
-\]
-satisfy
-\[
-\partial_t\alpha_t+\diverg(\alpha_t v_t)
-=\frac12\sum_{i,j}\partial_{ij}^2\bigl((D_t)_{ij}\alpha_t\bigr).
-\]
-Thus the noisy regression estimates the drift in a Fokker--Planck equation, not a pure continuity equation. If $\alpha_t=\rho_t\d x$, an equivalent probability-flow ODE uses
-\(\bar v_t=v_t-(2\rho_t)^{-1}\diverg(\rho_tD_t)\), hence
-\(\bar v_t=v_t-\frac{\sigma_t^2}{2}\nabla\log\rho_t\) when $D_t=\sigma_t^2\Id$.
-\end{rem}
 
 \paragraph{Connection with diffusion models.}
 In the special case where $P_t(x,y)=(1-t)x+ty$ is a linear interpolation and $\pi = \alpha \otimes \beta$, the curve $\alpha_t$ is a convolution of rescaled versions of $\alpha_0$ and $\alpha_1$. The flow-matching problem~\eqref{eq:flow-matching} becomes
@@ -227,8 +196,6 @@ Both $T_1^{\rm FM}$ and $T^{\rm OT}$ push $\Gaussian(0,\Sigma_0)$ to $\Gaussian(
 Thus symmetry of $T_1^{\rm FM}$ is equivalent to
 $\Sigma_0 C^{1/2}=C^{1/2}\Sigma_0$, hence to $\Sigma_0 C=C\Sigma_0$ by functional calculus. Multiplying this identity on the left and right by $\Sigma_0^{1/2}$ gives $\Sigma_0\Sigma_1=\Sigma_1\Sigma_0$. Conversely, if $\Sigma_0$ and $\Sigma_1$ commute, they are orthogonally co-diagonalizable, and both~\eqref{eq-gaussian-product-fm-terminal-map} and~\eqref{eq-gaussian-brenier-map-comparison} reduce in that basis to the diagonal map with entries $\sqrt{\lambda_{1,k}/\lambda_{0,k}}$. This proves the equivalence.
 \end{proof}
-Proposition~\ref{prop-gaussian-flow-matching-optimality} explains why the statement ``flow matching gives an optimal map'' is fragile. The same terminal map~\eqref{eq-gaussian-product-fm-terminal-map} is obtained for any scalar schedule $Z_t=a_tX_0+b_tX_1$ with the same endpoints, because after whitening the covariance path remains $a_t^2\Id+b_t^2C$.
-
 \paragraph{Variations on the interpolant.}
 \(v_t(z)=\lambda'(t)\,v^{\rm lin}_{\lambda(t)}(z), \qquad v^{\rm lin}_{r}(z)=\EE[Y-X\mid (1-r)X+rY=z].\)
 \(Z_t=a_tX+b_tY,\qquad Y\sim\Gaussian(0,\sigma^2\Id),\)
@@ -288,6 +255,8 @@ u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\mu_t](x)
 \frac{\int K_\epsilon(x,y)\,\d\beta(y)}
 {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
 \end{equation}
+The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. For a fixed reference measure, \(B_\epsilon[\nu]\) is precisely the Gaussian mean-shift displacement in~\eqref{eq-l2-attention-mean-shift}: it moves $x$ toward the local kernel barycenter of $\nu$.
+
 \begin{prop}[Drifting as a time-dependent Wasserstein gradient]\label{prop-drifting-semi-relaxed-gradient}
 Let $\mu_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
 \begin{equation}\label{eq-semi-relaxed-drift-functional}
@@ -306,42 +275,84 @@ By Proposition~\ref{prop-formal-wass-gradient}, \(\Wgrad \mathcal R_t(\alpha|\mu
 The Wasserstein gradient-descent velocity is the negative of this gradient, namely $u_t$. Substituting this velocity in the continuity equation gives the claimed flow.
 \end{proof}
 \subsection{Moment Measures}
-Moment measures encode a target law by a single convex potential: the same $u$ defines the log-concave source and the Brenier map. The useful point is hidden convexity: after rewriting the problem with OT, a nonlinear equation on convex potentials becomes a convex minimization over densities. If $u:\RR^d\to\RR\cup\{+\infty\}$ is proper convex and \(Z_u=\int e^{-u(x)}\d x<+\infty,\) set
-\[
-\rho_u=Z_u^{-1}e^{-u(x)}\d x,
-\qquad
-\mathfrak M(u)=(\nabla u)_\sharp\rho_u .
-\]
-The normalization removes additive constants, and translations of the argument do not change $\mathfrak M(u)$. Integration by parts gives \(\int y\,\d\mathfrak M(u)(y)=0\), so moment measures are centered. The Cordero--Erausquin--Klartag theorem states that a probability $\mu\in\Pp_1(\RR^d)$ is a moment measure iff it is centered and its support is not contained in a hyperplane; the convex potential is unique up to translations and additive constants. For example, if \(u(x)=x^\top A x/2+c\) with $A\succ0$, then \(\rho_u=\Nn(0,A^{-1})\) and \(\mathfrak M(u)=\Nn(0,A)\).
+\label{sec-moment-measures}
+\begin{defn}[Moment measure of a convex function]\label{def-moment-measure}
+Let $u:\RR^d\to\RR\cup\{+\infty\}$ be a proper lower-semicontinuous convex function such that
+\(Z_u\eqdef \int_{\RR^d} e^{-u(x)}\,\d x <+\infty.\)
+The normalized log-concave measure associated with $u$ is \(\rho_u \eqdef Z_u^{-1} e^{-u(x)}\,\d x.\)
+Whenever $\nabla u$ is defined $\rho_u$-almost everywhere, the moment measure of $u$ is \(\mathfrak M(u)\eqdef (\nabla u)_\sharp \rho_u.\)
+\end{defn}
+\(\int y\,\d\mathfrak M(u)(y) = Z_u^{-1}\int \nabla u(x)e^{-u(x)}\,\d x = -Z_u^{-1}\int \nabla(e^{-u(x)})\,\d x =0.\)
+Thus moment measures are necessarily centered. The non-smooth theory uses essentially continuous convex functions, meaning convex functions whose restriction to the closure of their effective domain is continuous except possibly on a boundary set of zero $\mathcal H^{d-1}$ measure.
 
-Santambrogio's OT formulation fixes centered $\mu$ and minimizes
-\[
-\min_{\rho\in\Pp_1(\RR^d)} \mathcal H(\rho)+\mathcal C_\mu(\rho),
-\qquad
-\mathcal C_\mu(\rho)=\sup_{\pi\in\Couplings(\rho,\mu)}
-\int x\cdot y\,\d\pi(x,y),
-\]
-where \(\mathcal H(r\d x)=\int r\log r\). Duality gives
-\[
-\mathcal C_\mu(\rho)=
-\inf_{v\ {\rm convex}}
-\left\{\int v\,\d\rho+\int v^*\,\d\mu\right\},
-\]
-and, when second moments are finite,
-\[
+\begin{thm}[Cordero--Erausquin--Klartag]\label{thm-moment-measure-characterization}
+Let $\mu\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\mu=\mathfrak M(u)$ if and only if
+\(\int y\,\d\mu(y)=0 \qquad\text{and}\qquad \supp(\mu)\text{ is not contained in a hyperplane.}\)
+Under these conditions, $u$ is unique up to translations of the argument and additive constants.
+\end{thm}
+\paragraph{Optimal-transport variational formulation.}
+\begin{equation}\label{eq-moment-max-correlation}
+\mathcal C_\mu(\rho)
+\eqdef
+\sup_{\pi\in\Couplings(\rho,\mu)}
+\int_{\RR^d\times\RR^d} x\cdot y\,\d\pi(x,y).
+\end{equation}
+\begin{equation}\label{eq-moment-max-correlation-dual}
 \mathcal C_\mu(\rho)
 =
-\frac12\int\norm{x}^2\d\rho
+\inf_{v\ \mathrm{convex}}
+\left\{
+\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\mu(y)
+\right\},
+\end{equation}
+where $v^*$ is the Legendre transform. If $\rho,\mu\in\Pp_2(\RR^d)$, then
+
+\begin{equation}\label{eq-moment-correlation-w2}
+\mathcal C_\mu(\rho)
+=
+\frac12\int \norm{x}^2\,\d\rho(x)
 +
-\frac12\int\norm{y}^2\d\mu
+\frac12\int \norm{y}^2\,\d\mu(y)
 -
 \frac12\Wass_2^2(\rho,\mu).
-\]
-The centering of $\mu$ makes the objective invariant under translations of $\rho$. The hidden convexity is that, on \(\Pp_2\), both \(\mathcal H\) and \(\mathcal C_\mu\) are displacement convex; for \(\mathcal C_\mu\), this follows from the identity above and the convexity of the quadratic moment combined with the semiconvexity of \(-\Wass_2^2(\cdot,\mu)/2\). The minimizer has the form \(\rho=Z_u^{-1}e^{-u}\d x\) and satisfies \(\mu=(\nabla u)_\sharp\rho\). Conversely, if this equation holds, then along a geodesic from $\rho$ to a competitor the derivative of entropy is \(-\int\dotp{T-\Id}{\nabla u}\d\rho\), while the derivative of \(\mathcal C_\mu\) is bounded below by the opposite quantity; displacement convexity gives global minimality. Eliminating $\rho$ instead gives \(u\mapsto \int u^*\d\mu-\log\int e^{-u}\d x\), whose convexity is hidden until one passes to the conjugate potential. For generative modeling, the conjugate variant uses
-\[
-\beta=(\nabla w^*)_\sharp\left(Z_w^{-1}e^{-w(z)}\d z\right),
-\]
-so sampling and mapping are still controlled by a single convex potential, but the map is placed on the Brenier-conjugate side.
+\end{equation}
+\begin{equation}\label{eq-moment-measure-variational}
+\min_{\rho\in\Pp_1(\RR^d)}
+\left\{
+\mathcal H(\rho)+\mathcal C_\mu(\rho)
+\right\},
+\qquad
+\mathcal H(r\,\d x)\eqdef \int r(x)\log r(x)\,\d x,
+\end{equation}
+\begin{prop}[Variational characterization of moment measures]\label{prop-moment-hidden-convexity}
+Let $\mu\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
+\(\rho=Z_u^{-1}e^{-u}\,\d x,\)
+where $u$ is convex, essentially continuous, and satisfies the moment-measure equation
+\(\mu=(\nabla u)_\sharp \rho.\)
+Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\mu\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\mu(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\mu\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
+\end{prop}
+\begin{proof}
+The existence proof has two ingredients. First, since $\mu$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\mu(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\mu$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\mu(\rho)\geq c_\mu\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\mu>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer.
+
+Let $\rho=r\,\d x$ be a minimizer and let $u$ be a convex optimizer in the dual formula~\eqref{eq-moment-max-correlation-dual}. Keeping $u$ fixed and varying $\rho$ in~\eqref{eq-moment-measure-variational} gives the Euler equation
+\(\log r(x)+1+u(x)=\mathrm{constant} \qquad\text{on }\{r>0\},\)
+so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\mu=(\nabla u)_\sharp\rho$.
+
+Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\mu=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
+\(\frac{\d}{\d t}\mathcal H(\rho_t)\Big|_{t=0^+} = -\int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),\)
+where the identity follows by differentiating the Jacobian formula and integrating by parts. Santambrogio's derivative estimate for the maximal-correlation functional gives
+\(\frac{\d}{\d t}\mathcal C_\mu(\rho_t)\Big|_{t=0^+} \geq \int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),\)
+because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\mu$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\mu$ because $\mu$ is centered.
+
+The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\mu$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\mu$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\mu)$, hence $\mathcal C_\mu$ is displacement convex. For merely finite first moment $\mu$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
+\end{proof}
+\paragraph{Conjugate moment measures for generation.}
+\begin{equation}\label{eq-conjugate-moment-measure}
+\beta
+=
+(\nabla w^*)_\sharp
+\left(Z_w^{-1}e^{-w(z)}\,\d z\right).
+\end{equation}
 \subsection{Evolution in Depth of Transformers}
 \paragraph{Attention as a context-dependent velocity.}
 After tokenization, embedding, and positional encoding, each input (from a set of tokens) is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ points in the space of vectorized tokens. An attention layer with skip connection and rescaling by $1/T$ (where $T$ is the depth) defines a transformation of the tokens:
@@ -356,6 +367,29 @@ To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i 
 \(\Gamma_\theta[\alpha](x):= \frac{\int e^{\langle Q x, K y \rangle} V y \, \d \alpha(y)} {\int e^{\langle Q x, K z \rangle} \, \d \alpha(z)}.\)
 \(\alpha_{t+\tau} = (\Id + \tau \Gamma_{\theta_t}[\alpha_t])_\sharp \alpha_t.\)
 \(\partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.\)
+\paragraph{\texorpdfstring{$L^2$ attention and mean shift.}{L^2 attention and mean shift.}}
+\[
+K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon)),
+\qquad
+\rho_\epsilon[\alpha](x)=\int K_\epsilon(x,y)\d\alpha(y),
+\qquad
+m_\epsilon[\alpha](x)
+=
+\frac{\int yK_\epsilon(x,y)\d\alpha(y)}
+{\rho_\epsilon[\alpha](x)}.
+\]
+\begin{equation}\label{eq-l2-attention-mean-shift}
+M_\epsilon[\alpha](x)
+\eqdef
+m_\epsilon[\alpha](x)-x
+=
+\frac{\int (y-x)K_\epsilon(x,y)\d\alpha(y)}
+{\rho_\epsilon[\alpha](x)}
+=
+\epsilon\nabla\log\rho_\epsilon[\alpha](x)
+\end{equation}
+\(x_i^{k+1} = (1-\tau)x_i^k+\tau m_\epsilon[\alpha_k](x_i^k) = x_i^k+\tau M_\epsilon[\alpha_k](x_i^k)\)
+\(\partial_t\alpha_t+\diverg\bigl(\alpha_tM_\epsilon[\alpha_t]\bigr)=0.\)
 \paragraph{Gradient structure and limitations.}
 When the token space has dimension $d$ and the query/key space has dimension $r$, take $Q,K\in\RR^{r\times d}$ and $V\in\RR^{d\times d}$. If $V=Q^\top K$, the field $\Gamma_\theta[\alpha]$ is a gradient vector field in the token variable. Indeed, define the log-partition potential
 

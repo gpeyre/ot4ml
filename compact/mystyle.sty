@@ -4,7 +4,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 % \usepackage{amsfonts, amssymb, amscd}
-\usepackage{mathrsfs}
+% newpxmath provides \mathscr; loading mathrsfs first breaks TeX Live 2025.
 \usepackage{mathtools} % for psmallmatrix
 
 
@@ -27,7 +27,10 @@
 \usepackage{xspace}
 
 \usepackage{xcolor}
-\usepackage{mdframed}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage[skins,breakable]{tcolorbox}
 
 % spacings
 \renewcommand{\baselinestretch}{1}
@@ -119,22 +122,26 @@
 \newtheorem{lem}[thm]{Lemma}
 \definecolor{remarkblue}{HTML}{E8F1F8}
 \definecolor{remarkbluebar}{HTML}{8FB6D6}
-\mdfdefinestyle{remarkbox}{%
-	backgroundcolor=white,
-	linecolor=remarkbluebar,
-	linewidth=.9pt,
-	leftline=true,
-	rightline=false,
-	topline=false,
-	bottomline=false,
-	innerleftmargin=10pt,
-	innerrightmargin=0pt,
-	innertopmargin=1pt,
-	innerbottommargin=1pt,
-	skipabove=.45\baselineskip,
-	skipbelow=.45\baselineskip,
-	frametitleaboveskip=0pt,
-	frametitlebelowskip=0pt,
+\definecolor{examplegoldbar}{HTML}{D6A24C}
+\newcommand{\ottcbwavyframe}[1]{%
+	\draw[
+		#1,
+		line width=.9pt,
+		decorate,
+		decoration={snake, amplitude=.45pt, segment length=3.4pt}
+	] ([xshift=.5pt]frame.north west) -- ([xshift=.5pt]frame.south west);%
+}
+\newtcolorbox{otremarkbox}{%
+	enhanced,
+	breakable,
+	blanker,
+	left=10pt,
+	right=0pt,
+	top=1pt,
+	bottom=1pt,
+	before skip=.45\baselineskip,
+	after skip=.45\baselineskip,
+	borderline west={.9pt}{0pt}{remarkbluebar},
 }
 \newtheoremstyle{waveremark}
 	{0pt}
@@ -148,7 +155,7 @@
 \theoremstyle{waveremark}
 \newtheorem{innerrem}[thm]{Remark}
 \newenvironment{rem}[1][]{%
-	\begin{mdframed}[style=remarkbox]%
+	\begin{otremarkbox}%
 	\if\relax\detokenize{#1}\relax
 		\begin{innerrem}%
 	\else
@@ -156,11 +163,50 @@
 	\fi
 }{%
 	\end{innerrem}%
-	\end{mdframed}%
+	\end{otremarkbox}%
 }
-\theoremstyle{remark}
-\newtheorem{exmp}[thm]{Example}
-\newtheorem{example}[thm]{Example}
+\newtcolorbox{otexamplebox}{%
+	enhanced,
+	breakable,
+	blanker,
+	left=10pt,
+	right=2pt,
+	top=2pt,
+	bottom=2pt,
+	before skip=.45\baselineskip,
+	after skip=.45\baselineskip,
+	overlay unbroken={\ottcbwavyframe{examplegoldbar}},
+	overlay first={\ottcbwavyframe{examplegoldbar}},
+	overlay middle={\ottcbwavyframe{examplegoldbar}},
+	overlay last={\ottcbwavyframe{examplegoldbar}},
+}
+\newtheoremstyle{smalltheexample}
+	{0pt}
+	{0pt}
+	{\normalfont}
+	{}
+	{\bfseries\color{black!72}}
+	{.}
+	{.45em}
+	{\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}}
+\theoremstyle{smalltheexample}
+\newtheorem{innerexample}[thm]{Example}
+\newenvironment{example}[1][]{%
+	\begin{otexamplebox}%
+	\if\relax\detokenize{#1}\relax
+		\begin{innerexample}%
+	\else
+		\begin{innerexample}[#1]%
+	\fi
+}{%
+	\end{innerexample}%
+	\end{otexamplebox}%
+}
+\newenvironment{exmp}[1][]{%
+	\begin{example}[#1]%
+}{%
+	\end{example}%
+}
 \newtheorem*{ass}{Main assumption}
 
 
@@ -184,14 +230,54 @@
 \floatstyle{otruled}
 \newfloat{algfloat}{tbp}{loa}[section]
 \floatname{algfloat}{Algorithm}
+\definecolor{algorithmblockrule}{HTML}{B7C0C8}
+\mdfdefinestyle{algorithmblock}{%
+	backgroundcolor=white,
+	linecolor=algorithmblockrule,
+	linewidth=.45pt,
+	topline=false,
+	rightline=false,
+	bottomline=false,
+	innerleftmargin=7pt,
+	innerrightmargin=0pt,
+	innertopmargin=0pt,
+	innerbottommargin=0pt,
+	skipabove=0pt,
+	skipbelow=0pt,
+	frametitleaboveskip=0pt,
+	frametitlebelowskip=0pt,
+	nobreak=true,
+}
+\newenvironment{algblock}{%
+	\begin{mdframed}[style=algorithmblock]%
+	\setlength{\parindent}{0pt}%
+	\setlength{\parskip}{0pt}%
+	\setlength{\abovedisplayskip}{0pt}%
+	\setlength{\belowdisplayskip}{0pt}%
+}{%
+	\end{mdframed}%
+}
+\newcommand{\algreturnskip}{\vspace{-.45\baselineskip}}
 \newenvironment{alg}[1][]{%
 	\begin{algfloat}[htbp]%
-	\small\normalfont
+	\normalfont
 	\setlength{\parindent}{0pt}%
-	\setlength{\parskip}{.35em}%
-	\setlength{\jot}{.2em}%
-	\setlength{\abovedisplayskip}{.45\baselineskip}%
-	\setlength{\belowdisplayskip}{.45\baselineskip}%
+	\setlength{\parskip}{0pt}%
+	\setlength{\jot}{0pt}%
+	\setlength{\abovedisplayskip}{0pt}%
+	\setlength{\belowdisplayskip}{0pt}%
+	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
+}{%
+	\end{algfloat}%
+}
+\newenvironment{algH}[1][]{%
+	\begin{algfloat}[H]%
+	\normalfont
+	\setlength{\parindent}{0pt}%
+	\setlength{\parskip}{0pt}%
+	\setlength{\jot}{0pt}%
+	\setlength{\abovedisplayskip}{0pt}%
+	\setlength{\belowdisplayskip}{0pt}%
 	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
 }{%
 	\end{algfloat}%
