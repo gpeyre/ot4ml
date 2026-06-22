@@ -5170,13 +5170,167 @@ function drawAdvancedSamples() {
   setStatus(`dimension ${dimension}; epsilon ${epsilon.toFixed(3)}; Sinkhorn guide is bias floor epsilon plus an epsilon-dependent parametric fluctuation`);
 }
 
+function mixtureDensityOnGrid(xs, components) {
+  const density = xs.map((x) => {
+    let value = 0;
+    for (const c of components) value += c.weight * normalPdf(x, c.mean, c.sigma);
+    return value;
+  });
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const total = density.reduce((sum, z) => sum + z, 0) * dx;
+  return density.map((z) => z / Math.max(total, 1e-12));
+}
+
+function weightsFromDensityAndDx(density, dx) {
+  const weights = density.map((z) => Math.max(z, 0) * dx);
+  const total = weights.reduce((sum, z) => sum + z, 0);
+  return weights.map((z) => z / Math.max(total, 1e-12));
+}
+
+function bookUnbalancedGrid(n) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3, 3, i / Math.max(n - 1, 1)));
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const sourceDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.62, mean: -1.35, sigma: 0.30 },
+    { weight: 0.38, mean: 0.35, sigma: 0.23 },
+  ]);
+  const targetDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.30, mean: -0.80, sigma: 0.28 },
+    { weight: 0.42, mean: 0.85, sigma: 0.32 },
+    { weight: 0.28, mean: 2.20, sigma: 0.20 },
+  ]);
+  const a = weightsFromDensityAndDx(sourceDensity, dx);
+  const b = weightsFromDensityAndDx(targetDensity, dx);
+  const rawCost = xs.map((x) => xs.map((y) => (x - y) ** 2));
+  const scale = medianPositive(rawCost);
+  const cost = rawCost.map((row) => row.map((z) => z / Math.max(scale, 1e-12)));
+  return { xs, dx, sourceDensity, targetDensity, a, b, cost };
+}
+
+function bookPartialGrid(n) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3.15, 3.15, i / Math.max(n - 1, 1)));
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const sourceDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.56, mean: -2.08, sigma: 0.34 },
+    { weight: 0.44, mean: -0.76, sigma: 0.24 },
+  ]);
+  const targetDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.43, mean: 0.64, sigma: 0.26 },
+    { weight: 0.57, mean: 1.93, sigma: 0.36 },
+  ]);
+  const a = weightsFromDensityAndDx(sourceDensity, dx);
+  const b = weightsFromDensityAndDx(targetDensity, dx);
+  return { xs, dx, sourceDensity, targetDensity, a, b };
+}
+
+function densityPath(ctx, xs, density, box, sideScale, color, alpha, orientation, fill = true, lineWidth = 1) {
+  const [r, g, b] = rgb(color);
+  ctx.beginPath();
+  if (orientation === "top") {
+    const X = (x) => box.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.w;
+    const Y = (z) => box.y + box.h - (z / Math.max(sideScale, 1e-12)) * box.h;
+    if (fill) ctx.moveTo(X(xs[0]), Y(0));
+    for (let i = 0; i < xs.length; i += 1) {
+      const px = X(xs[i]);
+      const py = Y(density[i]);
+      if (i === 0 && !fill) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    if (fill) {
+      ctx.lineTo(X(xs[xs.length - 1]), Y(0));
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    }
+    return;
+  }
+  const Y = (x) => box.y + box.h - ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.h;
+  const X = (z) => box.x + box.w - (z / Math.max(sideScale, 1e-12)) * box.w;
+  if (fill) ctx.moveTo(X(0), Y(xs[0]));
+  for (let i = 0; i < xs.length; i += 1) {
+    const px = X(density[i]);
+    const py = Y(xs[i]);
+    if (i === 0 && !fill) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  if (fill) {
+    ctx.lineTo(X(0), Y(xs[xs.length - 1]));
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+}
+
+function planColor(value) {
+  const t = clamp(value, 0, 1);
+  const base = [255, 255, 255];
+  const pale = [242, 231, 243];
+  const dark = rgb(VIOLET);
+  const mid = t < 0.42 ? t / 0.42 : (t - 0.42) / 0.58;
+  const a = t < 0.42 ? base : pale;
+  const b = t < 0.42 ? pale : dark;
+  const r = Math.round(lerp(a[0], b[0], mid));
+  const g = Math.round(lerp(a[1], b[1], mid));
+  const c = Math.round(lerp(a[2], b[2], mid));
+  return `rgb(${r},${g},${c})`;
+}
+
+function drawSidePlanPanel(ctx, box, xs, plan, sourceDensity, targetDensity, rowDensity, colDensity, title, sideScale, planScale) {
+  const n = plan.length;
+  const m = plan[0].length;
+  const strip = Math.min(54, Math.max(34, 0.27 * Math.min(box.w, box.h)));
+  const gap = 3;
+  const left = { x: box.x, y: box.y + strip + gap, w: strip, h: box.h - strip - gap - 1 };
+  const top = { x: box.x + strip + gap, y: box.y, w: box.w - strip - gap - 1, h: strip };
+  const mat = { x: box.x + strip + gap, y: box.y + strip + gap, w: box.w - strip - gap - 1, h: box.h - strip - gap - 1 };
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+
+  densityPath(ctx, xs, targetDensity, top, sideScale, BLUE, 0.10, "top", true);
+  densityPath(ctx, xs, colDensity, top, sideScale, VIOLET, 0.24, "top", true);
+  densityPath(ctx, xs, targetDensity, top, sideScale, BLUE, 0.95, "top", false, 1.05);
+  densityPath(ctx, xs, colDensity, top, sideScale, VIOLET, 0.92, "top", false, 1.15);
+
+  densityPath(ctx, xs, sourceDensity, left, sideScale, RED, 0.10, "left", true);
+  densityPath(ctx, xs, rowDensity, left, sideScale, VIOLET, 0.24, "left", true);
+  densityPath(ctx, xs, sourceDensity, left, sideScale, RED, 0.95, "left", false, 1.05);
+  densityPath(ctx, xs, rowDensity, left, sideScale, VIOLET, 0.92, "left", false, 1.15);
+
+  const cellW = mat.w / m;
+  const cellH = mat.h / n;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const value = Math.sqrt(plan[i][j] / Math.max(planScale, 1e-15));
+      ctx.fillStyle = planColor(value);
+      ctx.fillRect(mat.x + j * cellW, mat.y + mat.h - (i + 1) * cellH, Math.ceil(cellW) + 0.2, Math.ceil(cellH) + 0.2);
+    }
+  }
+  ctx.strokeStyle = "#30343b";
+  ctx.lineWidth = 1.05;
+  ctx.strokeRect(mat.x, mat.y, mat.w, mat.h);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, mat.x + mat.w / 2, box.y + box.h + 17);
+  ctx.textAlign = "left";
+}
+
 function unbalancedState(cost, a, b, epsilon, tau, iterations) {
   const n = a.length;
   const m = b.length;
   const eps = Math.max(epsilon, 1e-4);
   const relaxedTau = Math.max(tau, 1e-4);
   const rho = relaxedTau / (relaxedTau + eps);
-  const K = cost.map((row, i) => row.map((c, j) => a[i] * b[j] * Math.exp(-c / eps)));
+  const K = cost.map((row) => row.map((c) => Math.exp(-c / eps)));
   const u = Array(n).fill(1);
   const v = Array(m).fill(1);
   for (let it = 0; it < iterations; it += 1) {
@@ -5213,27 +5367,39 @@ function drawGeneralizedUnbalanced() {
   const n = Math.round(val("guBins"));
   const epsilon = val("guEps");
   const tau = val("guTau");
-  const shift = val("guShift");
-  const source = val("guSource");
-  const target = val("guTarget");
-  const data = sinkhornGrid(n, source, target, shift, 1);
-  const state = unbalancedState(data.cost, data.a, data.b, epsilon, tau, 100);
+  const data = bookUnbalancedGrid(n);
+  const tauValues = [0.04, tau, 20.0];
+  const states = tauValues.map((t) => unbalancedState(data.cost, data.a, data.b, epsilon, t, 420));
+  const rowDensities = states.map((state) => state.row.map((z) => z / data.dx));
+  const colDensities = states.map((state) => state.col.map((z) => z / data.dx));
+  const sideScale = 1.05 * Math.max(
+    ...data.sourceDensity,
+    ...data.targetDensity,
+    ...rowDensities.flat(),
+    ...colDensities.flat(),
+  );
+  const planScale = Math.max(...states.flatMap((state) => state.plan.flat()), 1e-15);
   const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
-  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 640 : 400);
-  const vertical = w < 720;
-  const gap = 30;
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 710 : 390);
+  const vertical = w < 760;
+  const gap = vertical ? 38 : 28;
   const boxes = vertical
     ? [
-        { x: 22, y: 40, w: w - 44, h: (h - 100) / 2 },
-        { x: 22, y: 40 + (h - 100) / 2 + gap, w: w - 44, h: (h - 100) / 2 },
+        { x: 24, y: 32, w: w - 48, h: (h - 98) / 3 },
+        { x: 24, y: 32 + (h - 98) / 3 + gap, w: w - 48, h: (h - 98) / 3 },
+        { x: 24, y: 32 + 2 * ((h - 98) / 3 + gap), w: w - 48, h: (h - 98) / 3 },
       ]
     : [
-        { x: 22, y: 44, w: (w - 74) / 2, h: h - 84 },
-        { x: 22 + (w - 74) / 2 + gap, y: 44, w: (w - 74) / 2, h: h - 84 },
+        { x: 18, y: 40, w: (w - 72) / 3, h: h - 72 },
+        { x: 18 + (w - 72) / 3 + gap, y: 40, w: (w - 72) / 3, h: h - 72 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 40, w: (w - 72) / 3, h: h - 72 },
   ];
-  drawCouplingMatrix(ctx, state.plan, state.row, state.col, boxes[0], "relaxed coupling");
-  drawSinkhornMarginalPanel(ctx, boxes[1], data.xs, data.a, data.b, state.row, state.col);
-  setStatus(`tau ${tau.toFixed(3)}; rho ${state.rho.toFixed(3)}; transported ${state.mass.toFixed(3)}; destroyed ${state.destroyed.toFixed(3)}; created ${state.created.toFixed(3)}`);
+  for (let k = 0; k < states.length; k += 1) {
+    const label = k === 0 ? "small tau" : k === 1 ? `tau=${tau.toFixed(2)}` : "large tau";
+    drawSidePlanPanel(ctx, boxes[k], data.xs, states[k].plan, data.sourceDensity, data.targetDensity, rowDensities[k], colDensities[k], label, sideScale, planScale);
+  }
+  const state = states[1];
+  setStatus(`book source/target; epsilon ${epsilon.toFixed(3)}; middle tau ${tau.toFixed(3)}; transported ${state.mass.toFixed(3)}; destroyed ${state.destroyed.toFixed(3)}; created ${state.created.toFixed(3)}`);
 }
 
 function generalizedShape(name, n, random) {
@@ -8265,38 +8431,142 @@ function drawSinkhornBridges() {
   setStatus(eps < 1e-5 ? "epsilon = 0: OT rays without Brownian noise" : `epsilon ${eps.toFixed(2)}: Brownian-bridge noise and coupling spread both increase`);
 }
 
+function nearestGridIndex(xs, x) {
+  const t = (x - xs[0]) / Math.max(xs[xs.length - 1] - xs[0], 1e-12);
+  return clamp(Math.round(t * (xs.length - 1)), 0, xs.length - 1);
+}
+
+function partialQuantilePairs(sourceQ, targetQ, requestedMass) {
+  const k = sourceQ.length;
+  const lMax = Math.max(1, Math.min(k, Math.round(requestedMass * k)));
+  const layers = lMax + 1;
+  const width = k + 1;
+  const size = width * width * layers;
+  const inf = 1e100;
+  const dp = new Float64Array(size);
+  const action = new Uint8Array(size);
+  dp.fill(inf);
+  const id = (i, j, l) => ((i * width + j) * layers + l);
+  dp[id(0, 0, 0)] = 0;
+  for (let i = 0; i <= k; i += 1) {
+    for (let j = 0; j <= k; j += 1) {
+      const maxL = Math.min(lMax, i, j);
+      for (let l = 0; l <= maxL; l += 1) {
+        const idx = id(i, j, l);
+        if (i === 0 && j === 0 && l === 0) continue;
+        let best = dp[idx];
+        let bestAction = action[idx];
+        if (i > 0) {
+          const candidate = dp[id(i - 1, j, l)];
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 1;
+          }
+        }
+        if (j > 0) {
+          const candidate = dp[id(i, j - 1, l)];
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 2;
+          }
+        }
+        if (i > 0 && j > 0 && l > 0) {
+          const d = sourceQ[i - 1] - targetQ[j - 1];
+          const candidate = dp[id(i - 1, j - 1, l - 1)] + d * d;
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 3;
+          }
+        }
+        dp[idx] = best;
+        action[idx] = bestAction;
+      }
+    }
+  }
+  const pairs = [];
+  let i = k;
+  let j = k;
+  let l = lMax;
+  while (i > 0 || j > 0) {
+    const a = action[id(i, j, l)];
+    if (a === 3 && i > 0 && j > 0 && l > 0) {
+      pairs.push([i - 1, j - 1]);
+      i -= 1;
+      j -= 1;
+      l -= 1;
+    } else if (a === 1 && i > 0) {
+      i -= 1;
+    } else if (a === 2 && j > 0) {
+      j -= 1;
+    } else if (i > 0) {
+      i -= 1;
+    } else {
+      j -= 1;
+    }
+    if (l === 0 && i === 0 && j === 0) break;
+  }
+  pairs.reverse();
+  return { pairs, selectedMass: lMax / k, value: dp[id(k, k, lMax)] / Math.max(lMax, 1) };
+}
+
+function smoothDensityFromSamples(xs, samples, sampleMass, bandwidth) {
+  const h = Math.max(bandwidth, 1e-4);
+  const norm = 1 / (Math.sqrt(2 * Math.PI) * h);
+  return xs.map((x) => {
+    let value = 0;
+    for (const p of samples) {
+      const z = (x - p) / h;
+      value += sampleMass * norm * Math.exp(-0.5 * z * z);
+    }
+    return value;
+  });
+}
+
+function partialPlanFromQuantiles(data, requestedMass, samples) {
+  const sourceQ = inverseCdfSamples(data.xs, data.a, samples);
+  const targetQ = inverseCdfSamples(data.xs, data.b, samples);
+  const selected = partialQuantilePairs(sourceQ, targetQ, requestedMass);
+  const n = data.xs.length;
+  const plan = Array.from({ length: n }, () => Array(n).fill(0));
+  const mass = 1 / samples;
+  const sourceActive = [];
+  const targetActive = [];
+  for (const [i, j] of selected.pairs) {
+    sourceActive.push(sourceQ[i]);
+    targetActive.push(targetQ[j]);
+    const ii = nearestGridIndex(data.xs, sourceQ[i]);
+    const jj = nearestGridIndex(data.xs, targetQ[j]);
+    plan[ii][jj] += mass;
+  }
+  const bandwidth = Math.max(0.075, 1.7 * data.dx);
+  return {
+    plan,
+    rowDensity: smoothDensityFromSamples(data.xs, sourceActive, mass, bandwidth),
+    colDensity: smoothDensityFromSamples(data.xs, targetActive, mass, bandwidth),
+    selectedMass: selected.selectedMass,
+    pairs: selected.pairs.length,
+    meanCost: selected.value,
+  };
+}
+
 function drawPartialOT1D() {
   const mass = val("potMass");
-  const separation = val("potSep");
-  const { ctx, w, h } = resizeCanvas(395);
-  const box = { x: 42, y: 28, w: w - 70, h: h - 76 };
-  const xMin = -3.8, xMax = 3.8;
-  const xs = Array.from({ length: 520 }, (_, i) => lerp(xMin, xMax, i / 519));
-  const source = xs.map((x) => 0.55 * normalPdf(x, -1.45 - 0.25 * separation, 0.36) + 0.45 * normalPdf(x, -0.15, 0.55));
-  const target = xs.map((x) => 0.45 * normalPdf(x, 0.25, 0.35) + 0.55 * normalPdf(x, 1.55 + 0.25 * separation, 0.48));
-  function normalizePdf(pdf) { const dx = (xMax - xMin) / (pdf.length - 1); const s = pdf.reduce((a, b) => a + b, 0) * dx; return pdf.map((z) => z / s); }
-  const a = normalizePdf(source), b = normalizePdf(target);
-  const maxA = Math.max(...a), maxB = Math.max(...b);
-  const aa0 = a.map((z, i) => Math.min(z, mass * (0.35 + 0.65 * b[Math.min(b.length - 1, Math.max(0, i + Math.round(0.13 * b.length)))] / maxB)));
-  const bb0 = b.map((z, i) => Math.min(z, mass * (0.35 + 0.65 * a[Math.min(a.length - 1, Math.max(0, i - Math.round(0.13 * a.length)))] / maxA)));
-  const renorm = (pdf) => { const dx = (xMax - xMin) / (pdf.length - 1); const s = pdf.reduce((p, q) => p + q, 0) * dx; return pdf.map((z) => (mass * z) / Math.max(s, 1e-9)); };
-  const aa = renorm(aa0), bb = renorm(bb0);
-  const ymax = Math.max(...a, ...b, ...aa, ...bb) * 1.15;
-  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
-  const Y = (y) => box.y + box.h - (y / ymax) * box.h;
-  ctx.fillStyle = "#fbfcfd"; ctx.fillRect(box.x, box.y, box.w, box.h); ctx.strokeStyle = "#d8dee8"; ctx.strokeRect(box.x, box.y, box.w, box.h);
-  function curve(pdf, color, alpha, fill = false) {
-    ctx.beginPath(); if (fill) ctx.moveTo(X(xs[0]), Y(0));
-    for (let i = 0; i < xs.length; i += 1) { const px = X(xs[i]), py = Y(pdf[i]); if (i === 0 && !fill) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
-    if (fill) { ctx.lineTo(X(xs[xs.length - 1]), Y(0)); ctx.closePath(); ctx.fillStyle = color === RED ? `rgba(215,48,39,${alpha})` : `rgba(33,102,172,${alpha})`; ctx.fill(); }
-    else { ctx.strokeStyle = color === RED ? `rgba(215,48,39,${alpha})` : `rgba(33,102,172,${alpha})`; ctx.lineWidth = 1.8; ctx.stroke(); }
-  }
-  curve(a, RED, 0.22, true); curve(b, BLUE, 0.22, true); curve(aa, RED, 0.95); curve(bb, BLUE, 0.95);
-  const sx = inverseCdfSamples(xs, aa, 34), tx = inverseCdfSamples(xs, bb, 34);
-  ctx.strokeStyle = "rgba(123,50,148,.27)"; ctx.lineWidth = 0.7;
-  for (let i = 0; i < sx.length; i += 1) { ctx.beginPath(); ctx.moveTo(X(sx[i]), Y(0.05 * ymax)); ctx.lineTo(X(tx[i]), Y(0.05 * ymax)); ctx.stroke(); }
-  drawSmallLabel(ctx, "transparent: full marginals; bold: transported submarginals", box.x + box.w / 2, h - 16);
-  setStatus(`transported mass ${mass.toFixed(2)}; unmatched tails remain faded in the background`);
+  const samples = Math.round(val("potSamples"));
+  const bins = Math.round(val("potBins"));
+  const data = bookPartialGrid(bins);
+  const active = partialPlanFromQuantiles(data, mass, samples);
+  const sideScale = 1.10 * Math.max(
+    ...data.sourceDensity,
+    ...data.targetDensity,
+    ...active.rowDensity,
+    ...active.colDensity,
+  );
+  const planScale = Math.max(...active.plan.flat(), 1e-15);
+  const { ctx, w, h } = resizeCanvas(445);
+  const box = { x: 26, y: 28, w: w - 52, h: h - 78 };
+  drawSidePlanPanel(ctx, box, data.xs, active.plan, data.sourceDensity, data.targetDensity, active.rowDensity, active.colDensity, `m=${active.selectedMass.toFixed(2)}`, sideScale, planScale);
+  drawSmallLabel(ctx, "pale red/blue: full marginals; violet: active submarginals", box.x + box.w / 2, h - 18, "#56616f", "center");
+  setStatus(`exact monotone partial matching on ${samples} quantiles; selected mass ${active.selectedMass.toFixed(3)}; ${active.pairs} active pairs`);
 }
 
 function init() {
@@ -8652,12 +8922,9 @@ function init() {
     bind(drawAdvancedSamples);
   } else if (kind === "generalizedunbalanced") {
     controls.innerHTML = [
-      slider("guTau", "tau", 0.18, 0.015, 1.2, 0.005),
-      slider("guEps", "epsilon", 0.13, 0.025, 0.55, 0.005),
-      slider("guBins", "bins", 38, 18, 66, 2),
-      slider("guShift", "source shift", -0.35, -1.2, 1.2, 0.05),
-      select("guSource", "source", Object.keys(MIXTURES), "wide_two"),
-      select("guTarget", "target", Object.keys(MIXTURES), "three"),
+      slider("guTau", "middle tau", 0.25, 0.04, 1.2, 0.005),
+      slider("guEps", "epsilon", 0.02, 0.01, 0.08, 0.002),
+      slider("guBins", "bins", 58, 32, 92, 2),
     ].join("");
     bind(drawGeneralizedUnbalanced);
   } else if (kind === "generalizedsliced") {
@@ -8971,8 +9238,9 @@ function init() {
     bind(drawSinkhornBridges);
   } else if (kind === "partialot1d") {
     controls.innerHTML = [
-      slider("potMass", "transported mass", 0.62, 0.18, 1, 0.01),
-      slider("potSep", "separation", 0.85, 0, 1.8, 0.01),
+      slider("potMass", "transported mass", 0.65, 0.18, 0.95, 0.01),
+      slider("potSamples", "quantile samples", 88, 44, 128, 4),
+      slider("potBins", "display bins", 94, 58, 130, 4),
     ].join("");
     bind(drawPartialOT1D);
   } else {
