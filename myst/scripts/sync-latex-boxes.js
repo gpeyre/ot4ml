@@ -276,10 +276,20 @@ function classForKind(kind) {
   return `ot4ml-${kind.toLowerCase()}`;
 }
 
+function mystLabelForBlock(block) {
+  if (!block.label) return null;
+  // MyST resolves references with colons inconsistently for algorithm-style
+  // admonitions in the static HTML theme. Use the browser-safe form that
+  // resolveLabel() already tries for incoming LaTeX references.
+  if (block.env === 'alg') return block.label.replace(/:/g, '-');
+  return block.label;
+}
+
 function makeBlock(block) {
   const kind = kindForEnv(block.env);
   const body = latexToMyst(block.body);
-  const label = block.label ? `(${block.label})=\n` : '';
+  const blockLabel = mystLabelForBlock(block);
+  const label = blockLabel ? `(${blockLabel})=\n` : '';
   return `${label}:::{admonition} ${kind}: ${block.title}\n:class: ${classForKind(kind)}\n\n${body}\n:::\n\n`;
 }
 
@@ -513,7 +523,11 @@ function normalizeTargetSpacing(markdown) {
 }
 
 function normalizeMarkdown(markdown) {
-  return markdown.replace(/[ \t]+$/gm, '').replace(/\n*$/, '\n');
+  return markdown
+    .replace(/\{ref\}`alg:([^`]+)`/g, (_, label) => `{ref}\`alg-${label.replace(/:/g, '-')}\``)
+    .replace(/^\(alg:([^)]+)\)=/gm, (_, label) => `(alg-${label.replace(/:/g, '-')})=`)
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n*$/, '\n');
 }
 
 function frontmatterEnd(markdown) {

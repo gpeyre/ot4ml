@@ -126,6 +126,71 @@ function patchThemeBundles() {
   return changed;
 }
 
+function escapeHtmlAttribute(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function collectAdmonitionAnchors(node, out = []) {
+  if (!node || typeof node !== 'object') return out;
+  if (node.type === 'admonition') {
+    out.push(node.html_id || node.identifier || null);
+  }
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) {
+      for (const child of value) collectAdmonitionAnchors(child, out);
+    } else if (value && typeof value === 'object') {
+      collectAdmonitionAnchors(value, out);
+    }
+  }
+  return out;
+}
+
+function htmlFileForPageJson(jsonFile, page) {
+  const name = path.basename(jsonFile, '.json');
+  if (name === 'index') return path.join(htmlRoot, 'index.html');
+  const slug = page.slug || name;
+  return path.join(htmlRoot, slug, 'index.html');
+}
+
+function patchAdmonitionAnchors() {
+  let changed = 0;
+  for (const jsonFile of walk(htmlRoot, (full, name) => name.endsWith('.json') && path.dirname(full) === htmlRoot)) {
+    if (['config.json', 'myst.search.json', 'myst.xref.json'].includes(path.basename(jsonFile))) continue;
+
+    let page;
+    try {
+      page = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!page || !page.mdast) continue;
+
+    const anchors = collectAdmonitionAnchors(page.mdast);
+    if (!anchors.some(Boolean)) continue;
+
+    const htmlFile = htmlFileForPageJson(jsonFile, page);
+    if (!fs.existsSync(htmlFile)) continue;
+
+    const text = fs.readFileSync(htmlFile, 'utf8');
+    let index = 0;
+    const next = text.replace(/<aside\b[^>]*\bmyst-admonition\b[^>]*>/g, (match) => {
+      const anchor = anchors[index++];
+      if (!anchor || /\bid=/.test(match)) return match;
+      return match.replace('<aside', `<aside id="${escapeHtmlAttribute(anchor)}"`);
+    });
+
+    if (next !== text) {
+      fs.writeFileSync(htmlFile, next);
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
 function copySidebarScript() {
   if (!fs.existsSync(sidebarScriptFile)) return 0;
 
@@ -287,6 +352,7 @@ function patchTemplateZip() {
 function patchGeneratedSite() {
   const result = {
     html: patchHtml(),
+    admonitionAnchors: patchAdmonitionAnchors(),
     bundles: patchThemeBundles(),
     assets: patchAssetImports(),
     sidebar: copySidebarScript(),
