@@ -10,13 +10,13 @@
 \label{sec-entropic-convergence}
 \label{sec-convergence-dual}
 
-Convergence for entropic optimal transport has two complementary meanings. At fixed marginals and fixed temperature, one studies how Sinkhorn iterates approach the regularized optimizer; when the marginals are empirical, one also studies how the regularized value and potentials behave as the number of samples grows toward a mean-field limit. This chapter keeps these two scales together: first the algorithmic convergence of matrix scaling and soft transforms, then the Gaussian closed forms and sample-complexity consequences that explain the statistical role of the regularization.
-\index{mean-field limit}% strictindex
-\index{sample complexity}% strictindex
+This chapter focuses on algorithmic convergence for entropic optimal transport: the marginals and the temperature are fixed, and one asks how Sinkhorn iterates, soft transforms and related monotone scaling procedures approach their regularized fixed point.  Statistical convergence is a separate question, because the empirical marginals then change with the sample size; this is the topic of Chapter~\ref{sec-statistical-ot}.
+\index{algorithmic convergence}% strictindex
+\index{Sinkhorn!fixed point}% strictindex
 \index{matrix!scaling}% strictindex
 \index{soft!transform}% strictindex
 
-The algorithmic part of the chapter revisits Sinkhorn convergence through three complementary lenses. Bregman projections explain the alternating-projection geometry, Fortet's order argument gives qualitative fixed-point convergence, robust Bregman estimates give a non-asymptotic $O(1/k)$ dual-gap bound, and Hilbert's metric gives a clean linear contraction when the kernel is uniformly positive. A final order-theoretic viewpoint explains why Sinkhorn-like scaling can still converge even when the equations are no longer the gradient of a convex potential. The first and last viewpoints explain convergence mechanisms, while the robust estimate is often the most useful for explicit complexity guarantees.
+The chapter revisits Sinkhorn convergence through several complementary lenses. Bregman projections explain the alternating-projection geometry, Fortet's order argument gives qualitative fixed-point convergence, and an order-theoretic M-function viewpoint explains why Sinkhorn-like scaling can still converge even when the equations are no longer the gradient of a convex potential. Robust Bregman estimates then give a non-asymptotic $O(1/k)$ dual-gap bound, while Hilbert's metric gives a clean linear contraction when the kernel is uniformly positive. The last sections discuss Gaussian closed forms and continuous \(\varepsilon\)-Sinkhorn flows as model cases where the fixed-point structure becomes explicit.
 \index{Sinkhorn!convergence}% strictindex
 \index{Bregman!projection}% strictindex
 \index{dual!gap}% strictindex
@@ -540,6 +540,208 @@ Thus the Fortet monotonicity mechanism and the basic nonexpansiveness estimate e
 
 
 %%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Monotone Clearing Beyond Variational Sinkhorn}
+\index{M-function}% strictindex
+\index{non-variational scaling}% strictindex
+\index{Sinkhorn!scaling}% strictindex
+\label{sec-mfunction-scaling}
+
+The preceding sections mostly used variational structure: Sinkhorn is alternating KL projection, coordinate ascent on a dual objective, or a contraction in a projective metric.  There is another, more algebraic, convergence mechanism which keeps the scaling form but discards the existence of an objective.  In Galichon's equilibrium-flow viewpoint, and in related work on substitutability and inverse isotonicity, one studies nonlinear market-clearing equations whose Jacobian has a substitute sign structure~\cite{GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone}.  This is the nonlinear analogue of the classical theory of nonsingular M-matrices and M-functions~\cite{MoreRheinboldt1973PSFunctions,Plemmons1977MMatrix}.  The relevance for OT is that Sinkhorn is the canonical scaling example, but the same monotone-clearing proof also covers fixed-point equations that are not first-order conditions of any convex regularized transport problem.
+\index{market clearing}% strictindex
+\index{substitutability}% strictindex
+\index{gross substitutes}% strictindex
+
+\paragraph{Two-block clearing maps.}
+Write the unknowns as two blocks \(z=(u,v)\in\RR^n\times\RR^m\), where \(u\) and \(v\) will later be signed log-scalings.  Let
+\index{log-scaling}% strictindex
+\[
+	Q(z)=\big(Q^\alpha(u,v),Q^\beta(u,v)\big)
+	\in\RR^n\times\RR^m
+\]
+be a continuous clearing map.  The parallel coordinate-clearing map \(T\) is defined by solving, for each coordinate,
+\[
+	Q_\ell\big(T_\ell(z),z_{-\ell}\big)=0,
+	\qquad 1\leq \ell\leq n+m.
+\]
+This is the Jacobi version: all coordinates are cleared against the old values of the other coordinates.  In two-block scaling problems, all coordinates in \(u\) decouple when \(v\) is fixed, and all coordinates in \(v\) decouple when \(u\) is fixed.  The more common alternating Sinkhorn sweep is the Gauss--Seidel composition of these two block clearings; the order argument below is stated for the parallel map to keep the notation short.  The same construction extends to any finite number of blocks.
+
+\begin{defn}[Z-functions and M-functions]\label{def-mfunctions}
+\index{Z-function}% strictindex
+\index{M-function}% strictindex
+\index{diagonal isotonicity}% strictindex
+\index{inverse isotonicity}% strictindex
+	Let \(D\subset\RR^N\) be an order interval.  A map \(Q:D\to\RR^N\) is diagonally isotone if \(Q_\ell(z_\ell,z_{-\ell})\) is nondecreasing in \(z_\ell\) for every \(\ell\).  It is a Z-function if increasing the other coordinates cannot increase the \(\ell\)-th component:
+	\[
+		z_{-\ell}\leq z'_{-\ell}
+		\quad\Longrightarrow\quad
+		Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).
+	\]
+	For a \(C^1\) map this means \(\partial Q_\ell/\partial z_k\leq0\) for \(k\neq\ell\).  An M-function is a Z-function which is inverse isotone:
+	\[
+		Q(z)\leq Q(z')
+		\quad\Longrightarrow\quad
+		z\leq z'.
+	\]
+	A vector \(z\) is a subsolution if \(Q(z)\leq0\), and a supersolution if \(Q(z)\geq0\).
+\index{subsolution}% strictindex
+\index{supersolution}% strictindex
+\index{order interval}% strictindex
+\end{defn}
+
+The M-function assumption says that cross-effects have the sign of substitutes, and that own effects dominate them strongly enough to prevent a global reversal of order.  Galichon, Samuelson and Vernet formulate this idea through nonreversingness and unified gross substitutes; for single-valued maps this is the inverse-isotone structure used below.  A degenerate \(M_0\)-function keeps the same order structure but allows a null gauge direction, which is exactly what happens for balanced Sinkhorn before a potential normalization is imposed.
+\index{M0-function}% strictindex
+\index{gauge direction}% strictindex
+
+\begin{thm}[Monotone convergence of coordinate clearing]\label{thm-mfunction-jacobi-convergence}
+\index{coordinate clearing}% strictindex
+\index{Jacobi iteration}% strictindex
+\index{M-function}% strictindex
+	Let \(D=[\underline z,\overline z]\subset\RR^N\) be a closed order interval, with \(\underline z\) a subsolution and \(\overline z\) a supersolution.  Assume that \(Q:D\to\RR^N\) is continuous, diagonally isotone and an M-function.  Assume also that, for every \(z\in D\) and every \(\ell\), the scalar clearing equation \(Q_\ell(\xi,z_{-\ell})=0\) has a unique solution \(\xi\in[\underline z_\ell,\overline z_\ell]\).  Then \(Q(z)=0\) has a unique solution \(z^\star\in D\).  The Jacobi coordinate-clearing iterates starting from any subsolution in \(D\) increase monotonically to \(z^\star\), while those starting from any supersolution in \(D\) decrease monotonically to \(z^\star\).
+\end{thm}
+
+\begin{proof}
+	Let \(T\) be the coordinate-clearing map.  If \(z\in D\) is a subsolution, then \(Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})\).  Diagonal isotonicity and uniqueness of the scalar zero give \(z_\ell\leq T_\ell(z)\) for every \(\ell\), hence \(z\leq T(z)\).  Since \(Q\) is a Z-function,
+	\[
+		Q_\ell(T(z))
+		\leq
+		Q_\ell(T_\ell(z),z_{-\ell})
+		=0,
+	\]
+	so \(T(z)\) is again a subsolution.  Since every subsolution lies below every supersolution by inverse isotonicity, \(T(z)\leq\overline z\), and therefore \(T(z)\in D\).  The supersolution argument is the same with all inequalities reversed.  The lower and upper iterates are thus monotone and trapped in the compact interval \(D\).  Their limits exist, and passing to the limit in the identities \(Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0\) gives \(Q(z^\star)=0\).  If \(z\) and \(z'\) were two zeros in \(D\), then \(Q(z)\leq Q(z')\) and \(Q(z')\leq Q(z)\); inverse isotonicity gives \(z=z'\).
+\end{proof}
+
+\begin{prop}[Smooth M-matrix certificate]\label{prop-smooth-mfunction-certificate}
+\index{M-matrix}% strictindex
+\index{Z-matrix}% strictindex
+\index{diagonal dominance}% strictindex
+	Let \(D\subset\RR^N\) be a convex order interval and let \(Q:D\to\RR^N\) be \(C^1\).  Assume that \(DQ(z)\) has nonpositive off-diagonal entries for every \(z\in D\).  If there exists \(\lambda\gg0\) such that
+	\[
+		\lambda^\top DQ(z)\gg0
+		\qquad\text{for all } z\in D,
+	\]
+	or equivalently
+	\[
+		\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
+		>
+		\sum_{k\neq \ell}\lambda_k
+		\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
+		\qquad 1\leq \ell\leq N,
+	\]
+	then \(Q\) is an M-function on \(D\).
+\end{prop}
+
+\begin{proof}
+	The off-diagonal sign gives the Z-property by integrating the partial derivatives along coordinatewise increasing segments.  The displayed inequalities imply that each \(DQ(z)\) is a strictly weighted column diagonally dominant Z-matrix, hence a nonsingular M-matrix; in particular \(DQ(z)^{-1}\geq0\) for each fixed \(z\)~\cite{Plemmons1977MMatrix}.  For two points \(z,z'\in D\), set
+	\[
+		A=\int_0^1 DQ\big(z'+t(z-z')\big)\,\d t .
+	\]
+	The matrix \(A\) has the same Z-sign pattern and the same strict weighted diagonal dominance, so it is again a nonsingular M-matrix and \(A^{-1}\geq0\).  Since \(Q(z)-Q(z')=A(z-z')\), the implication \(Q(z)\leq Q(z')\) gives \(z-z'=A^{-1}(Q(z)-Q(z'))\leq0\).  This is inverse isotonicity.  The positive diagonal entries also give diagonal isotonicity.
+\end{proof}
+
+\paragraph{Sinkhorn as the canonical \(M_0\)-system.}
+\index{M0-function}% strictindex
+\index{Sinkhorn!scaling}% strictindex
+Let \(\K=\exp(-\C/\epsilon)>0\), and write the entropic plan as
+\[
+	P_{ij}=r_i\K_{ij}s_j,
+	\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
+\]
+The signed convention \(v=-\log s\) makes the clearing map
+\[
+	Q_i^\alpha(u,v)=\sum_j\K_{ij}e^{u_i-v_j}-a_i,
+	\qquad
+	Q_j^\beta(u,v)=b_j-\sum_i\K_{ij}e^{u_i-v_j}.
+\]
+The equations \(Q=0\) are the row and column constraints \(P\ones=\a\) and \(P^\top\ones=\b\), and the coordinate-clearing equations give the usual Sinkhorn scalings
+\index{row constraint}% strictindex
+\index{column constraint}% strictindex
+\index{coordinate clearing}% strictindex
+\[
+	r_i^+=\frac{a_i}{\sum_j\K_{ij}s_j},
+	\qquad
+	s_j^+=\frac{b_j}{\sum_i\K_{ij}r_i}.
+\]
+The Jacobian has positive diagonal terms and nonpositive off-diagonal terms:
+\[
+	\frac{\partial Q_i^\alpha}{\partial u_i}=\sum_jP_{ij},
+	\qquad
+	\frac{\partial Q_i^\alpha}{\partial v_j}=-P_{ij},
+	\qquad
+	\frac{\partial Q_j^\beta}{\partial v_j}=\sum_iP_{ij},
+	\qquad
+	\frac{\partial Q_j^\beta}{\partial u_i}=-P_{ij}.
+\]
+Its column sums vanish, which reflects the gauge invariance \((u,v)\mapsto(u+c\ones,v+c\ones)\).  Thus balanced Sinkhorn is naturally an \(M_0\)-system.  After fixing a gauge, for instance by imposing one linear normalization on the potentials, the reduced Jacobian is a graph-Laplacian minor; under the usual connected-support condition it is a nonsingular M-matrix, and the M-function convergence mechanism applies.  This order-theoretic reading complements the variational and Hilbert-metric proofs above, and also appears in the link between Sinkhorn scaling and choice models~\cite{QuGalichonUgander2023SinkhornChoice}.
+\index{Sinkhorn!scaling}% strictindex
+\index{M-matrix}% strictindex
+\index{gauge invariance}% strictindex
+
+\begin{example}[Lossy Sinkhorn clearing with outside options]\label{ex-lossy-sinkhorn-clearing}
+\index{lossy Sinkhorn clearing}% strictindex
+\index{non-variational scaling}% strictindex
+	The following OT-shaped clearing model is deliberately minimal.  It keeps a positive transport kernel and multiplicative scalings, but introduces outside options and lossy arrivals.  It should be read as a toy absorptive matching model rather than as a new transport distance.  Let \(0<\eta_{ij}\leq1\), \(\sigma_i>0\), \(\tau_j>0\), and set
+\index{outside option}% strictindex
+\index{absorptive matching}% strictindex
+\index{loss factor}% strictindex
+	\[
+		P_{ij}=r_i\K_{ij}s_j,\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
+	\]
+	The clearing equations are
+	\[
+		\sigma_i r_i+\sum_jP_{ij}=a_i,
+		\qquad
+		\tau_j s_j+\sum_i\eta_{ij}P_{ij}=b_j.
+	\]
+	They say that source mass can exit through an outside sink, while target demand can be met either by effective arrivals or by a local outside source.  The coordinate-clearing update is still Sinkhorn-like:
+	\[
+		r_i^+=\frac{a_i}{\sigma_i+\sum_j\K_{ij}s_j},
+		\qquad
+		s_j^+=\frac{b_j}{\tau_j+\sum_i\eta_{ij}\K_{ij}r_i}.
+	\]
+	In the variables \((u,v)\), the off-diagonal derivatives again have the Z-sign.  On the invariant domain \(r_i\leq a_i/\sigma_i\), the simple sufficient condition
+	\[
+		\tau_j>\sum_i(1-\eta_{ij})\K_{ij}\frac{a_i}{\sigma_i},
+		\qquad 1\leq j\leq m,
+	\]
+	implies the weighted diagonal-dominance certificate \(\ones^\top DQ\gg0\), hence Proposition~\ref{prop-smooth-mfunction-certificate} shows that the system is an M-function on that domain.  Indeed, for the clearing map \(Q_i^\alpha=\sigma_i r_i+\sum_jP_{ij}-a_i\) and \(Q_j^\beta=b_j-\tau_j s_j-\sum_i\eta_{ij}P_{ij}\), the column sums of the Jacobian are
+	\[
+		\sigma_i r_i+\sum_j(1-\eta_{ij})P_{ij}>0,
+		\qquad
+		\tau_j s_j-\sum_i(1-\eta_{ij})P_{ij}
+		=
+		s_j\left(\tau_j-\sum_i(1-\eta_{ij})\K_{ij}r_i\right)>0.
+	\]
+	The model is generally non-variational.  If \(Q=\nabla\Phi\) for a \(C^2\) potential, the cross-partials would satisfy
+	\[
+		\frac{\partial Q_i^\alpha}{\partial v_j}
+		=
+		\frac{\partial Q_j^\beta}{\partial u_i}.
+	\]
+	Here this would force \(-P_{ij}=-\eta_{ij}P_{ij}\) on every active arc, hence \(\eta_{ij}=1\).  Lossy arrivals therefore destroy exactness of the one-form \(\sum_\ell Q_\ell\,\d z_\ell\), while preserving the monotone clearing structure.
+\index{one-form}% strictindex
+\end{example}
+
+Figure~\ref{fig:sinkhorn-mfunctions-nonvariational-scaling} shows this mechanism on two empirical Gaussian mixtures in \(\RR^2\).  Increasing \(\sigma\) and \(\tau\) changes the log-scalings smoothly; the visual point is not an optimization benchmark but the persistence of a well-behaved Sinkhorn-shaped fixed point outside the variational OT setting.
+
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c@{}}
+\includegraphics[width=.88\linewidth]{figures/sinkhorn-mfunctions-nonvariational-scaling/uniform-outside.pdf} \\[-.15em]
+\small uniform outside coefficients \\[.25em]
+\includegraphics[width=.88\linewidth]{figures/sinkhorn-mfunctions-nonvariational-scaling/spatial-outside.pdf} \\[-.15em]
+\small spatially varying outside coefficients
+\end{tabular}
+\caption{Non-variational lossy Sinkhorn scaling on two Gaussian-mixture point clouds.  Across columns, the outside-option scale \(\rho\) increases in \(\sigma\) and \(\tau\).  Colors show centered log-scalings, \(\log r-\langle\log r\rangle\) on the source row and \(\log s-\langle\log s\rangle\) on the target row; faint violet links mark the largest entries of the induced effective plan.  The upper panel uses uniform outside coefficients, while the lower panel uses spatially varying outside coefficients and directional loss factors.  The updates are Sinkhorn-like row and column clearings, but the loss factors \(\eta_{ij}\neq1\) break the cross-partial symmetry required by a convex potential.}
+\index{lossy Sinkhorn clearing}% strictindex
+\index{M-function}% strictindex
+\label{fig:sinkhorn-mfunctions-nonvariational-scaling}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sinkhorn Convergence: Sublinear Robust Rate}
@@ -1316,355 +1518,7 @@ as long as $1+u_t''>0$.  This scalar case is useful for visualization because th
 \label{fig:sinkhorn-continuous-epsilon-flow}
 \end{figure}
 
-\newpage
-
 %%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Sample Complexity}
-\index{sample complexity}% strictindex
-
-This section separates two statistical regimes. Exact OT resolves geometry at all spatial scales and pays rates controlled by the metric entropy, hence by the intrinsic dimension, of the support; fixed-temperature Sinkhorn divergences smooth the dual potentials and recover parametric fluctuations, at the price of regularization bias.
-\index{exact OT}% strictindex
-\index{Sinkhorn divergence}% strictindex
-\index{dual!potential}% strictindex
-\index{metric entropy}% strictindex
-
-The sample complexity of unregularized OT suffers from the curse of dimensionality, but the relevant dimension is geometric. If the distributions are supported on a regular lower-dimensional set, for instance a $d'$-dimensional submanifold of $\RR^d$, the empirical rate is governed by $d'$ rather than by the ambient dimension $d$. In the high-dimensional regime for $\Wass_p$, namely $d'>2p$, this gives the characteristic rate $n^{-1/d'}$. Exact OT is therefore dimension-adaptive: it sees the intrinsic dimension of the data support through its covering numbers~\cite{dudley1969speed,weed2017sharp}. Entropic regularization changes a different aspect of the picture: for a fixed $\epsilon>0$, Sinkhorn divergences have parametric $n^{-1/2}$ statistical rates, although the constant deteriorates when $\epsilon\to0$~\cite{genevay2018sample,bigot2017central}. Related two-sample-testing viewpoints are developed in~\cite{ramdas2017wasserstein}, and the large-$\epsilon$ kernel limit connects to classical MMD tests~\cite{gretton2012kernel}. This improvement should be balanced against the regularization bias, which vanishes only when $\epsilon$ is sent to zero.
-\index{maximum mean discrepancy}% strictindex
-\index{curse of dimensionality}% strictindex
-\index{entropic regularization}% strictindex
-\index{sample complexity}% strictindex
-\index{intrinsic dimension}% strictindex
-\index{manifold support}% strictindex
-\index{covering number}% strictindex
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}cc@{}}
-\includegraphics[width=.45\linewidth]{figures/sinkhorn-bias-variance-tradeoff/dimension-3.pdf} &
-\includegraphics[width=.45\linewidth]{figures/sinkhorn-bias-variance-tradeoff/dimension-6.pdf} \\[-.1em]
-\small $d=3$ & \small $d=6$
-\end{tabular}
-\caption{Empirical fluctuations in dimensions three and six. For each sample size $n$, two independent empirical measures $\al_n$ and $\al'_n$ are drawn from the same standard Gaussian law in $\RR^d$. The curves show the median of $D(\al_n,\al'_n)$, normalized by its value at the smallest displayed $n$, with interquartile bands. Exact OT follows a slower dimension-dependent scale, while MMD and the fixed-$\epsilon$ Sinkhorn divergence behave closer to the parametric $n^{-1/2}$ guide. This is a statistical illustration, not a solver benchmark.}
-\index{Sinkhorn divergence}% strictindex
-\index{empirical!measure}% strictindex
-\label{fig:sinkhorn-bias-variance-tradeoff}
-\end{figure}
-
-\begin{prop}[Empirical OT has intrinsic-dimension value rates]\label{prop-empirical-ot-rate}
-\index{empirical!OT}% strictindex
-\index{empirical!OT rate}% strictindex
-	Let $\alpha$ and $\beta$ be probability distributions with densities bounded above and below on $[0,1]^d$, and let $\hat\alpha_n$ and $\hat\beta_m$ be independent empirical measures. For $d>2p$, the expected empirical error for estimating the two-sample distance obeys
-	\[
-		\EE\abs{\Wass_p(\hat\alpha_n,\hat\beta_m)-\Wass_p(\alpha,\beta)}
-		\lesssim
-		n^{-1/d}+m^{-1/d}.
-	\]
-	More generally, if the measures are supported on a compact set with regular $d'$-dimensional volume growth, so that covering numbers at scale $r$ are of order $r^{-d'}$, then the same estimate holds with $d$ replaced by $d'$ when $d'>2p$. This includes smooth compact $d'$-dimensional submanifolds with densities bounded above and below with respect to their volume measure. The exponent changes in low dimension, but the important message is that exact OT deteriorates with the intrinsic dimension of the support rather than necessarily with the ambient dimension.
-\index{exact OT}% strictindex
-\index{intrinsic dimension}% strictindex
-\index{manifold support}% strictindex
-\index{covering number}% strictindex
-\end{prop}
-
-\begin{proof}
-	By the triangle inequality,
-\index{triangle inequality}% strictindex
-	\[
-		\abs{\Wass_p(\hat\alpha_n,\hat\beta_m)-\Wass_p(\alpha,\beta)}
-		\leq
-		\Wass_p(\hat\alpha_n,\alpha)+\Wass_p(\hat\beta_m,\beta).
-	\]
-	We then recall the standard multiscale argument for each one-sample term, suppressing constants~\cite{dudley1969speed,fournier2015rate,weed2017sharp}. For the upper bound, partition $[0,1]^d$ into dyadic cubes. At scale $2^{-j}$, the empirical mass fluctuation over the cells is of order $n^{-1/2}2^{jd/2}$, while moving this excess mass inside cells costs $2^{-j}$. Summing the multiscale contributions up to the scale where the expected number of samples per cell is of order one gives $2^{-J}$ with $2^{Jd}\simeq n$, hence $n^{-1/d}$. On a support with $d'$-dimensional metric entropy, the same chaining argument uses covers with $O(2^{jd'})$ cells at scale $2^{-j}$; the balancing scale becomes $2^{Jd'}\simeq n$ and yields $n^{-1/d'}$. The same estimate with $m$ samples gives the second term. Matching lower bounds for empirical OT follow from packing arguments; they show that this intrinsic-dimension dependence is unavoidable for exact OT.
-\index{dyadic cube}% strictindex
-\index{packing argument}% strictindex
-\index{exact OT}% strictindex
-\index{empirical!OT}% strictindex
-\index{dimension dependence}% strictindex
-\index{intrinsic dimension}% strictindex
-\index{metric entropy}% strictindex
-\end{proof}
-
-\begin{prop}[MMD has a parametric value rate]\label{prop-mmd-sample-rate}
-\index{maximum mean discrepancy}% strictindex
-\index{rate!parametric}% strictindex
-	Let $k$ be a bounded positive definite kernel with RKHS $\Hh_k$, and define
-\index{RKHS}% strictindex
-\index{kernel!positive definite}% strictindex
-	\[
-		\MMD_k(\alpha,\beta)
-		=
-		\norm{\int k(x,\cdot)\d(\alpha-\beta)(x)}_{\Hh_k}.
-	\]
-	If $\hat\alpha_n$ and $\hat\beta_m$ are independent empirical measures, then
-\index{empirical!measure}% strictindex
-	\[
-		\EE\abs{\MMD_k(\hat\alpha_n,\hat\beta_m)-\MMD_k(\alpha,\beta)}
-\index{maximum mean discrepancy}% strictindex
-		\leq
-		\kappa\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right)
-	\]
-	when $k(x,x)\leq\kappa^2$.
-\end{prop}
-
-\begin{proof}
-	Let $\Phi(x)=k(x,\cdot)$ be the feature map and $m_\alpha=\EE\Phi(X)$. The reverse triangle inequality for the RKHS norm gives
-\index{triangle inequality}% strictindex
-\index{RKHS}% strictindex
-	\[
-		\abs{\MMD_k(\hat\alpha_n,\hat\beta_m)-\MMD_k(\alpha,\beta)}
-\index{maximum mean discrepancy}% strictindex
-		\leq
-		\MMD_k(\hat\alpha_n,\alpha)+\MMD_k(\hat\beta_m,\beta).
-	\]
-	Independence cancels the cross terms after taking the squared norm and expectation, giving
-	\[
-		\EE\MMD_k(\hat\alpha_n,\alpha)^2
-		=\frac1n\EE\norm{\Phi(X)-m_\alpha}_{\Hh_k}^2
-		=\frac{1}{n}\Big(\EE k(X,X)-\EE k(X,X')\Big).
-	\]
-	The same estimate applies to $\hat\beta_m$, and Jensen's inequality together with $k(x,x)\leq\kappa^2$ gives the displayed bound.
-\index{Jensen inequality}% strictindex
-\end{proof}
-
-\begin{prop}[Sinkhorn divergences interpolate the rates]\label{prop-sinkhorn-sample-rate}
-\index{Sinkhorn divergence}% strictindex
-	Assume that $\alpha$ and $\beta$ are supported in a compact subset of $\RR^d$ and that the cost is smooth. For fixed $\epsilon>0$, debiased Sinkhorn divergences satisfy representative empirical bounds of the form
-	\[
-		\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_m)-\bar\MK_\c^\epsilon(\alpha,\beta)}
-		\leq
-		C_{c,d}\,\epsilon^{-d/2}\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right),
-	\]
-	up to constants and exponents depending on the precise smoothness class and support diameter. Thus regularization removes the $n^{-1/d}$ curse for fixed $\epsilon$, while the prefactor deteriorates as $\epsilon\to0$.
-\end{prop}
-
-\begin{proof}
-	The proof follows the empirical-process argument of~\cite{genevay2018sample}. By the envelope theorem, the fluctuation of $\MK_\c^\epsilon$ with respect to its first marginal is controlled by the class of entropic dual potentials. The soft $c$-transform smooths these potentials at spatial scale $\sqrt\epsilon$ for a quadratic-type cost. Covering a bounded $d$-dimensional domain at this scale gives an effective complexity of order $\epsilon^{-d/2}$. Standard Rademacher or Dudley entropy bounds then give an empirical-process fluctuation of order $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to the three terms defining the debiased divergence gives the stated bound.
-\index{Rademacher bound}% strictindex
-\index{Dudley entropy}% strictindex
-\index{soft c-transform}% strictindex
-\index{empirical!process}% strictindex
-\index{envelope theorem}% strictindex
-\index{dual!potential}% strictindex
-\end{proof}
-
-\begin{rem}[No free lunch when approximating exact OT]\label{rem-sinkhorn-no-free-lunch}
-\index{exact OT}% strictindex
-	The parametric rate in Proposition~\ref{prop-sinkhorn-sample-rate} holds for fixed $\epsilon$. If the goal is to approximate the unregularized OT value, one must also account for the regularization bias. In a typical bounded-cost finite-dimensional regime,
-\index{rate!parametric}% strictindex
-	\[
-		\abs{\bar\MK_\c^\epsilon(\alpha,\beta)-\MK_\c(\alpha,\beta)}
-		\leq C\epsilon,
-		\qquad
-		\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_\c^\epsilon(\alpha,\beta)}
-		\leq C_{c,d}\epsilon^{-d/2}n^{-1/2}.
-	\]
-	Balancing the two terms gives $\epsilon\simeq n^{-1/(d+2)}$ and total error of order $n^{-1/(d+2)}$. Equivalently, target accuracy $\eta$ requires choosing $\epsilon\simeq\eta$ and $n\simeq\eta^{-(d+2)}$ samples under this bound. Thus entropic smoothing improves the statistical behavior at fixed scale, but approximating exact OT still forces a bias-variance tradeoff whose exponent deteriorates with dimension.
-\index{exact OT}% strictindex
-\index{entropic!smoothing}% strictindex
-\end{rem}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Monotone Clearing Beyond Variational Sinkhorn}
-\index{M-function}% strictindex
-\index{non-variational scaling}% strictindex
-\index{Sinkhorn!scaling}% strictindex
-\label{sec-mfunction-scaling}
-
-The preceding sections mostly used variational structure: Sinkhorn is alternating KL projection, coordinate ascent on a dual objective, or a contraction in a projective metric.  There is another, more algebraic, convergence mechanism which keeps the scaling form but discards the existence of an objective.  In Galichon's equilibrium-flow viewpoint, and in related work on substitutability and inverse isotonicity, one studies nonlinear market-clearing equations whose Jacobian has a substitute sign structure~\cite{GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone}.  This is the nonlinear analogue of the classical theory of nonsingular M-matrices and M-functions~\cite{MoreRheinboldt1973PSFunctions,Plemmons1977MMatrix}.  The relevance for OT is that Sinkhorn is the canonical scaling example, but the same monotone-clearing proof also covers fixed-point equations that are not first-order conditions of any convex regularized transport problem.
-\index{market clearing}% strictindex
-\index{substitutability}% strictindex
-\index{gross substitutes}% strictindex
-
-\paragraph{Two-block clearing maps.}
-Write the unknowns as two blocks \(z=(u,v)\in\RR^n\times\RR^m\), where \(u\) and \(v\) will later be signed log-scalings.  Let
-\index{log-scaling}% strictindex
-\[
-	Q(z)=\big(Q^\alpha(u,v),Q^\beta(u,v)\big)
-	\in\RR^n\times\RR^m
-\]
-be a continuous clearing map.  The parallel coordinate-clearing map \(T\) is defined by solving, for each coordinate,
-\[
-	Q_\ell\big(T_\ell(z),z_{-\ell}\big)=0,
-	\qquad 1\leq \ell\leq n+m.
-\]
-This is the Jacobi version: all coordinates are cleared against the old values of the other coordinates.  In two-block scaling problems, all coordinates in \(u\) decouple when \(v\) is fixed, and all coordinates in \(v\) decouple when \(u\) is fixed.  The more common alternating Sinkhorn sweep is the Gauss--Seidel composition of these two block clearings; the order argument below is stated for the parallel map to keep the notation short.  The same construction extends to any finite number of blocks.
-
-\begin{defn}[Z-functions and M-functions]\label{def-mfunctions}
-\index{Z-function}% strictindex
-\index{M-function}% strictindex
-\index{diagonal isotonicity}% strictindex
-\index{inverse isotonicity}% strictindex
-	Let \(D\subset\RR^N\) be an order interval.  A map \(Q:D\to\RR^N\) is diagonally isotone if \(Q_\ell(z_\ell,z_{-\ell})\) is nondecreasing in \(z_\ell\) for every \(\ell\).  It is a Z-function if increasing the other coordinates cannot increase the \(\ell\)-th component:
-	\[
-		z_{-\ell}\leq z'_{-\ell}
-		\quad\Longrightarrow\quad
-		Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).
-	\]
-	For a \(C^1\) map this means \(\partial Q_\ell/\partial z_k\leq0\) for \(k\neq\ell\).  An M-function is a Z-function which is inverse isotone:
-	\[
-		Q(z)\leq Q(z')
-		\quad\Longrightarrow\quad
-		z\leq z'.
-	\]
-	A vector \(z\) is a subsolution if \(Q(z)\leq0\), and a supersolution if \(Q(z)\geq0\).
-\index{subsolution}% strictindex
-\index{supersolution}% strictindex
-\index{order interval}% strictindex
-\end{defn}
-
-The M-function assumption says that cross-effects have the sign of substitutes, and that own effects dominate them strongly enough to prevent a global reversal of order.  Galichon, Samuelson and Vernet formulate this idea through nonreversingness and unified gross substitutes; for single-valued maps this is the inverse-isotone structure used below.  A degenerate \(M_0\)-function keeps the same order structure but allows a null gauge direction, which is exactly what happens for balanced Sinkhorn before a potential normalization is imposed.
-\index{M0-function}% strictindex
-\index{gauge direction}% strictindex
-
-\begin{thm}[Monotone convergence of coordinate clearing]\label{thm-mfunction-jacobi-convergence}
-\index{coordinate clearing}% strictindex
-\index{Jacobi iteration}% strictindex
-\index{M-function}% strictindex
-	Let \(D=[\underline z,\overline z]\subset\RR^N\) be a closed order interval, with \(\underline z\) a subsolution and \(\overline z\) a supersolution.  Assume that \(Q:D\to\RR^N\) is continuous, diagonally isotone and an M-function.  Assume also that, for every \(z\in D\) and every \(\ell\), the scalar clearing equation \(Q_\ell(\xi,z_{-\ell})=0\) has a unique solution \(\xi\in[\underline z_\ell,\overline z_\ell]\).  Then \(Q(z)=0\) has a unique solution \(z^\star\in D\).  The Jacobi coordinate-clearing iterates starting from any subsolution in \(D\) increase monotonically to \(z^\star\), while those starting from any supersolution in \(D\) decrease monotonically to \(z^\star\).
-\end{thm}
-
-\begin{proof}
-	Let \(T\) be the coordinate-clearing map.  If \(z\in D\) is a subsolution, then \(Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})\).  Diagonal isotonicity and uniqueness of the scalar zero give \(z_\ell\leq T_\ell(z)\) for every \(\ell\), hence \(z\leq T(z)\).  Since \(Q\) is a Z-function,
-	\[
-		Q_\ell(T(z))
-		\leq
-		Q_\ell(T_\ell(z),z_{-\ell})
-		=0,
-	\]
-	so \(T(z)\) is again a subsolution.  Since every subsolution lies below every supersolution by inverse isotonicity, \(T(z)\leq\overline z\), and therefore \(T(z)\in D\).  The supersolution argument is the same with all inequalities reversed.  The lower and upper iterates are thus monotone and trapped in the compact interval \(D\).  Their limits exist, and passing to the limit in the identities \(Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0\) gives \(Q(z^\star)=0\).  If \(z\) and \(z'\) were two zeros in \(D\), then \(Q(z)\leq Q(z')\) and \(Q(z')\leq Q(z)\); inverse isotonicity gives \(z=z'\).
-\end{proof}
-
-\begin{prop}[Smooth M-matrix certificate]\label{prop-smooth-mfunction-certificate}
-\index{M-matrix}% strictindex
-\index{Z-matrix}% strictindex
-\index{diagonal dominance}% strictindex
-	Let \(D\subset\RR^N\) be a convex order interval and let \(Q:D\to\RR^N\) be \(C^1\).  Assume that \(DQ(z)\) has nonpositive off-diagonal entries for every \(z\in D\).  If there exists \(\lambda\gg0\) such that
-	\[
-		\lambda^\top DQ(z)\gg0
-		\qquad\text{for all } z\in D,
-	\]
-	or equivalently
-	\[
-		\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
-		>
-		\sum_{k\neq \ell}\lambda_k
-		\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
-		\qquad 1\leq \ell\leq N,
-	\]
-	then \(Q\) is an M-function on \(D\).
-\end{prop}
-
-\begin{proof}
-	The off-diagonal sign gives the Z-property by integrating the partial derivatives along coordinatewise increasing segments.  The displayed inequalities imply that each \(DQ(z)\) is a strictly weighted column diagonally dominant Z-matrix, hence a nonsingular M-matrix; in particular \(DQ(z)^{-1}\geq0\) for each fixed \(z\)~\cite{Plemmons1977MMatrix}.  For two points \(z,z'\in D\), set
-	\[
-		A=\int_0^1 DQ\big(z'+t(z-z')\big)\,\d t .
-	\]
-	The matrix \(A\) has the same Z-sign pattern and the same strict weighted diagonal dominance, so it is again a nonsingular M-matrix and \(A^{-1}\geq0\).  Since \(Q(z)-Q(z')=A(z-z')\), the implication \(Q(z)\leq Q(z')\) gives \(z-z'=A^{-1}(Q(z)-Q(z'))\leq0\).  This is inverse isotonicity.  The positive diagonal entries also give diagonal isotonicity.
-\end{proof}
-
-\paragraph{Sinkhorn as the canonical \(M_0\)-system.}
-\index{M0-function}% strictindex
-\index{Sinkhorn!scaling}% strictindex
-Let \(\K=\exp(-\C/\epsilon)>0\), and write the entropic plan as
-\[
-	P_{ij}=r_i\K_{ij}s_j,
-	\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-\]
-The signed convention \(v=-\log s\) makes the clearing map
-\[
-	Q_i^\alpha(u,v)=\sum_j\K_{ij}e^{u_i-v_j}-a_i,
-	\qquad
-	Q_j^\beta(u,v)=b_j-\sum_i\K_{ij}e^{u_i-v_j}.
-\]
-The equations \(Q=0\) are the row and column constraints \(P\ones=\a\) and \(P^\top\ones=\b\), and the coordinate-clearing equations give the usual Sinkhorn scalings
-\index{row constraint}% strictindex
-\index{column constraint}% strictindex
-\index{coordinate clearing}% strictindex
-\[
-	r_i^+=\frac{a_i}{\sum_j\K_{ij}s_j},
-	\qquad
-	s_j^+=\frac{b_j}{\sum_i\K_{ij}r_i}.
-\]
-The Jacobian has positive diagonal terms and nonpositive off-diagonal terms:
-\[
-	\frac{\partial Q_i^\alpha}{\partial u_i}=\sum_jP_{ij},
-	\qquad
-	\frac{\partial Q_i^\alpha}{\partial v_j}=-P_{ij},
-	\qquad
-	\frac{\partial Q_j^\beta}{\partial v_j}=\sum_iP_{ij},
-	\qquad
-	\frac{\partial Q_j^\beta}{\partial u_i}=-P_{ij}.
-\]
-Its column sums vanish, which reflects the gauge invariance \((u,v)\mapsto(u+c\ones,v+c\ones)\).  Thus balanced Sinkhorn is naturally an \(M_0\)-system.  After fixing a gauge, for instance by imposing one linear normalization on the potentials, the reduced Jacobian is a graph-Laplacian minor; under the usual connected-support condition it is a nonsingular M-matrix, and the M-function convergence mechanism applies.  This order-theoretic reading complements the variational and Hilbert-metric proofs above, and also appears in the link between Sinkhorn scaling and choice models~\cite{QuGalichonUgander2023SinkhornChoice}.
-\index{Sinkhorn!scaling}% strictindex
-\index{M-matrix}% strictindex
-\index{gauge invariance}% strictindex
-
-\begin{example}[Lossy Sinkhorn clearing with outside options]\label{ex-lossy-sinkhorn-clearing}
-\index{lossy Sinkhorn clearing}% strictindex
-\index{non-variational scaling}% strictindex
-	The following OT-shaped clearing model is deliberately minimal.  It keeps a positive transport kernel and multiplicative scalings, but introduces outside options and lossy arrivals.  It should be read as a toy absorptive matching model rather than as a new transport distance.  Let \(0<\eta_{ij}\leq1\), \(\sigma_i>0\), \(\tau_j>0\), and set
-\index{outside option}% strictindex
-\index{absorptive matching}% strictindex
-\index{loss factor}% strictindex
-	\[
-		P_{ij}=r_i\K_{ij}s_j,\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-	\]
-	The clearing equations are
-	\[
-		\sigma_i r_i+\sum_jP_{ij}=a_i,
-		\qquad
-		\tau_j s_j+\sum_i\eta_{ij}P_{ij}=b_j.
-	\]
-	They say that source mass can exit through an outside sink, while target demand can be met either by effective arrivals or by a local outside source.  The coordinate-clearing update is still Sinkhorn-like:
-	\[
-		r_i^+=\frac{a_i}{\sigma_i+\sum_j\K_{ij}s_j},
-		\qquad
-		s_j^+=\frac{b_j}{\tau_j+\sum_i\eta_{ij}\K_{ij}r_i}.
-	\]
-	In the variables \((u,v)\), the off-diagonal derivatives again have the Z-sign.  On the invariant domain \(r_i\leq a_i/\sigma_i\), the simple sufficient condition
-	\[
-		\tau_j>\sum_i(1-\eta_{ij})\K_{ij}\frac{a_i}{\sigma_i},
-		\qquad 1\leq j\leq m,
-	\]
-	implies the weighted diagonal-dominance certificate \(\ones^\top DQ\gg0\), hence Proposition~\ref{prop-smooth-mfunction-certificate} shows that the system is an M-function on that domain.  Indeed, for the clearing map \(Q_i^\alpha=\sigma_i r_i+\sum_jP_{ij}-a_i\) and \(Q_j^\beta=b_j-\tau_j s_j-\sum_i\eta_{ij}P_{ij}\), the column sums of the Jacobian are
-	\[
-		\sigma_i r_i+\sum_j(1-\eta_{ij})P_{ij}>0,
-		\qquad
-		\tau_j s_j-\sum_i(1-\eta_{ij})P_{ij}
-		=
-		s_j\left(\tau_j-\sum_i(1-\eta_{ij})\K_{ij}r_i\right)>0.
-	\]
-	The model is generally non-variational.  If \(Q=\nabla\Phi\) for a \(C^2\) potential, the cross-partials would satisfy
-	\[
-		\frac{\partial Q_i^\alpha}{\partial v_j}
-		=
-		\frac{\partial Q_j^\beta}{\partial u_i}.
-	\]
-	Here this would force \(-P_{ij}=-\eta_{ij}P_{ij}\) on every active arc, hence \(\eta_{ij}=1\).  Lossy arrivals therefore destroy exactness of the one-form \(\sum_\ell Q_\ell\,\d z_\ell\), while preserving the monotone clearing structure.
-\index{one-form}% strictindex
-\end{example}
-
-Figure~\ref{fig:sinkhorn-mfunctions-nonvariational-scaling} shows this mechanism on two empirical Gaussian mixtures in \(\RR^2\).  Increasing \(\sigma\) and \(\tau\) changes the log-scalings smoothly; the visual point is not an optimization benchmark but the persistence of a well-behaved Sinkhorn-shaped fixed point outside the variational OT setting.
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}c@{}}
-\includegraphics[width=.88\linewidth]{figures/sinkhorn-mfunctions-nonvariational-scaling/uniform-outside.pdf} \\[-.15em]
-\small uniform outside coefficients \\[.25em]
-\includegraphics[width=.88\linewidth]{figures/sinkhorn-mfunctions-nonvariational-scaling/spatial-outside.pdf} \\[-.15em]
-\small spatially varying outside coefficients
-\end{tabular}
-\caption{Non-variational lossy Sinkhorn scaling on two Gaussian-mixture point clouds.  Across columns, the outside-option scale \(\rho\) increases in \(\sigma\) and \(\tau\).  Colors show centered log-scalings, \(\log r-\langle\log r\rangle\) on the source row and \(\log s-\langle\log s\rangle\) on the target row; faint violet links mark the largest entries of the induced effective plan.  The upper panel uses uniform outside coefficients, while the lower panel uses spatially varying outside coefficients and directional loss factors.  The updates are Sinkhorn-like row and column clearings, but the loss factors \(\eta_{ij}\neq1\) break the cross-partial symmetry required by a convex potential.}
-\index{lossy Sinkhorn clearing}% strictindex
-\index{M-function}% strictindex
-\label{fig:sinkhorn-mfunctions-nonvariational-scaling}
-\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
