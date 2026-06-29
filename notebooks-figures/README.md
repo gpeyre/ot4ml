@@ -2,25 +2,25 @@
 
 This directory contains the executable notebooks that generate the illustrative
 figures currently included in the OT4ML book. Each live notebook writes one or
-several PDF panels to `../latex/figures/<figure-name>/`; the thumbnails below
+several PDF panels to `../OT4ML/figures/<figure-name>/`; the thumbnails below
 are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 116
-live `latex/figures/<figure-name>/` directories referenced by
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 117
+live `OT4ML/figures/<figure-name>/` directories referenced by
 `\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
 in [`thumbnails/`](thumbnails/), and generated PDF panels in
-`../latex/figures/`. The searchable gallery currently exposes 117 figure views,
+`../OT4ML/figures/`. The searchable gallery currently exposes 118 figure views,
 because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 119 LaTeX figure labels because
+schedule-comparison view. The book currently has 120 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet
 below is built from the same active thumbnail set.
 
 This README intentionally lists only figure views integrated in the current
 LaTeX or MyST sources. Retired or exploratory notebooks live in
 [`removed/`](removed/), with their matching
-generated panels in [`../latex/figures/removed/`](../latex/figures/removed/).
+generated panels in [`../OT4ML/figures/removed/`](../OT4ML/figures/removed/).
 They are kept for provenance but omitted from this paper gallery.
 
 Open a notebook locally from the **Open notebook** link, or launch it in Google
@@ -826,19 +826,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="gradflow-jko-entropy-steps.ipynb"><img src="thumbnails/gradflow-jko-entropy-steps.png" alt="JKO steps for the entropy flow" width="210"></a><br>
   <strong>JKO steps for the entropy flow</strong><br>
   <a href="gradflow-jko-entropy-steps.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-jko-entropy-steps.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="gradflow-heat-versus-porous-medium.ipynb"><img src="thumbnails/gradflow-heat-versus-porous-medium.png" alt="Heat flow and porous-medium powers" width="210"></a><br>
   <strong>Heat flow and porous-medium powers</strong><br>
   <a href="gradflow-heat-versus-porous-medium.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-heat-versus-porous-medium.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="gradflow-fractional-laplacian-diffusion.ipynb"><img src="thumbnails/gradflow-fractional-laplacian-diffusion.png" alt="Fractional Laplacian diffusion" width="210"></a><br>
+  <strong>Fractional Laplacian diffusion</strong><br>
+  <a href="gradflow-fractional-laplacian-diffusion.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-fractional-laplacian-diffusion.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="gradflow-mmd-particle-count.ipynb"><img src="thumbnails/gradflow-mmd-particle-count.png" alt="Particle count for squared-MMD flow" width="210"></a><br>
   <strong>Particle count for squared-MMD flow</strong><br>
   <a href="gradflow-mmd-particle-count.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-mmd-particle-count.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>

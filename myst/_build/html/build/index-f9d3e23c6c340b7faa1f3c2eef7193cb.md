@@ -85,7 +85,7 @@ environment:
 
 :::{note}
 The current web layer is a prototype, but its chapter list now mirrors the 14
-main chapters compiled by `latex/OT4ML.tex`. Each chapter demonstrates the
+main chapters compiled by `OT4ML/OT4ML.tex`. Each chapter demonstrates the
 intended pattern: hidden helpers, static notebook figures, and browser-native
 interactive demos beside the mathematical exposition.
 :::

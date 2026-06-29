@@ -12,7 +12,7 @@ from matplotlib.colors import to_rgb
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LATEX_FIGURES = ROOT / "latex" / "figures"
+LATEX_FIGURES = ROOT / "OT4ML" / "figures"
 
 RED = "#d73027"
 BLUE = "#2166ac"

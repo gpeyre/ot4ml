@@ -5,7 +5,7 @@ This document collects new figure ideas that could be added to the paper after t
 Each item is indexed by a possible future LaTeX label `fig:<name>`.  The same `<name>` should be used for the notebook name and output directory if the figure is implemented:
 
 - notebook: `notebooks-figures/<name>.ipynb`;
-- generated panels: `latex/figures/<name>/*.pdf`;
+- generated panels: `OT4ML/figures/<name>/*.pdf`;
 - LaTeX label: `\label{fig:<name>}`.
 
 The list is organized by the current chapter order.  Items marked `priority: high` are the ones that seem most likely to clarify a key concept that is currently not visualized as directly as it could be.

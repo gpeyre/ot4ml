@@ -4,7 +4,7 @@ This directory contains an experimental MyST/Jupyter Book 2 version of OT4ML.
 It fuses the LaTeX exposition with the notebook-generated figures and adds
 small browser-native interactive demos beside selected examples. The web table
 of contents mirrors the front matter, 14 main chapter inputs, conclusion,
-acknowledgements, and notation-table appendix in `../latex/OT4ML.tex`; those
+acknowledgements, and notation-table appendix in `../OT4ML/OT4ML.tex`; those
 converted pages are listed in `myst.yml`.
 
 The entry point is `index.md`, the project configuration is `myst.yml`, and

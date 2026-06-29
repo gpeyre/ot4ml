@@ -9,7 +9,7 @@
 \index{Sinkhorn algorithm}% strictindex
 \label{sec-sinkhorn}
 
-Entropic regularization makes optimal transport smooth, strictly convex and scalable. This chapter first explains the discrete KL-regularized problem, derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the same construction as a relative-entropy projection problem. It then records the general continuous formulation, explains the path-space Schr\"odinger problem behind the static coupling formulation, develops the dual soft-transform picture, and presents the main convex regularization variants and the debiased Sinkhorn divergence. A final section records a less standard viewpoint: after fixing the potential gauge, the finite-dimensional Sinkhorn equations admit a local holomorphic continuation to complex values of the temperature. The presentation connects the older matrix-scaling literature~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67} with modern entropic OT~\cite{CuturiSinkhorn,peyre2019computational}.
+Entropic regularization makes optimal transport smooth, strictly convex and scalable. This chapter first explains the discrete KL-regularized problem, derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the same construction as a relative-entropy projection problem. It then records the general continuous formulation, develops the dual soft-transform picture, explains the path-space Schr\"odinger problem behind the static coupling formulation, and presents the main convex regularization variants and the debiased Sinkhorn divergence. A final section records a less standard viewpoint: after fixing the potential gauge, the finite-dimensional Sinkhorn equations admit a local holomorphic continuation to complex values of the temperature. The presentation connects the older matrix-scaling literature~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67} with modern entropic OT~\cite{CuturiSinkhorn,peyre2019computational}.
 \index{matrix!scaling}% strictindex
 \index{entropic!OT}% strictindex
 \index{path-space formulation}% strictindex
@@ -576,7 +576,7 @@ Subtracting $\min_{i,j}\C_{i,j}$ from the cost changes every feasible objective 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{General Formulation}
 
-The continuous formulation replaces matrices by measures and discrete KL by relative entropy. It is the static endpoint problem solved by Sinkhorn; the next section explains how it is obtained from an optimization problem on stochastic paths.
+The continuous formulation replaces matrices by measures and discrete KL by relative entropy. It is the static endpoint problem solved by Sinkhorn; the path-space interpretation developed in Section~\ref{sec-path-space-schrodinger} explains how it is obtained from an optimization problem on stochastic paths.
 \index{relative entropy}% strictindex
 
 One can consider arbitrary measures by replacing the discrete entropy with the relative entropy with respect to the product measure $\d\al\otimes\d\be(x,y) \eqdef \d\al(x)\d\be(y)$, and propose a regularized counterpart to~\eqref{eq-mk-generic} using
@@ -602,17 +602,292 @@ The measure-theoretic definition is the exact analogue of Definition~\ref{def-di
 For fixed balanced marginals, the specific product reference in the entropy only matters up to additive constants, exactly as in Proposition~\ref{prop-kl-shift}, provided the alternative reference marginals are mutually absolutely continuous with $\al$ and $\be$. Its support and absolute-continuity structure are nevertheless essential: they determine which couplings have finite entropy. This distinction becomes substantive in the unbalanced setting, where the marginal constraints no longer freeze the additive terms.
 \index{marginal!constraint}% strictindex
 \index{absolute continuity}% strictindex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Dual of Sinkhorn}
+\index{Sinkhorn!dual}% strictindex
+
+The dual point of view replaces couplings by potentials and soft $c$-transforms. It is the right formulation for stabilized implementations and differentiation.
+\index{soft c-transform}% strictindex
+
+%%%
+\paragraph{Discrete dual.}
+
+The following proposition details the dual problem associated with the KL-normalized formulation~\eqref{eq-regularized-discr-rescaled}. This formulation has the same minimizer as~\eqref{eq-regularized-discr}; its optimal value is shifted by the constant $\epsilon\HD(\a)+\epsilon\HD(\b)$.
+\index{dual!problem}% strictindex
+
+\begin{prop}[Dual of entropic OT]
+\index{entropic!OT}% strictindex
+The optimal value of~\eqref{eq-regularized-discr-rescaled} is
+\eql{\label{eq-dual-formulation}
+	\umin{\P \in \CouplingsD(\a,\b)}
+		\dotp{\P}{\C}+\epsilon\KLD(\P|\a\otimes\b)
+	=
+	\umax{\fD \in \RR^n,\gD \in \RR^m}
+		 \dotp{\fD}{\a} + \dotp{\gD}{\b}
+		% - \epsilon\sum_{i,j} e^{ \frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon} }.
+%		- \epsilon \dotp{e^{\fD/\epsilon} }{ \K e^{\gD/\epsilon}}.
+	- \epsilon \sum_{i,j} \exp\pa{
+		\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}
+	} \a_i \b_j + \epsilon.
+}
 %
-The path-space meaning of this static problem is developed next. The main point is that a noisy reference dynamics first defines a probability law on trajectories; after optimizing out the conditional law of the path given its endpoints, only the endpoint coupling remains.
-\index{conditional law}% strictindex
+The optimal $(\fD,\gD)$ are linked to scalings $(\uD,\vD)$ appearing in~\eqref{eq-scaling-form} through
+\index{scaling!form}% strictindex
+\eql{\label{eq-entropy-pd}
+		\uD_i=\a_i e^{\fD_i/\epsilon}
+		\qandq
+		\vD_j=\b_j e^{\gD_j/\epsilon}.
+}
+\end{prop}
+
+\begin{proof}
+We introduce Lagrange multipliers and consider
+\eq{
+	\umin{\P \geq 0} \umax{\fD,\gD} \dotp{\C}{\P} + \epsilon \KLD(\P|\a \otimes \b) + \dotp{\a-\P\ones}{\fD} + \dotp{\b-\P^\top\ones}{\gD}.
+}
+	Finite-dimensional convex duality allows us to exchange the minimum over $\P$ with the maximum over $(\fD,\gD)$, giving
+	\eq{
+		 \umax{\fD,\gD}
+		 \dotp{\fD}{\a} + \dotp{\gD}{\b}
+		 +
+		 \epsilon \umin{\P \geq 0}
+		 \pa{
+			\KLD(\P|\a \otimes \b)
+			-
+			\dotp{\frac{\fD\oplus\gD-\C}{\epsilon}}{\P}
+		 }
+			=
+			\dotp{\fD}{\a} + \dotp{\gD}{\b} - \epsilon \KLD^*\pa{ \frac{\fD\oplus\gD-\C}{\epsilon}|\a \otimes \b }.
+	}
+	One concludes by using~\eqref{eq-legendre} for $\phi(r)=r \log(r)-r+1$
+	\eq{
+		\KLD^*(H|\a \otimes \b) = \sum_{i,j} \phi^*(H_{i,j}) \a_i \b_j.
+	}
+	Indeed, the scalar maximization
+	\[
+		\phi^*(s)=\sup_{r\geq0}\{rs-r\log r+r-1\}
+	\]
+	has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
+\end{proof}
+
+%%%
+\paragraph{Discrete soft $c$-transforms.}
+\index{soft c-transform}% strictindex
+
+Since the dual problem~\eqref{eq-dual-formulation} is smooth and concave, one can perform alternating block maximization. For a fixed $\gD$, maximizing with respect to $\fD$ leads to the following equation after zeroing the derivative with respect to $\fD$:
+\index{dual!problem}% strictindex
+\eq{
+	\a_i - e^{\frac{\fD_i}{\epsilon}} \a_i \sum_j \exp\pa{
+		\frac{\gD_j-\C_{i,j}}{\epsilon}
+	} \b_j = 0
+}
+which leads to the explicit solution
+\eq{
+	\fD_i = -\epsilon \log \sum_j \exp\pa{ \frac{\gD_j-\C_{i,j}}{\epsilon} } \b_j.
+}
+The log-sum-exp form is best read as a smoothed minimum. This gives the entropic analogue of the hard $c$-transform.
+
+\begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
+\index{soft!minimum}% strictindex
+\index{soft c-transform}% strictindex
+\index{c-transform}% strictindex
+		For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is
+		\[
+			{\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j.
+		\]
+		It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $\C$, the discrete soft $c$-transforms are
+	\eql{\label{eq-soft-c-1}
+		\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD )
+	}
+	and
+	\eql{\label{eq-soft-c-2}
+		\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
+	}
+\end{defn}
+Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These iterations, however, become unstable for small $\epsilon$. To apply the algorithm in this regime, one needs to stabilize it using the celebrated log-sum-exp trick. This follows from noticing that, similarly to the minimum operator, one has
+\index{log-sum-exp}% strictindex
+\index{Sinkhorn algorithm}% strictindex
+\eq{
+	{\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}
+}
+and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
+
+\begin{alg}[Log-domain Sinkhorn by soft transforms]\label{alg:log-domain-sinkhorn}
+\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+
+\textbf{Output:} Entropic coupling $\P$ computed from stabilized potentials.
+
+\textbf{Initialize:} Set $\gD^{(0)}=0$, \(\eta_0=+\infty\), and \(k=0\).
+
+\textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
+\begin{algblock}
+
+\textbf{Set} \(k\leftarrow k+1\).
+
+\textbf{Compute} stabilized soft transform:
+\(\fD_i^{(k)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k-1)}-\C_{ij}}{\epsilon}\right)\b_j.\)
+
+\textbf{Compute} stabilized reverse soft transform:
+\(\gD_j^{(k)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k)}-\C_{ij}}{\epsilon}\right)\a_i.\)
+
+\textbf{Set} \(\eta_k=\max\{\norm{\fD^{(k)}-\fD^{(k-1)}}_\infty,\norm{\gD^{(k)}-\gD^{(k-1)}}_\infty\}\), with the first term ignored for \(k=1\).
+\end{algblock}
+\algreturnskip
+\textbf{Return} \(\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij}}{\epsilon}\right).\)
+\end{alg}
+
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}cccc@{}}
+\small hard transform & \small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ \\[-.15em]
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--hard.pdf} &
+\index{soft c-transform}% strictindex
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p55.pdf} &
+\index{c-transform}% strictindex
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p14.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p035.pdf}
+\end{tabular}
+\caption{Soft $c$-transforms for decreasing temperatures. The hard transform is the lower envelope of shifted cost functions, while a positive $\epsilon$ replaces the pointwise minimum by a log-sum-exp soft minimum. As $\epsilon$ decreases, the soft transform sharpens and approaches the non-smooth hard envelope.}
+\index{log-sum-exp}% strictindex
+\index{soft!transform}% strictindex
+\index{soft!minimum}% strictindex
+\label{fig:sinkhorn-soft-c-transform-epsilon}
+\end{figure}
+
+%%%
+\paragraph{Continuous dual and soft-transforms.}
+\index{continuous!dual}% strictindex
+
+For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
+\eql{\label{eq-dual-sinkh-cont}
+	\MK_\c^\epsilon(\al,\be)
+	=
+	\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
+	\mathcal D_\epsilon(f,g),
+}
+where
+\eql{\label{eq-dual-sinkhorn-objective}
+	\mathcal D_\epsilon(f,g)
+	\eqdef
+	\int_{\Xx} f(x)\d\al(x)
+	+
+	\int_{\Yy} g(y)\d\be(y)
+	-
+	\epsilon
+	\int_{\Xx\times\Yy}
+	\pa{
+		e^{\frac{f(x)+g(y)-c(x,y)}{\epsilon}}-1
+	}
+	\d\al(x)\d\be(y).
+}
+This is the smooth counterpart of the hard feasibility constraint $f\oplus g\leq c$ from the Kantorovich dual: violations are penalized exponentially and disappear in the limit $\epsilon\to0$.
+
+The corresponding soft $c$-transforms are the exact block maximizers of this dual objective. They are the continuous log-integral counterparts of Definition~\ref{def-discrete-soft-c-transform}.
+
+\begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
+\index{soft c-transform}% strictindex
+\index{soft!transform}% strictindex
+	For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
+	\begin{align}
+		f^{c,\epsilon}(y)
+		&\eqdef
+		-\epsilon\log\!\left(
+			\int_{\Xx}
+			e^{\frac{f(x)-c(x,y)}{\epsilon}}\d\al(x)
+		\right),
+		\qquad y\in\Yy, \label{eq-soft-c-cont-f}\\
+		g^{\bar c,\epsilon}(x)
+		&\eqdef
+		-\epsilon\log\!\left(
+			\int_{\Yy}
+			e^{\frac{g(y)-c(x,y)}{\epsilon}}\d\be(y)
+		\right),
+		\qquad x\in\Xx . \label{eq-soft-c-cont-g}
+	\end{align}
+\end{defn}
+In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} and~\eqref{eq-soft-c-2}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
+\index{soft!transform}% strictindex
+\index{semi-discrete!OT}% strictindex
+
+\begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
+\index{dual!potential}% strictindex
+	Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
+\index{dual!problem}% strictindex
+	\[
+		(f^\star+\lambda,g^\star-\lambda),
+		\qquad \lambda\in\RR .
+	\]
+\end{prop}
+
+\begin{proof}
+	Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
+\index{soft c-transform}% strictindex
+\index{soft!transform}% strictindex
+	\[
+		\norm{f}_V+\norm{g}_V
+		\leq
+		2(\sup c-\inf c).
+	\]
+	Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
+	\[
+		\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')}
+		\leq
+		\sup_y\abs{c(x,y)-c(x',y)}.
+	\]
+	After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzel\`a--Ascoli gives a uniformly converging subsequence, and continuity of~\eqref{eq-dual-sinkhorn-objective} gives a maximizer.
+
+	For uniqueness, use strict convexity of
+\index{strict!convexity}% strictindex
+	\[
+		H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)
+	\]
+	on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
+\end{proof}
+
+\begin{rem}[Convexity properties of soft transforms]\label{rem-soft-transform-convexity}
+\index{soft!transform}% strictindex
+	The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
+\index{log-sum-exp}% strictindex
+\index{quadratic cost}% strictindex
+\index{c-concavity}% strictindex
+\end{rem}
+
+\paragraph{Neural dual solvers.}
+\index{neural!Sinkhorn solver}% strictindex
+\index{input-convex neural network}% strictindex
+\index{convex!neural network}% strictindex
+The convex-potential structure of the preceding remark suggests a sample-based alternative to evaluating soft transforms on a grid or on all pairs of samples. For the bilinear cost \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: writing \(\Phi=-f\) and \(\Psi=-g\), the zero-temperature constraint \(f(x)+g(y)\leq-\dotp{x}{y}\) becomes the Fenchel-type inequality
+\[
+	\Phi(x)+\Psi(y)\geq \dotp{x}{y}.
+\]
+For the quadratic cost this is the same statement after subtracting the quadratic terms, as in Remark~\ref{rem-soft-transform-convexity}. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
+
+A useful parameterization is given by input-convex neural networks (ICNNs)~\cite{amos2017input,makkuva2020optimal}. The construction mirrors elementary closure rules for convex functions: nonnegative linear combinations preserve convexity, composition with a convex nondecreasing scalar nonlinearity preserves convexity, and the ReLU \(r\mapsto\max(r,0)\) is both convex and nondecreasing. Thus a feed-forward network with nonnegative hidden-to-hidden weights and affine skip connections from the input defines a convex function of its input. This gives a flexible cone of convex trial potentials, although the finite-dimensional optimization over the network weights is not a convex optimization problem. Universal-approximation statements must also be read with this distinction in mind: max-affine functions are dense among continuous convex functions on compact convex sets, and ICNN-type architectures are designed to inherit this approximation principle. General ReLU universal approximation results, such as the width \(d+1\) theorem on compact subsets of \(\RR^d\)~\cite{hanin2019universal}, provide useful background but do not by themselves enforce convexity. In practice, neural dual solvers trade exact Sinkhorn scaling for amortized stochastic optimization of the dual potentials.
+\index{Fenchel inequality}% strictindex
+\index{input-convex neural network}% strictindex
+\index{convex!potential}% strictindex
+\index{neural!dual solver}% strictindex
+
+\begin{rem}[Gaussian marginals]\label{rem-sinkhorn-gaussian-marginals}
+\index{Gaussian!marginals}% strictindex
+	For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve quadratic functions, because products and convolutions of Gaussian functions remain Gaussian. Hence optimal entropic potentials are quadratic and the optimal entropic coupling is Gaussian. Section~\ref{sec-gaussian-sinkhorn} makes this finite-dimensional closure explicit.
+\index{entropic!potential}% strictindex
+\index{soft!transform}% strictindex
+\end{rem}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The path-space meaning of the static Schr\"odinger problem now follows the dual construction. A noisy reference dynamics first defines a probability law on trajectories; after optimizing out the conditional law of the path given its endpoints, only the endpoint coupling remains.
+
 \index{path-space formulation}% strictindex
-\index{endpoint coupling}% strictindex
-\index{path space}% strictindex
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Path-Space Schr\"odinger Problem}
 \index{path-space formulation}% strictindex
 \index{Schrodinger!problem}% strictindex
@@ -1003,284 +1278,6 @@ Large $\epsilon$ therefore favors nearly independent endpoints, while small $\ep
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Dual of Sinkhorn}
-\index{Sinkhorn!dual}% strictindex
-
-The dual point of view replaces couplings by potentials and soft $c$-transforms. It is the right formulation for stabilized implementations and differentiation.
-\index{soft c-transform}% strictindex
-
-%%%
-\paragraph{Discrete dual.}
-
-The following proposition details the dual problem associated with the KL-normalized formulation~\eqref{eq-regularized-discr-rescaled}. This formulation has the same minimizer as~\eqref{eq-regularized-discr}; its optimal value is shifted by the constant $\epsilon\HD(\a)+\epsilon\HD(\b)$.
-\index{dual!problem}% strictindex
-
-\begin{prop}[Dual of entropic OT]
-\index{entropic!OT}% strictindex
-The optimal value of~\eqref{eq-regularized-discr-rescaled} is
-\eql{\label{eq-dual-formulation}
-	\umin{\P \in \CouplingsD(\a,\b)}
-		\dotp{\P}{\C}+\epsilon\KLD(\P|\a\otimes\b)
-	=
-	\umax{\fD \in \RR^n,\gD \in \RR^m}
-		 \dotp{\fD}{\a} + \dotp{\gD}{\b}
-		% - \epsilon\sum_{i,j} e^{ \frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon} }.
-%		- \epsilon \dotp{e^{\fD/\epsilon} }{ \K e^{\gD/\epsilon}}.
-	- \epsilon \sum_{i,j} \exp\pa{
-		\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}
-	} \a_i \b_j + \epsilon.
-}
-%
-The optimal $(\fD,\gD)$ are linked to scalings $(\uD,\vD)$ appearing in~\eqref{eq-scaling-form} through
-\index{scaling!form}% strictindex
-\eql{\label{eq-entropy-pd}
-		\uD_i=\a_i e^{\fD_i/\epsilon}
-		\qandq
-		\vD_j=\b_j e^{\gD_j/\epsilon}.
-}
-\end{prop}
-
-\begin{proof}
-We introduce Lagrange multipliers and consider
-\eq{
-	\umin{\P \geq 0} \umax{\fD,\gD} \dotp{\C}{\P} + \epsilon \KLD(\P|\a \otimes \b) + \dotp{\a-\P\ones}{\fD} + \dotp{\b-\P^\top\ones}{\gD}.
-}
-	Finite-dimensional convex duality allows us to exchange the minimum over $\P$ with the maximum over $(\fD,\gD)$, giving
-	\eq{
-		 \umax{\fD,\gD}
-		 \dotp{\fD}{\a} + \dotp{\gD}{\b}
-		 +
-		 \epsilon \umin{\P \geq 0}
-		 \pa{
-			\KLD(\P|\a \otimes \b)
-			-
-			\dotp{\frac{\fD\oplus\gD-\C}{\epsilon}}{\P}
-		 }
-			=
-			\dotp{\fD}{\a} + \dotp{\gD}{\b} - \epsilon \KLD^*\pa{ \frac{\fD\oplus\gD-\C}{\epsilon}|\a \otimes \b }.
-	}
-	One concludes by using~\eqref{eq-legendre} for $\phi(r)=r \log(r)-r+1$
-	\eq{
-		\KLD^*(H|\a \otimes \b) = \sum_{i,j} \phi^*(H_{i,j}) \a_i \b_j.
-	}
-	Indeed, the scalar maximization
-	\[
-		\phi^*(s)=\sup_{r\geq0}\{rs-r\log r+r-1\}
-	\]
-	has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
-\end{proof}
-
-%%%
-\paragraph{Discrete soft $c$-transforms.}
-\index{soft c-transform}% strictindex
-
-Since the dual problem~\eqref{eq-dual-formulation} is smooth and concave, one can perform alternating block maximization. For a fixed $\gD$, maximizing with respect to $\fD$ leads to the following equation after zeroing the derivative with respect to $\fD$:
-\index{dual!problem}% strictindex
-\eq{
-	\a_i - e^{\frac{\fD_i}{\epsilon}} \a_i \sum_j \exp\pa{
-		\frac{\gD_j-\C_{i,j}}{\epsilon}
-	} \b_j = 0
-}
-which leads to the explicit solution
-\eq{
-	\fD_i = -\epsilon \log \sum_j \exp\pa{ \frac{\gD_j-\C_{i,j}}{\epsilon} } \b_j.
-}
-The log-sum-exp form is best read as a smoothed minimum. This gives the entropic analogue of the hard $c$-transform.
-
-\begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
-\index{soft!minimum}% strictindex
-\index{soft c-transform}% strictindex
-\index{c-transform}% strictindex
-		For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is
-		\[
-			{\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j.
-		\]
-		It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $\C$, the discrete soft $c$-transforms are
-	\eql{\label{eq-soft-c-1}
-		\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD )
-	}
-	and
-	\eql{\label{eq-soft-c-2}
-		\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
-	}
-\end{defn}
-Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These iterations, however, become unstable for small $\epsilon$. To apply the algorithm in this regime, one needs to stabilize it using the celebrated log-sum-exp trick. This follows from noticing that, similarly to the minimum operator, one has
-\index{log-sum-exp}% strictindex
-\index{Sinkhorn algorithm}% strictindex
-\eq{
-	{\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}
-}
-and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
-
-\begin{alg}[Log-domain Sinkhorn by soft transforms]\label{alg:log-domain-sinkhorn}
-\textbf{Input:} Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
-
-\textbf{Output:} Entropic coupling $\P$ computed from stabilized potentials.
-
-\textbf{Initialize:} Set $\gD^{(0)}=0$, \(\eta_0=+\infty\), and \(k=0\).
-
-\textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
-\begin{algblock}
-
-\textbf{Set} \(k\leftarrow k+1\).
-
-\textbf{Compute} stabilized soft transform:
-\(\fD_i^{(k)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k-1)}-\C_{ij}}{\epsilon}\right)\b_j.\)
-
-\textbf{Compute} stabilized reverse soft transform:
-\(\gD_j^{(k)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k)}-\C_{ij}}{\epsilon}\right)\a_i.\)
-
-\textbf{Set} \(\eta_k=\max\{\norm{\fD^{(k)}-\fD^{(k-1)}}_\infty,\norm{\gD^{(k)}-\gD^{(k-1)}}_\infty\}\), with the first term ignored for \(k=1\).
-\end{algblock}
-\algreturnskip
-\textbf{Return} \(\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij}}{\epsilon}\right).\)
-\end{alg}
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}cccc@{}}
-\small hard transform & \small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ \\[-.15em]
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--hard.pdf} &
-\index{soft c-transform}% strictindex
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p55.pdf} &
-\index{c-transform}% strictindex
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p14.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p035.pdf}
-\end{tabular}
-\caption{Soft $c$-transforms for decreasing temperatures. The hard transform is the lower envelope of shifted cost functions, while a positive $\epsilon$ replaces the pointwise minimum by a log-sum-exp soft minimum. As $\epsilon$ decreases, the soft transform sharpens and approaches the non-smooth hard envelope.}
-\index{log-sum-exp}% strictindex
-\index{soft!transform}% strictindex
-\index{soft!minimum}% strictindex
-\label{fig:sinkhorn-soft-c-transform-epsilon}
-\end{figure}
-
-%%%
-\paragraph{Continuous dual and soft-transforms.}
-\index{continuous!dual}% strictindex
-
-For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
-\eql{\label{eq-dual-sinkh-cont}
-	\MK_\c^\epsilon(\al,\be)
-	=
-	\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
-	\mathcal D_\epsilon(f,g),
-}
-where
-\eql{\label{eq-dual-sinkhorn-objective}
-	\mathcal D_\epsilon(f,g)
-	\eqdef
-	\int_{\Xx} f(x)\d\al(x)
-	+
-	\int_{\Yy} g(y)\d\be(y)
-	-
-	\epsilon
-	\int_{\Xx\times\Yy}
-	\pa{
-		e^{\frac{f(x)+g(y)-c(x,y)}{\epsilon}}-1
-	}
-	\d\al(x)\d\be(y).
-}
-This is the smooth counterpart of the hard feasibility constraint $f\oplus g\leq c$ from the Kantorovich dual: violations are penalized exponentially and disappear in the limit $\epsilon\to0$.
-
-The corresponding soft $c$-transforms are the exact block maximizers of this dual objective. They are the continuous log-integral counterparts of Definition~\ref{def-discrete-soft-c-transform}.
-
-\begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
-\index{soft c-transform}% strictindex
-\index{soft!transform}% strictindex
-	For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
-	\begin{align}
-		f^{c,\epsilon}(y)
-		&\eqdef
-		-\epsilon\log\!\left(
-			\int_{\Xx}
-			e^{\frac{f(x)-c(x,y)}{\epsilon}}\d\al(x)
-		\right),
-		\qquad y\in\Yy, \label{eq-soft-c-cont-f}\\
-		g^{\bar c,\epsilon}(x)
-		&\eqdef
-		-\epsilon\log\!\left(
-			\int_{\Yy}
-			e^{\frac{g(y)-c(x,y)}{\epsilon}}\d\be(y)
-		\right),
-		\qquad x\in\Xx . \label{eq-soft-c-cont-g}
-	\end{align}
-\end{defn}
-In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} and~\eqref{eq-soft-c-2}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
-\index{soft!transform}% strictindex
-\index{semi-discrete!OT}% strictindex
-
-\begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
-\index{dual!potential}% strictindex
-	Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
-\index{dual!problem}% strictindex
-	\[
-		(f^\star+\lambda,g^\star-\lambda),
-		\qquad \lambda\in\RR .
-	\]
-\end{prop}
-
-\begin{proof}
-	Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
-\index{soft c-transform}% strictindex
-\index{soft!transform}% strictindex
-	\[
-		\norm{f}_V+\norm{g}_V
-		\leq
-		2(\sup c-\inf c).
-	\]
-	Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
-	\[
-		\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')}
-		\leq
-		\sup_y\abs{c(x,y)-c(x',y)}.
-	\]
-	After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzel\`a--Ascoli gives a uniformly converging subsequence, and continuity of~\eqref{eq-dual-sinkhorn-objective} gives a maximizer.
-
-	For uniqueness, use strict convexity of
-\index{strict!convexity}% strictindex
-	\[
-		H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)
-	\]
-	on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
-\end{proof}
-
-\begin{rem}[Convexity properties of soft transforms]\label{rem-soft-transform-convexity}
-\index{soft!transform}% strictindex
-	The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
-\index{log-sum-exp}% strictindex
-\index{quadratic cost}% strictindex
-\index{c-concavity}% strictindex
-\end{rem}
-
-\paragraph{Neural dual solvers.}
-\index{neural!Sinkhorn solver}% strictindex
-\index{input-convex neural network}% strictindex
-\index{convex!neural network}% strictindex
-The convex-potential structure of the preceding remark suggests a sample-based alternative to evaluating soft transforms on a grid or on all pairs of samples. For the bilinear cost \(c(x,y)=-\dotp{x}{y}\), the signs of the dual potentials are convex: writing \(\Phi=-f\) and \(\Psi=-g\), the zero-temperature constraint \(f(x)+g(y)\leq-\dotp{x}{y}\) becomes the Fenchel-type inequality
-\[
-	\Phi(x)+\Psi(y)\geq \dotp{x}{y}.
-\]
-For the quadratic cost this is the same statement after subtracting the quadratic terms, as in Remark~\ref{rem-soft-transform-convexity}. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
-
-A useful parameterization is given by input-convex neural networks (ICNNs)~\cite{amos2017input,makkuva2020optimal}. The construction mirrors elementary closure rules for convex functions: nonnegative linear combinations preserve convexity, composition with a convex nondecreasing scalar nonlinearity preserves convexity, and the ReLU \(r\mapsto\max(r,0)\) is both convex and nondecreasing. Thus a feed-forward network with nonnegative hidden-to-hidden weights and affine skip connections from the input defines a convex function of its input. This gives a flexible cone of convex trial potentials, although the finite-dimensional optimization over the network weights is not a convex optimization problem. Universal-approximation statements must also be read with this distinction in mind: max-affine functions are dense among continuous convex functions on compact convex sets, and ICNN-type architectures are designed to inherit this approximation principle. General ReLU universal approximation results, such as the width \(d+1\) theorem on compact subsets of \(\RR^d\)~\cite{hanin2019universal}, provide useful background but do not by themselves enforce convexity. In practice, neural dual solvers trade exact Sinkhorn scaling for amortized stochastic optimization of the dual potentials.
-\index{Fenchel inequality}% strictindex
-\index{input-convex neural network}% strictindex
-\index{convex!potential}% strictindex
-\index{neural!dual solver}% strictindex
-
-\begin{rem}[Gaussian marginals]\label{rem-sinkhorn-gaussian-marginals}
-\index{Gaussian!marginals}% strictindex
-	For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve quadratic functions, because products and convolutions of Gaussian functions remain Gaussian. Hence optimal entropic potentials are quadratic and the optimal entropic coupling is Gaussian. Section~\ref{sec-gaussian-sinkhorn} makes this finite-dimensional closure explicit.
-\index{entropic!potential}% strictindex
-\index{soft!transform}% strictindex
-\end{rem}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Marginal-Dependent Problems}

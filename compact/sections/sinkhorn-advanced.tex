@@ -2,6 +2,8 @@
 \label{sec-sinkhorn-advanced}
 \label{sec-entropic-convergence}
 \label{sec-convergence-dual}
+The chapter revisits Sinkhorn convergence through several complementary lenses. Bregman projections explain the alternating-projection geometry, Fortet's order argument gives qualitative fixed-point convergence, and an order-theoretic M-function viewpoint explains why Sinkhorn-like scaling can still converge even when the equations are no longer the gradient of a convex potential.
+
 \subsection{Sinkhorn Convergence: Bregman View}
 \label{sec-convergence-init}
 \paragraph{\texorpdfstring{Alternating $\KL$ projections.}{Alternating KL projections.}}
@@ -206,6 +208,56 @@ Proposition~\ref{prop-phi-double-soft-transform-monotone} shows that the order a
 \(\norm{\mathcal A_\phi(f)-\mathcal A_\phi(h)}_V \leq \norm{f-h}_V.\)
 Thus the Fortet monotonicity mechanism and the basic nonexpansiveness estimate extend to general convex density-ratio penalties. What remains special to KL is the stronger Hilbert-metric contraction of Section~\ref{sec-sinkhorn-hilbert}, which uses the strictly positive Gibbs kernel to obtain a linear rate.
 
+\subsection{Monotone Clearing Beyond Variational Sinkhorn}
+\label{sec-mfunction-scaling}
+\paragraph{Two-block clearing maps.}
+\(Q(z)=\big(Q^\alpha(u,v),Q^\beta(u,v)\big) \in\RR^n\times\RR^m\)
+\(Q_\ell\big(T_\ell(z),z_{-\ell}\big)=0, \qquad 1\leq \ell\leq n+m.\)
+\begin{defn}[Z-functions and M-functions]\label{def-mfunctions}
+Let \(D\subset\RR^N\) be an order interval. A map \(Q:D\to\RR^N\) is diagonally isotone if \(Q_\ell(z_\ell,z_{-\ell})\) is nondecreasing in \(z_\ell\) for every \(\ell\). It is a Z-function if increasing the other coordinates cannot increase the \(\ell\)-th component:
+\(z_{-\ell}\leq z'_{-\ell} \quad\Longrightarrow\quad Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).\)
+For a \(C^1\) map this means \(\partial Q_\ell/\partial z_k\leq0\) for \(k\neq\ell\). An M-function is a Z-function which is inverse isotone: \(Q(z)\leq Q(z') \quad\Longrightarrow\quad z\leq z'.\)
+A vector \(z\) is a subsolution if \(Q(z)\leq0\), and a supersolution if \(Q(z)\geq0\).
+\end{defn}
+\begin{thm}[Monotone convergence of coordinate clearing]\label{thm-mfunction-jacobi-convergence}
+Let \(D=[\underline z,\overline z]\subset\RR^N\) be a closed order interval, with \(\underline z\) a subsolution and \(\overline z\) a supersolution. Assume that \(Q:D\to\RR^N\) is continuous, diagonally isotone and an M-function. Assume also that, for every \(z\in D\) and every \(\ell\), the scalar clearing equation \(Q_\ell(\xi,z_{-\ell})=0\) has a unique solution \(\xi\in[\underline z_\ell,\overline z_\ell]\). Then \(Q(z)=0\) has a unique solution \(z^\star\in D\). The Jacobi coordinate-clearing iterates starting from any subsolution in \(D\) increase monotonically to \(z^\star\), while those starting from any supersolution in \(D\) decrease monotonically to \(z^\star\).
+\end{thm}
+\begin{proof}
+Let \(T\) be the coordinate-clearing map. If \(z\in D\) is a subsolution, then \(Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})\). Diagonal isotonicity and uniqueness of the scalar zero give \(z_\ell\leq T_\ell(z)\) for every \(\ell\), hence \(z\leq T(z)\). Since \(Q\) is a Z-function,
+\(Q_\ell(T(z)) \leq Q_\ell(T_\ell(z),z_{-\ell}) =0,\)
+so \(T(z)\) is again a subsolution. Since every subsolution lies below every supersolution by inverse isotonicity, \(T(z)\leq\overline z\), and therefore \(T(z)\in D\). The supersolution argument is the same with all inequalities reversed. The lower and upper iterates are thus monotone and trapped in the compact interval \(D\). Their limits exist, and passing to the limit in the identities \(Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0\) gives \(Q(z^\star)=0\). If \(z\) and \(z'\) were two zeros in \(D\), then \(Q(z)\leq Q(z')\) and \(Q(z')\leq Q(z)\); inverse isotonicity gives \(z=z'\).
+\end{proof}
+\begin{prop}[Smooth M-matrix certificate]\label{prop-smooth-mfunction-certificate}
+Let \(D\subset\RR^N\) be a convex order interval and let \(Q:D\to\RR^N\) be \(C^1\). Assume that \(DQ(z)\) has nonpositive off-diagonal entries for every \(z\in D\). If there exists \(\lambda\gg0\) such that
+\(\lambda^\top DQ(z)\gg0 \qquad\text{for all } z\in D,\)
+or equivalently
+\[
+\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
+>
+\sum_{k\neq \ell}\lambda_k
+\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
+\qquad 1\leq \ell\leq N,
+\]
+then \(Q\) is an M-function on \(D\).
+\end{prop}
+\begin{proof}
+The off-diagonal sign gives the Z-property by integrating the partial derivatives along coordinatewise increasing segments. The displayed inequalities imply that each \(DQ(z)\) is a strictly weighted column diagonally dominant Z-matrix, hence a nonsingular M-matrix; in particular \(DQ(z)^{-1}\geq0\) for each fixed \(z\). For two points \(z,z'\in D\), set
+\(A=\int_0^1 DQ\big(z'+t(z-z')\big)\,\d t.\)
+The matrix \(A\) has the same Z-sign pattern and the same strict weighted diagonal dominance, so it is again a nonsingular M-matrix and \(A^{-1}\geq0\). Since \(Q(z)-Q(z')=A(z-z')\), the implication \(Q(z)\leq Q(z')\) gives \(z-z'=A^{-1}(Q(z)-Q(z'))\leq0\). This is inverse isotonicity. The positive diagonal entries also give diagonal isotonicity.
+\end{proof}
+\paragraph{Sinkhorn as the canonical \(M_0\)-system.}
+\(P_{ij}=r_i\K_{ij}s_j, \qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.\)
+\(Q_i^\alpha(u,v)=\sum_j\K_{ij}e^{u_i-v_j}-a_i, \qquad Q_j^\beta(u,v)=b_j-\sum_i\K_{ij}e^{u_i-v_j}.\)
+\(r_i^+=\frac{a_i}{\sum_j\K_{ij}s_j}, \qquad s_j^+=\frac{b_j}{\sum_i\K_{ij}r_i}.\)
+\[
+\frac{\partial Q_i^\alpha}{\partial u_i}=\sum_jP_{ij},
+\qquad
+\frac{\partial Q_i^\alpha}{\partial v_j}=-P_{ij},
+\qquad
+\frac{\partial Q_j^\beta}{\partial v_j}=\sum_iP_{ij},
+\qquad
+\frac{\partial Q_j^\beta}{\partial u_i}=-P_{ij}.
+\]
 \subsection{Sinkhorn Convergence: Sublinear Robust Rate}
 Sinkhorn is cyclic coordinate ascent on the smooth dual objective $\mathcal D_\epsilon$ defined in~\eqref{eq-dual-sinkhorn-objective}; equivalently, it alternates KL projections on the two marginal constraint sets. We state it for balanced entropic OT, which is the specialization needed here.
 
@@ -542,93 +594,3 @@ G(y)=\frac12\dotp{y-\mean_\be}{\cov_\be^{-1}(y-\mean_\be)}+\mathrm{cst},
 \(\cov_t=B_t\cov_\al B_t, \qquad \dot\cov_t=\dot B_t\cov_\al B_t+B_t\cov_\al\dot B_t.\)
 \(B\cov_\be^{-1}B=\cov_\al^{-1}, \qquad q=\mean_\be,\)
 \(\partial_t u_t(x) = \log\big(1+u_t''(x)\big)-G\big(x+u_t'(x)\big)+F(x)-\bar r_t,\)
-\subsection{Sample Complexity}
-\begin{prop}[Empirical OT has intrinsic-dimension value rates]\label{prop-empirical-ot-rate}
-Let $\alpha$ and $\beta$ be probability distributions with densities bounded above and below on $[0,1]^d$, and let $\hat\alpha_n$ and $\hat\beta_m$ be independent empirical measures. For $d>2p$, the expected empirical error for estimating the two-sample distance obeys
-\(\EE\abs{\Wass_p(\hat\alpha_n,\hat\beta_m)-\Wass_p(\alpha,\beta)} \lesssim n^{-1/d}+m^{-1/d}.\)
-More generally, if the measures are supported on a compact set with regular $d'$-dimensional volume growth, so that covering numbers at scale $r$ are of order $r^{-d'}$, then the same estimate holds with $d$ replaced by $d'$ when $d'>2p$. This includes smooth compact $d'$-dimensional submanifolds with densities bounded above and below with respect to their volume measure. The exponent changes in low dimension, but the important message is that exact OT deteriorates with the intrinsic dimension of the support rather than necessarily with the ambient dimension.
-\end{prop}
-\begin{proof}
-By the triangle inequality, \(\abs{\Wass_p(\hat\alpha_n,\hat\beta_m)-\Wass_p(\alpha,\beta)} \leq \Wass_p(\hat\alpha_n,\alpha)+\Wass_p(\hat\beta_m,\beta).\)
-For the upper bound, partition $[0,1]^d$ into dyadic cubes. At scale $2^{-j}$, the empirical mass fluctuation over the cells is of order $n^{-1/2}2^{jd/2}$, while moving this excess mass inside cells costs $2^{-j}$. Summing the multiscale contributions up to the scale where the expected number of samples per cell is of order one gives $2^{-J}$ with $2^{Jd}\simeq n$, hence $n^{-1/d}$. On a support with $d'$-dimensional metric entropy, the same chaining argument uses covers with $O(2^{jd'})$ cells at scale $2^{-j}$; the balancing scale becomes $2^{Jd'}\simeq n$ and yields $n^{-1/d'}$. The same estimate with $m$ samples gives the second term. Matching lower bounds for empirical OT follow from packing arguments; they show that this intrinsic-dimension dependence is unavoidable for exact OT.
-\end{proof}
-\begin{prop}[MMD has a parametric value rate]\label{prop-mmd-sample-rate}
-Let $k$ be a bounded positive definite kernel with RKHS $\Hh_k$, and define
-\(\MMD_k(\alpha,\beta) = \norm{\int k(x,\cdot)\d(\alpha-\beta)(x)}_{\Hh_k}.\)
-If $\hat\alpha_n$ and $\hat\beta_m$ are independent empirical measures, then
-\[
-\EE\abs{\MMD_k(\hat\alpha_n,\hat\beta_m)-\MMD_k(\alpha,\beta)}
-\leq
-\kappa\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right)
-\]
-when $k(x,x)\leq\kappa^2$.
-\end{prop}
-\begin{proof}
-Let $\Phi(x)=k(x,\cdot)$ be the feature map and $m_\alpha=\EE\Phi(X)$. The reverse triangle inequality for the RKHS norm gives
-\(\abs{\MMD_k(\hat\alpha_n,\hat\beta_m)-\MMD_k(\alpha,\beta)} \leq \MMD_k(\hat\alpha_n,\alpha)+\MMD_k(\hat\beta_m,\beta).\)
-Independence cancels the cross terms after taking the squared norm and expectation, giving
-\(\EE\MMD_k(\hat\alpha_n,\alpha)^2 =\frac1n\EE\norm{\Phi(X)-m_\alpha}_{\Hh_k}^2 =\frac{1}{n}\Big(\EE k(X,X)-\EE k(X,X')\Big).\)
-The same estimate applies to $\hat\beta_m$, and Jensen's inequality together with $k(x,x)\leq\kappa^2$ gives the displayed bound.
-\end{proof}
-\begin{prop}[Sinkhorn divergences interpolate the rates]\label{prop-sinkhorn-sample-rate}
-Assume that $\alpha$ and $\beta$ are supported in a compact subset of $\RR^d$ and that the cost is smooth. For fixed $\epsilon>0$, debiased Sinkhorn divergences satisfy representative empirical bounds of the form
-\[
-\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_m)-\bar\MK_\c^\epsilon(\alpha,\beta)}
-\leq
-C_{c,d}\,\epsilon^{-d/2}\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right),
-\]
-up to constants and exponents depending on the precise smoothness class and support diameter. Thus regularization removes the $n^{-1/d}$ curse for fixed $\epsilon$, while the prefactor deteriorates as $\epsilon\to0$.
-\end{prop}
-\begin{proof}
-The proof follows the empirical-process argument. By the envelope theorem, the fluctuation of $\MK_\c^\epsilon$ with respect to its first marginal is controlled by the class of entropic dual potentials. The soft $c$-transform smooths these potentials at spatial scale $\sqrt\epsilon$ for a quadratic-type cost. Covering a bounded $d$-dimensional domain at this scale gives an effective complexity of order $\epsilon^{-d/2}$. Standard Rademacher or Dudley entropy bounds then give an empirical-process fluctuation of order $\epsilon^{-d/2}/\sqrt n$ for each marginal. Applying the same estimate to the three terms defining the debiased divergence gives the stated bound.
-\end{proof}
-\subsection{Monotone Clearing Beyond Variational Sinkhorn}
-\label{sec-mfunction-scaling}
-\paragraph{Two-block clearing maps.}
-\(Q(z)=\big(Q^\alpha(u,v),Q^\beta(u,v)\big) \in\RR^n\times\RR^m\)
-\(Q_\ell\big(T_\ell(z),z_{-\ell}\big)=0, \qquad 1\leq \ell\leq n+m.\)
-\begin{defn}[Z-functions and M-functions]\label{def-mfunctions}
-Let \(D\subset\RR^N\) be an order interval. A map \(Q:D\to\RR^N\) is diagonally isotone if \(Q_\ell(z_\ell,z_{-\ell})\) is nondecreasing in \(z_\ell\) for every \(\ell\). It is a Z-function if increasing the other coordinates cannot increase the \(\ell\)-th component:
-\(z_{-\ell}\leq z'_{-\ell} \quad\Longrightarrow\quad Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).\)
-For a \(C^1\) map this means \(\partial Q_\ell/\partial z_k\leq0\) for \(k\neq\ell\). An M-function is a Z-function which is inverse isotone: \(Q(z)\leq Q(z') \quad\Longrightarrow\quad z\leq z'.\)
-A vector \(z\) is a subsolution if \(Q(z)\leq0\), and a supersolution if \(Q(z)\geq0\).
-\end{defn}
-\begin{thm}[Monotone convergence of coordinate clearing]\label{thm-mfunction-jacobi-convergence}
-Let \(D=[\underline z,\overline z]\subset\RR^N\) be a closed order interval, with \(\underline z\) a subsolution and \(\overline z\) a supersolution. Assume that \(Q:D\to\RR^N\) is continuous, diagonally isotone and an M-function. Assume also that, for every \(z\in D\) and every \(\ell\), the scalar clearing equation \(Q_\ell(\xi,z_{-\ell})=0\) has a unique solution \(\xi\in[\underline z_\ell,\overline z_\ell]\). Then \(Q(z)=0\) has a unique solution \(z^\star\in D\). The Jacobi coordinate-clearing iterates starting from any subsolution in \(D\) increase monotonically to \(z^\star\), while those starting from any supersolution in \(D\) decrease monotonically to \(z^\star\).
-\end{thm}
-\begin{proof}
-Let \(T\) be the coordinate-clearing map. If \(z\in D\) is a subsolution, then \(Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})\). Diagonal isotonicity and uniqueness of the scalar zero give \(z_\ell\leq T_\ell(z)\) for every \(\ell\), hence \(z\leq T(z)\). Since \(Q\) is a Z-function,
-\(Q_\ell(T(z)) \leq Q_\ell(T_\ell(z),z_{-\ell}) =0,\)
-so \(T(z)\) is again a subsolution. Since every subsolution lies below every supersolution by inverse isotonicity, \(T(z)\leq\overline z\), and therefore \(T(z)\in D\). The supersolution argument is the same with all inequalities reversed. The lower and upper iterates are thus monotone and trapped in the compact interval \(D\). Their limits exist, and passing to the limit in the identities \(Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0\) gives \(Q(z^\star)=0\). If \(z\) and \(z'\) were two zeros in \(D\), then \(Q(z)\leq Q(z')\) and \(Q(z')\leq Q(z)\); inverse isotonicity gives \(z=z'\).
-\end{proof}
-\begin{prop}[Smooth M-matrix certificate]\label{prop-smooth-mfunction-certificate}
-Let \(D\subset\RR^N\) be a convex order interval and let \(Q:D\to\RR^N\) be \(C^1\). Assume that \(DQ(z)\) has nonpositive off-diagonal entries for every \(z\in D\). If there exists \(\lambda\gg0\) such that
-\(\lambda^\top DQ(z)\gg0 \qquad\text{for all } z\in D,\)
-or equivalently
-\[
-\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
->
-\sum_{k\neq \ell}\lambda_k
-\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
-\qquad 1\leq \ell\leq N,
-\]
-then \(Q\) is an M-function on \(D\).
-\end{prop}
-\begin{proof}
-The off-diagonal sign gives the Z-property by integrating the partial derivatives along coordinatewise increasing segments. The displayed inequalities imply that each \(DQ(z)\) is a strictly weighted column diagonally dominant Z-matrix, hence a nonsingular M-matrix; in particular \(DQ(z)^{-1}\geq0\) for each fixed \(z\). For two points \(z,z'\in D\), set
-\(A=\int_0^1 DQ\big(z'+t(z-z')\big)\,\d t.\)
-The matrix \(A\) has the same Z-sign pattern and the same strict weighted diagonal dominance, so it is again a nonsingular M-matrix and \(A^{-1}\geq0\). Since \(Q(z)-Q(z')=A(z-z')\), the implication \(Q(z)\leq Q(z')\) gives \(z-z'=A^{-1}(Q(z)-Q(z'))\leq0\). This is inverse isotonicity. The positive diagonal entries also give diagonal isotonicity.
-\end{proof}
-\paragraph{Sinkhorn as the canonical \(M_0\)-system.}
-\(P_{ij}=r_i\K_{ij}s_j, \qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.\)
-\(Q_i^\alpha(u,v)=\sum_j\K_{ij}e^{u_i-v_j}-a_i, \qquad Q_j^\beta(u,v)=b_j-\sum_i\K_{ij}e^{u_i-v_j}.\)
-\(r_i^+=\frac{a_i}{\sum_j\K_{ij}s_j}, \qquad s_j^+=\frac{b_j}{\sum_i\K_{ij}r_i}.\)
-\[
-\frac{\partial Q_i^\alpha}{\partial u_i}=\sum_jP_{ij},
-\qquad
-\frac{\partial Q_i^\alpha}{\partial v_j}=-P_{ij},
-\qquad
-\frac{\partial Q_j^\beta}{\partial v_j}=\sum_iP_{ij},
-\qquad
-\frac{\partial Q_j^\beta}{\partial u_i}=-P_{ij}.
-\]
