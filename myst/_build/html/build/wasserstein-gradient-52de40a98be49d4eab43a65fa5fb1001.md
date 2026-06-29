@@ -3554,15 +3554,6 @@ peaks remain more localized near the bumps, while heavier tails appear across
 the whole displayed window.*
 :::
 
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Vary the fractional exponents and final time to compare
-local heat smoothing with heavier-tailed nonlocal diffusion from the same two
-localized initial blocks.
-:::
-
-<iframe class="ot4ml-live-frame" title="Fractional diffusion controls" src="../live/gradflow-fractional.html" loading="lazy" style="width:100%;height:620px;border:0;display:block;"></iframe>
-
 More generally, when a target-dependent jump kernel $K_\beta$ satisfies
 detailed balance with a desired invariant measure
 $\beta=\rho_\beta\mathfrak m$, the same construction can be applied to
@@ -3954,17 +3945,6 @@ target cloud. Dashed gray contours show a KDE of the target particles, colored
 panels show KDEs of the evolving transported particles, and the left panels
 show farthest-point-subsampled trajectories.*
 :::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Compare the same energy-distance force interpreted as
-an overdamped Wasserstein velocity or as a Newton acceleration. The browser
-simulation keeps the source cloud, target mixture, representative trajectories
-and $-|x-y|$ interaction visible with a smaller empirical discretization than
-the publication figure.
-:::
-
-<iframe class="ot4ml-live-frame" title="Second-order Wasserstein particle controls" src="../live/gradflow-momentum-mmd.html" loading="lazy" style="width:100%;height:560px;border:0;display:block;"></iframe>
 
 (ex-second-order-entropy-score)=
 :::{admonition} Example: Entropy-driven inertial flow

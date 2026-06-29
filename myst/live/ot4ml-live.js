@@ -49,6 +49,7 @@ const knownKinds = [
   "sinkhorncontinuous",
   "sinkhorncapacity1d",
   "sinkhorncomplex",
+  "sinkhornhopfcole",
   "sinkhornadvancedconvergence",
   "sinkhornadvancedgaussian",
   "sinkhornadvancedsamples",
@@ -74,6 +75,8 @@ const knownKinds = [
   "gradflowobjective",
   "gradflowfokker",
   "gradflowmlp",
+  "gradflowfractional",
+  "gradflowmomentummmd",
   "generativeflow",
   "generativediffusion1d",
   "generativediffusion2d",
@@ -8569,6 +8572,227 @@ function drawPartialOT1D() {
   setStatus(`exact monotone partial matching on ${samples} quantiles; selected mass ${active.selectedMass.toFixed(3)}; ${active.pairs} active pairs`);
 }
 
+function normalizeDensity(xs, values) {
+  const dx = xs.length > 1 ? (xs[xs.length - 1] - xs[0]) / (xs.length - 1) : 1;
+  const mass = values.reduce((sum, z) => sum + Math.max(z, 0), 0) * dx;
+  return values.map((z) => Math.max(z, 0) / Math.max(mass, 1e-12));
+}
+
+function heatColeSnapshots(xs, epsilon, finalTime, amplitude) {
+  const n = xs.length;
+  const dx = (xs[xs.length - 1] - xs[0]) / (n - 1);
+  const v0 = xs.map((x) => amplitude * Math.exp(-0.5 * ((x + 0.72) / 0.42) ** 2));
+  const phi0 = Array(n).fill(0);
+  for (let i = 1; i < n; i += 1) phi0[i] = phi0[i - 1] + 0.5 * dx * (v0[i - 1] + v0[i]);
+  const offset = Math.min(...phi0);
+  const u = phi0.map((p) => Math.exp(-(p - offset) / Math.max(epsilon, 1e-4)));
+  const requested = [0, 0.18, 0.42, 0.68, 1].map((s) => s * finalTime);
+  const maxTime = requested[requested.length - 1];
+  const dtStable = 0.42 * dx * dx / Math.max(epsilon, 1e-4);
+  const steps = Math.max(1, Math.ceil(maxTime / Math.max(dtStable, 1e-5)));
+  const dt = maxTime / steps;
+  const snapshots = [];
+  let next = 0;
+  function capture(time, state) {
+    const phi = state.map((z) => -epsilon * Math.log(Math.max(z, 1e-300)) + offset);
+    const vel = Array(n).fill(0);
+    for (let i = 1; i < n - 1; i += 1) vel[i] = (phi[i + 1] - phi[i - 1]) / (2 * dx);
+    vel[0] = (phi[1] - phi[0]) / dx;
+    vel[n - 1] = (phi[n - 1] - phi[n - 2]) / dx;
+    snapshots.push({ time, phi, vel });
+  }
+  capture(0, u.slice());
+  let state = u.slice();
+  for (let step = 1; step <= steps; step += 1) {
+    const nextState = state.slice();
+    for (let i = 1; i < n - 1; i += 1) {
+      nextState[i] = Math.max(1e-300, state[i] + 0.5 * epsilon * dt * (state[i - 1] - 2 * state[i] + state[i + 1]) / (dx * dx));
+    }
+    nextState[0] = nextState[1];
+    nextState[n - 1] = nextState[n - 2];
+    state = nextState;
+    const time = step * dt;
+    while (next + 1 < requested.length && time >= requested[next + 1] - 1e-12) {
+      capture(requested[next + 1], state.slice());
+      next += 1;
+    }
+  }
+  while (snapshots.length < requested.length) capture(maxTime, state.slice());
+  return snapshots.slice(0, requested.length);
+}
+
+function drawSinkhornHopfCole() {
+  const epsilon = val("shcEps");
+  const finalTime = val("shcTime");
+  const amplitude = val("shcAmp");
+  const xs = Array.from({ length: 180 }, (_, i) => lerp(-3.2, 3.2, i / 179));
+  const snapshots = heatColeSnapshots(xs, epsilon, finalTime, amplitude);
+  const phiMin = Math.min(...snapshots.flatMap((s) => s.phi));
+  const phiMax = Math.max(...snapshots.flatMap((s) => s.phi));
+  const velMin = Math.min(...snapshots.flatMap((s) => s.vel));
+  const velMax = Math.max(...snapshots.flatMap((s) => s.vel));
+  const { ctx, w, h } = resizeCanvas(430);
+  const gap = 36;
+  const top = { x: 26, y: 42, w: w - 52, h: (h - 88 - gap) / 2 };
+  const bottom = { x: 26, y: top.y + top.h + gap, w: w - 52, h: (h - 88 - gap) / 2 };
+  drawFrame(ctx, top, "Hamilton--Jacobi potential via Hopf--Cole");
+  drawFrame(ctx, bottom, "viscous Burgers velocity");
+  for (let k = 0; k < snapshots.length; k += 1) {
+    const t = k / Math.max(snapshots.length - 1, 1);
+    const color = mixColor(t, RED, BLUE, k === snapshots.length - 1 ? 0.95 : 0.72);
+    drawCurve(ctx, xs, snapshots[k].phi, top, -3.2, 3.2, phiMin, phiMax, color, k === snapshots.length - 1 ? 2.2 : 1.35);
+    drawCurve(ctx, xs, snapshots[k].vel, bottom, -3.2, 3.2, velMin, velMax, color, k === snapshots.length - 1 ? 2.2 : 1.35);
+  }
+  setStatus(`epsilon ${epsilon.toFixed(3)}; final time ${finalTime.toFixed(2)}; heat equation is solved explicitly in the Hopf--Cole variable`);
+}
+
+function compactInitialBars(xs) {
+  return normalizeDensity(xs, xs.map((x) => (Math.abs(x + 1.15) < 0.28 || Math.abs(x - 0.72) < 0.22 ? 1 : 0)));
+}
+
+function stableKernelValue(r, alpha, time) {
+  const t = Math.max(time, 1e-4);
+  if (alpha >= 1.95) return Math.exp(-(r * r) / (4 * t)) / Math.sqrt(4 * Math.PI * t);
+  const scale = Math.pow(t, 1 / Math.max(alpha, 0.35));
+  return scale / Math.pow(scale * scale + r * r, (1 + alpha) / 2);
+}
+
+function diffuseStable(xs, density, alpha, time) {
+  if (time <= 1e-10) return density.slice();
+  const n = xs.length;
+  const dx = (xs[n - 1] - xs[0]) / (n - 1);
+  const out = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    let value = 0;
+    for (let j = 0; j < n; j += 1) value += density[j] * stableKernelValue(Math.abs(xs[i] - xs[j]), alpha, time) * dx;
+    out[i] = value;
+  }
+  return normalizeDensity(xs, out);
+}
+
+function drawStackedDensityEvolution(ctx, box, xs, snapshots, title) {
+  drawFrame(ctx, box, title);
+  const maxDensity = 1.05 * Math.max(...snapshots.flat());
+  const rowGap = box.h / (snapshots.length + 0.25);
+  for (let k = 0; k < snapshots.length; k += 1) {
+    const y = box.y + rowGap * (k + 0.9);
+    ctx.strokeStyle = "rgba(95,102,112,.16)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(box.x + 4, y);
+    ctx.lineTo(box.x + box.w - 4, y);
+    ctx.stroke();
+    drawDensityRibbon(ctx, box, xs, snapshots[k], xs[0], xs[xs.length - 1], y, rowGap * 0.72, maxDensity, mixColor(k / Math.max(snapshots.length - 1, 1), RED, BLUE, 0.46));
+  }
+}
+
+function drawGradflowFractional() {
+  const finalTime = val("gffracTime");
+  const mediumAlpha = val("gffracMedium");
+  const strongAlpha = val("gffracStrong");
+  const xs = Array.from({ length: 170 }, (_, i) => lerp(-3.2, 3.2, i / 169));
+  const init = compactInitialBars(xs);
+  const times = [0, 0.08, 0.22, 0.48, 1].map((s) => s * finalTime);
+  const alphas = [2, mediumAlpha, strongAlpha];
+  const names = ["classical diffusion", `nonlocal alpha=${mediumAlpha.toFixed(2)}`, `strong nonlocal alpha=${strongAlpha.toFixed(2)}`];
+  const snapshots = alphas.map((alpha) => times.map((t) => diffuseStable(xs, init, alpha, t)));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 740 : 420);
+  const boxes = beyondBoxes(w, h, 3, 720);
+  for (let k = 0; k < 3; k += 1) drawStackedDensityEvolution(ctx, boxes[k], xs, snapshots[k], names[k]);
+  setStatus(`fractional heat-kernel surrogate; smaller alpha gives heavier tails and faster nonlocal leakage between the two initial blocks`);
+}
+
+function sampleMmdTarget(n) {
+  const pts = [];
+  const centers = [[0.15, 0.5], [1.1, -0.35]];
+  for (let i = 0; i < n; i += 1) {
+    const c = centers[i % 2];
+    const a = (i * 1.61803398875) % 1;
+    const r = 0.13 + 0.24 * ((i * 0.754877666) % 1);
+    pts.push([c[0] + r * Math.cos(2 * Math.PI * a), c[1] + 0.75 * r * Math.sin(2 * Math.PI * a)]);
+  }
+  return pts;
+}
+
+function sampleMmdSource(n, seed, spread) {
+  const random = rng(seed);
+  return Array.from({ length: n }, () => [-1.25 + spread * randn(random), 0.05 + 0.72 * spread * randn(random)]);
+}
+
+function energyDistanceForce(i, pts, target) {
+  const p = pts[i];
+  let fx = 0;
+  let fy = 0;
+  for (const y of target) {
+    const dx = y[0] - p[0];
+    const dy = y[1] - p[1];
+    const r = Math.max(Math.hypot(dx, dy), 0.05);
+    fx += dx / r;
+    fy += dy / r;
+  }
+  fx /= target.length;
+  fy /= target.length;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (i === j) continue;
+    const dx = pts[j][0] - p[0];
+    const dy = pts[j][1] - p[1];
+    const r = Math.max(Math.hypot(dx, dy), 0.05);
+    fx -= 0.62 * dx / (r * pts.length);
+    fy -= 0.62 * dy / (r * pts.length);
+  }
+  return [fx, fy];
+}
+
+function simulateEnergyDistanceFlow(mode, n, seed, steps, dt, spread) {
+  const target = sampleMmdTarget(96);
+  let pts = sampleMmdSource(n, seed, spread);
+  const vel = pts.map(() => [0, 0]);
+  const trajectories = pts.map((p) => [p.slice()]);
+  for (let s = 0; s < steps; s += 1) {
+    const forces = pts.map((_, i) => energyDistanceForce(i, pts, target));
+    for (let i = 0; i < pts.length; i += 1) {
+      if (mode === "newton") {
+        vel[i][0] += dt * forces[i][0];
+        vel[i][1] += dt * forces[i][1];
+        pts[i][0] += dt * vel[i][0];
+        pts[i][1] += dt * vel[i][1];
+      } else {
+        pts[i][0] += dt * forces[i][0];
+        pts[i][1] += dt * forces[i][1];
+      }
+    }
+    if (s % 8 === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { target, pts, trajectories };
+}
+
+function drawEnergyDistanceFlowPanel(ctx, box, sim, label) {
+  drawFrame(ctx, box, label);
+  const lim = 2.35;
+  gfDrawTarget(ctx, box, lim, [[0.15, 0.5], [1.1, -0.35]]);
+  gfDrawTrajectories(ctx, box, lim, sim.trajectories, Math.max(1, Math.floor(sim.trajectories.length / 44)));
+  gfDrawPoints(ctx, box, lim, sim.trajectories.map((p) => p[0]), RED, 1.7, 0.42);
+  gfDrawPoints(ctx, box, lim, sim.pts, BLUE, 2.1, 0.82);
+}
+
+function drawGradflowMomentumMMD() {
+  const n = Math.round(val("gfmomParticles"));
+  const steps = Math.round(val("gfmomSteps"));
+  const spread = val("gfmomSpread");
+  const seed = Math.round(val("gfmomSeed"));
+  const gf = simulateEnergyDistanceFlow("gf", n, seed, steps, 0.045, spread);
+  const newton = simulateEnergyDistanceFlow("newton", n, seed, steps, 0.014, spread);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 640 : 400);
+  const boxes = beyondBoxes(w, h, 2, 720);
+  drawEnergyDistanceFlowPanel(ctx, boxes[0], gf, "GF");
+  drawEnergyDistanceFlowPanel(ctx, boxes[1], newton, "Newton");
+  setStatus(`${n} particles; energy-distance kernel -|x-y|; ${steps} explicit steps from the same narrow source Gaussian`);
+}
+
 function init() {
   if (kind === "linecost") {
     controls.innerHTML = [
@@ -8897,6 +9121,13 @@ function init() {
       slider("cxIter", "iterations", 180, 60, 340, 10),
     ].join("");
     bind(drawComplexSinkhorn);
+  } else if (kind === "sinkhornhopfcole") {
+    controls.innerHTML = [
+      slider("shcEps", "epsilon", 0.08, 0.025, 0.35, 0.005),
+      slider("shcTime", "final time", 1.35, 0.25, 2.8, 0.01),
+      slider("shcAmp", "velocity bump", 1.0, 0.35, 1.8, 0.05),
+    ].join("");
+    bind(drawSinkhornHopfCole);
   } else if (kind === "sinkhornadvancedconvergence") {
     controls.innerHTML = [
       slider("sacEps", "epsilon", 0.24, 0.03, 0.55, 0.005),
@@ -9099,6 +9330,21 @@ function init() {
       slider("gflSeed", "seed", 3506, 3500, 3580, 1),
     ].join("");
     bind(drawGradflowMLP);
+  } else if (kind === "gradflowfractional") {
+    controls.innerHTML = [
+      slider("gffracTime", "final time", 0.75, 0.18, 1.6, 0.01),
+      slider("gffracMedium", "medium alpha", 1.15, 0.65, 1.75, 0.05),
+      slider("gffracStrong", "strong alpha", 0.55, 0.25, 1.1, 0.05),
+    ].join("");
+    bind(drawGradflowFractional);
+  } else if (kind === "gradflowmomentummmd") {
+    controls.innerHTML = [
+      slider("gfmomParticles", "particles", 120, 42, 220, 2),
+      slider("gfmomSteps", "steps", 118, 40, 220, 2),
+      slider("gfmomSpread", "initial width", 0.14, 0.08, 0.32, 0.01),
+      slider("gfmomSeed", "seed", 3912, 3900, 3980, 1),
+    ].join("");
+    bind(drawGradflowMomentumMMD);
   } else if (kind === "generativeflow") {
     controls.innerHTML = [
       slider("gmfParticles", "particles", 24, 9, 45, 3),

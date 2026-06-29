@@ -3561,7 +3561,7 @@ local heat smoothing with heavier-tailed nonlocal diffusion from the same two
 localized initial blocks.
 :::
 
-<iframe class="ot4ml-live-frame" title="Fractional diffusion controls" src="../live/gradflow-fractional.html" loading="lazy" style="width:100%;height:620px;border:0;display:block;"></iframe>
+<iframe class="ot4ml-live-frame" title="Fractional diffusion controls" src="../live/gradflow-fractional.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 More generally, when a target-dependent jump kernel $K_\beta$ satisfies
 detailed balance with a desired invariant measure
@@ -3959,12 +3959,11 @@ show farthest-point-subsampled trajectories.*
 :class: ot4ml-interactive-note
 **Interactive panel.** Compare the same energy-distance force interpreted as
 an overdamped Wasserstein velocity or as a Newton acceleration. The browser
-simulation keeps the source cloud, target mixture, representative trajectories
-and $-|x-y|$ interaction visible with a smaller empirical discretization than
-the publication figure.
+simulation is intentionally lightweight, but keeps the source cloud, target
+mixture, and $-|x-y|$ interaction visible.
 :::
 
-<iframe class="ot4ml-live-frame" title="Second-order Wasserstein particle controls" src="../live/gradflow-momentum-mmd.html" loading="lazy" style="width:100%;height:560px;border:0;display:block;"></iframe>
+<iframe class="ot4ml-live-frame" title="Second-order Wasserstein particle controls" src="../live/gradflow-momentum-mmd.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 (ex-second-order-entropy-score)=
 :::{admonition} Example: Entropy-driven inertial flow

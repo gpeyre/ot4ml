@@ -1059,6 +1059,7 @@ f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
    where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers  {eq}`eq:entropy-func`, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
 :::
 
+
 (rem-two-interpretations-heat-equation)=
 :::{admonition} Remark: Two gradient-flow interpretations of the heat equation
 :class: ot4ml-remark
@@ -2509,6 +2510,8 @@ Applying Theorem {ref}`thm-wasserstein-pl-convergence` and using that the
 unique minimizer of $F$ is $\beta$ gives the displayed $\Wass_2$ distance rate.
 :::
 
+(sec-wasserstein-flows-mlp)=
+
 (rem-lsi-wasserstein-pl)=
 :::{admonition} Remark: Logarithmic Sobolev as Wasserstein--PL
 :class: ot4ml-remark
@@ -2538,8 +2541,6 @@ Since the unique minimizer is $\beta$ and $F(\beta)=0$,  the corresponding equat
 that is, the Wasserstein--PL inequality of Definition {ref}`def-wasserstein-pl`. Thus logarithmic Sobolev is the functional-inequality incarnation of the convergence mechanism studied in Section {ref}`sec-geodesic-convexity`, and Theorem {ref}`thm-wasserstein-pl-convergence` converts it into exponential decay of both entropy and Wasserstein distance to equilibrium.
 :::
 
-
-(sec-wasserstein-flows-mlp)=
 ## Training Two-Layer MLPs as Wasserstein Flows
 
 Mean-field limits recast the training of wide neural networks as transport of
@@ -3554,15 +3555,6 @@ peaks remain more localized near the bumps, while heavier tails appear across
 the whole displayed window.*
 :::
 
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Vary the fractional exponents and final time to compare
-local heat smoothing with heavier-tailed nonlocal diffusion from the same two
-localized initial blocks.
-:::
-
-<iframe class="ot4ml-live-frame" title="Fractional diffusion controls" src="../live/gradflow-fractional.html" loading="lazy" style="width:100%;height:620px;border:0;display:block;"></iframe>
-
 More generally, when a target-dependent jump kernel $K_\beta$ satisfies
 detailed balance with a desired invariant measure
 $\beta=\rho_\beta\mathfrak m$, the same construction can be applied to
@@ -3954,17 +3946,6 @@ target cloud. Dashed gray contours show a KDE of the target particles, colored
 panels show KDEs of the evolving transported particles, and the left panels
 show farthest-point-subsampled trajectories.*
 :::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Compare the same energy-distance force interpreted as
-an overdamped Wasserstein velocity or as a Newton acceleration. The browser
-simulation keeps the source cloud, target mixture, representative trajectories
-and $-|x-y|$ interaction visible with a smaller empirical discretization than
-the publication figure.
-:::
-
-<iframe class="ot4ml-live-frame" title="Second-order Wasserstein particle controls" src="../live/gradflow-momentum-mmd.html" loading="lazy" style="width:100%;height:560px;border:0;display:block;"></iframe>
 
 (ex-second-order-entropy-score)=
 :::{admonition} Example: Entropy-driven inertial flow

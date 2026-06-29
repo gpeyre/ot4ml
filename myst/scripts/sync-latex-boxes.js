@@ -6,6 +6,12 @@ const repoRoot = path.resolve(mystRoot, '..');
 const latexSections = path.join(repoRoot, 'OT4ML', 'sections');
 const mystChapters = path.join(mystRoot, 'chapters');
 let knownLabels = new Set();
+const skippedLabels = new Set([
+  // MyST keeps a single explicit target per heading. The LaTeX keeps this
+  // older alias next to the descriptive label, but the web book only links to
+  // the latter.
+  'sec-bb-extensions',
+]);
 
 const files = {
   'matching.tex': 'matching.md',
@@ -16,6 +22,7 @@ const files = {
   'dual-norms.tex': 'dual-norms.md',
   'sinkhorn.tex': 'sinkhorn.md',
   'sinkhorn-advanced.tex': 'sinkhorn-advanced.md',
+  'statistical-ot.tex': 'statistical-ot.md',
   'generalized-wasserstein.tex': 'generalized-wasserstein.md',
   'generalized-ot-problems.tex': 'generalized-ot-problems.md',
   'beyond-comparing-measures.tex': 'beyond-comparing-measures.md',
@@ -363,8 +370,9 @@ function extractHeadingLabels(text, texFile) {
     const current = matches[i];
     const nextStart = i + 1 < matches.length ? matches[i + 1].end : clean.length;
     const window = clean.slice(current.end, Math.min(nextStart, current.end + 500));
-    const label = window.match(/^\s*\\label\{([^}]+)\}/m)?.[1] || null;
-    if (!label) continue;
+    const labelMatches = [...window.matchAll(/^\s*\\label\{([^}]+)\}/gm)];
+    const label = labelMatches.map((item) => item[1]).find((item) => !skippedLabels.has(item)) || null;
+    if (!label || skippedLabels.has(label)) continue;
     labels.push({
       level: current.level,
       title: targetSection(texFile, current) || current.title,

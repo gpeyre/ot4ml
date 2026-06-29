@@ -1724,7 +1724,7 @@ variable, while the logarithm reconstructs the Hamilton--Jacobi potential and
 the Burgers velocity.
 :::
 
-<iframe class="ot4ml-live-frame" title="Hopf-Cole and Burgers controls" src="../live/sinkhorn-hopf-cole.html" loading="lazy" style="width:100%;height:540px;border:0;display:block;"></iframe>
+<iframe class="ot4ml-live-frame" title="Hopf-Cole and Burgers controls" src="../live/sinkhorn-hopf-cole.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 (sec-sinkhorn-other-regularizers)=
 ## Other Convex Regularizers
