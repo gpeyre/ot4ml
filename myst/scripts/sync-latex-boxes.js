@@ -3,7 +3,7 @@ const path = require('path');
 
 const mystRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(mystRoot, '..');
-const latexSections = path.join(repoRoot, 'latex', 'sections');
+const latexSections = path.join(repoRoot, 'OT4ML', 'sections');
 const mystChapters = path.join(mystRoot, 'chapters');
 let knownLabels = new Set();
 

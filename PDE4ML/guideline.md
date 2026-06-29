@@ -22,7 +22,7 @@ Create a standalone long review paper titled **PDE4ML: PDEs for Machine Learning
 
 ## Independence
 
-- The directory must compile without relying on `latex/`.
+- The directory must compile without relying on `OT4ML/`.
 - Copy local versions of the style files, notation file and bibliography.
 - Copy only the figure PDF directories used by this review.
 - Keep figure paths relative to `PDE4ML/`.

@@ -271,6 +271,22 @@ For a generalized entropy
    where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers \eqref{eq:entropy-func}, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
 \index{porous medium equation}% strictindex
 \end{example}
+
+\begin{rem}[Two gradient-flow interpretations of the heat equation]\label{rem-two-interpretations-heat-equation}
+\index{heat equation}% strictindex
+\index{Dirichlet energy}% strictindex
+\index{gradient!flow}% strictindex
+\index{Shannon entropy}% strictindex
+\index{Wasserstein!gradient flow}% strictindex
+	The heat equation already illustrates that a PDE does not determine a unique gradient-flow structure. Write $\alpha=\rho\d x$ on a flat domain, with periodic or no-flux boundary conditions. In the Hilbert geometry of densities, the squared distance and the Dirichlet energy are
+	\[
+		d_{L^2}^2(\alpha,\beta)=\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
+		\qquad
+		\mathcal D(\alpha)=\frac12\int \norm{\nabla\rho(x)}^2\d x,
+	\]
+	so $\delta\mathcal D/\delta\rho=-\Delta\rho$ and the $L^2$ gradient flow $\partial_t\rho_t=-\delta\mathcal D/\delta\rho(\rho_t)$ gives $\partial_t\rho_t=\Delta\rho_t$. This viewpoint says that heat flow decreases oscillations and regularizes the density. In Wasserstein geometry, the same equation is instead the $\Wass_2$ gradient flow of the Shannon entropy $\int \rho\log\rho\d x$, so the driving mechanism is entropic spreading. The example is a useful warning: explaining a dynamics as a gradient flow requires specifying both an energy and a metric, and different pairs $(f,d)$ may produce the same PDE.
+\end{rem}
+
 	%
 The preceding examples are also governed by a precise geodesic-convexity criterion.
 	A celebrated theorem by McCann~\cite{mccann1997convexity} states that an internal energy of the form~\eqref{eq:gen-entropies}, for $g : \RR^+ \to \RR\cup\{+\infty\}$ with $g(0)=0$, is geodesically convex on $\Pp(\RR^d)$ when $g$ is convex and the map $r \mapsto r^d g(r^{-d})$ is convex and nonincreasing on $(0,+\infty)$.
@@ -529,29 +545,7 @@ This is the mathematical mechanism behind macroscopic crowd-motion models with c
 \index{maximal density constraint}% strictindex
 \index{congestion}% strictindex
 
-The constraint set is compatible with Wasserstein geometry.
-
-\begin{proposition}[Geodesic convexity of density caps]\label{prop-density-cap-geodesic-convex}
-\index{density constraint}% strictindex
-\index{convexity!geodesic}% strictindex
-	Assume that $\Omega\subset\RR^d$ is convex and let $\kappa>0$. The set $\mathcal K_\kappa$ in~\eqref{eq-density-constrained-energy} is geodesically convex in $\Pp_2(\Omega)$: if $\alpha_0,\alpha_1\in\mathcal K_\kappa$, then the constant-speed $\Wass_2$ geodesic $(\alpha_t)_{t\in[0,1]}$ between them also belongs to $\mathcal K_\kappa$.
-\end{proposition}
-\begin{proof}
-	Assume first that the endpoints have smooth positive densities $\alpha_i=\rho_i\d x$ with $\rho_i\leq\kappa$, and let $T=\nabla\varphi$ be the Brenier map from $\alpha_0$ to $\alpha_1$. Since $\Omega$ is convex, $T_t=(1-t)\Id+tT$ maps $\Omega$ into $\Omega$. The interpolation is $\alpha_t=(T_t)_\sharp\alpha_0$ and
-	\[
-		\rho_t(T_t(x))=\frac{\rho_0(x)}{\det((1-t)I+t\nabla T(x))}.
-	\]
-	The concavity of $\det^{1/d}$ on positive semidefinite matrices and the identity $\rho_1(T(x))\det\nabla T(x)=\rho_0(x)$ give
-	\[
-		\rho_t(T_t(x))^{-1/d}
-		\geq
-		(1-t)\rho_0(x)^{-1/d}+t\rho_1(T(x))^{-1/d}
-		\geq\kappa^{-1/d}.
-	\]
-	Hence $\rho_t\leq\kappa$ for all $t$. The general case follows by approximation and lower semicontinuity of the $L^\infty$ bound, as in McCann's displacement-convexity theory~\cite{mccann1997convexity}.
-\index{Brenier map}% strictindex
-\index{displacement interpolation}% strictindex
-\end{proof}
+The hard cap is not especially benign numerically: the projection in the JKO step and the pressure field below can be difficult to compute accurately. Its advantage is geometric. Proposition~\ref{prop-density-cap-geodesic-convex} in Section~\ref{sec-geodesic-convexity} shows that $\mathcal K_\kappa$ is geodesically convex, so the indicator of the constraint is harmless for the usual geodesic-convex convergence guarantees.
 
 The formal PDE contains a pressure field $p_t$, the Lagrange multiplier of the constraint. With no-flux boundary condition $\rho_t\nabla(h+p_t)\cdot n=0$ on $\partial\Omega$, the constrained gradient flow is the complementarity system
 \index{pressure field}% strictindex
@@ -664,127 +658,6 @@ When $b$ is constant, the pressure can be chosen constant and the system reduces
 \label{fig:gradflow-multispecies-entropy-flow}
 \end{figure}
 
-\subsection{Unbalanced Wasserstein--Fisher--Rao Gradient Flows}
-\index{unbalanced!gradient flow}% strictindex
-\index{Wasserstein-Fisher-Rao}% strictindex
-\index{birth-death dynamics}% strictindex
-\index{Wasserstein-Fisher-Rao distance}% strictindex
-
-The Wasserstein gradient flows above conserve total mass, because their tangent vectors are generated by continuity equations. When the unknown measure represents an intensity, a population or a cloud of trainable particles, it is often useful to combine spatial motion with creation and destruction of mass. The dynamic unbalanced distance defined in Section~\ref{sec-unbalanced-ot}, through the balance-equation formula~\eqref{eq-dynamic-unbalanced-ot}, gives exactly this geometry.
-
-\begin{defn}[WFR minimizing movement]\label{def-wfr-jko-gradient-flow}
-\index{JKO scheme}% strictindex
-	Let $F:\Mm_+(\RR^d)\to\RR\cup\{+\infty\}$ be an energy on positive finite measures and let $\WFR_\kappa$ be the Wasserstein--Fisher--Rao distance with growth scale $\kappa>0$, defined by the dynamic balance-equation formulation~\eqref{eq-dynamic-unbalanced-ot} and its static equivalence in Proposition~\ref{prop-static-dynamic-unbalanced}. The unbalanced JKO step is
-	\begin{equation}\label{eq-wfr-jko}
-		\alpha^{k+1}
-		\in
-		\uargmin{\alpha\in\Mm_+(\RR^d)}
-		\frac{1}{2\tau}\WFR_\kappa^2(\alpha^k,\alpha)+F(\alpha).
-	\end{equation}
-	The continuous-time limit, when it exists, is called the $\WFR_\kappa$ gradient flow of $F$.
-\end{defn}
-
-Formally, a smooth curve $\alpha_t=\rho_t\d x$ has tangent vectors of the form
-\[
-	\partial_t\rho_t+\diverg(\rho_t v_t)=g_t\rho_t,
-\]
-with squared norm $\int(\norm{v_t}^2+\kappa^2 g_t^2)\rho_t\d x$. This is the infinitesimal version of the balance-equation action in Section~\ref{sec-dynamic-optimal-transport}.
-
-\begin{proposition}[Formal WFR gradient-flow PDE]\label{prop-wfr-gradient-flow-pde}
-\index{Wasserstein-Fisher-Rao}% strictindex
-\index{balance equation}% strictindex
-	Assume that $F$ has a smooth first variation $\phi_t=\delta F(\alpha_t)$ and that $\alpha_t=\rho_t\d x$ is smooth and positive. The formal $\WFR_\kappa$ gradient flow of $F$ is
-\index{Wasserstein-Fisher-Rao distance}% strictindex
-	\begin{equation}\label{eq-wfr-gradient-flow-pde}
-		\partial_t\rho_t
-		=
-		\diverg(\rho_t\nabla\phi_t)
-		-
-		\frac{1}{\kappa^2}\phi_t\rho_t .
-	\end{equation}
-	Along such a smooth solution,
-	\begin{equation}\label{eq-wfr-energy-dissipation}
-		\frac{\d}{\d t}F(\alpha_t)
-		=
-		-\int
-		\left(\norm{\nabla\phi_t}^2+\frac{1}{\kappa^2}\phi_t^2\right)\rho_t\,\d x
-		\leq 0 .
-	\end{equation}
-\end{proposition}
-\begin{proof}
-	For an infinitesimal tangent pair $(v,g)$, the density variation is $\zeta=-\diverg(\rho v)+g\rho$. The first variation of $F$ is
-	\[
-		\int \phi\,\zeta
-		=
-		\int \dotp{\nabla\phi}{v}\rho\,\d x+\int \phi g\rho\,\d x,
-	\]
-	after integration by parts. For the inner product
-	\[
-		\dotp{(v,g)}{(\tilde v,\tilde g)}_\rho
-		=
-		\int \dotp{v}{\tilde v}\rho\,\d x+\kappa^2\int g\tilde g\rho\,\d x,
-	\]
-	the Riesz representative is $(\nabla\phi,\phi/\kappa^2)$. Steepest descent therefore uses $(v,g)=(-\nabla\phi,-\phi/\kappa^2)$, which gives~\eqref{eq-wfr-gradient-flow-pde}.
-	Substituting this pair in the first-variation formula gives
-	\[
-		\frac{\d}{\d t}F(\alpha_t)
-		=
-		-\int
-		\left(\norm{\nabla\phi_t}^2+\frac{1}{\kappa^2}\phi_t^2\right)\rho_t\,\d x,
-	\]
-	which is~\eqref{eq-wfr-energy-dissipation}.
-\end{proof}
-
-The reaction term makes additive constants in the first variation meaningful: adding a constant to $\phi$ changes the global growth rate. This is not a defect but the infinitesimal signature of optimizing over positive finite measures, rather than on the probability simplex. The rigorous metric-space construction of Kantorovich--Fisher--Rao and WFR gradient flows is developed in~\cite{gallouet2017jko,2017-chizat-focm,2015-chizat-unbalanced}. Chizat's measure-optimization framework relates weight-changing gradient methods to mirror- and Bregman-type descents on positive measures~\cite{Chizat2019SparseOptimization,Chizat2021GradientMethodsMeasures}. In machine learning, birth--death dynamics use the same reaction intuition to let a particle population reweight, remove and create neurons during training~\cite{Rotskoff2019BirthDeath}.
-
-\Needspace{18\baselineskip}
-\begin{example}[Relative entropy and birth--death relaxation]\label{ex-wfr-kl-flow}
-\index{relative entropy}% strictindex
-\index{Fokker-Planck equation}% strictindex
-	Let $\beta=b\d x$ and use the finite-measure relative entropy
-	\[
-		F(\alpha)=\KL(\alpha|\beta)
-		=
-		\int
-		\left(\rho\log\frac{\rho}{b}-\rho+b\right)\d x,
-		\qquad
-		\alpha=\rho\d x.
-	\]
-	This is the Csisz{\'a}r divergence on positive measures; it is nonnegative and is minimized, without imposing a mass constraint, at $\alpha=\beta$. Its first variation is $\delta F(\alpha)=\log(\rho/b)$. The balanced $\Wass_2$ flow, when the total mass is fixed, is the Fokker--Planck equation
-\index{Fokker-Planck equation}% strictindex
-	\[
-		\partial_t\rho_t
-		=
-		\diverg\left(\rho_t\nabla\log\frac{\rho_t}{b}\right)
-		=
-		\Delta\rho_t-\diverg(\rho_t\nabla\log b),
-	\]
-	whereas the $\WFR_\kappa$ flow is
-	\begin{equation}\label{eq-wfr-kl-flow}
-		\partial_t\rho_t
-		=
-		\Delta\rho_t-\diverg(\rho_t\nabla\log b)
-		-
-		\frac{1}{\kappa^2}\rho_t\log\frac{\rho_t}{b}.
-	\end{equation}
-	The first two terms transport and diffuse mass, while the last term kills mass where $\rho_t>b$ and creates it where $\rho_t<b$.
-\end{example}
-
-\begin{figure}[ht]
-\centering
-\begin{tabular}{@{}cc@{}}
-\small balanced $\Wass_2$ flow & \small unbalanced $\WFR_\kappa$ flow \\[-.15em]
-\includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/balanced.pdf} &
-\includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/unbalanced.pdf}
-\end{tabular}
-\caption{Balanced and unbalanced gradient flows of $\KL(\rho|\beta)$ for one-dimensional Gaussian mixtures. In each panel the colored density stacks correspond to five increasing times, from red to blue, and the faint gray curve repeated on each row is the target mixture $\beta$. The balanced Wasserstein flow is the conservative Fokker--Planck equation, so mass must move through the low-density region between modes. The $\WFR_\kappa$ flow adds the birth--death reaction term in~\eqref{eq-wfr-kl-flow}; it attenuates overrepresented regions and creates missing mass near target modes, reaching the target shape much faster.}
-\index{Wasserstein!gradient flow}% strictindex
-\index{Wasserstein-Fisher-Rao}% strictindex
-\index{birth-death dynamics}% strictindex
-\index{Fokker-Planck equation}% strictindex
-\label{fig:gradflow-wfr-unbalanced-flow}
-\end{figure}
-
 \subsection{Geodesic Convexity and Convergence}
 \index{convexity!geodesic}% strictindex
 \label{sec-geodesic-convexity}
@@ -838,6 +711,35 @@ where $P_0(x,y)=x$ and $P_1(x,y)=y$. If the optimal plan is induced by a Brenier
 \index{Monge!geodesic}% strictindex
 \end{proof}
 
+\paragraph{Geodesically convex constraints.}
+\label{par-geodesically-convex-constraints}
+\index{convexity!geodesic}% strictindex
+\index{density constraint}% strictindex
+
+Geodesic convexity is also useful for hard constraints. If a feasible set is geodesically convex, then adding its indicator to an energy does not destroy the variational structure used by minimizing movements and convergence arguments. The density cap from~\eqref{eq-density-constrained-energy} is the model example: it is numerically delicate, because one must compute a projection or a pressure, but it is geometrically compatible with Wasserstein descent.
+
+\begin{proposition}[Geodesic convexity of density caps]\label{prop-density-cap-geodesic-convex}
+\index{density constraint}% strictindex
+\index{convexity!geodesic}% strictindex
+	Assume that $\Omega\subset\RR^d$ is convex and let $\kappa>0$. The set $\mathcal K_\kappa$ in~\eqref{eq-density-constrained-energy} is geodesically convex in $\Pp_2(\Omega)$: if $\alpha_0,\alpha_1\in\mathcal K_\kappa$, then the constant-speed $\Wass_2$ geodesic $(\alpha_t)_{t\in[0,1]}$ between them also belongs to $\mathcal K_\kappa$.
+\end{proposition}
+\begin{proof}
+	Assume first that the endpoints have smooth positive densities $\alpha_i=\rho_i\d x$ with $\rho_i\leq\kappa$, and let $T=\nabla\varphi$ be the Brenier map from $\alpha_0$ to $\alpha_1$. Since $\Omega$ is convex, $T_t=(1-t)\Id+tT$ maps $\Omega$ into $\Omega$. The interpolation is $\alpha_t=(T_t)_\sharp\alpha_0$ and
+	\[
+		\rho_t(T_t(x))=\frac{\rho_0(x)}{\det((1-t)I+t\nabla T(x))}.
+	\]
+	The concavity of $\det^{1/d}$ on positive semidefinite matrices and the identity $\rho_1(T(x))\det\nabla T(x)=\rho_0(x)$ give
+	\[
+		\rho_t(T_t(x))^{-1/d}
+		\geq
+		(1-t)\rho_0(x)^{-1/d}+t\rho_1(T(x))^{-1/d}
+		\geq\kappa^{-1/d}.
+	\]
+	Hence $\rho_t\leq\kappa$ for all $t$. The general case follows by approximation and lower semicontinuity of the $L^\infty$ bound, as in McCann's displacement-convexity theory~\cite{mccann1997convexity}.
+\index{Brenier map}% strictindex
+\index{displacement interpolation}% strictindex
+\end{proof}
+
 \paragraph{A useful non-example.}
 
 The squared distance to a fixed measure is not geodesically convex in general. This is a sharp contrast with Hilbert spaces, where \(x\mapsto\norm{x-y}^2\) is convex along line segments. In \(\Pp_2(\RR^d)\), \(d\geq2\), take
@@ -868,6 +770,36 @@ which violates geodesic convexity. Thus objectives built from squared Wasserstei
 \index{Wasserstein!squared distance}% strictindex
 \index{quantization!optimal}% strictindex
 \index{Lloyd algorithm}% strictindex
+
+\paragraph{Dissipation and finite metric length.}
+\index{energy!dissipation}% strictindex
+\index{metric derivative}% strictindex
+
+Before asking for rates, energy dissipation already controls the length travelled by the flow. For a smooth Euclidean flow $\dot x_t=-\nabla h(x_t)$,
+\[
+	\frac{\d}{\d t}h(x_t)=-\norm{\nabla h(x_t)}^2=-\norm{\dot x_t}^2,
+\]
+and hence, for $0\leq s<t$,
+\[
+	\int_s^t\norm{\dot x_r}\d r
+	\leq
+	\sqrt{t-s}\,\bigl(h(x_s)-h(x_t)\bigr)^{1/2}.
+\]
+For a smooth Wasserstein gradient flow with metric derivative $|\dot\alpha_t|_{\Wass_2}$ and velocity $v_t=-\Wgrad f(\alpha_t)$,
+\[
+	f(\alpha_s)-f(\alpha_t)
+	=
+	\int_s^t |\dot\alpha_r|_{\Wass_2}^2\d r
+	=
+	\int_s^t\int\norm{v_r(x)}^2\d\alpha_r(x)\d r,
+\]
+so
+\[
+	\int_s^t |\dot\alpha_r|_{\Wass_2}\d r
+	\leq
+	\sqrt{t-s}\,\bigl(f(\alpha_s)-f(\alpha_t)\bigr)^{1/2}.
+\]
+In the abstract metric theory, the same conclusion is formulated through the energy-dissipation identity for curves of maximal slope~\cite{ambrosio2006gradient,SantambrogioBook}; with the weaker inequality convention only the numerical constant changes. Thus an energy-dissipating trajectory has finite metric length on every finite interval as soon as the energy is bounded below there. Non-coercivity means that sublevel sets need not be compact, but it does not by itself allow finite-time escape to infinity in the metric. Convergence rates require additional structure, such as geodesic convexity or a Polyak--{\L}ojasiewicz slope inequality. The latter originates in finite-dimensional optimization~\cite{Polyak1963GradientMethods,KarimiNutiniSchmidt2016PL}; in Wasserstein space it is obtained by replacing the Euclidean gradient norm by the metric slope. The tail-length refinement giving an explicit \(\Wass_2\)-distance to the minimizer set was communicated to us by Rapha{\"e}l Barboni.
 
 \paragraph{Convergence of the flow.}
 
@@ -1443,6 +1375,95 @@ Transport also gives a short proof of the sharp Gaussian logarithmic Sobolev ine
 	This proves the inequality. The general Sobolev-class statement follows by approximation.
 \end{proof}
 
+For the entropy functional \(F(\alpha)=\KL(\alpha|\gamma_d)\), the squared Wasserstein slope is the Fisher information,
+\[
+	|\partial F|^2(\alpha)
+	=
+	\int \norm{\nabla\log\frac{\d\alpha}{\d\gamma_d}}^2\,\d\alpha.
+\]
+Thus the Gaussian logarithmic Sobolev inequality is exactly the Wasserstein--PL inequality for \(F\) with constant \(1\). This interpretation turns the static estimate into exponential convergence of the Ornstein--Uhlenbeck flow.
+\index{Wasserstein-PL inequality}% strictindex
+\index{Ornstein-Uhlenbeck flow}% strictindex
+
+\paragraph{Poincar\'e as a linearized Wasserstein--PL inequality.}
+\index{Poincare inequality}% strictindex
+\index{linearized Wasserstein metric}% strictindex
+	The Poincar\'e inequality is the linearized form of the logarithmic Sobolev inequality at equilibrium. Let \(\beta=Z^{-1}e^{-V}\d x\), write \(\alpha=h\beta\), and let \(L\varphi=\Delta\varphi-\dotp{\nabla V}{\nabla\varphi}=\beta^{-1}\nabla\cdot(\beta\nabla\varphi)\) be the reversible generator acting on test functions. If a logarithmic Sobolev inequality holds with constant \(\lambda\), then its expansion around \(h=1\) gives Poincar\'e with the same constant. Indeed, for \(h_\epsilon=1+\epsilon g\) with \(\int g\d\beta=0\),
+	\[
+		\KL(h_\epsilon\beta|\beta)
+		=
+		\frac{\epsilon^2}{2}\int g^2\d\beta+O(\epsilon^3),
+		\qquad
+		\int \norm{\nabla\log h_\epsilon}^2 h_\epsilon\d\beta
+		=
+		\epsilon^2\int\norm{\nabla g}^2\d\beta+O(\epsilon^3).
+	\]
+		The second-order terms give the Poincar\'e, or spectral-gap, inequality
+	\[
+		\lambda\int g^2\d\beta
+		\leq
+		\int\norm{\nabla g}^2\d\beta,
+		\qquad
+		\int g\d\beta=0.
+	\]
+		This linearization is important. Poincar\'e is not, in general, the usual \(\Wass_2\)-PL inequality for the chi-square energy \(E_2(h)=\frac12\int(h-1)^2\d\beta\), because the \(\Wass_2\) slope contains the moving mobility \(h\),
+	\[
+		|\partial E_2|_{\Wass_2}^2(h\beta)
+		=
+		\int h\norm{\nabla h}^2\d\beta .
+	\]
+		The exact PL interpretation is obtained by freezing the mobility at equilibrium. This gives the \(H^{-1}(\beta)\) metric, which is precisely the linearization of \(\Wass_2\) at \(\beta\).
+
+\begin{prop}[Poincar\'e as linearized Wasserstein--PL]\label{prop-poincare-linearized-wasserstein-pl}
+\index{Poincare inequality}% strictindex
+\index{Wasserstein-PL inequality}% strictindex
+	For a mean-zero perturbation \(u\), define the frozen-mobility norm
+	\[
+		\norm{u}_{-1,\beta}^2
+		\eqdef
+		\inf_{\substack{v\\ u=-\nabla_\beta\!\cdot v}}
+		\int\norm{v}^2\d\beta,
+		\qquad
+		\nabla_\beta\!\cdot v\eqdef\frac{1}{\beta}\nabla\cdot(\beta v).
+	\]
+		Equivalently, the associated dynamic metric on curves with fixed mass is obtained from
+	\[
+		\partial_t h_t+\nabla_\beta\!\cdot v_t=0,
+		\qquad
+		\int_0^1\!\int\norm{v_t}^2\d\beta\,\d t .
+	\]
+		For a smooth density ratio \(h\) with \(\int h\d\beta=1\), set \(E_2(h)=\frac12\int(h-1)^2\d\beta\). Its squared slope in this linearized Wasserstein metric is
+	\[
+		|\partial E_2|_{-1,\beta}^2(h)
+		=
+		\int\norm{\nabla h}^2\d\beta .
+	\]
+	Consequently, the Poincar\'e inequality with constant \(\lambda>0\) is exactly the PL inequality
+	\[
+		2\lambda E_2(h)
+		\leq
+		|\partial E_2|_{-1,\beta}^2(h).
+	\]
+	The corresponding gradient flow is the linear Fokker--Planck equation \(\partial_t h_t=Lh_t\), and it satisfies
+	\[
+		\chi^2(h_t\beta|\beta)
+		\leq
+		e^{-2\lambda t}\chi^2(h_0\beta|\beta).
+	\]
+\end{prop}
+
+\begin{proof}
+	A tangent vector for the frozen-mobility metric has the form \(\dot h=-\nabla_\beta\!\cdot v\). Differentiating \(E_2\) in this direction and integrating by parts with respect to \(\beta\) gives
+	\[
+		\d E_2(h)[\dot h]
+		=
+		\int (h-1)\dot h\,\d\beta
+		=
+		\int\dotp{\nabla h}{v}\,\d\beta .
+	\]
+		The squared dual norm of this differential is at most \(\int\norm{\nabla h}^2\d\beta\) by Cauchy--Schwarz, and equality is attained, after normalization, by the tangent vector represented by \(v=\nabla h\). This proves the slope identity. The Poincar\'e inequality is precisely \(2\lambda E_2\leq|\partial E_2|_{-1,\beta}^2\). The Riemannian gradient is \(-Lh\), hence the gradient flow is \(\partial_t h_t=Lh_t\). Along this flow, \(\frac{\d}{\d t}E_2(h_t)=-\int\norm{\nabla h_t}^2\d\beta\), and Gronwall's lemma gives the decay estimate.
+\end{proof}
+
 \paragraph{Talagrand's transport-entropy inequality.}
 \index{Talagrand inequality}% strictindex
 \index{transport-entropy inequality}% strictindex
@@ -1610,6 +1631,127 @@ The logarithmic Sobolev assumption below is the same curvature-controlled mechan
 	\]
 	and Gronwall's lemma gives the result.
 \end{proof}
+
+\subsection{Unbalanced Wasserstein--Fisher--Rao Gradient Flows}
+\index{unbalanced!gradient flow}% strictindex
+\index{Wasserstein-Fisher-Rao}% strictindex
+\index{birth-death dynamics}% strictindex
+\index{Wasserstein-Fisher-Rao distance}% strictindex
+
+The Wasserstein gradient flows above conserve total mass, because their tangent vectors are generated by continuity equations. When the unknown measure represents an intensity, a population or a cloud of trainable particles, it is often useful to combine spatial motion with creation and destruction of mass. The dynamic unbalanced distance defined in Section~\ref{sec-unbalanced-ot}, through the balance-equation formula~\eqref{eq-dynamic-unbalanced-ot}, gives exactly this geometry.
+
+\begin{defn}[WFR minimizing movement]\label{def-wfr-jko-gradient-flow}
+\index{JKO scheme}% strictindex
+	Let $F:\Mm_+(\RR^d)\to\RR\cup\{+\infty\}$ be an energy on positive finite measures and let $\WFR_\kappa$ be the Wasserstein--Fisher--Rao distance with growth scale $\kappa>0$, defined by the dynamic balance-equation formulation~\eqref{eq-dynamic-unbalanced-ot} and its static equivalence in Proposition~\ref{prop-static-dynamic-unbalanced}. The unbalanced JKO step is
+	\begin{equation}\label{eq-wfr-jko}
+		\alpha^{k+1}
+		\in
+		\uargmin{\alpha\in\Mm_+(\RR^d)}
+		\frac{1}{2\tau}\WFR_\kappa^2(\alpha^k,\alpha)+F(\alpha).
+	\end{equation}
+	The continuous-time limit, when it exists, is called the $\WFR_\kappa$ gradient flow of $F$.
+\end{defn}
+
+Formally, a smooth curve $\alpha_t=\rho_t\d x$ has tangent vectors of the form
+\[
+	\partial_t\rho_t+\diverg(\rho_t v_t)=g_t\rho_t,
+\]
+with squared norm $\int(\norm{v_t}^2+\kappa^2 g_t^2)\rho_t\d x$. This is the infinitesimal version of the balance-equation action in Section~\ref{sec-dynamic-optimal-transport}.
+
+\begin{proposition}[Formal WFR gradient-flow PDE]\label{prop-wfr-gradient-flow-pde}
+\index{Wasserstein-Fisher-Rao}% strictindex
+\index{balance equation}% strictindex
+	Assume that $F$ has a smooth first variation $\phi_t=\delta F(\alpha_t)$ and that $\alpha_t=\rho_t\d x$ is smooth and positive. The formal $\WFR_\kappa$ gradient flow of $F$ is
+\index{Wasserstein-Fisher-Rao distance}% strictindex
+	\begin{equation}\label{eq-wfr-gradient-flow-pde}
+		\partial_t\rho_t
+		=
+		\diverg(\rho_t\nabla\phi_t)
+		-
+		\frac{1}{\kappa^2}\phi_t\rho_t .
+	\end{equation}
+	Along such a smooth solution,
+	\begin{equation}\label{eq-wfr-energy-dissipation}
+		\frac{\d}{\d t}F(\alpha_t)
+		=
+		-\int
+		\left(\norm{\nabla\phi_t}^2+\frac{1}{\kappa^2}\phi_t^2\right)\rho_t\,\d x
+		\leq 0 .
+	\end{equation}
+\end{proposition}
+\begin{proof}
+	For an infinitesimal tangent pair $(v,g)$, the density variation is $\zeta=-\diverg(\rho v)+g\rho$. The first variation of $F$ is
+	\[
+		\int \phi\,\zeta
+		=
+		\int \dotp{\nabla\phi}{v}\rho\,\d x+\int \phi g\rho\,\d x,
+	\]
+	after integration by parts. For the inner product
+	\[
+		\dotp{(v,g)}{(\tilde v,\tilde g)}_\rho
+		=
+		\int \dotp{v}{\tilde v}\rho\,\d x+\kappa^2\int g\tilde g\rho\,\d x,
+	\]
+	the Riesz representative is $(\nabla\phi,\phi/\kappa^2)$. Steepest descent therefore uses $(v,g)=(-\nabla\phi,-\phi/\kappa^2)$, which gives~\eqref{eq-wfr-gradient-flow-pde}.
+	Substituting this pair in the first-variation formula gives
+	\[
+		\frac{\d}{\d t}F(\alpha_t)
+		=
+		-\int
+		\left(\norm{\nabla\phi_t}^2+\frac{1}{\kappa^2}\phi_t^2\right)\rho_t\,\d x,
+	\]
+	which is~\eqref{eq-wfr-energy-dissipation}.
+\end{proof}
+
+The reaction term makes additive constants in the first variation meaningful: adding a constant to $\phi$ changes the global growth rate. This is not a defect but the infinitesimal signature of optimizing over positive finite measures, rather than on the probability simplex. The rigorous metric-space construction of Kantorovich--Fisher--Rao and WFR gradient flows is developed in~\cite{gallouet2017jko,2017-chizat-focm,2015-chizat-unbalanced}. Chizat's measure-optimization framework relates weight-changing gradient methods to mirror- and Bregman-type descents on positive measures~\cite{Chizat2019SparseOptimization,Chizat2021GradientMethodsMeasures}. In machine learning, birth--death dynamics use the same reaction intuition to let a particle population reweight, remove and create neurons during training~\cite{Rotskoff2019BirthDeath}.
+
+\Needspace{18\baselineskip}
+\begin{example}[Relative entropy and birth--death relaxation]\label{ex-wfr-kl-flow}
+\index{relative entropy}% strictindex
+\index{Fokker-Planck equation}% strictindex
+	Let $\beta=b\d x$ and use the finite-measure relative entropy
+	\[
+		F(\alpha)=\KL(\alpha|\beta)
+		=
+		\int
+		\left(\rho\log\frac{\rho}{b}-\rho+b\right)\d x,
+		\qquad
+		\alpha=\rho\d x.
+	\]
+	This is the Csisz{\'a}r divergence on positive measures; it is nonnegative and is minimized, without imposing a mass constraint, at $\alpha=\beta$. Its first variation is $\delta F(\alpha)=\log(\rho/b)$. The balanced $\Wass_2$ flow, when the total mass is fixed, is the Fokker--Planck equation
+\index{Fokker-Planck equation}% strictindex
+	\[
+		\partial_t\rho_t
+		=
+		\diverg\left(\rho_t\nabla\log\frac{\rho_t}{b}\right)
+		=
+		\Delta\rho_t-\diverg(\rho_t\nabla\log b),
+	\]
+	whereas the $\WFR_\kappa$ flow is
+	\begin{equation}\label{eq-wfr-kl-flow}
+		\partial_t\rho_t
+		=
+		\Delta\rho_t-\diverg(\rho_t\nabla\log b)
+		-
+		\frac{1}{\kappa^2}\rho_t\log\frac{\rho_t}{b}.
+	\end{equation}
+	The first two terms transport and diffuse mass, while the last term kills mass where $\rho_t>b$ and creates it where $\rho_t<b$.
+\end{example}
+
+\begin{figure}[ht]
+\centering
+\begin{tabular}{@{}cc@{}}
+\small balanced $\Wass_2$ flow & \small unbalanced $\WFR_\kappa$ flow \\[-.15em]
+\includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/balanced.pdf} &
+\includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/unbalanced.pdf}
+\end{tabular}
+\caption{Balanced and unbalanced gradient flows of $\KL(\rho|\beta)$ for one-dimensional Gaussian mixtures. In each panel the colored density stacks correspond to five increasing times, from red to blue, and the faint gray curve repeated on each row is the target mixture $\beta$. The balanced Wasserstein flow is the conservative Fokker--Planck equation, so mass must move through the low-density region between modes. The $\WFR_\kappa$ flow adds the birth--death reaction term in~\eqref{eq-wfr-kl-flow}; it attenuates overrepresented regions and creates missing mass near target modes, reaching the target shape much faster.}
+\index{Wasserstein!gradient flow}% strictindex
+\index{Wasserstein-Fisher-Rao}% strictindex
+\index{birth-death dynamics}% strictindex
+\index{Fokker-Planck equation}% strictindex
+\label{fig:gradflow-wfr-unbalanced-flow}
+\end{figure}
 
 \subsection{Second-Order Momentum Flows}
 \label{sec-second-order-momentum-flows}

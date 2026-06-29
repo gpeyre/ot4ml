@@ -186,6 +186,132 @@ By convention, $\KL(\pi|\xi)=+\infty$ if $\pi$ is not absolutely continuous with
 \end{defn}
 For fixed balanced marginals, the specific product reference in the entropy only matters up to additive constants, exactly as in Proposition~\ref{prop-kl-shift}, provided the alternative reference marginals are mutually absolutely continuous with $\al$ and $\be$. Its support and absolute-continuity structure are nevertheless essential: they determine which couplings have finite entropy.
 
+\subsection{Dual of Sinkhorn}
+\paragraph{Discrete dual.}
+\begin{prop}[Dual of entropic OT]
+The optimal value of~\eqref{eq-regularized-discr-rescaled} is
+\eql{\label{eq-dual-formulation}
+\umin{\P \in \CouplingsD(\a,\b)}
+\dotp{\P}{\C}+\epsilon\KLD(\P|\a\otimes\b)
+=
+\umax{\fD \in \RR^n,\gD \in \RR^m}
+\dotp{\fD}{\a} + \dotp{\gD}{\b}
+- \epsilon \sum_{i,j} \exp\pa{
+\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}
+} \a_i \b_j + \epsilon.
+}
+The optimal $(\fD,\gD)$ are linked to scalings $(\uD,\vD)$ appearing in~\eqref{eq-scaling-form} through
+\eql{\label{eq-entropy-pd}
+\uD_i=\a_i e^{\fD_i/\epsilon}
+\qandq
+\vD_j=\b_j e^{\gD_j/\epsilon}.
+}
+\end{prop}
+\begin{proof}
+We introduce Lagrange multipliers and consider
+\(\umin{\P \geq 0} \umax{\fD,\gD} \dotp{\C}{\P} + \epsilon \KLD(\P|\a \otimes \b) + \dotp{\a-\P\ones}{\fD} + \dotp{\b-\P^\top\ones}{\gD}.\)
+Finite-dimensional convex duality allows us to exchange the minimum over $\P$ with the maximum over $(\fD,\gD)$, giving
+\eq{
+\umax{\fD,\gD}
+\dotp{\fD}{\a} + \dotp{\gD}{\b}
++
+\epsilon \umin{\P \geq 0}
+\pa{
+\KLD(\P|\a \otimes \b)
+-
+\dotp{\frac{\fD\oplus\gD-\C}{\epsilon}}{\P}
+}
+=
+\dotp{\fD}{\a} + \dotp{\gD}{\b} - \epsilon \KLD^*\pa{ \frac{\fD\oplus\gD-\C}{\epsilon}|\a \otimes \b }.
+}
+One concludes by using~\eqref{eq-legendre} for $\phi(r)=r \log(r)-r+1$
+\(\KLD^*(H|\a \otimes \b) = \sum_{i,j} \phi^*(H_{i,j}) \a_i \b_j.\)
+Indeed, the scalar maximization
+\(\phi^*(s)=\sup_{r\geq0}\{rs-r\log r+r-1\}\)
+has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
+\end{proof}
+\paragraph{\texorpdfstring{Discrete soft $c$-transforms.}{Discrete soft c-transforms.}}
+\eq{
+\a_i - e^{\frac{\fD_i}{\epsilon}} \a_i \sum_j \exp\pa{
+\frac{\gD_j-\C_{i,j}}{\epsilon}
+} \b_j = 0
+}
+\eq{
+\fD_i = -\epsilon \log \sum_j \exp\pa{ \frac{\gD_j-\C_{i,j}}{\epsilon} } \b_j.
+}
+\begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
+For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is \({\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j.\)
+It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $\C$, the discrete soft $c$-transforms are
+\eql{\label{eq-soft-c-1}
+\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD )
+}
+and
+\eql{\label{eq-soft-c-2}
+\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
+}
+\end{defn}
+\({\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}\)
+\paragraph{Continuous dual and soft-transforms.}
+For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
+
+\eql{\label{eq-dual-sinkh-cont}
+\MK_\c^\epsilon(\al,\be)
+=
+\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
+\mathcal D_\epsilon(f,g),
+}
+\eql{\label{eq-dual-sinkhorn-objective}
+\mathcal D_\epsilon(f,g)
+\eqdef
+\int_{\Xx} f(x)\d\al(x)
++
+\int_{\Yy} g(y)\d\be(y)
+-
+\epsilon
+\int_{\Xx\times\Yy}
+\pa{
+e^{\frac{f(x)+g(y)-c(x,y)}{\epsilon}}-1
+}
+\d\al(x)\d\be(y).
+}
+\begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
+For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
+\begin{align}
+f^{c,\epsilon}(y)
+&\eqdef
+-\epsilon\log\!\left(
+\int_{\Xx}
+e^{\frac{f(x)-c(x,y)}{\epsilon}}\d\al(x)
+\right),
+\qquad y\in\Yy, \label{eq-soft-c-cont-f}\\
+g^{\bar c,\epsilon}(x)
+&\eqdef
+-\epsilon\log\!\left(
+\int_{\Yy}
+e^{\frac{g(y)-c(x,y)}{\epsilon}}\d\be(y)
+\right),
+\qquad x\in\Xx. \label{eq-soft-c-cont-g}
+\end{align}
+\end{defn}
+\begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
+Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
+\((f^\star+\lambda,g^\star-\lambda), \qquad \lambda\in\RR.\)
+\end{prop}
+\begin{proof}
+Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
+\(\norm{f}_V+\norm{g}_V \leq 2(\sup c-\inf c).\)
+Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
+\(\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')} \leq \sup_y\abs{c(x,y)-c(x',y)}.\)
+After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzel\`a--Ascoli gives a uniformly converging subsequence, and continuity of~\eqref{eq-dual-sinkhorn-objective} gives a maximizer.
+
+For uniqueness, use strict convexity of
+\(H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)\)
+on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
+\end{proof}
+\paragraph{Neural dual solvers.}
+\(\Phi(x)+\Psi(y)\geq \dotp{x}{y}.\)
+For the quadratic cost this is the same statement after subtracting the quadratic terms, using the convexity properties of soft transforms. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
+
 \subsection{Path-Space Schr\"odinger Problem}
 \label{sec-path-space-schrodinger}
 \paragraph{Unregularized path-space transport.}
@@ -357,132 +483,6 @@ If $(X,Y)\sim\pi$ have marginals $X\sim\al$ and $Y\sim\be$, the mutual informati
 It is nonnegative and vanishes if and only if $X$ and $Y$ are independent.
 \end{defn}
 \(\inf_{X\sim\al,\;Y\sim\be} \EE\bigl(c(X,Y)\bigr)+\epsilon\Ii(X,Y).\)
-\subsection{Dual of Sinkhorn}
-\paragraph{Discrete dual.}
-\begin{prop}[Dual of entropic OT]
-The optimal value of~\eqref{eq-regularized-discr-rescaled} is
-\eql{\label{eq-dual-formulation}
-\umin{\P \in \CouplingsD(\a,\b)}
-\dotp{\P}{\C}+\epsilon\KLD(\P|\a\otimes\b)
-=
-\umax{\fD \in \RR^n,\gD \in \RR^m}
-\dotp{\fD}{\a} + \dotp{\gD}{\b}
-- \epsilon \sum_{i,j} \exp\pa{
-\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}
-} \a_i \b_j + \epsilon.
-}
-The optimal $(\fD,\gD)$ are linked to scalings $(\uD,\vD)$ appearing in~\eqref{eq-scaling-form} through
-\eql{\label{eq-entropy-pd}
-\uD_i=\a_i e^{\fD_i/\epsilon}
-\qandq
-\vD_j=\b_j e^{\gD_j/\epsilon}.
-}
-\end{prop}
-\begin{proof}
-We introduce Lagrange multipliers and consider
-\(\umin{\P \geq 0} \umax{\fD,\gD} \dotp{\C}{\P} + \epsilon \KLD(\P|\a \otimes \b) + \dotp{\a-\P\ones}{\fD} + \dotp{\b-\P^\top\ones}{\gD}.\)
-Finite-dimensional convex duality allows us to exchange the minimum over $\P$ with the maximum over $(\fD,\gD)$, giving
-\eq{
-\umax{\fD,\gD}
-\dotp{\fD}{\a} + \dotp{\gD}{\b}
-+
-\epsilon \umin{\P \geq 0}
-\pa{
-\KLD(\P|\a \otimes \b)
--
-\dotp{\frac{\fD\oplus\gD-\C}{\epsilon}}{\P}
-}
-=
-\dotp{\fD}{\a} + \dotp{\gD}{\b} - \epsilon \KLD^*\pa{ \frac{\fD\oplus\gD-\C}{\epsilon}|\a \otimes \b }.
-}
-One concludes by using~\eqref{eq-legendre} for $\phi(r)=r \log(r)-r+1$
-\(\KLD^*(H|\a \otimes \b) = \sum_{i,j} \phi^*(H_{i,j}) \a_i \b_j.\)
-Indeed, the scalar maximization
-\(\phi^*(s)=\sup_{r\geq0}\{rs-r\log r+r-1\}\)
-has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
-\end{proof}
-\paragraph{\texorpdfstring{Discrete soft $c$-transforms.}{Discrete soft c-transforms.}}
-\eq{
-\a_i - e^{\frac{\fD_i}{\epsilon}} \a_i \sum_j \exp\pa{
-\frac{\gD_j-\C_{i,j}}{\epsilon}
-} \b_j = 0
-}
-\eq{
-\fD_i = -\epsilon \log \sum_j \exp\pa{ \frac{\gD_j-\C_{i,j}}{\epsilon} } \b_j.
-}
-\begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
-For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is \({\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j.\)
-It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $\C$, the discrete soft $c$-transforms are
-\eql{\label{eq-soft-c-1}
-\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD )
-}
-and
-\eql{\label{eq-soft-c-2}
-\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
-}
-\end{defn}
-\({\min}_{\b}^\epsilon(h-\text{cst})={\min}_{\b}^\epsilon(h)-\text{cst}\)
-\paragraph{Continuous dual and soft-transforms.}
-For general, not necessarily discrete, measures $(\al,\be)$, the KL-regularized problem~\eqref{eq-entropic-generic} has the concave dual
-
-\eql{\label{eq-dual-sinkh-cont}
-\MK_\c^\epsilon(\al,\be)
-=
-\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
-\mathcal D_\epsilon(f,g),
-}
-\eql{\label{eq-dual-sinkhorn-objective}
-\mathcal D_\epsilon(f,g)
-\eqdef
-\int_{\Xx} f(x)\d\al(x)
-+
-\int_{\Yy} g(y)\d\be(y)
--
-\epsilon
-\int_{\Xx\times\Yy}
-\pa{
-e^{\frac{f(x)+g(y)-c(x,y)}{\epsilon}}-1
-}
-\d\al(x)\d\be(y).
-}
-\begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
-For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
-\begin{align}
-f^{c,\epsilon}(y)
-&\eqdef
--\epsilon\log\!\left(
-\int_{\Xx}
-e^{\frac{f(x)-c(x,y)}{\epsilon}}\d\al(x)
-\right),
-\qquad y\in\Yy, \label{eq-soft-c-cont-f}\\
-g^{\bar c,\epsilon}(x)
-&\eqdef
--\epsilon\log\!\left(
-\int_{\Yy}
-e^{\frac{g(y)-c(x,y)}{\epsilon}}\d\be(y)
-\right),
-\qquad x\in\Xx. \label{eq-soft-c-cont-g}
-\end{align}
-\end{defn}
-\begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
-Assume that $\Xx$ and $\Yy$ are compact and that $c$ is continuous. The dual problem~\eqref{eq-dual-sinkh-cont} has solutions, and the set of solutions is of the form
-\((f^\star+\lambda,g^\star-\lambda), \qquad \lambda\in\RR.\)
-\end{prop}
-\begin{proof}
-Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
-\(\norm{f}_V+\norm{g}_V \leq 2(\sup c-\inf c).\)
-Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
-\(\abs{g^{\bar c,\epsilon}(x)-g^{\bar c,\epsilon}(x')} \leq \sup_y\abs{c(x,y)-c(x',y)}.\)
-After normalization, maximizing sequences are therefore uniformly bounded and equicontinuous. Arzel\`a--Ascoli gives a uniformly converging subsequence, and continuity of~\eqref{eq-dual-sinkhorn-objective} gives a maximizer.
-
-For uniqueness, use strict convexity of
-\(H\mapsto \int e^{H/\epsilon}\d(\al\otimes\be)\)
-on the image of $(f,g)\mapsto H=f\oplus g-c$, modulo constants. If two optimal pairs exist, their midpoint is also optimal; strict convexity forces the two functions $f\oplus g$ to agree $\al\otimes\be$-almost everywhere. Since the potentials are continuous on compact supports, this implies that $f-f'$ is constant and $g-g'$ is the opposite constant.
-\end{proof}
-\paragraph{Neural dual solvers.}
-\(\Phi(x)+\Psi(y)\geq \dotp{x}{y}.\)
-For the quadratic cost this is the same statement after subtracting the quadratic terms, using the convexity properties of soft transforms. One can therefore maximize the continuous dual~\eqref{eq-dual-sinkhorn-objective} over parameterized convex potentials, estimating the integrals by stochastic samples.
-
 \subsection{Marginal-Dependent Problems}
 \label{sec-sinkhorn-marginal-dependent}
 Let $\mathcal F$ and $\mathcal G$ be proper convex lower semicontinuous functionals on finite nonnegative measures on $\Xx$ and $\Yy$. The unregularized marginal-dependent transport problem is

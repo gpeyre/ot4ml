@@ -1,7 +1,7 @@
 # Compact Teaching Version
 
 This directory contains the compact, bibliography-free teaching version of the
-OT4ML manuscript. It is generated from the current sources in `latex/` with
+OT4ML manuscript. It is generated from the current sources in `OT4ML/` with
 `generate_compact.py`, using a 10pt A4 layout and tight margins for handouts.
 
 The compact version is meant for lecture use: it follows the current chapter
@@ -25,7 +25,7 @@ compact LaTeX source, and the two LaTeX passes refresh cross-references.
 ## Generator Policy
 
 - preserve formal mathematical environments and proofs;
-- follow the section order of `latex/OT4ML.tex`;
+- follow the section order of `OT4ML/OT4ML.tex`;
 - strip citations and omit the bibliography, index, figures, tables, remarks,
   and examples;
 - remove pitches, transitions and background prose outside formal/math blocks;
