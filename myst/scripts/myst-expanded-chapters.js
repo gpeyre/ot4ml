@@ -14,6 +14,7 @@ const marker = 'data-ot4ml-expanded-chapters';
 const serverPatchMarker = 'ot4ml-expanded-chapters-server-patch';
 const assetVersion = '?ot4ml-expanded-chapters=1';
 const defaultBuildBaseUrl = '/ot4ml/myst/_build/html';
+const defaultBuildPort = process.env.MYST_BUILD_PORT || process.env.PORT || '3000';
 
 function hasEnv(name) {
   return Object.prototype.hasOwnProperty.call(process.env, name);
@@ -30,6 +31,7 @@ function normalizeBaseUrl(value) {
 function buildEnv() {
   const env = { ...process.env };
   if (!hasEnv('BASE_URL')) env.BASE_URL = defaultBuildBaseUrl;
+  if (!env.HOST || env.HOST === '0.0.0.0') env.HOST = '127.0.0.1';
   return env;
 }
 
@@ -374,7 +376,7 @@ function runMyst(args, env = process.env) {
 
 if (mode === 'build') {
   patchGeneratedSite();
-  const child = runMyst(['build', '--html', '--execute'], buildEnv());
+  const child = runMyst(['build', '--html', '--execute', '--port', defaultBuildPort], buildEnv());
   child.on('exit', (code, signal) => {
     if (code === 0) patchGeneratedSite();
     if (signal) process.kill(process.pid, signal);
@@ -398,7 +400,10 @@ if (mode === 'build') {
     if (signal) process.kill(process.pid, signal);
     process.exit(code || 0);
   });
+} else if (mode === 'patch') {
+  const result = patchGeneratedSite();
+  console.log(`Patched generated site: ${JSON.stringify(result)}`);
 } else {
-  console.error(`Unknown mode "${mode}". Use "build" or "start".`);
+  console.error(`Unknown mode "${mode}". Use "build", "start" or "patch".`);
   process.exit(1);
 }

@@ -1726,15 +1726,9 @@ The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})
 :::{admonition} Remark: A quantitative CLT in Wasserstein form
 :class: ot4ml-remark
 
-The metric viewpoint on weak convergence is not only topological. It also
-turns some classical limit theorems into quantitative metric estimates. For
-instance, the Berry--Esseen theorem can be stated as a bound on the $\Wass_1$
-distance between the law of the normalized sum $n^{-1/2}\sum_i X_i$ and the
-limiting Gaussian. By Kantorovich--Rubinstein duality, this is exactly a
-uniform control of the CLT error over all $1$-Lipschitz test functions. This
-application is developed later in {ref}`sec-law-large-numbers-clt`, see in
-particular {ref}`prop-berry-esseen-w1`.
+The metric viewpoint on weak convergence is not only topological.  It also turns some classical limit theorems into quantitative metric estimates.  For instance, the Berry--Esseen theorem can be stated as a bound on the $\Wass_1$ distance between the law of the normalized sum $n^{-1/2}\sum_i X_i$ and the limiting Gaussian.  By Kantorovich--Rubinstein duality, this is exactly a uniform control of the CLT error over all $1$-Lipschitz test functions.  This application is developed later in Section {ref}`sec-law-large-numbers-clt`, see in particular Proposition {ref}`prop-berry-esseen-w1`.
 :::
+
 
 (prop-rel-wass-tv)=
 :::{admonition} Proposition: Total Variation As Wasserstein For The Discrete Metric

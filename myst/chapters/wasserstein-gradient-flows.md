@@ -1059,19 +1059,16 @@ f(\alpha) = \int g\left(\frac{\d \alpha}{\d x}\right) \d x,
    where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers  {eq}`eq:entropy-func`, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
 :::
 
-
+(rem-two-interpretations-heat-equation)=
 :::{admonition} Remark: Two gradient-flow interpretations of the heat equation
 :class: ot4ml-remark
+
 The heat equation already illustrates that a PDE does not determine a unique gradient-flow structure. Write $\alpha=\rho\d x$ on a flat domain, with periodic or no-flux boundary conditions. In the Hilbert geometry of densities, the squared distance and the Dirichlet energy are
 
 ```{math}
-d_{L^2}^2(\alpha,\beta)
-=
-\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
+d_{L^2}^2(\alpha,\beta)=\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
 \qquad
-\mathcal D(\alpha)
-=
-\frac12\int \|\nabla\rho(x)\|^2\d x,
+\mathcal D(\alpha)=\frac12\int \norm{\nabla\rho(x)}^2\d x,
 ```
 
 so $\delta\mathcal D/\delta\rho=-\Delta\rho$ and the $L^2$ gradient flow $\partial_t\rho_t=-\delta\mathcal D/\delta\rho(\rho_t)$ gives $\partial_t\rho_t=\Delta\rho_t$. This viewpoint says that heat flow decreases oscillations and regularizes the density. In Wasserstein geometry, the same equation is instead the $\Wass_2$ gradient flow of the Shannon entropy $\int \rho\log\rho\d x$, so the driving mechanism is entropic spreading. The example is a useful warning: explaining a dynamics as a gradient flow requires specifying both an energy and a metric, and different pairs $(f,d)$ may produce the same PDE.
@@ -2512,6 +2509,36 @@ Applying Theorem {ref}`thm-wasserstein-pl-convergence` and using that the
 unique minimizer of $F$ is $\beta$ gives the displayed $\Wass_2$ distance rate.
 :::
 
+(rem-lsi-wasserstein-pl)=
+:::{admonition} Remark: Logarithmic Sobolev as Wasserstein--PL
+:class: ot4ml-remark
+
+For $F(\alpha)=\KL(\alpha|\beta)$, the Wasserstein gradient is
+
+```{math}
+\Wgrad F(\alpha)
+=
+\nabla\log\frac{\d\alpha}{\d\beta},
+```
+
+and its squared Wasserstein slope is precisely the relative Fisher information,
+
+```{math}
+|\partial F|^2(\alpha)=\mathcal I_\beta(\alpha).
+```
+
+Since the unique minimizer is $\beta$ and $F(\beta)=0$,  the corresponding equation is exactly
+
+```{math}
+|\partial F|^2(\alpha)
+\geq
+2\lambda\bigl(F(\alpha)-F(\beta)\bigr),
+```
+
+that is, the Wasserstein--PL inequality of Definition {ref}`def-wasserstein-pl`. Thus logarithmic Sobolev is the functional-inequality incarnation of the convergence mechanism studied in Section {ref}`sec-geodesic-convexity`, and Theorem {ref}`thm-wasserstein-pl-convergence` converts it into exponential decay of both entropy and Wasserstein distance to equilibrium.
+:::
+
+
 (sec-wasserstein-flows-mlp)=
 ## Training Two-Layer MLPs as Wasserstein Flows
 
@@ -2830,7 +2857,48 @@ hypotheses ensuring that a negative descent direction would be present in the
 support and would contradict stationarity.
 :::
 
-## Unbalanced Wasserstein--Fisher--Rao Gradient Flows
+(sec-generalized-dynamic-wasserstein-flows)=
+## Generalized Dynamic Wasserstein Flows
+
+The generalized distances of {ref}`sec-generalized-dynamic-wasserstein-distances`
+are useful because they change what *steepest descent* means. The energy
+functional can be the same, but the tangent norm, mobility, reaction term,
+graph structure, spectral normalization or jump kernel changes the resulting
+PDE. This section mirrors the dynamic-distance taxonomy: each subsection takes
+one distance defined in {ref}`sec-dynamic-optimal-transport` and records the
+corresponding formal gradient-flow equation or algorithmic interpretation.
+
+### General Mobility Flows
+
+The concave-mobility distances of {ref}`rem-generalized-bb` replace the linear
+mobility $\rho$ by $\theta(\rho)$. This changes the Onsager operator of the
+gradient flow while keeping a continuity equation. For a smooth density
+$\rho_t$ and an energy $F$, the formal gradient flow associated with the action
+$A_\theta(\rho,m)=|m|^2/\theta(\rho)$ is
+
+```{math}
+:label: eq-general-mobility-gradient-flow
+\partial_t\rho_t
+=
+\nabla\!\cdot\!\left(\theta(\rho_t)\nabla\frac{\delta F}{\delta\rho}(\rho_t)\right).
+```
+
+If $F(\rho)=\int U(\rho(x))\,\d x+\int V(x)\rho(x)\,\d x$, this becomes
+
+```{math}
+\partial_t\rho
+=
+\nabla\!\cdot\!\left(\theta(\rho)\big(U''(\rho)\nabla\rho+\nabla V\big)\right).
+```
+
+Thus $\theta(\rho)=\rho$ and $U(\rho)=\rho\log\rho$ gives the usual heat or
+Fokker--Planck equation, while $\theta(\rho)=\rho(1-\rho/M)$ gives a
+volume-filling drift--diffusion whose mobility vanishes at saturation. Power
+internal energies and power mobilities tune nonlinear diffusion; this viewpoint
+is useful for nonlinear diffusions, exclusion models, volume-filling models and
+finite-volume discretizations {cite:p}`dolbeault2009new`.
+
+### Dynamic Unbalanced OT and WFR Flows
 
 The Wasserstein gradient flows above conserve total mass, because their tangent
 vectors are generated by continuity equations. When the unknown measure
@@ -3003,6 +3071,568 @@ conservative motion with creation--destruction dynamics.
 :::
 
 <iframe class="ot4ml-live-frame" title="Dynamic unbalanced OT controls" src="../live/dynamic-unbalanced.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+
+(sec-normalized-spectral-wasserstein-dynamics)=
+### Dynamic Spectral Wasserstein Flows
+
+The preceding section added inertia to the usual Wasserstein gradient flow. A
+different modification, closer to many large-scale optimizers, is to normalize
+the descent direction itself. Normalized gradient methods replace the Euclidean
+steepest-descent direction by the solution of a norm-constrained linear
+minimization problem {cite:p}`PethickXieAntonakopoulosEtAl2025`; this point of
+view is useful for ordinary normalized SGD
+{cite:p}`MurraySwensonKar2019,CutkoskyMehta2020`, for tensor-aware optimizers
+such as Shampoo {cite:p}`GuptaKorenSinger2018`, and for Muon-type spectral
+normalizations used in large-scale training
+{cite:p}`KellerJordan2024,LiuSuYaoEtAl2025`. We now describe the mean-field
+version developed in {cite:p}`peyre2026muon`. The construction uses the
+monotone spectral gauges of Section {ref}`sec-spectral-subspace-wasserstein`: the
+trace gauge gives the classical $\Wass_2$ flow, while the operator gauge
+$\gamma(M)=\lambda_{\max}(M)$ gives the idealized Muon geometry.
+
+#### Spectral Tangent Norm
+
+Let $\gamma$ be a monotone spectral gauge on $\mathbb S_+^d$, with polar set
+$\mathcal B_\gamma$ as in {eq}`eq-spectral-polar-set`. For a probability
+measure $\alpha$ and a velocity field $v\in L^2(\alpha;\RR^d)$, define
+
+```{math}
+
+\mathcal N_{\gamma,\alpha}(v)^2
+\eqdef
+\gamma\!\left(\int v(x)v(x)^\top\d\alpha(x)\right).
+```
+
+This is the infinitesimal analogue of the displacement covariance used in the
+spectral distance $\Wass_\gamma$ in {ref}`def-spectral-wasserstein`. It
+measures the covariance of the velocity field before applying the gauge.
+
+(def-normalized-spectral-descent)=
+:::{admonition} Definition: Spectral Steepest-Descent Direction
+:class: important
+For $g\in L^2(\alpha;\RR^d)$, the spectral steepest-descent direction is any
+minimizer
+
+```{math}
+:label: eq-normalized-spectral-lmo
+\mathcal J_{\gamma}^{\alpha}(g)
+\in
+\uargmin{v\in L^2(\alpha;\RR^d)}
+\left\{
+\int \dotp{g(x)}{v(x)}\d\alpha(x)
++
+\frac12\mathcal N_{\gamma,\alpha}(v)^2
+\right\}.
+```
+:::
+
+The field $g$ should be read as the Wasserstein gradient
+$g=\Wgrad f(\alpha)=\nabla\delta f(\alpha)$. In the trace case,
+$\mathcal N_{\tr,\alpha}(v)^2=\int\norm{v}^2\d\alpha$ and
+$\mathcal J_{\tr}^{\alpha}(g)=-g$. For other gauges, the velocity is globally
+preconditioned by the covariance of $g$ under $\alpha$.
+
+(prop-normalized-spectral-lmo-polar)=
+:::{admonition} Proposition: Polar Formula for the Spectral Direction
+:class: important
+Let $S_\alpha(g)=\int g(x)g(x)^\top\d\alpha(x)$. Assume that the
+inverse-trace problem admits a positive definite minimizer
+
+```{math}
+A_\alpha^\star
+\in
+\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
+\tr\!\left(A^{-1}S_\alpha(g)\right).
+```
+
+Then
+
+```{math}
+:label: eq-normalized-spectral-lmo-explicit
+\mathcal J_{\gamma}^{\alpha}(g)(x)=-(A_\alpha^\star)^{-1}g(x)
+```
+
+is a spectral steepest-descent direction. Boundary minimizers are understood by
+positive-definite approximation, or by using the inverse on the range of
+$S_\alpha(g)$.
+:::
+
+:::{dropdown} Proof
+Using the polar formula
+$\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$, the objective in
+{eq}`eq-normalized-spectral-lmo` is the supremum over $A\in\mathcal B_\gamma$
+of
+
+```{math}
+\int \dotp{g}{v}\d\alpha
++
+\frac12\int v^\top A v\d\alpha .
+```
+
+For fixed $A\succ0$, this quadratic expression is minimized by
+$v_A=-A^{-1}g$. The first-order optimality of $A_\alpha^\star$ over the polar
+set implies that it is active in the polar representation at
+$v_\star=-(A_\alpha^\star)^{-1}g$. Hence equality holds in the lower bound
+defined by $A_\alpha^\star$, and $v_\star$ minimizes the original objective.
+:::
+
+For the trace gauge, the minimizer is $A_\alpha^\star=\Id$. For the operator
+gauge $\gamma(M)=\lambda_{\max}(M)$, one has
+$\mathcal B_\gamma=\{A\succeq0:\tr(A)\leq1\}$; if $S_\alpha(g)\succ0$, then
+
+```{math}
+A_\alpha^\star
+=
+\frac{S_\alpha(g)^{1/2}}{\tr(S_\alpha(g)^{1/2})},
+\qquad
+\mathcal J_{\gamma}^{\alpha}(g)(x)
+=
+-\tr(S_\alpha(g)^{1/2})\,S_\alpha(g)^{-1/2}g(x).
+```
+
+This is the continuum covariance-normalization formula that becomes the Muon
+polar factor for empirical measures.
+
+#### JKO Interpretation
+
+The normalized dynamics can be obtained formally from the JKO scheme associated
+with the spectral distance:
+
+```{math}
+:label: eq-normalized-spectral-jko
+\alpha^{k+1}
+\in
+\uargmin{\alpha\in\Pp_2(\RR^d)}
+\frac{1}{2\tau}\Wass_\gamma(\alpha^k,\alpha)^2+f(\alpha).
+```
+
+For a small displacement $\alpha=(\Id+\tau v)_\sharp\alpha^k$, the dynamic
+interpretation of $\Wass_\gamma$ developed in {cite:p}`peyre2026muon` gives
+the tangent expansion
+$\Wass_\gamma(\alpha^k,(\Id+\tau v)_\sharp\alpha^k)^2
+=\tau^2\mathcal N_{\gamma,\alpha^k}(v)^2+o(\tau^2)$. Combining this with the
+first-variation expansion of $f$ yields {eq}`eq-normalized-spectral-lmo`.
+
+(prop-normalized-spectral-gradient-flow)=
+:::{admonition} Proposition: Formal Normalized Spectral Gradient Flow
+:class: important
+Assume that $f$ has a smooth first variation and that the tangent expansion of
+$\Wass_\gamma$ above is valid along smooth perturbations. Then the formal
+small-step limit of {eq}`eq-normalized-spectral-jko` solves
+
+```{math}
+:label: eq-normalized-spectral-flow
+\partial_t\alpha_t
++
+\diverg\!\left(
+\alpha_t\,\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))
+\right)=0.
+```
+
+Equivalently, if $A_t^\star$ solves the inverse-trace problem for
+$S_t=\int \Wgrad f(\alpha_t)(x)\Wgrad f(\alpha_t)(x)^\top\d\alpha_t(x)$, then
+the velocity is $v_t(x)=-(A_t^\star)^{-1}\Wgrad f(\alpha_t)(x)$. Along smooth
+solutions,
+
+```{math}
+\frac{\d}{\d t}f(\alpha_t)
+=
+-\mathcal N_{\gamma,\alpha_t}(v_t)^2.
+```
+:::
+
+:::{dropdown} Proof
+Set $\alpha=(\Id+\tau v)_\sharp\alpha_t$. The spectral JKO objective equals,
+up to terms independent of $v$ and $o(\tau)$,
+
+```{math}
+\tau\left[
+\frac12\mathcal N_{\gamma,\alpha_t}(v)^2
++
+\int\dotp{\Wgrad f(\alpha_t)(x)}{v(x)}\d\alpha_t(x)
+\right].
+```
+
+Minimizing the bracket gives
+$v=\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))$, and the transport
+expansion $(\Id+\tau v)_\sharp\alpha_t
+=\alpha_t-\tau\diverg(\alpha_t v)+o(\tau)$ gives the continuity equation.
+The dissipation identity follows by differentiating $f(\alpha_t)$ and using
+the one-dimensional rescaling optimality of the homogeneous minimization
+problem.
+:::
+
+#### Empirical and Muon Limits
+
+For empirical measures $\alpha_X=n^{-1}\sum_i\delta_{x_i}$, stack the
+velocities $v(x_i)$ into a matrix $V\in\RR^{n\times d}$ and the gradients
+$g(x_i)$ into a matrix $G\in\RR^{n\times d}$. Up to the harmless factor $1/n$,
+{eq}`eq-normalized-spectral-lmo` becomes the finite-dimensional matrix problem
+
+```{math}
+:label: eq-normalized-matrix-lmo
+J_\gamma(G)
+\in
+\uargmin{V\in\RR^{n\times d}}
+\left\{
+\tr(G^\top V)+\frac12\gamma(V^\top V)
+\right\}.
+```
+
+If $G=U\diag(\sigma_i)W^\top$ and $\gamma(M)=\lambda_{\max}(M)$, then
+
+```{math}
+:label: eq-normalized-muon-lmo
+J_\gamma(G)
+=
+-\norm{G}_{S_1}UW^\top
+=
+-\tr\!\left((G^\top G)^{1/2}\right)G(G^\top G)^{\dagger/2}.
+```
+
+The ray of this direction is the polar factor $-UW^\top$, and the scalar factor
+$\norm{G}_{S_1}$ can be absorbed into a time or step-size normalization. This
+is the exact-polar, full-batch, continuous-time idealization of Muon
+{cite:p}`KellerJordan2024,peyre2026muon`. Practical Muon implementations
+replace the polar factor by a few Newton--Schulz iterations for GPU efficiency
+{cite:p}`LiuSuYaoEtAl2025`.
+
+The effect of this spectral normalization is visible already in the homogeneous
+two-layer ReLU model discussed earlier in this chapter. Figure
+{ref}`fig:gradflow-mlp-w2-vs-muon` reproduces, in the style of the book
+figures, the numerical comparison from {cite:p}`peyre2026muon`: the same
+teacher network, initialization and empirical first variation are evolved
+either by the $W_2$ particle flow or by the operator-gauge Muon direction.
+
+(fig:gradflow-mlp-w2-vs-muon)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("gradflow-mlp-w2-vs-muon")
+```
+
+*Wasserstein versus Muon mean-field training of a homogeneous ReLU model. The
+top row displays trajectories in reduced homogeneous coordinates; black dashed
+rays are the teacher directions. The bottom row compares the empirical
+square-loss decay and the weighted angular density of neurons. Spectral
+normalization produces a more coherent collective alignment and reaches the
+low-risk regime earlier in normalized time.*
+:::
+
+(rem-normalized-momentum)=
+:::{admonition} Remark: Relation with momentum
+:class: ot4ml-remark
+
+Section {ref}`sec-second-order-momentum-flows` introduces momentum by adding a velocity variable. Practical Muon instead often averages gradients before applying the spectral normalization. In continuous time this leads to a phase-space system for pairs $(x,a)$,
+
+```{math}
+\tau\dot a_t=\Wgrad f(\alpha_t)(x_t)-a_t,
+\qquad
+\dot x_t=-(A_t^\star)^{-1}a_t,
+```
+
+where $\eta_t$ is the law of $(x_t,a_t)$, $\alpha_t=(\pi_x)_\sharp\eta_t$, and $A_t^\star$ is selected from the covariance of the averaged force,
+
+```{math}
+A_t^\star
+\in
+\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
+\tr\!\left(A^{-1}\int aa^\top\d\eta_t(x,a)\right).
+```
+
+When $\tau=0$, the auxiliary force relaxes instantly to $a_t=\Wgrad f(\alpha_t)(x_t)$ and one recovers  {eq}`eq-normalized-spectral-flow`. For $\tau>0$, the dynamics is kinetic and is not, in general, a gradient flow of a distance on the spatial marginal alone.
+:::
+
+
+### Discrete Wasserstein Flows on Markov Chains
+
+The finite-state distance $\mathcal W_K$ in {ref}`sec-discrete-wasserstein-markov`
+is designed so that the reversible Markov chain itself becomes an entropy
+gradient flow. This is the discrete counterpart of the fact that the heat
+equation is the Wasserstein gradient flow of Shannon entropy.
+
+A metric gradient flow can be read as the continuous-time limit of the implicit
+Euler, or JKO, step
+
+```{math}
+:label: eq-discrete-markov-jko
+\rho^{k+1}\in\argmin_\rho
+\frac{1}{2\tau}\mathcal W_K^2(\rho,\rho^k)+\operatorname{Ent}_\pi(\rho).
+```
+
+For small $\tau$, the first-order optimality condition gives
+
+```{math}
+\frac{\rho^{k+1}-\rho^k}{\tau}
+=-\mathcal K_{\rho^k}\log\rho^k+O(\tau)
+=K\rho^k+O(\tau),
+```
+
+where $(K\rho)_i=\sum_jK_{ij}(\rho_j-\rho_i)$. Thus the discrete Wasserstein
+geometry is engineered so that the entropy gradient flow is the Markov
+semigroup; the proposition below makes this identity explicit.
+
+(prop-discrete-markov-entropy-gradient)=
+:::{admonition} Proposition: Entropy Gradient Flow of a Reversible Markov Chain
+:class: important
+Let $K$ be reversible with invariant law $\pi$. The gradient flow of
+$\operatorname{Ent}_\pi$ for the metric $\mathcal W_K$ is the forward equation
+of the Markov chain,
+
+```{math}
+:label: eq-discrete-markov-gradient-flow
+\dot\rho_i(t)=\sum_jK_{ij}\bigl(\rho_j(t)-\rho_i(t)\bigr).
+```
+
+Equivalently, for the masses $p_i(t)=\pi_i\rho_i(t)$, this is
+$\dot p_i(t)=\sum_j(p_j(t)K_{ji}-p_i(t)K_{ij})$.
+:::
+
+:::{dropdown} Proof
+The first variation of the entropy, with respect to the weighted pairing
+$\sum_i\pi_i\xi_i\varphi_i$, is $\log\rho_i+1$. Constants do not contribute to
+$\mathcal K_\rho$, hence the metric gradient-flow equation is
+$\dot\rho=-\mathcal K_\rho\log\rho$. Using
+$\theta(a,b)(\log a-\log b)=a-b$, one obtains
+
+```{math}
+\dot\rho_i
+=-\sum_jK_{ij}\theta(\rho_i,\rho_j)(\log\rho_i-\log\rho_j)
+=
+\sum_jK_{ij}(\rho_j-\rho_i),
+```
+
+which is the density form of the Kolmogorov forward equation. Multiplying by
+$\pi_i$ and using detailed balance gives the equation for the probability
+masses.
+:::
+
+
+(sec-nonlocal-wasserstein-pdes)=
+### Nonlocal Wasserstein Flows and Fractional PDEs
+
+The nonlocal distance $\mathcal W_K$ of
+{ref}`sec-generalized-dynamic-wasserstein-distances` replaces local velocities
+by antisymmetric fluxes across jumps selected by a reversible kernel $K$. Its
+logarithmic-mean mobility is chosen so that entropy dissipation produces the
+Markov generator. This turns jump processes, fractional heat equations and some
+heavy-tailed stochastic models into gradient flows for nonlocal transport
+geometries.
+
+(prop-nonlocal-entropy-gradient-flow)=
+:::{admonition} Proposition: Entropy Gradient Flow for Reversible Jump Kernels
+:class: important
+Under the regularity and irreducibility assumptions of
+{cite:t}`Erbar2012JumpEntropy`, $\mathcal W_K$ is an extended distance on the
+set of probability measures absolutely continuous with respect to
+$\mathfrak m$, finite-action pairs are connected by constant-speed geodesics,
+and the Markov semigroup generated by the closure of
+
+```{math}
+L\psi(x)
+=
+\int\bigl(\psi(y)-\psi(x)\bigr)K(x,\d y)
+```
+
+is the gradient flow of the relative entropy
+
+```{math}
+\operatorname{Ent}_{\mathfrak m}(\alpha)
+=
+\int\rho\log\rho\,\d\mathfrak m,
+\qquad
+\alpha=\rho\mathfrak m,
+```
+
+for the distance $\mathcal W_K$. In weak form, the entropy flow is
+
+```{math}
+:label: eq-nonlocal-entropy-flow
+\partial_t\rho_t=L\rho_t .
+```
+
+When $K$ is singular, the integral defining $L$ is understood in the
+principal-value sense.
+:::
+
+:::{dropdown} Proof idea
+The key identity is the logarithmic-mean relation
+
+```{math}
+\theta(a,b)(\log a-\log b)=a-b.
+```
+
+The first variation of $\operatorname{Ent}_{\mathfrak m}$ is $\log\rho+1$.
+With the sign convention of {eq}`eq-nonlocal-continuity-weak`, the steepest
+descent velocity is
+
+```{math}
+v(x,y)
+=
+-\bar\nabla(\log\rho+1)(x,y)
+=
+\log\rho(x)-\log\rho(y).
+```
+
+Hence $\theta(\rho(x),\rho(y))v(x,y)=\rho(x)-\rho(y)$. Substituting this in
+{eq}`eq-nonlocal-continuity-weak` and using the symmetry of $\mathsf J$ gives
+
+```{math}
+\frac{\d}{\d t}\int\varphi\rho\,\d\mathfrak m
+=
+\int\varphi(x)\int(\rho(y)-\rho(x))K(x,\d y)\,\mathfrak m(\d x),
+```
+
+which is the weak form of $\partial_t\rho=L\rho$. The metric properties and
+geodesic existence require compactness and lower-semicontinuity estimates for
+the action and are the main content of {cite:t}`Erbar2012JumpEntropy`.
+:::
+
+#### Fractional Diffusion as a Transport Gradient Flow
+
+The construction becomes especially transparent for translation-invariant
+kernels. A power-law jump kernel turns the entropy flow into a
+fractional heat equation.
+
+On $X=\RR^d$, let
+
+```{math}
+K_s(x,\d y)
+=
+c_{d,s}\frac{\d y}{|x-y|^{d+s}},
+\qquad
+0<s<2.
+```
+
+The associated generator is, up to the normalizing constant,
+
+```{math}
+L_s\psi(x)
+=
+\operatorname{p.v.}\int_{\RR^d}
+\bigl(\psi(y)-\psi(x)\bigr)
+\frac{c_{d,s}}{|x-y|^{d+s}}\,\d y
+=
+-(-\Delta)^{s/2}\psi(x),
+```
+
+where $(-\Delta)^{s/2}$ is the fractional Laplacian
+{cite:p}`samko1993fractional`. Hence the $\mathcal W_{K_s}$-gradient flow of
+the entropy is
+
+```{math}
+:label: eq-fractional-heat-nonlocal-wasserstein
+\partial_t\rho_t
+=
+-(-\Delta)^{s/2}\rho_t .
+```
+
+The figure below illustrates the qualitative effect of lowering $s$. Classical
+heat diffusion, $s=2$, smooths local discontinuities by nearby averaging.
+Fractional diffusion keeps a sharper memory of localized peaks but immediately
+creates algebraic long-range tails, because mass can jump over macroscopic
+distances.
+
+(fig:gradflow-fractional-laplacian-diffusion)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("gradflow-fractional-laplacian-diffusion")
+```
+
+*Classical and fractional heat flows from two localized indicator bumps. Each
+panel evolves the same normalized mixture of two intervals by the Fourier
+multiplier $e^{-t|\xi|^s}$, with time colored from red to blue. The classical
+heat flow quickly rounds the discontinuities and spreads by local Gaussian
+averaging. As $s$ decreases, the diffusion becomes increasingly nonlocal:
+peaks remain more localized near the bumps, while heavier tails appear across
+the whole displayed window.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Vary the fractional exponents and final time to compare
+local heat smoothing with heavier-tailed nonlocal diffusion from the same two
+localized initial blocks.
+:::
+
+<iframe class="ot4ml-live-frame" title="Fractional diffusion controls" src="../live/gradflow-fractional.html" loading="lazy" style="width:100%;height:620px;border:0;display:block;"></iframe>
+
+More generally, when a target-dependent jump kernel $K_\beta$ satisfies
+detailed balance with a desired invariant measure
+$\beta=\rho_\beta\mathfrak m$, the same construction can be applied to
+$r_t=\d\alpha_t/\d\beta$. The gradient flow of $\KL(\alpha|\beta)$ is then
+$\partial_t r_t=L_\beta r_t$. This is the nonlocal analogue of the
+Fokker-Planck gradient flow of relative entropy, and it is one of the
+motivations behind more recent nonlocal diffusion gradient-flow frameworks
+{cite:p}`Warren2024NonlocalDiffusionGradientFlow`.
+
+#### Lévy SDE Viewpoint
+
+The same operators appear probabilistically as generators of jump processes.
+This gives a complementary interpretation of nonlocal PDEs as laws of
+stochastic processes with heavy-tailed jumps.
+
+For the kernel $K_s$, the process with generator $L_s$ is the symmetric
+$s$-stable Lévy process $X_t=X_0+L_t^{(s)}$, whose density solves
+{eq}`eq-fractional-heat-nonlocal-wasserstein` {cite:p}`Applebaum2009Levy`.
+Adding a smooth confining drift gives the fractional Fokker-Planck equation
+
+```{math}
+:label: eq-fractional-fokker-planck
+\partial_t\rho_t
+=
+\nabla\cdot(\rho_t\nabla V)
+-
+\sigma^s(-\Delta)^{s/2}\rho_t,
+```
+
+which is the forward equation of
+
+```{math}
+\d X_t=-\nabla V(X_t)\,\d t+\sigma\,\d L_t^{(s)}.
+```
+
+Equation {eq}`eq-fractional-fokker-planck` should be distinguished from the
+exactly reversible entropy flow above unless the jump kernel is chosen to
+satisfy detailed balance with the target measure. Both viewpoints, however,
+share the same nonlocal mechanism: relaxation is driven not only by local
+drift and Brownian diffusion but also by rare long jumps.
+
+#### Connection with Stochastic Gradient Dynamics
+
+This nonlocal point of view is useful in machine learning because stochastic
+optimization noise need not be well approximated by Brownian noise. Classical
+diffusion approximations model small-step SGD by a Brownian SDE near
+stationarity {cite:p}`MandtHoffmanBlei2017SGD`. In deep-network regimes,
+empirical and theoretical work has shown that gradient noise and even
+stationary iterates can be heavy-tailed
+{cite:p}`SimsekliSagunGurbuzbalaban2019TailIndex,GurbuzbalabanSimsekliZhu2021HeavyTailSGD`.
+A coarse continuous-time model for parameters $\Theta_t$ is then
+
+```{math}
+\d\Theta_t
+=
+-\nabla\mathcal L(\Theta_t)\,\d t
++
+\sigma\,\d L_t^{(s)},
+```
+
+whose law solves a fractional Fokker-Planck equation of the form
+{eq}`eq-fractional-fokker-planck`. The jumps represent occasional large
+stochastic-gradient fluctuations, so they can move the dynamics between basins
+in a way that Brownian approximations tend to understate. This makes nonlocal
+Wasserstein geometries a useful language for linking heavy-tailed training
+noise, fractional PDE models, and measure-valued gradient-flow ideas. The
+correspondence remains a modeling approximation: the effective tail index,
+anisotropy, minibatch correlations and learning-rate schedule all influence
+whether a Lévy limit is a faithful description of a concrete training run.
+
 
 (sec-second-order-momentum-flows)=
 ## Second-Order Momentum Flows
@@ -3325,6 +3955,17 @@ panels show KDEs of the evolving transported particles, and the left panels
 show farthest-point-subsampled trajectories.*
 :::
 
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Compare the same energy-distance force interpreted as
+an overdamped Wasserstein velocity or as a Newton acceleration. The browser
+simulation keeps the source cloud, target mixture, representative trajectories
+and $-|x-y|$ interaction visible with a smaller empirical discretization than
+the publication figure.
+:::
+
+<iframe class="ot4ml-live-frame" title="Second-order Wasserstein particle controls" src="../live/gradflow-momentum-mmd.html" loading="lazy" style="width:100%;height:560px;border:0;display:block;"></iframe>
+
 (ex-second-order-entropy-score)=
 :::{admonition} Example: Entropy-driven inertial flow
 :class: ot4ml-example
@@ -3405,565 +4046,3 @@ lift on a grid in $(x,s)$, initialized with a narrow centered speed
 distribution: its spatial marginal is shown in color and the full phase-space
 density below in grayscale.*
 :::
-
-(sec-normalized-spectral-wasserstein-dynamics)=
-## Normalized Spectral Wasserstein Dynamics
-
-The preceding section added inertia to the usual Wasserstein gradient flow. A
-different modification, closer to many large-scale optimizers, is to normalize
-the descent direction itself. Normalized gradient methods replace the Euclidean
-steepest-descent direction by the solution of a norm-constrained linear
-minimization problem {cite:p}`PethickXieAntonakopoulosEtAl2025`; this point of
-view is useful for ordinary normalized SGD
-{cite:p}`MurraySwensonKar2019,CutkoskyMehta2020`, for tensor-aware optimizers
-such as Shampoo {cite:p}`GuptaKorenSinger2018`, and for Muon-type spectral
-normalizations used in large-scale training
-{cite:p}`KellerJordan2024,LiuSuYaoEtAl2025`. We now describe the mean-field
-version developed in {cite:p}`peyre2026muon`. The construction uses the
-monotone spectral gauges of Section {ref}`sec-spectral-subspace-wasserstein`: the
-trace gauge gives the classical $\Wass_2$ flow, while the operator gauge
-$\gamma(M)=\lambda_{\max}(M)$ gives the idealized Muon geometry.
-
-### Spectral Tangent Norm
-
-Let $\gamma$ be a monotone spectral gauge on $\mathbb S_+^d$, with polar set
-$\mathcal B_\gamma$ as in {eq}`eq-spectral-polar-set`. For a probability
-measure $\alpha$ and a velocity field $v\in L^2(\alpha;\RR^d)$, define
-
-```{math}
-:label: eq-normalized-spectral-tangent-norm
-\mathcal N_{\gamma,\alpha}(v)^2
-\eqdef
-\gamma\!\left(\int v(x)v(x)^\top\d\alpha(x)\right).
-```
-
-This is the infinitesimal analogue of the displacement covariance used in the
-spectral distance $\Wass_\gamma$ in {ref}`def-spectral-wasserstein`. It
-measures the covariance of the velocity field before applying the gauge.
-
-(def-normalized-spectral-descent)=
-:::{admonition} Definition: Spectral Steepest-Descent Direction
-:class: important
-For $g\in L^2(\alpha;\RR^d)$, the spectral steepest-descent direction is any
-minimizer
-
-```{math}
-:label: eq-normalized-spectral-lmo
-\mathcal J_{\gamma}^{\alpha}(g)
-\in
-\uargmin{v\in L^2(\alpha;\RR^d)}
-\left\{
-\int \dotp{g(x)}{v(x)}\d\alpha(x)
-+
-\frac12\mathcal N_{\gamma,\alpha}(v)^2
-\right\}.
-```
-:::
-
-The field $g$ should be read as the Wasserstein gradient
-$g=\Wgrad f(\alpha)=\nabla\delta f(\alpha)$. In the trace case,
-$\mathcal N_{\tr,\alpha}(v)^2=\int\norm{v}^2\d\alpha$ and
-$\mathcal J_{\tr}^{\alpha}(g)=-g$. For other gauges, the velocity is globally
-preconditioned by the covariance of $g$ under $\alpha$.
-
-(prop-normalized-spectral-lmo-polar)=
-:::{admonition} Proposition: Polar Formula for the Spectral Direction
-:class: important
-Let $S_\alpha(g)=\int g(x)g(x)^\top\d\alpha(x)$. Assume that the
-inverse-trace problem admits a positive definite minimizer
-
-```{math}
-A_\alpha^\star
-\in
-\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
-\tr\!\left(A^{-1}S_\alpha(g)\right).
-```
-
-Then
-
-```{math}
-:label: eq-normalized-spectral-lmo-explicit
-\mathcal J_{\gamma}^{\alpha}(g)(x)=-(A_\alpha^\star)^{-1}g(x)
-```
-
-is a spectral steepest-descent direction. Boundary minimizers are understood by
-positive-definite approximation, or by using the inverse on the range of
-$S_\alpha(g)$.
-:::
-
-:::{dropdown} Proof
-Using the polar formula
-$\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$, the objective in
-{eq}`eq-normalized-spectral-lmo` is the supremum over $A\in\mathcal B_\gamma$
-of
-
-```{math}
-\int \dotp{g}{v}\d\alpha
-+
-\frac12\int v^\top A v\d\alpha .
-```
-
-For fixed $A\succ0$, this quadratic expression is minimized by
-$v_A=-A^{-1}g$. The first-order optimality of $A_\alpha^\star$ over the polar
-set implies that it is active in the polar representation at
-$v_\star=-(A_\alpha^\star)^{-1}g$. Hence equality holds in the lower bound
-defined by $A_\alpha^\star$, and $v_\star$ minimizes the original objective.
-:::
-
-For the trace gauge, the minimizer is $A_\alpha^\star=\Id$. For the operator
-gauge $\gamma(M)=\lambda_{\max}(M)$, one has
-$\mathcal B_\gamma=\{A\succeq0:\tr(A)\leq1\}$; if $S_\alpha(g)\succ0$, then
-
-```{math}
-A_\alpha^\star
-=
-\frac{S_\alpha(g)^{1/2}}{\tr(S_\alpha(g)^{1/2})},
-\qquad
-\mathcal J_{\gamma}^{\alpha}(g)(x)
-=
--\tr(S_\alpha(g)^{1/2})\,S_\alpha(g)^{-1/2}g(x).
-```
-
-This is the continuum covariance-normalization formula that becomes the Muon
-polar factor for empirical measures.
-
-### JKO Interpretation
-
-The normalized dynamics can be obtained formally from the JKO scheme associated
-with the spectral distance:
-
-```{math}
-:label: eq-normalized-spectral-jko
-\alpha^{k+1}
-\in
-\uargmin{\alpha\in\Pp_2(\RR^d)}
-\frac{1}{2\tau}\Wass_\gamma(\alpha^k,\alpha)^2+f(\alpha).
-```
-
-For a small displacement $\alpha=(\Id+\tau v)_\sharp\alpha^k$, the dynamic
-interpretation of $\Wass_\gamma$ developed in {cite:p}`peyre2026muon` gives
-the tangent expansion
-$\Wass_\gamma(\alpha^k,(\Id+\tau v)_\sharp\alpha^k)^2
-=\tau^2\mathcal N_{\gamma,\alpha^k}(v)^2+o(\tau^2)$. Combining this with the
-first-variation expansion of $f$ yields {eq}`eq-normalized-spectral-lmo`.
-
-(prop-normalized-spectral-gradient-flow)=
-:::{admonition} Proposition: Formal Normalized Spectral Gradient Flow
-:class: important
-Assume that $f$ has a smooth first variation and that the tangent expansion of
-$\Wass_\gamma$ above is valid along smooth perturbations. Then the formal
-small-step limit of {eq}`eq-normalized-spectral-jko` solves
-
-```{math}
-:label: eq-normalized-spectral-flow
-\partial_t\alpha_t
-+
-\diverg\!\left(
-\alpha_t\,\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))
-\right)=0.
-```
-
-Equivalently, if $A_t^\star$ solves the inverse-trace problem for
-$S_t=\int \Wgrad f(\alpha_t)(x)\Wgrad f(\alpha_t)(x)^\top\d\alpha_t(x)$, then
-the velocity is $v_t(x)=-(A_t^\star)^{-1}\Wgrad f(\alpha_t)(x)$. Along smooth
-solutions,
-
-```{math}
-\frac{\d}{\d t}f(\alpha_t)
-=
--\mathcal N_{\gamma,\alpha_t}(v_t)^2.
-```
-:::
-
-:::{dropdown} Proof
-Set $\alpha=(\Id+\tau v)_\sharp\alpha_t$. The spectral JKO objective equals,
-up to terms independent of $v$ and $o(\tau)$,
-
-```{math}
-\tau\left[
-\frac12\mathcal N_{\gamma,\alpha_t}(v)^2
-+
-\int\dotp{\Wgrad f(\alpha_t)(x)}{v(x)}\d\alpha_t(x)
-\right].
-```
-
-Minimizing the bracket gives
-$v=\mathcal J_{\gamma}^{\alpha_t}(\Wgrad f(\alpha_t))$, and the transport
-expansion $(\Id+\tau v)_\sharp\alpha_t
-=\alpha_t-\tau\diverg(\alpha_t v)+o(\tau)$ gives the continuity equation.
-The dissipation identity follows by differentiating $f(\alpha_t)$ and using
-the one-dimensional rescaling optimality of the homogeneous minimization
-problem.
-:::
-
-### Empirical and Muon Limits
-
-For empirical measures $\alpha_X=n^{-1}\sum_i\delta_{x_i}$, stack the
-velocities $v(x_i)$ into a matrix $V\in\RR^{n\times d}$ and the gradients
-$g(x_i)$ into a matrix $G\in\RR^{n\times d}$. Up to the harmless factor $1/n$,
-{eq}`eq-normalized-spectral-lmo` becomes the finite-dimensional matrix problem
-
-```{math}
-:label: eq-normalized-matrix-lmo
-J_\gamma(G)
-\in
-\uargmin{V\in\RR^{n\times d}}
-\left\{
-\tr(G^\top V)+\frac12\gamma(V^\top V)
-\right\}.
-```
-
-If $G=U\diag(\sigma_i)W^\top$ and $\gamma(M)=\lambda_{\max}(M)$, then
-
-```{math}
-:label: eq-normalized-muon-lmo
-J_\gamma(G)
-=
--\norm{G}_{S_1}UW^\top
-=
--\tr\!\left((G^\top G)^{1/2}\right)G(G^\top G)^{\dagger/2}.
-```
-
-The ray of this direction is the polar factor $-UW^\top$, and the scalar factor
-$\norm{G}_{S_1}$ can be absorbed into a time or step-size normalization. This
-is the exact-polar, full-batch, continuous-time idealization of Muon
-{cite:p}`KellerJordan2024,peyre2026muon`. Practical Muon implementations
-replace the polar factor by a few Newton--Schulz iterations for GPU efficiency
-{cite:p}`LiuSuYaoEtAl2025`.
-
-The effect of this spectral normalization is visible already in the homogeneous
-two-layer ReLU model discussed earlier in this chapter. Figure
-{ref}`fig:gradflow-mlp-w2-vs-muon` reproduces, in the style of the book
-figures, the numerical comparison from {cite:p}`peyre2026muon`: the same
-teacher network, initialization and empirical first variation are evolved
-either by the $W_2$ particle flow or by the operator-gauge Muon direction.
-
-(fig:gradflow-mlp-w2-vs-muon)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("gradflow-mlp-w2-vs-muon")
-```
-
-*Wasserstein versus Muon mean-field training of a homogeneous ReLU model. The
-top row displays trajectories in reduced homogeneous coordinates; black dashed
-rays are the teacher directions. The bottom row compares the empirical
-square-loss decay and the weighted angular density of neurons. Spectral
-normalization produces a more coherent collective alignment and reaches the
-low-risk regime earlier in normalized time.*
-:::
-
-(rem-normalized-momentum)=
-:::{admonition} Remark: Relation with momentum
-:class: ot4ml-remark
-
-The section above introduced momentum by adding a velocity variable. Practical Muon instead often averages gradients before applying the spectral normalization. In continuous time this leads to a phase-space system for pairs $(x,a)$,
-
-```{math}
-\tau\dot a_t=\Wgrad f(\alpha_t)(x_t)-a_t,
-\qquad
-\dot x_t=-(A_t^\star)^{-1}a_t,
-```
-
-where $\eta_t$ is the law of $(x_t,a_t)$, $\alpha_t=(\pi_x)_\sharp\eta_t$, and $A_t^\star$ is selected from the covariance of the averaged force,
-
-```{math}
-A_t^\star
-\in
-\uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
-\tr\!\left(A^{-1}\int aa^\top\d\eta_t(x,a)\right).
-```
-
-When $\tau=0$, the auxiliary force relaxes instantly to $a_t=\Wgrad f(\alpha_t)(x_t)$ and one recovers  {eq}`eq-normalized-spectral-flow`. For $\tau>0$, the dynamics is kinetic and is not, in general, a gradient flow of a distance on the spatial marginal alone.
-:::
-
-(sec-nonlocal-wasserstein-pdes)=
-## Nonlocal Wasserstein Distances and Fractional PDEs
-
-The Wasserstein metric used so far is local: mass moves continuously through a
-velocity field and the continuity equation. For jump processes and heavy-tailed
-stochastic dynamics, the relevant motion is instead nonlocal: mass can jump
-directly from $x$ to $y$. Erbar's construction
-{cite:p}`Erbar2012JumpEntropy`, building on generalized transport metrics with
-nonlinear mobilities {cite:p}`dolbeault2009new` and connected to the discrete
-Markov-chain geometries of Maas and Mielke
-{cite:p}`Maas2011,MielkeCVPDE`, replaces the local gradient by a pairwise
-difference over $(x,y)$. Subsequent work clarified metric and
-asymptotic properties of such nonlocal transport distances
-{cite:p}`SlepcevWarren2022NonlocalWasserstein`; related gradient-flow
-structures for nonlocal diffusion equations are developed in
-{cite:p}`Warren2024NonlocalDiffusionGradientFlow`. The result is a transport
-geometry whose entropy gradient flow is a nonlocal diffusion.
-
-### A Benamou-Brenier Formula with Jumps
-
-The local continuity equation can be rewritten as a balance of infinitesimal
-fluxes across nearby points. The nonlocal version keeps the same idea
-but lets the flux connect arbitrary pairs selected by a jump kernel.
-
-Let $(X,\mathfrak m)$ be a reference measure space, and let $K(x,\d y)$ be a
-nonnegative jump kernel, possibly of infinite total mass, reversible with
-respect to $\mathfrak m$. This means that
-
-```{math}
-\mathsf J(\d x,\d y)
-\eqdef
-K(x,\d y)\mathfrak m(\d x)
-```
-
-is a symmetric measure on $X\times X$. For a density
-$\rho=\d\alpha/\d\mathfrak m$, write, for $a,b>0$,
-
-```{math}
-\bar\nabla\varphi(x,y)\eqdef\varphi(y)-\varphi(x),
-\qquad
-\theta(a,b)\eqdef\frac{a-b}{\log a-\log b}
-```
-
-for the nonlocal gradient and the logarithmic mean, with
-$\theta(a,a)=a$ and the usual lower-semicontinuous extension at $a=0$ or
-$b=0$. A curve $\alpha_t=\rho_t\mathfrak m$ driven by an
-antisymmetric velocity $v_t(x,y)=-v_t(y,x)$ satisfies the nonlocal continuity
-equation if, for all test functions $\varphi$,
-
-```{math}
-:label: eq-nonlocal-continuity-weak
-\frac{\d}{\d t}\int\varphi\,\d\alpha_t
-=
-\frac12
-\iint
-\bar\nabla\varphi(x,y)\,
-v_t(x,y)\,
-\theta(\rho_t(x),\rho_t(y))\,
-\mathsf J(\d x,\d y).
-```
-
-The corresponding action is
-
-```{math}
-\mathcal A_K(\rho,v)
-\eqdef
-\frac12
-\iint
-|v(x,y)|^2
-\theta(\rho(x),\rho(y))\,
-\mathsf J(\d x,\d y),
-```
-
-and the nonlocal transport distance is
-
-```{math}
-:label: eq-nonlocal-wasserstein-distance
-\mathcal W_K^2(\alpha_0,\alpha_1)
-\eqdef
-\inf_{\rho_t,v_t}
-\int_0^1
-\mathcal A_K(\rho_t,v_t)\,\d t,
-```
-
-where the infimum is over all curves solving
-{eq}`eq-nonlocal-continuity-weak` with endpoints $\alpha_0,\alpha_1$.
-
-(prop-nonlocal-entropy-gradient-flow)=
-:::{admonition} Proposition: Entropy Gradient Flow for Reversible Jump Kernels
-:class: important
-Under the regularity and irreducibility assumptions of
-{cite:t}`Erbar2012JumpEntropy`, $\mathcal W_K$ is an extended distance on the
-set of probability measures absolutely continuous with respect to
-$\mathfrak m$, finite-action pairs are connected by constant-speed geodesics,
-and the Markov semigroup generated by the closure of
-
-```{math}
-L\psi(x)
-=
-\int\bigl(\psi(y)-\psi(x)\bigr)K(x,\d y)
-```
-
-is the gradient flow of the relative entropy
-
-```{math}
-\operatorname{Ent}_{\mathfrak m}(\alpha)
-=
-\int\rho\log\rho\,\d\mathfrak m,
-\qquad
-\alpha=\rho\mathfrak m,
-```
-
-for the distance $\mathcal W_K$. In weak form, the entropy flow is
-
-```{math}
-:label: eq-nonlocal-entropy-flow
-\partial_t\rho_t=L\rho_t .
-```
-
-When $K$ is singular, the integral defining $L$ is understood in the
-principal-value sense.
-:::
-
-:::{dropdown} Proof idea
-The key identity is the logarithmic-mean relation
-
-```{math}
-\theta(a,b)(\log a-\log b)=a-b.
-```
-
-The first variation of $\operatorname{Ent}_{\mathfrak m}$ is $\log\rho+1$.
-With the sign convention of {eq}`eq-nonlocal-continuity-weak`, the steepest
-descent velocity is
-
-```{math}
-v(x,y)
-=
--\bar\nabla(\log\rho+1)(x,y)
-=
-\log\rho(x)-\log\rho(y).
-```
-
-Hence $\theta(\rho(x),\rho(y))v(x,y)=\rho(x)-\rho(y)$. Substituting this in
-{eq}`eq-nonlocal-continuity-weak` and using the symmetry of $\mathsf J$ gives
-
-```{math}
-\frac{\d}{\d t}\int\varphi\rho\,\d\mathfrak m
-=
-\int\varphi(x)\int(\rho(y)-\rho(x))K(x,\d y)\,\mathfrak m(\d x),
-```
-
-which is the weak form of $\partial_t\rho=L\rho$. The metric properties and
-geodesic existence require compactness and lower-semicontinuity estimates for
-the action and are the main content of {cite:t}`Erbar2012JumpEntropy`.
-:::
-
-### Fractional Diffusion as a Transport Gradient Flow
-
-The construction becomes especially transparent for translation-invariant
-kernels. A power-law jump kernel turns the entropy flow into a
-fractional heat equation.
-
-On $X=\RR^d$, let
-
-```{math}
-K_s(x,\d y)
-=
-c_{d,s}\frac{\d y}{|x-y|^{d+s}},
-\qquad
-0<s<2.
-```
-
-The associated generator is, up to the normalizing constant,
-
-```{math}
-L_s\psi(x)
-=
-\operatorname{p.v.}\int_{\RR^d}
-\bigl(\psi(y)-\psi(x)\bigr)
-\frac{c_{d,s}}{|x-y|^{d+s}}\,\d y
-=
--(-\Delta)^{s/2}\psi(x),
-```
-
-where $(-\Delta)^{s/2}$ is the fractional Laplacian
-{cite:p}`samko1993fractional`. Hence the $\mathcal W_{K_s}$-gradient flow of
-the entropy is
-
-```{math}
-:label: eq-fractional-heat-nonlocal-wasserstein
-\partial_t\rho_t
-=
--(-\Delta)^{s/2}\rho_t .
-```
-
-The figure below illustrates the qualitative effect of lowering $s$. Classical
-heat diffusion, $s=2$, smooths local discontinuities by nearby averaging.
-Fractional diffusion keeps a sharper memory of localized peaks but immediately
-creates algebraic long-range tails, because mass can jump over macroscopic
-distances.
-
-(fig:gradflow-fractional-laplacian-diffusion)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("gradflow-fractional-laplacian-diffusion")
-```
-
-*Classical and fractional heat flows from two localized indicator bumps. Each
-panel evolves the same normalized mixture of two intervals by the Fourier
-multiplier $e^{-t|\xi|^s}$, with time colored from red to blue. The classical
-heat flow quickly rounds the discontinuities and spreads by local Gaussian
-averaging. As $s$ decreases, the diffusion becomes increasingly nonlocal:
-peaks remain more localized near the bumps, while heavier tails appear across
-the whole displayed window.*
-:::
-
-More generally, when a target-dependent jump kernel $K_\beta$ satisfies
-detailed balance with a desired invariant measure
-$\beta=\rho_\beta\mathfrak m$, the same construction can be applied to
-$r_t=\d\alpha_t/\d\beta$. The gradient flow of $\KL(\alpha|\beta)$ is then
-$\partial_t r_t=L_\beta r_t$. This is the nonlocal analogue of the
-Fokker-Planck gradient flow of relative entropy, and it is one of the
-motivations behind more recent nonlocal diffusion gradient-flow frameworks
-{cite:p}`Warren2024NonlocalDiffusionGradientFlow`.
-
-### Lévy SDE Viewpoint
-
-The same operators appear probabilistically as generators of jump processes.
-This gives a complementary interpretation of nonlocal PDEs as laws of
-stochastic processes with heavy-tailed jumps.
-
-For the kernel $K_s$, the process with generator $L_s$ is the symmetric
-$s$-stable Lévy process $X_t=X_0+L_t^{(s)}$, whose density solves
-{eq}`eq-fractional-heat-nonlocal-wasserstein` {cite:p}`Applebaum2009Levy`.
-Adding a smooth confining drift gives the fractional Fokker-Planck equation
-
-```{math}
-:label: eq-fractional-fokker-planck
-\partial_t\rho_t
-=
-\nabla\cdot(\rho_t\nabla V)
--
-\sigma^s(-\Delta)^{s/2}\rho_t,
-```
-
-which is the forward equation of
-
-```{math}
-\d X_t=-\nabla V(X_t)\,\d t+\sigma\,\d L_t^{(s)}.
-```
-
-Equation {eq}`eq-fractional-fokker-planck` should be distinguished from the
-exactly reversible entropy flow above unless the jump kernel is chosen to
-satisfy detailed balance with the target measure. Both viewpoints, however,
-share the same nonlocal mechanism: relaxation is driven not only by local
-drift and Brownian diffusion but also by rare long jumps.
-
-### Connection with Stochastic Gradient Dynamics
-
-This nonlocal point of view is useful in machine learning because stochastic
-optimization noise need not be well approximated by Brownian noise. Classical
-diffusion approximations model small-step SGD by a Brownian SDE near
-stationarity {cite:p}`MandtHoffmanBlei2017SGD`. In deep-network regimes,
-empirical and theoretical work has shown that gradient noise and even
-stationary iterates can be heavy-tailed
-{cite:p}`SimsekliSagunGurbuzbalaban2019TailIndex,GurbuzbalabanSimsekliZhu2021HeavyTailSGD`.
-A coarse continuous-time model for parameters $\Theta_t$ is then
-
-```{math}
-\d\Theta_t
-=
--\nabla\mathcal L(\Theta_t)\,\d t
-+
-\sigma\,\d L_t^{(s)},
-```
-
-whose law solves a fractional Fokker-Planck equation of the form
-{eq}`eq-fractional-fokker-planck`. The jumps represent occasional large
-stochastic-gradient fluctuations, so they can move the dynamics between basins
-in a way that Brownian approximations tend to understate. This makes nonlocal
-Wasserstein geometries a useful language for linking heavy-tailed training
-noise, fractional PDE models, and measure-valued gradient-flow ideas. The
-correspondence remains a modeling approximation: the effective tail index,
-anisotropy, minibatch correlations and learning-rate schedule all influence
-whether a Lévy limit is a faithful description of a concrete training run.

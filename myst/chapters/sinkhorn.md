@@ -1710,11 +1710,21 @@ evolved through the Hopf--Cole transform for three values of the viscosity.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-show_book_figure("sinkhorn-burgers-hopf-cole", width=760)
+show_book_figure("sinkhorn-hopf-cole-transform", width=760)
 ```
 
 *Hopf--Cole numerics for viscous Hamilton--Jacobi and Burgers dynamics.  The upper row shows the potentials $\phi_t$, the lower row shows the velocities $v_t=\partial_x\phi_t$, and colors encode time from red to blue.*
 :::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Change the viscosity, final time and initial velocity
+bump to see the same Hopf--Cole mechanism: heat evolves the transformed
+variable, while the logarithm reconstructs the Hamilton--Jacobi potential and
+the Burgers velocity.
+:::
+
+<iframe class="ot4ml-live-frame" title="Hopf-Cole and Burgers controls" src="../live/sinkhorn-hopf-cole.html" loading="lazy" style="width:100%;height:540px;border:0;display:block;"></iframe>
 
 (sec-sinkhorn-other-regularizers)=
 ## Other Convex Regularizers

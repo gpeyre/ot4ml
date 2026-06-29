@@ -667,6 +667,7 @@ the composition of two $1$-Lipschitz maps is $1$-Lipschitz.
 Order-preserving additively homogeneous maps are called topical maps in nonlinear Perron--Frobenius theory {cite:p}`lemmens2012nonlinear`. Proposition {ref}`prop-topical-variation-nonexpansive` is the basic nonexpansiveness mechanism behind Fortet's monotone argument.
 :::
 
+
 (sec-mfunction-scaling)=
 ## Monotone Clearing Beyond Variational Sinkhorn
 
@@ -1821,4 +1822,3 @@ in blue.*
 :::
 
 <iframe class="ot4ml-live-frame" title="Continuous ε-Sinkhorn flow controls" src="../live/sinkhorn-continuous-epsilon.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-

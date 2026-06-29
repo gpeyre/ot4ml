@@ -76,7 +76,7 @@ environment:
 - the interface stays focused on the book content.
 
 :::{note}
-The table of contents mirrors the front matter, 14 main chapters, conclusion,
+The table of contents mirrors the front matter, 15 main chapters, conclusion,
 acknowledgements, and notation-table appendix of the book. Each chapter keeps
 the mathematical exposition first and places browser-native interactive panels
 beside the relevant figures.
