@@ -1,6 +1,7 @@
 \section{Generative Models via Transportation}
 \label{sec-generative-models-transportation}
 \subsection{Generative Models via Flow Matching}
+\label{sec-generative-flow-matching}
 \paragraph{Stochastic interpolant.}
 The word ``stochastic'' can hide two different levels of randomness. We first use the simpler one: after drawing a latent variable $U\sim\pi$, the path $t\mapsto P_t(U)$ is deterministic and differentiable.
 
@@ -213,19 +214,19 @@ one obtains the forward probability-flow velocity $v_\tau(z)=-z-\sigma^2\nabla\l
 
 \(a_t=(1-t)(1-2t), \qquad b_t=t,\)
 \subsection{One-Step Generative Models}
-\paragraph{Training a one-step flow.}
-Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. A Wasserstein-flow construction chooses a discrepancy
+\paragraph{One-step model using Wasserstein flow of discrepancy.}
+This keeps the preceding discrepancy-minimization viewpoint but replaces Euclidean parameter descent by the Wasserstein gradient flow of the generated law, a distribution-space natural-gradient-type dynamics less tied to parametrization and potentially less prone to parameter-space local minima. Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. The Wasserstein-flow construction chooses a discrepancy
 
 \(\mathcal E_\beta(\alpha),\)
 \begin{equation}\label{eq-one-step-wgf}
-\partial_t\mu_t+\diverg(\mu_t w_t)=0,
+\partial_t\al_t+\diverg(\al_t w_t)=0,
 \qquad
-w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\mu_t)(x).
+w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\al_t)(x).
 \end{equation}
 \begin{equation}\label{eq-one-step-l2-fit}
 \min_\eta \int_0^1\!\int
 \norm{U_\eta(t,x)-w_t(x)}^2
-\,\d\mu_t(x)\,\d t.
+\,\d\al_t(x)\,\d t.
 \end{equation}
 \[
 \alpha_{\theta}^{+}
@@ -234,6 +235,29 @@ w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\mu_t)(x).
 \qquad\text{or equivalently}\qquad
 G_\theta^{+}(z)=G_\theta(z)+\tau U_\eta(G_\theta(z)).
 \]
+\paragraph{Sliced-Wasserstein flow.}
+For \(\mathcal E_\beta(\alpha)=\SW_2^2(\alpha,\beta)/2\), the \(\Wass_2\)-gradient flow has velocity
+\[
+w_{\SW}[\alpha,\beta](x)=\int_{\Sphere^{d-1}}\big(T_\theta(P_\theta x)-P_\theta x\big)\theta\,\d\sigma(\theta),
+\]
+where \(T_\theta\) is the one-dimensional monotone map between projected measures. This only needs sorting along sampled directions. For Gaussian targets the flow converges under suitable hypotheses; when both laws are Gaussian it closes on means/covariances, see the Gaussian closure subsection.
+
+\paragraph{Stein variational gradient descent.}\label{sec-svgd-generative-flow}
+For a target probability $\beta=\rho_\beta\,\d x$ with smooth positive density, SVGD replaces the $\Wass_2$ gradient flow of $\KL(\alpha|\beta)$ by the kernelized geometry of Section~\ref{sec-kernelized-bb-distance}. If $k$ has vector RKHS $\RKHS_k^d$, then
+\[
+\left.\frac{\d}{\d\epsilon}\KL((\Id+\epsilon v)_\sharp\alpha|\beta)\right|_{0}
+=-\int(\dotp{\nabla\log\rho_\beta}{v}+\diverg v)\d\alpha,
+\]
+so the RKHS steepest-descent direction is
+\[
+v_{\alpha}^{\rm SVGD}(x)=\int\big(k(y,x)\nabla\log\rho_\beta(y)+\nabla_y k(y,x)\big)\d\alpha(y).
+\]
+Thus $\partial_t\alpha_t+\diverg(\alpha_t v_{\alpha_t}^{\rm SVGD})=0$, and particles follow
+\[
+X_i^{\ell+1}=X_i^\ell+\tau n^{-1}\sum_j\big(k(X_j^\ell,X_i^\ell)\nabla\log\rho_\beta(X_j^\ell)+\nabla_{X_j}k(X_j^\ell,X_i^\ell)\big).
+\]
+The target-score term attracts particles and the kernel-gradient term repels them.
+
 \paragraph{Self-corrected drifting fields.}
 \begin{equation}\label{eq-normalized-kernel-drift}
 B_\epsilon[\nu](x)
@@ -249,29 +273,29 @@ B_\epsilon[\nu](x)
 \epsilon\nabla\log\!\left(\int K_\epsilon(x,y)\,\d\nu(y)\right).
 \end{equation}
 \begin{equation}\label{eq-cross-minus-self-drift}
-u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\mu_t](x)
+u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\al_t](x)
 =
 \epsilon\nabla\log
 \frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-{\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+{\int K_\epsilon(x,y)\,\d\al_t(y)}.
 \end{equation}
 The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. For a fixed reference measure, \(B_\epsilon[\nu]\) is precisely the Gaussian mean-shift displacement in~\eqref{eq-l2-attention-mean-shift}: it moves $x$ toward the local kernel barycenter of $\nu$.
 
 \begin{prop}[Drifting as a time-dependent Wasserstein gradient]\label{prop-drifting-semi-relaxed-gradient}
-Let $\mu_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
+Let $\al_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
 \begin{equation}\label{eq-semi-relaxed-drift-functional}
-\mathcal R_t(\alpha|\mu_t)
+\mathcal R_t(\alpha|\al_t)
 \eqdef
 -\int \phi_t(x)\,\d\alpha(x)
-+\int \phi_t(x)\,\d\mu_t(x).
++\int \phi_t(x)\,\d\al_t(x).
 \end{equation}
-Here $\mu_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
-\(\partial_t\mu_t+\diverg(\mu_t u_t)=0\)
-is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\mu_t)$.
+Here $\al_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
+\(\partial_t\al_t+\diverg(\al_t u_t)=0\)
+is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\al_t)$.
 \end{prop}
 \begin{proof}
-Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is \(\delta_\alpha \mathcal R_t(\alpha|\mu_t)(x)=-\phi_t(x).\)
-By Proposition~\ref{prop-formal-wass-gradient}, \(\Wgrad \mathcal R_t(\alpha|\mu_t) = \nabla\delta_\alpha \mathcal R_t(\alpha|\mu_t) = -\nabla\phi_t = -u_t.\)
+Since $\al_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is \(\delta_\alpha \mathcal R_t(\alpha|\al_t)(x)=-\phi_t(x).\)
+By Proposition~\ref{prop-formal-wass-gradient}, \(\Wgrad \mathcal R_t(\alpha|\al_t) = \nabla\delta_\alpha \mathcal R_t(\alpha|\al_t) = -\nabla\phi_t = -u_t.\)
 The Wasserstein gradient-descent velocity is the negative of this gradient, namely $u_t$. Substituting this velocity in the continuity equation gives the claimed flow.
 \end{proof}
 \subsection{Moment Measures}
@@ -286,65 +310,65 @@ Whenever $\nabla u$ is defined $\rho_u$-almost everywhere, the moment measure of
 Thus moment measures are necessarily centered. The non-smooth theory uses essentially continuous convex functions, meaning convex functions whose restriction to the closure of their effective domain is continuous except possibly on a boundary set of zero $\mathcal H^{d-1}$ measure.
 
 \begin{thm}[Cordero--Erausquin--Klartag]\label{thm-moment-measure-characterization}
-Let $\mu\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\mu=\mathfrak M(u)$ if and only if
-\(\int y\,\d\mu(y)=0 \qquad\text{and}\qquad \supp(\mu)\text{ is not contained in a hyperplane.}\)
+Let $\al\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\al=\mathfrak M(u)$ if and only if
+\(\int y\,\d\al(y)=0 \qquad\text{and}\qquad \supp(\al)\text{ is not contained in a hyperplane.}\)
 Under these conditions, $u$ is unique up to translations of the argument and additive constants.
 \end{thm}
 \paragraph{Optimal-transport variational formulation.}
 \begin{equation}\label{eq-moment-max-correlation}
-\mathcal C_\mu(\rho)
+\mathcal C_\al(\rho)
 \eqdef
-\sup_{\pi\in\Couplings(\rho,\mu)}
+\sup_{\pi\in\Couplings(\rho,\al)}
 \int_{\RR^d\times\RR^d} x\cdot y\,\d\pi(x,y).
 \end{equation}
 \begin{equation}\label{eq-moment-max-correlation-dual}
-\mathcal C_\mu(\rho)
+\mathcal C_\al(\rho)
 =
 \inf_{v\ \mathrm{convex}}
 \left\{
-\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\mu(y)
+\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\al(y)
 \right\},
 \end{equation}
-where $v^*$ is the Legendre transform. If $\rho,\mu\in\Pp_2(\RR^d)$, then
+where $v^*$ is the Legendre transform. If $\rho,\al\in\Pp_2(\RR^d)$, then
 
 \begin{equation}\label{eq-moment-correlation-w2}
-\mathcal C_\mu(\rho)
+\mathcal C_\al(\rho)
 =
 \frac12\int \norm{x}^2\,\d\rho(x)
 +
-\frac12\int \norm{y}^2\,\d\mu(y)
+\frac12\int \norm{y}^2\,\d\al(y)
 -
-\frac12\Wass_2^2(\rho,\mu).
+\frac12\Wass_2^2(\rho,\al).
 \end{equation}
 \begin{equation}\label{eq-moment-measure-variational}
 \min_{\rho\in\Pp_1(\RR^d)}
 \left\{
-\mathcal H(\rho)+\mathcal C_\mu(\rho)
+\mathcal H(\rho)+\mathcal C_\al(\rho)
 \right\},
 \qquad
 \mathcal H(r\,\d x)\eqdef \int r(x)\log r(x)\,\d x,
 \end{equation}
 \begin{prop}[Variational characterization of moment measures]\label{prop-moment-hidden-convexity}
-Let $\mu\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
+Let $\al\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
 \(\rho=Z_u^{-1}e^{-u}\,\d x,\)
 where $u$ is convex, essentially continuous, and satisfies the moment-measure equation
-\(\mu=(\nabla u)_\sharp \rho.\)
-Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\mu\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\mu(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\mu\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
+\(\al=(\nabla u)_\sharp \rho.\)
+Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\al\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\al(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\al\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
 \end{prop}
 \begin{proof}
-The existence proof has two ingredients. First, since $\mu$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\mu(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\mu$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\mu(\rho)\geq c_\mu\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\mu>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer.
+The existence proof has two ingredients. First, since $\al$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\al(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\al$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\al(\rho)\geq c_\al\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\al>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer.
 
 Let $\rho=r\,\d x$ be a minimizer and let $u$ be a convex optimizer in the dual formula~\eqref{eq-moment-max-correlation-dual}. Keeping $u$ fixed and varying $\rho$ in~\eqref{eq-moment-measure-variational} gives the Euler equation
 \(\log r(x)+1+u(x)=\mathrm{constant} \qquad\text{on }\{r>0\},\)
-so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\mu=(\nabla u)_\sharp\rho$.
+so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\al=(\nabla u)_\sharp\rho$.
 
-Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\mu=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
+Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\al=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
 \(\frac{\d}{\d t}\mathcal H(\rho_t)\Big|_{t=0^+} = -\int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),\)
 where the identity follows by differentiating the Jacobian formula and integrating by parts. Santambrogio's derivative estimate for the maximal-correlation functional gives
-\(\frac{\d}{\d t}\mathcal C_\mu(\rho_t)\Big|_{t=0^+} \geq \int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),\)
-because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\mu$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\mu$ because $\mu$ is centered.
+\(\frac{\d}{\d t}\mathcal C_\al(\rho_t)\Big|_{t=0^+} \geq \int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),\)
+because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\al$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\al$ because $\al$ is centered.
 
-The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\mu$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\mu$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\mu)$, hence $\mathcal C_\mu$ is displacement convex. For merely finite first moment $\mu$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
+The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\al$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\al$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\al)$, hence $\mathcal C_\al$ is displacement convex. For merely finite first moment $\al$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
 \end{proof}
 \paragraph{Conjugate moment measures for generation.}
 \begin{equation}\label{eq-conjugate-moment-measure}
@@ -398,6 +422,7 @@ When the token space has dimension $d$ and the query/key space has dimension $r$
 This is an instantaneous gradient in $x$. It is not, however, the gradient of the first variation of a fixed functional of $\alpha$, because the potential $U_\alpha$ itself depends on the current measure through the same attention normalization.
 
 \subsection{Flows over the Gaussian Manifold}
+\label{sec-gaussian-closure-transport-dynamics}
 \paragraph{Gaussianity preservation.}
 \begin{prop}[Affine velocities preserve Gaussianity]\label{prop-gaussian-affine-closure}
 Let $\alpha_t=\Gaussian(\mean_t,\cov_t)$, with $\cov_t$ positive definite, solve the continuity equation with an affine velocity
@@ -449,20 +474,20 @@ for all affine gradient fields $v$. This identifies the constrained Wasserstein 
 \end{proof}
 \paragraph{Gaussian-preserving gradient flows.}
 \begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
-Let $\gamma=\Gaussian(0,\Id)$ and let $\mu_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
+Let $\gamma=\Gaussian(0,\Id)$ and let $\al_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
 \[
 \begin{array}{rcl}
-\KL(\mu|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
-\frac12\,\mathcal I(\mu|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
-\Wass_2^2(\mu,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
-\MMD_k^2(\mu,\gamma),\quad k(x,y)=\dotp{x}{y}^2
+\KL(\al|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
+\frac12\,\mathcal I(\al|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
+\Wass_2^2(\al,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
+\MMD_k^2(\al,\gamma),\quad k(x,y)=\dotp{x}{y}^2
 &:& h(C)=8(C-C^2), \\[.35em]
-S_\epsilon(\mu,\gamma)
+S_\epsilon(\al,\gamma)
 &:& h(C)=
 4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
 -2\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}
 -2C-\frac{\epsilon}{2}\Id, \\[.75em]
-\SW_2^2(\mu,\gamma)
+\SW_2^2(\al,\gamma)
 &:& h(C)=V(C)C+CV(C),
 \end{array}
 \]
@@ -475,8 +500,8 @@ V(C)=
 \]
 for the normalized spherical measure $\sigma$. Here
 \[
-\mathcal I(\mu|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
-\qquad(\mu=\rho\,\d x).
+\mathcal I(\al|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
+\qquad(\al=\rho\,\d x).
 \]
 Thus the unhalved Fisher divergence has right-hand side $4(C^{-1}-C)$. Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
 \end{prop}
@@ -487,31 +512,31 @@ Each row is obtained by identifying the affine descent velocity $v(x)=M_Cx$ gene
 \]
 Using Proposition~\ref{prop-gaussian-gradient-bullet-list} gives the descent velocity $(C^{-2}-\Id)x$, hence $\dot C=2(C^{-1}-C)$. This row should be read as a Gaussian projected closure of the fourth-order Fisher flow.
 
-For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\mu,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
+For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\al,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
 
 Gaussian Sinkhorn dual potentials are quadratic, so the velocity is again linear; differentiating the closed Gaussian formula yields the displayed spectral expression. The square roots are spectral functions of $C$, hence commute with $C$, which is why the covariance ODE closes as a matrix function of $C$ alone. For sliced Wasserstein, each one-dimensional projection is a Gaussian transport with velocity $2((\theta^\top C\theta)^{-1/2}-1)\dotp{\theta}{x}\theta$; averaging these velocities over $\Sphere^{d-1}$ gives $v(x)=V(C)x$ and thus $\dot C=V(C)C+CV(C)$.
 \end{proof}
 \paragraph{Non-variational Gaussian-preserving flows.}
 \paragraph{Contractive Gaussian projection.}
 \begin{thm}[Gelbrich theorem]\label{thm-gelbrich-projection}
-For $\mu\in\Pp_2(\RR^d)$, let
-\(\mathcal R\mu\eqdef \Gaussian(\mean_\mu,\cov_\mu)\)
-be the Gaussian with the same mean and covariance as $\mu$. Then
-\(\Wass_2^2(\mathcal R\mu,\mathcal R\nu) = \norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu) \leq \Wass_2^2(\mu,\nu).\)
+For $\al\in\Pp_2(\RR^d)$, let
+\(\mathcal R\al\eqdef \Gaussian(\mean_\al,\cov_\al)\)
+be the Gaussian with the same mean and covariance as $\al$. Then
+\(\Wass_2^2(\mathcal R\al,\mathcal R\nu) = \norm{\mean_\al-\mean_\nu}^2+\Bb^2(\cov_\al,\cov_\nu) \leq \Wass_2^2(\al,\nu).\)
 \end{thm}
 \begin{proof}
-Take any coupling $(X,Y)$ of $\mu$ and $\nu$, center the variables, and write $C=\EE[(X-\mean_\mu)(Y-\mean_\nu)^\top]$. In the positive definite case, positivity of the block covariance matrix implies the factorization $C=\cov_\mu^{1/2}K\cov_\nu^{1/2}$ with $\norm{K}_{\mathrm{op}}\leq1$, and therefore, by operator/nuclear norm duality,
+Take any coupling $(X,Y)$ of $\al$ and $\nu$, center the variables, and write $C=\EE[(X-\mean_\al)(Y-\mean_\nu)^\top]$. In the positive definite case, positivity of the block covariance matrix implies the factorization $C=\cov_\al^{1/2}K\cov_\nu^{1/2}$ with $\norm{K}_{\mathrm{op}}\leq1$, and therefore, by operator/nuclear norm duality,
 \[
-\tr C\leq \tr\left((\cov_\mu^{1/2}\cov_\nu\cov_\mu^{1/2})^{1/2}\right).
+\tr C\leq \tr\left((\cov_\al^{1/2}\cov_\nu\cov_\al^{1/2})^{1/2}\right).
 \]
 The semidefinite case follows by adding $\eta\Id$ to both covariance matrices and letting $\eta\downarrow0$.
 Expanding $\EE\norm{X-Y}^2$ gives the lower bound
-\(\EE\norm{X-Y}^2 \geq \norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu).\)
+\(\EE\norm{X-Y}^2 \geq \norm{\mean_\al-\mean_\nu}^2+\Bb^2(\cov_\al,\cov_\nu).\)
 Taking the infimum over couplings proves the inequality, while equality for Gaussian laws is Proposition~\ref{prop-gaussian-w2-bures}.
 \end{proof}
 \begin{thm}[Hugo Lavenant Gaussian-preservation criterion]\label{thm-lavenant-gaussian-preserving-jko}
 Let $F:\Pp_2(\RR^d)\to(-\infty,+\infty]$ satisfy
-\(F(\mathcal R\mu)\leq F(\mu) \qquad\forall\mu\in\Pp_2(\RR^d),\)
+\(F(\mathcal R\al)\leq F(\al) \qquad\forall\al\in\Pp_2(\RR^d),\)
 with $\mathcal R$ defined in Theorem~\ref{thm-gelbrich-projection}. If $\gamma$ is Gaussian and $\nu$ minimizes the JKO step
 \(\eta\mapsto F(\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\eta),\)
 then $\mathcal R\nu$ is also a minimizer. If the JKO minimizer is unique, it is Gaussian. Thus any unique Wasserstein gradient flow obtained as the limit of this JKO scheme preserves Gaussian initial data.

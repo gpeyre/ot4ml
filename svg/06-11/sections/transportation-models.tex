@@ -277,15 +277,15 @@ Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\s
 \]
 for instance a smoothed $\KL(\alpha|\beta)$, an MMD/IPM loss, or the debiased Sinkhorn divergence $\bar\MK_\c^\epsilon(\alpha,\beta)$ introduced in Section~\ref{sec-sinkhorn-div}. The associated formal descent is
 \begin{equation}\label{eq-one-step-wgf}
-	\partial_t\mu_t+\diverg(\mu_t w_t)=0,
+	\partial_t\al_t+\diverg(\al_t w_t)=0,
 	\qquad
-	w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\mu_t)(x).
+	w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\al_t)(x).
 \end{equation}
 Instead of integrating~\eqref{eq-one-step-wgf} at inference time, one fits a parametric residual field $U_\eta$ along the current model distribution:
 \begin{equation}\label{eq-one-step-l2-fit}
 	\min_\eta \int_0^1\!\int
 		\norm{U_\eta(t,x)-w_t(x)}^2
-		\,\d\mu_t(x)\,\d t.
+		\,\d\al_t(x)\,\d t.
 \end{equation}
 In a particle or generator implementation, the learned residual is then used to update the current generator by
 \[
@@ -299,7 +299,7 @@ After many training updates, the accumulated generator is evaluated once at test
 
 \paragraph{Normalized drifting fields.}
 
-Drifting methods need not start from an exact Wasserstein gradient. They often prescribe a normalized attraction-minus-repulsion field and then regress this field in $L^2(\mu_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
+Drifting methods need not start from an exact Wasserstein gradient. They often prescribe a normalized attraction-minus-repulsion field and then regress this field in $L^2(\al_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
 \begin{equation}\label{eq-normalized-kernel-drift}
 	B_\epsilon[\nu](x)
 	\eqdef
@@ -315,11 +315,11 @@ $K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon))$, this normalized field is a sc
 \end{equation}
 The drifting velocity is then
 \begin{equation}\label{eq-cross-minus-self-drift}
-	u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\mu_t](x)
+	u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\al_t](x)
 	=
 	\epsilon\nabla\log
 	\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-	     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+	     {\int K_\epsilon(x,y)\,\d\al_t(y)}.
 \end{equation}
 The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator~\cite{He2026SinkhornDrifting}.
 
@@ -331,35 +331,35 @@ The first term pulls samples toward data, while the second term corrects self-at
 \includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-trajectories.pdf} &
 \includegraphics[width=.30\linewidth]{figures/generative-drifting-model-trajectories/normalized-field.pdf}
 \end{tabular}
-\caption{Drifting fields for a small particle generator. The unnormalized Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The normalized drift uses the local average $B_\epsilon[\beta]-B_\epsilon[\mu_t]$, so particles reach the blue modes while the self-normalized correction prevents collapse. The right panel displays the normalized vector field around an intermediate violet model distribution.}
+\caption{Drifting fields for a small particle generator. The unnormalized Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The normalized drift uses the local average $B_\epsilon[\beta]-B_\epsilon[\al_t]$, so particles reach the blue modes while the self-normalized correction prevents collapse. The right panel displays the normalized vector field around an intermediate violet model distribution.}
 \label{fig:generative-drifting-model-trajectories}
 \end{figure}
 
 \begin{prop}[Drifting as a time-dependent Wasserstein gradient]\label{prop-drifting-semi-relaxed-gradient}
-	Let $\mu_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
+	Let $\al_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
 	\begin{equation}\label{eq-semi-relaxed-drift-functional}
-		\mathcal R_t(\alpha|\mu_t)
+		\mathcal R_t(\alpha|\al_t)
 		\eqdef
 		-\int \phi_t(x)\,\d\alpha(x)
-		+\int \phi_t(x)\,\d\mu_t(x).
+		+\int \phi_t(x)\,\d\al_t(x).
 	\end{equation}
-	Here $\mu_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
+	Here $\al_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
 	\[
-		\partial_t\mu_t+\diverg(\mu_t u_t)=0
+		\partial_t\al_t+\diverg(\al_t u_t)=0
 	\]
-	is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\mu_t)$.
+	is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\al_t)$.
 \end{prop}
 
 \begin{proof}
-	Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is
+	Since $\al_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is
 	\[
-		\delta_\alpha \mathcal R_t(\alpha|\mu_t)(x)=-\phi_t(x).
+		\delta_\alpha \mathcal R_t(\alpha|\al_t)(x)=-\phi_t(x).
 	\]
 	By Proposition~\ref{prop-formal-wass-gradient},
 	\[
-		\Wgrad \mathcal R_t(\alpha|\mu_t)
+		\Wgrad \mathcal R_t(\alpha|\al_t)
 		=
-		\nabla\delta_\alpha \mathcal R_t(\alpha|\mu_t)
+		\nabla\delta_\alpha \mathcal R_t(\alpha|\al_t)
 		=
 		-\nabla\phi_t
 		=
@@ -374,32 +374,32 @@ The first term pulls samples toward data, while the second term corrects self-at
 		\phi_t(x)=
 		\epsilon\log
 		\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-		     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+		     {\int K_\epsilon(x,y)\,\d\al_t(y)}.
 	\]
 	Then $u_t=\nabla\phi_t$, so Proposition~\ref{prop-drifting-semi-relaxed-gradient} shows that kernel drifting is the Wasserstein gradient descent of
 	\[
-		\mathcal R_t^{\mathrm{drift}}(\alpha|\mu_t)
+		\mathcal R_t^{\mathrm{drift}}(\alpha|\al_t)
 		=
 		\epsilon
 		\int
 		\log
-		\frac{\int K_\epsilon(x,y)\,\d\mu_t(y)}
+		\frac{\int K_\epsilon(x,y)\,\d\al_t(y)}
 		     {\int K_\epsilon(x,y)\,\d\beta(y)}
 		\,\d\alpha(x)
 		+\mathrm{constant}.
 	\]
-	It is ``semi-relaxed'' because the current model $\mu_t$ is used to build the potential, but it is not varied inside the denominator when computing the first variation in $\alpha$.
+	It is ``semi-relaxed'' because the current model $\al_t$ is used to build the potential, but it is not varied inside the denominator when computing the first variation in $\alpha$.
 \end{example}
 
 \begin{rem}[General fields and projection onto gradients]
-	A general regressed field $b_t$ is not necessarily a Wasserstein gradient, since Wasserstein tangent vectors are represented by gradient fields modulo $L^2(\mu_t)$-null directions. The gradient component is obtained by the weighted projection
+	A general regressed field $b_t$ is not necessarily a Wasserstein gradient, since Wasserstein tangent vectors are represented by gradient fields modulo $L^2(\al_t)$-null directions. The gradient component is obtained by the weighted projection
 	\[
 		\nabla\phi_t
 		=
 		\uargmin{\nabla\phi}
-		\int \norm{\nabla\phi(x)-b_t(x)}^2\,\d\mu_t(x).
+		\int \norm{\nabla\phi(x)-b_t(x)}^2\,\d\al_t(x).
 	\]
-	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\mu_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
+	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\al_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
 \end{rem}
 
 \subsection{Evolution in Depth of Transformers}
@@ -669,7 +669,7 @@ The next examples show that many familiar energies already have affine Wasserste
 \end{example}
 
 \begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
-	Let $\gamma=\Gaussian(0,\Id)$ and let $\mu_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
+	Let $\gamma=\Gaussian(0,\Id)$ and let $\al_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
 	\[
 	\begin{array}{rcl}
 		\KL(\mu|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
@@ -772,13 +772,13 @@ The last examples are not ordinary gradient flows of a fixed scalar energy on th
 \end{example}
 
 \begin{example}[Gaussian kernel drifting]
-	Let the target be $\beta=\Gaussian(\bar\mean,\bar\cov)$ and assume $\mu_t=\Gaussian(\mean_t,\cov_t)$. For the Gaussian kernel
+	Let the target be $\beta=\Gaussian(\bar\mean,\bar\cov)$ and assume $\al_t=\Gaussian(\mean_t,\cov_t)$. For the Gaussian kernel
 	\[
 		K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon)),
 	\]
 	the normalized field~\eqref{eq-normalized-kernel-drift} satisfies
 	\[
-		B_\epsilon[\mu_t](x)
+		B_\epsilon[\al_t](x)
 		=
 		-\epsilon(\cov_t+\epsilon\Id)^{-1}(x-\mean_t).
 	\]

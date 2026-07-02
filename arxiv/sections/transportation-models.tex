@@ -12,6 +12,7 @@ The preceding gradient-flow calculus is variational. Modern machine-learning mod
 \index{one-step generative model}% strictindex
 
 \section{Generative Models via Flow Matching}
+\label{sec-generative-flow-matching}
 \index{flow matching}% strictindex
 \index{generative model}% strictindex
 
@@ -687,10 +688,103 @@ whose data coefficient changes sign before vanishing. This overshooting bridge i
 One-step generative models try to keep the geometric training principle of flows while removing the expensive multi-step integration at sampling time. The idea is to evolve the model distribution during training, but to store the final evolution in a single generator evaluation.
 \index{generative model}% strictindex
 
-\paragraph{Training a one-step flow.}
-\index{one-step flow}% strictindex
+\paragraph{One-step models via parameter-domain discrepancy flows.}
+\index{one-step generative model}% strictindex
+\index{parameter!space}% strictindex
+\index{minibatch}% strictindex
+\index{Wasserstein GAN}% strictindex
+\index{MMD-GAN}% strictindex
+\index{Sinkhorn!GAN}% strictindex
 
-Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. A Wasserstein-flow construction chooses a discrepancy
+The most direct one-step strategy is to train the generator parameters themselves by descending a discrepancy between generated and data distributions. Let $\zeta$ be a simple latent distribution, let $f_\theta:\Zz\to\Xx$ be a neural generator, and let $\beta$ be the data distribution. The objective is to find $\theta$ such that
+\[
+	(f_\theta)_\sharp\zeta=\beta,
+\]
+or, in practice, such that the generated law is close to $\beta$. Given a discrepancy $\mathcal D$ on probability measures, define
+\begin{equation}\label{eq-one-step-parameter-discrepancy}
+	\mathcal E_\beta(\gamma)\eqdef\mathcal D(\gamma,\beta),
+	\qquad
+	H_\beta(\theta)
+	\eqdef
+	\mathcal E_\beta\big((f_\theta)_\sharp\zeta\big)
+	=
+	\mathcal D\big((f_\theta)_\sharp\zeta,\beta\big).
+\end{equation}
+This viewpoint includes Wasserstein GANs, MMD-GANs and Sinkhorn generative models~\cite{WassersteinGAN,MMD-GAN,2017-Genevay-AutoDiff}; when $\mathcal D$ is written through a dual potential or discriminator, it connects directly with the adversarial formulation of Section~\ref{sec-gan-duality}. The resulting training dynamics is the ordinary Euclidean gradient flow in parameter space,
+\begin{equation}\label{eq-one-step-parameter-flow}
+	\dot\theta_t=-\nabla_\theta H_\beta(\theta_t).
+\end{equation}
+This parameter flow induces a flow of generated measures, but this induced flow is not intrinsic in general. Set
+\[
+	\alpha_t\eqdef(f_{\theta_t})_\sharp\zeta,
+	\qquad
+	X_t=f_{\theta_t}(Z),
+	\qquad
+	Z\sim\zeta .
+\]
+If $t\mapsto\theta_t$ is smooth and $f_\theta$ is differentiable with respect to $\theta$, then
+\[
+	\dot X_t
+	=
+	\partial_\theta f_{\theta_t}(Z)\dot\theta_t .
+\]
+For $\alpha_t$-a.e. $x$, let $\eta_{t,x}$ be the disintegration of the latent law $\zeta$ with respect to the map $f_{\theta_t}$. Thus $\eta_{t,x}$ is supported on the fiber $\enscond{z}{f_{\theta_t}(z)=x}$, and for every bounded measurable $\psi$,
+\[
+	\int \psi(z)\,\d\zeta(z)
+	=
+	\int_\Xx\left(\int \psi(z)\,\d\eta_{t,x}(z)\right)\d\alpha_t(x).
+\]
+The Eulerian velocity of the generated measure is therefore the conditional average
+\begin{equation}\label{eq-one-step-induced-velocity}
+	v_t(x)
+	=
+	\int \partial_\theta f_{\theta_t}(z)\dot\theta_t\,\d\eta_{t,x}(z)
+	=
+	-\int \partial_\theta f_{\theta_t}(z)\nabla_\theta H_\beta(\theta_t)\,\d\eta_{t,x}(z).
+\end{equation}
+Indeed, for every smooth test function $\varphi$,
+\[
+	\frac{\d}{\d t}\int \varphi(x)\,\d\alpha_t(x)
+	=
+	\int \dotp{\nabla\varphi(x)}{v_t(x)}\,\d\alpha_t(x),
+\]
+which is the weak form of the continuity equation
+\begin{equation}\label{eq-one-step-induced-continuity}
+	\partial_t\alpha_t+\diverg(\alpha_t v_t)=0.
+\end{equation}
+The velocity~\eqref{eq-one-step-induced-velocity} depends on the parameter value $\theta_t$ and on the latent disintegration, not only on the measure $\alpha_t$. If the parametrization is non-identifiable, two different parameters can generate the same measure while inducing different velocities. Thus~\eqref{eq-one-step-parameter-flow} is a Euclidean gradient flow on parameter space, and only after push-forward a model-dependent flow on measures. It coincides with an intrinsic Wasserstein gradient flow only in special cases where $v_t$ agrees with the Wasserstein velocity
+\[
+	-\nabla\delta_\gamma\mathcal E_\beta(\gamma)\big|_{\gamma=\alpha_t}.
+\]
+More generally, a projected Wasserstein flow on the model manifold would require projecting this intrinsic velocity onto the infinitesimal velocities attainable by variations of $\theta$, using the $L^2(\alpha_t)$ metric. The ordinary Euclidean parameter gradient flow~\eqref{eq-one-step-parameter-flow} does not perform this projection in general.
+\index{continuity equation}% strictindex
+\index{disintegration}% strictindex
+\index{generator!manifold}% strictindex
+In machine learning, however, $\beta$ is accessed through minibatches. If
+\[
+	\hat\beta_n=\frac{1}{n}\sum_{i=1}^n\de_{Y_i},
+	\qquad
+	Y_i\overset{\mathrm{i.i.d.}}{\sim}\beta,
+\]
+then the implemented update often replaces $H_\beta$ by the random objective $H_{\hat\beta_n}$. For nonlinear discrepancies this is not, in general, an unbiased gradient estimator:
+\[
+	\EE\left[\nabla_\theta H_{\hat\beta_n}(\theta)\right]
+	\neq
+	\nabla_\theta H_\beta(\theta).
+\]
+The expectation is over the data minibatch. This bias is a finite-sample effect of inserting the empirical measure inside a nonlinear transport or adversarial optimization before differentiating; it is distinct from the optimization noise of stochastic gradient descent. MMD losses admit unbiased $U$-statistic variants, but OT and entropic OT objectives generally exhibit finite-sample bias--variance phenomena.
+\index{stochastic!gradient}% strictindex
+\index{bias!finite-sample}% strictindex
+\index{empirical measure}% strictindex
+\index{Sinkhorn divergence}% strictindex
+
+\paragraph{One-step model using Wasserstein flow of discrepancy.}
+\index{one-step flow}% strictindex
+\index{Wasserstein gradient flow}% strictindex
+
+This construction keeps the discrepancy-minimization viewpoint of the previous paragraph but changes the dynamics. Instead of following the Euclidean gradient of the discrepancy in parameter space, one prescribes the Wasserstein gradient flow of the generated law and then learns a generator update realizing this motion. This distribution-space, natural-gradient-type dynamics is less tied to a particular parametrization and can have better convergence behavior, in particular by reducing parameter-space traps when the discrepancy has a favorable geometry.
+
+Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. The Wasserstein-flow construction chooses a discrepancy
 \[
 	\mathcal E_\beta(\alpha),
 \]
@@ -699,15 +793,15 @@ for instance a smoothed $\KL(\alpha|\beta)$, an MMD/IPM loss, or the debiased Si
 \index{integral probability metric}% strictindex
 \index{Sinkhorn divergence}% strictindex
 \begin{equation}\label{eq-one-step-wgf}
-	\partial_t\mu_t+\diverg(\mu_t w_t)=0,
+	\partial_t\al_t+\diverg(\al_t w_t)=0,
 	\qquad
-	w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\mu_t)(x).
+	w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\al_t)(x).
 \end{equation}
 Instead of integrating~\eqref{eq-one-step-wgf} at inference time, one fits a parametric residual field $U_\eta$ along the current model distribution:
 \begin{equation}\label{eq-one-step-l2-fit}
 	\min_\eta \int_0^1\!\int
 		\norm{U_\eta(t,x)-w_t(x)}^2
-		\,\d\mu_t(x)\,\d t.
+		\,\d\al_t(x)\,\d t.
 \end{equation}
 In a particle or generator implementation, the learned residual is then used to update the current generator by
 \[
@@ -746,10 +840,111 @@ After many training updates, the accumulated generator is evaluated once at test
 \index{drifting!model}% strictindex
 \index{attention}% strictindex
 
+\paragraph{Sliced-Wasserstein flow.}
+\index{sliced Wasserstein!flow}% strictindex
+\index{Wasserstein gradient flow}% strictindex
+
+A particularly transparent instance uses the sliced objective introduced for imaging and barycenters by Rabin, Peyr\'e, Delon and Bernot~\cite{rabin-ssvm-11}. Take
+\[
+	\mathcal E_\beta(\alpha)=\frac12\SW_2^2(\alpha,\beta),
+\]
+with $\SW_2$ defined in Section~\ref{sec-sliced-wasserstein}. With the continuity-equation convention $\partial_t\alpha_t+\diverg(\alpha_t w_t)=0$, the descent velocity points from the current projected law toward the target projected law. More precisely, when the projected transports are well defined, if $T_\theta$ denotes the one-dimensional monotone transport from $(P_\theta)_\sharp\alpha$ to $(P_\theta)_\sharp\beta$, then the formal $\Wass_2$-gradient-flow velocity is
+\begin{equation}\label{eq-sliced-wasserstein-flow-velocity}
+	w_{\SW}[\alpha,\beta](x)
+	=
+	\int_{\Sphere^{d-1}}
+	\big(T_\theta(P_\theta x)-P_\theta x\big)\,\theta\,\d\sigma(\theta).
+\end{equation}
+The sign follows from the one-dimensional identity: the first variation of $\frac12\Wass_2^2(\rho,\nu)$ has spatial derivative $s-T(s)$, so the descent velocity is $T(s)-s$, and composing with $P_\theta$ lifts it in the direction $\theta$.
+Thus empirical implementations only require one-dimensional sorting along sampled directions, followed by averaging the lifted projected displacements. This is the sliced-Wasserstein flow studied by Cozzi and Santambrogio~\cite{CozziSantambrogio2024SlicedFlow}, who prove long-time convergence under their hypotheses when the target is Gaussian and also show that the limiting characteristic map is not, in general, the optimal transport map. When both the evolving law and the target are Gaussian, the averaged velocity is affine and the flow closes on means and covariances; this finite-dimensional closure is revisited in Section~\ref{sec-gaussian-closure-transport-dynamics}, where the sliced objective appears in the Gaussian covariance catalogue of Proposition~\ref{prop-centered-gaussian-covariance-catalogue}.
+\index{Gaussian!closure}% strictindex
+\index{monotone transport map}% strictindex
+
+The difference between the full \(\Wass_2\) descent and its sliced analogue is already visible on a simple shape example. Figure~\ref{fig:generative-w2-vs-sliced-flow-shapes} compares the exact empirical flow of \(\frac12\Wass_2^2(\cdot,\beta)\), where one fixed optimal assignment gives straight relaxation curves, with the \(\Wass_2\)-gradient flow of \(\frac12\SW_2^2(\cdot,\beta)\), where the velocity is recomputed from projected monotone rearrangements.
+
+\begin{figure}[ht]
+\centering
+{\setlength{\tabcolsep}{.12em}
+\begin{tabular}{@{}>{\centering\arraybackslash}m{2.0em}@{\hspace{.25em}}c@{\hspace{.25em}}ccccc@{}}
+{\small $\Wass_2$} &
+\includegraphics[width=.17\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-trajectories.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-density-0.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-density-1.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-density-2.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-density-3.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--w2-density-4.pdf} \\
+{\small $\SW_2$} &
+\includegraphics[width=.17\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-trajectories.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-density-0.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-density-1.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-density-2.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-density-3.pdf} &
+\includegraphics[width=.115\linewidth]{figures/generative-w2-vs-sliced-flow-shapes--sw-density-4.pdf} \\[-.2em]
+& {\small particles} & \multicolumn{5}{c}{\small kernel-density snapshots}
+\end{tabular}}
+\caption{Full Wasserstein and sliced-Wasserstein flows from a cat-shaped empirical law to a heart-shaped target. The left panel in each row shows representative particle trajectories colored from red to blue. The five panels on the right render kernel-density estimates of all particles at common normalized times. The \(\Wass_2\) flow follows the fixed optimal assignment and therefore straight relaxation rays, whereas the sliced flow averages one-dimensional sorted rearrangements over projection directions, producing curved trajectories and a different transient density evolution.}
+\label{fig:generative-w2-vs-sliced-flow-shapes}
+\end{figure}
+\index{sliced Wasserstein!flow}% strictindex
+\index{kernel density estimate}% strictindex
+
+
+\paragraph{Stein variational gradient descent.}\label{sec-svgd-generative-flow}
+\index{Stein variational gradient descent}% strictindex
+\index{kernelized Benamou--Brenier distance}% strictindex
+\index{Stein operator}% strictindex
+\index{kernelized Stein discrepancy}% strictindex
+Stein variational gradient descent (SVGD) is another deterministic particle flow that fits naturally in this one-step viewpoint~\cite{LiuWang2016SVGD}. Its original motivation is Bayesian sampling: given a target probability $\beta=\rho_\beta\,\d x$ known through its score $\nabla\log\rho_\beta=-\nabla V$, but not necessarily through its normalizing constant, drive a particle cloud toward $\beta$ without estimating the score of the current empirical law. Geometrically, this replaces the Wasserstein gradient flow of $\KL(\alpha|\beta)$, whose tangent norm is $L^2(\alpha)$, by the kernelized Benamou--Brenier geometry of Section~\ref{sec-kernelized-bb-distance}, whose velocities live in an RKHS.
+
+For the formal density-level calculation, assume $\alpha=\rho_\alpha\,\d x$ and $\beta=\rho_\beta\,\d x$ have smooth positive densities, and let $v$ be a smooth compactly supported vector field. For the perturbation $\alpha_\epsilon=(\Id+\epsilon v)_\sharp\alpha$, integration by parts gives the Stein first variation
+\[
+	\left.\frac{\d}{\d\epsilon}\KL(\alpha_\epsilon|\beta)\right|_{\epsilon=0}
+	=
+	-\int
+	\big(\dotp{\nabla\log\rho_\beta(x)}{v(x)}+\diverg v(x)\big)
+	\d\alpha(x).
+\]
+The bracket is the Langevin--Stein operator applied to $v$ and averaged under $\alpha$; because it only evaluates $v$, $\diverg v$, and the target score at sample locations, it remains meaningful when $\alpha$ is empirical. Optimizing this linear functional over the unit ball of $\RKHS_k^d$ and using the reproducing property gives the RKHS steepest-descent direction,
+\begin{equation}\label{eq-svgd-velocity}
+	v_{\alpha}^{\mathrm{SVGD}}(x)
+	=
+	\int
+	\Big(k(y,x)\nabla\log\rho_\beta(y)+\nabla_y k(y,x)\Big)
+	\d\alpha(y).
+\end{equation}
+The associated mean-field equation is the transport equation
+\begin{equation}\label{eq-svgd-mean-field}
+	\partial_t\alpha_t+\diverg\bigl(\alpha_t v_{\alpha_t}^{\mathrm{SVGD}}\bigr)=0.
+\end{equation}
+For particles $\alpha^\ell_n=n^{-1}\sum_i\delta_{X_i^\ell}$, this becomes the explicit update
+\begin{equation}\label{eq-svgd-particle-update}
+	X_i^{\ell+1}
+	=
+	X_i^\ell
+	+
+	\tau\,\frac{1}{n}\sum_{j=1}^n
+	\Big(k(X_j^\ell,X_i^\ell)\nabla\log\rho_\beta(X_j^\ell)
+	+
+	\nabla_{X_j}k(X_j^\ell,X_i^\ell)\Big).
+\end{equation}
+The first term attracts particles toward increasing target log-density; the second term is a kernel repulsion that prevents immediate collapse. Liu's gradient-flow interpretation~\cite{Liu2017SVGDGradientFlow}, the geometric analysis of Duncan, Nuesken and Szpruch~\cite{DuncanNueskenSzpruch2019SVGDGeometry}, and the many-particle/long-time analysis of Nuesken and Renger~\cite{NueskenRenger2021SVGDAsymptotics} make precise in which sense this is a gradient flow in a Stein or kernelized transport geometry. In generative modeling terms, SVGD transports a simple empirical latent law by repeated smooth particle updates. It is therefore close in spirit to the drifting fields above, but its velocity is not learned by regression: it is the closed-form RKHS steepest-descent direction of the KL functional.
+
+Figure~\ref{fig:generative-w2-vs-svgd-entropy-flow} contrasts this RKHS flow with a particle closure of the Wasserstein gradient flow of \(\KL(\alpha|\beta)\).  The latter evaluates the current score \(\nabla\log\rho_\alpha\) by a Gaussian KDE, while SVGD avoids this density estimate and uses the target score together with a kernel repulsion.
+\begin{figure}[H]
+\centering
+\includegraphics[width=.47\linewidth]{figures/generative-w2-vs-svgd-entropy-flow--w2-kde-trajectories.pdf}\hfill
+\includegraphics[width=.47\linewidth]{figures/generative-w2-vs-svgd-entropy-flow--svgd-trajectories.pdf}\par\vspace{.15em}
+{\small \(\Wass_2\) KDE closure\hfill SVGD}
+\caption{Particle trajectories for two deterministic descents of relative entropy toward the same three-Gaussian target, whose density is shown by gray contours. The left panel approximates the \(\Wass_2\) gradient flow of \(\KL(\alpha|\beta)\) by the KDE velocity \(\nabla\log\rho_\beta-\nabla\log\rho_{\alpha,h}\). The right panel uses the RBF-kernel SVGD velocity~\eqref{eq-svgd-velocity}, where target-score attraction is coupled with RKHS repulsion. Both panels use the same initial particles and color trajectory time from red to blue.}
+\label{fig:generative-w2-vs-svgd-entropy-flow}
+\end{figure}
+\index{Stein variational gradient descent!particle flow}% strictindex
+\index{Fokker--Planck equation!particle closure}% strictindex
+
 \paragraph{Self-corrected drifting fields.}
 \index{drifting!field}% strictindex
 
-Drifting methods need not start from an exact Wasserstein gradient. They often prescribe an attraction-minus-repulsion field and then regress this field in $L^2(\mu_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
+Drifting methods need not start from an exact Wasserstein gradient. They often prescribe an attraction-minus-repulsion field and then regress this field in $L^2(\al_t)$. A simple continuous version uses a positive kernel $K_\epsilon(x,y)$ and defines, for any measure $\nu$,
 \index{Wasserstein gradient}% strictindex
 \index{kernel!positive}% strictindex
 \begin{equation}\label{eq-normalized-kernel-drift}
@@ -769,11 +964,11 @@ $K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon))$, this normalized field is a sc
 \end{equation}
 The drifting velocity is then
 \begin{equation}\label{eq-cross-minus-self-drift}
-	u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\mu_t](x)
+	u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\al_t](x)
 	=
 	\epsilon\nabla\log
 	\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-	     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+	     {\int K_\epsilon(x,y)\,\d\al_t(y)}.
 \end{equation}
 The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. For a fixed reference measure, \(B_\epsilon[\nu]\) is precisely the Gaussian mean-shift displacement in~\eqref{eq-l2-attention-mean-shift}: it moves $x$ toward the local kernel barycenter of $\nu$. Hence self-corrected drifting can be read as the difference between a target mean-shift field and the current model's own mean-shift field. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator~\cite{He2026SinkhornDrifting}.
 \index{Sinkhorn!scaling}% strictindex
@@ -782,7 +977,7 @@ The first term pulls samples toward data, while the second term corrects self-at
 
 \begin{alg}[Self-corrected drifting particle update]\label{alg:self-corrected-drifting-particles}
 \index{drifting!model}% strictindex
-\textbf{Input:} Particles $x_i^k$ for $\mu_k$, data samples $(y_b)_{b=1}^B$ from $\beta$, kernel scale $\epsilon$, step $h$.
+\textbf{Input:} Particles $x_i^k$ for $\alpha_k$, data samples $(y_b)_{b=1}^B$ from $\beta$, kernel scale $\epsilon$, step $h$.
 
 \textbf{Output:} Updated particles $x_i^{k+1}$.
 
@@ -791,7 +986,7 @@ The first term pulls samples toward data, while the second term corrects self-at
 
 \textbf{Set} \(Z_{\beta,i}=\sum_{b=1}^B K_\epsilon(x_i^k,y_b)\) and \(b_i^k=Z_{\beta,i}^{-1}\sum_{b=1}^B (y_b-x_i^k)K_\epsilon(x_i^k,y_b)\).
 
-\textbf{Set} \(Z_{\mu,i}=\sum_{j=1}^n K_\epsilon(x_i^k,x_j^k)\) and \(m_i^k=Z_{\mu,i}^{-1}\sum_{j=1}^n (x_j^k-x_i^k)K_\epsilon(x_i^k,x_j^k)\).
+\textbf{Set} \(Z_{\alpha,i}=\sum_{j=1}^n K_\epsilon(x_i^k,x_j^k)\) and \(m_i^k=Z_{\alpha,i}^{-1}\sum_{j=1}^n (x_j^k-x_i^k)K_\epsilon(x_i^k,x_j^k)\).
 
 \textbf{Set}
 \(u_i^k=b_i^k-m_i^k.\)
@@ -813,41 +1008,41 @@ The first term pulls samples toward data, while the second term corrects self-at
 \small raw kernel drift & \small self-corrected drift
 \index{self-corrected field}% strictindex
 \end{tabular}
-\caption{Drifting trajectories for a small particle generator. The raw Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The self-corrected field uses the difference $B_\epsilon[\beta]-B_\epsilon[\mu_t]$, so a longer integration brings particles to the blue modes while repelling them from their own current concentration.}
+\caption{Drifting trajectories for a small particle generator. The raw Laplacian-kernel drift has weak long-range attraction and can leave particles away from the data modes. The self-corrected field uses the difference $B_\epsilon[\beta]-B_\epsilon[\al_t]$, so a longer integration brings particles to the blue modes while repelling them from their own current concentration.}
 \label{fig:generative-drifting-model-trajectories}
 \end{figure}
 
 \begin{prop}[Drifting as a time-dependent Wasserstein gradient]\label{prop-drifting-semi-relaxed-gradient}
 \index{drifting!model}% strictindex
 \index{Wasserstein gradient}% strictindex
-	Let $\mu_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
+	Let $\al_t$ be a smooth curve of positive densities and let $u_t=\nabla\phi_t$ be a smooth time-dependent gradient field. Define the semi-relaxed functional
 	\begin{equation}\label{eq-semi-relaxed-drift-functional}
-		\mathcal R_t(\alpha|\mu_t)
+		\mathcal R_t(\alpha|\al_t)
 		\eqdef
 		-\int \phi_t(x)\,\d\alpha(x)
-		+\int \phi_t(x)\,\d\mu_t(x).
+		+\int \phi_t(x)\,\d\al_t(x).
 	\end{equation}
-	Here $\mu_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
+	Here $\al_t$ and $\phi_t$ are frozen when taking the first variation with respect to the first argument $\alpha$. Then the continuity equation
 \index{first variation}% strictindex
 \index{continuity equation}% strictindex
 	\[
-		\partial_t\mu_t+\diverg(\mu_t u_t)=0
+		\partial_t\al_t+\diverg(\al_t u_t)=0
 	\]
-	is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\mu_t)$.
+	is the formal Wasserstein gradient descent of the time-dependent functional $\alpha\mapsto\mathcal R_t(\alpha|\al_t)$.
 \index{Wasserstein gradient}% strictindex
 \end{prop}
 
 \begin{proof}
-	Since $\mu_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is
+	Since $\al_t$ and $\phi_t$ are fixed in the variation with respect to $\alpha$, the first variation is
 \index{first variation}% strictindex
 	\[
-		\delta_\alpha \mathcal R_t(\alpha|\mu_t)(x)=-\phi_t(x).
+		\delta_\alpha \mathcal R_t(\alpha|\al_t)(x)=-\phi_t(x).
 	\]
 	By Proposition~\ref{prop-formal-wass-gradient},
 	\[
-		\Wgrad \mathcal R_t(\alpha|\mu_t)
+		\Wgrad \mathcal R_t(\alpha|\al_t)
 		=
-		\nabla\delta_\alpha \mathcal R_t(\alpha|\mu_t)
+		\nabla\delta_\alpha \mathcal R_t(\alpha|\al_t)
 		=
 		-\nabla\phi_t
 		=
@@ -867,37 +1062,37 @@ The first term pulls samples toward data, while the second term corrects self-at
 		\phi_t(x)=
 		\epsilon\log
 		\frac{\int K_\epsilon(x,y)\,\d\beta(y)}
-		     {\int K_\epsilon(x,y)\,\d\mu_t(y)}.
+		     {\int K_\epsilon(x,y)\,\d\al_t(y)}.
 	\]
 	Then $u_t=\nabla\phi_t$, so Proposition~\ref{prop-drifting-semi-relaxed-gradient} shows that kernel drifting is the Wasserstein gradient descent of
 \index{Wasserstein gradient}% strictindex
 \index{kernel!drifting}% strictindex
 	\[
-		\mathcal R_t^{\mathrm{drift}}(\alpha|\mu_t)
+		\mathcal R_t^{\mathrm{drift}}(\alpha|\al_t)
 		=
 		\epsilon
 		\int
 		\log
-		\frac{\int K_\epsilon(x,y)\,\d\mu_t(y)}
+		\frac{\int K_\epsilon(x,y)\,\d\al_t(y)}
 		     {\int K_\epsilon(x,y)\,\d\beta(y)}
 		\,\d\alpha(x)
 		+\mathrm{constant}.
 	\]
-	It is ``semi-relaxed'' because the current model $\mu_t$ is used to build the potential, but it is not varied inside the denominator when computing the first variation in $\alpha$.
+	It is ``semi-relaxed'' because the current model $\al_t$ is used to build the potential, but it is not varied inside the denominator when computing the first variation in $\alpha$.
 \index{first variation}% strictindex
 \end{example}
 
 \begin{rem}[General fields and projection onto gradients]
 \index{gradient!projection}% strictindex
-	A general regressed field $b_t$ is not necessarily a Wasserstein gradient, since Wasserstein tangent vectors are represented by gradient fields modulo $L^2(\mu_t)$-null directions. The gradient component is obtained by the weighted projection
+	A general regressed field $b_t$ is not necessarily a Wasserstein gradient, since Wasserstein tangent vectors are represented by gradient fields modulo $L^2(\al_t)$-null directions. The gradient component is obtained by the weighted projection
 \index{Wasserstein gradient}% strictindex
 	\[
 		\nabla\phi_t
 		=
 		\uargmin{\nabla\phi}
-		\int \norm{\nabla\phi(x)-b_t(x)}^2\,\d\mu_t(x).
+		\int \norm{\nabla\phi(x)-b_t(x)}^2\,\d\al_t(x).
 	\]
-	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\mu_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
+	One may first normalize $b_t$ pointwise, for instance by $b_t/(\norm{b_t}+\eta)$, or globally by $\norm{b_t}_{L^2(\al_t)}$, before this projection. Proposition~\ref{prop-drifting-semi-relaxed-gradient} then applies to the projected field. Non-gradient components can still be useful in a parametric model, but they are not descent directions of a scalar functional for the $\Wass_2$ Riemannian metric.
 \end{rem}
 
 \section{Moment Measures}
@@ -966,11 +1161,11 @@ Figure~\ref{fig:moment-measure-forward-map} shows the forward construction in on
 \begin{thm}[Cordero--Erausquin--Klartag]\label{thm-moment-measure-characterization}
 \index{moment measure}% strictindex
 \index{barycenter}% strictindex
-	Let $\mu\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\mu=\mathfrak M(u)$ if and only if
+	Let $\al\in\Pp_1(\RR^d)$ be a probability measure. There exists an essentially continuous convex function $u$ such that $\al=\mathfrak M(u)$ if and only if
 	\[
-		\int y\,\d\mu(y)=0
+		\int y\,\d\al(y)=0
 		\qquad\text{and}\qquad
-		\supp(\mu)\text{ is not contained in a hyperplane.}
+		\supp(\al)\text{ is not contained in a hyperplane.}
 	\]
 	Under these conditions, $u$ is unique up to translations of the argument and additive constants.
 \end{thm}
@@ -996,44 +1191,44 @@ This theorem is due to Cordero--Erausquin and Klartag~\cite{CorderoErausquinKlar
 \paragraph{Optimal-transport variational formulation.}
 \index{maximal correlation}% strictindex
 \index{entropy}% strictindex
-Santambrogio~\cite{Santambrogio2015MomentMeasures} reformulates the moment-measure problem as a minimization over probability densities. For a centered $\mu\in\Pp_1(\RR^d)$, define the maximal-correlation transport functional, with values in $\RR\cup\{+\infty\}$,
+Santambrogio~\cite{Santambrogio2015MomentMeasures} reformulates the moment-measure problem as a minimization over probability densities. For a centered $\al\in\Pp_1(\RR^d)$, define the maximal-correlation transport functional, with values in $\RR\cup\{+\infty\}$,
 \begin{equation}\label{eq-moment-max-correlation}
-	\mathcal C_\mu(\rho)
+	\mathcal C_\al(\rho)
 	\eqdef
-	\sup_{\pi\in\Couplings(\rho,\mu)}
+	\sup_{\pi\in\Couplings(\rho,\al)}
 	\int_{\RR^d\times\RR^d} x\cdot y\,\d\pi(x,y).
 \end{equation}
 By Kantorovich duality for the scalar-product cost,
 \begin{equation}\label{eq-moment-max-correlation-dual}
-	\mathcal C_\mu(\rho)
+	\mathcal C_\al(\rho)
 	=
 	\inf_{v\ \mathrm{convex}}
 	\left\{
-		\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\mu(y)
+		\int v(x)\,\d\rho(x)+\int v^*(y)\,\d\al(y)
 	\right\},
 \end{equation}
-where $v^*$ is the Legendre transform. If $\rho,\mu\in\Pp_2(\RR^d)$, then
+where $v^*$ is the Legendre transform. If $\rho,\al\in\Pp_2(\RR^d)$, then
 \index{Legendre transform}% strictindex
 \begin{equation}\label{eq-moment-correlation-w2}
-	\mathcal C_\mu(\rho)
+	\mathcal C_\al(\rho)
 	=
 	\frac12\int \norm{x}^2\,\d\rho(x)
 	+
-	\frac12\int \norm{y}^2\,\d\mu(y)
+	\frac12\int \norm{y}^2\,\d\al(y)
 	-
-	\frac12\Wass_2^2(\rho,\mu).
+	\frac12\Wass_2^2(\rho,\al).
 \end{equation}
-The variational problem attached to a centered target $\mu$ is
+The variational problem attached to a centered target $\al$ is
 \begin{equation}\label{eq-moment-measure-variational}
 	\min_{\rho\in\Pp_1(\RR^d)}
 	\left\{
-		\mathcal H(\rho)+\mathcal C_\mu(\rho)
+		\mathcal H(\rho)+\mathcal C_\al(\rho)
 	\right\},
 	\qquad
 	\mathcal H(r\,\d x)\eqdef \int r(x)\log r(x)\,\d x,
 \end{equation}
 with $\mathcal H(\rho)=+\infty$ when $\rho$ is not absolutely continuous.
-The centering of $\mu$ makes this functional invariant under translations of $\rho$, since translating $\rho$ by a vector $a$ changes $\int x\cdot y\,\d\pi$ by $a\cdot\int y\,\d\mu(y)=0$.
+The centering of $\al$ makes this functional invariant under translations of $\rho$, since translating $\rho$ by a vector $a$ changes $\int x\cdot y\,\d\pi$ by $a\cdot\int y\,\d\al(y)=0$.
 \index{Kantorovich!duality}% strictindex
 \index{Legendre transform}% strictindex
 \index{Wasserstein!distance}% strictindex
@@ -1042,28 +1237,28 @@ The centering of $\mu$ makes this functional invariant under translations of $\r
 \index{moment measure}% strictindex
 \index{hidden convexity}% strictindex
 \index{displacement convexity}% strictindex
-	Let $\mu\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
+	Let $\al\in\Pp_1(\RR^d)$ be centered and not supported on a hyperplane. Then the minimization problem~\eqref{eq-moment-measure-variational} admits a solution, unique up to translations. Every minimizer is a log-concave density of the form
 	\[
 		\rho=Z_u^{-1}e^{-u}\,\d x,
 	\]
 	where $u$ is convex, essentially continuous, and satisfies the moment-measure equation
 	\[
-		\mu=(\nabla u)_\sharp \rho .
+		\al=(\nabla u)_\sharp \rho .
 	\]
-	Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\mu\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\mu(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\mu\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
+	Conversely, any essentially continuous convex $u$ satisfying this equation yields a global minimizer. In the finite-second-moment case $\al\in\Pp_2(\RR^d)$, the objective $\rho\mapsto\mathcal H(\rho)+\mathcal C_\al(\rho)$ is displacement convex along $\Wass_2$ geodesics on $\Pp_2(\RR^d)$ whenever the terms are finite. For general $\al\in\Pp_1(\RR^d)$, the same statement is obtained by approximation and lower semicontinuity.
 \end{prop}
 
 \begin{proof}
-	The existence proof has two ingredients. First, since $\mu$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\mu(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\mu$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\mu(\rho)\geq c_\mu\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\mu>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer~\cite{Santambrogio2015MomentMeasures}.
+	The existence proof has two ingredients. First, since $\al$ is centered, translating $\rho$ does not change either $\mathcal H(\rho)$ or $\mathcal C_\al(\rho)$, so one can center a minimizing sequence. Second, the assumption that $\al$ is not supported on a hyperplane gives a coercive lower bound of the form $\mathcal C_\al(\rho)\geq c_\al\int\norm{x}\,\d\rho(x)$ for centered absolutely continuous $\rho$, with $c_\al>0$. Together with the lower semicontinuity estimates for entropy and maximal correlation, this yields a minimizer~\cite{Santambrogio2015MomentMeasures}.
 
 	Let $\rho=r\,\d x$ be a minimizer and let $u$ be a convex optimizer in the dual formula~\eqref{eq-moment-max-correlation-dual}. Keeping $u$ fixed and varying $\rho$ in~\eqref{eq-moment-measure-variational} gives the Euler equation
 	\[
 		\log r(x)+1+u(x)=\mathrm{constant}
 		\qquad\text{on }\{r>0\},
 	\]
-	so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\mu=(\nabla u)_\sharp\rho$.
+	so $\rho=Z_u^{-1}e^{-u}\d x$. The optimality condition for the scalar-product transport problem says that an optimal coupling is supported on $\{(x,y):y\in\partial u(x)\}$. Since $\rho$ is absolutely continuous and $u$ is convex, $\partial u(x)=\{\nabla u(x)\}$ for $\rho$-almost every $x$, hence $\al=(\nabla u)_\sharp\rho$.
 
-	Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\mu=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
+	Conversely, assume $\rho=Z_u^{-1}e^{-u}\d x$ and $\al=(\nabla u)_\sharp\rho$. Let $\nu$ be a smooth compactly supported competitor, and let $T$ be the Brenier map from $\rho$ to $\nu$. Along the geodesic $\rho_t=((1-t)\Id+tT)_\sharp\rho$, the right derivative of the entropy at $t=0$ is
 	\[
 		\frac{\d}{\d t}\mathcal H(\rho_t)\Big|_{t=0^+}
 		=
@@ -1071,13 +1266,13 @@ The centering of $\mu$ makes this functional invariant under translations of $\r
 	\]
 	where the identity follows by differentiating the Jacobian formula and integrating by parts. Santambrogio's derivative estimate for the maximal-correlation functional gives
 	\[
-		\frac{\d}{\d t}\mathcal C_\mu(\rho_t)\Big|_{t=0^+}
+		\frac{\d}{\d t}\mathcal C_\al(\rho_t)\Big|_{t=0^+}
 		\geq
 		\int \dotp{T(x)-x}{\nabla u(x)}\,\d\rho(x),
 	\]
-	because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\mu$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\mu$ because $\mu$ is centered.
+	because $(\Id,\nabla u)_\sharp\rho$ is optimal for the scalar-product problem. The first-order terms cancel, hence the one-sided derivative of $\mathcal H+\mathcal C_\al$ at $\rho$ in every such direction is nonnegative. Displacement convexity then implies global minimality, and approximation removes the smooth compact-support restriction. Strict displacement convexity of entropy gives uniqueness, except for translations; translations do not change $\mathcal C_\al$ because $\al$ is centered.
 
-	It remains to justify the convexity assertion. The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\mu$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\mu$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\mu)$, hence $\mathcal C_\mu$ is displacement convex. For merely finite first moment $\mu$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
+	It remains to justify the convexity assertion. The entropy term is displacement convex by McCann's theorem, recalled in Proposition~\ref{prop-basic-geodesic-convexity}. If $\al$ has finite second moment, identity~\eqref{eq-moment-correlation-w2} writes $\mathcal C_\al$ as the sum of the $1$-convex moment term $\rho\mapsto\frac12\int\norm{x}^2\,\d\rho$ and the $(-1)$-convex term $\rho\mapsto-\frac12\Wass_2^2(\rho,\al)$, hence $\mathcal C_\al$ is displacement convex. For merely finite first moment $\al$, the same convexity and the variational characterization follow by the approximation and semicontinuity arguments of Santambrogio.
 \end{proof}
 
 \begin{rem}[Where the convexity is hidden]\label{rem-moment-hidden-convexity}
@@ -1086,7 +1281,7 @@ The centering of $\mu$ makes this functional invariant under translations of $\r
 	If one eliminates $\rho$ first, the problem becomes the convex-potential functional
 	\[
 		u\mapsto
-		\int u^*(y)\,\d\mu(y)
+		\int u^*(y)\,\d\al(y)
 		-
 		\log\!\left(\int e^{-u(x)}\,\d x\right).
 	\]
@@ -1183,7 +1378,7 @@ As $\tau \to 0$, this converges formally to the conservation equation
 \index{token measure}% strictindex
 
 \textbf{Initialize:}
-\(\alpha_0=\frac1n\sum_{i=1}^n\delta_{x_i^0}, \qquad \tau=1/T.\)
+\(\alpha_0=\frac{1}{n}\sum_{i=1}^n\delta_{x_i^0}, \qquad \tau=1/T.\)
 
 \textbf{For} $k=0,\ldots,T-1$ \textbf{do}:
 \begin{algblock}
@@ -1296,6 +1491,7 @@ This is an instantaneous gradient in $x$. It is not, however, the gradient of th
 \index{attention}% strictindex
 
 \section{Flows over the Gaussian Manifold}
+\label{sec-gaussian-closure-transport-dynamics}
 \index{Gaussian!manifold}% strictindex
 
 Gaussian measures provide a useful testing ground for the preceding dynamics. They are not invariant under a general Wasserstein gradient flow: a nonlinear velocity usually creates non-Gaussian densities immediately. The useful substitute is to either identify affine velocities, which exactly preserve Gaussianity, or to project the dynamics onto the Gaussian manifold. In both cases the measure PDE reduces to matrix ODEs for the mean and covariance. This viewpoint is emphasized in the survey~\cite{Peyre2026OptimalDiffusionTransports} and is useful for comparing diffusion paths, Wasserstein gradient flows, drifting fields and transformer-type dynamics.
@@ -1557,22 +1753,22 @@ The next examples show that many familiar energies already have affine Wasserste
 
 \begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
 \index{Gaussian!covariance}% strictindex
-	Let $\gamma=\Gaussian(0,\Id)$ and let $\mu_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
+	Let $\gamma=\Gaussian(0,\Id)$ and let $\al_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
 \index{Gaussian!manifold}% strictindex
 	\[
 	\begin{array}{rcl}
-		\KL(\mu|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
-		\frac12\,\mathcal I(\mu|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
-		\Wass_2^2(\mu,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
-		\MMD_k^2(\mu,\gamma),\quad k(x,y)=\dotp{x}{y}^2
+		\KL(\al|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
+		\frac12\,\mathcal I(\al|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
+		\Wass_2^2(\al,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
+		\MMD_k^2(\al,\gamma),\quad k(x,y)=\dotp{x}{y}^2
 \index{maximum mean discrepancy}% strictindex
 			&:& h(C)=8(C-C^2), \\[.35em]
-		S_\epsilon(\mu,\gamma)
+		S_\epsilon(\al,\gamma)
 			&:& h(C)=
 			4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
 			-2\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}
 			-2C-\frac{\epsilon}{2}\Id, \\[.75em]
-		\SW_2^2(\mu,\gamma)
+		\SW_2^2(\al,\gamma)
 			&:& h(C)=V(C)C+CV(C),
 	\end{array}
 	\]
@@ -1587,8 +1783,8 @@ The next examples show that many familiar energies already have affine Wasserste
 	\]
 	for the normalized spherical measure $\sigma$. Here
 	\[
-		\mathcal I(\mu|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
-		\qquad(\mu=\rho\,\d x).
+		\mathcal I(\al|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
+		\qquad(\al=\rho\,\d x).
 	\]
 	Thus the unhalved Fisher divergence has right-hand side $4(C^{-1}-C)$. Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
 \end{prop}
@@ -1602,7 +1798,7 @@ The next examples show that many familiar energies already have affine Wasserste
 	\]
 	Using Proposition~\ref{prop-gaussian-gradient-bullet-list} gives the descent velocity $(C^{-2}-\Id)x$, hence $\dot C=2(C^{-1}-C)$. This row should be read as a Gaussian projected closure of the fourth-order Fisher flow.
 
-	For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\mu,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
+	For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\al,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
 \index{first variation}% strictindex
 \index{maximum mean discrepancy}% strictindex
 \index{Brenier map}% strictindex
@@ -1696,17 +1892,17 @@ The last examples are not ordinary gradient flows of a fixed scalar energy on th
 \begin{example}[Gaussian kernel drifting]
 \index{kernel!Gaussian}% strictindex
 \index{Gaussian!kernel drifting}% strictindex
-	Let the target be $\beta=\Gaussian(\bar\mean,\bar\cov)$ and assume $\mu_t=\Gaussian(\mean_t,\cov_t)$. For the Gaussian kernel
+	Let the target be $\beta=\Gaussian(\bar\mean,\bar\cov)$ and assume $\al_t=\Gaussian(\mean_t,\cov_t)$. For the Gaussian kernel
 	\[
 		K_\epsilon(x,y)=\exp(-\norm{x-y}^2/(2\epsilon)),
 	\]
 	the normalized field~\eqref{eq-normalized-kernel-drift} satisfies
 	\[
-		B_\epsilon[\mu_t](x)
+		B_\epsilon[\al_t](x)
 		=
 		-\epsilon(\cov_t+\epsilon\Id)^{-1}(x-\mean_t).
 	\]
-	Indeed the smoothed density \(x\mapsto\int K_\epsilon(x,y)\d\mu_t(y)\) is proportional to the Gaussian density with mean $\mean_t$ and covariance $\cov_t+\epsilon\Id$. Thus \(B_\epsilon[\mu_t]\) is the mean-shift vector of a Gaussian density: it points linearly toward the Gaussian mode, with strength set by the bandwidth. The drifting velocity~\eqref{eq-cross-minus-self-drift} is therefore the difference of two affine mean-shift fields; it is affine and preserves Gaussianity. With
+	Indeed the smoothed density \(x\mapsto\int K_\epsilon(x,y)\d\al_t(y)\) is proportional to the Gaussian density with mean $\mean_t$ and covariance $\cov_t+\epsilon\Id$. Thus \(B_\epsilon[\al_t]\) is the mean-shift vector of a Gaussian density: it points linearly toward the Gaussian mode, with strength set by the bandwidth. The drifting velocity~\eqref{eq-cross-minus-self-drift} is therefore the difference of two affine mean-shift fields; it is affine and preserves Gaussianity. With
 	\[
 		A_t=(\cov_t+\epsilon\Id)^{-1},
 		\qquad
@@ -1760,32 +1956,32 @@ The preceding examples show when Gaussianity is preserved or imposed by projecti
 
 \begin{thm}[Gelbrich theorem]\label{thm-gelbrich-projection}
 \index{Gelbrich theorem}% strictindex
-	For $\mu\in\Pp_2(\RR^d)$, let
+	For $\al\in\Pp_2(\RR^d)$, let
 	\[
-		\mathcal R\mu\eqdef \Gaussian(\mean_\mu,\cov_\mu)
+		\mathcal R\al\eqdef \Gaussian(\mean_\al,\cov_\al)
 	\]
-	be the Gaussian with the same mean and covariance as $\mu$. Then
+	be the Gaussian with the same mean and covariance as $\al$. Then
 	\[
-		\Wass_2^2(\mathcal R\mu,\mathcal R\nu)
+		\Wass_2^2(\mathcal R\al,\mathcal R\nu)
 		=
-		\norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu)
+		\norm{\mean_\al-\mean_\nu}^2+\Bb^2(\cov_\al,\cov_\nu)
 		\leq
-		\Wass_2^2(\mu,\nu).
+		\Wass_2^2(\al,\nu).
 	\]
 \end{thm}
 
 \begin{proof}
-	Take any coupling $(X,Y)$ of $\mu$ and $\nu$, center the variables, and write $C=\EE[(X-\mean_\mu)(Y-\mean_\nu)^\top]$. In the positive definite case, positivity of the block covariance matrix implies the factorization $C=\cov_\mu^{1/2}K\cov_\nu^{1/2}$ with $\norm{K}_{\mathrm{op}}\leq1$, and therefore, by operator/nuclear norm duality,
+	Take any coupling $(X,Y)$ of $\al$ and $\nu$, center the variables, and write $C=\EE[(X-\mean_\al)(Y-\mean_\nu)^\top]$. In the positive definite case, positivity of the block covariance matrix implies the factorization $C=\cov_\al^{1/2}K\cov_\nu^{1/2}$ with $\norm{K}_{\mathrm{op}}\leq1$, and therefore, by operator/nuclear norm duality,
 \index{covariance!matrix}% strictindex
 	\[
-		\tr C\leq \tr\left((\cov_\mu^{1/2}\cov_\nu\cov_\mu^{1/2})^{1/2}\right).
+		\tr C\leq \tr\left((\cov_\al^{1/2}\cov_\nu\cov_\al^{1/2})^{1/2}\right).
 	\]
 	The semidefinite case follows by adding $\eta\Id$ to both covariance matrices and letting $\eta\downarrow0$.
 	Expanding $\EE\norm{X-Y}^2$ gives the lower bound
 	\[
 		\EE\norm{X-Y}^2
 		\geq
-		\norm{\mean_\mu-\mean_\nu}^2+\Bb^2(\cov_\mu,\cov_\nu).
+		\norm{\mean_\al-\mean_\nu}^2+\Bb^2(\cov_\al,\cov_\nu).
 	\]
 	Taking the infimum over couplings proves the inequality, while equality for Gaussian laws is Proposition~\ref{prop-gaussian-w2-bures}.
 \end{proof}
@@ -1802,8 +1998,8 @@ The following preservation criterion is a direct consequence of Gelbrich's theor
 \index{Gaussian!preservation}% strictindex
 	Let $F:\Pp_2(\RR^d)\to(-\infty,+\infty]$ satisfy
 	\[
-		F(\mathcal R\mu)\leq F(\mu)
-		\qquad\forall\mu\in\Pp_2(\RR^d),
+		F(\mathcal R\al)\leq F(\al)
+		\qquad\forall\al\in\Pp_2(\RR^d),
 	\]
 	with $\mathcal R$ defined in Theorem~\ref{thm-gelbrich-projection}. If $\gamma$ is Gaussian and $\nu$ minimizes the JKO step
 \index{Gelbrich inequality}% strictindex
@@ -1833,9 +2029,9 @@ The following preservation criterion is a direct consequence of Gelbrich's theor
 \index{Wasserstein!barycenter}% strictindex
 \index{Gaussian measure}% strictindex
 	\[
-		F(\mu)=\sum_s\la_s\Wass_2^2(\mu,\be_s),
+		F(\al)=\sum_s\la_s\Wass_2^2(\al,\be_s),
 	\]
-	then $\mathcal R\be_s=\be_s$, and Theorem~\ref{thm-gelbrich-projection} gives $F(\mathcal R\mu)\leq F(\mu)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian. This is the contraction viewpoint behind Corollary~\ref{cor-gaussian-discrete-barycenters}.
+	then $\mathcal R\be_s=\be_s$, and Theorem~\ref{thm-gelbrich-projection} gives $F(\mathcal R\al)\leq F(\al)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian. This is the contraction viewpoint behind Corollary~\ref{cor-gaussian-discrete-barycenters}.
 \index{moment matching}% strictindex
 \index{Gaussian!projection}% strictindex
 \end{rem}

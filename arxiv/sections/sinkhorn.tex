@@ -576,8 +576,12 @@ Subtracting $\min_{i,j}\C_{i,j}$ from the cost changes every feasible objective 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{General Formulation}
 
-The continuous formulation replaces matrices by measures and discrete KL by relative entropy. It is the static endpoint problem solved by Sinkhorn; the path-space interpretation developed in Section~\ref{sec-path-space-schrodinger} explains how it is obtained from an optimization problem on stochastic paths.
+The continuous formulation replaces matrices by measures and discrete KL by relative entropy. This section records the measure-theoretic problem, explains how the temperature $\epsilon$ connects exact transport to the independent product coupling, and states the two asymptotic regimes that are useful later: a large-temperature expansion around independence and a small-temperature expansion around quadratic optimal transport. The path-space interpretation developed in Section~\ref{sec-path-space-schrodinger} explains how the same static endpoint problem is obtained from an optimization problem on stochastic paths.
 \index{relative entropy}% strictindex
+
+\paragraph{Measure formulation.}
+
+The only structural change from the discrete problem is that matrix entries are replaced by densities with respect to a reference product measure. This keeps the marginal constraints unchanged while turning the entropy into a relative entropy.
 
 One can consider arbitrary measures by replacing the discrete entropy with the relative entropy with respect to the product measure $\d\al\otimes\d\be(x,y) \eqdef \d\al(x)\d\be(y)$, and propose a regularized counterpart to~\eqref{eq-mk-generic} using
 \index{product!measure}% strictindex
@@ -602,6 +606,214 @@ The measure-theoretic definition is the exact analogue of Definition~\ref{def-di
 For fixed balanced marginals, the specific product reference in the entropy only matters up to additive constants, exactly as in Proposition~\ref{prop-kl-shift}, provided the alternative reference marginals are mutually absolutely continuous with $\al$ and $\be$. Its support and absolute-continuity structure are nevertheless essential: they determine which couplings have finite entropy. This distinction becomes substantive in the unbalanced setting, where the marginal constraints no longer freeze the additive terms.
 \index{marginal!constraint}% strictindex
 \index{absolute continuity}% strictindex
+
+\paragraph{Probabilistic interpretation.}
+
+\begin{defn}[Mutual information]\label{def-mutual-information}
+\index{mutual information}% strictindex
+	If $(X,Y)\sim\pi$ have marginals $X\sim\al$ and $Y\sim\be$, the mutual information of the pair is
+	\[
+		\Ii(X,Y)\eqdef \KL(\pi|\al\otimes\be).
+	\]
+	It is nonnegative and vanishes if and only if $X$ and $Y$ are independent.
+\end{defn}
+With this terminology, the entropic problem~\eqref{eq-entropic-generic} is equivalent to
+\[
+	\inf_{X\sim\al,\;Y\sim\be}
+	\EE\bigl(c(X,Y)\bigr)+\epsilon\Ii(X,Y).
+\]
+Large $\epsilon$ therefore favors nearly independent endpoints, while small $\epsilon$ suppresses endpoint randomness and recovers an optimal Monge--Kantorovich coupling in the limit. When the unregularized quadratic problem has a Brenier map, this limiting coupling is deterministic.
+\index{Brenier map}% strictindex
+
+\paragraph{Convergence with \texorpdfstring{$\epsilon$}{epsilon}.}
+
+The continuous problem has the same qualitative temperature limits as Proposition~\ref{prop-convergence-eps}, but one must be more careful about the zero-temperature selection. In finite dimension an exact optimal plan has finite entropy whenever its support is contained in the support of $\a\otimes\b$. For smooth quadratic transport, by contrast, the optimal Monge plan is typically singular with respect to $\al\otimes\be$, so the robust statement is weak convergence of minimizers rather than entropy selection on the exact optimal face. The following statement is the usual $\Gamma$-convergence mechanism for entropic OT~\cite{leonard2012schrodinger,2017-carlier-SIMA}; the density hypothesis below is a convenient way to isolate the only approximation point needed in the proof.
+
+\begin{prop}[Convergence with $\epsilon$ for measures]\label{prop-continuous-convergence-epsilon}
+\index{entropic!OT}% strictindex
+\index{Gamma convergence}% strictindex
+	Let $\Xx,\Yy$ be compact metric spaces, let $c\in\Cc(\Xx\times\Yy)$, and let $\al\in\Pp(\Xx)$, $\be\in\Pp(\Yy)$. Assume that finite-entropy couplings are dense in $\Couplings(\al,\be)$ for weak convergence with convergence of the cost integral. For $\epsilon>0$, let $\pi_\epsilon$ be a minimizer of~\eqref{eq-entropic-generic}. Then
+	\[
+		\MK_\c^\epsilon(\al,\be)\longrightarrow \MK_\c(\al,\be)
+		\quad\text{as}\quad \epsilon\downarrow0,
+	\]
+	and every weak cluster point of $(\pi_\epsilon)_\epsilon$ is an optimal plan for the unregularized Kantorovich problem. If the latter optimal plan is unique, then $\pi_\epsilon$ converges weakly to it. In particular, for $\Xx=\Yy\subset\RR^d$, $c(x,y)=\norm{x-y}^2$ and $\al$ absolutely continuous, $\pi_\epsilon\rightharpoonup(\Id,T)_\sharp\al$, where $T$ is the Brenier map.
+
+	As $\epsilon\to+\infty$,
+	\[
+		\pi_\epsilon\longrightarrow \al\otimes\be
+		\quad\text{in total variation},\qquad
+		\MK_\c^\epsilon(\al,\be)\longrightarrow \int_{\Xx\times\Yy} c\,\d\al\d\be .
+	\]
+\end{prop}
+
+\begin{proof}
+	Existence follows from compactness of $\Couplings(\al,\be)$ and lower semicontinuity of the relative entropy. For the limit $\epsilon\downarrow0$, take any sequence $\epsilon_k\downarrow0$ and a weak cluster point $\pi^\star$ of $\pi_{\epsilon_k}$. Since $\KL(\pi|\al\otimes\be)\geq0$ on probability couplings,
+	\[
+		\liminf_k \MK_\c^{\epsilon_k}(\al,\be)
+		\geq \liminf_k \int c\,\d\pi_{\epsilon_k}
+		= \int c\,\d\pi^\star
+		\geq \MK_\c(\al,\be).
+	\]
+	Conversely, by the density assumption, for every $\delta>0$ there exists a coupling $\pi^\delta$ with finite relative entropy and $\int c\,\d\pi^\delta\leq \MK_\c(\al,\be)+\delta$. Testing~\eqref{eq-entropic-generic} with $\pi^\delta$ gives
+	\[
+		\limsup_k \MK_\c^{\epsilon_k}(\al,\be)
+		\leq \int c\,\d\pi^\delta .
+	\]
+	Letting $\delta\downarrow0$ proves convergence of the values and forces $\int c\,\d\pi^\star=\MK_\c(\al,\be)$. Uniqueness of the unregularized optimizer then identifies all cluster points. Brenier's theorem gives the stated quadratic consequence when $\al$ is absolutely continuous.
+
+	For the limit $\epsilon\to+\infty$, subtract a constant from $c$ and assume $c\geq0$. Since $\al\otimes\be$ is admissible and has zero relative entropy with respect to itself,
+	\[
+		\int c\,\d\pi_\epsilon+\epsilon\KL(\pi_\epsilon|\al\otimes\be)
+		\leq
+		\int c\,\d\al\d\be .
+	\]
+	Hence $\KL(\pi_\epsilon|\al\otimes\be)\leq \epsilon^{-1}\int c\,\d\al\d\be$. Pinsker's inequality gives total-variation convergence to $\al\otimes\be$, and the convergence of the values follows by continuity of $c$.
+\end{proof}
+
+\paragraph{Large-temperature expansion.}
+
+When $\epsilon$ is large, the entropy dominates and the optimal plan is a small perturbation of the product coupling. The useful quantity is the component of the cost that cannot be absorbed into row and column potentials.
+
+\begin{prop}[Large-temperature expansion]\label{prop-large-epsilon-expansion}
+\index{entropic!bias}% strictindex
+	Let $r=\al\otimes\be$ and assume $c\in L^\infty(r)$. Define the product averages
+	\[
+		\bar c_\Xx(x)\eqdef\int_\Yy c(x,y)\,\d\be(y),\qquad
+		\bar c_\Yy(y)\eqdef\int_\Xx c(x,y)\,\d\al(x),\qquad
+		\bar c\eqdef\int_{\Xx\times\Yy}c\,\d r,
+	\]
+	and the centered interaction
+	\[
+		c_0(x,y)\eqdef c(x,y)-\bar c_\Xx(x)-\bar c_\Yy(y)+\bar c .
+	\]
+	Assume that the large-temperature branch $p_\epsilon=\d\pi_\epsilon/\d r$, $f_\epsilon,g_\epsilon$ admits an expansion to third order in $\epsilon^{-1}$ near $0$ in $L^\infty(r)$, with gauge $\int g_\epsilon\,\d\be=0$. Then
+	\[
+		p_\epsilon(x,y)=1-\frac{c_0(x,y)}{\epsilon}+O(\epsilon^{-2})
+		\quad\text{in }L^2(r),
+	\]
+	and
+	\[
+		\MK_\c^\epsilon(\al,\be)
+		=
+		\bar c-\frac{1}{2\epsilon}\int_{\Xx\times\Yy} c_0(x,y)^2\,\d r(x,y)
+		+\frac{1}{6\epsilon^2}\int_{\Xx\times\Yy} c_0(x,y)^3\,\d r(x,y)
+		+O(\epsilon^{-3}).
+	\]
+	Moreover, with
+	\[
+		A(x)\eqdef\int_\Yy c_0(x,y)^2\,\d\be(y),\qquad
+		B(y)\eqdef\int_\Xx c_0(x,y)^2\,\d\al(x),\qquad
+		\sigma^2\eqdef\int_{\Xx\times\Yy}c_0^2\,\d r,
+	\]
+	one has
+	\[
+		f_\epsilon(x)=\bar c_\Xx(x)-\frac{A(x)}{2\epsilon}+O(\epsilon^{-2}),
+	\]
+	and
+	\[
+		g_\epsilon(y)=\bar c_\Yy(y)-\bar c
+		+\frac{\sigma^2-B(y)}{2\epsilon}+O(\epsilon^{-2})
+	\]
+	in the same gauge.
+\end{prop}
+
+\begin{proof}
+	The optimality equation can be written
+	\[
+		p_\epsilon(x,y)=\exp\pa{\frac{f_\epsilon(x)+g_\epsilon(y)-c(x,y)}{\epsilon}},
+	\]
+	with the constraints $\int p_\epsilon(x,y)\,\d\be(y)=1$ and $\int p_\epsilon(x,y)\,\d\al(x)=1$. Write $p_\epsilon=1+\epsilon^{-1}q+O(\epsilon^{-2})$. The linearized marginal constraints impose
+	\[
+		\int q(x,y)\,\d\be(y)=0,\qquad \int q(x,y)\,\d\al(x)=0.
+	\]
+	Expanding the objective gives
+	\[
+		\int c\,p_\epsilon\,\d r+\epsilon\int p_\epsilon\log(p_\epsilon)\,\d r
+		=
+		\bar c+\frac1\epsilon
+		\pa{\int c\,q\,\d r+\frac12\int q^2\,\d r}
+		+O(\epsilon^{-2}).
+	\]
+	Thus $q$ is the minimizer of the quadratic expression over zero-row and zero-column perturbations. Orthogonal projection in $L^2(r)$ gives $q=-c_0$, because $c_0$ has zero conditional means. This proves the first-order density and value expansions.
+
+	To identify the next displayed terms, write $p_\epsilon=1+\epsilon^{-1}q+\epsilon^{-2}s+O(\epsilon^{-3})$ and
+	$f_\epsilon=f_0+\epsilon^{-1}f_1+O(\epsilon^{-2})$, $g_\epsilon=g_0+\epsilon^{-1}g_1+O(\epsilon^{-2})$, where $f_0=\bar c_\Xx$ and $g_0=\bar c_\Yy-\bar c$. Since
+	\[
+		p_\epsilon
+		=
+		\exp\pa{-\frac{c_0}{\epsilon}+\frac{f_1(x)+g_1(y)}{\epsilon^2}+O(\epsilon^{-3})},
+	\]
+	one has $s=f_1+g_1+c_0^2/2$. The second-order marginal constraints and the gauge $\int g_1\,\d\be=0$ give $f_1=-A/2$ and $g_1=(\sigma^2-B)/2$. Finally,
+	\[
+		p_\epsilon\log p_\epsilon
+		=
+		\epsilon^{-1}q+\epsilon^{-2}\pa{s+\frac12 q^2}
+		+\epsilon^{-3}\pa{q s-\frac16 q^3}+O(\epsilon^{-4}),
+	\]
+	and the zero-conditional-mean property of $c_0$ cancels all additive terms in $s$. The order-$\epsilon^{-2}$ contribution to the value is therefore
+	$\frac12\int c_0^3\,\d r-\frac13\int c_0^3\,\d r=\frac16\int c_0^3\,\d r$.
+\end{proof}
+
+\paragraph{Small-temperature expansion for smooth densities.}
+
+At the opposite end, entropic transport is a viscous perturbation of quadratic optimal transport. The expansion contains an $\epsilon\log\epsilon$ term coming from the Gaussian normalization of Brownian bridges, then an endpoint entropy correction, and finally a Fisher-information term integrated along the McCann interpolation. The following statement translates the small-noise expansion of the Schr\"odinger problem~\cite{ConfortiTamanini2021EntropicDerivative} to the present convention, where the static cost is $\norm{x-y}^2+\epsilon\KL(\cdot|\al\otimes\be)$. The same second-order term is the reason why Sinkhorn divergences cancel the leading entropic bias~\cite{ChizatRoussillonLegerVialardPeyre2020Sinkhorn}.
+
+\begin{prop}[Small-temperature quadratic expansion]\label{prop-small-epsilon-expansion}
+\index{Schrodinger problem@Schr\"odinger problem}% strictindex
+\index{Fisher information}% strictindex
+	Let $\Omega\subset\RR^d$ be a smooth compact domain and let $\al=\rho_0\,\d x$, $\be=\rho_1\,\d x$ have smooth positive densities. Assume that the quadratic optimal map $T$ from $\al$ to $\be$ is a smooth diffeomorphism and that the McCann interpolation $\al_t=\rho_t\,\d x=((1-t)\Id+tT)_\sharp\al$ satisfies
+	\[
+		\Ii_0(\al,\be)\eqdef
+		\int_0^1\int_\Omega \norm{\nabla\log\rho_t(x)}^2\rho_t(x)\,\d x\,\d t<+\infty .
+	\]
+	For $c(x,y)=\norm{x-y}^2$, define $\mathrm H(\al)\eqdef\int_\Omega\rho_0\log\rho_0\,\d x$ and similarly for $\be$. Then, as $\epsilon\downarrow0$,
+	\[
+		\MK_{\norm{\cdot}^2}^{\epsilon}(\al,\be)
+		=
+		\Wass_2^2(\al,\be)
+		-\frac{d\epsilon}{2}\log(\pi\epsilon)
+		-\frac{\epsilon}{2}\pa{\mathrm H(\al)+\mathrm H(\be)}
+		+\frac{\epsilon^2}{16}\Ii_0(\al,\be)
+		+o(\epsilon^2).
+	\]
+	If $f_\epsilon,g_\epsilon$ are optimal Sinkhorn potentials and $f_0,g_0$ are Kantorovich potentials for the quadratic cost, normalized by $\int g_\epsilon\,\d\be=\int g_0\,\d\be=0$, then under the same smooth non-degeneracy assumptions,
+	\[
+		f_\epsilon+\frac{d\epsilon}{2}\log(\pi\epsilon)\longrightarrow f_0,
+		\qquad
+		g_\epsilon\longrightarrow g_0,
+	\]
+	locally uniformly. The order-$\epsilon$ correction to the potentials is obtained by the Laplace prefactor in the soft $c$-transform equations and depends on the endpoint densities and on the Hessian of the quadratic contact phase.
+\end{prop}
+
+\begin{proof}
+	For the Brownian reference with heat kernel variance $T$, the dynamic Schr\"odinger formulation gives
+	\[
+		T\mathscr C_T(\al,\be)
+		=
+		\frac12\Wass_2^2(\al,\be)
+		+\frac{T}{2}\pa{\mathrm H(\al)+\mathrm H(\be)}
+		+\frac{T^2}{8}\Ii_0(\al,\be)+o(T^2),
+	\]
+	under the stated regularity assumptions~\cite{ConfortiTamanini2021EntropicDerivative}. Since
+	\[
+		\mathscr C_T(\al,\be)
+		=
+		\inf_{\pi\in\Couplings(\al,\be)}
+		\KL(\pi|p_T(x,y)\,\d x\d y),
+		\qquad
+		p_T(x,y)=(2\pi T)^{-d/2}e^{-\norm{x-y}^2/(2T)},
+	\]
+	multiplying by $2T$ and setting $\epsilon=2T$ gives
+	\[
+		\MK_{\norm{\cdot}^2}^{\epsilon}(\al,\be)
+		=
+		2T\mathscr C_T(\al,\be)
+		-2T\pa{\mathrm H(\al)+\mathrm H(\be)}
+		-dT\log(2\pi T),
+	\]
+	which is exactly the displayed expansion because $2T=\epsilon$. The potential statement follows by applying Laplace's method to the soft $c$-transform equations. In the chosen gauge the universal Gaussian prefactor is placed in $f_\epsilon$; changing the additive gauge redistributes the same scalar shift between the two potentials.
+\end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1259,23 +1471,6 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 \index{bridge!Brownian}% strictindex
 \label{fig:sinkhorn-path-space-bridges}
 \end{figure}
-
-\begin{defn}[Mutual information]\label{def-mutual-information}
-\index{mutual information}% strictindex
-	If $(X,Y)\sim\pi$ have marginals $X\sim\al$ and $Y\sim\be$, the mutual information of the pair is
-	\[
-		\Ii(X,Y)\eqdef \KL(\pi|\al\otimes\be).
-	\]
-	It is nonnegative and vanishes if and only if $X$ and $Y$ are independent.
-\end{defn}
-With this terminology, the entropic problem~\eqref{eq-entropic-generic} is equivalent to
-\[
-	\inf_{X\sim\al,\;Y\sim\be}
-	\EE\bigl(c(X,Y)\bigr)+\epsilon\Ii(X,Y).
-\]
-Large $\epsilon$ therefore favors nearly independent endpoints, while small $\epsilon$ suppresses endpoint randomness and recovers an optimal Monge--Kantorovich coupling in the limit. When the unregularized quadratic problem has a Brenier map, this limiting coupling is deterministic.
-\index{Brenier map}% strictindex
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

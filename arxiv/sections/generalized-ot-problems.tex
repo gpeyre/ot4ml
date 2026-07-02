@@ -18,25 +18,44 @@ Barycenters ask how to average probability measures rather than points. This sec
 \paragraph{Fr\'echet means.}
 \index{Frechet mean}% strictindex
 
-For discrete input histograms $\{\b_s\}_{s=1}^S$, with $\b_s \in \simplex_{n_s}$, and weights $\la \in \simplex_S$, a Wasserstein barycenter can be computed by minimizing
-\index{histogram}% strictindex
+The natural formulation is a Fr\'echet-mean problem on the space of probability measures: the unknown is the barycenter measure itself, and its support is not prescribed. Given input measures $(\be_s)_{s=1}^S$ on a space $\X$ and weights $\la\in\simplex_S$, one minimizes
 \index{Wasserstein!barycenter}% strictindex
-\eql{\label{eq-wass-discr}
-	\umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
+\eq{
+	\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
 }
-where the cost matrices $\C_s \in \RR^{n \times n_s}$ are prescribed.
-\index{cost matrix}% strictindex
+The minimizer $\al$ is the barycenter. Unlike a coupling, it is a new probability measure on $\X$.
+\index{probability measure}% strictindex
 
 This barycenter problem was originally introduced by~\cite{Carlier_wasserstein_barycenter} following earlier ideas of~\cite{carlierekelandmatching}. For the quadratic cost on $\X=\RR^d$, their theory gives existence and uniqueness when at least one input measure is absolutely continuous, and more generally under hypotheses ensuring that the relevant optimal maps are well defined. Discrete existence, consistency and fixed-point constructions are further studied in~\cite{anderes2016discrete,alvarez2016fixed,leGouic2016existence}.
 \index{quadratic cost}% strictindex
 \index{barycenter}% strictindex
 
-Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the barycenter problem becomes
-\eql{\label{eq-barycenter-generic}
-	\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
+\paragraph{Fixed-support restriction.}
+For computation, one often turns the preceding infinite-dimensional problem into a finite one by prescribing possible barycenter locations. Assume the inputs are discrete,
+\[
+	\be_s=\sum_{j=1}^{n_s} b_{s,j}\de_{x_{s,j}},
+	\qquad \b_s=(b_{s,j})_{j=1}^{n_s}\in\simplex_{n_s}.
+\]
+Choose candidate barycenter sites $(y_i)_{i=1}^n$ and restrict the unknown to $\al=\sum_i a_i\de_{y_i}$. For each input $s$, the cost $\MK_\c(\al,\be_s)$ then becomes a finite Kantorovich problem with cost matrix
+\[
+	(\C_s)_{ij}=c(y_i,x_{s,j}) \in \RR^{n\times n_s}.
+\]
+The resulting fixed-support discrete barycenter problem is
+\index{multimarginal OT}% strictindex
+\index{discrete!barycenter}% strictindex
+\index{support!barycenter}% strictindex
+\eql{\label{eq-wass-discr}
+	\umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
 }
-For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, then the barycenter is unique~\cite{Carlier_wasserstein_barycenter}.
-\index{Wasserstein!barycenter}% strictindex
+where $\a=(a_i)_i$ are the weights on the prescribed barycenter support.
+\index{histogram}% strictindex
+\index{cost matrix}% strictindex
+
+This construction is a finite-dimensional restriction, not an exact discrete reduction of the general barycenter problem. In the ordinary two-marginal Kantorovich problem, once both marginals are discrete, the two supports are known and the whole problem is exactly a matrix optimization on their product support. For barycenters, the input supports do not determine the support of the unknown barycenter: a minimizer may place mass outside the chosen sites $(y_i)_i$ and outside the union of the input supports.
+
+For quadratic costs, the multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that, for discrete inputs, one may choose a barycenter supported on weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input. This exact candidate set can contain $\prod_s n_s$ points, which is usually too large. Prescribing the support $(y_i)_i$ before solving~\eqref{eq-wass-discr} is therefore a numerical approximation, and choosing this support is itself a significant part of the barycenter problem.
+\index{multimarginal OT}% strictindex
+
 
 \begin{example}[Two measures recover a Wasserstein geodesic]
 \index{Wasserstein!geodesic}% strictindex
@@ -49,7 +68,7 @@ For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, th
 \index{Brenier map}% strictindex
 \end{example}
 \begin{example}[Dirac inputs recover Fr\'echet means]
-	Problem~\eqref{eq-barycenter-generic} generalizes the computation of barycenters of points $(x_s)_{s=1}^S \in \X^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution to~\eqref{eq-barycenter-generic} is $\de_{x^\star}$ where $x^\star$ is a Fr\'echet mean of the points $(x_s)_s$.
+	The general barycenter formulation above extends the computation of barycenters of points $(x_s)_{s=1}^S \in \X^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution is $\de_{x^\star}$ where $x^\star$ is a Fr\'echet mean of the points $(x_s)_s$.
 \index{Frechet mean}% strictindex
 \index{Dirac mass}% strictindex
 \end{example}
@@ -83,7 +102,7 @@ For $\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density, th
 \index{multimarginal OT}% strictindex
 \end{rem}
 
-The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a convex optimization problem over measures. The difficulty is not convexity, but the fact that the unknown is itself a measure whose support is not known in advance.
+The next elementary proposition explains why the general barycenter formulation is a convex optimization problem over measures. The difficulty is not convexity, but the fact that the unknown is itself a measure whose support is not known in advance.
 
 \begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
 \index{cost!transport}% strictindex
@@ -105,9 +124,6 @@ The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a 
 	\]
 	Letting $\eta\to0$ gives the claim.
 \end{proof}
-
-Even when all input measures are discrete, the support of a barycenter is not known a priori. The multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that a discrete barycenter can be supported on all weighted averages of one support point from each input. This gives at most $\prod_s n_s$ candidate points if the $s$-th input has $n_s$ atoms, which is prohibitive when the number of inputs is large. A common numerical compromise is therefore to prescribe a smaller support for the barycenter and solve a fixed-support problem.
-\index{multimarginal OT}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \paragraph{One-dimensional case.}
@@ -365,6 +381,129 @@ The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all coup
 Classical applications include two-dimensional image interpolation, three-dimensional shape interpolation, and barycenters on surfaces where the ground cost is the square of the geodesic distance; see~\cite{2015-solomon-siggraph} for applications to computer graphics and imaging.
 \index{ground cost}% strictindex
 
+\paragraph{Wasserstein-over-Wasserstein and barycenters.}
+The barycenter formula does not require a finite list of inputs. The Wasserstein-over-Wasserstein viewpoint of Section~\ref{sec-wasserstein-over-wasserstein} allows one to replace the discrete family $(\be_s,\la_s)_s$ by a law $\mathfrak A\in\Pp(\Pp(\Omega))$ over probability measures. Assume, for instance, that $c$ is lower semicontinuous and that there exists at least one $\beta_0\in\Pp(\Omega)$ with
+\[
+\int_{\Pp(\Omega)}\MK_c(\beta_0,\alpha)\d\mathfrak A(\alpha)<+\infty,
+\]
+together with the usual compactness or coercivity hypotheses ensuring existence of minimizers. For instance, these assumptions are automatic when $\Omega$ is compact and $c$ is continuous. The barycenter correspondence is then
+\index{Wasserstein over Wasserstein}% strictindex
+\index{Wasserstein!barycenter}% strictindex
+\index{flattening map}% strictindex
+\[
+\mathcal B_c(\mathfrak A)
+\eqdef
+\operatorname*{Argmin}_{\beta\in\Pp(\Omega)}
+\int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).
+\]
+When this set is a singleton, we denote its element by
+\[
+\widetilde\alpha_{\mathfrak A}
+\eqdef
+\uargmin{\beta\in\Pp(\Omega)}
+\int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha),
+\]
+which defines a nonlinear flattening map $\mathfrak A\mapsto\widetilde\alpha_{\mathfrak A}$ from laws over measures back to measures on $\Omega$.
+When $\mathfrak A=\sum_s\la_s\delta_{\be_s}$, this is exactly the finite barycenter problem above. This map should be contrasted with the linear collapsed, or barycentric, mixture $\bar\alpha_{\mathfrak A}$ of Definition~\ref{def-collapsed-barycentric-mixture}, which simply averages the input measures themselves. The two operations agree in degenerate linear situations, but in general $\widetilde\alpha_{\mathfrak A}$ is a geometric average in transport space, whereas $\bar\alpha_{\mathfrak A}$ is an ordinary mixture in the ambient linear space of measures.
+\index{collapsed mixture}% strictindex
+\index{barycentric!mixture}% strictindex
+
+The next result records the corresponding law of large numbers. It is useful when a dataset is itself made of probability measures, for instance populations of histograms, posterior distributions or shapes. We state it in the compact setting, where no moment or tightness side conditions are needed; non-compact extensions require the usual integrability assumptions. Consistency of Wasserstein barycenters and related statistical constructions is developed in~\cite{boissard2015distribution,leGouic2016existence,zemel2017fr}; streaming and large-scale uses of many input measures appear for instance in~\cite{staib2017parallel,srivastava2015wasp,srivastava2018scalable}.
+\index{law of large numbers}% strictindex
+\index{Wasserstein!barycenter!consistency}% strictindex
+\index{empirical!measure over measures}% strictindex
+
+\begin{prop}[Law of large numbers for barycenters over measures]\label{prop-wow-barycenter-lln}
+	Let $\Omega$ be a compact metric space, let $c:\Omega\times\Omega\to\RR$ be continuous, and let $\mathfrak A\in\Pp(\Pp(\Omega))$. Let $\alpha_1,\alpha_2,\ldots$ be independent random probability measures with common law $\mathfrak A$, and set
+	\[
+		\widehat{\mathfrak A}_p
+		\eqdef
+		\frac1p\sum_{i=1}^p\delta_{\alpha_i}
+		\in\Pp(\Pp(\Omega)).
+	\]
+	Then, almost surely,
+	\[
+		\widehat{\mathfrak A}_p \rightharpoonup \mathfrak A
+		\quad\text{in }\Pp(\Pp(\Omega)),
+		\qquad
+		\bar\alpha_{\widehat{\mathfrak A}_p}
+		\rightharpoonup
+		\bar\alpha_{\mathfrak A}
+		\quad\text{in }\Pp(\Omega).
+	\]
+	Moreover, if $\mathcal B_c(\mathfrak A)=\{\widetilde\alpha_{\mathfrak A}\}$ is a singleton and if $\widetilde\alpha_{\widehat{\mathfrak A}_p}\in\mathcal B_c(\widehat{\mathfrak A}_p)$ is any empirical barycenter, then, almost surely,
+	\[
+		\widetilde\alpha_{\widehat{\mathfrak A}_p}
+		\rightharpoonup
+		\widetilde\alpha_{\mathfrak A}
+		\quad\text{in }\Pp(\Omega).
+	\]
+\end{prop}
+
+\begin{proof}
+	Set $K=\Pp(\Omega)$. Since $\Omega$ is compact metric, $K$ is compact metric for weak convergence, and so is $\Pp(K)$. The space $\Cc(K)$ is separable for the uniform norm. Applying the scalar strong law to a countable dense family of test functions and then using uniform approximation gives, almost surely, for every $\Phi\in\Cc(K)$,
+	\[
+		\int \Phi(\alpha)\d\widehat{\mathfrak A}_p(\alpha)
+		=
+		\frac1p\sum_{i=1}^p\Phi(\alpha_i)
+		\longrightarrow
+		\int \Phi(\alpha)\d\mathfrak A(\alpha)
+	\]
+	This is exactly $\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A$ in $\Pp(K)$.
+
+	For the collapsed mixtures, take $f\in\Cc(\Omega)$ and define $\Phi_f(\alpha)=\int_\Omega f\d\alpha$. This function is continuous on $\Pp(\Omega)$. Hence
+	\[
+		\int_\Omega f\d\bar\alpha_{\widehat{\mathfrak A}_p}
+		=
+		\int_{\Pp(\Omega)}\Phi_f(\alpha)\d\widehat{\mathfrak A}_p(\alpha)
+		\longrightarrow
+		\int_{\Pp(\Omega)}\Phi_f(\alpha)\d\mathfrak A(\alpha)
+		=
+		\int_\Omega f\d\bar\alpha_{\mathfrak A},
+	\]
+	which proves $\bar\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\bar\alpha_{\mathfrak A}$.
+
+	It remains to prove the nonlinear barycenter consistency. Since $c$ is continuous on the compact product $\Omega\times\Omega$, the value $(\beta,\alpha)\mapsto\MK_c(\beta,\alpha)$ is continuous on $K^2$. Therefore the map $\beta\mapsto h_\beta$, where $h_\beta(\alpha)=\MK_c(\beta,\alpha)$, is continuous from the compact space $K$ to $\Cc(K)$. Its image
+	\[
+		\mathcal H
+		\eqdef
+		\{h_\beta:\beta\in K\}
+	\]
+	is compact in $\Cc(K)$. The convergence of $\widehat{\mathfrak A}_p$ to $\mathfrak A$ is uniform over $\mathcal H$: given $\eta>0$, cover $\mathcal H$ by finitely many $\eta$-balls in $\norm{\cdot}_\infty$, use weak convergence for the centers, and bound the error on the balls by the total variation of $\widehat{\mathfrak A}_p-\mathfrak A$. Hence the empirical objectives
+	\[
+		F_p(\beta)\eqdef\int\MK_c(\beta,\alpha)\d\widehat{\mathfrak A}_p(\alpha)
+	\]
+	converge uniformly on $K$ to
+	\[
+		F(\beta)\eqdef\int\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).
+	\]
+	Let $\beta_p\in\mathcal B_c(\widehat{\mathfrak A}_p)$. Compactness gives a subsequence $\beta_{p_k}\rightharpoonup\beta$. Uniform convergence, continuity of $F$, and optimality of $\beta_{p_k}$ give, for any $\gamma\in K$,
+	\[
+		F(\beta)
+		=
+		\lim_k F_{p_k}(\beta_{p_k})
+		\leq
+		\lim_k F_{p_k}(\gamma)
+		=
+		F(\gamma),
+	\]
+	so $\beta\in\mathcal B_c(\mathfrak A)$. If this set is the singleton $\{\widetilde\alpha_{\mathfrak A}\}$, every converging subsequence has the same limit, and therefore the whole sequence $\widetilde\alpha_{\widehat{\mathfrak A}_p}$ converges to $\widetilde\alpha_{\mathfrak A}$.
+\end{proof}
+
+The first convergence above is a classical law of large numbers applied to random elements of the Wasserstein space. The second, for $\bar\alpha_{\widehat{\mathfrak A}_p}$, is still linear after testing against $f\in\Cc(\Omega)$. The third convergence is its nonlinear counterpart: one first forms an empirical law over measures and then solves a Wasserstein barycenter problem. The number $p$ of input measures should not be confused with the number $n$ of samples used to approximate each input measure, studied in Section~\ref{sec-sample-complexity}. In applications one often observes $p$ empirical measures, each made of roughly $n$ atoms, hence about $np$ points in total. Balancing the error due to finitely many input laws against the error due to finitely sampled input laws is a separate statistical and computational tradeoff.
+\index{sample complexity}% strictindex
+\index{statistical optimal transport}% strictindex
+
+\paragraph{Toward central limit theorems on Wasserstein space.}
+
+The same hierarchy suggests a central-limit refinement of the preceding law of large numbers, but the nonlinear geometry makes this substantially more delicate. For the linear collapse $\bar\alpha_{\widehat{\mathfrak A}_p}$, testing against a fixed $f\in\Cc(\Omega)$ reduces the question to the classical scalar central limit theorem for the random variable $\alpha\mapsto\int f\d\alpha$. For the nonlinear barycenter $\widetilde\alpha_{\widehat{\mathfrak A}_p}$, however, there is no canonical vector difference $\widetilde\alpha_{\widehat{\mathfrak A}_p}-\widetilde\alpha_{\mathfrak A}$ inside $\Pp(\Omega)$. One has to choose a local linearization. When the population barycenter is sufficiently regular so that the optimal map $T_p$ from $\widetilde\alpha_{\mathfrak A}$ to $\widetilde\alpha_{\widehat{\mathfrak A}_p}$ exists, this amounts to asking whether $\sqrt p\,(T_p-\Id)$ converges in a Hilbert space such as $L^2(\widetilde\alpha_{\mathfrak A})$. In nonsmooth settings one must instead work with optimal-plan or logarithmic-map coordinates. Even after such a linearization, an infinite-dimensional CLT requires tightness of the rescaled tangent variables and a genuine Radon Gaussian random element; in a Hilbert space, the associated covariance must be trace class. A cylindrical Gaussian limit alone is therefore not a probability law on the tangent space. This obstruction explains why Wasserstein-space CLTs are more rigid than the weak laws above.
+\index{central limit theorem}% strictindex
+\index{Wasserstein barycenter}% strictindex
+
+There are nevertheless important settings where such results can be proved. In one dimension, the quantile representation linearizes $\Wass_2$, so barycenter fluctuations can be studied through empirical averages of quantile functions. Another finite-dimensional case is the family of non-degenerate Gaussian measures in fixed dimension, where $\Wass_2$ reduces to the Bures geometry of means and covariance matrices. Agueh and Carlier~\cite{agueh2017vers} formulate this Wasserstein-barycenter CLT precisely in tangent coordinates and prove it in a few special cases, including the one-dimensional non-atomic setting and finite laws supported on non-degenerate Gaussian measures. Entropic barycenters give a smoother variant for which central-limit theorems for empirical barycenters are also available~\cite{CarlierEichingerKroshnin2020EntropicBarycenterCLT}. These results should be read as nonlinear analogues of statistical limits for optimal transport values, not as a generic Hilbert-space CLT valid on all of $\Pp(\Omega)$.
+\index{quantile function}% strictindex
+\index{Bures metric}% strictindex
+
 \section{Multimarginal OT}
 \index{multimarginal OT}% strictindex
 \label{sec-multimarginal-ot}
@@ -450,12 +589,12 @@ A second canonical example, besides barycenters, comes from electronic structure
 	\eqdef
 	\sum_{1\leq i<j\leq N}\frac{1}{\norm{x_i-x_j}},
 \]
-with the value $+\infty$ on the collision set. This lower-semicontinuous singularity is not a harmless detail: finite-energy plans avoid electron collisions, and the smooth structure theorem above should be read as a guide rather than as a global theorem for the Coulomb cost. If $\rho$ is an electron density with $\int_{\RR^3}\rho(x)\d x=N$ and $\mu=\rho/N$ is the associated probability density, the strictly-correlated-electrons relaxation of density-functional theory is the equal-marginal problem
+with the value $+\infty$ on the collision set. This lower-semicontinuous singularity is not a harmless detail: finite-energy plans avoid electron collisions, and the smooth structure theorem above should be read as a guide rather than as a global theorem for the Coulomb cost. If $\rho$ is an electron density with $\int_{\RR^3}\rho(x)\d x=N$ and $\al=\rho/N$ is the associated probability density, the strictly-correlated-electrons relaxation of density-functional theory is the equal-marginal problem
 \index{Coulomb cost}% strictindex
 \[
 	V_{\mathrm{ee}}^{\mathrm{SCE}}[\rho]
 	\eqdef
-	\inf_{\pi\in\Couplings(\mu,\ldots,\mu)}
+	\inf_{\pi\in\Couplings(\al,\ldots,\al)}
 	\int_{(\RR^3)^N}
 	c_{\mathrm{Coul}}(x_1,\ldots,x_N)
 	\d\pi(x_1,\ldots,x_N).
@@ -463,9 +602,9 @@ with the value $+\infty$ on the collision set. This lower-semicontinuous singula
 Since the cost and constraints are permutation invariant, symmetrizing any admissible plan does not change its value, so one may equivalently minimize over symmetric plans. This functional gives the smallest possible electron--electron repulsion compatible with the prescribed one-particle density; it appears as the strong-interaction limit in density-functional theory and was connected to optimal transport in~\cite{GorSeiVig,BuDePGor,CotarDFT,DiMarinoGerolinNennaRepulsiveCosts}. The deterministic ansatz writes a plan through co-motion maps
 \index{density-functional theory}% strictindex
 \[
-	\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\mu,
+	\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\al,
 	\qquad
-	(\T_i)_\sharp\mu=\mu,
+	(\T_i)_\sharp\al=\al,
 \]
 so that the position of one electron determines the positions of the others. The following cyclic version is the most common structural form of this ansatz in the strictly-correlated-electrons literature.
 \index{strictly correlated electrons}% strictindex
@@ -476,11 +615,11 @@ so that the position of one electron determines the positions of the others. The
 
 \begin{prop}[Cyclic co-motion plans]\label{prop-cyclic-comotion-plans}
 \index{cyclic!co-motion plan}% strictindex
-	Let $\mu\in\Pp(\RR^3)$ and let $\T:\RR^3\to\RR^3$ be measurable with $\T_\sharp\mu=\mu$ and $\T^N=\Id$ $\mu$-a.e. Set $\T^0=\Id$ and
+	Let $\al\in\Pp(\RR^3)$ and let $\T:\RR^3\to\RR^3$ be measurable with $\T_\sharp\al=\al$ and $\T^N=\Id$ $\al$-a.e. Set $\T^0=\Id$ and
 	\[
-		\pi_\T=(\T^0,\T^1,\ldots,\T^{N-1})_\sharp\mu .
+		\pi_\T=(\T^0,\T^1,\ldots,\T^{N-1})_\sharp\al .
 	\]
-	Then $\pi_\T\in\Couplings(\mu,\ldots,\mu)$. If $R_\sigma(x_1,\ldots,x_N)=(x_{\sigma(1)},\ldots,x_{\sigma(N)})$ for $\sigma\in\Perm(N)$, then
+	Then $\pi_\T\in\Couplings(\al,\ldots,\al)$. If $R_\sigma(x_1,\ldots,x_N)=(x_{\sigma(1)},\ldots,x_{\sigma(N)})$ for $\sigma\in\Perm(N)$, then
 	\[
 		\bar\pi_\T\eqdef\frac1{N!}\sum_{\sigma\in\Perm(N)}(R_\sigma)_\sharp\pi_\T
 	\]
@@ -492,11 +631,11 @@ so that the position of one electron determines the positions of the others. The
 		=
 		\int_{\RR^3}
 		\sum_{0\leq i<j\leq N-1}
-		\frac{1}{\norm{\T^i(x)-\T^j(x)}}\d\mu(x).
+		\frac{1}{\norm{\T^i(x)-\T^j(x)}}\d\al(x).
 	\]
 \end{prop}
 \begin{proof}
-	Since $\T_\sharp\mu=\mu$, all iterates $\T^i$ preserve $\mu$, so every marginal of $\pi_\T$ is $\mu$. The plan $\bar\pi_\T$ is an average of coordinate permutations of $\pi_\T$, hence has the same marginals and is invariant under coordinate permutations. The Coulomb cost is symmetric in its arguments, so its integral is unchanged by each $R_\sigma$. The last identity follows by evaluating $c_{\mathrm{Coul}}$ on the graph $(x,\T(x),\ldots,\T^{N-1}(x))$.
+	Since $\T_\sharp\al=\al$, all iterates $\T^i$ preserve $\al$, so every marginal of $\pi_\T$ is $\al$. The plan $\bar\pi_\T$ is an average of coordinate permutations of $\pi_\T$, hence has the same marginals and is invariant under coordinate permutations. The Coulomb cost is symmetric in its arguments, so its integral is unchanged by each $R_\sigma$. The last identity follows by evaluating $c_{\mathrm{Coul}}$ on the graph $(x,\T(x),\ldots,\T^{N-1}(x))$.
 \index{symmetric plan}% strictindex
 \index{Coulomb cost}% strictindex
 \end{proof}
@@ -608,8 +747,20 @@ The optimizer has the generalized Gibbs form
 	\exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
 	\prod_s\d\al_s(x_s),
 \]
-and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
+and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. This formula is direct but, without additional structure, it is mostly a conceptual baseline. In the discrete case, even storing the Gibbs tensor or the coupling requires $\prod_s n_s$ entries, and the unstructured multi-marginal Sinkhorn complexity inherits this exponential dependence on the number of marginals~\cite{LinHoCuturiJordan2022MOTComplexity}.
+
+The important exception is when the cost has a sparse graphical structure. If, for instance,
+\[
+	c(x_1,\ldots,x_S)=\sum_{(r,s)\in E} c_{r,s}(x_r,x_s),
+\]
+then the tensor contractions needed by Sinkhorn can be organized by message passing on the graph $G=(\{1,\ldots,S\},E)$. The complexity is then controlled by the treewidth of $G$ rather than by the full tensor dimension: trees and, more generally, small-treewidth graphs require only clique tensors of bounded order. This viewpoint connects entropic multi-marginal OT with probabilistic graphical models and Schr\"odinger bridge computations~\cite{HaaslerRinghChenKarlsson2021TreeMOT,HaaslerSinghZhangKarlssonChen2020PGMMOT,FanHaaslerKarlssonChen2021GraphCostMOT,AltschulerBoixAdsera2022StructuredMOT}. A representative fluid-mechanics example is the time discretization of Brenier's generalized incompressible Euler problem: the kinetic action couples neighboring time slices and the periodic incompressibility constraint closes the chain into a cycle, a graph of treewidth two. Entropic Bregman/Sinkhorn schemes exploit exactly this circular structure~\cite{2015-benamou-cisc,BenamouCarlierNenna2018GeneralizedIncompressible}.
 \index{Sinkhorn!iteration}% strictindex
+\index{treewidth}% strictindex
+\index{graphical model}% strictindex
+\index{message passing}% strictindex
+\index{incompressible Euler}% strictindex
+
+Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
 \index{low-rank OT}% strictindex
 
 In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn.
@@ -1354,6 +1505,7 @@ The projected target $\bar\beta_\pi$ records the distribution of conditional mea
 \index{cyclic!monotonicity}% strictindex
 \end{proof}
 
+\paragraph{Weak transport costs.}
 Weak transport costs use the same disintegration but allow the objective to depend on the whole conditional law, or on summaries such as the barycentric projection~\eqref{eq-barycentric-projection}. The framework was introduced through general transport costs and weak transport inequalities in~\cite{gozlan2017kantorovich}; existence, duality and optimality conditions on Polish spaces are developed in~\cite{backhoff2019weak}. For a weak cost $C:\X\times\Pp(\Y)\to\RR\cup\{+\infty\}$, the weak OT value is
 \index{weak!cost}% strictindex
 \index{disintegration}% strictindex
@@ -1497,38 +1649,99 @@ must be the diagonal coupling $(\Id,\Id)_\sharp\alpha$. This is stronger than me
 
 \paragraph{Stochastic orders.}
 \index{stochastic order}% strictindex
-The admissibility of martingale couplings is governed by stochastic order. For measures on $\RR$, the classical stochastic order is
+The admissibility of constrained couplings is governed by stochastic order. The basic principle is that inequalities tested against a class of functions are equivalent to the existence of couplings satisfying a pointwise or conditional constraint. Strassen's theorem is the canonical result of this kind~\cite{Strassen1965}.
 \index{martingale coupling}% strictindex
-\[
-	\alpha\preceq_{\mathrm{st}}\beta
-	\quad\Longleftrightarrow\quad
-	\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
-	\quad\text{for every increasing }\varphi .
-\]
-Strassen's theorem~\cite{Strassen1965} says that this is equivalent to the existence of a coupling $(X,Y)$ with $X\leq Y$ almost surely. Thus an order inequality between laws is represented by a pathwise constraint on a coupling.
 \index{Strassen theorem}% strictindex
 \index{order-constrained coupling}% strictindex
 
-For martingale OT the relevant order is the convex order. For measures with finite first moments,
+\begin{prop}[Strassen's theorem for stochastic order]\label{prop-strassen-stochastic-order}
+\index{stochastic order}% strictindex
+	Let $\alpha,\beta\in\Pp(\RR)$ and define the classical stochastic order by
+	\[
+		\alpha\preceq_{\mathrm{st}}\beta
+		\quad\Longleftrightarrow\quad
+		\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
+		\quad\text{for every bounded increasing }\varphi .
+	\]
+	Then $\alpha\preceq_{\mathrm{st}}\beta$ if and only if there exists $\pi\in\Couplings(\alpha,\beta)$ concentrated on $\enscond{(x,y)}{x\leq y}$.
+\end{prop}
+
+\begin{proof}
+	A coupling supported on $x\leq y$ immediately gives the integral inequality for every increasing $\varphi$. Conversely, testing approximate indicators of intervals $(t,+\infty)$ gives $F_\alpha(t)\geq F_\beta(t)$ for all continuity points of the distribution functions. If $U$ is uniform on $(0,1)$ and $F_\alpha^{-1},F_\beta^{-1}$ are the generalized quantiles, then $X=F_\alpha^{-1}(U)$ and $Y=F_\beta^{-1}(U)$ have laws $\alpha$ and $\beta$, and the inequality between distribution functions gives $X\leq Y$ almost surely.
+\end{proof}
+
+\paragraph{Convex order and martingale feasibility.}
 \index{convex order}% strictindex
+For martingale OT, the pointwise order constraint is replaced by a barycentric constraint on conditional laws. The corresponding order is the convex order. For $\alpha,\beta\in\Pp_1(\RR^d)$,
 \[
 	\alpha\preceq_{\mathrm{cx}}\beta
 	\quad\Longleftrightarrow\quad
 	\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
 	\quad\text{for every convex }\varphi\text{ with finite integrals}.
 \]
-Testing affine functions gives equality of means, while convex test functions say that $\beta$ is more spread out than $\alpha$. For Gaussian measures with the same mean, this reduces to the Loewner order on covariance matrices:
+Testing affine functions gives equality of means, while convex test functions say that $\beta$ is more spread out than $\alpha$. Strassen's martingale theorem says that this spread condition is exactly what is needed to realize $\beta$ from $\alpha$ by mean-preserving randomization.
+\index{martingale coupling}% strictindex
+\index{Strassen theorem}% strictindex
+
+\begin{thm}[Strassen's martingale theorem]\label{thm-strassen-martingale}
+\index{convex order}% strictindex
+\index{martingale coupling}% strictindex
+	Let $\alpha,\beta\in\Pp_1(\RR^d)$. Then
+	\[
+		\alpha\preceq_{\mathrm{cx}}\beta
+		\quad\Longleftrightarrow\quad
+		\Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset .
+	\]
+	Equivalently, $\beta$ is above $\alpha$ in convex order if and only if there exists a coupling $\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$ such that $\int y\d\pi_x(y)=x$ for $\alpha$-almost every $x$.
+\end{thm}
+
+\begin{proof}
+	If $\pi$ is a martingale coupling, then Jensen's inequality gives, for every convex $\varphi$,
+	\[
+		\varphi(x)
+		=
+		\varphi\!\left(\int y\d\pi_x(y)\right)
+		\leq
+		\int \varphi(y)\d\pi_x(y),
+	\]
+	and integration in $x$ gives $\int\varphi\d\alpha\leq\int\varphi\d\beta$.
+
+	Conversely, assume $\alpha\preceq_{\mathrm{cx}}\beta$. In the compactly supported case, one proves existence by separating $\beta$ from the closed convex set of all second marginals reachable from $\alpha$ by martingale kernels. If $\beta$ were not in this set, a separating test function $\psi$ would satisfy
+	\[
+		\int\psi\d\beta
+		>
+		\sup
+		\left\{
+			\int\psi\d\eta
+			\;:\;
+			\eta\in\Pp_1(\RR^d),\
+			\Couplings_{\mathrm{mart}}(\alpha,\eta)\neq\emptyset
+		\right\}.
+	\]
+	For a fixed $x$, optimizing over conditional laws with barycenter $x$ gives the concave envelope $\operatorname{conc}\psi(x)$; hence the right-hand side is $\int\operatorname{conc}\psi\d\alpha$. Since $\alpha\preceq_{\mathrm{cx}}\beta$ is equivalently the reverse inequality for concave functions,
+	\[
+		\int\operatorname{conc}\psi\d\alpha
+		\geq
+		\int\operatorname{conc}\psi\d\beta
+		\geq
+		\int\psi\d\beta,
+	\]
+	a contradiction. The finite-first-moment case follows by the standard truncation and tightness argument in Strassen's theorem.
+\end{proof}
+
+Theorem~\ref{thm-strassen-martingale} explains why convex order is the right admissibility notion for martingale OT: it is exactly the feasibility condition for the constraint~\eqref{eq-martingale-coupling}. If $\alpha\not\preceq_{\mathrm{cx}}\beta$, then $\Couplings_{\mathrm{mart}}(\alpha,\beta)=\emptyset$ and the martingale OT value is $+\infty$, independently of the cost. If $\alpha\preceq_{\mathrm{cx}}\beta$, then the optimization problem is nonempty and the cost selects, among all mean-preserving splittings of each source point, the martingale coupling best adapted to the application. This is the probabilistic meaning of the barycentric constraint: mass may branch, but it cannot drift on average.
+\index{martingale OT}% strictindex
+
+For Gaussian measures with the same mean, convex order reduces to the Loewner order on covariance matrices:
 \[
 	\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1)
 	\quad\Longleftrightarrow\quad
 	\Sigma_1-\Sigma_0\succeq0 .
 \]
 Indeed, if $\Sigma_1-\Sigma_0\succeq0$, then $\Gaussian(m,\Sigma_1)$ is obtained from $\Gaussian(m,\Sigma_0)$ by adding independent centered Gaussian noise; the converse follows by testing the convex quadratic functions $x\mapsto\dotp{u}{x}^2$.
-Strassen's martingale theorem states that $\alpha\preceq_{\mathrm{cx}}\beta$ if and only if $\Couplings_{\mathrm{mart}}(\alpha,\beta)$ is nonempty. Hence convex order is exactly the feasibility condition for martingale OT.
 \index{convex order}% strictindex
 \index{Gaussian measure}% strictindex
 \index{covariance!Loewner order}% strictindex
-\index{Strassen theorem}% strictindex
 
 \begin{figure}[H]
 \centering

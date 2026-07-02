@@ -1322,6 +1322,7 @@ as long as $1+u_t''>0$.  This scalar case is useful for visualization because th
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sample Complexity}
+\label{sec-sample-complexity}
 \index{sample complexity}% strictindex
 
 This section separates two statistical regimes. Exact OT resolves geometry at all spatial scales and pays rates controlled by the metric entropy, hence by the intrinsic dimension, of the support; fixed-temperature Sinkhorn divergences smooth the dual potentials and recover parametric fluctuations, at the price of regularization bias.
@@ -1449,6 +1450,88 @@ The sample complexity of unregularized OT suffers from the curse of dimensionali
 \index{envelope theorem}% strictindex
 \index{dual!potential}% strictindex
 \end{proof}
+
+\paragraph{Sample complexity of estimating OT maps.}
+\index{optimal transport map!estimation}% strictindex
+\index{barycentric projection}% strictindex
+Value convergence does not directly give map convergence.  A common estimator first solves the empirical dual problem for potentials \((\fD_{n,m}^\epsilon,\gD_{n,m}^\epsilon)\in\RR^n\times\RR^m\), with \(\epsilon=0\) denoting the unregularized problem, and then extends the potentials by the soft \(c\)-transform of Definition~\ref{def-continuous-soft-c-transform}.  For \(c_2(x,y)=\norm{x-y}^2/2\), if \(\gD_{n,m}^\epsilon\) is the target-side potential, set
+\[
+	u_{n,m}^\epsilon(x)=
+	-\epsilon\log\sum_j b_j
+	\exp\!\left(\frac{\gD_{n,m,j}^\epsilon-c_2(x,Y_j)}{\epsilon}\right),
+	\qquad
+	T_{n,m}^\epsilon(x)=x-\nabla u_{n,m}^\epsilon(x).
+\]
+Equivalently, subtracting the quadratic marginal terms turns \(c_2\) into the bilinear cost \(c_{\rm ip}(x,y)=-\dotp{x}{y}\).  With the sign convention used here, the associated soft convex potential is
+\[
+	\varphi_{n,m}^\epsilon(x)
+	\eqdef
+	\frac12\norm{x}^2-u_{n,m}^\epsilon(x)
+	=
+	\epsilon\log\sum_j b_j
+	\exp\!\left(
+		\frac{\dotp{x}{Y_j}+\gD_{n,m,j}^\epsilon-\frac12\norm{Y_j}^2}{\epsilon}
+	\right),
+	\qquad
+	T_{n,m}^\epsilon=\nabla\varphi_{n,m}^\epsilon .
+\]
+Differentiating the log-sum-exp gives
+\[
+	T_{n,m}^\epsilon(x)=\sum_j\omega_j^\epsilon(x)Y_j,
+	\qquad
+	\omega_j^\epsilon(x)=
+	\frac{b_j e^{(\gD_{n,m,j}^\epsilon-c_2(x,Y_j))/\epsilon}}
+	{\sum_k b_k e^{(\gD_{n,m,k}^\epsilon-c_2(x,Y_k))/\epsilon}}.
+\]
+At a sample point \(X_i\), Sinkhorn normalization gives
+\[
+	T_{n,m}^\epsilon(X_i)=\frac1{a_i}\sum_j P_{ij}^\epsilon Y_j,
+\]
+which is exactly the barycentric projection~\eqref{eq-barycentric-projection} of the entropic coupling \(P^\epsilon\).  For \(\epsilon=0\), the soft transform becomes the hard \(c\)-transform and the same in-sample formula uses an optimal unregularized empirical plan.  The consistency statement below is written for uniform empirical weights, which is the standard statistical case; deterministic nonuniform weights are handled by the same compactness proof with the corresponding entropy bound.
+
+\begin{prop}[Consistency of empirical barycentric maps]\label{prop-empirical-barycentric-map-consistency}
+\index{optimal transport map!consistency}% strictindex
+	Let \(\Omega\subset\RR^d\) be compact, let \(\alpha,\beta\in\Pp_2(\Omega)\), and assume that \(\alpha\) is absolutely continuous.  Let \(T\) be the unique Brenier map from \(\alpha\) to \(\beta\), represented by a Borel subgradient selection \(T(x)\in\partial\phi(x)\) of a Brenier potential \(\phi\).  If uniform empirical measures \(\hat\alpha_n,\hat\beta_m\) converge to \(\alpha,\beta\) in \(\Wass_2\), if \(\epsilon_{n,m}\to0\) with \(\epsilon_{n,m}\log(nm)\to0\), and if \(\bar T_{n,m}^{\epsilon}\) denotes the barycentric projection of the empirical entropic coupling, then
+	\[
+		\int\norm{\bar T_{n,m}^{\epsilon}(x)-T(x)}^2\d\hat\alpha_n(x)\longrightarrow0.
+	\]
+	The analogous backward statement holds when \(\beta\) is also absolutely continuous.
+\end{prop}
+
+\begin{proof}
+	Empirical convergence in \(\Wass_2\) implies convergence of the empirical OT values.  Comparing the entropic minimizer with an unregularized optimal empirical plan gives
+	\[
+		\int c_2\,\d P_{n,m}^{\epsilon}
+		\leq
+		\MK_{c_2}(\hat\alpha_n,\hat\beta_m)+\epsilon\log(nm),
+	\]
+	because the relative entropy of any plan on a uniform \(n\times m\) grid with respect to the product empirical measure is at most \(\log(nm)\).  Thus any weak limit point of \(P_{n,m}^{\epsilon}\) is an optimal population plan, hence equals \((\Id,T)_\sharp\alpha\) by Brenier uniqueness.  Jensen's inequality applied to the conditional laws gives
+	\[
+		\int\norm{\bar T_{n,m}^{\epsilon}(x)-T(x)}^2\d\hat\alpha_n(x)
+		\leq
+		\iint\norm{y-T(x)}^2\d P_{n,m}^{\epsilon}(x,y).
+	\]
+	At every differentiability point of \(\phi\), the subdifferential is the singleton \(\{\nabla\phi(x)\}\).  Since the target is compact, all selected subgradients are bounded, and the closed-graph property of the subdifferential forces nearby selected subgradients to converge to \(\nabla\phi(x)\).  Convex functions are differentiable Lebesgue-almost everywhere.  Since \(\alpha\) is absolutely continuous, \((x,y)\mapsto\norm{y-T(x)}^2\) is bounded and continuous \((\Id,T)_\sharp\alpha\)-almost everywhere.  The portmanteau theorem for such test functions implies that the last right-hand side converges to \(0\).
+\end{proof}
+
+Quantitative map rates require stronger regularity.  For unregularized map estimation, H\"utter--Rigollet~\cite{hutter2021minimaxOTMaps}, Deb--Ghosal--Sen~\cite{deb2021ratesBarycentricMaps}, and Manole--Balakrishnan--Niles-Weed--Wasserman~\cite{manole2021pluginOTMaps} obtain, under smoothness and curvature assumptions, squared \(L^2(\alpha)\) risk of order
+\[
+	\EE\norm{\widehat T_n-T_0}_{L^2(\alpha)}^2
+	\lesssim
+	n^{-\frac{2s}{2(s-1)+d}}
+\]
+up to logarithms, and this rate is minimax optimal.  For the Sinkhorn-computable entropic barycentric estimator, Pooladian--Niles-Weed~\cite{pooladian2021entropicOTMaps} prove, with \(\bar s=s\wedge3\),
+\[
+	\EE\norm{T_{\epsilon,(n,n)}-T_0}_{L^2(\alpha)}^2
+	\lesssim
+	\epsilon^{-d/2}\log(n)n^{-1/2}
+	+
+	\epsilon^{(\bar s+1)/2}
+	+
+	\epsilon^2\Ii_0(\alpha,\beta).
+\]
+The first term is the statistical fluctuation of the entropic map, whereas the last two terms are regularization-bias terms.  Thus fixed \(\epsilon\) gives a parametric empirical fluctuation for the regularized map, while \(\epsilon\simeq n^{-1/(d+\bar s+1)}\) gives a convergent estimator of the Brenier map at rate \(n^{-(\bar s+1)/(2(d+\bar s+1))}\) up to logarithms.  The unregularized case can achieve sharper minimax rates when combined with enough smooth extension machinery; the regularized estimator is instead directly Sinkhorn-computable.
+\index{entropic!map estimation}% strictindex
 
 \begin{rem}[No free lunch when approximating exact OT]\label{rem-sinkhorn-no-free-lunch}
 \index{exact OT}% strictindex

@@ -472,11 +472,11 @@ The mean-field case is different: the drift is recomputed from the current empir
 \index{gradient!flow}% strictindex
 \index{mean-field limit}% strictindex
 \[
-	\d X_i^n(t)=b(X_i^n(t),\mu_t^n)\d t+\sqrt{2}\sigma\d B_i(t),
+	\d X_i^n(t)=b(X_i^n(t),\al_t^n)\d t+\sqrt{2}\sigma\d B_i(t),
 	\qquad
-	\mu_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)} .
+	\al_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)} .
 \]
-For finite $n$, the empirical law $\mu_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\mu_t^n$ converges in probability to this law. The limiting density solves the nonlinear Fokker--Planck, or McKean--Vlasov, equation
+For finite $n$, the empirical law $\al_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\al_t^n$ converges in probability to this law. The limiting density solves the nonlinear Fokker--Planck, or McKean--Vlasov, equation
 \index{Fokker-Planck equation}% strictindex
 \index{McKean-Vlasov limit}% strictindex
 \index{propagation of chaos}% strictindex
@@ -511,7 +511,7 @@ When the interaction drift has variational form
 \small grid Fokker--Planck density \\[-.15em]
 \includegraphics[width=.86\linewidth]{figures/gradflow-fokker-planck-three-representations/grid-pde.pdf}
 \end{tabular}
-\caption{Three numerical representations of the same entropy-regularized Wasserstein gradient flow of $\KL(\rho|\beta)$, where $\beta$ is a two-Gaussian target shifted to the right of an initially isotropic Gaussian density. The first row simulates independent Langevin particles and displays a thinned set of trajectories in the left panel. The second row evolves many deterministic particles with velocity $\tau(\nabla\log\beta-\nabla\log\rho_t)$, estimating $\nabla\log\rho_t$ by a sharper kernel-density score; only representative trajectories and particle subsets are displayed. The third row solves the corresponding Fokker--Planck equation on a grid, starting from the initial density in the left panel. The remaining columns use front-loaded times, so that the onset of the flow and the later deformation toward a bimodal law are both visible.}
+\caption{Three numerical representations of the same entropy-regularized Wasserstein gradient flow of $\KL(\rho|\beta)$, where $\beta$ is a two-Gaussian target shifted to the right of an initially isotropic Gaussian density. The first row simulates independent Langevin particles and displays a thinned set of trajectories in the left panel. The second row evolves many deterministic particles with velocity $\tau(\nabla\log\rho_\beta-\nabla\log\rho_t)$, estimating $\nabla\log\rho_t$ by a sharper kernel-density score; only representative trajectories and particle subsets are displayed. The third row solves the corresponding Fokker--Planck equation on a grid, starting from the initial density in the left panel. The remaining columns use front-loaded times, so that the onset of the flow and the later deformation toward a bimodal law are both visible.}
 \index{Wasserstein!gradient flow}% strictindex
 \index{Fokker-Planck equation}% strictindex
 \index{Langevin dynamics}% strictindex
@@ -740,7 +740,7 @@ Geodesic convexity is also useful for hard constraints. If a feasible set is geo
 \index{displacement interpolation}% strictindex
 \end{proof}
 
-\paragraph{A useful non-example.}
+\begin{example}[Squared Wasserstein distance need not be geodesically convex]
 
 The squared distance to a fixed measure is not geodesically convex in general. This is a sharp contrast with Hilbert spaces, where \(x\mapsto\norm{x-y}^2\) is convex along line segments. In \(\Pp_2(\RR^d)\), \(d\geq2\), take
 \[
@@ -770,6 +770,54 @@ which violates geodesic convexity. Thus objectives built from squared Wasserstei
 \index{Wasserstein!squared distance}% strictindex
 \index{quantization!optimal}% strictindex
 \index{Lloyd algorithm}% strictindex
+\end{example}
+
+\begin{rem}[Target discrepancies are usually semiconcave]\label{rem-target-discrepancies-semiconcave}
+\index{geodesic semiconcavity}% strictindex
+\index{generative model}% strictindex
+	The preceding example is a useful warning. Losses of the form
+	\(\alpha\mapsto D(\alpha,\beta)\), where \(\beta\) is a fixed target
+	distribution, are rarely geodesically convex in the transport geometry. This is unfortunate for generative AI and generative modeling more broadly: training a distribution to match data by decreasing \(\Wass_2^2(\alpha,\beta)\), \(\SW_2^2(\alpha,\beta)\), or similar discrepancies should not be expected to inherit the convex behavior of Euclidean least squares.
+
+	The squared Wasserstein loss has the opposite one-sided curvature: it is \(2\)-geodesically semiconcave along \(\Wass_2\) geodesics. More precisely, if \((\alpha_t)_{t\in[0,1]}\) is a constant-speed \(\Wass_2\) geodesic, then
+	\[
+		\Wass_2^2(\alpha_t,\beta)
+		\geq
+		(1-t)\Wass_2^2(\alpha_0,\beta)
+		+
+		t\Wass_2^2(\alpha_1,\beta)
+		-
+		t(1-t)\Wass_2^2(\alpha_0,\alpha_1).
+	\]
+	This is the standard \(2\)-geodesic semiconcavity convention for squared distances, often informally called ``\(2\)-concavity'': the graph may fall below the chord, but only by the quadratic correction \(t(1-t)\Wass_2^2(\alpha_0,\alpha_1)\). Equivalently, \(-\Wass_2^2(\cdot,\beta)\) is \((-2)\)-geodesically convex in the convention of Definition~\ref{def-geodesic-convexity}.
+
+	To prove the estimate, write
+	\(\alpha_t=((1-t)P_0+tP_1)_\sharp\pi_{01}\), where \(\pi_{01}\) is optimal between \(\alpha_0\) and \(\alpha_1\). Fix \(t\), put \(Z=(1-t)X_0+tX_1\), take an optimal coupling between \(\alpha_t\) and \(\beta\), and glue it with a disintegration of \(\pi_{01}\) over \(Z\). This gives random variables \((X_0,X_1,Y)\) such that \((Z,Y)\) is optimal between \(\alpha_t\) and \(\beta\), while \((X_0,X_1)\) is optimal between \(\alpha_0\) and \(\alpha_1\). Since \((X_i,Y)\) are admissible couplings between \(\alpha_i\) and \(\beta\),
+	\[
+		\Wass_2^2(\alpha_i,\beta)\leq \EE\norm{X_i-Y}^2,
+		\qquad i=0,1.
+	\]
+	The Euclidean identity
+	\[
+		(1-t)\norm{X_0-Y}^2+t\norm{X_1-Y}^2
+		=
+		\norm{Z-Y}^2+t(1-t)\norm{X_0-X_1}^2
+	\]
+	then gives the claim after taking expectations.
+
+	The sliced loss has the same flavor, but one must keep track of which geometry is used. The projection of a \(\Wass_2\) geodesic need not be the monotone one-dimensional geodesic between the projected endpoint measures. The preceding proof nevertheless applies after projection, using the projected coupling induced by \(\pi_{01}\). With the usual normalization by the uniform probability measure \(\sigma\) on \(\Sphere^{d-1}\), this gives, along the same \(\Wass_2\) geodesic,
+	\[
+		\SW_2^2(\alpha_t,\beta)
+		\geq
+		(1-t)\SW_2^2(\alpha_0,\beta)
+		+
+		t\SW_2^2(\alpha_1,\beta)
+		-
+		\frac{t(1-t)}{d}\Wass_2^2(\alpha_0,\alpha_1),
+	\]
+	because the projection cost satisfies
+	\(\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{x_0-x_1}}^2\d\sigma(\theta)=\norm{x_0-x_1}^2/d\) and \(\pi_{01}\) is \(\Wass_2\)-optimal. Thus this is a semiconcavity estimate for the sliced discrepancy along \(\Wass_2\) geodesics, with a \(\Wass_2\)-controlled correction. If one instead works in the idealized Hilbert embedding by projected quantile functions, straight sliced chords satisfy the exact identity with the last term \(\SW_2^2(\alpha_0,\alpha_1)\); the caveat is that such straight chords need not be realized by actual measures on \(\RR^d\).
+\end{rem}
 
 \paragraph{Dissipation and finite metric length.}
 \index{energy!dissipation}% strictindex
@@ -785,21 +833,49 @@ and hence, for $0\leq s<t$,
 	\leq
 	\sqrt{t-s}\,\bigl(h(x_s)-h(x_t)\bigr)^{1/2}.
 \]
-For a smooth Wasserstein gradient flow with metric derivative $|\dot\alpha_t|_{\Wass_2}$ and velocity $v_t=-\Wgrad f(\alpha_t)$,
+The Wasserstein analogue is the following elementary estimate.
+	\begin{prop}[Finite metric length from dissipation]\label{prop-gradient-flow-finite-length}
+		Let \((\alpha_r)_{r\in[0,T]}\) be an absolutely continuous curve in \((\Pp_2(\RR^d),\Wass_2)\). If
+		\[
+			f(\alpha_s)-f(\alpha_t)
+			=
+			\int_s^t |\dot\alpha_r|_{\Wass_2}^2\d r
+		\]
+		for all \(0\leq s<t\leq T\), then
+		\[
+			\operatorname{Length}_{\Wass_2}\bigl((\alpha_r)_{r\in[s,t]}\bigr)
+			=
+			\int_s^t |\dot\alpha_r|_{\Wass_2}\d r
+			\leq
+			\sqrt{t-s}\,\bigl(f(\alpha_s)-f(\alpha_t)\bigr)^{1/2}.
+		\]
+		For a smooth Wasserstein gradient flow with velocity \(v_r=-\Wgrad f(\alpha_r)\), the dissipation identity is equivalently
+		\[
+			f(\alpha_s)-f(\alpha_t)
+			=
+			\int_s^t |\dot\alpha_r|_{\Wass_2}^2\d r
+			=
+			\int_s^t\int\norm{v_r(x)}^2\d\alpha_r(x)\d r.
+		\]
+		With only the weaker maximal-slope energy-dissipation inequality, the same estimate holds with the right-hand side multiplied by \(\sqrt2\).
+	\end{prop}
+	\begin{proof}
+		Cauchy's inequality gives
+		\[
+			\int_s^t |\dot\alpha_r|_{\Wass_2}\d r
+			\leq
+			\sqrt{t-s}\left(\int_s^t|\dot\alpha_r|_{\Wass_2}^2\d r\right)^{1/2}.
+		\]
+		The exact dissipation identity gives the stated bound. The maximal-slope energy-dissipation inequality gives \(\frac12\int_s^t|\dot\alpha_r|_{\Wass_2}^2\d r\leq f(\alpha_s)-f(\alpha_t)\), hence the factor \(\sqrt2\).
+	\end{proof}
+In the abstract metric theory, this is formulated through the energy-dissipation identity for curves of maximal slope~\cite{ambrosio2006gradient,SantambrogioBook}. Thus an energy-dissipating trajectory has finite metric length on every finite interval as soon as the energy is bounded below there. More quantitatively, if \(m_T\leq f(\alpha_r)\) for \(0\leq r\leq T\), then
 \[
-	f(\alpha_s)-f(\alpha_t)
-	=
-	\int_s^t |\dot\alpha_r|_{\Wass_2}^2\d r
-	=
-	\int_s^t\int\norm{v_r(x)}^2\d\alpha_r(x)\d r,
-\]
-so
-\[
-	\int_s^t |\dot\alpha_r|_{\Wass_2}\d r
+	\Wass_2(\alpha_s,\alpha_t)
 	\leq
-	\sqrt{t-s}\,\bigl(f(\alpha_s)-f(\alpha_t)\bigr)^{1/2}.
+	\sqrt{f(\alpha_0)-m_T}\,\sqrt{t-s},
+	\qquad 0\leq s<t\leq T,
 \]
-In the abstract metric theory, the same conclusion is formulated through the energy-dissipation identity for curves of maximal slope~\cite{ambrosio2006gradient,SantambrogioBook}; with the weaker inequality convention only the numerical constant changes. Thus an energy-dissipating trajectory has finite metric length on every finite interval as soon as the energy is bounded below there. Non-coercivity means that sublevel sets need not be compact, but it does not by itself allow finite-time escape to infinity in the metric. Convergence rates require additional structure, such as geodesic convexity or a Polyak--{\L}ojasiewicz slope inequality. The latter originates in finite-dimensional optimization~\cite{Polyak1963GradientMethods,KarimiNutiniSchmidt2016PL}; in Wasserstein space it is obtained by replacing the Euclidean gradient norm by the metric slope. The tail-length refinement giving an explicit \(\Wass_2\)-distance to the minimizer set was communicated to us by Rapha{\"e}l Barboni.
+up to the factor \(\sqrt2\) for the metric energy-dissipation inequality. Hence the curve is \(1/2\)-H\"older continuous in Wasserstein space on finite-energy intervals. Non-coercivity means that sublevel sets need not be compact, but it does not by itself allow finite-time escape to infinity in the metric. Convergence rates require additional structure, such as geodesic convexity or a Polyak--{\L}ojasiewicz slope inequality. The latter originates in finite-dimensional optimization~\cite{Polyak1963GradientMethods,KarimiNutiniSchmidt2016PL}; in Wasserstein space it is obtained by replacing the Euclidean gradient norm by the metric slope. The tail-length refinement giving an explicit \(\Wass_2\)-distance to the minimizer set was communicated to us by Rapha{\"e}l Barboni.
 
 \paragraph{Convergence of the flow.}
 
@@ -1153,31 +1229,52 @@ The convergence theory then separates two regimes. Chizat and Bach prove global 
 		\psi(\lambda x,z)=\lambda^2\psi(x,z)
 		\qquad(\lambda>0),
 	\]
-	and that $f(\alpha)=J(G_\alpha)$ with $J$ convex and differentiable as a functional of the predictor. Let $\alpha$ be a smooth stationary point of the Wasserstein flow, so that $\nabla_x\delta f(\alpha)(x)=0$ on $\supp(\alpha)$. Assume also full directional support: for every nonzero direction $\omega$, the support of $\alpha$ intersects the ray $\{\lambda\omega:\lambda>0\}$. Then $\alpha$ is a global minimizer of $f$ over the mean-field model class.
+	and that $f(\alpha)=J(G_\alpha)$ with $J$ convex and differentiable as a functional of the predictor. Let $\alpha$ be a smooth stationary point of the Wasserstein flow, so that $\nabla_x\delta f(\alpha)(x)=0$ on $\supp(\alpha)$. Assume also full directional support: for every unit direction $\omega$, the support of $\alpha$ intersects the ray $\{\lambda\omega:\lambda>0\}$. Then $\alpha$ is a global minimizer of $f$ over the mean-field model class.
 \index{stationarity}% strictindex
 \index{global!minimizer}% strictindex
 \end{prop}
 \begin{proof}
-	Write
+	Choose the first-variation representative
 	\[
 		h_\alpha(x)=\delta f(\alpha)(x)
 		=
 		\left\langle \nabla J(G_\alpha),\psi(x,\cdot)\right\rangle_\rho .
 	\]
-	By two-homogeneity of $\psi$, one has $h_\alpha(\lambda x)=\lambda^2h_\alpha(x)$. Normalize a nonzero direction $\omega$ and choose $r_\omega>0$ with $r_\omega\omega\in\supp(\alpha)$. Stationarity gives a zero radial derivative at this point:
+	Additive constants in first variations do not affect the Wasserstein gradient or first-order inequalities between probability measures; this normalization is useful because it inherits the homogeneity of $\psi$. By two-homogeneity of $\psi$, one has
 	\[
-		0=\frac{\d}{\d r}h_\alpha(r\omega)\bigg|_{r=r_\omega}
-		=2r_\omega h_\alpha(\omega).
+		h_\alpha(\lambda x)=\lambda^2h_\alpha(x),
+		\qquad \lambda>0.
 	\]
-	Hence $h_\alpha(\omega)=0$ for every direction $\omega$, and by homogeneity $h_\alpha(x)=0$ for every $x$.
+	Taking \(x=0\) and any \(\lambda\neq1\) in this identity gives \(h_\alpha(0)=0\). We first record that stationarity forces \(h_\alpha\) to vanish on \(\supp(\alpha)\). Indeed, if \(x=r\omega\in\supp(\alpha)\) with \(r>0\) and \(\norm{\omega}=1\), then
+	\[
+		0=\dotp{\nabla h_\alpha(r\omega)}{\omega}
+		=\frac{\d}{\d s}h_\alpha(s\omega)\bigg|_{s=r}
+		=2r h_\alpha(\omega),
+	\]
+	so \(h_\alpha(\omega)=0\), and hence \(h_\alpha(x)=r^2h_\alpha(\omega)=0\). The case \(x=0\) has already been covered, so \(h_\alpha=0\) on \(\supp(\alpha)\) and \(\int h_\alpha\,\d\alpha=0\).
 
-	For any competitor $\beta$, convexity of $J$ gives
+	We now argue by contradiction. Suppose that a competitor \(\beta\) satisfies \(f(\beta)<f(\alpha)\). Since
+	\[
+		G_\beta-G_\alpha
+		=
+		\int \psi(x,\cdot)\d(\beta-\alpha)(x),
+	\]
+	convexity of \(J\) gives
 	\[
 		f(\beta)-f(\alpha)
 		\geq
-		\int h_\alpha(x)\d(\beta-\alpha)(x)=0.
+		\int h_\alpha(x)\d(\beta-\alpha)(x).
 	\]
-	Thus no competitor has smaller risk. The rigorous theorem replaces the full directional support assumption by propagation and overparameterization hypotheses ensuring that a negative descent direction would be present in the support and would contradict stationarity.
+	The left-hand side is negative, while \(\int h_\alpha\,\d\alpha=0\), so \(\int h_\alpha\,\d\beta<0\). Since \(h_\alpha(0)=0\), this strict negativity must occur away from the origin: there exists a nonzero point \(x=r\omega\) with \(r>0\), \(\norm{\omega}=1\), and \(h_\alpha(x)<0\). Equivalently \(h_\alpha(\omega)=h_\alpha(x)/r^2<0\). By full directional support, there is \(r_\omega>0\) such that \(r_\omega\omega\in\supp(\alpha)\). At this support point,
+	\[
+		\dotp{\nabla h_\alpha(r_\omega\omega)}{\omega}
+		=
+		2r_\omega h_\alpha(\omega)
+		<0,
+	\]
+	which contradicts the stationarity condition \(\nabla h_\alpha=0\) on \(\supp(\alpha)\). Thus no competitor has smaller risk.
+
+	The rigorous Chizat--Bach theorem replaces the full directional support assumption by propagation and overparameterization hypotheses ensuring that any negative first-variation direction is represented by the evolving support. The same radial-derivative contradiction, applied after this support-propagation step, then rules out non-optimal stationary limits.
 \index{stationarity}% strictindex
 \end{proof}
 
@@ -1338,7 +1435,7 @@ Transport also gives a short proof of the sharp Gaussian logarithmic Sobolev ine
 \end{prop}
 
 \begin{proof}
-	Let $\mu=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with $T_\sharp\mu=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge--Amp\`ere equation reads
+	Let $\al=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with $T_\sharp\al=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge--Amp\`ere equation reads
 	\[
 		f(x)e^{-\norm{x}^2/2}
 		=
@@ -1471,18 +1568,18 @@ The same Jacobian estimate gives the sharp quadratic transport-entropy inequalit
 \index{logarithmic Sobolev inequality}% strictindex
 
 \begin{prop}[Gaussian \(T_2\) inequality]\label{prop-gaussian-talagrand-t2}
-	Let $\mu=f\gamma_d$ be a probability measure with finite second moment. Then
+	Let $\al=f\gamma_d$ be a probability measure with finite second moment. Then
 	\[
-		\frac12\Wass_2^2(\mu,\gamma_d)
+		\frac12\Wass_2^2(\al,\gamma_d)
 		\leq
-		\KL(\mu|\gamma_d)
+		\KL(\al|\gamma_d)
 		=
 		\int f\log f\,\d\gamma_d .
 	\]
 \end{prop}
 
 \begin{proof}
-	Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier map with $T_\sharp\gamma_d=\mu$, and write $T(x)=x+\theta(x)$. The change of variables gives
+	Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier map with $T_\sharp\gamma_d=\al$, and write $T(x)=x+\theta(x)$. The change of variables gives
 	\[
 		f(T(x))e^{-\norm{T(x)}^2/2}\det(DT(x))
 		=
@@ -1500,7 +1597,7 @@ The same Jacobian estimate gives the sharp quadratic transport-entropy inequalit
 	\]
 	Using again $\log\det(\Id+D\theta)\leq\diverg\theta$ and integrating with respect to $\gamma_d$,
 	\[
-		\KL(\mu|\gamma_d)
+		\KL(\al|\gamma_d)
 		\geq
 		\frac12\int\norm{\theta}^2\,\d\gamma_d
 		+
@@ -1508,7 +1605,7 @@ The same Jacobian estimate gives the sharp quadratic transport-entropy inequalit
 	\]
 	The last integral vanishes by Gaussian integration by parts. Since $T$ is optimal,
 	\[
-		\int\norm{\theta}^2\,\d\gamma_d=\Wass_2^2(\gamma_d,\mu),
+		\int\norm{\theta}^2\,\d\gamma_d=\Wass_2^2(\gamma_d,\al),
 	\]
 	which proves the claim. Approximation gives the general case.
 \end{proof}
@@ -1801,9 +1898,9 @@ This ODE interpretation is due to Su, Boyd and Cand{\`e}s~\cite{SuBoydCandes2016
 \index{empirical measure}% strictindex
 We now take a functional $f$ on measures and lift it to particle configurations. For $X=(x_1,\ldots,x_n)\in(\RR^d)^n$, write
 \begin{equation}\label{eq-empirical-momentum-lift}
-	\mu_X \eqdef \frac1n\sum_{i=1}^n \delta_{x_i},
+	\al_X \eqdef \frac1n\sum_{i=1}^n \delta_{x_i},
 	\qquad
-	F(X) \eqdef f(\mu_X).
+	F(X) \eqdef f(\al_X).
 \end{equation}
 This is the same empirical lift as in \eqref{eq:wassflows-particles}, and is the particle viewpoint underlying mean-field analyses of wide neural networks and Wasserstein gradient methods~\cite{ChizatBach2018OverparameterizedOT,MeiMontanariNguyen2018MeanFieldNN,RotskoffVandenEijnden2018Trainability}. The important point is that the configuration space is not used with the plain Euclidean metric, but with the empirical metric
 \[
@@ -1816,7 +1913,7 @@ which is the metric induced by $\Wass_2$ on equally weighted empirical measures 
 	\left.\frac{\d}{\d\varepsilon}\right|_{\varepsilon=0}
 	F(x_1,\ldots,x_i+\varepsilon\xi,\ldots,x_n)
 	=
-	\frac1n\dotp{\nabla\delta f(\mu_X)(x_i)}{\xi}.
+	\frac1n\dotp{\nabla\delta f(\al_X)(x_i)}{\xi}.
 \]
 Thus, if $\nabla^{(n)}F$ denotes the gradient for the metric $\norm{\cdot}_n$, then
 \begin{equation}\label{eq-empirical-lift-gradient}
@@ -1824,31 +1921,31 @@ Thus, if $\nabla^{(n)}F$ denotes the gradient for the metric $\norm{\cdot}_n$, t
 	=
 	n\nabla_{x_i}F(X)
 	=
-	\nabla\delta f(\mu_X)(x_i)
+	\nabla\delta f(\al_X)(x_i)
 	=
-	\Wgrad f(\mu_X)(x_i).
+	\Wgrad f(\al_X)(x_i).
 \end{equation}
-The first-order Wasserstein particle descent is therefore $\dot x_i=v_{\mu_X}(x_i)$ with
+The first-order Wasserstein particle descent is therefore $\dot x_i=v_{\al_X}(x_i)$ with
 \begin{equation}\label{eq-momentum-wasserstein-velocity}
-	v_\mu(x)\eqdef -\Wgrad f(\mu)(x)=-\nabla\delta f(\mu)(x).
+	v_\al(x)\eqdef -\Wgrad f(\al)(x)=-\nabla\delta f(\al)(x).
 \end{equation}
 Applying the heavy-ball equation to the empirical metric gives the second-order Wasserstein momentum system
 \begin{equation}\label{eq-wasserstein-momentum-particles}
 	\dot x_i(t)=s_i(t),
 	\qquad
-	\dot s_i(t)=-\gamma s_i(t)+v_{\mu_t}(x_i(t)),
+	\dot s_i(t)=-\gamma s_i(t)+v_{\al_t}(x_i(t)),
 	\qquad
-	\mu_t=\frac1n\sum_{i=1}^n\delta_{x_i(t)} .
+	\al_t=\frac1n\sum_{i=1}^n\delta_{x_i(t)} .
 \end{equation}
 Equivalently,
 \[
 	\ddot x_i(t)+\gamma\dot x_i(t)
 	=
-	v_{\mu_t}(x_i(t))
+	v_{\al_t}(x_i(t))
 	=
-	-\Wgrad f(\mu_t)(x_i(t)).
+	-\Wgrad f(\al_t)(x_i(t)).
 \]
-This is an explicit inertial particle method for the measure energy $f$: the Wasserstein steepest-descent field acts as an acceleration rather than as an instantaneous velocity. The statement is deliberately formal at this level; rigorous mean-field limits require stability and regularity assumptions on $v_\mu$, as in propagation-of-chaos arguments for classical Vlasov dynamics and in mean-field analyses of interacting learning systems.
+This is an explicit inertial particle method for the measure energy $f$: the Wasserstein steepest-descent field acts as an acceleration rather than as an instantaneous velocity. The statement is deliberately formal at this level; rigorous mean-field limits require stability and regularity assumptions on $v_\al$, as in propagation-of-chaos arguments for classical Vlasov dynamics and in mean-field analyses of interacting learning systems.
 \index{inertial particle method}% strictindex
 
 \begin{prop}[Discrete mechanical energy dissipation]\label{prop-second-order-energy-dissipation}
@@ -1871,19 +1968,19 @@ This is an explicit inertial particle method for the measure energy $f$: the Was
 	\end{equation}
 \end{prop}
 \begin{proof}
-	By \eqref{eq-empirical-lift-gradient} and the definition $v_\mu=-\Wgrad f(\mu)$, one has $\nabla_{x_i}F(X)=-v_{\mu_X}(x_i)/n$. Hence
+	By \eqref{eq-empirical-lift-gradient} and the definition $v_\al=-\Wgrad f(\al)$, one has $\nabla_{x_i}F(X)=-v_{\al_X}(x_i)/n$. Hence
 	\[
 		\frac{\d}{\d t}F(X(t))
 		=
 		\sum_{i=1}^n \dotp{\nabla_{x_i}F(X(t))}{s_i(t)}
 		=
-		-\frac1n\sum_{i=1}^n\dotp{v_{\mu_t}(x_i(t))}{s_i(t)}.
+		-\frac1n\sum_{i=1}^n\dotp{v_{\al_t}(x_i(t))}{s_i(t)}.
 	\]
 	On the other hand,
 	\[
 		\frac{\d}{\d t}\frac1{2n}\sum_i\norm{s_i(t)}^2
 		=
-		\frac1n\sum_i\dotp{s_i(t)}{-\gamma s_i(t)+v_{\mu_t}(x_i(t))}.
+		\frac1n\sum_i\dotp{s_i(t)}{-\gamma s_i(t)+v_{\al_t}(x_i(t))}.
 	\]
 	The force terms cancel, leaving \eqref{eq-second-order-energy-dissipation}.
 \end{proof}
@@ -1896,12 +1993,12 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 \begin{prop}[Phase-space Liouville formulation]\label{prop-second-order-liouville}
 \index{Liouville equation}% strictindex
 \index{phase space}% strictindex
-	Let $v_\mu$ be smooth enough that \eqref{eq-wasserstein-momentum-particles} has a classical solution. Define the empirical phase-space measure
+	Let $v_\al$ be smooth enough that \eqref{eq-wasserstein-momentum-particles} has a classical solution. Define the empirical phase-space measure
 	\[
 		\eta_t^n \eqdef \frac1n\sum_{i=1}^n\delta_{(x_i(t),s_i(t))}
 		\in \Pp(\RR^d_x\times\RR^d_s),
 		\qquad
-		\mu_t^n=(\pi_x)_\sharp\eta_t^n .
+		\al_t^n=(\pi_x)_\sharp\eta_t^n .
 	\]
 	Then $\eta_t^n$ solves, in the sense of distributions,
 	\begin{equation}\label{eq-second-order-liouville-empirical}
@@ -1909,7 +2006,7 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 		+
 		\nabla_x\cdot(s\,\eta_t^n)
 		+
-		\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t^n}(x))\,\eta_t^n\bigr)
+		\nabla_s\cdot\bigl((-\gamma s+v_{\al_t^n}(x))\,\eta_t^n\bigr)
 		=0 .
 	\end{equation}
 	If, as $n\to\infty$, the empirical phase-space laws converge to a smooth density $\eta_t(x,s)$ and the nonlinear fields converge accordingly, the limiting kinetic equation is
@@ -1918,10 +2015,10 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 		+
 		\nabla_x\cdot(s\,\eta_t)
 		+
-		\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t}(x))\,\eta_t\bigr)
+		\nabla_s\cdot\bigl((-\gamma s+v_{\al_t}(x))\,\eta_t\bigr)
 		=0,
 		\qquad
-		\mu_t=(\pi_x)_\sharp\eta_t .
+		\al_t=(\pi_x)_\sharp\eta_t .
 	\end{equation}
 \end{prop}
 \begin{proof}
@@ -1934,7 +2031,7 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 		\left[
 		\dotp{\nabla_x\varphi(x_i,s_i)}{s_i}
 		+
-		\dotp{\nabla_s\varphi(x_i,s_i)}{-\gamma s_i+v_{\mu_t^n}(x_i)}
+		\dotp{\nabla_s\varphi(x_i,s_i)}{-\gamma s_i+v_{\al_t^n}(x_i)}
 		\right].
 	\]
 	Rewriting the right-hand side as an integral against $\eta_t^n$ and integrating by parts gives \eqref{eq-second-order-liouville-empirical}. Passing formally to the mean-field limit gives \eqref{eq-second-order-liouville-density}.
@@ -1945,9 +2042,9 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 \index{inertia}% strictindex
 	If damping is removed, or if inertia dominates friction after rescaling, \eqref{eq-wasserstein-momentum-particles} becomes
 	\[
-		\ddot x_i(t)=v_{\mu_t}(x_i(t)).
+		\ddot x_i(t)=v_{\al_t}(x_i(t)).
 	\]
-	This is Newton's law with acceleration field $v_{\mu_t}$. Thus first-order Wasserstein gradient flow reads the force as a velocity, while second-order momentum flow reads the same force as an acceleration. The price is that the state is no longer just the spatial measure $\mu_t$; it is the phase-space law of position and velocity. In this limit the flow is Hamiltonian rather than dissipative whenever the force comes from a smooth interaction energy and $\gamma=0$.
+	This is Newton's law with acceleration field $v_{\al_t}$. Thus first-order Wasserstein gradient flow reads the force as a velocity, while second-order momentum flow reads the same force as an acceleration. The price is that the state is no longer just the spatial measure $\al_t$; it is the phase-space law of position and velocity. In this limit the flow is Hamiltonian rather than dissipative whenever the force comes from a smooth interaction energy and $\gamma=0$.
 \end{rem}
 
 \begin{example}[Quadratic energies and gravitational attraction]\label{ex-quadratic-momentum-gravity}
@@ -1956,20 +2053,20 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 \index{gravity interaction}% strictindex
 	The quadratic-plus-linear energies
 	\[
-		f(\mu)=\frac12\iint k(x,y)\,\d\mu(x)\d\mu(y)+\int V(x)\,\d\mu(x),
+		f(\al)=\frac12\iint k(x,y)\,\d\al(x)\d\al(y)+\int V(x)\,\d\al(x),
 		\qquad k(x,y)=k(y,x),
 	\]
 	are the interaction energies already discussed around \eqref{eq:quadratic-func}, up to the harmless convention of inserting the factor $1/2$. The force computed there becomes, in the present inertial setting, an acceleration:
 	\[
-		v_\mu(x)
+		v_\al(x)
 		=
-		-\int \nabla_x k(x,y)\,\d\mu(y)-\nabla V(x).
+		-\int \nabla_x k(x,y)\,\d\al(y)-\nabla V(x).
 	\]
 	For the attractive Newtonian kernel in three dimensions, $k(x,y)=-G/\norm{x-y}$, understood with a short-distance regularization if needed, this gives
 	\[
-		v_\mu(x)
+		v_\al(x)
 		=
-		G\int \frac{y-x}{\norm{x-y}^3}\,\d\mu(y)-\nabla V(x),
+		G\int \frac{y-x}{\norm{x-y}^3}\,\d\al(y)-\nabla V(x),
 	\]
 	the usual mean-field gravitational acceleration. The phase-space equation \eqref{eq-second-order-liouville-density} is then a damped Vlasov-type equation. This kinetic viewpoint is classical in statistical physics: Boltzmann introduced the description of gases through phase-space distributions, the collisionless mean-field limit gives Liouville--Vlasov equations, and adding collision operators leads to the Boltzmann equation~\cite{CercignaniIllnerPulvirenti1994DiluteGases,Villani2002Boltzmann,BraunHepp1977Vlasov}.
 	\index{Vlasov equation}% strictindex
@@ -1981,17 +2078,17 @@ The numerical illustration below uses the energy-distance kernel
 \[
 	k(x,y)=-\norm{x-y},
 	\qquad
-	f(\mu)=\MMD_k^2(\mu,\beta)
+	f(\al)=\MMD_k^2(\al,\beta)
 	=
-	\iint k(x,y)\,\d(\mu-\beta)(x)\d(\mu-\beta)(y).
+	\iint k(x,y)\,\d(\al-\beta)(x)\d(\al-\beta)(y).
 \]
-This is the usual squared energy distance between $\mu$ and $\beta$. Away from the diagonal, its Wasserstein velocity is
+This is the usual squared energy distance between $\al$ and $\beta$. Away from the diagonal, its Wasserstein velocity is
 \[
-	v_\mu(x)
+	v_\al(x)
 	=
-	2\int \frac{x-y}{\norm{x-y}}\,\d(\mu-\beta)(y).
+	2\int \frac{x-y}{\norm{x-y}}\,\d(\al-\beta)(y).
 \]
-For numerical stability, Figure~\ref{fig:gradflow-second-order-momentum-mmd} uses the smoothed distance $\sqrt{\norm{x-y}^2+\delta^2}$ with a small $\delta$. It compares the first-order flow with the undamped Newton lift $\ddot x=v_{\mu_t}(x)=-\nabla_W f(\mu_t)(x)$, initialized with zero velocity. The initial measure is a single Gaussian located to the left of a two-Gaussian target mixture. Both the transported measure and the target are discretized by large empirical clouds, and the smooth density views are KDE renderings of these particles. The trajectory panels display only a representative subset of initial particles selected by farthest-point sampling.
+For numerical stability, Figure~\ref{fig:gradflow-second-order-momentum-mmd} uses the smoothed distance $\sqrt{\norm{x-y}^2+\delta^2}$ with a small $\delta$. It compares the first-order flow with the undamped Newton lift $\ddot x=v_{\al_t}(x)=-\nabla_W f(\al_t)(x)$, initialized with zero velocity. The initial measure is a single Gaussian located to the left of a two-Gaussian target mixture. Both the transported measure and the target are discretized by large empirical clouds, and the smooth density views are KDE renderings of these particles. The trajectory panels display only a representative subset of initial particles selected by farthest-point sampling.
 
 \begin{figure}[H]
 \centering
@@ -2038,7 +2135,7 @@ For numerical stability, Figure~\ref{fig:gradflow-second-order-momentum-mmd} use
 &
 \mmdmomentumpanel{figures/gradflow-second-order-momentum-mmd/newton-density-t100.pdf}
 \end{tabular}
-\caption{\emph{First-order and Newton Wasserstein particle flows for the squared MMD with the energy-distance kernel $k(x,y)=-\norm{x-y}$.} The first row follows the overdamped Wasserstein gradient flow. The second row follows the infinite-momentum Newton dynamics $\ddot x=-\nabla_W f(\mu_t)(x)$, so the same Wasserstein force is read as an acceleration rather than a velocity. Both rows use the same large empirical source cloud and the same empirical two-Gaussian target cloud. Dashed gray contours show a KDE of the target particles, colored panels show KDEs of the evolving transported particles, and the left panels show farthest-point-subsampled trajectories.}
+\caption{\emph{First-order and Newton Wasserstein particle flows for the squared MMD with the energy-distance kernel $k(x,y)=-\norm{x-y}$.} The first row follows the overdamped Wasserstein gradient flow. The second row follows the infinite-momentum Newton dynamics $\ddot x=-\nabla_W f(\al_t)(x)$, so the same Wasserstein force is read as an acceleration rather than a velocity. Both rows use the same large empirical source cloud and the same empirical two-Gaussian target cloud. Dashed gray contours show a KDE of the target particles, colored panels show KDEs of the evolving transported particles, and the left panels show farthest-point-subsampled trajectories.}
 \label{fig:gradflow-second-order-momentum-mmd}
 \end{figure}
 
@@ -2053,18 +2150,18 @@ The previous interaction example has a genuine value on empirical measures: once
 \index{phase-space equation}% strictindex
 	Let
 	\[
-		f(\mu)=
+		f(\al)=
 		\begin{cases}
 			\displaystyle \int_{\RR^d} \rho(x)\log\rho(x)\,\d x,
-			& \text{if } \mu=\rho\d x,\\[.4em]
+			& \text{if } \al=\rho\d x,\\[.4em]
 			+\infty, & \text{otherwise.}
 		\end{cases}
 	\]
-	Thus $f(\mu_X)=+\infty$ for an empirical measure $\mu_X=n^{-1}\sum_i\delta_{x_i}$, and the finite-dimensional lift $F(X)=f(\mu_X)$ is not meaningful. For $\mu=\rho\d x$ with a smooth positive density, however,
+	Thus $f(\al_X)=+\infty$ for an empirical measure $\al_X=n^{-1}\sum_i\delta_{x_i}$, and the finite-dimensional lift $F(X)=f(\al_X)$ is not meaningful. For $\al=\rho\d x$ with a smooth positive density, however,
 	\[
-		\delta f(\mu)(x)=\log\rho(x)+1,
+		\delta f(\al)(x)=\log\rho(x)+1,
 			\qquad
-		v_\mu(x)=-\nabla\log\rho(x).
+		v_\al(x)=-\nabla\log\rho(x).
 	\]
 	The first-order Wasserstein gradient flow is therefore the heat equation $\partial_t\rho_t=\Delta\rho_t$. If the spatial marginal remains smooth and positive, the corresponding formal second-order phase-space equation is
 	\begin{equation}\label{eq-second-order-entropy-phase-space}

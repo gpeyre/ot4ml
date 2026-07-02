@@ -594,10 +594,22 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="sliced-radon-barycenter.ipynb"><img src="thumbnails/sliced-radon-barycenter.png" alt="Sliced/Radon barycentric interpolation" width="210"></a><br>
+  <strong>Sliced/Radon barycentric interpolation</strong><br>
+  <a href="sliced-radon-barycenter.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sliced-radon-barycenter.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="min-sliced-transport-plan.ipynb"><img src="thumbnails/min-sliced-transport-plan.png" alt="Min-sliced lifted transport plan" width="210"></a><br>
   <strong>Min-sliced lifted transport plan</strong><br>
   <a href="min-sliced-transport-plan.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/min-sliced-transport-plan.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+</tr>
+</table>
+
+<table>
+<tr>
 
 <td width="33%" align="center" valign="top">
   <a href="wasserstein-procrustes-rigid-motion.ipynb"><img src="thumbnails/wasserstein-procrustes-rigid-motion.png" alt="Wasserstein--Procrustes rigid alignment" width="210"></a><br>
@@ -1003,10 +1015,28 @@ Colab from the badge. The Colab links target the `main` branch of
 <tr>
 
 <td width="33%" align="center" valign="top">
+  <a href="generative-w2-vs-sliced-flow-shapes.ipynb"><img src="thumbnails/generative-w2-vs-sliced-flow-shapes.png" alt="Wasserstein and sliced-Wasserstein shape flows" width="210"></a><br>
+  <strong>Wasserstein and sliced-Wasserstein shape flows</strong><br>
+  <a href="generative-w2-vs-sliced-flow-shapes.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/generative-w2-vs-sliced-flow-shapes.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="generative-w2-vs-svgd-entropy-flow.ipynb"><img src="thumbnails/generative-w2-vs-svgd-entropy-flow.png" alt="Wasserstein KL flow and SVGD particle trajectories" width="210"></a><br>
+  <strong>Wasserstein KL flow and SVGD trajectories</strong><br>
+  <a href="generative-w2-vs-svgd-entropy-flow.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/generative-w2-vs-svgd-entropy-flow.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="moment-measure-forward-map.ipynb"><img src="thumbnails/moment-measure-forward-map.png" alt="Forward moment-measure construction" width="210"></a><br>
   <strong>Forward moment-measure construction</strong><br>
   <a href="moment-measure-forward-map.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/moment-measure-forward-map.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
+
+</tr>
+</table>
+
+<table>
+<tr>
 
 <td width="33%" align="center" valign="top">
   <a href="generative-mean-shift-pde.ipynb"><img src="thumbnails/generative-mean-shift-pde.png" alt="Mean-shift PDE for Gaussian-kernel attention" width="210"></a><br>

@@ -42,6 +42,12 @@ By definition of the Riesz representative for the $L^2(\alpha)$ metric, this rep
 \(f( (\Id + \tau v)_\sharp \alpha_t ) = f(\alpha_t) - \tau \int \delta f(\alpha_t) \diverg( v \alpha_t ) \d x + o(\tau)\)
 \(= f(\alpha_t) + \tau \int \langle \nabla_x \delta f(\alpha_t)(x), v(x) \rangle \d \alpha_t(x) + o(\tau)\)
 \(\min_{v} f(\alpha_t) + \tau \int \Big[ \frac{1}{2} \norm{v(x)}^2 + \langle \Wgrad f(\alpha_t)(x), v(x) \rangle \Big]\d \alpha_t(x) + o(\tau).\)
+\paragraph{Metric derivative and curves of maximal slope.}
+For an absolutely continuous curve $x_t$ in a metric space $(\mathcal X,d)$, \( |\dot x_t|\eqdef\lim_{h\to0}d(x_{t+h},x_t)/|h| \) a.e.; equivalently it is the minimal $g\in L^1_{\rm loc}$ such that \(d(x_s,x_t)\leq\int_s^t g(r)\d r\). For l.s.c. \(f:\mathcal X\to(-\infty,+\infty]\), the local slope is \( |\partial f|(x)\eqdef\limsup_{y\to x,\ y\neq x}(f(x)-f(y))_+/d(x,y)\). A curve of maximal slope satisfies
+\[
+f(x_t)+\frac12\int_s^t|\dot x_r|^2\d r+\frac12\int_s^t|\partial f|^2(x_r)\d r\leq f(x_s).
+\]
+For $\alpha_t\in\Pp_2$, \( |\dot\alpha_t|_{\Wass_2}\leq\norm{v_t}_{L^2(\alpha_t)}\), with equality for the minimal continuity-equation velocity, and in the smooth regime \( |\partial f|(\alpha_t)=\norm{\Wgrad f(\alpha_t)}_{L^2(\alpha_t)}\).
 \paragraph{Discrete evolutions.}
 If $f(\alpha)$ can be evaluated on discrete distributions and $\Wgrad$ is continuous in this case, the flow \eqref{eq:wassflow-pde} maintains the number of Dirac masses, $\alpha_t = \frac{1}{n} \sum_i \delta_{x_i(t)}$. The particles $X(t):= (x_i(t))_i$ evolve according to a system of coupled ODEs:
 
@@ -81,8 +87,8 @@ Thus MMD-type training energies are exactly an interaction energy plus a linear 
 and the one-particle law $\alpha_t=\rho_t\d x$ directly satisfies the linear Fokker--Planck equation
 
 \(\partial_t\rho_t=-\diverg(b\rho_t)+\sigma^2\Delta\rho_t.\)
-\(\d X_i^n(t)=b(X_i^n(t),\mu_t^n)\d t+\sqrt{2}\sigma\d B_i(t), \qquad \mu_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)}.\)
-For finite $n$, the empirical law $\mu_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\mu_t^n$ converges in probability to this law.
+\(\d X_i^n(t)=b(X_i^n(t),\al_t^n)\d t+\sqrt{2}\sigma\d B_i(t), \qquad \al_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)}.\)
+For finite $n$, the empirical law $\al_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\al_t^n$ converges in probability to this law.
 
 \(\partial_t \rho_t = -\diverg\big(b(x,\rho_t)\rho_t\big) + \sigma^2\Delta\rho_t.\)
 \(b(x,\rho)=-\nabla \frac{\delta \mathcal E}{\delta \rho}(x),\)
@@ -202,7 +208,7 @@ The concavity of $\det^{1/d}$ on positive semidefinite matrices and the identity
 \(\rho_t(T_t(x))^{-1/d} \geq (1-t)\rho_0(x)^{-1/d}+t\rho_1(T(x))^{-1/d} \geq\kappa^{-1/d}.\)
 Hence $\rho_t\leq\kappa$ for all $t$. The general case follows by approximation and lower semicontinuity of the $L^\infty$ bound, as in McCann's displacement-convexity theory.
 \end{proof}
-\paragraph{A useful non-example.}
+\begin{example}[Squared Wasserstein distance need not be geodesically convex]
 The squared distance to a fixed measure is not geodesically convex in general. This is a sharp contrast with Hilbert spaces, where \(x\mapsto\norm{x-y}^2\) is convex along line segments.
 
 \[
@@ -215,6 +221,7 @@ The squared distance to a fixed measure is not geodesically convex in general. T
 \(\alpha_{1/2}=\frac12\de_{(-1/2,1/2)}+\frac12\de_{(1/2,-1/2)}.\)
 \(\Wass_2^2(\alpha_0,\beta) = \Wass_2^2(\alpha_1,\beta) = \frac12, \qquad \Wass_2^2(\alpha_{1/2},\beta) = 1,\)
 which violates geodesic convexity. Thus objectives built from squared Wasserstein distances can be non-convex in the Wasserstein geometry itself.
+\end{example}
 
 \paragraph{Dissipation and finite metric length.}
 \(\frac{\d}{\d t}h(x_t) = -\norm{\nabla h(x_t)}^2 = -\norm{\dot x_t}^2.\)
@@ -227,15 +234,26 @@ Thus, for $0\leq s<t$, Cauchy's inequality gives
 =
 \sqrt{t-s}\,\bigl(h(x_s)-h(x_t)\bigr)^{1/2}.
 \end{equation}
-The Wasserstein analogue uses the metric derivative $|\dot\alpha_t|_{\Wass_2}$ of an absolutely continuous curve. In the smooth formal setting, a Wasserstein gradient flow with velocity $v_t=-\Wgrad f(\alpha_t)$ satisfies the energy-dissipation identity
-
-\(f(\alpha_s)-f(\alpha_t) = \int_s^t |\dot\alpha_r|_{\Wass_2}^2\d r = \int_s^t\int \norm{v_r(x)}^2\d\alpha_r(x)\d r,\)
-with only an inessential constant change under the weaker metric energy-dissipation inequality convention.
-\begin{equation}\label{eq-wasserstein-gradient-flow-length}
-\int_s^t |\dot\alpha_r|_{\Wass_2}\,\d r
-\leq
-\sqrt{t-s}\,\bigl(f(\alpha_s)-f(\alpha_t)\bigr)^{1/2}.
-\end{equation}
+\begin{prop}[Finite metric length from dissipation]\label{prop-gradient-flow-finite-length}
+Assume that an absolutely continuous curve \((\alpha_r)_{r\in[0,T]}\) in \((\Pp_2,\Wass_2)\) satisfies \(f(\alpha_s)-f(\alpha_t)=\int_s^t|\dot\alpha_r|_{\Wass_2}^2\d r\). Then
+	\begin{equation}\label{eq-wasserstein-gradient-flow-length}
+	\operatorname{Length}_{\Wass_2}\bigl((\alpha_r)_{r\in[s,t]}\bigr)
+	=
+	\int_s^t |\dot\alpha_r|_{\Wass_2}\,\d r
+	\leq
+	\sqrt{t-s}\,\bigl(f(\alpha_s)-f(\alpha_t)\bigr)^{1/2}.
+	\end{equation}
+For a smooth Wasserstein flow with velocity \(v_r=-\Wgrad f(\alpha_r)\), the identity is \(f(\alpha_s)-f(\alpha_t)=\int_s^t|\dot\alpha_r|_{\Wass_2}^2\d r=\int_s^t\int\norm{v_r}^2\d\alpha_r\d r\). Under the weaker maximal-slope EDI, multiply the right side by \(\sqrt2\).
+\end{prop}
+\begin{proof}
+Cauchy's inequality gives \(\int_s^t|\dot\alpha_r|_{\Wass_2}\d r\leq\sqrt{t-s}\left(\int_s^t|\dot\alpha_r|_{\Wass_2}^2\d r\right)^{1/2}\). The dissipation identity gives the result; the EDI only bounds the square-speed integral by \(2(f(\alpha_s)-f(\alpha_t))\).
+\end{proof}
+If \(m_T\leq f(\alpha_r)\) on \(0\leq r\leq T\), then the proposition gives
+\[
+\Wass_2(\alpha_s,\alpha_t)\leq\sqrt{f(\alpha_0)-m_T}\sqrt{t-s},
+\qquad 0\leq s<t\leq T,
+\]
+up to a factor \(\sqrt2\) under the EDI. Thus dissipating curves are \(1/2\)-H\"older continuous in Wasserstein space on finite-energy intervals.
 \paragraph{Convergence: the Wasserstein--PL viewpoint.}
 \(|\partial f|^2(\alpha) \eqdef \int\norm{\Wgrad f(\alpha)(x)}^2\,\d\alpha(x)\). This is the Wasserstein analogue of the finite-dimensional Polyak--{\L}ojasiewicz condition, with the Euclidean gradient norm replaced by the metric slope.
 \begin{defn}[Wasserstein--Polyak--{\L}ojasiewicz inequality]\label{def-wasserstein-pl}
@@ -326,6 +344,8 @@ hence \(\alpha_\infty\in\operatorname{Argmin}f\). Sending the endpoint of the le
 The distance-to-the-set bound follows because \(\alpha_\infty\) is one minimizer.
 \end{proof}
 \paragraph{Attribution.} The distance-to-\(\operatorname{Argmin}f\) estimate is the elementary tail-length refinement of the PL energy decay; this exact formulation was communicated to us by Rapha{\"e}l Barboni.
+\paragraph{Geodesic strong convexity.}
+Strong geodesic convexity gives a direct route to the Wasserstein--PL inequality: displacement convexity bounds the metric slope from below by the energy gap.
 \begin{prop}[Strong geodesic convexity implies Wasserstein--PL]\label{prop-strong-geodesic-convexity-implies-pl}
 Assume that \(f\) is \(\lambda\)-geodesically convex with \(\lambda>0\), that \(f_\star\) is attained at some \(\alpha^\star\), and that the Wasserstein slope is finite at \(\alpha\). Then
 \(|\partial f|^2(\alpha) \geq 2\lambda\bigl(f(\alpha)-f_\star\bigr).\)
@@ -432,7 +452,7 @@ Let $\gamma_d$ be the standard Gaussian measure on $\RR^d$. If $f$ is smooth, po
 \(\mathrm{Ent}_{\gamma_d}(f) \eqdef \int f\log f\,\d\gamma_d \leq \frac12\int \frac{\norm{\nabla f}^2}{f}\,\d\gamma_d.\)
 \end{prop}
 \begin{proof}
-Let $\mu=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with $T_\sharp\mu=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge--Amp\`ere equation reads \(f(x)e^{-\norm{x}^2/2} = e^{-\norm{T(x)}^2/2}\det(DT(x)).\)
+Let $\al=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with $T_\sharp\al=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge--Amp\`ere equation reads \(f(x)e^{-\norm{x}^2/2} = e^{-\norm{T(x)}^2/2}\det(DT(x)).\)
 Thus
 \(\log f(x) = -\dotp{x}{\theta(x)} -\frac12\norm{\theta(x)}^2 + \log\det(\Id+D\theta(x)).\)
 Since $DT$ is positive semidefinite, $\log\det(\Id+D\theta)\leq\tr(D\theta)=\diverg\theta$. Multiplying by $f$ and integrating with respect to $\gamma_d$ gives
@@ -461,16 +481,16 @@ Thus \(\lambda\int g^2\d\beta\leq\int\norm{\nabla g}^2\d\beta\). This is the exa
 Indeed \(|\partial E_2|_{-1,\beta}^2=\int\norm{\nabla h}^2\d\beta\), so \(2\lambda E_2\leq|\partial E_2|_{-1,\beta}^2\), and the gradient flow \(\partial_t h_t=Lh_t\) satisfies \(\chi^2(h_t\beta|\beta)\leq e^{-2\lambda t}\chi^2(h_0\beta|\beta)\).
 \paragraph{Talagrand's transport-entropy inequality.}
 \begin{prop}[Gaussian \(T_2\) inequality]\label{prop-gaussian-talagrand-t2}
-Let $\mu=f\gamma_d$ be a probability measure with finite second moment. Then
-\(\frac12\Wass_2^2(\mu,\gamma_d) \leq \KL(\mu|\gamma_d) = \int f\log f\,\d\gamma_d.\)
+Let $\al=f\gamma_d$ be a probability measure with finite second moment. Then
+\(\frac12\Wass_2^2(\al,\gamma_d) \leq \KL(\al|\gamma_d) = \int f\log f\,\d\gamma_d.\)
 \end{prop}
 \begin{proof}
-Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier map with $T_\sharp\gamma_d=\mu$, and write $T(x)=x+\theta(x)$. The change of variables gives
+Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier map with $T_\sharp\gamma_d=\al$, and write $T(x)=x+\theta(x)$. The change of variables gives
 \(f(T(x))e^{-\norm{T(x)}^2/2}\det(DT(x)) = e^{-\norm{x}^2/2}.\)
 Hence
 \(\log f(T(x)) = \dotp{x}{\theta(x)} + \frac12\norm{\theta(x)}^2 - \log\det(\Id+D\theta(x)).\)
-Using again $\log\det(\Id+D\theta)\leq\diverg\theta$ and integrating with respect to $\gamma_d$, \(\KL(\mu|\gamma_d) \geq \frac12\int\norm{\theta}^2\,\d\gamma_d + \int(\dotp{x}{\theta}-\diverg\theta)\,\d\gamma_d.\)
-The last integral vanishes by Gaussian integration by parts. Since $T$ is optimal, \(\int\norm{\theta}^2\,\d\gamma_d=\Wass_2^2(\gamma_d,\mu),\)
+Using again $\log\det(\Id+D\theta)\leq\diverg\theta$ and integrating with respect to $\gamma_d$, \(\KL(\al|\gamma_d) \geq \frac12\int\norm{\theta}^2\,\d\gamma_d + \int(\dotp{x}{\theta}-\diverg\theta)\,\d\gamma_d.\)
+The last integral vanishes by Gaussian integration by parts. Since $T$ is optimal, \(\int\norm{\theta}^2\,\d\gamma_d=\Wass_2^2(\gamma_d,\al),\)
 which proves the claim. Approximation gives the general case.
 \end{proof}
 \paragraph{The HWI bridge.}
@@ -573,21 +593,33 @@ Thus no competitor has smaller energy. For square-loss two-layer mean-field mode
 \end{proof}
 \begin{prop}[Formal global optimality for two-homogeneous mean-field flows]\label{prop-formal-chizat-bach}
 Assume that the feature is positively two-homogeneous in the neuron variable, \(\psi(\lambda x,z)=\lambda^2\psi(x,z) \qquad(\lambda>0),\)
-and that $f(\alpha)=J(G_\alpha)$ with $J$ convex and differentiable as a functional of the predictor. Let $\alpha$ be a smooth stationary point of the Wasserstein flow, so that $\nabla_x\delta f(\alpha)(x)=0$ on $\supp(\alpha)$. Assume also full directional support: for every nonzero direction $\omega$, the support of $\alpha$ intersects the ray $\{\lambda\omega:\lambda>0\}$. Then $\alpha$ is a global minimizer of $f$ over the mean-field model class.
+and that $f(\alpha)=J(G_\alpha)$ with $J$ convex and differentiable as a functional of the predictor. Let $\alpha$ be a smooth stationary point of the Wasserstein flow, so that $\nabla_x\delta f(\alpha)(x)=0$ on $\supp(\alpha)$. Assume also full directional support: for every unit direction $\omega$, the support of $\alpha$ intersects the ray $\{\lambda\omega:\lambda>0\}$. Then $\alpha$ is a global minimizer of $f$ over the mean-field model class.
 \end{prop}
 \begin{proof}
-Write
+Choose the homogeneous first-variation representative
 \[
 h_\alpha(x)=\delta f(\alpha)(x)
 =
 \left\langle \nabla J(G_\alpha),\psi(x,\cdot)\right\rangle_\rho.
 \]
-By two-homogeneity of $\psi$, one has $h_\alpha(\lambda x)=\lambda^2h_\alpha(x)$. Normalize a nonzero direction $\omega$ and choose $r_\omega>0$ with $r_\omega\omega\in\supp(\alpha)$. Stationarity gives a zero radial derivative at this point:
-\(0=\frac{\d}{\d r}h_\alpha(r\omega)\bigg|_{r=r_\omega} =2r_\omega h_\alpha(\omega).\)
-Hence $h_\alpha(\omega)=0$ for every direction $\omega$, and by homogeneity $h_\alpha(x)=0$ for every $x$.
+Additive constants in first variations are irrelevant on probability competitors. By two-homogeneity of $\psi$, one has \(h_\alpha(\lambda x)=\lambda^2h_\alpha(x)\), and taking \(x=0\) with any \(\lambda\neq1\) gives \(h_\alpha(0)=0\). Stationarity forces \(h_\alpha\) to vanish on \(\supp(\alpha)\). Indeed, if \(x=r\omega\in\supp(\alpha)\) with \(r>0\), \(\norm{\omega}=1\), then
+\[
+0=\dotp{\nabla h_\alpha(r\omega)}{\omega}
+=\frac{\d}{\d s}h_\alpha(s\omega)\bigg|_{s=r}
+=2r h_\alpha(\omega),
+\]
+so \(h_\alpha(x)=r^2h_\alpha(\omega)=0\); the origin has already been covered, hence \(\int h_\alpha\,\d\alpha=0\).
 
-For any competitor $\beta$, convexity of $J$ gives \(f(\beta)-f(\alpha) \geq \int h_\alpha(x)\d(\beta-\alpha)(x)=0.\)
-Thus no competitor has smaller risk. The rigorous theorem replaces the full directional support assumption by propagation and overparameterization hypotheses ensuring that a negative descent direction would be present in the support and would contradict stationarity.
+Assume by contradiction that a competitor \(\beta\) has \(f(\beta)<f(\alpha)\). Since \(G_\beta-G_\alpha=\int\psi(x,\cdot)\d(\beta-\alpha)(x)\), convexity of \(J\) gives
+\[
+f(\beta)-f(\alpha)\geq \int h_\alpha(x)\d(\beta-\alpha)(x).
+\]
+Thus \(\int h_\alpha\,\d\beta<0\). Since \(h_\alpha(0)=0\), some nonzero \(x=r\omega\) satisfies \(h_\alpha(x)<0\), hence \(h_\alpha(\omega)<0\). Full directional support gives \(r_\omega\omega\in\supp(\alpha)\) with \(r_\omega>0\), and then
+\[
+\dotp{\nabla h_\alpha(r_\omega\omega)}{\omega}
+=2r_\omega h_\alpha(\omega)<0,
+\]
+contradicting stationarity on \(\supp(\alpha)\). The rigorous Chizat--Bach theorem replaces full directional support by propagation and overparameterization hypotheses ensuring that any negative first-variation direction is represented by the evolving support; after this support-propagation step, the same radial-derivative contradiction applies.
 \end{proof}
 \subsection{Unbalanced Wasserstein--Fisher--Rao Gradient Flows}
 The Wasserstein gradient flows above conserve total mass, because their tangent vectors are generated by continuity equations. When the unknown measure represents an intensity, a population or a cloud of trainable particles, it is often useful to combine spatial motion with creation and destruction of mass.
@@ -666,16 +698,16 @@ X^{k+1}=Y^k-h\nabla F(Y^k),
 \end{equation}
 \paragraph{Empirical Wasserstein lift.}
 \begin{equation}\label{eq-empirical-momentum-lift}
-\mu_X \eqdef \frac1n\sum_{i=1}^n \delta_{x_i},
+\al_X \eqdef \frac1n\sum_{i=1}^n \delta_{x_i},
 \qquad
-F(X) \eqdef f(\mu_X).
+F(X) \eqdef f(\al_X).
 \end{equation}
 \(\norm{\dot X}_n^2 \eqdef \frac1n\sum_{i=1}^n\norm{\dot x_i}^2,\)
 \[
 \left.\frac{\d}{\d\varepsilon}\right|_{\varepsilon=0}
 F(x_1,\ldots,x_i+\varepsilon\xi,\ldots,x_n)
 =
-\frac1n\dotp{\nabla\delta f(\mu_X)(x_i)}{\xi}.
+\frac1n\dotp{\nabla\delta f(\al_X)(x_i)}{\xi}.
 \]
 Thus, if $\nabla^{(n)}F$ denotes the gradient for the metric $\norm{\cdot}_n$, then
 
@@ -684,21 +716,21 @@ Thus, if $\nabla^{(n)}F$ denotes the gradient for the metric $\norm{\cdot}_n$, t
 =
 n\nabla_{x_i}F(X)
 =
-\nabla\delta f(\mu_X)(x_i)
+\nabla\delta f(\al_X)(x_i)
 =
-\Wgrad f(\mu_X)(x_i).
+\Wgrad f(\al_X)(x_i).
 \end{equation}
 \begin{equation}\label{eq-momentum-wasserstein-velocity}
-v_\mu(x)\eqdef -\Wgrad f(\mu)(x)=-\nabla\delta f(\mu)(x).
+v_\al(x)\eqdef -\Wgrad f(\al)(x)=-\nabla\delta f(\al)(x).
 \end{equation}
 \begin{equation}\label{eq-wasserstein-momentum-particles}
 \dot x_i(t)=s_i(t),
 \qquad
-\dot s_i(t)=-\gamma s_i(t)+v_{\mu_t}(x_i(t)),
+\dot s_i(t)=-\gamma s_i(t)+v_{\al_t}(x_i(t)),
 \qquad
-\mu_t=\frac1n\sum_{i=1}^n\delta_{x_i(t)}.
+\al_t=\frac1n\sum_{i=1}^n\delta_{x_i(t)}.
 \end{equation}
-\(\ddot x_i(t)+\gamma\dot x_i(t) = v_{\mu_t}(x_i(t)) = -\Wgrad f(\mu_t)(x_i(t)).\)
+\(\ddot x_i(t)+\gamma\dot x_i(t) = v_{\al_t}(x_i(t)) = -\Wgrad f(\al_t)(x_i(t)).\)
 \begin{prop}[Discrete mechanical energy dissipation]\label{prop-second-order-energy-dissipation}
 Assume that $f$ and the particle solution are smooth enough to justify differentiating the identities above along \eqref{eq-wasserstein-momentum-particles}. Define
 \(\mathcal H_n(X,S) \eqdef F(X)+\frac1{2n}\sum_{i=1}^n\norm{s_i}^2, \qquad S=(s_1,\ldots,s_n).\)
@@ -711,22 +743,22 @@ Then along \eqref{eq-wasserstein-momentum-particles},
 \end{equation}
 \end{prop}
 \begin{proof}
-By \eqref{eq-empirical-lift-gradient} and the definition $v_\mu=-\Wgrad f(\mu)$, one has $\nabla_{x_i}F(X)=-v_{\mu_X}(x_i)/n$. Hence
-\(\frac{\d}{\d t}F(X(t)) = \sum_{i=1}^n \dotp{\nabla_{x_i}F(X(t))}{s_i(t)} = -\frac1n\sum_{i=1}^n\dotp{v_{\mu_t}(x_i(t))}{s_i(t)}.\)
-On the other hand, \(\frac{\d}{\d t}\frac1{2n}\sum_i\norm{s_i(t)}^2 = \frac1n\sum_i\dotp{s_i(t)}{-\gamma s_i(t)+v_{\mu_t}(x_i(t))}.\)
+By \eqref{eq-empirical-lift-gradient} and the definition $v_\al=-\Wgrad f(\al)$, one has $\nabla_{x_i}F(X)=-v_{\al_X}(x_i)/n$. Hence
+\(\frac{\d}{\d t}F(X(t)) = \sum_{i=1}^n \dotp{\nabla_{x_i}F(X(t))}{s_i(t)} = -\frac1n\sum_{i=1}^n\dotp{v_{\al_t}(x_i(t))}{s_i(t)}.\)
+On the other hand, \(\frac{\d}{\d t}\frac1{2n}\sum_i\norm{s_i(t)}^2 = \frac1n\sum_i\dotp{s_i(t)}{-\gamma s_i(t)+v_{\al_t}(x_i(t))}.\)
 The force terms cancel, leaving \eqref{eq-second-order-energy-dissipation}.
 \end{proof}
 \paragraph{Phase-space formulation.}
 \begin{prop}[Phase-space Liouville formulation]\label{prop-second-order-liouville}
-Let $v_\mu$ be smooth enough that \eqref{eq-wasserstein-momentum-particles} has a classical solution. Define the empirical phase-space measure
-\(\eta_t^n \eqdef \frac1n\sum_{i=1}^n\delta_{(x_i(t),s_i(t))} \in \Pp(\RR^d_x\times\RR^d_s), \qquad \mu_t^n=(\pi_x)_\sharp\eta_t^n.\)
+Let $v_\al$ be smooth enough that \eqref{eq-wasserstein-momentum-particles} has a classical solution. Define the empirical phase-space measure
+\(\eta_t^n \eqdef \frac1n\sum_{i=1}^n\delta_{(x_i(t),s_i(t))} \in \Pp(\RR^d_x\times\RR^d_s), \qquad \al_t^n=(\pi_x)_\sharp\eta_t^n.\)
 Then $\eta_t^n$ solves, in the sense of distributions,
 \begin{equation}\label{eq-second-order-liouville-empirical}
 \partial_t\eta_t^n
 +
 \nabla_x\cdot(s\,\eta_t^n)
 +
-\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t^n}(x))\,\eta_t^n\bigr)
+\nabla_s\cdot\bigl((-\gamma s+v_{\al_t^n}(x))\,\eta_t^n\bigr)
 =0.
 \end{equation}
 If, as $n\to\infty$, the empirical phase-space laws converge to a smooth density $\eta_t(x,s)$ and the nonlinear fields converge accordingly, the limiting kinetic equation is
@@ -735,10 +767,10 @@ If, as $n\to\infty$, the empirical phase-space laws converge to a smooth density
 +
 \nabla_x\cdot(s\,\eta_t)
 +
-\nabla_s\cdot\bigl((-\gamma s+v_{\mu_t}(x))\,\eta_t\bigr)
+\nabla_s\cdot\bigl((-\gamma s+v_{\al_t}(x))\,\eta_t\bigr)
 =0,
 \qquad
-\mu_t=(\pi_x)_\sharp\eta_t.
+\al_t=(\pi_x)_\sharp\eta_t.
 \end{equation}
 \end{prop}
 \begin{proof}
@@ -751,13 +783,13 @@ Let $\varphi\in C_c^\infty(\RR^d_x\times\RR^d_s)$. Along the particle system,
 \left[
 \dotp{\nabla_x\varphi(x_i,s_i)}{s_i}
 +
-\dotp{\nabla_s\varphi(x_i,s_i)}{-\gamma s_i+v_{\mu_t^n}(x_i)}
+\dotp{\nabla_s\varphi(x_i,s_i)}{-\gamma s_i+v_{\al_t^n}(x_i)}
 \right].
 \]
 Rewriting the right-hand side as an integral against $\eta_t^n$ and integrating by parts gives \eqref{eq-second-order-liouville-empirical}. Passing formally to the mean-field limit gives \eqref{eq-second-order-liouville-density}.
 \end{proof}
-\(k(x,y)=-\norm{x-y}, \qquad f(\mu)=\MMD_k^2(\mu,\beta) = \iint k(x,y)\,\d(\mu-\beta)(x)\d(\mu-\beta)(y).\)
-\(v_\mu(x) = 2\int \frac{x-y}{\norm{x-y}}\,\d(\mu-\beta)(y).\)
+\(k(x,y)=-\norm{x-y}, \qquad f(\al)=\MMD_k^2(\al,\beta) = \iint k(x,y)\,\d(\al-\beta)(x)\d(\al-\beta)(y).\)
+\(v_\al(x) = 2\int \frac{x-y}{\norm{x-y}}\,\d(\al-\beta)(y).\)
 \paragraph{Entropy without an empirical energy.}
 For the numerical illustration, we add the quadratic confinement $V(x)=\norm{x}^2/2$. In one dimension the overdamped equation becomes the Ornstein--Uhlenbeck Fokker--Planck equation
 

@@ -3,18 +3,15 @@
 \subsection{OT Barycenters}
 \label{sec-barycenters}
 \paragraph{Fr\'echet means.}
-For discrete input histograms $\{\b_s\}_{s=1}^S$, with $\b_s \in \simplex_{n_s}$, and weights $\la \in \simplex_S$, a Wasserstein barycenter can be computed by minimizing
-
+The intrinsic barycenter problem is a Fr\'echet mean over measures: the unknown barycenter is itself a probability measure, with no prescribed support. Given inputs $(\be_s)_{s=1}^S$ on $\X$ and weights $\la\in\simplex_S$,
+\eq{
+\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
+}
+For discrete inputs $\be_s=\sum_{j=1}^{n_s} b_{s,j}\de_{x_{s,j}}$, one often fixes candidate barycenter sites $(y_i)_{i=1}^n$ and restricts $\al$ to $\sum_i a_i\de_{y_i}$. With $(\C_s)_{ij}=c(y_i,x_{s,j})$, this gives the fixed-support problem
 \eql{\label{eq-wass-discr}
 \umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
 }
-where the cost matrices $\C_s \in \RR^{n \times n_s}$ are prescribed.
-
-Given a set of input measures $(\be_s)_s$ defined on some space $\X$, the barycenter problem becomes
-
-\eql{\label{eq-barycenter-generic}
-\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
-}
+where $\b_s=(b_{s,j})_j\in\simplex_{n_s}$. This is a finite-dimensional restriction, not an exact analogue of discrete two-marginal OT: the input supports do not determine the support of the barycenter. For quadratic costs, an exact discrete barycenter may be supported on weighted averages of support tuples, with up to $\prod_s n_s$ candidates, so support selection is a genuine numerical difficulty.
 \begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
 The map $(\al,\be)\mapsto\MK_\c(\al,\be)$ is convex.
 \end{prop}
@@ -122,6 +119,38 @@ The separable conjugate is
 because for $k>0$, \(\sup_{r\geq0} ur-\big(r\log(r/k)-r+k\big) = k(e^u-1),\)
 and the case $k=0$ follows by lower semicontinuity. Dropping constants independent of $(\fD_s,\gD_s)_s$ gives~\eqref{eq-dual-bary-entropy}. The coordinate maximization in $\gD_s$ gives~\eqref{eq-sinkhorn-bary}; the block maximization in all $(\fD_s)_s$ gives the common marginal~\eqref{eq-sinkhorn-bary-3} and then~\eqref{eq-sinkhorn-bary-2}.
 \end{proof}
+
+\paragraph{Wasserstein-over-Wasserstein and barycenters.}
+The finite barycenter formula extends to a law $\mathfrak A\in\Pp(\Pp(\Omega))$ over input measures, as in Section~\ref{sec-wasserstein-over-wasserstein}. Under the usual lower-semicontinuity, tightness and integrability assumptions, automatically satisfied for compact $\Omega$ and continuous $c$, one obtains the correspondence
+\[
+\mathcal B_c(\mathfrak A)
+\eqdef
+\operatorname*{Argmin}_{\beta\in\Pp(\Omega)}
+\int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).
+\]
+If this set is a singleton, its element $\widetilde\alpha_{\mathfrak A}$ defines a nonlinear flattening map from laws over measures to measures. For $\mathfrak A=\sum_s\la_s\delta_{\be_s}$ this is the preceding finite barycenter. It differs from the linear collapsed mixture $\bar\alpha_{\mathfrak A}$ of Definition~\ref{def-collapsed-barycentric-mixture}: the former is a transport-geometric average, while the latter is the ordinary average of measures.
+
+\begin{prop}[LLN over Wasserstein space]\label{prop-wow-barycenter-lln}
+Let $\Omega$ be compact, $c$ continuous, and $\alpha_i$ be iid with law $\mathfrak A\in\Pp(\Pp(\Omega))$. With
+\(\widehat{\mathfrak A}_p=p^{-1}\sum_{i=1}^p\delta_{\alpha_i}\),
+almost surely
+\[
+\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A,\qquad
+\bar\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\bar\alpha_{\mathfrak A}.
+\]
+If $\mathcal B_c(\mathfrak A)=\{\widetilde\alpha_{\mathfrak A}\}$, then any empirical barycenter $\widetilde\alpha_{\widehat{\mathfrak A}_p}\in\mathcal B_c(\widehat{\mathfrak A}_p)$ satisfies
+\[
+\widetilde\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\widetilde\alpha_{\mathfrak A}.
+\]
+\end{prop}
+\begin{proof}
+Set $K=\Pp(\Omega)$. Since $K$ is compact metric and $\Cc(K)$ is separable, the scalar strong law on a countable dense set of tests gives $\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A$ almost surely. Testing against $\alpha\mapsto\int f\d\alpha$ gives the convergence of collapsed mixtures. Finally $(\beta,\alpha)\mapsto\MK_c(\beta,\alpha)$ is continuous on $K^2$; the compact family $\{\alpha\mapsto\MK_c(\beta,\alpha):\beta\in K\}\subset\Cc(K)$ and a finite-net argument give uniform convergence of empirical barycenter objectives. Any limit point of empirical minimizers minimizes the population objective; uniqueness gives convergence of the whole sequence.
+\end{proof}
+This distinguishes the number $p$ of input measures from the number $n$ of atoms used to approximate each input measure: with $p$ empirical inputs of size $n$, both errors interact under a fixed total budget $np$.
+
+\paragraph{Central-limit refinements.}
+A CLT over Wasserstein space is subtler than this LLN. Linear averages can be tested against $f$ and treated by scalar CLTs, but nonlinear barycenters require local linearization. When optimal maps $T_p$ from the population barycenter to the empirical barycenter exist, one studies convergence of $\sqrt p(T_p-\Id)$ in $L^2$; nonsmooth cases require plan or logarithmic-map coordinates. In infinite dimension this needs a genuine Radon Gaussian random element, not only a cylindrical one; in Hilbert space the limiting covariance must be trace class. Such results are known only in special settings, notably in one dimension using quantiles and on finite-dimensional families such as non-degenerate Gaussians, where $\Wass_2$ becomes Bures geometry. Entropic barycenters give a smoother variant with related CLTs.
+
 \subsection{Multimarginal OT}
 \label{sec-multimarginal-ot}
 \label{subsec:multi-marginal}
@@ -157,16 +186,16 @@ All points in the fiber therefore have the same value of $\nabla_{x_1}c$. Twist 
 \[
 V_{\mathrm{ee}}^{\mathrm{SCE}}[\rho]
 \eqdef
-\inf_{\pi\in\Couplings(\mu,\ldots,\mu)}
+\inf_{\pi\in\Couplings(\al,\ldots,\al)}
 \int_{(\RR^3)^N}
 c_{\mathrm{Coul}}(x_1,\ldots,x_N)
 \d\pi(x_1,\ldots,x_N).
 \]
-\(\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\mu, \qquad (\T_i)_\sharp\mu=\mu,\)
+\(\pi=(\Id,\T_2,\ldots,\T_N)_\sharp\al, \qquad (\T_i)_\sharp\al=\al,\)
 \begin{prop}[Cyclic co-motion plans]\label{prop-cyclic-comotion-plans}
-Let $\mu\in\Pp(\RR^3)$ and let $\T:\RR^3\to\RR^3$ be measurable with $\T_\sharp\mu=\mu$ and $\T^N=\Id$ $\mu$-a.e. Set $\T^0=\Id$ and
-\(\pi_\T=(\T^0,\T^1,\ldots,\T^{N-1})_\sharp\mu.\)
-Then $\pi_\T\in\Couplings(\mu,\ldots,\mu)$. If $R_\sigma(x_1,\ldots,x_N)=(x_{\sigma(1)},\ldots,x_{\sigma(N)})$ for $\sigma\in\Perm(N)$, then
+Let $\al\in\Pp(\RR^3)$ and let $\T:\RR^3\to\RR^3$ be measurable with $\T_\sharp\al=\al$ and $\T^N=\Id$ $\al$-a.e. Set $\T^0=\Id$ and
+\(\pi_\T=(\T^0,\T^1,\ldots,\T^{N-1})_\sharp\al.\)
+Then $\pi_\T\in\Couplings(\al,\ldots,\al)$. If $R_\sigma(x_1,\ldots,x_N)=(x_{\sigma(1)},\ldots,x_{\sigma(N)})$ for $\sigma\in\Perm(N)$, then
 \(\bar\pi_\T\eqdef\frac1{N!}\sum_{\sigma\in\Perm(N)}(R_\sigma)_\sharp\pi_\T\)
 is a symmetric admissible plan and
 \[
@@ -176,11 +205,11 @@ is a symmetric admissible plan and
 =
 \int_{\RR^3}
 \sum_{0\leq i<j\leq N-1}
-\frac{1}{\norm{\T^i(x)-\T^j(x)}}\d\mu(x).
+\frac{1}{\norm{\T^i(x)-\T^j(x)}}\d\al(x).
 \]
 \end{prop}
 \begin{proof}
-Since $\T_\sharp\mu=\mu$, all iterates $\T^i$ preserve $\mu$, so every marginal of $\pi_\T$ is $\mu$. The plan $\bar\pi_\T$ is an average of coordinate permutations of $\pi_\T$, hence has the same marginals and is invariant under coordinate permutations. The Coulomb cost is symmetric in its arguments, so its integral is unchanged by each $R_\sigma$. The last identity follows by evaluating $c_{\mathrm{Coul}}$ on the graph $(x,\T(x),\ldots,\T^{N-1}(x))$.
+Since $\T_\sharp\al=\al$, all iterates $\T^i$ preserve $\al$, so every marginal of $\pi_\T$ is $\al$. The plan $\bar\pi_\T$ is an average of coordinate permutations of $\pi_\T$, hence has the same marginals and is invariant under coordinate permutations. The Coulomb cost is symmetric in its arguments, so its integral is unchanged by each $R_\sigma$. The last identity follows by evaluating $c_{\mathrm{Coul}}$ on the graph $(x,\T(x),\ldots,\T^{N-1}(x))$.
 \end{proof}
 Proposition~\ref{prop-multimarginal-monge-structure} explains the general mechanism that can force graph solutions, while Proposition~\ref{prop-cyclic-comotion-plans} records the additional equal-marginal symmetry used by co-motion maps. Thus the DFT problem is both a central application and a warning that multi-marginal OT is richer than a naive deterministic matching problem.
 
@@ -213,6 +242,7 @@ with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Ther
 \exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
 \prod_s\d\al_s(x_s),
 \]
+with block Sinkhorn updates on the potentials $f_s$. Without structure this is a tensor algorithm: storing the discrete coupling already costs $\prod_s n_s$, and unstructured multi-marginal Sinkhorn keeps this exponential dependence. If the cost factorizes on a sparse graph, \(c(x_1,\ldots,x_S)=\sum_{(r,s)\in E}c_{r,s}(x_r,x_s)\), the contractions are message-passing operations whose complexity is governed by treewidth rather than by the full tensor size. The time-discretized generalized incompressible Euler problem is a key example: neighboring time slices form a cycle, hence treewidth two, and entropic Bregman/Sinkhorn schemes exploit this circular structure.
 \subsection{Low-Rank Optimal Transport}
 \label{sec-low-rank-ot}
 \begin{defn}[Low-rank factored couplings]\label{def-low-rank-couplings}
@@ -428,6 +458,7 @@ Choose $x_1,\ldots,x_m$ in this full-measure set and independently sample $Y_i\s
 \(\sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_i)} \geq \sum_{i=1}^m \dotp{x_i}{\bar T_\pi(x_{i+1})}.\)
 Thus $(\Id,\bar T_\pi)_\sharp\alpha$ is concentrated on a cyclically monotone graph. By the cyclic-monotonicity characterization of quadratic optimality, this plan is optimal between its two marginals, namely $\alpha$ and $\bar\beta_\pi$.
 \end{proof}
+\paragraph{Weak transport costs.}
 \begin{equation}\label{eq-weak-ot}
 \WOT_C(\alpha,\beta)
 \eqdef
@@ -488,19 +519,44 @@ For a cost $c$, the martingale OT problem minimizes $\int c\d\pi$ over $\Couplin
 
 The terminology comes from probability: if $(X,Y)\sim\pi$, then~\eqref{eq-martingale-coupling} is exactly $\EE[Y|X]=X$. Hence martingale OT is a Kantorovich problem with the usual two marginal constraints plus a barycentric constraint on the conditional laws.
 
-\((\Id,\bar T_\pi)_\sharp\alpha\)
 \paragraph{Stochastic orders.}
+Stochastic orders are feasibility criteria for constrained couplings: inequalities against test functions can be equivalent to pathwise or conditional constraints.
+\begin{prop}[Strassen's theorem for stochastic order]\label{prop-strassen-stochastic-order}
+For $\alpha,\beta\in\Pp(\RR)$,
 \[
 \alpha\preceq_{\mathrm{st}}\beta
 \quad\Longleftrightarrow\quad
-\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
-\quad\text{for every increasing }\varphi.
+\int\varphi\,\d\alpha\leq\int\varphi\,\d\beta
+\quad\text{for every bounded increasing }\varphi
 \]
+is equivalent to the existence of $\pi\in\Couplings(\alpha,\beta)$ concentrated on $\{x\leq y\}$.
+\end{prop}
+\begin{proof}
+The direct implication follows by integrating increasing functions along a coupling with $x\leq y$. Conversely, testing approximate indicators of $(t,+\infty)$ gives $F_\alpha(t)\geq F_\beta(t)$; the monotone quantile coupling $X=F_\alpha^{-1}(U)$, $Y=F_\beta^{-1}(U)$ then satisfies $X\leq Y$.
+\end{proof}
+
+\paragraph{Convex order and martingale feasibility.}
+For $\alpha,\beta\in\Pp_1(\RR^d)$,
 \[
 \alpha\preceq_{\mathrm{cx}}\beta
 \quad\Longleftrightarrow\quad
-\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
-\quad\text{for every convex }\varphi\text{ with finite integrals}.
+\int\varphi\,\d\alpha\leq\int\varphi\,\d\beta
+\quad\text{for every convex }\varphi
 \]
-\(\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1) \quad\Longleftrightarrow\quad \Sigma_1-\Sigma_0\succeq0.\)
-Indeed, if $\Sigma_1-\Sigma_0\succeq0$, then $\Gaussian(m,\Sigma_1)$ is obtained from $\Gaussian(m,\Sigma_0)$ by adding independent centered Gaussian noise; the converse follows by testing the convex quadratic functions $x\mapsto\dotp{u}{x}^2$. Strassen's martingale theorem states that $\alpha\preceq_{\mathrm{cx}}\beta$ if and only if $\Couplings_{\mathrm{mart}}(\alpha,\beta)$ is nonempty.
+means that $\beta$ has the same mean as $\alpha$ and is more spread out.
+\begin{thm}[Strassen's martingale theorem]\label{thm-strassen-martingale}
+\[
+\alpha\preceq_{\mathrm{cx}}\beta
+\quad\Longleftrightarrow\quad
+\Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset .
+\]
+\end{thm}
+\begin{proof}
+Martingale couplings imply convex order by Jensen. Conversely, Strassen's separation argument shows that if no martingale coupling exists, then some test function separates $\beta$ from the set of second marginals reachable from $\alpha$ by martingale kernels; optimizing conditionally gives the concave envelope and contradicts the convex-order inequalities.
+\end{proof}
+Thus convex order is exactly the condition under which martingale OT has finite value; otherwise the admissible set is empty and the value is $+\infty$. When it holds, the cost selects one mean-preserving splitting among all feasible martingale couplings. For Gaussians with the same mean,
+\[
+\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1)
+\quad\Longleftrightarrow\quad \Sigma_1-\Sigma_0\succeq0.
+\]
+The direct implication follows by adding independent Gaussian noise; the converse follows by testing $x\mapsto\dotp{u}{x}^2$.
