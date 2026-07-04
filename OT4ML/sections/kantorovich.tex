@@ -801,6 +801,29 @@ This is an infinite-dimensional linear program over a space of measures.
 \index{joint!law}% strictindex
 \end{rem}
 
+\begin{example}[Application to domain adaptation]\label{ex-domain-adaptation}
+\index{domain adaptation}% strictindex
+\index{transfer learning}% strictindex
+	In unsupervised domain adaptation, labeled source samples \((x_i^s,y_i^s)_i\) and unlabeled target samples \((x_j^t)_j\) define empirical laws
+	\[
+		\al_s=\sum_i a_i\de_{x_i^s}
+		\qandq
+		\al_t=\sum_j b_j\de_{x_j^t}.
+	\]
+	Writing \(\a=(a_i)_i\) and \(\b=(b_j)_j\), a Kantorovich coupling \(\P\in\CouplingsD(\a,\b)\) gives soft correspondences between the two clouds. Labels can be transferred by the barycentric rule
+	\[
+		\widetilde y_j=\frac1{b_j}\sum_i \P_{ij}y_i^s
+		\qquad (b_j>0),
+	\]
+	for real-valued labels or one-hot class vectors. Alternatively, the transport can be optimized jointly with a classifier by adding label-prediction terms to the feature cost. This is the mechanism behind OT domain adaptation and JDOT: the plan is not only a distance certificate, but an explicit cross-domain alignment~\cite{courty2017optimal,courty2017joint}. Learning or adapting the ground cost is the inverse viewpoint developed later in Section~\ref{sec-metric-learning-inverse-ot}.
+\end{example}
+
+\begin{example}[Application to visual distributions]\label{ex-visual-distributions}
+\index{computer vision}% strictindex
+\index{earth mover's distance}% strictindex
+	Images, color histograms, texture descriptors and shape samples can all be represented as measures. The ground cost then encodes color differences, image-plane displacements or surface distances. This viewpoint underlies the Earth Mover's Distance for image retrieval~\cite{RubTomGui00}, regularized transport for imaging~\cite{2014-xia-siims}, convolutional transport on geometric domains~\cite{2015-solomon-siggraph}, and Wasserstein barycenters for texture mixing or Radon-domain image processing~\cite{2013-Bonneel-barycenter,bonneel2023survey}. The practical gain is that the discrepancy respects geometry: moving a small amount of mass to a nearby color or pixel is cheaper than moving it far away.
+\end{example}
+
 \begin{prop}[Existence on compact spaces]\label{prop-kantorovich-existence-compact}
 \index{compact space}% strictindex
 	Assume that $\Xx$ and $\Yy$ are compact metric spaces and that $c\in\Cc(\Xx\times\Yy)$. Then the Kantorovich problem~\eqref{eq-mk-generic} admits at least one minimizer.
@@ -1256,6 +1279,26 @@ Using this gluing lemma, we can now construct the Wasserstein distance in the ge
 	}
 	It depends on the ground distance $\dist$.
 \end{defn}
+
+\begin{example}[Application to gene-expression distances]\label{ex-gene-expression-distance}
+\index{single-cell genomics}% strictindex
+\index{ground metric learning}% strictindex
+	A single cell can be encoded as a measure over genes,
+	\[
+		\al_{\mathrm{cell}}=\sum_g e_g\de_{\varphi(g)},
+	\]
+	where \(e_g\geq0\), \(\sum_g e_g=1\), and \(\varphi(g)\) is a gene embedding or annotation vector. Wasserstein distances then compare cells by moving expression mass between genes. The choice of \(\dist(\varphi(g),\varphi(g'))\) is biologically meaningful: it can come from annotations, pathways or a learned ground metric. This is the idea behind the Gene Mover's Distance and related metric-learning approaches for single-cell data~\cite{BellazziCodegoniGualandiNicoraVercesi2021GeneMover,HuizingCantiniPeyre2021WassersteinSingularVectors}; it is the single-cell analogue of the cost-learning question revisited in Section~\ref{sec-metric-learning-inverse-ot}.
+\end{example}
+
+\begin{example}[Application to word embeddings and documents]\label{ex-word-mover-distance}
+\index{word mover's distance}% strictindex
+\index{natural language processing}% strictindex
+	A document can similarly be viewed as a probability measure on a word-embedding space,
+	\[
+		\al_{\mathrm{doc}}=\sum_{w\in\mathrm{doc}} a_w\de_{e_w}.
+	\]
+	Here \(a_w\) are normalized word frequencies and \(e_w\) are word embeddings. The Word Mover's Distance is the Wasserstein distance between such document measures~\cite{kusner2015word}. It compares bags of words through the geometry learned by the embedding, so that replacing a word by a nearby synonym is less costly than replacing it by an unrelated word. When two embedding spaces are not already aligned, Gromov--Wasserstein variants compare their intrinsic neighborhood geometry instead of relying on a common coordinate system~\cite{alvarez2018towards}; this is the intrinsic-space viewpoint developed in Section~\ref{sec-gromov-wasserstein}.
+\end{example}
 
 \begin{prop}[Metric property of the Wasserstein distance]\label{prop-metric-measure}
 \index{Wasserstein!distance}% strictindex
@@ -1750,6 +1793,16 @@ This bound is sharp, as this can be observed by taking $\al=\de_{x}$ and $\be=\d
 %
 This shows that the ratio between the two distances can blow up as $d_{\max}/d_{\min}$ increases. On non-discrete spaces, if $d_{\min}=0$, then the two distances are not equivalent, in line with the fact that the strong and weak topologies do not coincide.
 \index{topology!weak}% strictindex
+
+\begin{example}[Application to single-cell trajectory inference]\label{ex-single-cell-trajectory-inference}
+\index{single-cell genomics}% strictindex
+\index{trajectory inference}% strictindex
+	A single-cell time course gives empirical laws
+	\[
+		\al_{t_k}=\frac1{n_k}\sum_{i=1}^{n_k}\de_{x_i^{(k)}}
+	\]
+	on a gene-expression or latent cell-state space. Since sequencing is destructive, one observes populations at successive times, not trajectories of identical cells. Couplings \(\pi_k\in\Couplings(\al_{t_k},\al_{t_{k+1}})\) provide soft ancestor--descendant relations. After disintegration into Markov kernels, they can be chained to define population-level trajectories. This static sequence of couplings is the discrete-time shadow of the dynamic formulations of Chapter~\ref{sec-dynamic-optimal-transport}; entropic and unbalanced variants account for branching, noise and growth in modern single-cell models~\cite{schiebinger2017reconstruction,TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}.
+\end{example}
 
 \section{Distributional Robustness and \texorpdfstring{$\Wass_\infty$}{W-infinity}}
 \index{distributional robustness}% strictindex

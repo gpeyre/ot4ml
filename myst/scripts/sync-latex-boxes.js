@@ -11,6 +11,7 @@ const skippedLabels = new Set([
   // older alias next to the descriptive label, but the web book only links to
   // the latter.
   'sec-bb-extensions',
+  'sec-wfr-gradient-flows',
 ]);
 
 const files = {
@@ -61,6 +62,9 @@ function stripLatexComments(text) {
 
 function normalize(text) {
   return (text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\\texorpdfstring\{([^{}]*)\}\{[^{}]*\}/g, '$1')
     .replace(/\\['"`^~=.][{]?([A-Za-z])[}]?/g, '$1')
     .replace(/\\varepsilon|\\epsilon/g, 'epsilon')
     .replace(/\\Wass/g, 'wasserstein')
@@ -76,6 +80,18 @@ function normalize(text) {
     .replace(/[^A-Za-z0-9]+/g, ' ')
     .trim()
     .toLowerCase();
+}
+
+function cleanBlockTitle(title) {
+  return (title || '')
+    .replace(/\\texorpdfstring\{([^{}]*)\}\{[^{}]*\}/g, '$1')
+    .replace(/\\'\{?e\}?/g, 'é')
+    .replace(/\\'\{?E\}?/g, 'É')
+    .replace(/\\\((.*?)\\\)/g, '$$$1$$')
+    .replace(/\\\"o/g, 'o')
+    .replace(/\\\"O/g, 'O')
+    .replace(/~/g, ' ')
+    .trim();
 }
 
 function readBalanced(text, braceIndex) {
@@ -297,7 +313,7 @@ function makeBlock(block) {
   const body = latexToMyst(block.body);
   const blockLabel = mystLabelForBlock(block);
   const label = blockLabel ? `(${blockLabel})=\n` : '';
-  return `${label}:::{admonition} ${kind}: ${block.title}\n:class: ${classForKind(kind)}\n\n${body}\n:::\n\n`;
+  return `${label}:::{admonition} ${kind}: ${cleanBlockTitle(block.title)}\n:class: ${classForKind(kind)}\n\n${body}\n:::\n\n`;
 }
 
 function extractBlocks(text) {
@@ -495,11 +511,28 @@ function findSectionEnd(markdown, headingTitle) {
     const start = match.index;
     let next;
     while ((next = re.exec(markdown))) {
-      if (next[1].length <= level) return next.index;
+      if (next[1].length <= level) {
+        const labelPrefix = markdown.slice(0, next.index).match(/\n?(?:\([^)]+\)=\s*\n)+$/);
+        return labelPrefix ? next.index - labelPrefix[0].length : next.index;
+      }
     }
     return markdown.length;
   }
   return null;
+}
+
+function frontmatterTitle(markdown) {
+  if (!markdown.startsWith('---\n')) return null;
+  const end = frontmatterEnd(markdown);
+  const yaml = markdown.slice(4, end).replace(/\n---\s*$/, '');
+  const match = yaml.match(/^\s*title:\s*["']?(.+?)["']?\s*$/m);
+  return match ? match[1].trim() : null;
+}
+
+function firstSectionIndex(markdown) {
+  const re = /^##\s+.+$/gm;
+  const match = re.exec(markdown);
+  return match ? match.index : markdown.length;
 }
 
 function insertBefore(text, index, addition) {
@@ -661,7 +694,12 @@ function syncFile(texFile, mdFile) {
 
   for (const [section, sectionBlocks] of groups) {
     const rendered = sectionBlocks.map(makeBlock).join('\n');
-    const index = section === '__append__' ? markdown.length : findSectionEnd(markdown, section);
+    const pageTitle = frontmatterTitle(markdown);
+    const index = section === '__append__'
+      ? markdown.length
+      : normalize(section) === normalize(pageTitle)
+        ? firstSectionIndex(markdown)
+        : findSectionEnd(markdown, section);
     if (index == null) {
       throw new Error(`Could not find section "${section}" in ${mdFile}`);
     }

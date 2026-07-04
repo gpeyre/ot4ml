@@ -7,15 +7,15 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 117
-live `OT4ML/figures/<figure-name>/` directories referenced by
-`\includegraphics{figures/...}` have a matching live `.ipynb` file, thumbnail
-in [`thumbnails/`](thumbnails/), and generated PDF panels in
-`../OT4ML/figures/`. The searchable gallery currently exposes 118 figure views,
-because `generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 120 LaTeX figure labels because
-some figure directories generate several labeled views. The contact sheet
-below is built from the same active thumbnail set.
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 124
+live `OT4ML/figures/<figure-name>/` directories referenced by the LaTeX sources
+have a matching live `.ipynb` file, thumbnail in [`thumbnails/`](thumbnails/),
+and generated PDF panels in `../OT4ML/figures/`. The searchable gallery
+currently exposes 125 figure views, because
+`generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
+schedule-comparison view. The book currently has 127 LaTeX figure labels because
+some figure directories generate several labeled views. The contact sheet below
+is built from the same active thumbnail set.
 
 This README intentionally lists only figure views integrated in the current
 LaTeX or MyST sources. Retired or exploratory notebooks live in
@@ -25,7 +25,15 @@ They are kept for provenance but omitted from this paper gallery.
 
 Open a notebook locally from the **Open notebook** link, or launch it in Google
 Colab from the badge. The Colab links target the `main` branch of
-[`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml).
+[`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml). Each active notebook starts
+with a small bootstrap cell: when it is opened standalone in Colab, it clones
+the repository if needed, adds `notebooks-figures/` to the Python path, and
+installs POT for notebooks that import `ot`.
+
+**Notebook hygiene.** The active figure notebooks are written to be readable as
+standalone pedagogical documents: helper functions carry short docstrings, long
+implementation blocks are split into smaller cells, and explanatory markdown
+cells separate the main numerical steps.
 
 [![Contact sheet of book figures](thumbnails/book-figures-contact-sheet.png)](../README.md#figures-of-the-book)
 

@@ -48,15 +48,17 @@ is available on arXiv.
 
 The book figures are generated from executable notebooks and assembled by the
 LaTeX source. The current searchable gallery has been checked against the live
-LaTeX and MyST figure references: it exposes 113 figure views, covers all 112
+LaTeX and MyST figure references: it exposes 125 figure views, covers all 124
 referenced `OT4ML/figures/<figure-name>/` directories, and every active view has
 a notebook link, thumbnail, and generated PDF panels. The manuscript contains
-115 LaTeX figure labels because some figure directories generate several labeled
+127 LaTeX figure labels because some figure directories generate several labeled
 figures. Browse the rendered web gallery at
 [www.gpeyre.com/ot4ml/notebooks-figures/index.html](https://www.gpeyre.com/ot4ml/notebooks-figures/index.html)
 or the Markdown version in
 [`notebooks-figures/README.md`](notebooks-figures/README.md), with thumbnails,
-notebook links, and Open in Colab badges.
+notebook links, and Open in Colab badges. The figure notebooks are
+self-bootstrapping on Colab: they fetch the repository helper files and install
+POT automatically when a figure needs the `ot` package.
 
 <p align="center">
   <a href="notebooks-figures/README.md">
@@ -72,7 +74,10 @@ gallery.
 ## Teaching Notebooks
 
 The course notebooks below are compact, self-contained introductions to the
-main computational ideas. Each one can be opened locally or launched in Colab.
+main computational ideas. Helper functions are documented, code cells stay
+short enough to inspect, and the heavier demos use modest default budgets so
+they remain practical in Colab. Each one can be opened locally or launched in
+Colab.
 
 |  |  |
 | --- | --- |
@@ -84,8 +89,8 @@ main computational ideas. Each one can be opened locally or launched in Colab.
 ## Executable Web Prototype
 
 An experimental MyST/Jupyter Book 2 prototype lives in
-[`myst/`](myst/). It mirrors the LaTeX book front matter, 14 main chapters,
-conclusion, acknowledgements, and notation appendix while fusing the book text
+[`myst/`](myst/). It mirrors the LaTeX book front matter, 15 main chapters,
+conclusion, notation table, and index while fusing the book text
 with executable figures and browser-native interactive demos. The rendered static version is available from the
 [project homepage](https://www.gpeyre.com/ot4ml/myst/_build/html/index.html). The local
 workflow, the static-site build, and the offline behavior of the interactive demos

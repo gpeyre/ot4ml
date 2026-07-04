@@ -5,12 +5,9 @@
 \label{sec-dynamic-optimal-transport}
 \label{sec-wasserstein-flows}
 
-Optimal transport becomes especially powerful once distances between measures are seen as actions of moving mass. This section first develops the dynamic language: continuity equations describe admissible measure evolutions, while the Benamou--Brenier formula identifies $\Wass_2$ with a least-action principle. These ideas prepare the gradient-flow and generative-model sections that follow.
-\index{continuity equation}% strictindex
-\index{generative model}% strictindex
-\index{Benamou-Brenier}% strictindex
-\index{gradient!flow}% strictindex
+Optimal transport becomes especially useful for machine learning once distances between probability laws are written as actions of moving mass. This section is synchronized with the full OT4ML manuscript and keeps the material needed later in the survey: continuity equations, the Benamou--Brenier formula, path-space viewpoints, and generalized dynamic distances that later generate PDE flows.\index{continuity equation}% strictindex
 \index{Benamou-Brenier formula}% strictindex
+\index{generalized dynamic Wasserstein distance}% strictindex
 
 \subsection{Evolutions over the Space of Measures}
 \index{measure!evolution}% strictindex
@@ -119,6 +116,27 @@ with suitable boundary conditions, for instance vanishing at infinity. This form
 \index{velocity field}% strictindex
 \index{gradient!velocity}% strictindex
 
+The classical Dacorogna--Moser construction uses the linear density path. If $\alpha_i=\rho_i\,\d x$ are smooth positive densities with the same total mass on a bounded domain $\Omega$, set
+\[
+	\alpha_t=(1-t)\alpha_0+t\alpha_1=\rho_t\,\d x,
+	\qquad
+	\rho_t=(1-t)\rho_0+t\rho_1.
+\]
+Choose a time-independent flux $w$ satisfying
+\[
+	\diverg w=\rho_0-\rho_1,
+	\qquad
+	w\cdot n=0\quad\hbox{on }\partial\Omega,
+\]
+for instance $w=-\nabla\phi$ with $\Delta\phi=\rho_1-\rho_0$ and Neumann boundary condition. Then
+\[
+	v_t=\frac{w}{\rho_t}
+\]
+satisfies $\partial_t\rho_t+\diverg(\rho_t v_t)=0$. The flow
+$\partial_t T_t=v_t\circ T_t$, $T_0=\Id$, therefore transports
+$\rho_0\d x$ onto $\rho_t\d x$, and $T_1$ solves the prescribed-Jacobian problem
+$\rho_1(T_1(x))\det(\nabla T_1(x))=\rho_0(x)$.
+
 \paragraph{Least-square inversion and gradient structure.}
 \index{least-square!inversion}% strictindex
 \index{gradient!structure}% strictindex
@@ -177,7 +195,7 @@ A more robust choice, used implicitly in flow matching, optimal transport and Wa
 \index{weighted!Poisson equation}% strictindex
 \end{proof}
 
-In general this inversion is still computationally demanding, but special choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism exploited later by flow matching.
+In general this inversion is still computationally demanding, but special choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism exploited later by flow matching in Section~\ref{sec-generative-flow-matching}.
 \index{flow matching}% strictindex
 
 \begin{alg}[Least-square velocity reconstruction]\label{alg:least-square-velocity-reconstruction}
@@ -211,6 +229,8 @@ In general this inversion is still computationally demanding, but special choice
 The dynamic formulation identifies $\Wass_2$ with the kinetic energy of the cheapest continuity-equation path. It is the point where OT becomes a least-action principle.
 \index{continuity equation}% strictindex
 \index{dynamic!formulation}% strictindex
+
+\paragraph{Benamou--Brenier formulation.}
 
 Instead of assuming that a whole curve $(\alpha_t)_{t\in[0,1]}$ is prescribed, one only fixes its endpoints $\alpha_0$ and $\alpha_1$ and minimizes the least-square energy~\eqref{eq:least-square-field}. The theorem of Benamou and Brenier states that this geodesic energy is exactly the squared Wasserstein distance~\cite{benamou2000computational}.
 \index{Wasserstein!distance}% strictindex
@@ -266,7 +286,7 @@ Instead of assuming that a whole curve $(\alpha_t)_{t\in[0,1]}$ is prescribed, o
 \index{quadratic cost}% strictindex
 \end{proof}
 
-\subsubsection{Convex moment-based reformulation}
+\paragraph{Convex moment-based reformulation.}
 \index{momentum formulation}% strictindex
 
 Although~\eqref{eq:benamou-brenier} is not jointly convex in $(\alpha_t,v_t)$, it becomes convex after replacing velocities by the momentum measure $m_t=v_t\alpha_t$ and using the perspective action. In the absolutely continuous case $\alpha_t=\rho_t\,\d x$ and $m_t(x)=\rho_t(x)v_t(x)$, this reads
@@ -514,23 +534,88 @@ Equivalently one may swap the roles of $\mathcal F$ and $\mathcal G$. At converg
 \index{velocity field}% strictindex
 \index{Benamou-Brenier formulation}% strictindex
 
-\subsection{Extensions of the dynamic formulation}
+\subsection{Generalized Dynamic Wasserstein Distances}
 \index{dynamic!formulation}% strictindex
 \label{sec-bb-extensions}
+\label{sec-generalized-dynamic-wasserstein-distances}
 
-The same variational grammar extends beyond the quadratic Wasserstein distance. One changes either the kinetic exponent, the mobility or the balance equation, while keeping a continuity-type constraint and a convex action density.
+The quadratic Benamou--Brenier formula is only one instance of a broader dynamic language. By changing the local action, the mobility, the balance equation, the state graph or the allowed jumps, one obtains transport geometries adapted to constraints, reactions, Markov chains, normalized directions or nonlocal motion. The focus here is deliberately metric: we define the distances and record their basic properties. Their use as gradient-flow geometries is gathered later in Section~\ref{sec-generalized-dynamic-wasserstein-flows}.
 \index{balance equation}% strictindex
 \index{Wasserstein!distance}% strictindex
 \index{perspective function}% strictindex
 
-\paragraph{General convex action densities.}\label{rem-generalized-bb}
+\paragraph{Local tangent actions.}
+\index{local tangent action}% strictindex
+\index{squared local action}% strictindex
+\index{local action}% strictindex
+\index{tangent action}% strictindex
+The common infinitesimal object behind these dynamic distances is a local action on tangent directions. Let \(T_\alpha\) denote the admissible tangent space at \(\alpha\), for instance the \(L^2(\alpha)\)-closure of gradients for the usual \(\Wass_2\) geometry. Assume first that nearby measures are generated by maps \((\Id+t w)_\sharp\alpha\), with \(w\in T_\alpha\), and that a distance or discrepancy \(d\) has the second-order tangent expansion
+\begin{equation}\label{eq-generalized-distance-tangent-form}
+	q_\alpha(w)
+	\eqdef
+	\lim_{t\to0}
+	\frac{d^2\big((\Id+t w)_\sharp\alpha,\alpha\big)}{t^2},
+\end{equation}
+whenever this limit exists. The notation \(q_\alpha\) is intentionally broader than a quadratic form: it is the squared local norm, or more generally the squared local action, selected by \(d\). For instance, for \(\Wass_p\) with \(1\leq p<+\infty\), one has \(q_\alpha(w)=(\int\norm{w}^p\d\alpha)^{2/p}\); for the spectral distances studied below it is the square of the spectral tangent norm; and for local quadratic geometries it is represented by an operator \(Q_\alpha\).
+
+\index{Hilbertian tangent norm}% strictindex
+\index{Riemannian tensor}% strictindex
+The Riemannian, or Hilbertian, special case occurs when \(q_\alpha\) is quadratic. If its polarization is represented on \(T_\alpha\) by a positive self-adjoint operator \(Q_\alpha:T_\alpha\to T_\alpha\),
+\[
+	q_\alpha(w,z)
+	=
+	\left\langle Q_\alpha w,z\right\rangle_{L^2(\alpha)},
+\]
+then the tangent expansion reads
+\begin{equation}\label{eq-generalized-distance-tangent-expansion}
+	d^2\big((\Id+t w)_\sharp\alpha,\alpha\big)
+	=
+	t^2\left\langle Q_\alpha w,w\right\rangle_{L^2(\alpha)}
+	+o(t^2).
+\end{equation}
+This is the metric counterpart of a Riemannian tensor on the space of measures. Section~\ref{sec-generalized-dynamic-wasserstein-flows} uses the same \(q_\alpha\) to define steepest-descent directions and the corresponding gradient-flow PDEs.
+\index{Riemannian metric}% strictindex
+
+\paragraph{Geodesic distances from quadratic tangent norms.}
+\index{quadratic action}% strictindex
+\index{Onsager operator}% strictindex
+\index{Riemannian metric}% strictindex
+\index{tangent norm}% strictindex
+\index{quadratic tangent norm}% strictindex
+The quadratic case of the local action can be integrated along curves to define a geodesic distance. Keeping the continuity equation but replacing the usual infinitesimal norm \(\int\norm{v}^2\d\alpha\) by \(\langle Q_\alpha v,v\rangle_{L^2(\alpha)}\) leads to the formal geodesic value
+\begin{equation}\label{eq-general-quadratic-tangent-action}
+	\mathsf D_Q^2(\alpha_0,\alpha_1)
+	\eqdef
+	\inf_{\substack{\partial_t\alpha_t+\diverg(\alpha_t v_t)=0\\
+	\alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
+	\int_0^1
+	\left\langle Q_{\alpha_t}v_t,v_t\right\rangle_{L^2(\alpha_t)}
+	\d t .
+\end{equation}
+The usual \(\Wass_2\) geometry corresponds to \(T_\alpha\) being the Wasserstein tangent space and \(Q_\alpha=\Id\). This viewpoint is useful later for gradient flows: changing \(Q_\alpha\) changes the meaning of steepest descent, as made explicit in \eqref{eq-generalized-gradient-q-preconditioner}. When \(\alpha=\rho\d x\), \(m=\rho v\), and \(Q_\alpha\) acts by pointwise multiplication with a symmetric positive matrix field \(B_\rho(x)\), the integrand becomes
+\[
+	\left\langle Q_\alpha v,v\right\rangle_{L^2(\alpha)}
+	=
+	\int \frac{m(x)^\top B_\rho(x)m(x)}{\rho(x)}\,\d x .
+\]
+\index{action density}% strictindex
+\index{momentum variable}% strictindex
+Thus local quadratic Riemannian metrics are a special case of the convex action-density formalism below, with
+\[
+	A_Q(\rho,m,x)=\frac{m^\top B_\rho(x)m}{\rho}.
+\]
+For \(B_\rho=\Id\), this reduces to the Benamou--Brenier density \(|m|^2/\rho\). The next paragraph uses the \((\rho,m)\) variables as the primitive objects. This is less geometric but more robust analytically: convexity and lower-semicontinuous relaxation become transparent, and nonquadratic, hence non-Riemannian, Finsler-type actions are included as well.
+
+\paragraph{General mobilities and convex action densities.}\label{rem-generalized-bb}
 \index{Benamou-Brenier}% strictindex
 \index{Benamou-Brenier distance}% strictindex
-	A common abstraction is to keep the continuity equation but replace the quadratic cost $|m|^2/\rho$ by a convex local action. Let $I\subset[0,+\infty)$ be a convex interval of admissible densities and let
+\index{convex action density}% strictindex
+	The local action formalism keeps the continuity equation but replaces the quadratic cost $|m|^2/\rho$ by a convex function of density and momentum. It contains the quadratic \(Q_\alpha\)-construction above whenever \(Q_\alpha\) is a local multiplication operator, and it also covers infinitesimal lengths that are not induced by a Hilbert norm. Let $I\subset[0,+\infty)$ be a convex interval of admissible densities and let
 	\[
 		A:I\times\RR^d\to[0,+\infty]
 	\]
 	be an extended-valued lower-semicontinuous convex function of $(\rho,m)$, even in the momentum variable, with $A(\rho,0)=0$. For smooth densities $\rho_0,\rho_1$ with the same total mass, define the dynamic value
+\index{local action}% strictindex
 	\[
 		\mathcal A_A(\rho_0,\rho_1)
 		\eqdef
@@ -538,11 +623,86 @@ The same variational grammar extends beyond the quadratic Wasserstein distance. 
 		\rho_{t=0}=\rho_0,\ \rho_{t=1}=\rho_1}}
 		\int_0^1\!\int A(\rho_t(x),m_t(x))\,\d x\,\d t.
 	\]
-	The function $A$ specifies how expensive it is to carry a momentum $m$ through a local density $\rho$; values $+\infty$ encode forbidden states, such as moving mass through vacuum. Convexity is the structural assumption behind existence and stability of minimizers, and the same formula extends to measure-valued curves by taking the lower-semicontinuous relaxation. If, in addition, $A(\rho,\lambda m)=|\lambda|^qA(\rho,m)$ for some $q>1$ and $A(\rho,m)=0$ only when $m=0$, then $\mathcal A_A^{1/q}$ is an extended distance on finite-action components of each fixed-mass class. Indeed, symmetry follows from the evenness in $m$, while the triangle inequality follows by concatenating two curves and optimizing the time allocated to each piece. Without this homogeneity or nondegeneracy, the formula is still a useful action principle, but it does not automatically define a distance.
+	The function $A$ specifies how expensive it is to carry a momentum $m$ through a local density $\rho$; values $+\infty$ encode forbidden states, such as moving mass through vacuum. Convexity is the structural assumption behind existence and stability of minimizers, and the same formula extends to measure-valued curves by taking the lower-semicontinuous relaxation. The next proposition isolates the additional assumptions under which the action is a genuine path metric rather than only a variational principle.
 \index{dynamic!formulation}% strictindex
+\index{lower semicontinuous relaxation}% strictindex
+
+For a smooth state \(\alpha=\rho\d x\) and a velocity \(v\), the associated instantaneous action is
+\begin{equation}\label{eq-local-action-density-induced}
+	\ell_{A,\alpha}(v)
+	\eqdef
+	\int A(\rho(x),\rho(x)v(x))\,\d x .
+\end{equation}
+If \(A\) is \(r\)-homogeneous in the momentum and the distance is \(\mathsf D_A=\mathcal A_A^{1/r}\), then the squared tangent cost in the notation of \eqref{eq-generalized-distance-tangent-form} is \(\ell_{A,\alpha}(v)^{2/r}\). Thus \(\ell_{A,\alpha}\) and \(q_\alpha\) coincide in the quadratic case \(r=2\), but not for a general \(\Wass_p\)-type Finsler action. This convention keeps the metric definition in this section aligned with the steepest-descent notation used later in Section~\ref{sec-generalized-dynamic-wasserstein-flows}.
+\index{instantaneous action}% strictindex
+
+\begin{prop}[Homogeneous dynamic actions define distances]\label{prop-homogeneous-dynamic-action-distance}
+\index{dynamic!distance}% strictindex
+\index{homogeneous action}% strictindex
+\index{finite-action component}% strictindex
+	Assume, in addition to the hypotheses above, that for some \(q>1\)
+	\[
+		A(\rho,\lambda m)=|\lambda|^qA(\rho,m)
+		\qquad
+		\text{for all }\lambda\in\RR,
+	\]
+	and that \(A(\rho,m)=0\) if and only if \(m=0\). Set
+	\[
+		\mathsf D_A(\rho_0,\rho_1)
+		\eqdef
+		\mathcal A_A(\rho_0,\rho_1)^{1/q}.
+	\]
+	On every fixed-mass class, and after the usual lower-semicontinuous relaxation assuming that zero-action values are attained, \(\mathsf D_A\) is an extended distance on each finite-action component: it is symmetric, satisfies the triangle inequality, and \(\mathsf D_A(\rho_0,\rho_1)=0\) only when \(\rho_0=\rho_1\).
+\end{prop}
+
+\begin{proof}
+	The constant curve \(\rho_t=\rho_0\), \(m_t=0\), gives \(\mathsf D_A(\rho_0,\rho_0)=0\). Conversely, if \(\mathsf D_A(\rho_0,\rho_1)=0\), the relaxed zero-action minimizer satisfies
+	\[
+		\int_0^1\!\int A(\rho_t,m_t)\,\d x\,\d t=0.
+	\]
+	Since \(A\geq0\), this implies \(A(\rho_t,m_t)=0\) almost everywhere, hence \(m_t=0\) almost everywhere. The continuity equation then gives \(\partial_t\rho_t=0\) in the sense of distributions, so \(\rho_0=\rho_1\).
+
+	Symmetry follows by time reversal. If \((\rho_t,m_t)_{t\in[0,1]}\) connects \(\rho_0\) to \(\rho_1\), then
+	\[
+		\bar\rho_t=\rho_{1-t},
+		\qquad
+		\bar m_t=-m_{1-t}
+	\]
+	connects \(\rho_1\) to \(\rho_0\), satisfies the same continuity equation, and has the same action because \(A\) is even in \(m\).
+
+	It remains to prove the triangle inequality. Let \((\rho^1,m^1)\) connect \(\rho_0\) to \(\rho_1\) with action \(a\), and let \((\rho^2,m^2)\) connect \(\rho_1\) to \(\rho_2\) with action \(b\). For \(\tau\in(0,1)\), concatenate the two curves after the time changes \(s=t/\tau\) and \(s=(t-\tau)/(1-\tau)\):
+	\[
+		(\rho_t,m_t)=
+		\begin{cases}
+			\bigl(\rho^1_{t/\tau},\,\tau^{-1}m^1_{t/\tau}\bigr), & 0\leq t\leq \tau,\\[.2em]
+			\bigl(\rho^2_{(t-\tau)/(1-\tau)},\,(1-\tau)^{-1}m^2_{(t-\tau)/(1-\tau)}\bigr), & \tau\leq t\leq1.
+		\end{cases}
+	\]
+	The rescaled curve is admissible from \(\rho_0\) to \(\rho_2\). By \(q\)-homogeneity in \(m\), its action is
+	\[
+		\tau^{1-q}a+(1-\tau)^{1-q}b.
+	\]
+	Writing \(X=a^{1/q}\) and \(Y=b^{1/q}\), the optimal allocation is \(\tau=X/(X+Y)\), with the evident limiting convention if \(X+Y=0\), and gives
+	\[
+		\inf_{\tau\in(0,1)}
+		\left\{\tau^{1-q}a+(1-\tau)^{1-q}b\right\}
+		=
+		(X+Y)^q.
+	\]
+	Hence \(\mathcal A_A(\rho_0,\rho_2)^{1/q}\leq a^{1/q}+b^{1/q}\). Taking \(a\) and \(b\) arbitrarily close to the two optimal values yields
+	\[
+		\mathsf D_A(\rho_0,\rho_2)
+		\leq
+		\mathsf D_A(\rho_0,\rho_1)+\mathsf D_A(\rho_1,\rho_2),
+	\]
+	with the usual extended-real convention when one of the distances is infinite.
+\end{proof}
+
+Without homogeneity or nondegeneracy, \(\mathcal A_A\) remains a useful action principle, but its \(q\)-th root need not define a distance.
 
 \begin{example}[Wasserstein-\texorpdfstring{$p$}{p} action]
-	The usual $\Wass_p$ distances correspond to changing only the homogeneity in the momentum. For measures with finite $p$-th moments and $1<p<+\infty$, the Benamou--Brenier principle gives
+\index{Wasserstein-p action}% strictindex
+	The usual $\Wass_p$ distances correspond to changing only the homogeneity in the momentum. The case $p=2$ is the original Benamou--Brenier formula~\cite{benamou2000computational}; for $1<p<+\infty$, the same dynamic viewpoint gives the standard description of absolutely continuous curves in Wasserstein spaces~\cite{ambrosio2006gradient,Villani03,SantambrogioBook}. For measures with finite $p$-th moments, it gives
 	\[
 		\Wass_p^p(\alpha_0,\alpha_1)
 		=
@@ -561,15 +721,16 @@ The same variational grammar extends beyond the quadratic Wasserstein distance. 
 			+\infty, & \rho=0,\ m\neq 0,
 		\end{cases}
 	\]
-	under the linear constraint $\partial_t\rho_t+\nabla\!\cdot m_t=0$. This is precisely the general construction above with $q=p$: the $p$-th root of the value is $\Wass_p$. The case $p=2$ is the quadratic action used above. The endpoint $p=1$ can be treated separately: the perspective becomes $A_1(\rho,m)=|m|$, and the dynamic problem collapses to the Beckmann formulation of $\Wass_1$.
+	under the linear constraint $\partial_t\rho_t+\nabla\!\cdot m_t=0$. This is precisely Proposition~\ref{prop-homogeneous-dynamic-action-distance} with \(q=p\): the $p$-th root of the value is $\Wass_p$. The endpoint $p=1$ can be treated separately: the perspective becomes $A_1(\rho,m)=|m|$, and the dynamic problem collapses to Beckmann's formulation of $\Wass_1$~\cite{Beckmann52}.
+	In the local notation above, \(\ell_{A_p,\alpha}(v)=\int |v|^p\d\alpha\), while the squared tangent cost associated with the distance \(\Wass_p\) is \(q_{p,\alpha}(v)=\ell_{A_p,\alpha}(v)^{2/p}\).
 \index{Wasserstein!distance}% strictindex
-\index{Beckmann formulation}% strictindex
+\index{Beckmann!formulation}% strictindex
 \end{example}
 
 \begin{example}[Concave-mobility action]
 \index{mobility}% strictindex
 \index{concave mobility}% strictindex
-	A different use of the same formalism keeps the quadratic dependence in $m$ but replaces the linear mobility $\rho$ by a density-dependent mobility $\theta(\rho)$. For a concave function $\theta:I\to[0,+\infty)$, set
+	One can instead keep the quadratic dependence in $m$ and change the mobility multiplying the velocity field. Dolbeault, Nazaret and Savar\'e introduced this construction as a class of generalized transport distances adapted to nonlinear diffusion~\cite{dolbeault2009new}. For a concave function $\theta:I\to[0,+\infty)$, set
 	\[
 		A_\theta(\rho,m)=\frac{|m|^2}{\theta(\rho)},
 	\]
@@ -579,21 +740,17 @@ The same variational grammar extends beyond the quadratic Wasserstein distance. 
 		\eqdef
 		\mathcal A_{A_\theta}(\rho_0,\rho_1)
 	\]
-	is the quadratic case $q=2$ of the general construction, hence $\mathsf W_\theta$ is an extended distance under the same nondegeneracy assumptions. The choice $\theta(\rho)=\rho$ recovers $\Wass_2$. Other choices encode different physics: $\theta(\rho)=\rho^\gamma$ with $0<\gamma\leq1$ changes the cost of moving dilute mass, while $\theta(\rho)=\rho(1-\rho/M)$ on $[0,M]$ models a volume-filling or exclusion effect, since mobility vanishes both at vacuum and at the maximal density. In gradient-flow form, these metrics lead formally to
+	is the quadratic case \(q=2\) of Proposition~\ref{prop-homogeneous-dynamic-action-distance}, hence $\mathsf W_\theta$ is an extended distance under the same nondegeneracy assumptions. The choice $\theta(\rho)=\rho$ recovers $\Wass_2$. Other choices encode different geometry: $\theta(\rho)=\rho^\gamma$ with $0<\gamma\leq1$ changes the cost of moving dilute mass, while $\theta(\rho)=\rho(1-\rho/M)$ on $[0,M]$ models a volume-filling or exclusion effect, since mobility vanishes both at vacuum and at the maximal density. Under the usual positivity and lower-semicontinuity assumptions, $\mathsf W_\theta$ becomes a genuine metric on each finite-distance component. It is comparable with $\Wass_2$ on classes where $\theta(\rho)$ is bounded above and below by positive multiples of $\rho$; otherwise zero-mobility barriers can make some pairs infinitely far apart. The corresponding nonlinear diffusion and gradient-flow PDEs are discussed in Section~\ref{sec-generalized-dynamic-wasserstein-flows}.
+	The induced squared tangent cost is
 	\[
-		\partial_t\rho_t
+		q_{\theta,\alpha}(v)
 		=
-		\nabla\!\cdot\!\left(\theta(\rho_t)\nabla\frac{\delta F}{\delta\rho}(\rho_t)\right),
-	\]
-	so the metric itself controls the nonlinear diffusion coefficient. For instance, if $F(\rho)=\int U(\rho(x))\,\d x+\int V(x)\rho(x)\,\d x$, then formally
-	\[
-		\partial_t\rho
+		\ell_{A_\theta,\alpha}(v)
 		=
-		\nabla\!\cdot\!\left(\theta(\rho)\big(U''(\rho)\nabla\rho+\nabla V\big)\right).
+		\int\frac{\rho(x)}{\theta(\rho(x))}\norm{v(x)}^2\,\d\alpha(x),
 	\]
-	Thus $\theta(\rho)=\rho$ and $U(\rho)=\rho\log\rho$ gives the usual heat or Fokker--Planck equation, while $\theta(\rho)=\rho(1-\rho/M)$ gives a volume-filling drift--diffusion whose mobility vanishes at saturation. Power internal energies and power mobilities give a compact way to tune nonlinear diffusion: for instance $\theta(\rho)=\rho$ and $U(\rho)=\rho^m/(m-1)$ yields $\partial_t\rho=\Delta(\rho^m)$, whereas the entropy with $\theta(\rho)=\rho^\gamma$, $0<\gamma<1$, gives the fast-diffusion-type equation $\partial_t\rho=(1/\gamma)\Delta(\rho^\gamma)$. This viewpoint is useful for nonlinear diffusions, exclusion models, volume-filling models and finite-volume discretizations~\cite{dolbeault2009new}; related vector-valued and dissipative extensions follow the same principle. On finite graphs and Markov chains, the analogous construction uses edge mobilities, often logarithmic means of neighboring densities, and is developed in Section~\ref{sec-discrete-wasserstein-markov}. Under the usual positivity and lower-semicontinuity assumptions, $\mathsf W_\theta$ is an extended distance on equal-mass admissible densities and becomes a genuine metric on each finite-distance component. It is comparable with $\Wass_2$ on classes where $\theta(\rho)$ is bounded above and below by positive multiples of $\rho$; otherwise zero-mobility barriers can make some pairs infinitely far apart.
+	for \(\alpha=\rho\d x\). Hence this is a local Riemannian case whenever the multiplier \(\rho/\theta(\rho)\) is finite and positive.
 \index{Benamou-Brenier}% strictindex
-\index{Markov chain}% strictindex
 \end{example}
 
 \paragraph{Dynamic unbalanced OT.}
@@ -604,6 +761,8 @@ The same variational grammar extends beyond the quadratic Wasserstein distance. 
 Unbalanced dynamic transport is obtained by allowing mass to be created and destroyed along the path. The continuity equation is replaced by a balance equation, and the action penalizes both spatial motion and growth. This dynamic formulation underlies the Hellinger--Kantorovich and Wasserstein--Fisher--Rao metrics~\cite{LieroMielkeSavareShort,2017-chizat-focm}; its equivalence with static entropy-transport and cone formulations is developed in~\cite{LieroMielkeSavareLong,2015-chizat-unbalanced}. A representative quadratic action is
 \index{balance equation}% strictindex
 \index{continuity equation}% strictindex
+\index{growth term}% strictindex
+\index{source term}% strictindex
 	\[
 		\partial_t\rho_t+\nabla\!\cdot m_t=s_t,
 		\qquad
@@ -633,7 +792,7 @@ Unbalanced dynamic transport is obtained by allowing mass to be created and dest
 \begin{prop}[Static/dynamic equivalence for unbalanced OT]\label{prop-static-dynamic-unbalanced}
 \index{static-dynamic equivalence}% strictindex
 \index{unbalanced OT}% strictindex
-	Fix the action above and let $\CW_\kappa$ be the static cone value of unbalanced optimal transport, with the cone metric normalized to the same growth scale $\kappa$. For nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic value
+		Fix the action above and let $\CW_\kappa$ be the corresponding static cone value, with the cone metric normalized to the same growth scale $\kappa$. For nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic value
 	\begin{equation}\label{eq-dynamic-unbalanced-ot}
 		\WFR_\kappa^2(\alpha_0,\alpha_1)
 		\eqdef
@@ -679,21 +838,293 @@ Unbalanced dynamic transport is obtained by allowing mass to be created and dest
 \label{fig:dynamic-unbalanced-geodesic}
 \end{figure}
 
-\paragraph{Kernelized Benamou--Brenier distances.}\label{sec-kernelized-bb-distance}
-Let $k$ be a positive definite kernel with scalar RKHS $\RKHS_k$ and vector RKHS $\RKHS_k^d$, $\norm{v}_{\RKHS_k^d}^2=\sum_{\ell=1}^d\norm{v_\ell}_{\RKHS_k}^2$. The kernelized dynamic action is
-\[
-\mathcal W_k^2(\alpha_0,\alpha_1)
-=\inf_{\partial_t\alpha_t+\diverg(\alpha_t v_t)=0}
-\int_0^1\norm{v_t}_{\RKHS_k^d}^2\d t.
-\]
-Its square root is the associated kernelized transport length and gives the dynamic geometry behind SVGD~\cite{LiuWang2016SVGD,Liu2017SVGDGradientFlow,DuncanNueskenSzpruch2019SVGDGeometry}: the $L^2(\alpha)$ norm of velocities is replaced by the vector-valued RKHS norm on smooth vector fields. This length is generally extended: for smooth kernels, finite-action curves are regular flows, so atoms cannot split and a Dirac mass is at infinite distance from an absolutely continuous law.
+\paragraph{Dynamic spectral Wasserstein distances.}
+\index{dynamic spectral Wasserstein distance}% strictindex
+\index{matrix perspective}% strictindex
+\index{spectral Wasserstein distance}% strictindex
+\index{spectral tangent norm}% strictindex
+\index{velocity covariance}% strictindex
+Static spectral Wasserstein distances penalize a coupling through the covariance of its displacement. A dynamic version keeps the continuity equation but replaces the pointwise kinetic energy by a gauge of the whole velocity covariance. The resulting action is nonlocal in space: velocity directions are charged globally through their covariance, rather than independently at each point.
 
-\subsection{Discrete Wasserstein Geometries on Markov Chains}
+Let $\gamma$ be a monotone spectral gauge on $\mathbb S_+^d$. For a probability measure $\alpha$ and a velocity field $v\in L^2(\alpha;\RR^d)$, define the spectral tangent norm
+\index{monotone spectral gauge}% strictindex
+\begin{equation}\label{eq-normalized-spectral-tangent-norm}
+	\mathcal N_{\gamma,\alpha}(v)^2
+	\eqdef
+	\gamma\!\left(\int v(x)v(x)^\top\d\alpha(x)\right).
+\end{equation}
+In the local-action notation of \eqref{eq-generalized-distance-tangent-form}, this means \(q_{\gamma,\alpha}(v)=\mathcal N_{\gamma,\alpha}(v)^2\).
+The trace gauge gives the usual Wasserstein tangent norm, while the operator gauge $\gamma(M)=\lambda_{\max}(M)$ charges only the largest directional velocity variance. The associated dynamic action distance is
+\begin{equation}\label{eq-dynamic-spectral-wasserstein}
+	\mathsf W_{\gamma,\mathrm{dyn}}^2(\alpha_0,\alpha_1)
+	\eqdef
+	\inf_{\substack{\partial_t\alpha_t+\diverg(\alpha_t v_t)=0\\
+	\alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
+	\int_0^1
+	\mathcal N_{\gamma,\alpha_t}(v_t)^2\,\d t .
+\end{equation}
+In density--momentum variables, the instantaneous action is
+\[
+	(\rho,m)
+	\longmapsto
+	\gamma\!\left(\int \frac{m(x)m(x)^\top}{\rho(x)}\,\d x\right).
+\]
+This functional is convex in \((\rho,m)\) by the matrix perspective, together with the monotonicity and convexity of \(\gamma\). It is nevertheless not, in general, a pointwise action density of the form \(\int A(\rho(x),m(x))\,\d x\), because the covariance is computed globally before applying \(\gamma\). It becomes local only for linear spectral gauges. For instance, if \(\gamma(M)=\tr(GM)\) with \(G\succeq0\), then the spectral action is the integral of the quadratic density
+\[
+	A_{\mathrm{lin}}(\rho,m)=\frac{m^\top G m}{\rho},
+\]
+and the trace gauge, \(G=\Id\) in \(\gamma(M)=\tr(GM)\), recovers the usual Benamou--Brenier action.
+
+The following result, in the form used for normalized spectral flows in~\cite{peyre2026muon}, shows that this dynamic construction is not merely infinitesimal: it exactly recovers the static displacement-covariance formulation.
+
+\begin{prop}[Static/dynamic equality for spectral Wasserstein]\label{prop-static-dynamic-spectral-wasserstein}
+	\index{static-dynamic equivalence}% strictindex
+	\index{spectral Wasserstein distance}% strictindex
+	Let $\gamma$ be a monotone spectral gauge and let $\alpha_0,\alpha_1\in\Pp_2(\RR^d)$. Then
+	\[
+		\mathsf W_{\gamma,\mathrm{dyn}}^2(\alpha_0,\alpha_1)
+		=
+		\Wass_\gamma^2(\alpha_0,\alpha_1).
+	\]
+	Equivalently, the static spectral distance is the distance generated by the tangent norm $\mathcal N_{\gamma,\alpha}$.
+\end{prop}
+
+\begin{proof}
+	We first prove $\mathsf W_{\gamma,\mathrm{dyn}}^2\leq\Wass_\gamma^2$. Let $\pi\in\Couplings(\alpha_0,\alpha_1)$ and let $(X,Y)\sim\pi$. Set $Z_t=(1-t)X+tY$ and $\alpha_t=(Z_t)_\sharp\pi$. Define the Eulerian velocity as the conditional mean
+	\[
+		v_t(z)\eqdef \EE[Y-X\mid Z_t=z].
+	\]
+	Then $(\alpha_t,v_t)$ solves the continuity equation. If
+	\[
+		M_\pi\eqdef\int(x-y)(x-y)^\top\d\pi(x,y),
+		\qquad
+		C_t\eqdef\int v_t(z)v_t(z)^\top\d\alpha_t(z),
+	\]
+	conditional Jensen gives \(C_t\preceq M_\pi\). Indeed, for every direction \(u\in\RR^d\),
+	\[
+		u^\top C_tu
+		=
+		\EE\!\left[\EE[\dotp{u}{Y-X}\mid Z_t]^2\right]
+		\leq
+		\EE[(\dotp{u}{Y-X})^2]
+		=
+		u^\top M_\pi u .
+	\]
+	By the Loewner monotonicity of $\gamma$,
+	\[
+		\int_0^1\gamma(C_t)\d t
+		\leq
+		\gamma(M_\pi).
+	\]
+	Taking the infimum over $\pi$ gives the first inequality.
+	\index{Loewner order}% strictindex
+	\index{Jensen inequality}% strictindex
+
+	Conversely, let $(\alpha_t,v_t)$ be an admissible finite-action competitor. Since $\gamma$ is a finite positive gauge on the finite-dimensional cone $\mathbb S_+^d$, it is equivalent to the trace on this cone; hence finite spectral action implies the usual finite kinetic energy needed for the superposition principle. Thus there exists a probability law $\eta$ on absolutely continuous paths $\omega_\cdot$ such that $(e_t)_\sharp\eta=\alpha_t$ and $\dot\omega_t=v_t(\omega_t)$ for a.e. \(t\). Let $\pi=(e_0,e_1)_\sharp\eta$ be the induced endpoint coupling. With \(C_t=\int v_tv_t^\top\d\alpha_t\), Jensen's inequality along each path gives
+	\[
+		(\omega_1-\omega_0)(\omega_1-\omega_0)^\top
+		=
+		\left(\int_0^1\dot\omega_t\d t\right)
+		\left(\int_0^1\dot\omega_t\d t\right)^\top
+		\preceq
+		\int_0^1\dot\omega_t\dot\omega_t^\top\d t .
+	\]
+	After integration over $\eta$,
+	\[
+		M_\pi\preceq \int_0^1 C_t\d t .
+	\]
+	Monotonicity of $\gamma$, followed by convexity, yields
+	\[
+		\gamma(M_\pi)
+		\leq
+		\gamma\!\left(\int_0^1 C_t\d t\right)
+		\leq
+		\int_0^1\gamma(C_t)\d t .
+	\]
+	Since $\pi$ is admissible for the static problem, $\Wass_\gamma^2(\alpha_0,\alpha_1)$ is bounded by the action of the dynamic competitor. Taking the infimum over all competitors gives the reverse inequality.
+	\index{superposition principle}% strictindex
+	\index{path measure}% strictindex
+
+	The crucial assumption is the monotonicity of $\gamma$: both parts of the proof produce Loewner-order comparisons between covariance matrices, and these comparisons imply inequalities between actions only for monotone gauges.
+\end{proof}
+
+In particular, for smooth perturbations one recovers the tangent expansion
+\[
+	\Wass_\gamma\bigl(\alpha,(\Id+\tau v)_\sharp\alpha\bigr)^2
+	=
+	\tau^2\mathcal N_{\gamma,\alpha}(v)^2+o(\tau^2).
+\]
+The gradient-flow construction based on this geometry, including the operator-gauge connection with Muon-type normalization, is developed in Section~\ref{sec-normalized-spectral-wasserstein-dynamics}.
+\index{operator gauge}% strictindex
+\index{Muon algorithm}% strictindex
+
+\paragraph{Nonlocal Wasserstein distances.}
+\index{nonlocal action}% strictindex
+\index{pair-space action}% strictindex
+\index{nonlocal Wasserstein distance}% strictindex
+\index{jump process}% strictindex
+\index{jump kernel}% strictindex
+\index{reversible jump kernel}% strictindex
+The continuum dynamic distances introduced above are local: mass moves continuously through a velocity field and a continuity equation. For jump processes and heavy-tailed dynamics, the relevant motion is instead nonlocal: mass can jump directly from \(x\) to \(y\). Erbar's construction~\cite{Erbar2012JumpEntropy}, building on generalized transport metrics with nonlinear mobilities~\cite{dolbeault2009new} and connected to the discrete Markov-chain geometries of Maas and Mielke~\cite{Maas2011,MielkeCVPDE}, replaces the local gradient by a pairwise difference over \((x,y)\). Subsequent work clarified metric and asymptotic properties of such nonlocal transport distances~\cite{SlepcevWarren2022NonlocalWasserstein}.
+
+The mechanism is the same as in the finite-state Markov-chain construction recalled at the end of this section. A graph edge \(i\sim j\) is replaced by a pair \((x,y)\) sampled from a symmetric jump measure, finite sums over edges become integrals over \(X\times X\), and the discrete difference \(\psi_i-\psi_j\) becomes a nonlocal increment. The same logarithmic mean \(\theta\) appears in both settings, not as a convention but because the identity \(\theta(a,b)(\log a-\log b)=a-b\) is the algebraic chain rule that makes the entropy gradient flow coincide with the underlying reversible Markov or jump evolution.
+\index{logarithmic mean}% strictindex
+
+\index{pair space}% strictindex
+\index{nonlocal mobility}% strictindex
+This construction therefore does not fit the pointwise local action-density formalism \(A(\rho(x),m(x))\) used above. Its action is still quadratic, but the tangent variable is an antisymmetric jump velocity \(v(x,y)\), and the mobility depends simultaneously on the two endpoint densities \(\rho(x)\) and \(\rho(y)\). It is best viewed as a convex action on the pair space \(X\times X\), rather than as an integral of independent costs attached to single base points \(x\).
+
+Let \((X,\mathfrak m)\) be a reference measure space, and let \(K(x,\d y)\) be a nonnegative jump kernel, possibly of infinite total mass, reversible with respect to \(\mathfrak m\). This means that
+\[
+	\mathsf J(\d x,\d y)
+	\eqdef
+	K(x,\d y)\mathfrak m(\d x)
+\]
+is a symmetric measure on \(X\times X\). For a density \(\rho=\d\alpha/\d\mathfrak m\), write, for \(a,b>0\),
+\[
+	\bar\nabla \varphi(x,y)\eqdef \varphi(y)-\varphi(x),
+	\qquad
+	\theta(a,b)\eqdef \frac{a-b}{\log a-\log b}
+\]
+for the nonlocal gradient and the same logarithmic mean as above, with the continuous convention \(\theta(a,a)=a\) and the usual lower-semicontinuous extension at \(a=0\) or \(b=0\). A curve \(\alpha_t=\rho_t\mathfrak m\) driven by an antisymmetric velocity \(v_t(x,y)=-v_t(y,x)\) satisfies the nonlocal continuity equation if, for all test functions \(\varphi\),
+\index{nonlocal gradient}% strictindex
+\index{antisymmetric velocity}% strictindex
+\begin{equation}\label{eq-nonlocal-continuity-weak}
+	\frac{\d}{\d t}\int \varphi\,\d\alpha_t
+	=
+	\frac12
+	\iint
+	\bar\nabla\varphi(x,y)\,
+	v_t(x,y)\,
+	\theta(\rho_t(x),\rho_t(y))\,
+	\mathsf J(\d x,\d y).
+\end{equation}
+The corresponding action is
+\[
+	\mathcal A_K(\rho,v)
+	\eqdef
+	\frac12
+	\iint
+	|v(x,y)|^2
+	\theta(\rho(x),\rho(y))\,
+	\mathsf J(\d x,\d y),
+\]
+which is the nonlocal squared tangent action \(q_{K,\alpha}(v)\) for \(\alpha=\rho\mathfrak m\). Here \(v\) is not a vector field on \(X\) but an antisymmetric velocity on pairs \((x,y)\).
+and the nonlocal transport distance is
+\begin{equation}\label{eq-nonlocal-wasserstein-distance}
+	\mathcal W_K^2(\alpha_0,\alpha_1)
+	\eqdef
+	\inf_{\rho_t,v_t}
+	\int_0^1
+	\mathcal A_K(\rho_t,v_t)\,\d t,
+\end{equation}
+where the infimum is over all curves solving \eqref{eq-nonlocal-continuity-weak} with endpoints \(\alpha_0,\alpha_1\).
+\index{logarithmic mean}% strictindex
+\index{nonlocal continuity equation}% strictindex
+
+\begin{prop}[Metric properties of nonlocal transport]\label{prop-nonlocal-distance-properties}
+\index{geodesic}% strictindex
+\index{nonlocal Wasserstein distance}% strictindex
+	Under the regularity and irreducibility assumptions of~\cite{Erbar2012JumpEntropy}, \(\mathcal W_K\) is an extended distance on the set of probability measures absolutely continuous with respect to \(\mathfrak m\), and finite-distance pairs are connected by constant-speed geodesics.
+\end{prop}
+\begin{proof}
+	We use the analytic compactness and lower-semicontinuity theorem of~\cite{Erbar2012JumpEntropy} for the logarithmic-mean action. In particular, action-bounded sequences of admissible curves are compact for the narrow topology, the weak nonlocal continuity equation is closed under this convergence, and the action is lower semicontinuous. These facts are the nonlocal analogues of the compactness theorem used in the Benamou--Brenier formulation.
+\index{lower semicontinuity}% strictindex
+\index{compactness}% strictindex
+
+	Nonnegativity is immediate from the definition of \(\mathcal A_K\). If \(\alpha_0=\alpha_1\), the constant curve \(\rho_t=\rho_0\), \(v_t=0\), is admissible and has zero action, hence \(\mathcal W_K(\alpha_0,\alpha_0)=0\).
+
+	Symmetry follows by time reversal. If \((\rho_t,v_t)\) transports \(\alpha_0\) to \(\alpha_1\), set
+	\[
+		\tilde\rho_t=\rho_{1-t},
+		\qquad
+		\tilde v_t=-v_{1-t}.
+	\]
+	For every test function \(\varphi\), differentiating \(\int\varphi\tilde\rho_t\,\d\mathfrak m\) and using \eqref{eq-nonlocal-continuity-weak} shows that \((\tilde\rho_t,\tilde v_t)\) solves the same continuity equation from \(\alpha_1\) to \(\alpha_0\). Since the action is quadratic in \(v\), \(\mathcal A_K(\tilde\rho_t,\tilde v_t)=\mathcal A_K(\rho_{1-t},v_{1-t})\), so the action is unchanged.
+
+	For the triangle inequality, let \((\rho^0_t,v^0_t)\) connect \(\alpha_0\) to \(\alpha_1\) with action \(A_0\), and let \((\rho^1_t,v^1_t)\) connect \(\alpha_1\) to \(\alpha_2\) with action \(A_1\). For \(0<\lambda<1\), concatenate the two curves after the rescaling
+	\[
+		(\rho_t,v_t)=
+		\begin{cases}
+		\bigl(\rho^0_{t/\lambda},\,\lambda^{-1}v^0_{t/\lambda}\bigr),
+			&0\leq t\leq\lambda,\\[.35em]
+		\bigl(\rho^1_{(t-\lambda)/(1-\lambda)},\,(1-\lambda)^{-1}v^1_{(t-\lambda)/(1-\lambda)}\bigr),
+			&\lambda<t\leq1.
+		\end{cases}
+	\]
+	The factors \(\lambda^{-1}\) and \((1-\lambda)^{-1}\) are exactly those needed for the weak continuity equation after changing time. Since \(\mathcal A_K\) is quadratic in the velocity,
+	\[
+		\int_0^1\mathcal A_K(\rho_t,v_t)\,\d t
+		=
+		\frac{A_0}{\lambda}+\frac{A_1}{1-\lambda}.
+	\]
+	Optimizing in \(\lambda\), or taking \(\lambda=\sqrt{A_0}/(\sqrt{A_0}+\sqrt{A_1})\) when both actions are positive, gives a concatenated action \((\sqrt{A_0}+\sqrt{A_1})^2\). Taking infima over the two curves yields
+	\[
+		\mathcal W_K(\alpha_0,\alpha_2)
+		\leq
+		\mathcal W_K(\alpha_0,\alpha_1)
+		+
+		\mathcal W_K(\alpha_1,\alpha_2).
+	\]
+\index{triangle inequality}% strictindex
+
+	It remains to justify definiteness. If \(\mathcal W_K(\alpha_0,\alpha_1)=0\), choose admissible curves with actions tending to zero. By the compactness and lower-semicontinuity theorem quoted above, a subsequence converges to an admissible curve \((\rho_t,v_t)\) of zero action. Hence \(v_t=0\) for \(\theta(\rho_t(x),\rho_t(y))\mathsf J(\d x,\d y)\d t\)-a.e. \((t,x,y)\). Substituting in the weak continuity equation gives
+	\[
+		\frac{\d}{\d t}\int\varphi\,\d\alpha_t=0
+	\]
+	for every admissible test function \(\varphi\). The irreducibility/separation assumption in~\cite{Erbar2012JumpEntropy} ensures that these test functions determine the measure, so \(\alpha_t\) is constant and \(\alpha_0=\alpha_1\).
+\index{irreducibility}% strictindex
+
+	Finally, if \(\mathcal W_K(\alpha_0,\alpha_1)<+\infty\), the same direct-method compactness applied to a minimizing sequence gives a minimizer of \eqref{eq-nonlocal-wasserstein-distance}. Reparametrizing this minimizing curve by metric arclength gives a constant-speed curve. Equivalently, for every \(0\leq s<t\leq1\), the restriction of the minimizer to \([s,t]\), rescaled to unit time, is admissible between \(\alpha_s\) and \(\alpha_t\); the triangle inequality and equality of the total minimal action force
+	\[
+		\mathcal W_K(\alpha_s,\alpha_t)=(t-s)\mathcal W_K(\alpha_0,\alpha_1)
+	\]
+	after this constant-speed parametrization. Thus finite-distance pairs are joined by constant-speed geodesics. The nonlocal entropy-flow consequences and fractional PDE examples are developed in Section~\ref{sec-nonlocal-wasserstein-pdes}.
+\end{proof}
+
+\paragraph{Kernelized Benamou--Brenier distances.}\label{sec-kernelized-bb-distance}
+\index{kernelized transport distance}% strictindex
+\index{RKHS velocity}% strictindex
+\index{Stein geometry}% strictindex
+\index{kernelized Benamou--Brenier distance}% strictindex
+\index{Stein variational gradient descent}% strictindex
+\index{RKHS!vector field}% strictindex
+A different way to deform the Benamou--Brenier geometry is to keep the local continuity equation but to measure velocities in a reproducing-kernel Hilbert space rather than in $L^2(\alpha)$. This construction is motivated by Stein variational gradient descent, studied later in Section~\ref{sec-svgd-generative-flow}: the kernel makes the velocity field smooth and computable from particles, at the price of defining a much more restrictive transport geometry.
+
+Let $k$ be a positive definite kernel on $\RR^d$ with scalar RKHS $\RKHS_k$. The vector-valued RKHS is
+\[
+	\RKHS_k^d\eqdef \RKHS_k\times\cdots\times\RKHS_k,
+	\qquad
+	\norm{v}_{\RKHS_k^d}^2
+	\eqdef
+	\sum_{\ell=1}^d\norm{v_\ell}_{\RKHS_k}^2.
+\]
+This is the vector-valued analogue of the scalar RKHS norm used for maximum mean discrepancies. The kernelized dynamic action between two probabilities is defined by
+\begin{equation}\label{eq-kernelized-bb-distance}
+	\mathcal W_k^2(\alpha_0,\alpha_1)
+	\eqdef
+	\inf_{\alpha_t,v_t}
+	\int_0^1\norm{v_t}_{\RKHS_k^d}^2\,\d t,
+	\qquad
+	\partial_t\alpha_t+\diverg(\alpha_t v_t)=0,
+\end{equation}
+where the endpoint constraints are $\alpha_{t=0}=\alpha_0$ and $\alpha_{t=1}=\alpha_1$. This type of Stein geometry was introduced in the analysis of SVGD by Liu and Wang~\cite{LiuWang2016SVGD,Liu2017SVGDGradientFlow} and later developed geometrically in~\cite{DuncanNueskenSzpruch2019SVGDGeometry,NueskenRenger2021SVGDAsymptotics}.
+The corresponding tangent action is \(q_{k,\alpha}(v)=\norm{v}_{\RKHS_k^d}^2\), with the important caveat that the admissible tangent space is the smooth RKHS class, not the whole Wasserstein tangent space.
+
+\index{finite-action component}% strictindex
+\index{particle splitting}% strictindex
+One should read the square root of \eqref{eq-kernelized-bb-distance} as an extended distance on finite-action components, not as a replacement for $\Wass_2$ on all of $\Pp_2(\RR^d)$. Indeed the admissible velocity field is globally regular and shared by all particles. If $k$ is smooth enough that $\RKHS_k^d$ embeds into Lipschitz vector fields, finite-action curves are induced by flows of regular maps. Atomic measures therefore remain atomic with the same number of atoms along such curves, so a Dirac mass cannot be transported at finite kernelized action to a measure with a density. This lack of splitting is precisely what makes the geometry useful for deterministic particle methods, and also what makes it a nontrivial extended object rather than a full probability metric.
+\index{atomic measure}% strictindex
+\index{regular vector field}% strictindex
+
+\paragraph{Discrete Wasserstein distances on Markov chains.}
+\index{finite-state transport}% strictindex
+\index{logarithmic mean}% strictindex
 \label{sec-discrete-wasserstein-markov}
 \index{discrete Wasserstein geometry}% strictindex
 \index{Markov chain}% strictindex
 
-The Benamou--Brenier construction also has a finite-state analogue, but not the naive one obtained by putting the Euclidean metric on the simplex. The key idea, introduced by Maas and independently developed in related forms by Mielke and by Chow--Huang--Li--Zhou, is to use the transition graph of a reversible Markov chain to define the admissible directions and the mobility of the mass~\cite{Maas2011,MielkeCVPDE,ChowHuangLiZhou2012}. The resulting distance turns the heat flow of the chain into the gradient flow of the discrete Shannon entropy. This is the finite-dimensional counterpart of the fact that the heat equation on \(\RR^d\) is the Wasserstein gradient flow of entropy, and it is also the geometric structure used in numerical work on discrete metric-measure spaces~\cite{ErbarDCDS,erbar2017computation}.
+The Benamou--Brenier construction also has a finite-state analogue, but not the naive one obtained by putting the Euclidean metric on the simplex. The key idea, introduced by Maas and independently developed in related forms by Mielke and by Chow--Huang--Li--Zhou, is to use the transition graph of a reversible Markov chain to define the admissible directions and the mobility of the mass~\cite{Maas2011,MielkeCVPDE,ChowHuangLiZhou2012}. The resulting distance is the finite-dimensional counterpart of the Wasserstein geometry behind the heat equation, and it is also the geometric structure used in numerical work on discrete metric-measure spaces~\cite{ErbarDCDS,erbar2017computation}. The entropy gradient-flow interpretation is stated later in Proposition~\ref{prop-discrete-markov-entropy-gradient}.
 \index{Shannon entropy}% strictindex
 \index{heat flow}% strictindex
 \index{reversible Markov chain}% strictindex
@@ -716,7 +1147,11 @@ The logarithmic mean
 a, & a=b,
 \end{cases}
 \]
-is the specific mobility which makes the entropy gradient exactly coincide with the Markov evolution. For a potential \(\psi\in\RR^n\), define the Onsager operator
+is the mobility selected so that, when this distance is later used for entropy gradient flows, one recovers exactly the Markov evolution; see Proposition~\ref{prop-discrete-markov-entropy-gradient}. The reason is the edge-wise chain rule
+\[
+	\theta(a,b)(\log a-\log b)=a-b,
+\]
+which converts entropy gradients into density differences along graph edges. For a potential \(\psi\in\RR^n\), define the Onsager operator
 \index{Onsager operator}% strictindex
 \begin{equation}
 \label{eq-discrete-markov-onsager}
@@ -731,6 +1166,7 @@ Its associated action is
 \eqdef
 \frac12\sum_{i,j}\pi_iK_{ij}\theta(\rho_i,\rho_j)(\psi_i-\psi_j)^2.
 \end{equation}
+This is the finite-state squared tangent action \(q_{K,\rho}(\psi)\); the tangent variable is the potential \(\psi\), or equivalently the induced edge flux, rather than an ambient Euclidean vector field.
 The discrete transport distance is the least action
 \begin{equation}
 \label{eq-discrete-markov-distance}
@@ -746,59 +1182,12 @@ with endpoints \(\rho_0=\rho^0\), \(\rho_1=\rho^1\). Equivalently, one can write
 \index{Onsager operator}% strictindex
 \index{edge flux}% strictindex
 
-Although the minimizing-movement construction is introduced only in Section~\ref{sec-wasserstein-gradient-flows}, it is useful to keep its intuition in mind before the next statement. A metric gradient flow can be read as the continuous-time limit of the implicit Euler, or JKO, step
-\begin{equation}
-\label{eq-discrete-markov-jko}
-\rho^{k+1}\in\argmin_\rho
-\frac{1}{2\tau}\mathcal W_K^2(\rho,\rho^k)+\operatorname{Ent}_\pi(\rho).
-\end{equation}
-For the distance \(\mathcal W_K\), the first-order optimality condition of this step gives, for small \(\tau\),
-\[
-\frac{\rho^{k+1}-\rho^k}{\tau}
-=-\mathcal K_{\rho^k}\log\rho^k+O(\tau)
-=K\rho^k+O(\tau),
-\]
-where \((K\rho)_i=\sum_jK_{ij}(\rho_j-\rho_i)\). Thus the discrete Wasserstein geometry is engineered so that the entropy gradient flow is the Markov semigroup; the proposition below makes this identity explicit.
-\index{JKO scheme}% strictindex
-\index{Markov semigroup}% strictindex
-\index{discrete Wasserstein geometry}% strictindex
-
-\begin{prop}[Entropy gradient flow of a reversible Markov chain]
-\label{prop-discrete-markov-entropy-gradient}
-Let \(K\) be reversible with invariant law \(\pi\). The gradient flow of \(\operatorname{Ent}_\pi\) for the metric \(\mathcal W_K\) is the forward equation of the Markov chain,
-\index{Markov chain}% strictindex
-\begin{equation}
-\label{eq-discrete-markov-gradient-flow}
-\dot\rho_i(t)=\sum_jK_{ij}\bigl(\rho_j(t)-\rho_i(t)\bigr).
-\end{equation}
-Equivalently, for the masses \(p_i(t)=\pi_i\rho_i(t)\), this is \(\dot p_i(t)=\sum_j(p_j(t)K_{ji}-p_i(t)K_{ij})\).
-\end{prop}
-
-\begin{proof}
-The first variation of the entropy, with respect to the weighted pairing \(\sum_i\pi_i\xi_i\varphi_i\), is \(\log\rho_i+1\). Constants do not contribute to \(\mathcal K_\rho\), hence the metric gradient-flow equation is
-\[
-\dot\rho=-\mathcal K_\rho\log\rho.
-\]
-Using the identity
-\[
-\theta(a,b)(\log a-\log b)=a-b,
-\]
-one obtains, componentwise,
-\[
-\dot\rho_i
-=-\sum_jK_{ij}\theta(\rho_i,\rho_j)(\log\rho_i-\log\rho_j)
-=
-\sum_jK_{ij}(\rho_j-\rho_i),
-\]
-which is the density form of the Kolmogorov forward equation. Multiplying by \(\pi_i\) and using detailed balance gives the equation for the probability masses.
-\end{proof}
-\index{Kolmogorov forward equation}% strictindex
-\index{detailed balance}% strictindex
-
-\paragraph{Closed forms in dimensions two and three.}
 \index{simplex}% strictindex
-For the two- and three-state examples below, take the uniform random walk on the complete neighbor graph, i.e. every pair of distinct states is declared neighboring. Thus \(\pi_i=1/n\), and \(K_{ij}=1/(n-1)\) for \(i\neq j\). On \(\Sigma_2\), write \(p=(r,1-r)\) and \(q=(s,1-s)\). Since there is only one edge, the distance reduces to the scalar Riemannian length
+The first nontrivial finite Markov geometries already show how the logarithmic mean bends the simplex. In both examples below, take the uniform random walk on the complete neighbor graph, i.e. every pair of distinct points is declared neighboring. Thus \(\pi_i=1/n\), and \(K_{ij}=1/(n-1)\) for \(i\neq j\).
 \index{random walk}% strictindex
+
+\begin{example}[Two-point complete graph]
+	On \(\Sigma_2\), write \(p=(r,1-r)\) and \(q=(s,1-s)\). Since there is only one edge, the discrete dynamic problem reduces to the scalar Riemannian length
 \begin{equation}
 \label{eq-two-state-markov-distance}
 \mathcal W_K(p,q)
@@ -807,15 +1196,17 @@ For the two- and three-state examples below, take the uniform random walk on the
 \qquad
 0<r,s<1.
 \end{equation}
-This formula is closed but not Euclidean: the logarithmic mean changes the cost of moving mass depending on the current split between the two states.
+	This formula is closed but not Euclidean: the logarithmic mean changes the cost of moving mass depending on the current split between the two points.
+\end{example}
 \index{logarithmic mean}% strictindex
-
-On \(\Sigma_3\), the complete-neighbor graph is a triangle. For \(p\in\operatorname{int}(\Sigma_3)\), set
+\vspace{-.45\baselineskip}
+\begin{example}[Three-point complete graph]
+	On \(\Sigma_3\), the complete-neighbor graph is a triangle. For \(p\in\operatorname{int}(\Sigma_3)\), set
 \[
 a_{ij}(p)\eqdef\frac12\theta(p_i,p_j),
 \qquad 1\leq i<j\leq3.
 \]
-For a tangent vector \(u\in\RR^3\) with \(u_1+u_2+u_3=0\), orient the edges as \(1\to2\), \(1\to3\), \(2\to3\). The squared norm induced by the discrete Wasserstein metric is
+	For a tangent vector \(u\in\RR^3\) with \(u_1+u_2+u_3=0\), orient the edges as \(1\to2\), \(1\to3\), \(2\to3\). The squared norm induced by the discrete Wasserstein metric is
 \index{discrete Wasserstein geometry}% strictindex
 \begin{equation}
 \label{eq-three-state-markov-norm}
@@ -836,7 +1227,7 @@ u_2-q_{12}+q_{23}=0,
 \qquad
 u_3-q_{13}-q_{23}=0.
 \]
-Eliminating the three edge fluxes gives an explicit formula. With \(D=a_{12}^{-1}+a_{13}^{-1}+a_{23}^{-1}\),
+	Eliminating the three edge fluxes gives an explicit formula. With \(D=a_{12}^{-1}+a_{13}^{-1}+a_{23}^{-1}\),
 \[
 q_{12}^*=\frac{u_2/a_{23}-u_1/a_{13}}{D},
 \qquad
@@ -855,7 +1246,10 @@ and \(\|u\|_p^2\) is obtained by inserting these values in~\eqref{eq-three-state
 p_0=p^0,
 \quad p_1=p^1.
 \end{equation}
-Thus the three-state distance is an explicit two-dimensional Riemannian geodesic problem on the open triangle. The formula is simple enough to compute directly, but it already shows the main difference with Euclidean geometry on the simplex: the local metric depends nonlinearly on the current density through logarithmic edge mobilities. Figure~\ref{fig:discrete-markov-simplex-distances} visualizes these small-dimensional geometries and compares them with the ordinary Wasserstein distance associated with the \(0/1\) ground metric, for which \(W_2^2\) is exactly the total variation distance.
+	Thus the three-state distance is an explicit two-dimensional Riemannian geodesic problem on the open triangle. The formula is simple enough to compute directly, but it already shows the main difference with Euclidean geometry on the simplex: the local metric depends nonlinearly on the current density through logarithmic edge mobilities.
+\end{example}
+
+Figure~\ref{fig:discrete-markov-simplex-distances} visualizes these small-dimensional geometries and compares them with the ordinary Wasserstein distance associated with the \(0/1\) ground metric, for which \(W_2^2\) is exactly the total variation distance.
 \index{total variation}% strictindex
 
 \begin{figure}[H]

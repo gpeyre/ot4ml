@@ -27,6 +27,7 @@ SECTION_NAMES = [
     "dual-norms",
     "sinkhorn",
     "sinkhorn-advanced",
+    "statistical-ot",
     "generalized-wasserstein",
     "generalized-ot-problems",
     "beyond-comparing-measures",
@@ -123,6 +124,7 @@ KEEP_TECHNICAL_START_RE = re.compile(
 
 
 def strip_citations(text: str) -> str:
+    """Remove citations and repair nearby compact-text artifacts."""
     text = CITE_RE.sub("", text)
     text = COMMAND_CITE_RE.sub("", text)
     text = re.sub(r"\s*\(see [^)]+\\ref\{[^}]+\}[^)]*\)", "", text)
@@ -156,6 +158,7 @@ def strip_citations(text: str) -> str:
 
 
 def _scan_bracketed(text: str, start: int, open_char: str, close_char: str) -> tuple[str, int] | None:
+    """Scan a balanced bracketed group and return its content/end index."""
     if start >= len(text) or text[start] != open_char:
         return None
     depth = 0
@@ -171,6 +174,7 @@ def _scan_bracketed(text: str, start: int, open_char: str, close_char: str) -> t
 
 
 def parse_heading(line: str) -> tuple[str, str, str] | None:
+    """Parse a LaTeX heading into command, title, and trailing text."""
     for cmd in HEADING_COMMANDS:
         prefix = f"\\{cmd}"
         if not line.startswith(prefix):
@@ -196,6 +200,7 @@ def parse_heading(line: str) -> tuple[str, str, str] | None:
 
 
 def plain_heading(title: str) -> str:
+    """Convert a LaTeX heading into a compact plain-text title."""
     plain = title
     replacements = {
         r"$\Wass_1$": "W1",
@@ -245,10 +250,12 @@ def polish_heading(line: str) -> str:
 
 
 def is_index_line(stripped: str) -> bool:
+    """Return whether a stripped line is an index entry."""
     return stripped.startswith(r"\index{")
 
 
 def starts_skipped_env(stripped: str) -> str | None:
+    """Return a skipped environment opened by this line, if any."""
     for env in BEGIN_RE.findall(stripped):
         if env in SKIP_ENVS:
             return env
@@ -256,6 +263,7 @@ def starts_skipped_env(stripped: str) -> str | None:
 
 
 def ends_env(stripped: str, env_name: str) -> bool:
+    """Return whether this line closes the requested environment."""
     return any(env == env_name for env in END_RE.findall(stripped))
 
 
@@ -276,6 +284,7 @@ def remove_comment(line: str) -> str:
 
 
 def split_sentences(paragraph: str) -> list[str]:
+    """Split prose conservatively for compactification heuristics."""
     # Conservative splitter: enough for prose compaction, while avoiding most
     # equation punctuation because displayed math is handled separately.
     pieces = re.split(r"(?<=[.!?])\s+(?=[A-Z\\])", paragraph)
@@ -283,6 +292,7 @@ def split_sentences(paragraph: str) -> list[str]:
 
 
 def compact_paragraph(lines: list[str]) -> list[str]:
+    """Keep only short notation-bearing prose from a paragraph."""
     if not lines:
         return []
     raw = " ".join(x.strip() for x in lines if x.strip())
@@ -519,6 +529,46 @@ def polish_compact_text(text: str) -> str:
         ): (
             r"For the standard Gaussian $\gamma=\mathcal N(0,\Id)$, Proposition~\ref{prop-gaussian-log-sobolev-ot} gives $\lambda=1$."
         ),
+        (
+            r"The Wasserstein estimate follows from the length estimate in the Wasserstein--PL theorem: apply Theorem~\ref{thm-wasserstein-pl-convergence} to \(F=\KL(\cdot|\beta)\), whose unique minimizer is \(\beta\), and use Remark~\ref{rem-lsi-wasserstein-pl}."
+        ): (
+            r"The Wasserstein estimate follows by applying Theorem~\ref{thm-wasserstein-pl-convergence} to \(F=\KL(\cdot|\beta)\), whose unique minimizer is \(\beta\), and using the logarithmic Sobolev inequality as the corresponding Wasserstein--PL inequality."
+        ),
+        (
+            "This is the discrete form of the fast circle-Monge construction of."
+        ): (
+            "This is the discrete fast circle-Monge construction."
+        ),
+        (
+            "This is the standard route behind Brenier's polar factorization theorem; related existence and uniqueness results for more general strictly convex costs are developed for instance in."
+        ): (
+            "This is the standard route behind Brenier's polar factorization theorem; related existence and uniqueness results extend to more general strictly convex costs."
+        ),
+        (
+            r"The proof of~\eqref{eq-convlin-sinkh-prim} follows from."
+        ): (
+            r"The primal contraction follows from the same projective estimate."
+        ),
+        (
+            "Sharper constants and higher-order transport-distance refinements are studied in."
+        ): (
+            "Sharper constants and higher-order transport-distance refinements are available, but are omitted from the compact handout."
+        ),
+        (
+            "The full minimax theorem, including \\(W_p\\), Besov classes, lower bounds and endpoint logarithms in dimensions \\(1\\) and \\(2\\), is proved in."
+        ): (
+            "The full minimax theorem also covers \\(W_p\\), Besov classes, lower bounds and endpoint logarithms in dimensions \\(1\\) and \\(2\\)."
+        ),
+        (
+            r"Under the regularity and irreducibility assumptions of, \(\mathcal W_K\) is an extended distance on the set of probability measures absolutely continuous with respect to \(\mathfrak m\), and finite-distance pairs are connected by constant-speed geodesics."
+        ): (
+            r"Under standard regularity and irreducibility assumptions on the jump kernel, \(\mathcal W_K\) is an extended distance on the set of probability measures absolutely continuous with respect to \(\mathfrak m\), and finite-distance pairs are connected by constant-speed geodesics."
+        ),
+        (
+            "We use the analytic compactness and lower-semicontinuity theorem of for the logarithmic-mean action."
+        ): (
+            "We use the analytic compactness and lower-semicontinuity theorem for the logarithmic-mean action."
+        ),
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -526,12 +576,14 @@ def polish_compact_text(text: str) -> str:
 
 
 def brace_delta(line: str) -> int:
+    """Return the net brace balance of a LaTeX line."""
     # Counts braces well enough for custom \eq{...} blocks after comments have
     # been stripped. Escaped braces are rare in these sources and harmless here.
     return line.count("{") - line.count("}")
 
 
 def compact_section(path: Path) -> str:
+    """Return the compacted TeX content for one source section."""
     out: list[str] = []
     paragraph: list[str] = []
     env_stack: list[str] = []
@@ -542,6 +594,7 @@ def compact_section(path: Path) -> str:
     skip_env_stack: list[str] = []
 
     def flush() -> None:
+        """Flush the pending prose paragraph into compact output."""
         nonlocal paragraph
         out.extend(compact_paragraph(paragraph))
         paragraph = []
@@ -707,6 +760,7 @@ def compact_section(path: Path) -> str:
 
 
 def write_driver() -> None:
+    """Write the compact-edition LaTeX driver."""
     inputs = "\n".join(f"\\input{{sections/{name}}}" for name in SECTION_NAMES)
     driver = rf"""\documentclass[10pt,a4paper]{{article}}
 \pdfoutput=1
@@ -750,6 +804,7 @@ def write_driver() -> None:
 \newcommand{{\blue}}[1]{{#1}}
 \newcommand{{\removed}}[1]{{}}
 \newcommand{{\dims}}{{d}}
+\providecommand{{\mathscr}}{{\mathcal}}
 
 \begin{{document}}
 \begin{{center}}
@@ -768,6 +823,7 @@ Gabriel Peyr{{\'e}}\\[-.1em]
 
 
 def write_readme() -> None:
+    """Write the compact-edition README."""
     readme = """# Compact Teaching Version
 
 This directory contains the compact, bibliography-free teaching version of the
@@ -834,6 +890,7 @@ def write_clean_copy(src: Path, dst: Path) -> None:
 
 
 def main() -> None:
+    """Regenerate all compact-edition sources."""
     OUT_SECTIONS.mkdir(parents=True, exist_ok=True)
     for style in ("mystyle.sty", "notations_ot.sty"):
         write_clean_copy(LATEX / style, OUT / style)

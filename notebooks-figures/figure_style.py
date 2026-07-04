@@ -55,17 +55,20 @@ def setup_matplotlib() -> None:
 
 
 def figure_dir(name: str) -> Path:
+    """Return and create the output directory for one book figure."""
     out = LATEX_FIGURES / name
     out.mkdir(parents=True, exist_ok=True)
     return out
 
 
 def save_pdf(fig: plt.Figure, path: Path, *, pad_inches: float = 0.035) -> None:
+    """Save a Matplotlib figure as a tightly cropped PDF panel."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, bbox_inches="tight", pad_inches=pad_inches)
 
 
 def remove_axes(ax: plt.Axes) -> None:
+    """Remove ticks and spines for image-like geometric panels."""
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
@@ -73,6 +76,7 @@ def remove_axes(ax: plt.Axes) -> None:
 
 
 def box_axes(ax: plt.Axes) -> None:
+    """Show a thin box around panels where axes carry information."""
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(AXIS_LINE_WIDTH)
@@ -100,7 +104,11 @@ def coupling_box(
     )
 
 
-def padded_limits(points: np.ndarray, pad: float = 0.25) -> tuple[tuple[float, float], tuple[float, float]]:
+def padded_limits(
+    points: np.ndarray,
+    pad: float = 0.25,
+) -> tuple[tuple[float, float], tuple[float, float]]:
+    """Return axis limits padded around a two-dimensional point cloud."""
     points = np.asarray(points)
     xmin, ymin = points.min(axis=0)
     xmax, ymax = points.max(axis=0)
@@ -110,6 +118,7 @@ def padded_limits(points: np.ndarray, pad: float = 0.25) -> tuple[tuple[float, f
 
 
 def interp_color(t: float, color0: str = RED, color1: str = BLUE) -> tuple[float, float, float]:
+    """Linearly interpolate two colors in RGB space."""
     a = np.array(to_rgb(color0))
     b = np.array(to_rgb(color1))
     return tuple((1 - t) * a + t * b)
@@ -127,6 +136,7 @@ def draw_transport_segments(
     alpha_scale: float = TRANSPORT_LINE_ALPHA_SCALE,
     zorder: int = 1,
 ) -> None:
+    """Draw weighted transport segments between two point clouds."""
     if len(pairs) == 0:
         return
     masses = np.array([m for _, _, m in pairs], dtype=float)
@@ -151,22 +161,45 @@ def draw_point_clouds(
     base_size: float = DIRAC_MARKER_SIZE,
     zorder: int = 3,
 ) -> None:
+    """Draw source and target Dirac masses with the OT4ML color convention."""
     if source_weights is None:
         source_sizes = np.full(len(x), base_size)
     else:
         source_sizes = base_size * (
             MASS_MARKER_MIN_FACTOR
-            + (MASS_MARKER_MAX_FACTOR - MASS_MARKER_MIN_FACTOR) * np.asarray(source_weights) / np.max(source_weights)
+            + (MASS_MARKER_MAX_FACTOR - MASS_MARKER_MIN_FACTOR)
+            * np.asarray(source_weights)
+            / np.max(source_weights)
         )
     if target_weights is None:
         target_sizes = np.full(len(y), base_size)
     else:
         target_sizes = base_size * (
             MASS_MARKER_MIN_FACTOR
-            + (MASS_MARKER_MAX_FACTOR - MASS_MARKER_MIN_FACTOR) * np.asarray(target_weights) / np.max(target_weights)
+            + (MASS_MARKER_MAX_FACTOR - MASS_MARKER_MIN_FACTOR)
+            * np.asarray(target_weights)
+            / np.max(target_weights)
         )
-    ax.scatter(x[:, 0], x[:, 1], s=source_sizes, marker="o", color=RED, edgecolor="none", linewidth=POINT_EDGE_WIDTH, zorder=zorder)
-    ax.scatter(y[:, 0], y[:, 1], s=target_sizes, marker="o", color=BLUE, edgecolor="none", linewidth=POINT_EDGE_WIDTH, zorder=zorder)
+    ax.scatter(
+        x[:, 0],
+        x[:, 1],
+        s=source_sizes,
+        marker="o",
+        color=RED,
+        edgecolor="none",
+        linewidth=POINT_EDGE_WIDTH,
+        zorder=zorder,
+    )
+    ax.scatter(
+        y[:, 0],
+        y[:, 1],
+        s=target_sizes,
+        marker="o",
+        color=BLUE,
+        edgecolor="none",
+        linewidth=POINT_EDGE_WIDTH,
+        zorder=zorder,
+    )
 
 
 def canonical_matching_clouds(
@@ -187,6 +220,7 @@ def canonical_matching_clouds(
     rng = np.random.default_rng(seed)
 
     def farthest_indices(points: np.ndarray, n: int) -> np.ndarray:
+        """Select a deterministic farthest-point subset."""
         chosen = [int(np.argmin(np.sum(points**2, axis=1)))]
         dist2 = np.sum((points - points[chosen[0]]) ** 2, axis=1)
         for _ in range(1, n):
@@ -196,12 +230,14 @@ def canonical_matching_clouds(
         return np.asarray(chosen, dtype=int)
 
     def mean_nearest_spacing(points: np.ndarray) -> float:
+        """Estimate a representative nearest-neighbor spacing."""
         diff = points[:, None, :] - points[None, :, :]
         dist2 = np.sum(diff**2, axis=2)
         np.fill_diagonal(dist2, np.inf)
         return float(np.sqrt(np.min(dist2, axis=1)).mean())
 
     def jitter(points: np.ndarray) -> np.ndarray:
+        """Apply a tiny random perturbation at the local spacing scale."""
         sigma = 0.30 * mean_nearest_spacing(points)
         return points + rng.normal(scale=sigma, size=points.shape)
 

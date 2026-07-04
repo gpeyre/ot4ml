@@ -97,6 +97,26 @@ const knownKinds = [
   "kantodro",
   "sinkhornbridges",
   "partialot1d",
+  "partialot2d",
+  "capacityot2d",
+  "slicedradon",
+  "sinkhorngeodesicheat",
+  "sinkhornsketching",
+  "generativew2svgd",
+  "gradflowmomentumentropy",
+  "mongecaffarelli",
+  "sinkhornentropygeometry",
+  "sinkhornbiasvariance",
+  "sinkhorndoublypositive",
+  "sinkhornmfunctions",
+  "multimarginalcoulomb",
+  "martingalekernels",
+  "generativew2sliced",
+  "inverseotforward",
+  "inverseotgap",
+  "gradflowbrunnminkowski",
+  "gradflowhwi",
+  "gradflowmlpmuon",
 ];
 const pathKind = knownKinds.find((name) => window.location.pathname.includes(name));
 const kind = document.body.dataset.kind || params.get("kind") || pathKind || "quantile";
@@ -8572,6 +8592,1102 @@ function drawPartialOT1D() {
   setStatus(`exact monotone partial matching on ${samples} quantiles; selected mass ${active.selectedMass.toFixed(3)}; ${active.pairs} active pairs`);
 }
 
+
+function smallSinkhornPlan(source, target, epsilon, iterations = 90) {
+  const n = source.length;
+  const m = target.length;
+  const K = Array.from({ length: n }, () => Array(m).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const d2 = (source[i][0] - target[j][0]) ** 2 + (source[i][1] - target[j][1]) ** 2;
+      K[i][j] = Math.exp(-d2 / Math.max(epsilon, 1e-4));
+    }
+  }
+  const a = 1 / n;
+  const b = 1 / m;
+  let u = Array(n).fill(1);
+  let v = Array(m).fill(1);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+      u[i] = a / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b / Math.max(s, 1e-300);
+    }
+  }
+  return K.map((row, i) => row.map((z, j) => u[i] * z * v[j]));
+}
+
+function drawCoupledCloudPanel(ctx, box, source, target, plan, activeMass, title) {
+  drawFrame(ctx, box, title);
+  const lim = limits(source.concat(target));
+  const X = (p) => box.x + ((p[0] - lim.xmin) / Math.max(lim.xmax - lim.xmin, 1e-9)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / Math.max(lim.ymax - lim.ymin, 1e-9)) * box.h;
+  const edges = [];
+  for (let i = 0; i < source.length; i += 1) {
+    for (let j = 0; j < target.length; j += 1) edges.push([i, j, plan[i][j]]);
+  }
+  edges.sort((a, b) => b[2] - a[2]);
+  let selected = 0;
+  const kept = [];
+  for (const e of edges) {
+    if (selected >= activeMass) break;
+    const mass = Math.min(e[2], activeMass - selected);
+    if (mass > 1e-4) kept.push([e[0], e[1], mass]);
+    selected += mass;
+  }
+  const activeS = new Set(kept.map((e) => e[0]));
+  const activeT = new Set(kept.map((e) => e[1]));
+  const stride = Math.max(1, Math.floor(kept.length / 64));
+  for (let k = 0; k < kept.length; k += stride) {
+    const [i, j, mass] = kept[k];
+    ctx.strokeStyle = `rgba(25,25,25,${clamp(0.13 + 10 * mass, 0.13, 0.48)})`;
+    ctx.lineWidth = 0.75 + 17 * mass;
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), Y(source[i]));
+    ctx.lineTo(X(target[j]), Y(target[j]));
+    ctx.stroke();
+  }
+  for (let i = 0; i < source.length; i += 1) {
+    ctx.fillStyle = activeS.has(i) ? RED : 'rgba(215,48,39,.12)';
+    ctx.beginPath();
+    ctx.arc(X(source[i]), Y(source[i]), activeS.has(i) ? 2.9 : 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (let j = 0; j < target.length; j += 1) {
+    ctx.fillStyle = activeT.has(j) ? BLUE : 'rgba(33,102,172,.12)';
+    ctx.beginPath();
+    ctx.arc(X(target[j]), Y(target[j]), activeT.has(j) ? 2.9 : 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}
+
+function drawPartialOT2D() {
+  const mass = val('pot2Mass');
+  const n = Math.round(val('pot2Points'));
+  const eps = val('pot2Epsilon');
+  const seed = Math.round(val('pot2Seed'));
+  const source = sampleCloud('crescent', n, rng(seed)).map((q) => [0.62 * q[0] - 0.45, 0.62 * q[1]]);
+  const target = sampleCloud('annulus', n, rng(seed + 13)).map((q) => [0.62 * q[0] + 0.55, 0.62 * q[1]]);
+  const plan = smallSinkhornPlan(source, target, eps, 110);
+  const { ctx, w, h } = resizeCanvas(440);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  for (let k = 0; k < 3; k += 1) {
+    const m = clamp(mass - 0.22 * k, 0.12, 0.98);
+    drawCoupledCloudPanel(ctx, boxes[k], source, target, plan, m, `active mass ${m.toFixed(2)}`);
+  }
+  setStatus(`2D partial OT surrogate: ${n} source/target samples; lower prescribed mass keeps only shorter links.`);
+}
+
+function drawCapacityOT2D() {
+  const n = Math.round(val('cap2Points'));
+  const degree = Math.round(val('cap2Degree'));
+  const spread = val('cap2Spread');
+  const random = rng(Math.round(val('cap2Seed')));
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = i % 2 === 0 ? [-0.58, -0.18] : [0.58, 0.22];
+    pts.push([c[0] + spread * randn(random), c[1] + 0.72 * spread * randn(random)]);
+  }
+  const { ctx, w, h } = resizeCanvas(410);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(pts);
+  for (let b = 0; b < 3; b += 1) {
+    const k = [1, degree, Math.max(degree + 2, 5)][b];
+    const box = boxes[b];
+    drawFrame(ctx, box, `${k} links per point`);
+    const X = (q) => box.x + ((q[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (q) => box.y + box.h - ((q[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    for (let i = 0; i < pts.length; i += 1) {
+      const neigh = pts.map((q, j) => [j, (pts[i][0] - q[0]) ** 2 + (pts[i][1] - q[1]) ** 2])
+        .filter(([j]) => j !== i)
+        .sort((a, b2) => a[1] - b2[1])
+        .slice(0, k);
+      for (const [j] of neigh) {
+        if (j < i) continue;
+        ctx.strokeStyle = 'rgba(35,45,55,.18)';
+        ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(X(pts[i]), Y(pts[i]));
+        ctx.lineTo(X(pts[j]), Y(pts[j]));
+        ctx.stroke();
+      }
+    }
+    for (const q of pts) {
+      ctx.fillStyle = VIOLET;
+      ctx.beginPath();
+      ctx.arc(X(q), Y(q), 2.35, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  setStatus(`capacity constraint as local degree: raising the cap densifies the admissible self-coupling graph.`);
+}
+
+function oneDimMixtureProfile(xs, shift, scale = 1) {
+  return xs.map((x) => 0.55 * normalPdf(x, -0.8 + shift, 0.23 * scale) + 0.45 * normalPdf(x, 0.95 + shift, 0.38 * scale));
+}
+
+function cumulativeQuantiles(xs, density) {
+  const cdf = [];
+  let total = 0;
+  for (const v of density) {
+    total += Math.max(v, 0);
+    cdf.push(total);
+  }
+  for (let i = 0; i < cdf.length; i += 1) cdf[i] /= Math.max(total, 1e-12);
+  return xs.map((_, k) => {
+    const u = (k + 0.5) / xs.length;
+    let j = 1;
+    while (j < cdf.length && cdf[j] < u) j += 1;
+    const t = (u - cdf[j - 1]) / Math.max(cdf[j] - cdf[j - 1], 1e-12);
+    return lerp(xs[j - 1], xs[j], clamp(t, 0, 1));
+  });
+}
+
+function drawProfileImage(ctx, box, data, rows, cols, title, colorA = RED, colorB = BLUE) {
+  drawFrame(ctx, box, title);
+  const maxv = Math.max(...data.flat(), 1e-12);
+  const cw = box.w / cols;
+  const ch = box.h / rows;
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const z = clamp(data[r][c] / maxv, 0, 1);
+      ctx.fillStyle = z < 0.015 ? '#fff' : mixColor(r / Math.max(rows - 1, 1), colorA, colorB, Math.pow(z, 0.62));
+      ctx.fillRect(box.x + c * cw, box.y + r * ch, cw + 0.4, ch + 0.4);
+    }
+  }
+}
+
+function drawSlicedRadon() {
+  const time = val('srTime');
+  const angle = (Math.PI / 180) * val('srAngle');
+  const contrast = val('srContrast');
+  const { ctx, w, h } = resizeCanvas(620);
+  const boxes = beyondBoxes(w, h, 3, 780);
+  const cols = 96;
+  const rows = 32;
+  const xs = Array.from({ length: cols }, (_, i) => lerp(-2.2, 2.2, i / (cols - 1)));
+  const radon = [], quantiles = [], pseudo = [];
+  for (let r = 0; r < rows; r += 1) {
+    const theta = angle + (Math.PI * r) / rows;
+    const p0 = oneDimMixtureProfile(xs, 0.45 * Math.cos(theta), 0.88 + 0.18 * Math.sin(theta));
+    const p1 = oneDimMixtureProfile(xs, -0.35 * Math.sin(1.5 * theta), 1.05 + 0.16 * Math.cos(2 * theta)).map((z, i) => Math.max(0, z * (1 + 0.18 * Math.sin(3 * xs[i]))));
+    const q0 = cumulativeQuantiles(xs, p0);
+    const q1 = cumulativeQuantiles(xs, p1);
+    const qt = q0.map((z, i) => lerp(z, q1[i], time));
+    radon.push(p0.map((z, i) => lerp(z, p1[i], time)));
+    quantiles.push(qt.map((z) => (z - xs[0]) / (xs[xs.length - 1] - xs[0])));
+    pseudo.push(xs.map((x, i) => Math.exp(-((x - qt[i]) ** 2) / (0.035 + 0.03 * contrast))));
+  }
+  drawProfileImage(ctx, boxes[0], radon, rows, cols, `Radon profiles, t=${time.toFixed(2)}`);
+  drawProfileImage(ctx, boxes[1], quantiles, rows, cols, 'interpolated quantiles');
+  drawProfileImage(ctx, boxes[2], pseudo, rows, cols, 'pseudo-inverse view');
+  setStatus(`angle offset ${(180 * angle / Math.PI).toFixed(0)}°; interpolation is linear in 1D quantiles for each slice.`);
+}
+
+function drawGeodesicHeat() {
+  const eps = val('gihEps');
+  const points = Math.round(val('gihPoints'));
+  const curve = [];
+  for (let i = 0; i < points; i += 1) {
+    const t = (2 * Math.PI * i) / points;
+    curve.push([0.9 * Math.cos(t) + 0.28 * Math.cos(2 * t), 0.56 * Math.sin(t) + 0.22 * Math.sin(3 * t)]);
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  const levels = [0.12, 0.22, 0.34, 0.48, 0.64, 0.84, 1.08, 1.36];
+  for (let b = 0; b < 3; b += 1) {
+    const e = [0, eps, 2.5 * eps][b];
+    const box = boxes[b];
+    drawFrame(ctx, box, e === 0 ? 'exact Euclidean min' : `heat smoothing ε=${e.toFixed(2)}`);
+    const grid = 76;
+    const values = [];
+    for (let j = 0; j < grid; j += 1) {
+      for (let i = 0; i < grid; i += 1) {
+        const x = lerp(-1.45, 1.45, i / (grid - 1));
+        const y = lerp(-1.05, 1.05, j / (grid - 1));
+        const ds = curve.map((q) => (x - q[0]) ** 2 + (y - q[1]) ** 2);
+        const d = e === 0 ? Math.sqrt(Math.min(...ds)) : Math.sqrt(Math.max(-e * Math.log(ds.reduce((s, d2) => s + Math.exp(-d2 / Math.max(e, 1e-4)), 0) / points), 0));
+        values.push(d);
+      }
+    }
+    const cw = box.w / grid;
+    const ch = box.h / grid;
+    for (let j = 1; j < grid - 1; j += 1) {
+      for (let i = 1; i < grid - 1; i += 1) {
+        const here = values[j * grid + i];
+        for (const lev of levels) {
+          const right = values[j * grid + i + 1];
+          const down = values[(j + 1) * grid + i];
+          if ((here - lev) * (right - lev) < 0 || (here - lev) * (down - lev) < 0) {
+            ctx.fillStyle = `rgba(123,50,148,${0.10 + 0.18 * lev})`;
+            ctx.fillRect(box.x + i * cw, box.y + j * ch, cw + 0.6, ch + 0.6);
+          }
+        }
+      }
+    }
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    curve.forEach((q, i) => {
+      const x = box.x + ((q[0] + 1.45) / 2.9) * box.w;
+      const y = box.y + box.h - ((q[1] + 1.05) / 2.1) * box.h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  }
+  setStatus('Geodesics-in-heat surrogate: larger epsilon rounds level sets and hides small nonconvex details.');
+}
+
+function sinkhorn1dKernelPlan(xs, a, b, K, iterations = 120) {
+  const n = xs.length;
+  let u = Array(n).fill(1);
+  let v = Array(n).fill(1);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < n; j += 1) s += K[i][j] * v[j];
+      u[i] = a[i] / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < n; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b[j] / Math.max(s, 1e-300);
+    }
+  }
+  return K.map((row, i) => row.map((z, j) => u[i] * z * v[j]));
+}
+
+function drawMatrixImage(ctx, box, matrix, title, color = VIOLET) {
+  drawFrame(ctx, box, title);
+  const n = matrix.length;
+  const maxv = Math.max(...matrix.flat(), 1e-12);
+  const [r, g, b] = rgb(color);
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      const z = Math.sqrt(Math.max(matrix[i][j], 0) / maxv);
+      ctx.fillStyle = z < 0.015 ? '#fff' : `rgba(${r},${g},${b},${0.08 + 0.88 * z})`;
+      ctx.fillRect(box.x + (j / n) * box.w, box.y + ((n - 1 - i) / n) * box.h, box.w / n + 0.5, box.h / n + 0.5);
+    }
+  }
+}
+
+function drawSinkhornSketching() {
+  const eps = val('skEps');
+  const random = rng(Math.round(val('skSeed')));
+  const n = 52;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.7, 2.7, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const a = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [{ weight: .55, mean: -1.2, sigma: .35 }, { weight: .45, mean: .25, sigma: .5 }]), dx);
+  const b = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [{ weight: .42, mean: -.35, sigma: .28 }, { weight: .58, mean: 1.35, sigma: .42 }]), dx);
+  const exactK = xs.map((x) => xs.map((y) => Math.exp(-((x - y) ** 2) / Math.max(eps, 1e-4))));
+  const exact = sinkhorn1dKernelPlan(xs, a, b, exactK, 130);
+  const landmarks = Array.from({ length: 40 }, () => -3.2 + 6.4 * random());
+  const ranks = [40, 10, 3];
+  const kernels = ranks.map((r) => xs.map((x) => xs.map((y) => {
+    let s = 0;
+    for (let k = 0; k < r; k += 1) s += Math.exp(-((x - landmarks[k]) ** 2 + (y - landmarks[k]) ** 2) / Math.max(eps, 1e-4));
+    return Math.max(s / r, 1e-10);
+  })));
+  const plans = [exact].concat(kernels.map((K) => sinkhorn1dKernelPlan(xs, a, b, K, 130)));
+  const costs = [exactK].concat(kernels).map((K) => K.map((row) => row.map((v) => -eps * Math.log(Math.max(v, 1e-12)))));
+  const { ctx, w, h } = resizeCanvas(640);
+  const gap = 13;
+  const boxW = (w - 34 - gap * 3) / 4;
+  const boxH = (h - 66 - gap) / 2;
+  const labels = ['exact', 'r=40', 'r=10', 'r=3'];
+  for (let c = 0; c < 4; c += 1) {
+    drawMatrixImage(ctx, { x: 17 + c * (boxW + gap), y: 36, w: boxW, h: boxH }, plans[c], labels[c]);
+    drawMatrixImage(ctx, { x: 17 + c * (boxW + gap), y: 36 + boxH + gap, w: boxW, h: boxH }, costs[c], '-ε log K', '#26333f');
+  }
+  setStatus(`positive-feature sketching of the Sinkhorn kernel; epsilon ${eps.toFixed(3)}; low rank blurs both cost and plan.`);
+}
+
+function simulateTwoFlow(kind, n, seed, steps) {
+  const random = rng(seed);
+  const pts = [];
+  for (let i = 0; i < n; i += 1) pts.push([0.18 * randn(random), 0.18 * randn(random)]);
+  const centers = [[-0.75, 0.25], [0.78, -0.22], [0.1, 0.82]];
+  const traj = pts.map((q) => [q.slice()]);
+  for (let s = 0; s < steps; s += 1) {
+    for (let i = 0; i < n; i += 1) {
+      const q = pts[i];
+      let wx = 0, wy = 0, sw = 0;
+      for (const c of centers) {
+        const d2 = (q[0] - c[0]) ** 2 + (q[1] - c[1]) ** 2;
+        const wgt = Math.exp(-d2 / 0.38);
+        wx += wgt * (c[0] - q[0]);
+        wy += wgt * (c[1] - q[1]);
+        sw += wgt;
+      }
+      let vx = wx / Math.max(sw, 1e-9);
+      let vy = wy / Math.max(sw, 1e-9);
+      if (kind === 'svgd') {
+        for (let j = 0; j < n; j += 1) {
+          if (i === j) continue;
+          const dx = q[0] - pts[j][0];
+          const dy = q[1] - pts[j][1];
+          const kval = Math.exp(-(dx * dx + dy * dy) / 0.18);
+          vx += 0.028 * kval * dx / 0.18;
+          vy += 0.028 * kval * dy / 0.18;
+        }
+      }
+      pts[i][0] += 0.065 * vx;
+      pts[i][1] += 0.065 * vy;
+    }
+    if (s % 5 === 0 || s === steps - 1) for (let i = 0; i < n; i += 1) traj[i].push(pts[i].slice());
+  }
+  return { pts, traj, centers };
+}
+
+function drawGenerativeW2SVGD() {
+  const n = Math.round(val('gwsvgdParticles'));
+  const steps = Math.round(val('gwsvgdSteps'));
+  const seed = Math.round(val('gwsvgdSeed'));
+  const simW = simulateTwoFlow('w2', n, seed, steps);
+  const simS = simulateTwoFlow('svgd', n, seed, steps);
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const lim = 1.65;
+  [['W2 score flow', simW], ['SVGD kernelized flow', simS]].forEach(([title, sim], k) => {
+    const box = boxes[k];
+    drawFrame(ctx, box, title);
+    drawMeanShiftDensity(ctx, box, lim, sim.centers.flatMap((c) => Array.from({ length: 18 }, () => c)), 0.34, BLUE, 0.32, true);
+    drawTimeColoredTrajectories(ctx, box, lim, sim.traj, Math.max(1, Math.floor(n / 34)));
+    gfDrawPoints(ctx, box, lim, sim.pts, k === 0 ? VIOLET : BLUE, 2.2, 0.82);
+  });
+  setStatus('same target mixture and initialization; SVGD adds kernel repulsion to the Wasserstein score descent.');
+}
+
+function drawMomentumEntropy1D() {
+  const time = val('gmeTime');
+  const damping = val('gmeDamping');
+  const spread = val('gmeSpread');
+  const xs = Array.from({ length: 150 }, (_, i) => lerp(-3, 3, i / 149));
+  const rows = [0, .12, .24, .36, .50, .64].map((s) => s * time);
+  const gf = rows.map((t) => xs.map((x) => 0.45 * normalPdf(x, -0.9 * Math.exp(-t), Math.sqrt(spread ** 2 + .5 * t)) + 0.35 * normalPdf(x, 0.15 * Math.exp(-t), Math.sqrt((1.4 * spread) ** 2 + .5 * t)) + 0.2 * normalPdf(x, 1.0 * Math.exp(-t), Math.sqrt((.75 * spread) ** 2 + .5 * t))));
+  const nw = rows.map((t) => xs.map((x) => {
+    const osc = Math.cos(3.4 * t) * Math.exp(-damping * t);
+    return 0.45 * normalPdf(x, -0.9 * osc, Math.sqrt(spread ** 2 + .18 * t)) + 0.35 * normalPdf(x, 0.15 * osc, Math.sqrt((1.4 * spread) ** 2 + .18 * t)) + 0.2 * normalPdf(x, 1.0 * osc, Math.sqrt((.75 * spread) ** 2 + .18 * t));
+  }));
+  const { ctx, w, h } = resizeCanvas(610);
+  const boxes = [
+    { x: 58, y: 38, w: w - 78, h: 140 },
+    { x: 58, y: 224, w: w - 78, h: 140 },
+    { x: 58, y: 410, w: w - 78, h: 150 },
+  ];
+  drawProfileImage(ctx, boxes[0], gf, gf.length, xs.length, 'GF spatial density');
+  drawProfileImage(ctx, boxes[1], nw, nw.length, xs.length, 'Newton spatial density');
+  const phase = Array.from({ length: 48 }, (_, r) => xs.map((x) => Math.exp(-0.5 * ((x - 1.1 * Math.sin((r / 47) * 2 * Math.PI) * Math.exp(-damping * time)) / 0.45) ** 2) * Math.exp(-0.5 * ((r / 47 - .5) / .22) ** 2)));
+  drawProfileImage(ctx, boxes[2], phase, phase.length, xs.length, 'phase density');
+  ['GF', 'Newton', 'Phase'].forEach((txt, i) => {
+    ctx.save();
+    ctx.translate(28, boxes[i].y + boxes[i].h / 2);
+    ctx.rotate(-Math.PI / 2);
+    drawSmallLabel(ctx, txt, 0, 0, '#26333f', 'center');
+    ctx.restore();
+  });
+  setStatus(`finite-difference caricature: time ${time.toFixed(2)}, damping ${damping.toFixed(2)}; Newton retains phase-space inertia.`);
+}
+
+function drawMongeCaffarelli() {
+  const neck = val("mcfNeck");
+  const rings = Math.round(val("mcfRings"));
+  const curves = [];
+  for (let r = 1; r <= rings; r += 1) {
+    const rad = r / rings;
+    const curve = [];
+    for (let k = 0; k <= 160; k += 1) {
+      const th = (2 * Math.PI * k) / 160;
+      curve.push([rad * Math.cos(th), rad * Math.sin(th)]);
+    }
+    curves.push(curve);
+  }
+  const targetMap = (p, t = 1) => {
+    const x = p[0];
+    const y = p[1];
+    const lobes = 0.52 * Math.tanh(2.4 * x);
+    const throat = 1 - neck * Math.exp(-6.5 * x * x);
+    const tx = 1.08 * x + lobes;
+    const ty = (0.48 + 0.52 * x * x) * throat * y + 0.08 * Math.sin(2.1 * Math.PI * x) * (1 - y * y);
+    return [lerp(x, tx, t), lerp(y, ty, t)];
+  };
+  const { ctx, w, h } = resizeCanvas(410);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  const times = [0, 0.5, 1];
+  const lim = { xmin: -1.85, xmax: 1.85, ymin: -1.12, ymax: 1.12 };
+  for (let b = 0; b < 3; b += 1) {
+    const box = boxes[b];
+    const t = times[b];
+    drawFrame(ctx, box, t === 0 ? "source disk" : t === 1 ? "non-convex target" : "interpolated map");
+    const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    for (let i = 0; i < curves.length; i += 1) {
+      ctx.beginPath();
+      for (let k = 0; k < curves[i].length; k += 1) {
+        const q = targetMap(curves[i][k], t);
+        if (k === 0) ctx.moveTo(X(q), Y(q));
+        else ctx.lineTo(X(q), Y(q));
+      }
+      ctx.strokeStyle = mixColor(i / Math.max(curves.length - 1, 1), RED, BLUE, 0.72);
+      ctx.lineWidth = 1.15;
+      ctx.stroke();
+    }
+    for (let a = 0; a < 18; a += 1) {
+      ctx.beginPath();
+      for (let r = 0; r <= 1; r += 1 / 90) {
+        const q = targetMap([r * Math.cos((2 * Math.PI * a) / 18), r * Math.sin((2 * Math.PI * a) / 18)], t);
+        if (r === 0) ctx.moveTo(X(q), Y(q));
+        else ctx.lineTo(X(q), Y(q));
+      }
+      ctx.strokeStyle = "rgba(35,45,55,.22)";
+      ctx.lineWidth = 0.75;
+      ctx.stroke();
+    }
+  }
+  setStatus(`non-convexity ${neck.toFixed(2)}; concentric source curves reveal how regularity can deteriorate near a target neck.`);
+}
+
+function drawSinkhornEntropyGeometry() {
+  const epsilon = val("segEps");
+  const costs = [0.22, 0.64, 1.0];
+  const soft = (eps) => {
+    const z = costs.map((c) => Math.exp(-c / Math.max(eps, 1e-4)));
+    const s = z.reduce((a, b) => a + b, 0);
+    return z.map((v) => v / s);
+  };
+  const bary = (p, box) => {
+    const A = [box.x + box.w / 2, box.y + 12];
+    const B = [box.x + 14, box.y + box.h - 14];
+    const C = [box.x + box.w - 14, box.y + box.h - 14];
+    return [
+      p[0] * A[0] + p[1] * B[0] + p[2] * C[0],
+      p[0] * A[1] + p[1] * B[1] + p[2] * C[1],
+    ];
+  };
+  const { ctx, w, h } = resizeCanvas(410);
+  const boxes = beyondBoxes(w, h, 2, 720);
+  for (const [k, box] of boxes.entries()) {
+    drawFrame(ctx, box, k === 0 ? "linear LP geometry" : "entropy central path");
+    const A = bary([1, 0, 0], box);
+    const B = bary([0, 1, 0], box);
+    const C = bary([0, 0, 1], box);
+    ctx.fillStyle = "#fbfcfd";
+    ctx.beginPath();
+    ctx.moveTo(A[0], A[1]);
+    ctx.lineTo(B[0], B[1]);
+    ctx.lineTo(C[0], C[1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#26333f";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    if (k === 0) {
+      for (let i = 0; i <= 28; i += 1) {
+        for (let j = 0; j <= 28 - i; j += 1) {
+          const p = [i / 28, j / 28, 1 - (i + j) / 28];
+          const valCost = costs[0] * p[0] + costs[1] * p[1] + costs[2] * p[2];
+          const q = bary(p, box);
+          ctx.fillStyle = mixColor(clamp((valCost - costs[0]) / (costs[2] - costs[0]), 0, 1), BLUE, RED, 0.18);
+          ctx.fillRect(q[0] - 2.2, q[1] - 2.2, 4.4, 4.4);
+        }
+      }
+    } else {
+      ctx.beginPath();
+      const epsList = Array.from({ length: 80 }, (_, i) => Math.exp(lerp(Math.log(0.025), Math.log(2.0), i / 79)));
+      epsList.forEach((eps, i) => {
+        const q = bary(soft(eps), box);
+        if (i === 0) ctx.moveTo(q[0], q[1]);
+        else ctx.lineTo(q[0], q[1]);
+      });
+      ctx.strokeStyle = VIOLET;
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+    [[A, "1"], [B, "2"], [C, "3"]].forEach(([q, label], i) => {
+      ctx.fillStyle = i === 0 ? BLUE : i === 1 ? VIOLET : RED;
+      ctx.beginPath();
+      ctx.arc(q[0], q[1], 4, 0, 2 * Math.PI);
+      ctx.fill();
+      drawSmallLabel(ctx, `p${label}`, q[0], q[1] - 9, "#26333f", "center");
+    });
+  }
+  const q = bary(soft(epsilon), boxes[1]);
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.arc(q[0], q[1], 5, 0, 2 * Math.PI);
+  ctx.fill();
+  setStatus(`soft minimizer p_i ∝ exp(-c_i/epsilon); epsilon ${epsilon.toFixed(3)} moves from barycenter-like to LP vertex.`);
+}
+
+function detMatrix(A) {
+  const n = A.length;
+  const M = A.map((row) => row.slice());
+  let det = 1;
+  for (let k = 0; k < n; k += 1) {
+    let pivot = k;
+    for (let i = k + 1; i < n; i += 1) if (Math.abs(M[i][k]) > Math.abs(M[pivot][k])) pivot = i;
+    if (Math.abs(M[pivot][k]) < 1e-12) return 0;
+    if (pivot !== k) {
+      [M[pivot], M[k]] = [M[k], M[pivot]];
+      det *= -1;
+    }
+    det *= M[k][k];
+    const inv = 1 / M[k][k];
+    for (let i = k + 1; i < n; i += 1) {
+      const f = M[i][k] * inv;
+      for (let j = k; j < n; j += 1) M[i][j] -= f * M[k][j];
+    }
+  }
+  return det;
+}
+
+function drawDoublyPositiveCounterexample() {
+  const lambda = val("sdpLambda");
+  const H = [
+    [1, -1, 1, 1, -1],
+    [-1, 1, -1, 1, 1],
+    [1, -1, 1, -1, 1],
+    [1, 1, -1, 1, -1],
+    [-1, 1, 1, -1, 1],
+  ];
+  const xs = Array.from({ length: 5 }, (_, i) => (2 * Math.PI * i) / 5);
+  const K = xs.map((x) => xs.map((y) => lambda + Math.cos(0.5 * (x - y)) ** 2));
+  const HK = H.map((row, i) => row.map((h, j) => h * K[i][j]));
+  const witness = HK.flat().reduce((sum, z) => sum + z, 0);
+  const drawSigned = (ctx, box, matrix, title) => {
+    drawFrame(ctx, box, title);
+    const n = matrix.length;
+    const maxv = Math.max(...matrix.flat().map((z) => Math.abs(z)), 1e-12);
+    for (let i = 0; i < n; i += 1) {
+      for (let j = 0; j < n; j += 1) {
+        const z = matrix[i][j] / maxv;
+        const alpha = 0.12 + 0.82 * Math.abs(z);
+        ctx.fillStyle = z >= 0 ? `rgba(33,102,172,${alpha})` : `rgba(215,48,39,${alpha})`;
+        ctx.fillRect(box.x + (j / n) * box.w, box.y + (i / n) * box.h, box.w / n + 0.5, box.h / n + 0.5);
+      }
+    }
+  };
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  drawMatrixImage(ctx, boxes[0], K, `positive PSD kernel K`, VIOLET);
+  drawSigned(ctx, boxes[1], H, "Horn copositive witness H");
+  drawSigned(ctx, boxes[2], HK, "entrywise product H ∘ K");
+  drawSmallLabel(ctx, `sum entries = ${witness.toFixed(3)}`, boxes[2].x + boxes[2].w / 2, boxes[2].y + boxes[2].h + 20, witness < 0 ? RED : BLUE, "center");
+  setStatus(`lambda ${lambda.toFixed(2)}; <H,K> = ${witness.toFixed(3)}. Negative Horn pairing certifies K is doubly nonnegative but not completely positive.`);
+}
+
+function drawMFunctionsScaling() {
+  const sigma = val("smfSigma");
+  const tau = val("smfTau");
+  const steps = Math.round(val("smfSteps"));
+  const xs = Array.from({ length: 150 }, (_, i) => lerp(-3, 3, i / 149));
+  const a = normalizeDensity(xs, xs.map((x) => 0.55 * normalPdf(x, -1.05, 0.42) + 0.45 * normalPdf(x, 0.75, 0.35)));
+  const b = normalizeDensity(xs, xs.map((x) => 0.5 * normalPdf(x, -0.3, 0.30) + 0.5 * normalPdf(x, 1.38, 0.48)));
+  let f = xs.map(() => 0);
+  let g = xs.map(() => 0);
+  const keep = [];
+  for (let it = 0; it <= steps; it += 1) {
+    if (it % Math.max(1, Math.floor(steps / 7)) === 0 || it === steps) keep.push({ it, f: f.slice(), g: g.slice() });
+    const ng = xs.map((y, j) => {
+      let s = 0;
+      for (let i = 0; i < xs.length; i += 1) s += a[i] * Math.exp((f[i] - (xs[i] - y) ** 2) / Math.max(sigma, 1e-4));
+      return -tau * Math.log(Math.max(s, 1e-300));
+    });
+    const nf = xs.map((x, i) => {
+      let s = 0;
+      for (let j = 0; j < xs.length; j += 1) s += b[j] * Math.exp((ng[j] - (x - xs[j]) ** 2) / Math.max(tau, 1e-4));
+      return -sigma * Math.log(Math.max(s, 1e-300));
+    });
+    f = nf;
+    g = ng;
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 740);
+  const all = keep.flatMap((z) => z.f.concat(z.g));
+  const ymin = Math.min(...all);
+  const ymax = Math.max(...all);
+  [["source scaling log u", "f"], ["target scaling log v", "g"]].forEach(([title, key], k) => {
+    drawFrame(ctx, boxes[k], title);
+    for (let r = 0; r < keep.length; r += 1) {
+      drawCurve(ctx, xs, keep[r][key], boxes[k], -3, 3, ymin, ymax, mixColor(r / Math.max(keep.length - 1, 1), RED, BLUE, 0.85), r === keep.length - 1 ? 2.4 : 1.1);
+    }
+  });
+  setStatus(`non-variational monotone scaling surrogate; sigma ${sigma.toFixed(2)}, tau ${tau.toFixed(2)}, ${steps} iterations.`);
+}
+
+function drawMultimarginalCoulomb() {
+  const eps = val("mmcEps");
+  const repulsion = val("mmcRepulsion");
+  const n = 28;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.4, 2.4, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const a = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [
+    { weight: 0.62, mean: -0.75, sigma: 0.33 },
+    { weight: 0.38, mean: 1.05, sigma: 0.50 },
+  ]), dx);
+  const K = [];
+  for (let i = 0; i < n; i += 1) {
+    K[i] = [];
+    for (let j = 0; j < n; j += 1) {
+      K[i][j] = [];
+      for (let k = 0; k < n; k += 1) {
+        const c = repulsion / Math.sqrt((xs[i] - xs[j]) ** 2 + 0.05)
+          + repulsion / Math.sqrt((xs[i] - xs[k]) ** 2 + 0.05)
+          + repulsion / Math.sqrt((xs[j] - xs[k]) ** 2 + 0.05);
+        K[i][j][k] = Math.exp(-c / Math.max(eps, 1e-4));
+      }
+    }
+  }
+  let u = Array(n).fill(1), v = Array(n).fill(1), wv = Array(n).fill(1);
+  for (let it = 0; it < 26; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < n; j += 1) for (let k = 0; k < n; k += 1) s += K[i][j][k] * v[j] * wv[k];
+      u[i] = a[i] / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < n; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) for (let k = 0; k < n; k += 1) s += K[i][j][k] * u[i] * wv[k];
+      v[j] = a[j] / Math.max(s, 1e-300);
+    }
+    for (let k = 0; k < n; k += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) s += K[i][j][k] * u[i] * v[j];
+      wv[k] = a[k] / Math.max(s, 1e-300);
+    }
+  }
+  const pair = (which) => Array.from({ length: n }, (_, i) => Array(n).fill(0));
+  const P12 = pair(), P13 = pair(), P23 = pair();
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) for (let k = 0; k < n; k += 1) {
+    const p = u[i] * v[j] * wv[k] * K[i][j][k];
+    P12[i][j] += p;
+    P13[i][k] += p;
+    P23[j][k] += p;
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 860);
+  drawMatrixImage(ctx, boxes[0], P12, "pair marginal (1,2)", VIOLET);
+  drawMatrixImage(ctx, boxes[1], P13, "pair marginal (1,3)", BLUE);
+  drawMatrixImage(ctx, boxes[2], P23, "pair marginal (2,3)", RED);
+  setStatus(`three equal marginals; epsilon ${eps.toFixed(3)} and Coulomb strength ${repulsion.toFixed(2)} repel mass away from diagonals.`);
+}
+
+function drawMartingaleKernels() {
+  const spread = val("motSpread");
+  const massSkew = val("motSkew");
+  const n = 96;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.8, 2.8, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const alpha = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [
+    { weight: 0.55 + massSkew, mean: -1.0, sigma: 0.28 },
+    { weight: 0.45 - massSkew, mean: 0.85, sigma: 0.35 },
+  ]), dx);
+  const kernel = Array.from({ length: n }, () => Array(n).fill(0));
+  const beta = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    const sig = spread * (0.55 + 0.55 * Math.exp(-0.5 * (xs[i] / 0.9) ** 2));
+    let row = 0;
+    for (let j = 0; j < n; j += 1) {
+      kernel[i][j] = normalPdf(xs[j], xs[i], sig) * dx;
+      row += kernel[i][j];
+    }
+    for (let j = 0; j < n; j += 1) {
+      kernel[i][j] /= Math.max(row, 1e-12);
+      beta[j] += alpha[i] * kernel[i][j];
+    }
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawMatrixImage(ctx, boxes[0], kernel, "centered transition kernels", VIOLET);
+  drawFrame(ctx, boxes[1], "marginals and symmetric spreads");
+  const alphaDensity = alpha.map((z) => z / dx);
+  const betaDensity = beta.map((z) => z / dx);
+  const ymax = Math.max(...alphaDensity, ...betaDensity) * 1.15;
+  drawCurve(ctx, xs, alphaDensity, boxes[1], -2.8, 2.8, 0, ymax, RED, 2.1);
+  drawCurve(ctx, xs, betaDensity, boxes[1], -2.8, 2.8, 0, ymax, BLUE, 2.1);
+  const X = (x) => boxes[1].x + ((x + 2.8) / 5.6) * boxes[1].w;
+  const Y = (y) => boxes[1].y + boxes[1].h - (y / ymax) * boxes[1].h;
+  for (const x of [-1.35, -0.45, 0.55, 1.35]) {
+    const sig = spread * (0.55 + 0.55 * Math.exp(-0.5 * (x / 0.9) ** 2));
+    ctx.strokeStyle = "rgba(20,20,20,.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(X(x), Y(0.02 * ymax));
+    ctx.lineTo(X(x - sig), Y(0.12 * ymax));
+    ctx.moveTo(X(x), Y(0.02 * ymax));
+    ctx.lineTo(X(x + sig), Y(0.12 * ymax));
+    ctx.stroke();
+  }
+  setStatus(`conditional kernels are centered at x; beta is more spread while preserving the martingale barycentric constraint.`);
+}
+
+function drawGenerativeW2SlicedShapes() {
+  const n = Math.round(val("gwsParticles"));
+  const angle = val("gwsAngle");
+  const seed = Math.round(val("gwsSeed"));
+  const random = rng(seed);
+  const source = generalizedShape("crescent", n, random).map((p) => [0.92 * p[0] - 0.18, 0.92 * p[1]]);
+  const target = generalizedShape("heart", n, random).map((p) => [0.95 * p[0] + 0.2, 0.95 * p[1] - 0.02]);
+  const w2 = exactAssignment(source, target);
+  const sw = projectionAssignment(source, target, angle).assignment;
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const lim = limits(source.concat(target));
+  [["W2 assignment flow", w2], ["single-slice SW flow", sw]].forEach(([title, assignment], k) => {
+    const box = boxes[k];
+    drawFrame(ctx, box, title);
+    const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    const stride = Math.max(1, Math.floor(n / 48));
+    for (let i = 0; i < n; i += stride) {
+      const a = source[i], b = target[assignment[i]];
+      ctx.beginPath();
+      for (let q = 0; q <= 25; q += 1) {
+        const t = q / 25;
+        const bend = k === 0 ? 0 : 0.08 * Math.sin(Math.PI * t) * Math.sin(i);
+        const p = [lerp(a[0], b[0], t) + bend, lerp(a[1], b[1], t)];
+        if (q === 0) ctx.moveTo(X(p), Y(p));
+        else ctx.lineTo(X(p), Y(p));
+      }
+      ctx.strokeStyle = mixColor(i / Math.max(n - 1, 1), RED, BLUE, 0.30);
+      ctx.lineWidth = 0.85;
+      ctx.stroke();
+    }
+    for (let i = 0; i < n; i += 1) {
+      const q = lerp(0, 1, 0.58);
+      const p = [lerp(source[i][0], target[assignment[i]][0], q), lerp(source[i][1], target[assignment[i]][1], q)];
+      ctx.fillStyle = mixColor(q, RED, BLUE, 0.38);
+      ctx.beginPath();
+      ctx.arc(X(p), Y(p), 2.0, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  });
+  setStatus(`same source/target samples; W2 uses a global assignment, sliced flow sorts after projection at ${angle.toFixed(0)} degrees.`);
+}
+
+function inverseOTCloud(n, seed) {
+  const random = rng(seed);
+  const source = [];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = random() < 0.52 ? [-0.85, -0.28] : [0.62, 0.38];
+    source.push([c[0] + 0.24 * randn(random), c[1] + 0.18 * randn(random)]);
+  }
+  for (let i = 0; i < n; i += 1) {
+    const c = random() < 0.46 ? [-0.48, 0.55] : [0.92, -0.28];
+    target.push([c[0] + 0.20 * randn(random), c[1] + 0.25 * randn(random)]);
+  }
+  return { source, target };
+}
+
+function bilinearCostMatrix(source, target, A) {
+  return source.map((x) => target.map((y) => {
+    const ax0 = A[0][0] * x[0] + A[0][1] * x[1];
+    const ax1 = A[1][0] * x[0] + A[1][1] * x[1];
+    return ax0 * y[0] + ax1 * y[1];
+  }));
+}
+
+function assignmentMeanCost(cost, assignment) {
+  let value = 0;
+  for (let i = 0; i < assignment.length; i += 1) value += cost[i][assignment[i]];
+  return value / Math.max(assignment.length, 1);
+}
+
+function rotateMatrix(angleDeg) {
+  const th = (Math.PI / 180) * angleDeg;
+  const c = Math.cos(th);
+  const s = Math.sin(th);
+  return [[c, -s], [s, c]];
+}
+
+function transpose2(A) {
+  return [[A[0][0], A[1][0]], [A[0][1], A[1][1]]];
+}
+
+function diagonalBilinear(t, angleDeg = 0) {
+  const D = [[-(1 + t), 0], [0, -(1 - t)]];
+  const R = rotateMatrix(angleDeg);
+  return matMul2(matMul2(R, D), transpose2(R));
+}
+
+function drawInverseOTForward() {
+  const t = val("iofT");
+  const angle = val("iofAngle");
+  const seed = Math.round(val("iofSeed"));
+  const n = Math.round(val("iofPoints"));
+  const { source, target } = inverseOTCloud(n, seed);
+  const Ah = [[-1, -1], [0.001, 0.001]];
+  const Ac = diagonalBilinear(t, angle);
+  const Aw = [[-1, 0], [0, -1]];
+  const configs = [
+    ["rank-one horizontal", Ah],
+    [`A(t), t=${t.toFixed(2)}`, Ac],
+    ["quadratic W2 gauge", Aw],
+  ];
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(source.concat(target));
+  for (let k = 0; k < configs.length; k += 1) {
+    const [title, A] = configs[k];
+    const C = bilinearCostMatrix(source, target, A);
+    const assign = hungarian(C);
+    drawPairedMapPanel(ctx, source, target, assign, boxes[k], lim, title, 0.22);
+  }
+  setStatus(`${n} equal-weight points; each panel solves a true Hungarian assignment for c_A(x,y)=<Ax,y>.`);
+}
+
+function inverseOTGapCurve(n, seed, angleDeg, tGrid) {
+  const { source, target } = inverseOTCloud(n, seed);
+  const observedCost = bilinearCostMatrix(source, target, diagonalBilinear(0, angleDeg));
+  const observed = hungarian(observedCost);
+  const gaps = [];
+  for (const t of tGrid) {
+    const C = bilinearCostMatrix(source, target, diagonalBilinear(t, angleDeg));
+    const best = hungarian(C);
+    gaps.push(Math.max(0, assignmentMeanCost(C, observed) - assignmentMeanCost(C, best)));
+  }
+  return { source, target, observed, gaps };
+}
+
+function drawInverseOTGap() {
+  const nLarge = Math.round(val("iogPoints"));
+  const angle = val("iogAngle");
+  const seed = Math.round(val("iogSeed"));
+  const tGrid = Array.from({ length: 67 }, (_, i) => lerp(-0.92, 0.92, i / 66));
+  const small = inverseOTGapCurve(10, seed, angle, tGrid);
+  const large = inverseOTGapCurve(nLarge, seed + 17, angle, tGrid);
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(large.source.concat(large.target));
+  drawPairedMapPanel(ctx, large.source, large.target, large.observed, boxes[0], lim, "observed coupling", 0.2);
+  const ymax = Math.max(...small.gaps, ...large.gaps, 1e-4) * 1.12;
+  drawFrame(ctx, boxes[1], "gap loss, n=10");
+  drawCurve(ctx, tGrid, small.gaps, boxes[1], -0.92, 0.92, 0, ymax, RED, 2.2);
+  drawFrame(ctx, boxes[2], `gap loss, n=${nLarge}`);
+  drawCurve(ctx, tGrid, large.gaps, boxes[2], -0.92, 0.92, 0, ymax, BLUE, 2.2);
+  for (const box of [boxes[1], boxes[2]]) {
+    const X0 = box.x + ((0 + 0.92) / 1.84) * box.w;
+    ctx.strokeStyle = "rgba(20,20,20,.35)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(X0, box.y);
+    ctx.lineTo(X0, box.y + box.h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    drawSmallLabel(ctx, "true t=0", X0 + 4, box.y + 15, "#26333f", "left");
+  }
+  setStatus(`Hungarian gap scan along A_t=-R diag(1+t,1-t) R^T; larger n usually sharpens the zero valley.`);
+}
+
+function det2(A) {
+  return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+}
+
+function drawBrunnMinkowskiOT() {
+  const stretch = val("bmStretch");
+  const angle = val("bmAngle");
+  const tFocus = val("bmTime");
+  const R = rotateMatrix(angle);
+  const A = matMul2(matMul2(R, [[stretch, 0], [0, 0.72 + 0.18 / stretch]]), transpose2(R));
+  const times = [0, 0.25, 0.5, 0.75, 1];
+  const { ctx, w, h } = resizeCanvas(450);
+  const gap = 12;
+  const bw = (w - 34 - 5 * gap) / 6;
+  const ellipseBoxes = times.map((_, i) => ({ x: 17 + i * (bw + gap), y: 46, w: bw, h: h * 0.48 }));
+  const curveBox = { x: 17 + 5 * (bw + gap), y: 46, w: bw, h: h * 0.48 };
+  const lim = { xmin: -2.2, xmax: 2.2, ymin: -2.2, ymax: 2.2 };
+  for (let i = 0; i < times.length; i += 1) {
+    const t = times[i];
+    const B = matAdd2(matScale2([[1, 0], [0, 1]], 1 - t), matScale2(A, t));
+    drawFrame(ctx, ellipseBoxes[i], `t=${t.toFixed(2)}`);
+    drawCovEllipse(ctx, [0, 0], matMul2(B, transpose2(B)), ellipseBoxes[i], lim, mixColor(t, RED, BLUE, 1), 1.5, 0.22);
+  }
+  drawFrame(ctx, curveBox, "sqrt area");
+  const ts = Array.from({ length: 160 }, (_, i) => i / 159);
+  const areas = ts.map((t) => Math.sqrt(Math.max(det2(matAdd2(matScale2([[1, 0], [0, 1]], 1 - t), matScale2(A, t))), 1e-12)));
+  const line = ts.map((t) => lerp(areas[0], areas[areas.length - 1], t));
+  const ymin = Math.min(...areas, ...line) * 0.96;
+  const ymax = Math.max(...areas, ...line) * 1.04;
+  drawCurve(ctx, ts, areas, curveBox, 0, 1, ymin, ymax, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, line, curveBox, 0, 1, ymin, ymax, "#5f6670", 1.4, [4, 4]);
+  const panel = { x: 30, y: h * 0.66, w: w - 60, h: h * 0.24 };
+  drawFrame(ctx, panel, `highlighted affine image, t=${tFocus.toFixed(2)}`);
+  const Bf = matAdd2(matScale2([[1, 0], [0, 1]], 1 - tFocus), matScale2(A, tFocus));
+  drawCovEllipse(ctx, [0, 0], matMul2(Bf, transpose2(Bf)), panel, lim, mixColor(tFocus, RED, BLUE, 1), 2, 0.2);
+  setStatus(`determinant concavity: sqrt(det((1-t)I+tA)) lies above the chord; stretch ${stretch.toFixed(2)}.`);
+}
+
+function ouMixtureComponents(t, skew) {
+  const e = Math.exp(-t);
+  const v = 1 - e * e;
+  return [
+    { weight: 0.48 + skew, mean: e * -1.35, sigma: Math.sqrt(v + e * e * 0.25 ** 2) },
+    { weight: 0.34 - 0.5 * skew, mean: e * 0.15, sigma: Math.sqrt(v + e * e * 0.42 ** 2) },
+    { weight: 0.18 - 0.5 * skew, mean: e * 1.28, sigma: Math.sqrt(v + e * e * 0.28 ** 2) },
+  ];
+}
+
+function hwiQuantities(t, skew) {
+  const xs = Array.from({ length: 720 }, (_, i) => lerp(-4.5, 4.5, i / 719));
+  const dx = xs[1] - xs[0];
+  const comps = ouMixtureComponents(t, skew);
+  const p = normalizeDensity(xs, xs.map((x) => gaussianMixtureDensity(comps.map((c) => ({ w: c.weight, m: c.mean, s: c.sigma })), x)));
+  const gamma = normalizeDensity(xs, xs.map((x) => normalPdf(x, 0, 1)));
+  let H = 0;
+  for (let i = 0; i < xs.length; i += 1) H += p[i] * Math.log(Math.max(p[i] / Math.max(gamma[i], 1e-300), 1e-300)) * dx;
+  const logRatio = p.map((z, i) => Math.log(Math.max(z / Math.max(gamma[i], 1e-300), 1e-300)));
+  let I = 0;
+  for (let i = 1; i < xs.length - 1; i += 1) {
+    const d = (logRatio[i + 1] - logRatio[i - 1]) / (2 * dx);
+    I += d * d * p[i] * dx;
+  }
+  const qn = 220;
+  const qp = inverseCdfSamples(xs, p, qn);
+  let W2 = 0;
+  for (let i = 0; i < qn; i += 1) {
+    const u = (i + 0.5) / qn;
+    const qg = normalInv(u, 0, 1);
+    W2 += (qp[i] - qg) ** 2 / qn;
+  }
+  return { xs, p, gamma, H, I, W: Math.sqrt(Math.max(W2, 0)) };
+}
+
+function drawHWIEntropyDecay() {
+  const finalTime = val("hwiTime");
+  const skew = val("hwiSkew");
+  const ts = Array.from({ length: 54 }, (_, i) => lerp(0, finalTime, i / 53));
+  const data = ts.map((t) => hwiQuantities(t, skew));
+  const { ctx, w, h } = resizeCanvas(470);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  drawFrame(ctx, boxes[0], "OU density relaxation");
+  const xMin = -4.0, xMax = 4.0;
+  const ymaxD = Math.max(...data[0].p, ...data[data.length - 1].p, ...data[0].gamma) * 1.12;
+  [0, 0.25, 0.5, 0.75, 1].forEach((s) => {
+    const idx = Math.round(s * (data.length - 1));
+    drawCurve(ctx, data[idx].xs, data[idx].p, boxes[0], xMin, xMax, 0, ymaxD, mixColor(s, RED, BLUE, s === 0 || s === 1 ? 0.95 : 0.55), s === 0 || s === 1 ? 2 : 1.2);
+  });
+  drawDashedCurve(ctx, data[0].xs, data[0].gamma, boxes[0], xMin, xMax, 0, ymaxD, "#5f6670", 1.3, [5, 4]);
+  const H = data.map((z) => z.H);
+  const I = data.map((z) => z.I);
+  const W = data.map((z) => z.W);
+  const hwi = data.map((z) => Math.max(0, z.W * Math.sqrt(Math.max(z.I, 0)) - 0.5 * z.W * z.W));
+  const logsob = I.map((z) => 0.5 * z);
+  const tal = W.map((z) => 0.5 * z * z);
+  const ymax = Math.max(...H, ...hwi, ...logsob) * 1.08;
+  drawFrame(ctx, boxes[1], "static inequalities");
+  drawCurve(ctx, ts, H, boxes[1], 0, finalTime, 0, ymax, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, hwi, boxes[1], 0, finalTime, 0, ymax, RED, 1.5, [4, 4]);
+  drawDashedCurve(ctx, ts, logsob, boxes[1], 0, finalTime, 0, ymax, BLUE, 1.5, [6, 4]);
+  drawDashedCurve(ctx, ts, tal, boxes[1], 0, finalTime, 0, ymax, "#5f6670", 1.2, [2, 4]);
+  drawFrame(ctx, boxes[2], "entropy decay");
+  const guide = ts.map((t) => H[0] * Math.exp(-2 * t));
+  drawCurve(ctx, ts, H, boxes[2], 0, finalTime, 0, H[0] * 1.05, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, guide, boxes[2], 0, finalTime, 0, H[0] * 1.05, "#5f6670", 1.4, [5, 4]);
+  setStatus(`OU flow to N(0,1); H=${H[H.length - 1].toFixed(3)}, I=${I[I.length - 1].toFixed(3)}, W=${W[W.length - 1].toFixed(3)} at final time.`);
+}
+
+function mlpSurrogate(kind, n, seed, angleDeg, steps) {
+  const random = rng(seed);
+  const teachers = [-angleDeg, angleDeg].map((a) => [(Math.cos((Math.PI / 180) * a)), Math.sin((Math.PI / 180) * a)]);
+  let pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const th = 2 * Math.PI * random();
+    const r = 0.36 + 0.18 * randn(random);
+    pts.push([r * Math.cos(th), r * Math.sin(th)]);
+  }
+  const traj = pts.map((p) => [p.slice()]);
+  const risks = [];
+  const hist = [];
+  for (let s = 0; s <= steps; s += 1) {
+    let risk = 0;
+    const angles = [];
+    for (const p of pts) {
+      const r = Math.max(Math.hypot(p[0], p[1]), 1e-8);
+      const u = [p[0] / r, p[1] / r];
+      const best = teachers.map((v) => u[0] * v[0] + u[1] * v[1]).reduce((a, b) => Math.max(a, b), -Infinity);
+      risk += (1 - best) ** 2 + 0.08 * (r - 1) ** 2;
+      angles.push(Math.atan2(p[1], p[0]));
+    }
+    risks.push(risk / n);
+    if (s === steps) hist.push(...angles);
+    if (s === steps) break;
+    pts = pts.map((p) => {
+      const r = Math.max(Math.hypot(p[0], p[1]), 1e-8);
+      const u = [p[0] / r, p[1] / r];
+      const target = teachers[0][0] * u[0] + teachers[0][1] * u[1] > teachers[1][0] * u[0] + teachers[1][1] * u[1] ? teachers[0] : teachers[1];
+      let vx = target[0] - u[0] + 0.24 * (1 - r) * u[0];
+      let vy = target[1] - u[1] + 0.24 * (1 - r) * u[1];
+      if (kind === "muon") {
+        const norm = Math.max(Math.hypot(vx, vy), 1e-8);
+        vx = 0.62 * vx / norm + 0.20 * target[0];
+        vy = 0.62 * vy / norm + 0.20 * target[1];
+      }
+      const dt = kind === "muon" ? 0.032 : 0.024;
+      return [p[0] + dt * vx, p[1] + dt * vy];
+    });
+    if (s % 4 === 0 || s === steps - 1) for (let i = 0; i < n; i += 1) traj[i].push(pts[i].slice());
+  }
+  return { pts, traj, risks, hist, teachers };
+}
+
+function drawMLPW2Muon() {
+  const n = Math.round(val("mlpmNeurons"));
+  const angle = val("mlpmAngle");
+  const steps = Math.round(val("mlpmSteps"));
+  const seed = Math.round(val("mlpmSeed"));
+  const w2 = mlpSurrogate("w2", n, seed, angle, steps);
+  const muon = mlpSurrogate("muon", n, seed, angle, steps);
+  const { ctx, w, h } = resizeCanvas(560);
+  const boxesTop = [
+    { x: 36, y: 40, w: (w - 96) / 2, h: 210 },
+    { x: 60 + (w - 96) / 2, y: 40, w: (w - 96) / 2, h: 210 },
+  ];
+  const boxesBottom = [
+    { x: 36, y: 308, w: (w - 96) / 2, h: 170 },
+    { x: 60 + (w - 96) / 2, y: 308, w: (w - 96) / 2, h: 170 },
+  ];
+  [["W2 particle flow", w2], ["normalized Muon-like flow", muon]].forEach(([title, sim], k) => {
+    const box = boxesTop[k];
+    drawFrame(ctx, box, title);
+    const lim = 1.45;
+    const proj = gfMap(box, lim);
+    for (const v of sim.teachers) {
+      ctx.strokeStyle = "rgba(20,20,20,.45)";
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(proj.X(0), proj.Y(0));
+      ctx.lineTo(proj.X(1.25 * v[0]), proj.Y(1.25 * v[1]));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    gfDrawTrajectories(ctx, box, lim, sim.traj, Math.max(1, Math.floor(n / 46)));
+    gfDrawPoints(ctx, box, lim, sim.pts, k === 0 ? VIOLET : BLUE, 2.1, 0.82);
+  });
+  drawFrame(ctx, boxesBottom[0], "risk surrogate");
+  const xs = Array.from({ length: w2.risks.length }, (_, i) => i / Math.max(w2.risks.length - 1, 1));
+  const ymax = Math.max(...w2.risks, ...muon.risks) * 1.05;
+  drawCurve(ctx, xs, w2.risks, boxesBottom[0], 0, 1, 0, ymax, VIOLET, 2.1);
+  drawCurve(ctx, xs, muon.risks, boxesBottom[0], 0, 1, 0, ymax, BLUE, 2.1);
+  drawFrame(ctx, boxesBottom[1], "final angular density");
+  const bins = 60;
+  const histW = Array(bins).fill(0);
+  const histM = Array(bins).fill(0);
+  for (const a of w2.hist) histW[Math.floor(((a + Math.PI) / (2 * Math.PI)) * bins) % bins] += 1;
+  for (const a of muon.hist) histM[Math.floor(((a + Math.PI) / (2 * Math.PI)) * bins) % bins] += 1;
+  const xang = Array.from({ length: bins }, (_, i) => -180 + (360 * (i + 0.5)) / bins);
+  const yH = Math.max(...histW, ...histM, 1);
+  drawCurve(ctx, xang, histW, boxesBottom[1], -180, 180, 0, yH, VIOLET, 1.8);
+  drawCurve(ctx, xang, histM, boxesBottom[1], -180, 180, 0, yH, BLUE, 1.8);
+  setStatus(`surrogate normalized training dynamics; final risk W2=${w2.risks[w2.risks.length - 1].toFixed(3)}, Muon=${muon.risks[muon.risks.length - 1].toFixed(3)}.`);
+}
+
 function normalizeDensity(xs, values) {
   const dx = xs.length > 1 ? (xs[xs.length - 1] - xs[0]) / (xs.length - 1) : 1;
   const mass = values.reduce((sum, z) => sum + Math.max(z, 0), 0) * dx;
@@ -9489,6 +10605,140 @@ function init() {
       slider("potBins", "display bins", 94, 58, 130, 4),
     ].join("");
     bind(drawPartialOT1D);
+  } else if (kind === "partialot2d") {
+    controls.innerHTML = [
+      slider("pot2Mass", "initial active mass", 0.78, 0.36, 0.96, 0.01),
+      slider("pot2Points", "points", 74, 36, 120, 2),
+      slider("pot2Epsilon", "softness", 0.08, 0.025, 0.22, 0.005),
+      slider("pot2Seed", "seed", 4320, 4300, 4380, 1),
+    ].join("");
+    bind(drawPartialOT2D);
+  } else if (kind === "capacityot2d") {
+    controls.innerHTML = [
+      slider("cap2Points", "points", 82, 40, 140, 2),
+      slider("cap2Degree", "middle cap", 3, 2, 6, 1),
+      slider("cap2Spread", "spread", 0.36, 0.22, 0.58, 0.01),
+      slider("cap2Seed", "seed", 4390, 4360, 4440, 1),
+    ].join("");
+    bind(drawCapacityOT2D);
+  } else if (kind === "slicedradon") {
+    controls.innerHTML = [
+      slider("srTime", "interpolation time", 0.5, 0, 1, 0.01),
+      slider("srAngle", "angle offset", 18, 0, 90, 1),
+      slider("srContrast", "quantile width", 0.55, 0.2, 1.1, 0.01),
+    ].join("");
+    bind(drawSlicedRadon);
+  } else if (kind === "sinkhorngeodesicheat") {
+    controls.innerHTML = [
+      slider("gihEps", "heat scale", 0.16, 0.035, 0.42, 0.005),
+      slider("gihPoints", "curve points", 72, 28, 140, 2),
+    ].join("");
+    bind(drawGeodesicHeat);
+  } else if (kind === "sinkhornsketching") {
+    controls.innerHTML = [
+      slider("skEps", "epsilon", 0.055, 0.018, 0.14, 0.001),
+      slider("skSeed", "feature seed", 4460, 4440, 4520, 1),
+    ].join("");
+    bind(drawSinkhornSketching);
+  } else if (kind === "generativew2svgd") {
+    controls.innerHTML = [
+      slider("gwsvgdParticles", "particles", 88, 32, 150, 2),
+      slider("gwsvgdSteps", "steps", 115, 40, 190, 5),
+      slider("gwsvgdSeed", "seed", 4520, 4500, 4580, 1),
+    ].join("");
+    bind(drawGenerativeW2SVGD);
+  } else if (kind === "gradflowmomentumentropy") {
+    controls.innerHTML = [
+      slider("gmeTime", "final time", 0.6, 0.18, 1.1, 0.01),
+      slider("gmeDamping", "damping", 0.38, 0.05, 1.1, 0.01),
+      slider("gmeSpread", "initial width", 0.22, 0.12, 0.42, 0.01),
+    ].join("");
+    bind(drawMomentumEntropy1D);
+  } else if (kind === "mongecaffarelli") {
+    controls.innerHTML = [
+      slider("mcfNeck", "neck strength", 0.62, 0.05, 0.9, 0.01),
+      slider("mcfRings", "rings", 10, 5, 18, 1),
+    ].join("");
+    bind(drawMongeCaffarelli);
+  } else if (kind === "sinkhornentropygeometry") {
+    controls.innerHTML = [
+      slider("segEps", "epsilon", 0.18, 0.025, 1.2, 0.005),
+    ].join("");
+    bind(drawSinkhornEntropyGeometry);
+  } else if (kind === "sinkhornbiasvariance") {
+    controls.innerHTML = [
+      slider("sasDim", "dimension", 6, 1, 18, 1),
+      slider("sasEps", "epsilon", 0.11, 0.025, 0.45, 0.005),
+      slider("sasNmax", "max samples", 8000, 500, 20000, 500),
+    ].join("");
+    bind(drawAdvancedSamples);
+  } else if (kind === "sinkhorndoublypositive") {
+    controls.innerHTML = [
+      slider("sdpLambda", "lambda", 0.08, 0, 0.5, 0.01),
+    ].join("");
+    bind(drawDoublyPositiveCounterexample);
+  } else if (kind === "sinkhornmfunctions") {
+    controls.innerHTML = [
+      slider("smfSigma", "sigma", 0.28, 0.08, 0.8, 0.01),
+      slider("smfTau", "tau", 0.46, 0.08, 0.9, 0.01),
+      slider("smfSteps", "iterations", 28, 6, 70, 1),
+    ].join("");
+    bind(drawMFunctionsScaling);
+  } else if (kind === "multimarginalcoulomb") {
+    controls.innerHTML = [
+      slider("mmcEps", "epsilon", 0.34, 0.12, 0.95, 0.01),
+      slider("mmcRepulsion", "repulsion", 0.55, 0.15, 1.1, 0.01),
+    ].join("");
+    bind(drawMultimarginalCoulomb);
+  } else if (kind === "martingalekernels") {
+    controls.innerHTML = [
+      slider("motSpread", "kernel width", 0.52, 0.16, 1.1, 0.01),
+      slider("motSkew", "mass skew", 0.04, -0.18, 0.18, 0.01),
+    ].join("");
+    bind(drawMartingaleKernels);
+  } else if (kind === "generativew2sliced") {
+    controls.innerHTML = [
+      slider("gwsParticles", "particles", 72, 32, 110, 2),
+      slider("gwsAngle", "slice angle", 36, 0, 180, 1),
+      slider("gwsSeed", "seed", 4610, 4590, 4670, 1),
+    ].join("");
+    bind(drawGenerativeW2SlicedShapes);
+  } else if (kind === "inverseotforward") {
+    controls.innerHTML = [
+      slider("iofPoints", "points", 28, 14, 52, 2),
+      slider("iofT", "anisotropy t", 0.45, -0.85, 0.85, 0.01),
+      slider("iofAngle", "rotation", 18, -60, 60, 1),
+      slider("iofSeed", "seed", 4700, 4680, 4760, 1),
+    ].join("");
+    bind(drawInverseOTForward);
+  } else if (kind === "inverseotgap") {
+    controls.innerHTML = [
+      slider("iogPoints", "large n", 46, 20, 82, 2),
+      slider("iogAngle", "rotation", 12, -45, 45, 1),
+      slider("iogSeed", "seed", 4770, 4760, 4820, 1),
+    ].join("");
+    bind(drawInverseOTGap);
+  } else if (kind === "gradflowbrunnminkowski") {
+    controls.innerHTML = [
+      slider("bmStretch", "affine stretch", 2.1, 1.05, 3.6, 0.05),
+      slider("bmAngle", "angle", 28, 0, 90, 1),
+      slider("bmTime", "highlight t", 0.48, 0, 1, 0.01),
+    ].join("");
+    bind(drawBrunnMinkowskiOT);
+  } else if (kind === "gradflowhwi") {
+    controls.innerHTML = [
+      slider("hwiTime", "final time", 2.2, 0.5, 4.0, 0.05),
+      slider("hwiSkew", "mixture skew", 0.08, -0.14, 0.14, 0.01),
+    ].join("");
+    bind(drawHWIEntropyDecay);
+  } else if (kind === "gradflowmlpmuon") {
+    controls.innerHTML = [
+      slider("mlpmNeurons", "neurons", 92, 36, 180, 2),
+      slider("mlpmAngle", "teacher angle", 38, 15, 75, 1),
+      slider("mlpmSteps", "steps", 86, 24, 160, 2),
+      slider("mlpmSeed", "seed", 4830, 4820, 4890, 1),
+    ].join("");
+    bind(drawMLPW2Muon);
   } else {
     controls.innerHTML = [
       slider("hungarianN", "size", 8, 5, 14, 1),

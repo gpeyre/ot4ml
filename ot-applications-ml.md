@@ -1,586 +1,455 @@
-# Applications of Optimal Transport to Machine Learning and AI
+# Applications of Optimal Transport in Machine Learning and AI
 
-This note is a curated roadmap of places where optimal transport (OT) is used in
-machine learning, AI, and neighboring data-driven sciences. Each entry records
-the application, the practical role of OT, representative papers, and the most
-natural place to mention the topic in the OT4ML book.
+This file is both a planning document and a progress ledger for application
+examples in the OT4ML book.  Each item below is meant to correspond to a compact
+`example` environment inserted near the mathematical tool it illustrates.
 
-The selection mixes practice and theory on purpose. Some items are mature
-algorithmic tools, such as domain adaptation, WGANs, Sinkhorn losses, graph
-matching, or single-cell trajectory inference. Others are mathematical lenses,
-such as mean-field training dynamics or kernelized particle flows, that clarify
-why modern ML methods behave as they do.
+## Editorial Rule for Future Insertion
 
-## Quick Insertion Map
+Each application should be inserted as a single `example` environment with a
+title of the form `Application to ...`.  The block should not be a detached
+bibliographic aside: it should start from the notation and theorem currently
+being discussed, explain the concrete machine-learning task, give the minimal
+mathematical formulation, and then cite a small number of representative papers.
 
-| Application area | Best book location | Insertion angle |
-|---|---|---|
-| Transfer learning and domain adaptation | Chapter 3; Chapter 11 | Couplings as soft correspondences between source and target samples; learned costs for representation alignment. |
-| Single-cell genomics and perturbation response | Chapter 7; Chapter 10; Chapter 13; Chapter 15 | Time-marginal couplings, growth/death, unpaired perturbation maps, and neural transport. |
-| Generative models | Chapter 6; Chapter 7; Chapter 15 | WGAN/Sinkhorn losses, flow matching, rectified flows, diffusion bridges, and one-step maps. |
-| Distributional robustness and adversarial training | Chapter 3 | Wasserstein balls as geometric ambiguity sets around empirical data. |
-| Fairness and debiasing | Chapter 11; Chapter 10 | Barycenters and distribution repair across protected groups. |
-| Computer vision, graphics, and image processing | Chapter 2; Chapter 5; Chapter 10; Chapter 11 | Color transfer, texture mixing, shape interpolation, and image barycenters. |
-| Graphs, molecules, and structured data | Chapter 12 | GW/FGW as distances for objects without a common coordinate system. |
-| NLP and embeddings | Chapter 3; Chapter 12 | Word Mover's Distance and GW alignment of embedding spaces. |
-| Differentiable ranking, sorting, and attention | Chapter 1; Chapter 7; Chapter 15 | Sinkhorn relaxations of permutations and doubly stochastic attention. |
-| Barycenters, clustering, and prototypes | Chapter 11 | Wasserstein means as interpretable prototypes for distributions. |
-| Supervised learning losses | Chapter 6; Chapter 7; Chapter 9 | Differentiable losses for histogram- or measure-valued outputs. |
-| Bayesian inference and particle methods | Chapter 13; Chapter 15 | Kernelized BB geometry and SVGD as deterministic particle transport. |
-| Training dynamics of neural networks | Chapter 14 | Mean-field descriptions of overparameterized networks. |
-| Model evaluation and dataset drift | Chapter 2; Chapter 9; Chapter 15 | FID, two-sample testing, and distribution-shift monitoring. |
-| Reinforcement learning and imitation learning | Chapter 13; Chapter 15 | Occupancy-measure matching and stochastic-control viewpoints. |
-| Scientific ML and computational physics | Chapter 11; Chapter 13; Chapter 14 | Multimarginal Coulomb problems, particle systems, and PDE-constrained learning. |
-| Large-scale Sinkhorn and sketching | Chapter 9; Chapter 11; Chapter 15 | Low-rank couplings, positive features, and attention-like kernel approximations. |
+For each application, the preferred structure is:
 
-## 1. Transfer Learning and Domain Adaptation
+- **Mathematical hook.** A two- or three-line formula connecting the application
+to the surrounding section.
+- **Practical message.** What OT buys in the application: alignment, geometry,
+differentiability, barycentric averaging, uncertainty, growth/death, or testing.
+- **References.** A curated list of stable papers, avoiding long incremental
+bibliographies.
+- **Book location.** The precise section where the example should be inserted.
 
-**Application.** Transfer learning asks how to reuse labeled source data when
-predictions are needed in a target domain with a shifted distribution. OT gives
-an explicit coupling between source and target samples; this coupling can move
-labels, compare feature clouds, or align joint feature-label distributions.
+## Implementation Status
 
-**Practical role.** In practice, OT is used to align source and target feature
-clouds, regularize the coupling with class information, and learn a representation
-where source and target distributions are close. This is one of the cleanest
-practical uses of discrete and entropic OT.
+Status after the insertion and polishing passes:
 
-**Key papers.**
+| Application | Status | Book location |
+| --- | --- | --- |
+| Domain adaptation | Done, polished | `OT4ML/sections/kantorovich.tex`, `ex-domain-adaptation` |
+| Single-cell trajectory inference | Done, polished | `OT4ML/sections/kantorovich.tex`, `ex-single-cell-trajectory-inference` |
+| Single-cell gradient-flow models | Done, polished | `OT4ML/sections/wasserstein-gradient-flows.tex`, `ex-single-cell-gradient-flow` |
+| Perturbation-response prediction | Done, polished | `OT4ML/sections/transportation-models.tex`, `ex-perturbation-response-neural-ot` |
+| Gene-expression distances | Done, polished | `OT4ML/sections/kantorovich.tex`, `ex-gene-expression-distance` |
+| Proliferating and dying cell populations | Done, polished | `OT4ML/sections/generalized-wasserstein.tex`, `ex-unbalanced-single-cell` |
+| Multi-omics alignment | Done, polished | `OT4ML/sections/beyond-comparing-measures.tex`, `ex-multi-omics-alignment` |
+| Fair score repair | Done, polished | `OT4ML/sections/generalized-ot-problems.tex`, `ex-fair-score-repair` |
+| Visual distributions | Done, polished | `OT4ML/sections/kantorovich.tex`, `ex-visual-distributions` |
+| Structured objects | Done, polished | `OT4ML/sections/beyond-comparing-measures.tex`, `ex-structured-objects-gw` |
+| Word embeddings and documents | Done, polished | `OT4ML/sections/kantorovich.tex`, `ex-word-mover-distance` |
+| Structured prediction losses | Done, polished | `OT4ML/sections/estimation.tex`, `ex-structured-prediction-wasserstein-loss` |
+| Two-sample testing and generative-model evaluation | Done, polished | `OT4ML/sections/statistical-ot.tex`, `ex-two-sample-testing-fid` |
+| Imitation learning | Done, polished | `OT4ML/sections/dual-norms.tex`, `ex-imitation-learning-ot` |
+
+The insertion pass added a compact bibliography block in `OT4ML/all.bib` for
+the application papers that were not already present locally.  The polishing
+passes aligned notation with the main book, added cross-references to related
+sections, made the mathematical operations explicit when needed, and clarified
+the practical message of each example.  A few roadmap
+references that still needed exact verification, such as SCOT metadata and the
+intended STORIES reference, were not cited in the book examples.
+
+## Transfer Learning and Domain Adaptation
+
+**Proposed example title.** `Application to domain adaptation`.
+
+**Mathematical hook.** Given labeled source samples
+\((x_i^s,y_i^s)_i\) and unlabeled target samples \((x_j^t)_j\), write
+\(\alpha_s=\sum_i a_i\delta_{x_i^s}\) and
+\(\alpha_t=\sum_j b_j\delta_{x_j^t}\).  OT estimates a coupling
+\(P\in\U(a,b)\) between the two feature clouds.  Labels can then be transported
+by the barycentric rule
+\[
+        \tilde y_j = \frac{1}{b_j}\sum_i P_{ij}y_i^s,
+\]
+or the coupling can be optimized jointly with a classifier through a feature-label
+cost, as in JDOT.
+
+**Practical message.** OT is useful because it keeps explicit correspondences
+between source and target samples.  Class-aware costs, entropic regularization,
+and learned representations turn the basic coupling into practical domain
+adaptation methods.
+
+**Representative references.**
 
 - Courty, Flamary, Tuia, Rakotomamonjy, [Optimal Transport for Domain Adaptation](https://arxiv.org/abs/1507.00504), 2015.
 - Courty, Flamary, Habrard, Rakotomamonjy, [Joint Distribution Optimal Transportation for Domain Adaptation](https://arxiv.org/abs/1705.08848), 2017.
 - Damodaran, Kellenberger, Flamary, Tuia, Courty, [DeepJDOT: Deep Joint Distribution Optimal Transport for Unsupervised Domain Adaptation](https://arxiv.org/abs/1803.10081), 2018.
 - Shen, Qu, Zhang, Yu, [Wasserstein Distance Guided Representation Learning for Domain Adaptation](https://arxiv.org/abs/1707.01217), 2017.
 
-**Best book location.** Add a practice paragraph in Chapter 3 after the discrete
-Kantorovich relaxation: the domain-adaptation coupling is exactly a transport
-matrix between source and target samples. Add a second pointer in Chapter 11,
-near metric learning and inverse OT, because modern methods often learn the
-feature map or ground cost jointly with the plan.
+**Book location.** Chapter `Kantorovich Relaxation`, after `Relaxation for
+Arbitrary Measures`; a second short pointer can be added in `Metric learning and
+inverse OT`.
 
-## 2. Single-Cell Genomics, Fate Inference, and Perturbation Response
+## Single-Cell Population Alignment and Trajectory Inference
 
-**Application.** Single-cell RNA sequencing observes populations rather than
-individual trajectories: cells measured at one time or condition are not the same
-cells measured later. OT supplies couplings, trajectories, and response maps
-between unpaired cellular populations.
+**Proposed example title.** `Application to single-cell trajectory inference`.
 
-**Practical role.** OT is used for developmental trajectory reconstruction,
-cell-fate prediction, perturbation-response modeling, multi-omics alignment, and
-out-of-sample neural transport maps. Unbalanced and entropic variants are often
-essential because cell populations grow, die, branch, and are sampled unevenly.
+**Mathematical hook.** A time course of single-cell measurements gives empirical
+measures
+\[
+        \alpha_{t_k}=\frac1{n_k}\sum_{i=1}^{n_k}\delta_{x_i^{(k)}}
+\]
+on a gene-expression or latent cell-state space.  Since sequencing is destructive,
+one observes populations at several times, not trajectories of the same cells.
+OT couplings \(\pi_k\in\Gamma(\alpha_{t_k},\alpha_{t_{k+1}})\) provide soft
+ancestor-descendant relations and can be composed or regularized dynamically to
+infer developmental trajectories.
 
-**Key papers.**
+**Practical message.** This is one of the clearest modern examples where OT is
+not merely a distance: the coupling itself is the object of biological interest.
+Entropic, dynamic, and unbalanced variants account for noisy sampling, branching,
+and population growth.
+
+**Representative references.**
 
 - Schiebinger et al., *Optimal-Transport Analysis of Single-Cell Gene Expression Identifies Developmental Trajectories in Reprogramming*, Cell, 2019.
+- Tong, Huang, Wolf, van Dijk, Krishnaswamy, [TrajectoryNet: A Dynamic Optimal Transport Network for Modeling Cellular Dynamics](https://arxiv.org/abs/2002.04461), 2020.
 - Lavenant, Zhang, Kim, Schiebinger, [Towards a Mathematical Theory of Trajectory Inference](https://arxiv.org/abs/2102.09204), 2021.
-- Forrow, Huetter, Nitzan, Rigollet, Schiebinger, Weed, [Statistical Optimal Transport via Factored Couplings](https://arxiv.org/abs/1806.07348), 2018.
-- Bunne et al., *Learning single-cell perturbation responses using neural optimal transport*, Nature Methods, 2023.
 - Klein, Uscidda, Theis, Cuturi, [GENOT: Entropic (Gromov) Wasserstein Flow Matching with Applications to Single-Cell Genomics](https://arxiv.org/abs/2310.09254), 2023.
-- Bellazzi, Codegoni, Gualandi, Nicora, Vercesi, [The Gene Mover's Distance](https://arxiv.org/abs/2102.01218), 2021.
 
-**Best book location.** Add an extended example in Chapter 7 after the path-space
-Schrodinger problem, because Waddington-OT and gWOT are naturally path-space or
-time-marginal problems. Add a shorter pointer in Chapter 10, unbalanced OT, for
-growth, death, and unequal sampling. Add a forward pointer in Chapter 15, where
-neural OT and flow matching give scalable out-of-sample transport maps.
+**Book location.** Chapter `Kantorovich Relaxation`, at the end of `Metric
+Properties: Topology and Applications`, with a forward pointer to `Dynamic
+Optimal Transport` and `Generative Models via Flow Matching`.
 
-## 3. Generative Adversarial Models and OT Discrepancies
+## Single-Cell Dynamics as Wasserstein Gradient Flows
 
-**Application.** Generative modeling learns a map from a simple latent law to a
-data law. OT enters either as a training discrepancy, as in WGAN and
-Sinkhorn-type models, or as a geometry for evolving generated distributions.
+**Proposed example title.** `Application to single-cell gradient-flow models`.
 
-**Practical role.** OT-based losses often give informative gradients when
-supports are disjoint, which is important for high-dimensional empirical data.
-Entropic, sliced, MMD, and dual variants trade statistical behavior against
-computational tractability.
+**Mathematical hook.** Instead of only estimating pairwise couplings between
+snapshots, one can posit that a latent population law solves
+\[
+        \partial_t\alpha_t+\nabla\cdot(\alpha_t v_t)=0,
+        \qquad
+        v_t=-\nabla \frac{\delta \mathcal F}{\delta \alpha}(\alpha_t),
+\]
+for an energy such as
+\(\mathcal F(\alpha)=\int V\,d\alpha+\tau\Ent(\alpha)\).  The potential
+\(V\), the interaction part of \(\mathcal F\), or a neural approximation of
+\(v_t\) is then fitted from unpaired population snapshots.
 
-**Key papers.**
+**Practical message.** This application connects the biological language of a
+Waddington landscape to the mathematical language of gradient flows.  It also
+explains why dynamic OT, Fokker--Planck equations, and flow matching naturally
+appear in modern single-cell trajectory models.
 
-- Arjovsky, Chintala, Bottou, [Wasserstein GAN](https://arxiv.org/abs/1701.07875), 2017.
-- Gulrajani et al., [Improved Training of Wasserstein GANs](https://arxiv.org/abs/1704.00028), 2017.
-- Tolstikhin, Bousquet, Gelly, Schoelkopf, *Wasserstein Auto-Encoders*, 2018.
-- Patrini et al., [Sinkhorn AutoEncoders](https://arxiv.org/abs/1810.01118), 2018.
-- Kolouri, Pope, Martin, Rohde, [Sliced-Wasserstein Autoencoder](https://arxiv.org/abs/1804.01947), 2018.
-- Genevay, Peyre, Cuturi, *Learning Generative Models with Sinkhorn Divergences*, 2018.
+**Representative references.**
 
-**Best book location.** Chapter 6, GANs via duality, is the place for WGAN and
-MMD-GAN. Chapter 7 should mention Sinkhorn divergences as practical generative
-losses. Chapter 15 should carry the broader synthesis: one-step generators, flow
-matching, drifting fields, and particle flows.
+- Tong, Huang, Wolf, van Dijk, Krishnaswamy, [TrajectoryNet](https://arxiv.org/abs/2002.04461), 2020.
+- Lavenant, Zhang, Kim, Schiebinger, [Towards a Mathematical Theory of Trajectory Inference](https://arxiv.org/abs/2102.09204), 2021.
+- Klein, Uscidda, Theis, Cuturi, [GENOT](https://arxiv.org/abs/2310.09254), 2023.
 
-## 4. Flow Matching, Rectified Flows, Diffusion Models, and Stochastic Interpolants
+**Book location.** Chapter `Wasserstein Gradient Flows`, after `Minimizing
+Movements and Wasserstein Gradients`, with a backward pointer to `Benamou--Brenier
+dynamic formulation of OT`.
 
-**Application.** Modern generative AI often learns a velocity or score field
-that transports noise to data. OT supplies couplings, interpolants, and dynamic
-formulations that clarify when learned flows approximate displacement
-interpolation and when they are only transport-inspired.
+## Single-Cell Perturbation Response and Neural OT Maps
 
-**Practical role.** OT couplings can reduce variance in flow-matching targets,
-produce straighter trajectories, and connect deterministic flow models with
-Schrodinger bridges and diffusion models.
+**Proposed example title.** `Application to perturbation-response prediction`.
 
-**Key papers.**
+**Mathematical hook.** For a control distribution \(\alpha\) and a perturbed
+distribution \(\beta\), the goal is not only to compare \(\alpha\) and \(\beta\),
+but to learn a map or stochastic kernel sending a new unperturbed cell to its
+likely perturbed state.  Neural OT parameterizes a Monge map, semi-coupling, or
+conditional transport map and trains it from unpaired samples.
 
-- Lipman et al., [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747), 2022.
-- Liu, Gong, Liu, [Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow](https://arxiv.org/abs/2209.03003), 2022.
-- Albergo, Boffi, Vanden-Eijnden, [Stochastic Interpolants](https://arxiv.org/abs/2303.08797), 2023.
-- Tong et al., [Improving and Generalizing Flow-Based Generative Models with Minibatch Optimal Transport](https://arxiv.org/abs/2302.00482), 2023.
-- Song et al., [Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/abs/2011.13456), 2020.
-- Hertrich, Chambolle, Delon, [On the Optimality of Flow Matching](https://arxiv.org/abs/2505.19712), 2025.
+**Practical message.** Perturbation modeling is a practical reason to discuss
+out-of-sample maps, conditional Monge maps, and neural parameterizations of
+couplings.  The application should be kept close to the mathematical distinction
+between a coupling, a Monge map, and a learned extrapolator.
 
-**Best book location.** This is already central in Chapter 15. Add an
-application-oriented preamble to the flow-matching section explaining that
-learned velocity fields are now the main practical interface between OT-like
-geometry and large-scale generative AI.
+**Representative references.**
 
-## 5. Distributional Robustness and Adversarial Training
+- Bunne, Krause, Cuturi, [Supervised Training of Conditional Monge Maps](https://arxiv.org/abs/2206.14262), 2022.
+- Bunne et al., *Learning single-cell perturbation responses using neural optimal transport*, Nature Methods, 2023.  Not cited in the current book example until exact bibliography metadata is checked.
+- Lübeck, Bunne, Gut, Sarabia del Castillo, Pelkmans, Alvarez-Melis, [Neural Unbalanced Optimal Transport via Cycle-Consistent Semi-Couplings](https://arxiv.org/abs/2209.15621), 2022.
+- Chen, Hu, Chen, Huang, [Fast and scalable Wasserstein-1 neural optimal transport solver for single-cell perturbation prediction](https://arxiv.org/abs/2411.00614), 2024.
 
-**Application.** Wasserstein distributionally robust optimization (DRO) replaces
-empirical risk minimization by a worst-case risk over a Wasserstein ball around
-the empirical distribution. This models adversarial perturbations, covariate
-shift, and uncertainty in the data-generating distribution.
+**Book location.** Chapter `Generative Models via Transportation`, in `One-Step
+Generative Models`; also relevant to `Conditional Wasserstein Training of
+Infinite ResNets` as a conditional-map example.
 
-**Practical role.** In machine learning, DRO gives regularized learning problems,
-robust classifiers, adversarial training objectives, and interpretable ambiguity
-sets around samples.
+## Gene-Level OT Between Single Cells and Learned Ground Metrics
 
-**Key papers.**
+**Proposed example title.** `Application to gene-expression distances`.
 
-- Esfahani, Kuhn, [Data-driven Distributionally Robust Optimization Using the Wasserstein Metric](https://arxiv.org/abs/1505.05116), 2015.
-- Gao, Kleywegt, [Distributionally Robust Stochastic Optimization with Wasserstein Distance](https://arxiv.org/abs/1604.02199), 2016.
-- Sinha, Namkoong, Duchi, *Certifying Some Distributional Robustness with Principled Adversarial Training*, 2018.
-- Kuhn, Mohajerin Esfahani, Nguyen, Shafieezadeh-Abadeh, [Wasserstein Distributionally Robust Optimization: Theory and Applications in Machine Learning](https://arxiv.org/abs/1908.08729), 2019.
-- Ho-Nguyen, Wright, [Adversarial Classification via Distributional Robustness with Wasserstein Ambiguity](https://arxiv.org/abs/2005.13815), 2020.
+**Mathematical hook.** Instead of representing a whole experiment as a measure
+over cells, one can represent a single cell as a measure over genes,
+\[
+        \alpha_{\mathrm{cell}}=\sum_{g} e_g\delta_{\varphi(g)},
+\]
+where \(e_g\) is the normalized expression of gene \(g\) and \(\varphi(g)\) is a
+feature or learned embedding of the gene.  OT then compares two cells by moving
+expression mass between genes according to a gene-ground cost.
 
-**Best book location.** Chapter 3 already contains distributional robustness and
-W_infty. Add the ML discussion immediately after the geometric ambiguity-set
-paragraph, with examples from robust classification and adversarial training.
+**Practical message.** This viewpoint makes the ground metric biologically
+central.  It is a natural place to discuss when the cost is prescribed from gene
+annotations, learned from data, or jointly inferred with sample distances.
 
-## 6. Fairness, Debiasing, and Distribution Repair
+**Representative references.**
 
-**Application.** Fairness constraints often ask that prediction distributions be
-aligned across protected groups. OT gives a way to repair distributions, compare
-group-conditional predictors, and construct barycentric target distributions.
+- Bellazzi, Codegoni, Gualandi, Nicora, Vercesi, [The Gene Mover's Distance: Single-cell similarity via Optimal Transport](https://arxiv.org/abs/2102.01218), 2021.
+- Huizing, Cantini, Peyré, [Unsupervised Ground Metric Learning using Wasserstein Singular Vectors](https://arxiv.org/abs/2102.06278), 2021.
 
-**Practical role.** Practical fairness algorithms use OT maps as pre-processing
-or post-processing transformations, and Wasserstein barycenters as fair target
-laws for group-wise predictions.
+**Book location.** Chapter `Kantorovich Relaxation`, in `Metric Properties:
+Wasserstein Distances`, after the basic metric discussion; a second pointer fits
+in Chapter `Generalized OT Problems`, in `Metric learning and inverse OT`.
 
-**Key papers.**
+## Unbalanced Single-Cell Dynamics
+
+**Proposed example title.** `Application to proliferating and dying cell populations`.
+
+**Mathematical hook.** Balanced OT enforces \(\pi_1=\alpha\) and \(\pi_2=\beta\),
+which is too rigid when cell populations divide, die, or are sampled with unequal
+composition.  Unbalanced OT replaces exact conservation by marginal penalties,
+for instance
+\[
+        \min_{\pi\geq 0}\ \int c\,d\pi
+        + \tau_1 D(\pi_1\mid \alpha)+\tau_2 D(\pi_2\mid \beta),
+\]
+or by dynamic formulations with a source term in the continuity equation.
+
+**Practical message.** This application gives a biological interpretation of
+semi-couplings, mass creation/destruction, and WFR-type dynamics: the marginal
+mismatch is not a numerical nuisance but part of the phenomenon.
+
+**Representative references.**
+
+- Lübeck, Bunne, Gut, Sarabia del Castillo, Pelkmans, Alvarez-Melis, [Neural Unbalanced Optimal Transport via Cycle-Consistent Semi-Couplings](https://arxiv.org/abs/2209.15621), 2022.
+- Klein, Uscidda, Theis, Cuturi, [GENOT](https://arxiv.org/abs/2310.09254), 2023.
+
+**Book location.** Chapter `Generalized Wasserstein Distances`, in `Unbalanced
+OT`, with a later pointer to `Dynamic Unbalanced OT and WFR Flows`.
+
+## Multi-Omics, Spatial Biology, and Heterogeneous Data Integration
+
+**Proposed example title.** `Application to multi-omics alignment`.
+
+**Mathematical hook.** Multi-omics data often give two point clouds in different
+feature spaces, for instance RNA and ATAC measurements on unmatched cells.  When
+features are not directly comparable, GW or fused GW aligns relational geometry:
+\[
+        \min_{\pi\in\Gamma(a,b)}
+        \sum_{i,i',j,j'} |d_X(x_i,x_{i'})-d_Y(y_j,y_{j'})|^2
+        \pi_{ij}\pi_{i'j'}
+        + \lambda\sum_{i,j} c_{\mathrm{feat}}(x_i,y_j)\pi_{ij}.
+\]
+
+**Practical message.** This is a strong motivation for Gromov-type distances:
+the object to preserve is not an ambient coordinate system but neighborhood
+structure, cell-type relations, and cross-modality consistency.
+
+**Representative references.**
+
+- Demetci et al., *SCOT: Single-Cell Multi-Omics Alignment with Optimal Transport*, 2022.  Not cited in the current book example until exact venue and metadata are checked.
+- Singh et al., *Unsupervised Manifold Alignment for Single-Cell Multi-Omics Data*, 2020.
+- Tran, Janati, Courty, Flamary, Redko, Demetci, Singh, [Unbalanced CO-Optimal Transport](https://arxiv.org/abs/2205.14923), 2022.
+- Ryu, Bunne, Pinello, Regev, Lopez, [Cross-modality Matching and Prediction of Perturbation Responses with Labeled Gromov-Wasserstein Optimal Transport](https://arxiv.org/abs/2405.00838), 2024.
+- Stanojevic, Li, Garmire, [Computational Methods for Single-Cell Multi-Omics Integration and Alignment](https://arxiv.org/abs/2201.06725), 2022, for broader context.
+
+**Book location.** Chapter `Beyond Comparing Measures`, in `Gromov--Wasserstein`
+and fused GW; add a short pointer in `Weak Optimal Transport` if barycentric
+projections are used for modality translation.
+
+## Fairness, Debiasing, and Distribution Repair
+
+**Proposed example title.** `Application to fair score repair`.
+
+**Mathematical hook.** Let \(S\) be a protected group and \(Y=f(X)\) a score.  A
+basic demographic-parity constraint asks that the conditional score laws
+\(\alpha_s=\mathcal L(Y\mid S=s)\) be independent of \(s\).  OT post-processing
+chooses a common fair law, often the Wasserstein barycenter
+\[
+        \bar\alpha \in \arg\min_\nu \sum_s p_s W_2^2(\alpha_s,\nu),
+\]
+and maps each group by the monotone or Brenier map \(T_s{}_{\#}\alpha_s=\bar\alpha\).
+The repaired score is \(\tilde Y=T_S(Y)\).
+
+**Practical message.** This application is useful because it ties fairness to
+barycenters and distribution repair.  The OT map gives an interpretable minimal
+change of scores, while the barycenter expresses the target compromise across
+groups.
+
+**Representative references.**
 
 - del Barrio, Gamboa, Gordaliza, Loubes, [Obtaining Fairness Using Optimal Transport Theory](https://arxiv.org/abs/1806.03195), 2018.
 - Chzhen, Denis, Hebiri, Oneto, Pontil, [Fair Regression with Wasserstein Barycenters](https://arxiv.org/abs/2006.07286), 2020.
 - Buyl, De Bie, [Optimal Transport of Classifiers to Fairness](https://arxiv.org/abs/2202.03814), 2022.
 - Hu, Ratz, Charpentier, [Fairness in Multi-Task Learning via Wasserstein Barycenters](https://arxiv.org/abs/2306.10155), 2023.
 
-**Best book location.** Chapter 11, OT barycenters, is the best fit: fair
-regression is a clean applied interpretation of Wasserstein means. Add a short
-pointer in Chapter 10, because debiasing often becomes a generalized or
-unbalanced transport problem when groups have unequal mass or support.
+**Book location.** Chapter `Barycenters`, after the general Wasserstein
+barycenter definition; optionally add a pointer in `Metric Properties: Wasserstein
+Distances`.
 
-## 7. Computer Vision, Graphics, and Image Processing
+## Computer Vision, Graphics, and Image Processing
 
-**Application.** OT compares, interpolates, and edits images, colors, textures,
-shapes, and probability maps. This is one of the historical application areas
-where computational OT became visible outside pure mathematics.
+**Proposed example title.** `Application to visual distributions`.
 
-**Practical role.** Applications include color transfer, histogram equalization,
-image retrieval, texture mixing, shape interpolation, surface processing, and
-geometric image registration.
+**Mathematical hook.** Images, color histograms, texture descriptors, and shape
+samples can all be treated as measures.  OT compares them by moving mass through
+the geometry of color, image position, or surface distance; sliced OT and
+convolutional OT give scalable approximations.
 
-**Key papers.**
+**Practical message.** This is the historical bridge between computational OT and
+large-scale visual applications: EMD for retrieval, barycenters for texture
+mixing, sliced/Radon barycenters for images, and geometric OT for shapes and
+surfaces.
+
+**Representative references.**
 
 - Rubner, Tomasi, Guibas, *The Earth Mover's Distance as a Metric for Image Retrieval*, IJCV, 2000.
-- Ferradans, Papadakis, Peyre, Aujol, [Regularized Discrete Optimal Transport](https://arxiv.org/abs/1307.5551), 2013.
-- Rabin, Peyre, Delon, Bernot, *Wasserstein Barycenter and Its Application to Texture Mixing*, 2012.
-- Bonneel, Rabin, Peyre, Pfister, *Sliced and Radon Wasserstein Barycenters of Measures*, 2015.
+- Ferradans, Papadakis, Peyré, Aujol, [Regularized Discrete Optimal Transport](https://arxiv.org/abs/1307.5551), 2013.
+- Rabin, Peyré, Delon, Bernot, *Wasserstein Barycenter and Its Application to Texture Mixing*, 2012.
+- Bonneel, Rabin, Peyré, Pfister, *Sliced and Radon Wasserstein Barycenters of Measures*, 2015.
 - Solomon et al., *Convolutional Wasserstein Distances: Efficient Optimal Transportation on Geometric Domains*, 2015.
-- Bonneel, Peyre, Cuturi, *A Survey of Optimal Transport for Computer Graphics and Computer Vision*, 2016.
+- Bonneel, Peyré, Cuturi, *A Survey of Optimal Transport for Computer Graphics and Computer Vision*, 2016.
 
-**Best book location.** Mention color transfer and histogram equalization in
-Chapter 2 or Chapter 5. Mention texture mixing and shape interpolation in
-Chapter 11, barycenters. Mention convolutional and sliced approximations in
-Chapter 7, Sinkhorn, and Chapter 10, sliced Wasserstein.
+**Book location.** Chapter `Kantorovich Relaxation`, after `Relaxation for
+Arbitrary Measures`; image barycenter examples also belong in `OT Barycenters`
+and `Sliced Wasserstein Distances`.
 
-## 8. Graphs, Molecules, Point Clouds, and Structured Data
+## Graphs, Molecules, Point Clouds, and Structured Data
 
-**Application.** Graphs and structured objects are not naturally compared in a
-fixed ground space. Gromov-Wasserstein (GW) compares relational structure, while
-fused GW combines this intrinsic geometry with node or point features.
+**Proposed example title.** `Application to structured objects`.
 
-**Practical role.** These distances are used for graph classification, molecule
-comparison, shape matching, mesh correspondence, and cross-domain alignment when
-the feature spaces do not match.
+**Mathematical hook.** When samples live in different spaces, a ground cost
+\(c(x,y)\) is not always available.  GW compares metric-measure structures by
+matching pairwise distances, and fused GW adds feature costs when node labels or
+attributes are available.
 
-**Key papers.**
+**Practical message.** GW is the right application block for graph
+classification, molecule comparison, mesh correspondence, point-cloud matching,
+and cross-domain alignment without a common coordinate system.
 
-- Peyre, Cuturi, Solomon, *Gromov-Wasserstein Averaging of Kernel and Distance Matrices*, 2016.
+**Representative references.**
+
+- Peyré, Cuturi, Solomon, [Gromov-Wasserstein Averaging of Kernel and Distance Matrices](https://arxiv.org/abs/1606.08407), 2016.
 - Vayer, Chapel, Flamary, Tavenard, Courty, [Optimal Transport for Structured Data with Application on Graphs](https://arxiv.org/abs/1805.09114), 2018.
 - Vayer, Chapel, Flamary, Tavenard, Courty, [Fused Gromov-Wasserstein Distance for Structured Objects](https://arxiv.org/abs/1811.02834), 2018.
-- Xu et al., *Scalable Gromov-Wasserstein Learning for Graph Partitioning and Matching*, 2019.
-- Titouan Vayer et al., [Sliced Gromov-Wasserstein](https://arxiv.org/abs/1905.10124), 2019.
+- Xu, Luo, Zha, Carin, [Gromov-Wasserstein Learning for Graph Matching and Node Embedding](https://arxiv.org/abs/1901.06003), 2019.
+- Xu, Luo, Carin, [Scalable Gromov-Wasserstein Learning for Graph Partitioning and Matching](https://arxiv.org/abs/1905.07645), 2019.
+- Vayer et al., [Sliced Gromov-Wasserstein](https://arxiv.org/abs/1905.10124), 2019.
 
-**Best book location.** Chapter 12, Gromov-Wasserstein and fused GW. Put the
-application paragraph after the definition of FGW: it explains why ML practice
-often needs to combine node features with pairwise distances.
+**Book location.** Chapter `Beyond Comparing Measures`, in `Gromov--Wasserstein`
+and fused GW.
 
-## 9. Natural Language Processing and Embedding Alignment
+## Natural Language Processing and Embedding Alignment
 
-**Application.** Documents can be represented as weighted bags of word
-embeddings, and languages as metric spaces of embeddings. OT then gives semantic
-document distances and unsupervised cross-lingual alignment.
+**Proposed example title.** `Application to word embeddings and documents`.
 
-**Practical role.** Word Mover's Distance is an interpretable document metric.
-GW aligns embedding spaces without requiring the two vocabularies to live in the
-same coordinate system.
+**Mathematical hook.** A document can be represented as a weighted measure over
+word embeddings,
+\[
+        \alpha_{\mathrm{doc}}=\sum_{w\in \mathrm{doc}} a_w\delta_{e_w}.
+\]
+Word Mover's Distance is the Wasserstein distance between such measures.  For
+cross-lingual alignment, GW can compare two embedding spaces through their
+intrinsic relational geometry when no shared coordinates are available.
 
-**Key papers.**
+**Practical message.** This application is a compact way to show how OT uses the
+geometry of a learned representation, rather than treating a bag of words as an
+unordered vector.
+
+**Representative references.**
 
 - Kusner, Sun, Kolkin, Weinberger, [From Word Embeddings to Document Distances](https://proceedings.mlr.press/v37/kusnerb15.html), 2015.
 - Alvarez-Melis, Jaakkola, [Gromov-Wasserstein Alignment of Word Embedding Spaces](https://arxiv.org/abs/1809.00013), 2018.
 - Wu et al., [Word Mover's Embedding](https://arxiv.org/abs/1811.01713), 2018.
 - Frogner, Mirzazadeh, Solomon, [Learning Embeddings into Entropic Wasserstein Spaces](https://arxiv.org/abs/1905.03329), 2019.
 
-**Best book location.** Word Mover's Distance fits Chapter 3, discrete OT, as a
-practical example of transporting word weights over an embedding ground metric.
-Cross-lingual GW fits Chapter 12, after metric-measure spaces are introduced.
+**Book location.** Chapter `Kantorovich Relaxation`, in `Metric Properties:
+Wasserstein Distances`; the embedding-alignment part can also point to
+`Gromov--Wasserstein`.
 
-## 10. Differentiable Sorting, Matching, Ranking, and Attention
+## Supervised Learning with Wasserstein Losses
 
-**Application.** Many ML pipelines need differentiable approximations of
-permutations, matchings, rankings, top-k operations, and attention
-normalizations. Entropic OT and Sinkhorn scaling turn these discrete objects into
-smooth layers.
+**Proposed example title.** `Application to structured prediction losses`.
 
-**Practical role.** These relaxations allow gradients to pass through sorting,
-ranking, assignment, and permutation layers. Sinkhorn normalization also appears
-in attention mechanisms where doubly stochastic matrices impose conservation or
-competition between tokens.
+**Mathematical hook.** If the label \(y\) is a histogram, segmentation map,
+spatial heatmap, or probability vector, the prediction \(h_\theta(x)\) can be
+trained with
+\[
+        \min_\theta \frac1n\sum_{i=1}^n W_c(h_\theta(x_i),y_i),
+\]
+where the cost \(c\) encodes semantic or spatial similarity between output bins.
 
-**Key papers.**
+**Practical message.** Wasserstein losses penalize a geographically or
+semantically nearby error less than a distant one.  This is the supervised-learning
+counterpart of the book's differentiable OT-loss discussion.
 
-- Mena, Belanger, Linderman, Snoek, [Learning Latent Permutations with Gumbel-Sinkhorn Networks](https://arxiv.org/abs/1802.08665), 2018.
-- Cuturi, Teboul, Vert, [Differentiable Ranks and Sorting Using Optimal Transport](https://arxiv.org/abs/1905.11885), 2019.
-- Blondel, Teboul, Berthet, Djolonga, [Fast Differentiable Sorting and Ranking](https://arxiv.org/abs/2002.08871), 2020.
-- Sander, Ablin, Blondel, Peyre, [Sinkformers: Transformers with Doubly Stochastic Attention](https://arxiv.org/abs/2110.11773), 2021.
-
-**Best book location.** Add differentiable sorting and Gumbel-Sinkhorn in
-Chapter 1, after matching algorithms, with a forward pointer to Chapter 7 after
-Sinkhorn's algorithm. Sinkformers belong in Chapter 15, transformers and
-evolution in depth.
-
-## 11. Barycenters, Clustering, Prototypes, and Dictionary Learning
-
-**Application.** Wasserstein barycenters average probability distributions while
-respecting the geometry of their support. They are used for clustering
-distributions, averaging histograms or shapes, defining prototypes, and building
-dictionary-learning models.
-
-**Practical role.** In practice, barycenters provide interpretable class
-representatives, Wasserstein k-means centers, texture/shape averages, and
-low-dimensional mixture models over measures.
-
-**Key papers.**
-
-- Agueh, Carlier, *Barycenters in the Wasserstein Space*, 2011.
-- Cuturi, Doucet, *Fast Computation of Wasserstein Barycenters*, 2014.
-- Benamou, Carlier, Cuturi, Nenna, Peyre, *Iterative Bregman Projections for Regularized Transportation Problems*, 2015.
-- Schmitz et al., [Wasserstein Dictionary Learning](https://arxiv.org/abs/1708.01955), 2017.
-- Bonneel, Rabin, Peyre, Pfister, *Sliced and Radon Wasserstein Barycenters of Measures*, 2015.
-
-**Best book location.** Chapter 11, OT barycenters. Add a practice paragraph
-right after the general barycenter definition, before algorithmic details, to
-explain barycenters as prototypes, cluster centers, and distributional averages.
-
-## 12. Supervised Learning with Wasserstein Losses
-
-**Application.** In structured prediction, labels may be histograms,
-segmentation maps, probability vectors, or spatial distributions. OT losses use
-the geometry of the output space instead of treating output bins as unrelated.
-
-**Practical role.** Wasserstein losses improve learning when errors have a
-meaningful geometry, such as nearby labels, semantic classes, spatial heatmaps,
-or multi-label predictions.
-
-**Key papers.**
+**Representative references.**
 
 - Frogner, Zhang, Mobahi, Araya-Polo, Poggio, [Learning with a Wasserstein Loss](https://arxiv.org/abs/1506.05439), 2015.
-- Cuturi, [Sinkhorn Distances: Lightspeed Computation of Optimal Transport](https://arxiv.org/abs/1306.0895), 2013.
-- Genevay et al., *Sample Complexity of Sinkhorn Divergences*, 2019.
-- Feydy et al., *Interpolating between Optimal Transport and MMD using Sinkhorn Divergences*, 2019.
+- Toyokuni, Yokoi, Kashima, Yamada, [Computationally Efficient Wasserstein Loss for Structured Labels](https://arxiv.org/abs/2103.00899), 2021.
 
-**Best book location.** Chapter 7, Sinkhorn divergences, for differentiable
-losses. Chapter 9, statistical OT, for the statistical cost of empirical OT
-losses. A supervised-learning example could also be added in Chapter 6, after
-dual norms and IPMs.
+**Book location.** Chapter `Wasserstein Estimation`, in `Wasserstein Loss`, and
+Chapter `Generalized OT Problems`, in `Differentiating OT losses`.
 
-## 13. Model Evaluation, Dataset Drift, and Two-Sample Testing
+## Model Evaluation, Dataset Drift, and Two-Sample Testing
 
-**Application.** OT distances compare generated samples to real samples,
-training distributions to deployment distributions, and one empirical dataset to
-another. The Gaussian closed form also underlies the Frechet Inception Distance.
+**Proposed example title.** `Application to two-sample testing and generative-model evaluation`.
 
-**Practical role.** OT-based metrics are used for monitoring data drift,
-evaluating generative models, comparing embeddings, and two-sample testing.
-In practice, one often uses sliced, entropic, MMD, or Gaussian approximations.
+**Mathematical hook.** Given samples \(X_1,\ldots,X_n\sim\alpha\) and
+\(Y_1,\ldots,Y_m\sim\beta\), a two-sample test uses a statistic such as
+\(D(\hat\alpha_n,\hat\beta_m)\) to test \(H_0:\alpha=\beta\).  OT distances are
+geometric choices of \(D\), while MMD and energy distances give kernel or
+negative-type alternatives.  FID is the Gaussian \(W_2\) distance between fitted
+feature-space Gaussians.
 
-**Key papers.**
+**Practical message.** This application should separate two issues that are often
+confused: statistical calibration of a test under \(H_0\), and practical
+interpretability of a dataset or generator discrepancy.  It also connects the
+Bures/Gaussian formula to a very common machine-learning metric.
 
-- Heusel et al., *GANs Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium*, 2017. This introduced the Frechet Inception Distance in generative-model practice.
-- Ramdas, Garcia, Cuturi, *On Wasserstein Two-Sample Testing and Related Families of Nonparametric Tests*, 2015.
-- Binkowski et al., *Demystifying MMD GANs*, 2018.
-- Feydy et al., *Interpolating between Optimal Transport and MMD using Sinkhorn Divergences*, 2019.
+**Representative references.**
 
-**Best book location.** FID belongs in Chapter 2, Gaussian measures and Bures
-metric, with a pointer to Chapter 15. Two-sample testing and drift monitoring fit
-Chapter 9, statistical OT, because finite-sample behavior is the central issue in
-practice.
+- Ramdas, García Trillos, Cuturi, [On Wasserstein Two Sample Testing and Related Families of Nonparametric Tests](https://arxiv.org/abs/1509.02237), 2015.
+- Gretton et al., *A Kernel Two-Sample Test*, JMLR, 2012.
+- Heusel, Ramsauer, Unterthiner, Nessler, Hochreiter, [GANs Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium](https://arxiv.org/abs/1706.08500), 2017, for FID.
+- Bińkowski, Sutherland, Arbel, Gretton, [Demystifying MMD GANs](https://arxiv.org/abs/1801.01401), 2018, for KID/MMD-style evaluation.
 
-## 14. Bayesian Inference and Particle Sampling
+**Book location.** Chapter `Statistical Optimal Transport`, after `Law of Large
+Numbers and Central Limit Theorem` or in `Bias and Variance of OT`.
 
-**Application.** Deterministic particle methods use transport-like flows to move
-particles toward a posterior distribution. The most visible example is Stein
-variational gradient descent (SVGD), which can be interpreted as a gradient flow
-under a kernelized transport geometry.
 
-**Practical role.** These methods provide particle-based variational inference
-without Markov-chain random walks, while retaining repulsion between particles.
-They are useful when the target score is available but the normalizing constant
-is not.
+## Imitation Learning and Reinforcement Learning
 
-**Key papers.**
+**Proposed example title.** `Application to imitation learning`.
 
-- Liu, Wang, *Stein Variational Gradient Descent: A General Purpose Bayesian Inference Algorithm*, 2016.
-- Liu, *Stein Variational Gradient Descent as Gradient Flow*, 2017.
-- Duncan, Nuesken, Szpruch, *On the Geometry of Stein Variational Gradient Descent*, 2019.
-- Nuesken, Renger, *Stein Variational Gradient Descent: Many-Particle and Long-Time Asymptotics*, 2021.
+**Mathematical hook.** Imitation learning can compare the expert occupancy
+measure \(\rho_E\) and the learner occupancy measure \(\rho_\theta\) on
+state-action space.  OT yields either a primal matching loss
+\(W(\rho_\theta,\rho_E)\) or a dual adversarial reward given by a Kantorovich
+potential.
 
-**Best book location.** Chapter 13, kernelized Benamou-Brenier distances, for the
-metric viewpoint. Chapter 15, one-step generative models and SVGD, for the
-particle algorithm and its relation to generative flows.
+**Practical message.** OT gives a distribution-matching view of imitation
+learning that is close to GANs but geometrically aware.  This is a good applied
+example for dual potentials as learned rewards and for regularized OT in large
+state-action spaces.
 
-## 15. Neural-Network Training Dynamics and Mean-Field Limits
+**Representative references.**
 
-**Application.** Wide neural networks can be described by probability measures
-over parameters. Training then becomes an evolution of this measure, often a
-Wasserstein or Wasserstein-like gradient flow.
+- Xiao, Herman, Wagner, Ziesche, Etesami, Linh, [Wasserstein Adversarial Imitation Learning](https://arxiv.org/abs/1906.08113), 2019.
+- Dadashi, Hussenot, Geist, Pietquin, [Primal Wasserstein Imitation Learning](https://arxiv.org/abs/2006.04678), 2020.
 
-**Practical role.** This viewpoint explains feature learning, global convergence
-in overparameterized regimes, noisy training, mean-field limits of two-layer
-networks, normalized dynamics, and some transformer dynamics.
+**Book location.** Chapter `Divergences and Dual Norms`, after `GANs via Duality`,
+or Chapter `Generative Models via Transportation` as another distribution-matching
+learning problem.
 
-**Key papers.**
+## Bibliography and Verification Notes
 
-- Chizat, Bach, *On the Global Convergence of Gradient Descent for Over-parameterized Models using Optimal Transport*, 2018.
-- Mei, Montanari, Nguyen, *A Mean Field View of the Landscape of Two-Layer Neural Networks*, 2018.
-- Rotskoff, Vanden-Eijnden, *Parameters as Interacting Particles*, 2018.
-- Sirignano, Spiliopoulos, *Mean Field Analysis of Neural Networks*, 2020.
-- Sander, Ablin, Blondel, Peyre, [Sinkformers](https://arxiv.org/abs/2110.11773), 2021.
+References already visible in `OT4ML/all.bib` during this pass include several
+core entries: Courty/Flamary domain adaptation, Schiebinger Waddington-OT,
+Ramdas--García Trillos--Cuturi two-sample testing, Frogner et al. Wasserstein
+losses, Rubner--Tomasi--Guibas EMD, Kusner et al. Word Mover's Distance, Vayer
+et al. structured data/GW, and Bonneel--Peyré--Cuturi's graphics and vision
+survey.
 
-**Best book location.** Chapter 14, training dynamics of neural networks, is the
-main place. Add an opening paragraph emphasizing that this is an ML-theory use of
-OT: the measure is the model state, not merely an output distribution to compare.
+Items deliberately left out of the current book examples until exact metadata or
+scope is clarified:
 
-## 16. Reinforcement Learning, Imitation Learning, and Control
-
-**Application.** In imitation learning, one wants a policy whose state-action
-occupancy measure matches expert demonstrations. OT compares occupancy measures
-and defines imitation losses or robust control objectives.
-
-**Practical role.** Wasserstein imitation learning replaces adversarial
-classification between expert and learner trajectories by a geometric discrepancy.
-Dynamic OT and Schrodinger bridges also connect to stochastic control.
-
-**Key papers.**
-
-- Xiao et al., *Wasserstein Adversarial Imitation Learning*, 2019.
-- Dadashi et al., *Primal Wasserstein Imitation Learning*, 2021.
-- Chen, Georgiou, Pavon, *Optimal Transport over a Linear Dynamical System*, 2016.
-- Pavon and Wakolbinger, classical work connecting Schrodinger bridges and stochastic control.
-
-**Best book location.** Chapter 13, dynamic OT and path-space formulations,
-because occupancy measures and controlled processes are dynamic objects. Add a
-short application paragraph after the Schrodinger bridge and stochastic-control
-discussion.
-
-## 17. Time Series, Signal Processing, and Spatio-Temporal Alignment
-
-**Application.** Signals and time series often need both amplitude comparison and
-temporal alignment. OT gives soft correspondences between events, while dynamic
-and unbalanced variants handle missing or unequal mass.
-
-**Practical role.** Applications include audio source separation, temporal
-alignment, sensor data comparison, EEG/MEG alignment, and spatio-temporal
-registration.
-
-**Key papers.**
-
-- Flamary, Courty, Tuia, Rakotomamonjy, *Optimal Transport for Domain Adaptation*, with signal and vision applications.
-- Janati, Cuturi, Gramfort, *Spatio-Temporal Alignments: Optimal Transport through Space and Time*, 2020.
-- Courty, Flamary, Habrard, Rakotomamonjy, *Joint Distribution Optimal Transportation for Domain Adaptation*, 2017.
-- Chizat et al., *Scaling Algorithms for Unbalanced Optimal Transport Problems*, 2018.
-
-**Best book location.** Chapter 10, unbalanced OT, for missing mass and partial
-observations. Chapter 13, dynamic OT, for spatio-temporal couplings and
-trajectory alignment.
-
-## 18. Scientific ML, Physics, and Computational Chemistry
-
-**Application.** OT appears in density-functional theory, multimarginal Coulomb
-problems, particle methods, fluid mechanics, and simulation-based inference.
-These topics are not always labelled "ML", but they increasingly belong to the
-scientific machine-learning toolbox.
-
-**Practical role.** OT supplies variational principles, differentiable solvers,
-and structured regularizers for learning physical systems, comparing particle
-clouds, and imposing conservation laws.
-
-**Key papers.**
-
-- Benamou, Carlier, Cuturi, Nenna, Peyre, *Iterative Bregman Projections for Regularized Transportation Problems*, 2015.
-- Cotar, Friesecke, Klueppelberg, *Density Functional Theory and Optimal Transportation with Coulomb Cost*, 2013.
-- Buttazzo, De Pascale, Gori-Giorgi, *Optimal-Transport Formulation of Electronic Density-Functional Theory*, 2012.
-- Nenna, *Numerical Methods for Multi-Marginal Optimal Transportation*, thesis and related works.
-
-**Best book location.** Chapter 11, multimarginal OT, for Coulomb and density
-functional theory. Chapter 13, dynamic OT, for fluid mechanics and conservation
-laws. Chapter 14, gradient flows, for particle systems and PDE-based learning.
-
-## 19. Low-Rank, Sketching, and Large-Scale Sinkhorn in ML Systems
-
-**Application.** Large ML systems cannot form dense n by n transport matrices
-inside every training step. Low-rank couplings, factored couplings, kernel
-sketches, Nystrom approximations, and positive random features make OT losses
-feasible at larger scale.
-
-**Practical role.** These methods are used when Sinkhorn appears inside a
-learning loop, especially for differentiable losses, attention-like kernels, and
-large minibatches.
-
-**Key papers.**
-
-- Forrow, Huetter, Nitzan, Rigollet, Schiebinger, Weed, [Statistical Optimal Transport via Factored Couplings](https://arxiv.org/abs/1806.07348), 2018.
-- Scetbon, Cuturi, Peyre, *Low-Rank Sinkhorn Factorization*, 2021.
-- Scetbon, Cuturi, *Linear-Time Sinkhorn Divergences using Positive Features*, 2020.
-- Choromanski et al., *Rethinking Attention with Performers*, 2021.
-
-**Best book location.** Chapter 9, sketching Sinkhorn, for positive features and
-linear-time approximations. Chapter 11, low-rank OT, for factored couplings.
-Chapter 15, transformers, for the attention analogy.
-
-## 20. Metric Learning, Inverse OT, and Learning the Cost
-
-**Application.** Instead of fixing a cost, one learns the geometry that makes
-observed transports, labels, or correspondences likely. This is important for
-domain adaptation, representation learning, and inverse problems where the raw
-Euclidean metric is not meaningful.
-
-**Practical role.** In practice, the cost can be a Mahalanobis metric, a neural
-feature distance, a graph metric, or a bilinear cost learned from observed
-couplings.
-
-**Key papers.**
-
-- Cuturi, Avis, *Ground Metric Learning*, 2014.
-- Stuart, Wolfram, *Inverse Optimal Transport*, 2020.
-- Ma, Sun, Ye, Zha, Zhou, *Learning Cost Functions for Optimal Transport*, 2020.
-- Peyre, Poon, Tron, *Curvature of Optimal Transport with Respect to the Cost and Applications to Inverse Optimal Transport*, 2026.
-- Courty et al., *Joint Distribution Optimal Transportation*, 2017, as a practical joint cost/model learning example.
-
-**Best book location.** Chapter 11 already has metric learning and inverse OT.
-Add a practice paragraph explaining that applications often learn the cost
-because the raw feature geometry is rarely the geometry in which transport should
-be measured.
-
-## 21. Shape Registration, Procrustes Alignment, and Point-Cloud Learning
-
-**Application.** Point clouds, meshes, and shapes often differ by rigid motions,
-sampling density, or deformation. OT gives correspondences, while quotient or
-Gromov-Wasserstein variants handle invariances and changing coordinates.
-
-**Practical role.** Applications include point-cloud registration, shape
-matching, template alignment, and mesh interpolation. OT variants can improve on
-ICP by using soft global correspondences rather than nearest-neighbor matching.
-
-**Key papers.**
-
-- Solomon et al., *Convolutional Wasserstein Distances*, 2015.
-- Memoli, *Gromov-Wasserstein Distances and the Metric Approach to Object Matching*, 2011.
-- Grave, Joulin, Berthet, *Unsupervised Alignment of Embeddings with Wasserstein Procrustes*, 2019.
-- Alvarez-Melis, Jegelka, Jaakkola, *Towards Optimal Transport with Global Invariances*, 2019.
-- Vayer et al., *Fused Gromov-Wasserstein Distance for Structured Objects*, 2018.
-
-**Best book location.** Chapter 10, quotient Wasserstein and Wasserstein
-Procrustes, for rigid alignment. Chapter 12, GW, for intrinsic shape matching
-when coordinates are not comparable.
-
-## 22. Multi-Omics, Spatial Biology, and Heterogeneous Data Integration
-
-**Application.** Biological datasets often measure different modalities on
-different cells or spatial locations. OT aligns samples across modalities even
-when features are heterogeneous; GW and co-optimal transport additionally align
-features or relational structures.
-
-**Practical role.** OT helps integrate scRNA-seq with chromatin accessibility,
-spatial transcriptomics, protein markers, and perturbation measurements. This is
-practice-heavy and should be presented as a major modern use case, not only as a
-mathematical curiosity.
-
-**Key papers.**
-
-- Demetci et al., *SCOT: Single-Cell Multi-Omics Alignment with Optimal Transport*, 2022.
-- Singh et al., *Unsupervised Manifold Alignment for Single-Cell Multi-Omics Data*, 2020.
-- Tran, Janati, Courty, Flamary, Redko, Demetci, Singh, [Unbalanced CO-Optimal Transport](https://arxiv.org/abs/2205.14923), 2022.
-- Klein, Uscidda, Theis, Cuturi, [GENOT](https://arxiv.org/abs/2310.09254), 2023.
-
-**Best book location.** Chapter 12, GW and fused GW, for heterogeneous spaces.
-Chapter 10, unbalanced OT, for different cell populations and missing mass.
-Chapter 15, flow matching, for neural maps between modalities.
-
-## Recommended Additions to the Book
-
-The following additions would give the highest application payoff with little
-new mathematical overhead.
-
-1. Add a "Domain adaptation and transfer learning" paragraph after the discrete
-   Kantorovich problem in Chapter 3, and point to learned costs in Chapter 11.
-2. Add a "Single-cell genomics" example box in Chapter 7 after the path-space
-   Schrodinger formulation, with explicit pointers to unbalanced OT and neural
-   transport.
-3. Add "Word Mover's Distance" as a discrete OT example in Chapter 3.
-4. Add "FID as Gaussian W2/Bures" in Chapter 2, with a pointer to generative
-   model evaluation in Chapter 15.
-5. Add "Differentiable sorting and Sinkhorn layers" after Sinkhorn's algorithm in
-   Chapter 7, with a pointer back to matching algorithms in Chapter 1.
-6. Add a "Fairness by barycenters" example box in Chapter 11 after the barycenter
-   definition.
-7. Add a "Graph and molecule comparison" paragraph after fused GW in Chapter 12.
-8. Add a "Large-scale Sinkhorn in ML systems" paragraph in Chapter 9, connecting
-   positive-feature sketches to attention approximations.
-9. Add a short "OT in Bayesian particle inference" paragraph next to SVGD in
-   Chapter 15 and kernelized BB in Chapter 13.
-10. Add a "Scientific ML" paragraph near multimarginal OT, emphasizing Coulomb
-    costs, density-functional theory, and differentiable solvers.
-
-## Bibliography Triage
-
-These references should be checked against `OT4ML/all.bib` before insertion.
-
-- Rubner, Tomasi, Guibas, *The Earth Mover's Distance as a Metric for Image Retrieval*, IJCV, 2000.
-- Heusel et al., *GANs Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium*, 2017.
-- Tolstikhin et al., *Wasserstein Auto-Encoders*, 2018.
-- Patrini et al., *Sinkhorn AutoEncoders*, 2018.
-- Kolouri et al., *Sliced-Wasserstein Autoencoder*, 2018.
-- del Barrio et al., *Obtaining Fairness Using Optimal Transport Theory*, 2018.
-- Chzhen et al., *Fair Regression with Wasserstein Barycenters*, 2020.
-- Kusner et al., *From Word Embeddings to Document Distances*, 2015.
-- Mena et al., *Learning Latent Permutations with Gumbel-Sinkhorn Networks*, 2018.
-- Cuturi, Teboul, Vert, *Differentiable Ranks and Sorting using Optimal Transport*, 2019.
-- Schiebinger et al., *Optimal-Transport Analysis of Single-Cell Gene Expression*, 2019.
-- Bunne et al., *Learning single-cell perturbation responses using neural optimal transport*, 2023.
-- Demetci et al., *SCOT: Single-Cell Multi-Omics Alignment with Optimal Transport*, 2022.
-- Janati, Cuturi, Gramfort, *Spatio-Temporal Alignments: Optimal Transport through Space and Time*, 2020.
-- Xiao et al., *Wasserstein Adversarial Imitation Learning*, 2019.
-- Dadashi et al., *Primal Wasserstein Imitation Learning*, 2021.
+- Bunne et al., *Learning single-cell perturbation responses using neural optimal transport*, Nature Methods, 2023: left uncited until the exact author list and DOI are checked.
+- Demetci et al., *SCOT: Single-Cell Multi-Omics Alignment with Optimal Transport*, 2022: left uncited until the exact title, venue and DOI are checked.
+- Any intended `STORIES` reference involving Huizing/Cantini/Peyré: I did not verify an exact paper with that name in this pass.  The verified related reference is Huizing--Cantini--Peyré, *Unsupervised Ground Metric Learning using Wasserstein Singular Vectors*, 2021.

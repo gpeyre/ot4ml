@@ -3,15 +3,15 @@
 \subsection{OT Barycenters}
 \label{sec-barycenters}
 \paragraph{Fr\'echet means.}
-The intrinsic barycenter problem is a Fr\'echet mean over measures: the unknown barycenter is itself a probability measure, with no prescribed support. Given inputs $(\be_s)_{s=1}^S$ on $\X$ and weights $\la\in\simplex_S$,
-\eq{
-\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
-}
-For discrete inputs $\be_s=\sum_{j=1}^{n_s} b_{s,j}\de_{x_{s,j}}$, one often fixes candidate barycenter sites $(y_i)_{i=1}^n$ and restricts $\al$ to $\sum_i a_i\de_{y_i}$. With $(\C_s)_{ij}=c(y_i,x_{s,j})$, this gives the fixed-support problem
+\(\umin{\al \in \Mm_+^1(\X)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).\)
+\paragraph{Fixed-support restriction.}
+\(\be_s=\sum_{j=1}^{n_s} b_{s,j}\de_{x_{s,j}}, \qquad \b_s=(b_{s,j})_{j=1}^{n_s}\in\simplex_{n_s}.\)
+\((\C_s)_{ij}=c(y_i,x_{s,j}) \in \RR^{n\times n_s}.\)
 \eql{\label{eq-wass-discr}
 \umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
 }
-where $\b_s=(b_{s,j})_j\in\simplex_{n_s}$. This is a finite-dimensional restriction, not an exact analogue of discrete two-marginal OT: the input supports do not determine the support of the barycenter. For quadratic costs, an exact discrete barycenter may be supported on weighted averages of support tuples, with up to $\prod_s n_s$ candidates, so support selection is a genuine numerical difficulty.
+where $\a=(a_i)_i$ are the weights on the prescribed barycenter support.
+
 \begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
 The map $(\al,\be)\mapsto\MK_\c(\al,\be)$ is convex.
 \end{prop}
@@ -31,6 +31,38 @@ For $\X=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein baryce
 The one-dimensional formula~\eqref{eq-wass-cumul} gives \(\sum_s\la_s\Wass_2^2(\al,\be_s) = \int_0^1 \sum_s\la_s \abs{\cumul{\al}^{-1}(r)-\cumul{\be_s}^{-1}(r)}^2 \d r.\)
 The minimization decouples pointwise in $r$. For each fixed $r$, the minimizer of $z\mapsto\sum_s\la_s|z-\cumul{\be_s}^{-1}(r)|^2$ is the weighted average $\sum_s\la_s\cumul{\be_s}^{-1}(r)$. This function is nondecreasing because it is a positive weighted sum of nondecreasing quantile functions, hence it is a valid quantile function.
 \end{proof}
+\paragraph{Sliced and Radon barycenters.}
+Slicing gives a scalable surrogate for high-dimensional barycenters by applying the preceding one-dimensional quantile formula in every projection direction. For measures on $\RR^d$, define the sliced barycenter by replacing $\Wass_2$ with $\SW_2$, introduced in Definition~\ref{def-sliced-wasserstein} and interpreted through the Radon transform in Section~\ref{sec-sliced-wasserstein}:
+
+\[
+\umin{\al\in\Mm_+^1(\RR^d)}
+\sum_{s=1}^S\la_s\SW_2(\al,\be_s)^2
+=
+\umin{\al\in\Mm_+^1(\RR^d)}
+\int_{\Sphere^{d-1}}
+\sum_{s=1}^S\la_s
+\Wass_2\big((P_\theta)_\sharp\al,(P_\theta)_\sharp\be_s\big)^2
+\d\sigma(\theta).
+\]
+\[
+\umin{(\gamma_\theta)_\theta}
+\int_{\Sphere^{d-1}}
+\sum_{s=1}^S\la_s
+\Wass_2(\gamma_\theta,\be_{s,\theta})^2
+\d\sigma(\theta),
+\qquad
+\be_{s,\theta}\eqdef(P_\theta)_\sharp\be_s.
+\]
+\(\cumul{\gamma_\theta}^{-1}(r) = \sum_{s=1}^S\la_s\cumul{\be_{s,\theta}}^{-1}(r), \qquad r\in[0,1].\)
+\[
+R^\dagger h(x)
+=
+c_d\int_{\Sphere^{d-1}}\int_{\RR}
+e^{\imath\omega\dotp{\theta}{x}}
+|\omega|^{d-1}
+\widehat h(\theta,\omega)
+\d\omega\,\d\sigma(\theta),
+\]
 \paragraph{Gaussian case.}
 \paragraph{Sinkhorn for barycenters.}
 \eql{\label{eq-entropic-bary}
@@ -119,37 +151,60 @@ The separable conjugate is
 because for $k>0$, \(\sup_{r\geq0} ur-\big(r\log(r/k)-r+k\big) = k(e^u-1),\)
 and the case $k=0$ follows by lower semicontinuity. Dropping constants independent of $(\fD_s,\gD_s)_s$ gives~\eqref{eq-dual-bary-entropy}. The coordinate maximization in $\gD_s$ gives~\eqref{eq-sinkhorn-bary}; the block maximization in all $(\fD_s)_s$ gives the common marginal~\eqref{eq-sinkhorn-bary-3} and then~\eqref{eq-sinkhorn-bary-2}.
 \end{proof}
-
 \paragraph{Wasserstein-over-Wasserstein and barycenters.}
-The finite barycenter formula extends to a law $\mathfrak A\in\Pp(\Pp(\Omega))$ over input measures, as in Section~\ref{sec-wasserstein-over-wasserstein}. Under the usual lower-semicontinuity, tightness and integrability assumptions, automatically satisfied for compact $\Omega$ and continuous $c$, one obtains the correspondence
+\(\int_{\Pp(\Omega)}\MK_c(\beta_0,\alpha)\d\mathfrak A(\alpha)<+\infty,\)
+\(\mathcal B_c(\mathfrak A) \eqdef \operatorname*{Argmin}_{\beta\in\Pp(\Omega)} \int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).\)
+\(\widetilde\alpha_{\mathfrak A} \eqdef \uargmin{\beta\in\Pp(\Omega)} \int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha),\)
+\begin{prop}[Law of large numbers for barycenters over measures]\label{prop-wow-barycenter-lln}
+Let $\Omega$ be a compact metric space, let $c:\Omega\times\Omega\to\RR$ be continuous, and let $\mathfrak A\in\Pp(\Pp(\Omega))$. Let $\alpha_1,\alpha_2,\ldots$ be independent random probability measures with common law $\mathfrak A$, and set
+\(\widehat{\mathfrak A}_p \eqdef \frac1p\sum_{i=1}^p\delta_{\alpha_i} \in\Pp(\Pp(\Omega)).\)
+Then, almost surely,
 \[
-\mathcal B_c(\mathfrak A)
-\eqdef
-\operatorname*{Argmin}_{\beta\in\Pp(\Omega)}
-\int_{\Pp(\Omega)}\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).
+\widehat{\mathfrak A}_p \rightharpoonup \mathfrak A
+\quad\text{in }\Pp(\Pp(\Omega)),
+\qquad
+\bar\alpha_{\widehat{\mathfrak A}_p}
+\rightharpoonup
+\bar\alpha_{\mathfrak A}
+\quad\text{in }\Pp(\Omega).
 \]
-If this set is a singleton, its element $\widetilde\alpha_{\mathfrak A}$ defines a nonlinear flattening map from laws over measures to measures. For $\mathfrak A=\sum_s\la_s\delta_{\be_s}$ this is the preceding finite barycenter. It differs from the linear collapsed mixture $\bar\alpha_{\mathfrak A}$ of Definition~\ref{def-collapsed-barycentric-mixture}: the former is a transport-geometric average, while the latter is the ordinary average of measures.
-
-\begin{prop}[LLN over Wasserstein space]\label{prop-wow-barycenter-lln}
-Let $\Omega$ be compact, $c$ continuous, and $\alpha_i$ be iid with law $\mathfrak A\in\Pp(\Pp(\Omega))$. With
-\(\widehat{\mathfrak A}_p=p^{-1}\sum_{i=1}^p\delta_{\alpha_i}\),
-almost surely
+Moreover, if $\mathcal B_c(\mathfrak A)=\{\widetilde\alpha_{\mathfrak A}\}$ is a singleton and if $\widetilde\alpha_{\widehat{\mathfrak A}_p}\in\mathcal B_c(\widehat{\mathfrak A}_p)$ is any empirical barycenter, then, almost surely,
 \[
-\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A,\qquad
-\bar\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\bar\alpha_{\mathfrak A}.
-\]
-If $\mathcal B_c(\mathfrak A)=\{\widetilde\alpha_{\mathfrak A}\}$, then any empirical barycenter $\widetilde\alpha_{\widehat{\mathfrak A}_p}\in\mathcal B_c(\widehat{\mathfrak A}_p)$ satisfies
-\[
-\widetilde\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\widetilde\alpha_{\mathfrak A}.
+\widetilde\alpha_{\widehat{\mathfrak A}_p}
+\rightharpoonup
+\widetilde\alpha_{\mathfrak A}
+\quad\text{in }\Pp(\Omega).
 \]
 \end{prop}
 \begin{proof}
-Set $K=\Pp(\Omega)$. Since $K$ is compact metric and $\Cc(K)$ is separable, the scalar strong law on a countable dense set of tests gives $\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A$ almost surely. Testing against $\alpha\mapsto\int f\d\alpha$ gives the convergence of collapsed mixtures. Finally $(\beta,\alpha)\mapsto\MK_c(\beta,\alpha)$ is continuous on $K^2$; the compact family $\{\alpha\mapsto\MK_c(\beta,\alpha):\beta\in K\}\subset\Cc(K)$ and a finite-net argument give uniform convergence of empirical barycenter objectives. Any limit point of empirical minimizers minimizes the population objective; uniqueness gives convergence of the whole sequence.
-\end{proof}
-This distinguishes the number $p$ of input measures from the number $n$ of atoms used to approximate each input measure: with $p$ empirical inputs of size $n$, both errors interact under a fixed total budget $np$.
+Set $K=\Pp(\Omega)$. Since $\Omega$ is compact metric, $K$ is compact metric for weak convergence, and so is $\Pp(K)$. The space $\Cc(K)$ is separable for the uniform norm. Applying the scalar strong law to a countable dense family of test functions and then using uniform approximation gives, almost surely, for every $\Phi\in\Cc(K)$,
+\(\int \Phi(\alpha)\d\widehat{\mathfrak A}_p(\alpha) = \frac1p\sum_{i=1}^p\Phi(\alpha_i) \longrightarrow \int \Phi(\alpha)\d\mathfrak A(\alpha)\)
+This is exactly $\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A$ in $\Pp(K)$.
 
-\paragraph{Central-limit refinements.}
-A CLT over Wasserstein space is subtler than this LLN. Linear averages can be tested against $f$ and treated by scalar CLTs, but nonlinear barycenters require local linearization. When optimal maps $T_p$ from the population barycenter to the empirical barycenter exist, one studies convergence of $\sqrt p(T_p-\Id)$ in $L^2$; nonsmooth cases require plan or logarithmic-map coordinates. In infinite dimension this needs a genuine Radon Gaussian random element, not only a cylindrical one; in Hilbert space the limiting covariance must be trace class. Such results are known only in special settings, notably in one dimension using quantiles and on finite-dimensional families such as non-degenerate Gaussians, where $\Wass_2$ becomes Bures geometry. Entropic barycenters give a smoother variant with related CLTs.
+For the collapsed mixtures, take $f\in\Cc(\Omega)$ and define $\Phi_f(\alpha)=\int_\Omega f\d\alpha$. This function is continuous on $\Pp(\Omega)$. Hence
+\[
+\int_\Omega f\d\bar\alpha_{\widehat{\mathfrak A}_p}
+=
+\int_{\Pp(\Omega)}\Phi_f(\alpha)\d\widehat{\mathfrak A}_p(\alpha)
+\longrightarrow
+\int_{\Pp(\Omega)}\Phi_f(\alpha)\d\mathfrak A(\alpha)
+=
+\int_\Omega f\d\bar\alpha_{\mathfrak A},
+\]
+which proves $\bar\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\bar\alpha_{\mathfrak A}$.
+
+Since $c$ is continuous on the compact product $\Omega\times\Omega$, the value $(\beta,\alpha)\mapsto\MK_c(\beta,\alpha)$ is continuous on $K^2$. Therefore the map $\beta\mapsto h_\beta$, where $h_\beta(\alpha)=\MK_c(\beta,\alpha)$, is continuous from the compact space $K$ to $\Cc(K)$. Its image
+\(\mathcal H \eqdef \{h_\beta:\beta\in K\}\)
+is compact in $\Cc(K)$. The convergence of $\widehat{\mathfrak A}_p$ to $\mathfrak A$ is uniform over $\mathcal H$: given $\eta>0$, cover $\mathcal H$ by finitely many $\eta$-balls in $\norm{\cdot}_\infty$, use weak convergence for the centers, and bound the error on the balls by the total variation of $\widehat{\mathfrak A}_p-\mathfrak A$. Hence the empirical objectives
+\(F_p(\beta)\eqdef\int\MK_c(\beta,\alpha)\d\widehat{\mathfrak A}_p(\alpha)\)
+converge uniformly on $K$ to
+\(F(\beta)\eqdef\int\MK_c(\beta,\alpha)\d\mathfrak A(\alpha).\)
+Let $\beta_p\in\mathcal B_c(\widehat{\mathfrak A}_p)$. Compactness gives a subsequence $\beta_{p_k}\rightharpoonup\beta$. Uniform convergence, continuity of $F$, and optimality of $\beta_{p_k}$ give, for any $\gamma\in K$,
+\(F(\beta) = \lim_k F_{p_k}(\beta_{p_k}) \leq \lim_k F_{p_k}(\gamma) = F(\gamma),\)
+so $\beta\in\mathcal B_c(\mathfrak A)$. If this set is the singleton $\{\widetilde\alpha_{\mathfrak A}\}$, every converging subsequence has the same limit, and therefore the whole sequence $\widetilde\alpha_{\widehat{\mathfrak A}_p}$ converges to $\widetilde\alpha_{\mathfrak A}$.
+\end{proof}
+\paragraph{Toward central limit theorems on Wasserstein space.}
+There are nevertheless important settings where such results can be proved. In one dimension, the quantile representation linearizes $\Wass_2$, so barycenter fluctuations can be studied through empirical averages of quantile functions.
 
 \subsection{Multimarginal OT}
 \label{sec-multimarginal-ot}
@@ -242,7 +297,7 @@ with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Ther
 \exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
 \prod_s\d\al_s(x_s),
 \]
-with block Sinkhorn updates on the potentials $f_s$. Without structure this is a tensor algorithm: storing the discrete coupling already costs $\prod_s n_s$, and unstructured multi-marginal Sinkhorn keeps this exponential dependence. If the cost factorizes on a sparse graph, \(c(x_1,\ldots,x_S)=\sum_{(r,s)\in E}c_{r,s}(x_r,x_s)\), the contractions are message-passing operations whose complexity is governed by treewidth rather than by the full tensor size. The time-discretized generalized incompressible Euler problem is a key example: neighboring time slices form a cycle, hence treewidth two, and entropic Bregman/Sinkhorn schemes exploit this circular structure.
+\(c(x_1,\ldots,x_S)=\sum_{(r,s)\in E} c_{r,s}(x_r,x_s),\)
 \subsection{Low-Rank Optimal Transport}
 \label{sec-low-rank-ot}
 \begin{defn}[Low-rank factored couplings]\label{def-low-rank-couplings}
@@ -314,6 +369,7 @@ For discrete measures $\alpha=\sum_i a_i\de_{x_i}$ and $\beta=\sum_j b_j\de_{y_j
 \epsilon\KLD(P|\a\otimes\b).
 \end{equation}
 \subsection{Metric learning and inverse OT}
+\label{sec-metric-learning-inverse-ot}
 \subsubsection{Differentiating OT losses}
 \begin{prop}[First variations of unregularized OT]\label{prop-ot-first-variations-unregularized}
 Let $\alpha\in\Pp(\Xx)$ and $\beta\in\Pp(\Yy)$, where $\Xx,\Yy$ are compact metric spaces, and let $c\in\Cc(\Xx\times\Yy)$. Define
@@ -519,44 +575,60 @@ For a cost $c$, the martingale OT problem minimizes $\int c\d\pi$ over $\Couplin
 
 The terminology comes from probability: if $(X,Y)\sim\pi$, then~\eqref{eq-martingale-coupling} is exactly $\EE[Y|X]=X$. Hence martingale OT is a Kantorovich problem with the usual two marginal constraints plus a barycentric constraint on the conditional laws.
 
+\((\Id,\bar T_\pi)_\sharp\alpha\)
 \paragraph{Stochastic orders.}
-Stochastic orders are feasibility criteria for constrained couplings: inequalities against test functions can be equivalent to pathwise or conditional constraints.
 \begin{prop}[Strassen's theorem for stochastic order]\label{prop-strassen-stochastic-order}
-For $\alpha,\beta\in\Pp(\RR)$,
+Let $\alpha,\beta\in\Pp(\RR)$ and define the classical stochastic order by
 \[
 \alpha\preceq_{\mathrm{st}}\beta
 \quad\Longleftrightarrow\quad
-\int\varphi\,\d\alpha\leq\int\varphi\,\d\beta
-\quad\text{for every bounded increasing }\varphi
+\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
+\quad\text{for every bounded increasing }\varphi.
 \]
-is equivalent to the existence of $\pi\in\Couplings(\alpha,\beta)$ concentrated on $\{x\leq y\}$.
+Then $\alpha\preceq_{\mathrm{st}}\beta$ if and only if there exists $\pi\in\Couplings(\alpha,\beta)$ concentrated on $\enscond{(x,y)}{x\leq y}$.
 \end{prop}
 \begin{proof}
-The direct implication follows by integrating increasing functions along a coupling with $x\leq y$. Conversely, testing approximate indicators of $(t,+\infty)$ gives $F_\alpha(t)\geq F_\beta(t)$; the monotone quantile coupling $X=F_\alpha^{-1}(U)$, $Y=F_\beta^{-1}(U)$ then satisfies $X\leq Y$.
+A coupling supported on $x\leq y$ immediately gives the integral inequality for every increasing $\varphi$. Conversely, testing approximate indicators of intervals $(t,+\infty)$ gives $F_\alpha(t)\geq F_\beta(t)$ for all continuity points of the distribution functions. If $U$ is uniform on $(0,1)$ and $F_\alpha^{-1},F_\beta^{-1}$ are the generalized quantiles, then $X=F_\alpha^{-1}(U)$ and $Y=F_\beta^{-1}(U)$ have laws $\alpha$ and $\beta$, and the inequality between distribution functions gives $X\leq Y$ almost surely.
 \end{proof}
-
 \paragraph{Convex order and martingale feasibility.}
-For $\alpha,\beta\in\Pp_1(\RR^d)$,
+For martingale OT, the pointwise order constraint is replaced by a barycentric constraint on conditional laws. The corresponding order is the convex order. For $\alpha,\beta\in\Pp_1(\RR^d)$,
+
 \[
 \alpha\preceq_{\mathrm{cx}}\beta
 \quad\Longleftrightarrow\quad
-\int\varphi\,\d\alpha\leq\int\varphi\,\d\beta
-\quad\text{for every convex }\varphi
+\int \varphi\,\d\alpha\leq\int \varphi\,\d\beta
+\quad\text{for every convex }\varphi\text{ with finite integrals}.
 \]
-means that $\beta$ has the same mean as $\alpha$ and is more spread out.
 \begin{thm}[Strassen's martingale theorem]\label{thm-strassen-martingale}
-\[
-\alpha\preceq_{\mathrm{cx}}\beta
-\quad\Longleftrightarrow\quad
-\Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset .
-\]
+Let $\alpha,\beta\in\Pp_1(\RR^d)$. Then
+\(\alpha\preceq_{\mathrm{cx}}\beta \quad\Longleftrightarrow\quad \Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset.\)
+Equivalently, $\beta$ is above $\alpha$ in convex order if and only if there exists a coupling $\pi(\d x,\d y)=\pi_x(\d y)\alpha(\d x)$ such that $\int y\d\pi_x(y)=x$ for $\alpha$-almost every $x$.
 \end{thm}
 \begin{proof}
-Martingale couplings imply convex order by Jensen. Conversely, Strassen's separation argument shows that if no martingale coupling exists, then some test function separates $\beta$ from the set of second marginals reachable from $\alpha$ by martingale kernels; optimizing conditionally gives the concave envelope and contradicts the convex-order inequalities.
-\end{proof}
-Thus convex order is exactly the condition under which martingale OT has finite value; otherwise the admissible set is empty and the value is $+\infty$. When it holds, the cost selects one mean-preserving splitting among all feasible martingale couplings. For Gaussians with the same mean,
+If $\pi$ is a martingale coupling, then Jensen's inequality gives, for every convex $\varphi$,
 \[
-\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1)
-\quad\Longleftrightarrow\quad \Sigma_1-\Sigma_0\succeq0.
+\varphi(x)
+=
+\varphi\!\left(\int y\d\pi_x(y)\right)
+\leq
+\int \varphi(y)\d\pi_x(y),
 \]
-The direct implication follows by adding independent Gaussian noise; the converse follows by testing $x\mapsto\dotp{u}{x}^2$.
+and integration in $x$ gives $\int\varphi\d\alpha\leq\int\varphi\d\beta$.
+
+Conversely, assume $\alpha\preceq_{\mathrm{cx}}\beta$. In the compactly supported case, one proves existence by separating $\beta$ from the closed convex set of all second marginals reachable from $\alpha$ by martingale kernels. If $\beta$ were not in this set, a separating test function $\psi$ would satisfy
+\[
+\int\psi\d\beta
+>
+\sup
+\left\{
+\int\psi\d\eta
+\;:\;
+\eta\in\Pp_1(\RR^d),\
+\Couplings_{\mathrm{mart}}(\alpha,\eta)\neq\emptyset
+\right\}.
+\]
+For a fixed $x$, optimizing over conditional laws with barycenter $x$ gives the concave envelope $\operatorname{conc}\psi(x)$; hence the right-hand side is $\int\operatorname{conc}\psi\d\alpha$. Since $\alpha\preceq_{\mathrm{cx}}\beta$ is equivalently the reverse inequality for concave functions,
+\(\int\operatorname{conc}\psi\d\alpha \geq \int\operatorname{conc}\psi\d\beta \geq \int\psi\d\beta,\)
+a contradiction. The finite-first-moment case follows by the standard truncation and tightness argument in Strassen's theorem.
+\end{proof}
+\(\Gaussian(m,\Sigma_0)\preceq_{\mathrm{cx}}\Gaussian(m,\Sigma_1) \quad\Longleftrightarrow\quad \Sigma_1-\Sigma_0\succeq0.\)

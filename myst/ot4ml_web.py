@@ -28,6 +28,7 @@ WEIGHT_MODES = ("uniform", "angular", "right_heavy")
 
 
 def setup_style() -> None:
+    """Apply the OT4ML plotting style used by interactive demos."""
     mpl.rcParams.update(
         {
             "font.family": "serif",
@@ -47,6 +48,7 @@ def setup_style() -> None:
 
 
 def _remove_axes(ax: plt.Axes) -> None:
+    """Hide ticks and spines for image-like demo panels."""
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
@@ -54,12 +56,14 @@ def _remove_axes(ax: plt.Axes) -> None:
 
 
 def _interp_color(t: float, color0: str = RED, color1: str = BLUE) -> tuple[float, float, float]:
+    """Interpolate two colors in RGB space."""
     a = np.array(to_rgb(color0))
     b = np.array(to_rgb(color1))
     return tuple((1 - t) * a + t * b)
 
 
 def _bounded_int(value: int, name: str, low: int, high: int) -> int:
+    """Validate and clamp an integer-valued widget parameter."""
     value = int(value)
     if value < low or value > high:
         raise ValueError(f"{name} must be between {low} and {high}")
@@ -67,10 +71,12 @@ def _bounded_int(value: int, name: str, low: int, high: int) -> int:
 
 
 def _normal_pdf(x: np.ndarray, mean: float, std: float) -> np.ndarray:
+    """Evaluate a one-dimensional Gaussian density."""
     return np.exp(-0.5 * ((x - mean) / std) ** 2) / (std * np.sqrt(2 * np.pi))
 
 
 def _mixture_pdf(x: np.ndarray, weights: list[float], means: list[float], stds: list[float]) -> np.ndarray:
+    """Evaluate a normalized one-dimensional Gaussian mixture."""
     weights = np.asarray(weights, dtype=float)
     weights = weights / weights.sum()
     pdf = np.zeros_like(x, dtype=float)
@@ -80,6 +86,7 @@ def _mixture_pdf(x: np.ndarray, weights: list[float], means: list[float], stds: 
 
 
 def _inverse_cdf_samples(grid: np.ndarray, pdf: np.ndarray, n: int) -> tuple[np.ndarray, np.ndarray]:
+    """Sample quantiles from a density discretized on a grid."""
     cdf = np.cumsum(pdf)
     cdf = (cdf - cdf[0]) / (cdf[-1] - cdf[0])
     levels = (np.arange(n) + 0.5) / n
@@ -131,6 +138,7 @@ def plot_quantile_matching(n: int = 52, source: str = "two", target: str = "thre
 
 
 def _farthest_indices(points: np.ndarray, n: int) -> np.ndarray:
+    """Select a deterministic farthest-point subset."""
     chosen = [int(np.argmin(np.sum(points**2, axis=1)))]
     dist2 = np.sum((points - points[chosen[0]]) ** 2, axis=1)
     for _ in range(1, n):
@@ -141,6 +149,7 @@ def _farthest_indices(points: np.ndarray, n: int) -> np.ndarray:
 
 
 def _jitter(points: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    """Apply a small spacing-scaled perturbation to a point cloud."""
     if len(points) < 2:
         return points
     diff = points[:, None, :] - points[None, :, :]
@@ -151,6 +160,7 @@ def _jitter(points: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def _sample_cloud(kind: str, n: int, rng: np.random.Generator) -> np.ndarray:
+    """Sample a readable two-dimensional cloud for interactive OT demos."""
     n = _bounded_int(n, "number of points", 2, 180)
     if kind not in SHAPES:
         raise ValueError(f"shape must be one of {SHAPES}")
@@ -198,6 +208,7 @@ def make_clouds(
 
 
 def _padded_limits(points: np.ndarray, pad: float = 0.16) -> tuple[tuple[float, float], tuple[float, float]]:
+    """Return padded plot limits for a two-dimensional cloud."""
     xmin, ymin = points.min(axis=0)
     xmax, ymax = points.max(axis=0)
     dx = max(xmax - xmin, 1e-6)
@@ -206,6 +217,7 @@ def _padded_limits(points: np.ndarray, pad: float = 0.16) -> tuple[tuple[float, 
 
 
 def _weights_for_target(y: np.ndarray, mode: str = "uniform", strength: float = 1.0) -> np.ndarray:
+    """Return target weights for the selected interactive weighting mode."""
     if mode not in WEIGHT_MODES:
         raise ValueError(f"weight_mode must be one of {WEIGHT_MODES}")
     strength = float(np.clip(strength, 0.0, 4.0))
@@ -222,6 +234,7 @@ def _weights_for_target(y: np.ndarray, mode: str = "uniform", strength: float = 
 
 
 def _transport_plan(a: np.ndarray, b: np.ndarray, cost: np.ndarray, epsilon: float) -> np.ndarray:
+    """Compute either exact or entropic transport for small demos."""
     positive = cost[cost > 0]
     scale = float(np.median(positive)) if positive.size else 1.0
     cost_scaled = cost / max(scale, 1e-12)
@@ -246,6 +259,7 @@ def _plan_for_clouds(
     weight_mode: str,
     weight_strength: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Build weights and an OT plan for two already sampled clouds."""
     if cost_power <= 0:
         raise ValueError("cost_power must be positive")
     a = np.ones(len(x)) / len(x)
@@ -262,7 +276,13 @@ def _draw_segments(
     plan: np.ndarray,
     max_edges: int = 220,
 ) -> None:
-    entries = [(i, j, float(plan[i, j])) for i in range(plan.shape[0]) for j in range(plan.shape[1]) if plan[i, j] > 1e-12]
+    """Draw the largest weighted edges of a transport plan."""
+    entries = [
+        (i, j, float(plan[i, j]))
+        for i in range(plan.shape[0])
+        for j in range(plan.shape[1])
+        if plan[i, j] > 1e-12
+    ]
     if not entries:
         return
     entries = sorted(entries, key=lambda item: item[2], reverse=True)[:max_edges]
@@ -285,11 +305,30 @@ def _draw_transport_axis(
     title: str,
     limits: tuple[tuple[float, float], tuple[float, float]],
 ) -> None:
+    """Draw one complete transport-plan panel."""
     _draw_segments(ax, x, y, plan)
     source_sizes = 48 * np.sqrt(a / a.max())
     target_sizes = 48 * np.sqrt(b / b.max())
-    ax.scatter(x[:, 0], x[:, 1], s=source_sizes, marker="o", color=RED, edgecolor="white", linewidth=0.4, zorder=3)
-    ax.scatter(y[:, 0], y[:, 1], s=target_sizes, marker="o", color=BLUE, edgecolor="white", linewidth=0.4, zorder=4)
+    ax.scatter(
+        x[:, 0],
+        x[:, 1],
+        s=source_sizes,
+        marker="o",
+        color=RED,
+        edgecolor="white",
+        linewidth=0.4,
+        zorder=3,
+    )
+    ax.scatter(
+        y[:, 0],
+        y[:, 1],
+        s=target_sizes,
+        marker="o",
+        color=BLUE,
+        edgecolor="white",
+        linewidth=0.4,
+        zorder=4,
+    )
     ax.set_title(title, pad=7)
     ax.set_xlim(*limits[0])
     ax.set_ylim(*limits[1])
@@ -375,6 +414,7 @@ def plot_regularization_sweep(
 
 
 def _load_gray_cat(n: int = 126) -> np.ndarray:
+    """Load the grayscale cat image used by histogram equalization."""
     n = _bounded_int(n, "image_size", 32, 256)
     img = Image.open(ASSETS / "cat.jpg")
     img = ImageOps.grayscale(img).resize((n, n), Image.Resampling.LANCZOS)
@@ -382,6 +422,7 @@ def _load_gray_cat(n: int = 126) -> np.ndarray:
 
 
 def _equalize_to_truncated_gaussian(arr: np.ndarray, mean: float, sigma: float) -> np.ndarray:
+    """Monotonically remap gray levels to a truncated Gaussian law."""
     flat = arr.ravel()
     order = np.argsort(flat, kind="mergesort")
     ranks = np.empty_like(flat, dtype=float)
@@ -435,6 +476,7 @@ def plot_histogram_equalization(
 
 
 def _show_figure(fig: plt.Figure) -> None:
+    """Display and close a Matplotlib figure inside a notebook output."""
     from IPython.display import display
 
     display(fig)
@@ -442,6 +484,7 @@ def _show_figure(fig: plt.Figure) -> None:
 
 
 def _widgets():
+    """Import ipywidgets lazily with a clear error message."""
     try:
         import ipywidgets as widgets
     except ImportError as exc:
@@ -450,6 +493,7 @@ def _widgets():
 
 
 def _live_output(callback: Callable[..., plt.Figure], controls: dict[str, object]):
+    """Connect widget controls to a Matplotlib figure callback."""
     widgets = _widgets()
 
     def render(**kwargs) -> None:

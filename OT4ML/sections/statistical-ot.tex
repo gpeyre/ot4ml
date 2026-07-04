@@ -19,6 +19,12 @@ This statistical convergence is conceptually different from the algorithmic conv
 \index{intrinsic dimension}% strictindex
 \index{rate!parametric}% strictindex
 
+\begin{example}[Application to two-sample testing and generative-model evaluation]\label{ex-two-sample-testing-fid}
+\index{two-sample testing}% strictindex
+\index{Frechet inception distance}% strictindex
+	Given samples \(X_1,\ldots,X_n\sim\al\) and \(Y_1,\ldots,Y_m\sim\be\), a two-sample test uses a statistic \(D(\hat\al_n,\hat\be_m)\) to test \(H_0:\al=\be\). OT distances are geometric choices of \(D\), while MMD and energy distances give kernel or negative-type alternatives~\cite{ramdas2017wasserstein,gretton2012kernel,szekely2004testing}. In generative-model evaluation, the Fr\'echet Inception Distance first embeds data in a neural feature space, then fits Gaussian laws and computes their \(\Wass_2\) distance, i.e. the Bures formula between empirical means and covariances~\cite{HeuselRamsauerUnterthinerNesslerHochreiter2017FID}. KID replaces this Gaussian approximation by an MMD statistic~\cite{BinkowskiSutherlandArbelGretton2018MMDGAN}. These examples separate statistical calibration under \(H_0\) from the interpretability of the chosen discrepancy; the rest of this chapter explains why the plug-in statistic can have very different bias and variance depending on the discrepancy.
+\end{example}
+
 \section{Law of Large Numbers and Central Limit Theorem}
 \label{sec-law-large-numbers-clt}
 \label{sec-quantitative-clt}
@@ -365,6 +371,8 @@ The elementary mechanism behind this phenomenon is a multiscale coupling. One co
 \end{proof}
 
 \paragraph{Lower bounds and minimax optimality.}
+\index{minimax optimality}% strictindex
+\index{minimax lower bound}% strictindex
 The empirical upper bound above is not merely a weakness of the plug-in estimator. In fully nonparametric classes, the \(N^{-1/d}\) scale is a genuine minimax obstruction: from \(N\) samples one can resolve only about \(N\) spatial boxes, and the Wasserstein cost of an unresolved signed imbalance is proportional to the box diameter. This idea goes back to Dudley's entropy method and is now understood sharply for empirical measures and minimax distribution estimation in Wasserstein loss~\cite{dudley1969speed,fournier2015rate,singh2018minimax,weed2017sharp,weed2025statistical}. The following elementary Assouad argument gives the basic obstruction already for measures with bounded densities.
 \index{minimax lower bound}% strictindex
 \index{Assouad lemma}% strictindex
@@ -447,6 +455,9 @@ The same packing mechanism gives the corresponding high-dimensional lower bounds
 \index{bias-variance tradeoff}% strictindex
 
 \paragraph{Leveraging smoothness.}
+\index{smoothing estimator}% strictindex
+\index{smoothed plug-in estimator}% strictindex
+\index{Besov smoothness}% strictindex
 The preceding minimax obstruction is a worst-case statement over rough density classes. If the unknown laws have smooth densities, one can do better by smoothing the empirical measure before computing OT. This is a genuine statistical improvement: for \(s>0\), the right smoothing scale removes the finest empirical oscillations instead of transporting them at scale \(N^{-1/d}\). The following representative statement is a convenient \(W_1\) corollary of the minimax theory of Niles-Weed and Berthet~\cite{nilesweed2019minimaxSmooth}; related \(W_1\) results can also be viewed through Besov integral-probability metrics~\cite{uppal2019nonparametricBesovIPM}.
 \index{smoothness}% strictindex
 \index{density estimation}% strictindex
@@ -487,6 +498,8 @@ The preceding minimax obstruction is a worst-case statement over rough density c
 	Balancing these two quantities gives \(2^J\simeq N^{1/(d+2s)}\) and hence the rate \(N^{-(s+1)/(d+2s)}\). Projecting the linear wavelet estimate onto the cone of probability densities in the same negative Besov norm preserves the order of this bound. Applying the same estimate to both marginals proves the displayed two-sample bound. The full minimax theorem, including \(W_p\), Besov classes, lower bounds and endpoint logarithms in dimensions \(1\) and \(2\), is proved in~\cite{nilesweed2019minimaxSmooth}.
 \end{proof}
 
+\index{smooth OT estimation}% strictindex
+\index{sum-of-squares relaxation}% strictindex
 This result should not be confused with a free computational cure for high-dimensional OT. Literal kernel smoothing, \(\tilde\alpha_{n,h}=K_h\ast\hat\alpha_n\), replaces each atom by a continuous bump, so the subsequent transport problem is no longer an \(n\)-point discrete OT problem. If the smoothed densities are represented on a grid, convolution and OT involve \(h^{-d}\) degrees of freedom; if they are re-discretized by adding artificial noise samples, enough new atoms are needed to make the extra Monte-Carlo error negligible. At fixed accuracy both routes inherit an exponential dependence on \(d\). Recent work by Vacher, Muzellec, Rudi, Bach and Vialard uses an infinite-dimensional sum-of-squares representation, leading to SDP-type relaxations for smooth OT estimation with dimension-free sample and accuracy exponents in very smooth regimes~\cite{vacher2021dimensionfreeSmoothOT}. These results are conceptually important because they show that the smoothness gain is not purely formal, but the algorithms remain expensive in practice and mostly clarify the theoretical frontier rather than providing a routine high-dimensional solver.
 \index{Besov space}% strictindex
 \index{wavelet estimator}% strictindex
@@ -704,6 +717,9 @@ Entropic regularization keeps the transport geometry but smooths the dual potent
 \end{proof}
 
 \paragraph{Sample complexity of estimating OT maps.}
+\index{OT map estimation}% strictindex
+\index{map extrapolation}% strictindex
+\index{soft barycentric projection}% strictindex
 \index{optimal transport map!estimation}% strictindex
 \index{barycentric projection}% strictindex
 The preceding estimates concern transport values. In many learning tasks, however, one wants the map itself. The standard sample-based principle is to solve an empirical dual problem for potentials \((\fD_{n,m}^\epsilon,\gD_{n,m}^\epsilon)\in\RR^n\times\RR^m\), where \(\epsilon>0\) denotes the entropic temperature and \(\epsilon=0\) denotes the unregularized Kantorovich problem. The soft \(c\)-transform of Definition~\ref{def-continuous-soft-c-transform} then acts as an extrapolator from the samples to the full ambient space.
@@ -732,6 +748,8 @@ Equivalently, subtracting the quadratic marginal terms turns \(c_2\) into the bi
 	\qquad
 	T_{n,m}^\epsilon=\nabla\varphi_{n,m}^\epsilon .
 \]
+\index{soft conjugation}% strictindex
+\index{empirical dual potential}% strictindex
 This is the precise form of the informal statement that empirical dual potentials are extended by a soft conjugation and then differentiated. It estimates the Brenier map \(\alpha\to\beta\); the inverse map \(\beta\to\alpha\) is obtained symmetrically from the source-side potential. Differentiating the log-sum-exp gives the explicit half-squared formula
 \begin{equation}\label{eq-empirical-entropic-map-barycentric}
 	T_{n,m}^\epsilon(x)
@@ -808,6 +826,8 @@ Thus the extrapolated soft-transform map coincides on the empirical support with
 \index{Jensen inequality}% strictindex
 \end{proof}
 
+\index{Brenier potential stability}% strictindex
+\index{entropic barycentric map}% strictindex
 The preceding proposition is qualitative. Quantitative rates for maps are substantially more delicate than rates for values, because they require stability of Brenier potentials. The minimax theory of H\"utter--Rigollet~\cite{hutter2021minimaxOTMaps}, Deb--Ghosal--Sen~\cite{deb2021ratesBarycentricMaps}, and Manole--Balakrishnan--Niles-Weed--Wasserman~\cite{manole2021pluginOTMaps} shows that, under compact-support, density-boundedness, curvature and smoothness assumptions on the Brenier map \(T_0\), unregularized plug-in estimators with suitable out-of-sample extension can achieve the squared \(L^2(\alpha)\) risk
 \[
 	\EE\norm{\widehat T_n-T_0}_{L^2(\alpha)}^2
@@ -834,7 +854,7 @@ where \(\Ii_0(\alpha,\beta)\) is the Fisher-information quantity appearing in Pr
 	n^{-\frac{\bar s+1}{2(d+\bar s+1)}}\log n .
 \]
 This summarizes the main tradeoff: \(\epsilon=0\) can achieve minimax rates when combined with enough smooth extension machinery, whereas \(\epsilon>0\) gives a simple Sinkhorn-computable soft map whose finite-sample guarantees are explicit.
-\index{map!estimation}% strictindex
+\index{map estimation}% strictindex
 \index{barycentric projection}% strictindex
 \index{entropic!map estimation}% strictindex
 
@@ -961,7 +981,7 @@ for OT values such as \(\mathcal V(\alpha,\beta)=\Wass_p^p(\alpha,\beta)\), \(\m
 \index{entropic!OT}% strictindex
 
 \paragraph{Literature map.}
-The shape of the limit depends sharply on the analytic regularity of the transport value. For exact OT on a finite or countable space, the map from empirical weights to optimal cost is convex and piecewise affine. Sommerfeld and Munk~\cite{sommerfeld2018inference}, and the countable-space extensions of Tameling--Sommerfeld--Munk and Hundrieser--Klatt--Munk--Tameling~\cite{tameling2017empirical,hundrieser2022empirical}, show that the natural limit is a directional delta-method limit: often a support function of a Gaussian process over an optimal dual face, rather than a Gaussian random variable. For Euclidean costs, del Barrio--Loubes and collaborators obtain central-limit theorems for empirical transportation costs under regularity and uniqueness assumptions on the Kantorovich potentials~\cite{delBarrioLoubes2017clt,delBarrioGonzalezSanzLoubes2021central}. Entropic regularization makes the problem smoother. For fixed \(\epsilon>0\), the value is differentiable with respect to the marginals, and the limiting variance is read directly from the entropic dual potentials. This is the point of view developed by Bigot--Cazelles--Papadakis, Klatt--Tameling--Munk, Hundrieser--Klatt--Munk, and Mena--Weed~\cite{bigot2017central,klatt2020empirical,hundrieser2021limit,mena2019statistical}. More recent results clarify weak limits beyond smooth costs and second-order null limits for Sinkhorn divergences~\cite{gonzalezSanzHundrieser2023weak,goldfeld2022limit}. These asymptotic statements do not replace the dimension-dependent bounds of Section~\ref{sec-sample-complexity}; they explain what the leading random object is, what constants appear, and where the bias comes from.
+The shape of the limit depends sharply on the analytic regularity of the transport value. For exact OT on a finite or countable space, the map from empirical weights to optimal cost is convex and piecewise affine. Sommerfeld and Munk~\cite{sommerfeld2018inference}, and the countable-space extensions of Tameling--Sommerfeld--Munk~\cite{tameling2017empirical}, show that the natural limit is a directional delta-method limit: often a support function of a Gaussian process over an optimal dual face, rather than a Gaussian random variable. For Euclidean costs, del Barrio--Loubes and collaborators obtain central-limit theorems for empirical transportation costs under regularity and uniqueness assumptions on the Kantorovich potentials~\cite{delBarrioLoubes2017clt,delBarrioGonzalezSanzLoubes2021central}. Entropic regularization makes the problem smoother. For fixed \(\epsilon>0\), the value is differentiable with respect to the marginals, and the limiting variance is read directly from the entropic dual potentials. This is the point of view developed by Bigot--Cazelles--Papadakis, Klatt--Tameling--Munk, Hundrieser--Klatt--Munk, and Mena--Weed~\cite{bigot2017central,klatt2020empirical,hundrieser2021limit,mena2019statistical}. More recent results clarify weak limits beyond smooth costs and second-order null limits for Sinkhorn divergences~\cite{gonzalezSanzHundrieser2023weak,goldfeld2022limit}. These asymptotic statements do not replace the dimension-dependent bounds of Section~\ref{sec-sample-complexity}; they explain what the leading random object is, what constants appear, and where the bias comes from.
 \index{finite space}% strictindex
 \index{delta method}% strictindex
 \index{piecewise affine map}% strictindex
@@ -1173,6 +1193,9 @@ The finite-dimensional formulas above are not merely toy models; they are the cl
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Sketching Sinkhorn in Linear Time}
+\index{Sinkhorn!linear-time}% strictindex
+\index{kernel sketching}% strictindex
+\index{feature sketch}% strictindex
 \label{sec-sketching-sinkhorn}
 \index{Sinkhorn!sketching}% strictindex
 \index{linear-time Sinkhorn}% strictindex
@@ -1183,6 +1206,9 @@ The finite-dimensional formulas above are not merely toy models; they are the cl
 The statistical results above explain why entropic OT is attractive at fixed temperature, but they also expose a computational tension. Sampling the marginals replaces the input laws by empirical measures and reduces the problem to finitely many support points; subsampling or coarsening these supports is governed by the sample-complexity estimates of this chapter. Even after the supports are fixed, however, a Sinkhorn sweep still costs \(O(nm)\), because it repeatedly applies the Gibbs kernel to vectors. Kernel sketching attacks this second bottleneck: it keeps the sampled marginals fixed and samples, or otherwise compresses, the feature representation of the kernel used by Sinkhorn. The drawback of this sketching approach is that the additional approximation error induced by the kernel sketch is dimension-dependent, so the number of features needed for a fixed accuracy typically grows with the ambient dimension.
 
 \paragraph{PSD kernels and ordinary feature sketches.}
+\index{positive semidefinite kernel}% strictindex
+\index{random features}% strictindex
+\index{Fourier features}% strictindex
 The RKHS/MMD section, Section~\ref{sec-rkhs-mmd}, already used positive semidefinite kernels to define Hilbertian discrepancies between measures. Recall that a symmetric kernel \(k:\Xx\times\Xx\to\RR\) is positive semidefinite if, for every finite family \((x_i)_{i=1}^n\), the Gram matrix \((k(x_i,x_j))_{ij}\) is positive semidefinite. Many scalable kernel methods start from an integral feature representation
 \[
 	k(x,y)=\int_Z \dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\rho(z),
@@ -1202,7 +1228,7 @@ This is the classical random-feature principle. For data points \((x_i)_{i=1}^n\
 \index{kernel!ridge regression}% strictindex
 
 For translation-invariant kernels on \(\RR^d\), Bochner's theorem gives the standard Fourier sketch. If \(k(x,y)=\kappa(x-y)\) and \(\kappa(t)=\int e^{\mathrm{i}\dotp{\omega}{t}}\,d\Lambda(\omega)\), with \(\Lambda\) a positive spectral measure, one may use real features \(\phi(x,\omega)=(\cos\dotp{\omega}{x},\sin\dotp{\omega}{x})\). For the Gaussian kernel \(k_\sigma(x,y)=\exp(-\norm{x-y}^2/(2\sigma^2))\), this corresponds to \(\omega\sim\Gaussian(0,\sigma^{-2}\Id)\). This random Fourier feature construction was introduced by Rahimi and Recht to accelerate large-scale kernel machines~\cite{RahimiRecht2007RandomFeatures}; its statistical role for kernel ridge regression and related supervised methods is analyzed, for instance, in~\cite{RudiRosasco2017RandomFeatures,AvronKapralovMusco2017RandomFourierKRR}.
-\index{Fourier!random features}% strictindex
+\index{Fourier random features}% strictindex
 \index{Bochner theorem}% strictindex
 \index{Gaussian!kernel}% strictindex
 
@@ -1295,11 +1321,15 @@ For a fixed pair \((i,j)\), Hoeffding's inequality applied to bounded variables 
 A union bound over the \(nm\) entries gives the first claim. If \(\max_{ij}\abs{\widetilde K_{ij}-K_{ij}}\leq\eta<\kappa\), then \(\widetilde K_{ij}\geq\kappa-\eta>0\). Writing \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\), one has \(|s_{ij}|\leq\eta/\kappa\leq1/2\), hence \(|\log(1+s_{ij})|\leq2|s_{ij}|\), which proves the absolute logarithmic bound. Applying the same Hoeffding argument to \(\zeta_{ij}(Z)\), whose expectation is \(1\), gives the relative estimate. On the corresponding event, \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\) with \(|s_{ij}|\leq\delta\leq1/2\), so positivity and the bound \(\epsilon|\log(1+s_{ij})|\leq2\epsilon\delta\) follow.
 \end{proof}
 
+\index{kernel positivity}% strictindex
+\index{logarithmic kernel approximation}% strictindex
 This proposition is deliberately elementary, but it pinpoints the obstruction. When \(\epsilon\) is small or the data diameter is large, \(\kappa=\min K_{ij}\) can be exponentially small, so an ordinary signed sketch may need a very large \(r\) just to keep all entries positive. What Sinkhorn really needs is relative control of the kernel, equivalently additive control of the sketched costs. Positive features do not solve the whole approximation problem, but they remove the most basic failure mode: negative entries in \(\widetilde K\).
 \index{Hoeffding inequality}% strictindex
 \index{relative error}% strictindex
 \index{logarithmic error}% strictindex
 
+\index{effective rank}% strictindex
+\index{near-linear Sinkhorn}% strictindex
 The dimension dependence is unavoidable in the worst case. For the quadratic cost on points contained in a radius-\(R\) ball of \(\RR^d\), the Nystr\"om analysis of Altschuler, Bach, Rudi and Niles-Weed~\cite{AltschulerBachRudiNilesWeed2019NystromSinkhorn} studies \(K_{ij}=\exp(-\eta\norm{x_i-x_j}^2)\) and bounds the effective rank by a quantity of the form
 \[
 	r_\ast(X,\eta,\epsilon_0)
@@ -1307,11 +1337,14 @@ The dimension dependence is unavoidable in the worst case. For the quadratic cos
 	\pa{\eta R^2+\log(n/\epsilon_0)}^d
 \]
 up to universal constants and harmless logarithms. Thus the resulting Sinkhorn computation is near-linear in \(n\) once this rank is fixed, but the required rank is polynomial in the inverse kernel bandwidth, with exponent \(d\) and only logarithmic dependence on \(n\) in this bound. When the same machinery is used to approximate unregularized quadratic OT to additive accuracy \(\tau\), one takes \(\eta\) of order \(\tau^{-1}\log n\), so the complexity contains a factor \(\tau^{-O(d)}\), often summarized informally as an \(\epsilon^{-d}\)-type dependence on the target precision. The same work also explains why this can be much better on data with lower intrinsic dimension.
-\index{Nystr\"om approximation}% strictindex
+\index{Nystrom approximation}% strictindex
 \index{effective dimension}% strictindex
 \index{Gaussian!kernel rank}% strictindex
 
 \paragraph{Positive features and total positivity.}
+\index{positive features}% strictindex
+\index{complete-positive cone}% strictindex
+\index{doubly nonnegative cone}% strictindex
 A positive feature sketch asks for more than positive semidefiniteness. In finite dimension, let
 \[
 	\mathrm{DNN}_n=\enscond{A\in\RR^{n\times n}}{A\succeq0,\ A_{ij}\geq0},
@@ -1328,6 +1361,8 @@ For kernels, it is useful to distinguish the two corresponding notions. A kernel
 \index{totally positive kernel}% strictindex
 \index{complete-positive kernel}% strictindex
 
+\index{positive feature map}% strictindex
+\index{nonnegative factorization}% strictindex
 The positive-feature construction of Scetbon and Cuturi~\cite{ScetbonCuturi2020PositiveFeatures} makes the reason for this definition direct. If
 \[
 	k(x,y)=\int_Z\dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\rho(z),
@@ -1475,6 +1510,8 @@ The periodic kernel \(k_\lambda(t)=\lambda+\cos^2(t/2)\), with \(\lambda=1/20\),
 \index{copositive certificate}% strictindex
 
 \paragraph{Positive sketches for Sinkhorn.}
+\index{positive sketch}% strictindex
+\index{Gibbs kernel!sketching}% strictindex
 For the \(p\)-power cost \(c_p(x,y)=\norm{x-y}^p\), with \(0<p\leq2\), the Sinkhorn Gibbs kernel is the generalized Gaussian kernel
 \[
 	k_{p,\epsilon}(x,y)=\exp\pa{-\frac{\norm{x-y}^p}{\epsilon}}.
@@ -1531,6 +1568,8 @@ The top row shows entropic couplings between one-dimensional Gaussian mixtures, 
 \end{figure}
 
 \paragraph{Connection with linear attention.}
+\index{linear attention}% strictindex
+\index{kernel attention}% strictindex
 The same algebra appears in transformer attention, studied later from a continuous-depth transport viewpoint in Section~\ref{sec-transformer-depth-evolution}. A softmax attention matrix has entries proportional to \(\exp(\dotp{q_i}{k_j})\); linear-attention methods replace this positive kernel by features \(\Phi(q_i)^\top\Phi(k_j)\), so that attention can be applied as \(\Phi(Q)(\Phi(K)^\top V)\) rather than by forming the full \(n\times n\) matrix~\cite{Katharopoulos2020LinearAttention,Choromanski2021Performer,Wang2020Linformer,Xiong2021Nystromformer}. Sinkhorn sketching is the transport analogue of this idea: replace the Gibbs matrix by a positive feature factorization, keep only the scaling vectors and feature factors, and control the approximation in the logarithmic scale relevant to entropic potentials. The analogy is useful because both settings ask for scalable positive kernel algebra. The transport case is more constrained, however, since the approximate kernel is reused inside nonlinear normalizations until the prescribed marginals are reached for the sketched problem.
 \index{transformer}% strictindex
 \index{attention!linear}% strictindex

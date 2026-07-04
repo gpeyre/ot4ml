@@ -214,8 +214,57 @@ one obtains the forward probability-flow velocity $v_\tau(z)=-z-\sigma^2\nabla\l
 
 \(a_t=(1-t)(1-2t), \qquad b_t=t,\)
 \subsection{One-Step Generative Models}
+\paragraph{One-step models via parameter-domain discrepancy flows.}
+The most direct one-step strategy is to train the generator parameters themselves by descending a discrepancy between generated and data distributions. Let $\zeta$ be a simple latent distribution, let $f_\theta:\Zz\to\Xx$ be a neural generator, and let $\beta$ be the data distribution.
+
+\((f_\theta)_\sharp\zeta=\beta,\)
+or, in practice, such that the generated law is close to $\beta$. Given a discrepancy $\mathcal D$ on probability measures, define
+
+\begin{equation}\label{eq-one-step-parameter-discrepancy}
+\mathcal E_\beta(\gamma)\eqdef\mathcal D(\gamma,\beta),
+\qquad
+H_\beta(\theta)
+\eqdef
+\mathcal E_\beta\big((f_\theta)_\sharp\zeta\big)
+=
+\mathcal D\big((f_\theta)_\sharp\zeta,\beta\big).
+\end{equation}
+\begin{equation}\label{eq-one-step-parameter-flow}
+\dot\theta_t=-\nabla_\theta H_\beta(\theta_t).
+\end{equation}
+\(\alpha_t\eqdef(f_{\theta_t})_\sharp\zeta, \qquad X_t=f_{\theta_t}(Z), \qquad Z\sim\zeta.\)
+If $t\mapsto\theta_t$ is smooth and $f_\theta$ is differentiable with respect to $\theta$, then
+
+\(\dot X_t = \partial_\theta f_{\theta_t}(Z)\dot\theta_t.\)
+For $\alpha_t$-a.e. $x$, let $\eta_{t,x}$ be the disintegration of the latent law $\zeta$ with respect to the map $f_{\theta_t}$. Thus $\eta_{t,x}$ is supported on the fiber $\enscond{z}{f_{\theta_t}(z)=x}$, and for every bounded measurable $\psi$,
+
+\[
+\int \psi(z)\,\d\zeta(z)
+=
+\int_\Xx\left(\int \psi(z)\,\d\eta_{t,x}(z)\right)\d\alpha_t(x).
+\]
+\begin{equation}\label{eq-one-step-induced-velocity}
+v_t(x)
+=
+\int \partial_\theta f_{\theta_t}(z)\dot\theta_t\,\d\eta_{t,x}(z)
+=
+-\int \partial_\theta f_{\theta_t}(z)\nabla_\theta H_\beta(\theta_t)\,\d\eta_{t,x}(z).
+\end{equation}
+\(\frac{\d}{\d t}\int \varphi(x)\,\d\alpha_t(x) = \int \dotp{\nabla\varphi(x)}{v_t(x)}\,\d\alpha_t(x),\)
+\begin{equation}\label{eq-one-step-induced-continuity}
+\partial_t\alpha_t+\diverg(\alpha_t v_t)=0.
+\end{equation}
+The velocity~\eqref{eq-one-step-induced-velocity} depends on the parameter value $\theta_t$ and on the latent disintegration, not only on the measure $\alpha_t$. If the parametrization is non-identifiable, two different parameters can generate the same measure while inducing different velocities.
+
+\(-\nabla\delta_\gamma\mathcal E_\beta(\gamma)\big|_{\gamma=\alpha_t}.\)
+\(\hat\beta_n=\frac{1}{n}\sum_{i=1}^n\de_{Y_i}, \qquad Y_i\overset{\mathrm{i.i.d.}}{\sim}\beta,\)
+\[
+\EE\left[\nabla_\theta H_{\hat\beta_n}(\theta)\right]
+\neq
+\nabla_\theta H_\beta(\theta).
+\]
 \paragraph{One-step model using Wasserstein flow of discrepancy.}
-This keeps the preceding discrepancy-minimization viewpoint but replaces Euclidean parameter descent by the Wasserstein gradient flow of the generated law, a distribution-space natural-gradient-type dynamics less tied to parametrization and potentially less prone to parameter-space local minima. Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. The Wasserstein-flow construction chooses a discrepancy
+Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\sharp\zeta$ be the model distribution. Assume that the target data distribution is $\beta$. The Wasserstein-flow construction chooses a discrepancy
 
 \(\mathcal E_\beta(\alpha),\)
 \begin{equation}\label{eq-one-step-wgf}
@@ -236,28 +285,49 @@ w_t(x)=-\nabla\delta_\alpha \mathcal E_\beta(\al_t)(x).
 G_\theta^{+}(z)=G_\theta(z)+\tau U_\eta(G_\theta(z)).
 \]
 \paragraph{Sliced-Wasserstein flow.}
-For \(\mathcal E_\beta(\alpha)=\SW_2^2(\alpha,\beta)/2\), the \(\Wass_2\)-gradient flow has velocity
-\[
-w_{\SW}[\alpha,\beta](x)=\int_{\Sphere^{d-1}}\big(T_\theta(P_\theta x)-P_\theta x\big)\theta\,\d\sigma(\theta),
-\]
-where \(T_\theta\) is the one-dimensional monotone map between projected measures. This only needs sorting along sampled directions. For Gaussian targets the flow converges under suitable hypotheses; when both laws are Gaussian it closes on means/covariances, see the Gaussian closure subsection.
+\(\mathcal E_\beta(\alpha)=\frac12\SW_2^2(\alpha,\beta),\)
+with $\SW_2$ defined in Section~\ref{sec-sliced-wasserstein}. With the continuity-equation convention $\partial_t\alpha_t+\diverg(\alpha_t w_t)=0$, the descent velocity points from the current projected law toward the target projected law.
+
+\begin{equation}\label{eq-sliced-wasserstein-flow-velocity}
+w_{\SW}[\alpha,\beta](x)
+=
+\int_{\Sphere^{d-1}}
+\big(T_\theta(P_\theta x)-P_\theta x\big)\,\theta\,\d\sigma(\theta).
+\end{equation}
+The sign follows from the one-dimensional identity: the first variation of $\frac12\Wass_2^2(\rho,\nu)$ has spatial derivative $s-T(s)$, so the descent velocity is $T(s)-s$, and composing with $P_\theta$ lifts it in the direction $\theta$. Thus empirical implementations only require one-dimensional sorting along sampled directions, followed by averaging the lifted projected displacements.
 
 \paragraph{Stein variational gradient descent.}\label{sec-svgd-generative-flow}
-For a target probability $\beta=\rho_\beta\,\d x$ with smooth positive density, SVGD replaces the $\Wass_2$ gradient flow of $\KL(\alpha|\beta)$ by the kernelized geometry of Section~\ref{sec-kernelized-bb-distance}. If $k$ has vector RKHS $\RKHS_k^d$, then
-\[
-\left.\frac{\d}{\d\epsilon}\KL((\Id+\epsilon v)_\sharp\alpha|\beta)\right|_{0}
-=-\int(\dotp{\nabla\log\rho_\beta}{v}+\diverg v)\d\alpha,
-\]
-so the RKHS steepest-descent direction is
-\[
-v_{\alpha}^{\rm SVGD}(x)=\int\big(k(y,x)\nabla\log\rho_\beta(y)+\nabla_y k(y,x)\big)\d\alpha(y).
-\]
-Thus $\partial_t\alpha_t+\diverg(\alpha_t v_{\alpha_t}^{\rm SVGD})=0$, and particles follow
-\[
-X_i^{\ell+1}=X_i^\ell+\tau n^{-1}\sum_j\big(k(X_j^\ell,X_i^\ell)\nabla\log\rho_\beta(X_j^\ell)+\nabla_{X_j}k(X_j^\ell,X_i^\ell)\big).
-\]
-The target-score term attracts particles and the kernel-gradient term repels them.
+For the formal density-level calculation, assume $\alpha=\rho_\alpha\,\d x$ and $\beta=\rho_\beta\,\d x$ have smooth positive densities, and let $v$ be a smooth compactly supported vector field. For the perturbation $\alpha_\epsilon=(\Id+\epsilon v)_\sharp\alpha$, integration by parts gives the Stein first variation
 
+\[
+\left.\frac{\d}{\d\epsilon}\KL(\alpha_\epsilon|\beta)\right|_{\epsilon=0}
+=
+-\int
+\big(\dotp{\nabla\log\rho_\beta(x)}{v(x)}+\diverg v(x)\big)
+\d\alpha(x).
+\]
+\begin{equation}\label{eq-svgd-velocity}
+v_{\alpha}^{\mathrm{SVGD}}(x)
+=
+\int
+\Big(k(y,x)\nabla\log\rho_\beta(y)+\nabla_y k(y,x)\Big)
+\d\alpha(y).
+\end{equation}
+\begin{equation}\label{eq-svgd-mean-field}
+\partial_t\alpha_t+\diverg\bigl(\alpha_t v_{\alpha_t}^{\mathrm{SVGD}}\bigr)=0.
+\end{equation}
+For particles $\alpha^\ell_n=n^{-1}\sum_i\delta_{X_i^\ell}$, this becomes the explicit update
+
+\begin{equation}\label{eq-svgd-particle-update}
+X_i^{\ell+1}
+=
+X_i^\ell
++
+\tau\,\frac{1}{n}\sum_{j=1}^n
+\Big(k(X_j^\ell,X_i^\ell)\nabla\log\rho_\beta(X_j^\ell)
++
+\nabla_{X_j}k(X_j^\ell,X_i^\ell)\Big).
+\end{equation}
 \paragraph{Self-corrected drifting fields.}
 \begin{equation}\label{eq-normalized-kernel-drift}
 B_\epsilon[\nu](x)
@@ -378,6 +448,7 @@ The entropy term is displacement convex by McCann's theorem, recalled in Proposi
 \left(Z_w^{-1}e^{-w(z)}\,\d z\right).
 \end{equation}
 \subsection{Evolution in Depth of Transformers}
+\label{sec-transformer-depth-evolution}
 \paragraph{Attention as a context-dependent velocity.}
 After tokenization, embedding, and positional encoding, each input (from a set of tokens) is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ points in the space of vectorized tokens. An attention layer with skip connection and rescaling by $1/T$ (where $T$ is the depth) defines a transformation of the tokens:
 

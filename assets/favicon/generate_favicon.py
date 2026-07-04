@@ -46,6 +46,7 @@ SITE_ICON_DESTINATIONS = (
 
 
 def source_png() -> Path:
+    """Return the master PNG, creating it from the template when necessary."""
     if MASTER_PNG.exists():
         return MASTER_PNG
     if TEMPLATE_PNG.exists():
@@ -55,6 +56,7 @@ def source_png() -> Path:
 
 
 def square_image(path: Path) -> Image.Image:
+    """Load an image and pad it to a transparent square canvas."""
     with Image.open(path) as raw_image:
         image = raw_image.convert("RGBA")
     if image.width == image.height:
@@ -66,6 +68,7 @@ def square_image(path: Path) -> Image.Image:
 
 
 def write_pngs(master: Image.Image) -> list[Path]:
+    """Write the PNG favicon sizes used by browsers and touch devices."""
     outputs: list[Path] = []
     for size in PNG_SIZES:
         output = ASSET_DIR / f"favicon-{size}.png"
@@ -77,12 +80,14 @@ def write_pngs(master: Image.Image) -> list[Path]:
 
 
 def write_ico(master: Image.Image) -> Path:
+    """Write the multi-resolution ICO favicon."""
     ico_path = ASSET_DIR / "favicon.ico"
     master.save(ico_path, format="ICO", sizes=[(size, size) for size in ICO_SIZES])
     return ico_path
 
 
 def write_svg(png_path: Path) -> Path:
+    """Wrap a PNG favicon in a lightweight SVG data URI."""
     encoded = base64.b64encode(png_path.read_bytes()).decode("ascii")
     svg = (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'
@@ -96,6 +101,7 @@ def write_svg(png_path: Path) -> Path:
 
 
 def copy_site_icons() -> list[Path]:
+    """Copy canonical icon files to website and MyST public directories."""
     copied: list[Path] = []
     for destination in SITE_ICON_DESTINATIONS:
         if not destination.exists():
@@ -108,6 +114,7 @@ def copy_site_icons() -> list[Path]:
 
 
 def generate_favicon() -> list[Path]:
+    """Generate the complete favicon set and return the written paths."""
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
     source = source_png()
     master = square_image(source)

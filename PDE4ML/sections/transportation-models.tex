@@ -4,14 +4,12 @@
 \index{generative model}% strictindex
 \label{sec-generative-models-transportation}
 
-The preceding gradient-flow calculus is variational. Modern machine-learning models often use the same transportation language more broadly: one may prescribe an interpolation and regress its velocity, fit a one-step generator to a descent field, or view network depth as a continuous transport of token measures. The examples below separate what is genuinely a Wasserstein gradient flow from what is a transportation dynamics with a useful geometric interpretation.
-\index{Wasserstein gradient}% strictindex
-\index{gradient!flow}% strictindex
-\index{Wasserstein!gradient flow}% strictindex
-\index{token measure}% strictindex
-\index{one-step generative model}% strictindex
+Modern generative models often use transport language beyond literal Wasserstein gradient flows. This section is synchronized with the current OT4ML chapter and separates deterministic flow matching, diffusion-style interpolants, one-step discrepancy flows, SVGD, transformer depth dynamics, moment measures and Gaussian closures.\index{flow matching}% strictindex
+\index{diffusion model}% strictindex
+\index{transportation dynamics}% strictindex
 
 \subsection{Generative Models via Flow Matching}
+\label{sec-generative-flow-matching}
 \index{flow matching}% strictindex
 \index{generative model}% strictindex
 
@@ -44,6 +42,8 @@ This vector field $v_t$ is obtained by constructing an interpolation $\alpha_t$ 
 \index{push-forward}% strictindex
 
 \paragraph{Stochastic interpolant.}
+\index{deterministic interpolant}% strictindex
+\index{temporal noise}% strictindex
 \index{stochastic interpolant}% strictindex
 
 The word ``stochastic'' can hide two different levels of randomness. We first use the simpler one: after drawing a latent variable $U\sim\pi$, the path $t\mapsto P_t(U)$ is deterministic and differentiable. The randomness only comes from the initial draw of $U$; after taking the push-forward law, $\alpha_t=(P_t)_\sharp\pi$ is a deterministic curve of measures and obeys an ordinary continuity equation. This is the setting behind the stochastic-interpolant construction recalled in Remark~\ref{rem-static-noise-stochastic-interpolants}, and behind the flow-matching and rectified-flow regressions below. Genuine temporal noise, where the path itself has Brownian fluctuations, is different and is discussed in Remark~\ref{rem-noisy-stochastic-interpolants}.
@@ -69,7 +69,7 @@ The basic two-endpoint construction already covers most flow-matching paths used
 \index{continuous normalizing flow}% strictindex
 \index{reflow}% strictindex
 \index{discretization error}% strictindex
-\index{latent variable}% strictindex
+\index{latent!variable}% strictindex
 \index{conditional probability}% strictindex
 \index{normalizing flow}% strictindex
 \index{probability path}% strictindex
@@ -233,12 +233,12 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$. Thus the same interpolation as~\eqref{eq:interp-coupling} is represented by a deterministic flow rather than by the original coupling.
 \index{transport map}% strictindex
 \index{continuity equation}% strictindex
-The sampling procedure consists in first drawing $X_0 \sim \alpha$, and then integrating the ODE $\dot{X}_t = v_t(X_t)$ starting with $X_{t=0} = X_0$.
+The sampling procedure first draws $X_0 \sim \alpha$ and then integrates the ODE $\dot{X}_t = v_t(X_t)$ starting with $X_{t=0} = X_0$.
 In the ideal exact-field limit, the resulting $X_{t=1}$ is distributed according to $\alpha_1 = \beta$.
 
 \begin{rem}[Static-noise stochastic interpolants]\label{rem-static-noise-stochastic-interpolants}
 \index{stochastic interpolant}% strictindex
-\index{latent variable}% strictindex
+\index{latent!variable}% strictindex
 \index{probability-flow ODE}% strictindex
 In the terminology of Albergo--Boffi--Vanden-Eijnden~\cite{Albergo2025StochasticInterpolants}, a stochastic interpolant is not first defined as an SDE. It is an explicit random bridge
 \[
@@ -610,8 +610,15 @@ The proposition gives a compact warning about a common overinterpretation of flo
 \index{covariance!commuting}% strictindex
 
 \paragraph{Variations on the interpolant.}
+\index{noising path}% strictindex
+\index{OU bridge}% strictindex
+\index{overshooting bridge}% strictindex
+\index{interpolant}% strictindex
+\index{bridge!speed}% strictindex
 
 The geometry of the generated trajectories depends on the chosen interpolant, not only on the two endpoint laws. There is first a harmless ambiguity: a monotone reparametrization $Z_t=(1-\lambda(t))X+\lambda(t)Y$ of the linear bridge only changes the speed of the flow,
+\index{bridge!linear}% strictindex
+\index{time reparametrization}% strictindex
 \[
 	v_t(z)=\lambda'(t)\,v^{\rm lin}_{\lambda(t)}(z),
 	\qquad
@@ -619,6 +626,7 @@ The geometry of the generated trajectories depends on the chosen interpolant, no
 \]
 It therefore leaves the spatial integral curves unchanged. Diffusion models use a genuinely different family of noising paths. If
 \index{diffusion model}% strictindex
+\index{noising path}% strictindex
 \[
 	Z_t=a_tX+b_tY,\qquad Y\sim\Gaussian(0,\sigma^2\Id),
 \]
@@ -640,6 +648,8 @@ one obtains the forward probability-flow velocity $v_\tau(z)=-z-\sigma^2\nabla\l
 \index{Fokker-Planck equation}% strictindex
 
 The finite-time coefficients $a_t=\cos(\pi t/2)$ and $b_t=\sin(\pi t/2)$ are not a new spatial interpolant: they are exactly the OU coefficients after the time change $\tau=-\log\cos(\pi t/2)$. Figure~\ref{fig:generative-diffusion-schedule-comparison} therefore compares OU with a genuinely different scalar bridge,
+\index{scalar bridge}% strictindex
+\index{time change}% strictindex
 \[
 	a_t=(1-t)(1-2t),
 	\qquad
@@ -690,7 +700,10 @@ One-step generative models try to keep the geometric training principle of flows
 
 \paragraph{One-step models via parameter-domain discrepancy flows.}
 \index{one-step generative model}% strictindex
-\index{parameter!space}% strictindex
+\index{parameter-domain flow}% strictindex
+\index{discrepancy minimization}% strictindex
+\index{minibatch bias}% strictindex
+\index{parameter space}% strictindex
 \index{minibatch}% strictindex
 \index{Wasserstein GAN}% strictindex
 \index{MMD-GAN}% strictindex
@@ -710,7 +723,7 @@ or, in practice, such that the generated law is close to $\beta$. Given a discre
 	=
 	\mathcal D\big((f_\theta)_\sharp\zeta,\beta\big).
 \end{equation}
-This viewpoint includes Wasserstein GANs, MMD-GANs and Sinkhorn generative models~\cite{WassersteinGAN,MMD-GAN,2017-Genevay-AutoDiff}. When $\mathcal D$ is written through a dual potential or discriminator, this is the adversarial training viewpoint. The resulting training dynamics is the ordinary Euclidean gradient flow in parameter space,
+This viewpoint includes Wasserstein GANs, MMD-GANs and Sinkhorn generative models~\cite{WassersteinGAN,MMD-GAN,2017-Genevay-AutoDiff}; when $\mathcal D$ is written through a dual potential or discriminator, it connects directly with adversarial training. The resulting training dynamics is the ordinary Euclidean gradient flow in parameter space,
 \begin{equation}\label{eq-one-step-parameter-flow}
 	\dot\theta_t=-\nabla_\theta H_\beta(\theta_t).
 \end{equation}
@@ -759,7 +772,7 @@ The velocity~\eqref{eq-one-step-induced-velocity} depends on the parameter value
 More generally, a projected Wasserstein flow on the model manifold would require projecting this intrinsic velocity onto the infinitesimal velocities attainable by variations of $\theta$, using the $L^2(\alpha_t)$ metric. The ordinary Euclidean parameter gradient flow~\eqref{eq-one-step-parameter-flow} does not perform this projection in general.
 \index{continuity equation}% strictindex
 \index{disintegration}% strictindex
-\index{generator!manifold}% strictindex
+\index{generator manifold}% strictindex
 In machine learning, however, $\beta$ is accessed through minibatches. If
 \[
 	\hat\beta_n=\frac{1}{n}\sum_{i=1}^n\de_{Y_i},
@@ -772,13 +785,21 @@ then the implemented update often replaces $H_\beta$ by the random objective $H_
 	\neq
 	\nabla_\theta H_\beta(\theta).
 \]
-The expectation is over the data minibatch. This bias is a finite-sample effect of inserting the empirical measure inside a nonlinear transport or adversarial optimization before differentiating; it is distinct from the optimization noise of stochastic gradient descent. MMD losses admit unbiased $U$-statistic variants, but OT and entropic OT objectives generally exhibit finite-sample bias--variance phenomena.
+The expectation is over the data minibatch. This bias is a finite-sample effect of inserting the empirical measure inside a nonlinear transport or adversarial optimization before differentiating; it is distinct from the optimization noise of stochastic gradient descent. MMD losses admit unbiased $U$-statistic variants, but OT and entropic OT objectives generally exhibit nontrivial bias--variance tradeoffs.
 \index{stochastic!gradient}% strictindex
 \index{bias!finite-sample}% strictindex
 \index{empirical measure}% strictindex
 \index{Sinkhorn divergence}% strictindex
 
+\begin{example}[Application to perturbation-response prediction]\label{ex-perturbation-response-neural-ot}
+\index{single-cell genomics}% strictindex
+\index{perturbation response}% strictindex
+	In perturbation biology, one observes an unperturbed control law \(\al\) and a perturbed law \(\be\), but not paired cells. The goal is to learn how a new control cell would respond. Neural OT parameterizes a Monge map, a conditional Monge map or a stochastic semi-coupling and trains it from unpaired samples so that the pushed or transported control population matches \(\be\). The distinction between a coupling, a deterministic map and an out-of-sample extrapolator is essential here: the learned object should act on cells not seen during training, not merely explain one empirical coupling~\cite{BunneKrauseCuturi2022ConditionalMonge,LuebeckBunneGutCastilloPelkmansAlvarezMelis2022NubOT,ChenHuChenHuang2024W1SingleCellOT,KleinUsciddaTheisCuturi2023GENOT}. Conditional Wasserstein flows in Section~\ref{sec-conditional-wasserstein-resnets} give a related geometric language when the conditioning variable is depth, context or treatment.
+\end{example}
+
 \paragraph{One-step model using Wasserstein flow of discrepancy.}
+\index{Wasserstein flow of discrepancy}% strictindex
+\index{natural gradient}% strictindex
 \index{one-step flow}% strictindex
 \index{Wasserstein gradient flow}% strictindex
 
@@ -788,7 +809,7 @@ Let $\zeta$ be a simple latent distribution and let $\alpha_\theta=(G_\theta)_\s
 \[
 	\mathcal E_\beta(\alpha),
 \]
-for instance a smoothed $\KL(\alpha|\beta)$, an MMD/IPM loss, or a debiased Sinkhorn divergence $\bar\MK_\c^\epsilon(\alpha,\beta)$. The associated formal descent is
+for instance a smoothed $\KL(\alpha|\beta)$, an MMD/IPM loss, or the debiased Sinkhorn divergence $\bar\MK_\c^\epsilon(\alpha,\beta)$. The associated formal descent is
 \index{maximum mean discrepancy}% strictindex
 \index{integral probability metric}% strictindex
 \index{Sinkhorn divergence}% strictindex
@@ -841,6 +862,8 @@ After many training updates, the accumulated generator is evaluated once at test
 \index{drifting!model}% strictindex
 
 \paragraph{Sliced-Wasserstein flow.}
+\index{sliced-Wasserstein flow}% strictindex
+\index{Gaussian closure}% strictindex
 \index{sliced Wasserstein!flow}% strictindex
 \index{Wasserstein gradient flow}% strictindex
 
@@ -848,7 +871,7 @@ A particularly transparent instance uses the sliced objective introduced for ima
 \[
 	\mathcal E_\beta(\alpha)=\frac12\SW_2^2(\alpha,\beta),
 \]
-where $\SW_2$ averages one-dimensional quadratic Wasserstein distances over projections. With the continuity-equation convention $\partial_t\alpha_t+\diverg(\alpha_t w_t)=0$, the descent velocity points from the current projected law toward the target projected law. More precisely, when the projected transports are well defined, if $T_\theta$ denotes the one-dimensional monotone transport from $(P_\theta)_\sharp\alpha$ to $(P_\theta)_\sharp\beta$, then the formal $\Wass_2$-gradient-flow velocity is
+where $\SW_2$ denotes the sliced Wasserstein distance, obtained by averaging one-dimensional quadratic transport costs over projection directions. With the continuity-equation convention $\partial_t\alpha_t+\diverg(\alpha_t w_t)=0$, the descent velocity points from the current projected law toward the target projected law. More precisely, when the projected transports are well defined, if $T_\theta$ denotes the one-dimensional monotone transport from $(P_\theta)_\sharp\alpha$ to $(P_\theta)_\sharp\beta$, then the formal $\Wass_2$-gradient-flow velocity is
 \begin{equation}\label{eq-sliced-wasserstein-flow-velocity}
 	w_{\SW}[\alpha,\beta](x)
 	=
@@ -890,6 +913,9 @@ The difference between the full \(\Wass_2\) descent and its sliced analogue is a
 
 
 \paragraph{Stein variational gradient descent.}\label{sec-svgd-generative-flow}
+\index{SVGD}% strictindex
+\index{kernelized gradient flow}% strictindex
+\index{Stein force}% strictindex
 \index{Stein variational gradient descent}% strictindex
 \index{kernelized Benamou--Brenier distance}% strictindex
 \index{Stein operator}% strictindex
@@ -929,7 +955,7 @@ For particles $\alpha^\ell_n=n^{-1}\sum_i\delta_{X_i^\ell}$, this becomes the ex
 \end{equation}
 The first term attracts particles toward increasing target log-density; the second term is a kernel repulsion that prevents immediate collapse. Liu's gradient-flow interpretation~\cite{Liu2017SVGDGradientFlow}, the geometric analysis of Duncan, Nuesken and Szpruch~\cite{DuncanNueskenSzpruch2019SVGDGeometry}, and the many-particle/long-time analysis of Nuesken and Renger~\cite{NueskenRenger2021SVGDAsymptotics} make precise in which sense this is a gradient flow in a Stein or kernelized transport geometry. In generative modeling terms, SVGD transports a simple empirical latent law by repeated smooth particle updates. It is therefore close in spirit to the drifting fields above, but its velocity is not learned by regression: it is the closed-form RKHS steepest-descent direction of the KL functional.
 
-Figure~\ref{fig:generative-w2-vs-svgd-entropy-flow} contrasts this RKHS flow with a particle closure of the Wasserstein gradient flow of \(\KL(\alpha|\beta)\).  The latter evaluates the current score \(\nabla\log\rho_\alpha\) by a Gaussian KDE, while SVGD avoids this density estimate and uses the target score together with a kernel repulsion.
+Figure~\ref{fig:generative-w2-vs-svgd-entropy-flow} contrasts this RKHS flow with a particle closure of the Wasserstein gradient flow of \(\KL(\alpha|\beta)\). The latter evaluates the current score \(\nabla\log\rho_\alpha\) by a Gaussian KDE, while SVGD avoids this density estimate and uses the target score together with a kernel repulsion.
 \begin{figure}[H]
 \centering
 \includegraphics[width=.47\linewidth]{figures/generative-w2-vs-svgd-entropy-flow/w2-kde-trajectories.pdf}\hfill
@@ -939,7 +965,7 @@ Figure~\ref{fig:generative-w2-vs-svgd-entropy-flow} contrasts this RKHS flow wit
 \label{fig:generative-w2-vs-svgd-entropy-flow}
 \end{figure}
 \index{Stein variational gradient descent!particle flow}% strictindex
-\index{Fokker--Planck equation!particle closure}% strictindex
+\index{Fokker--Planck particle closure}% strictindex
 
 \paragraph{Self-corrected drifting fields.}
 \index{drifting!field}% strictindex
@@ -1289,6 +1315,8 @@ The centering of $\al$ makes this functional invariant under translations of $\r
 \end{rem}
 
 \paragraph{Conjugate moment measures for generation.}
+\index{log-concave generator}% strictindex
+\index{convex potential generator}% strictindex
 \index{generative model}% strictindex
 \index{input-convex neural network}% strictindex
 \index{conjugate moment measure}% strictindex
@@ -1300,12 +1328,13 @@ The moment-measure factorization suggests a generative recipe: sample $X$ from t
 	(\nabla w^*)_\sharp
 	\left(Z_w^{-1}e^{-w(z)}\,\d z\right).
 \end{equation}
-Here $\nabla w^*$ is the Brenier map from the learned log-concave source to the target distribution $\beta$. This keeps the single-convex-potential philosophy, but places the transport map on the conjugate side; it can be parameterized by input-convex neural networks and trained using OT solvers. From the viewpoint of this section, moment measures are therefore a rigorous convex-analytic prototype for one-step generators based on gradients of convex potentials.
+Here $\nabla w^*$ is the Brenier map from the learned log-concave source to the target distribution $\beta$. This keeps the single-convex-potential philosophy, but places the transport map on the conjugate side; it can be parameterized by input-convex neural networks and trained using OT solvers. From the viewpoint of this chapter, moment measures are therefore a rigorous convex-analytic prototype for one-step generators based on gradients of convex potentials.
 \index{Brenier map}% strictindex
 \index{one-step generative model}% strictindex
 \index{convex!conjugate}% strictindex
 
 \subsection{Evolution in Depth of Transformers}
+\label{sec-transformer-depth-evolution}
 \index{transformer}% strictindex
 \index{depth evolution}% strictindex
 
@@ -1318,6 +1347,7 @@ Transformers were introduced as sequence-to-sequence architectures driven by sel
 \index{attention!self-attention}% strictindex
 
 The mathematical limit used below concerns depth rather than model scale: one lets the number of residual attention layers grow while each layer makes a small update, as in continuous-depth neural networks~\cite{Chen2018NeuralODE}. For attention, the resulting velocity is nonlinear in the current token law because it is normalized by the whole context. This measure-theoretic view appears in the analysis of attention as a Lipschitz or interacting-particle operator~\cite{Vuckovic2020MathematicalAttention,Geshkovski2023MathematicalPerspective}, in the Sinkhorn-normalized dynamics of Sinkformers~\cite{Sander2022Sinkformers}, and in recent well-posedness and mean-field-limit results for several attention mechanisms~\cite{Castin2025DynamicsTransformers}. It also separates the infinite-depth limit studied here from the token-limit question, where one controls how a finite empirical context approximates its limiting attention operator~\cite{Bohbot2025TokenSampleComplexity}.
+\index{continuous-depth neural network}% strictindex
 \index{empirical context}% strictindex
 \index{attention!operator}% strictindex
 \index{infinite-depth limit}% strictindex
@@ -1345,6 +1375,8 @@ After tokenization, embedding, and positional encoding, each input (from a set o
 where $\theta = (K, Q, V)$ are the parameters of the attention layer, represented by three matrices.
 
 \paragraph{Token measure evolution.}
+\index{residual attention}% strictindex
+\index{in-context map}% strictindex
 \index{token measure}% strictindex
 
 To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$ as the empirical measure of tokens and rewrite the transformer mapping as:
@@ -1397,6 +1429,9 @@ As $\tau \to 0$, this converges formally to the conservation equation
 
 
 \paragraph{$L^2$ attention and mean shift.}
+\index{L2 self-attention}% strictindex
+\index{mean-shift PDE}% strictindex
+\index{kernel regression}% strictindex
 \index{attention!Gaussian kernel}% strictindex
 \index{Gaussian kernel attention}% strictindex
 \index{mean shift}% strictindex
@@ -1413,6 +1448,8 @@ A particularly geometric variant replaces the dot-product score \(\dotp{Qx}{Ky}\
 	     {\rho_\epsilon[\alpha](x)}.
 \]
 The map $x\mapsto m_\epsilon[\alpha](x)$ is exactly Gaussian-kernel attention, i.e. normalized kernel regression over tokens; such $L^2$ or Gaussian-kernel scores are used explicitly in transformer variants motivated by Lipschitz control and projection-free attention~\cite{KimPapamakariosMnih2020L2SelfAttention,KunduGhoshGhoshHonavar2026GaussianKernelAttention}. Classical mean shift, however, uses the displacement from the current point to this local barycenter. This gives
+\index{L2 attention}% strictindex
+\index{projection-free attention}% strictindex
 \begin{equation}\label{eq-l2-attention-mean-shift}
 	M_\epsilon[\alpha](x)
 	\eqdef
@@ -1424,6 +1461,8 @@ The map $x\mapsto m_\epsilon[\alpha](x)$ is exactly Gaussian-kernel attention, i
 	\epsilon\nabla\log\rho_\epsilon[\alpha](x)
 \end{equation}
 and, when $\alpha$ is empirical, $\rho_\epsilon[\alpha]$ is a Gaussian kernel density estimate up to normalization. Thus \(M_\epsilon[\alpha]\) is the classical Gaussian mean-shift vector~\cite{FukunagaHostetler1975,Cheng1995MeanShift,ComaniciuMeer2002MeanShift}. Consequently, the barycentric residual update
+\index{kernel density estimate}% strictindex
+\index{mean shift!vector}% strictindex
 \[
 	x_i^{k+1}
 	=
@@ -1436,6 +1475,8 @@ is an explicit Euler step of the continuous-time mean-shift equation
 	\partial_t\alpha_t+\diverg\bigl(\alpha_tM_\epsilon[\alpha_t]\bigr)=0.
 \]
 With time step one this recovers the usual mean-shift iteration $x\leftarrow m_\epsilon[\alpha](x)$; with small residual steps it becomes a transport PDE that moves each token uphill along the log of the smoothed token density. This distinction between the raw barycentric attention output $m_\epsilon$ and the velocity $M_\epsilon=m_\epsilon-\Id$ is important: adding $m_\epsilon$ directly as a residual would produce a different drift. The mean-shift form isolates a purely metric attention mechanism from the learned bilinear geometry of $\dotp{Qx}{Ky}$.
+\index{mean shift!iteration}% strictindex
+\index{barycentric attention}% strictindex
 
 \begin{figure}[ht]
 \centering
@@ -2030,7 +2071,7 @@ The following preservation criterion is a direct consequence of Gelbrich's theor
 	\[
 		F(\al)=\sum_s\la_s\Wass_2^2(\al,\be_s),
 	\]
-	then $\mathcal R\be_s=\be_s$, and Theorem~\ref{thm-gelbrich-projection} gives $F(\mathcal R\al)\leq F(\al)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian. This is the contraction viewpoint behind Gaussian barycenter preservation.
+	then $\mathcal R\be_s=\be_s$, and Theorem~\ref{thm-gelbrich-projection} gives $F(\mathcal R\al)\leq F(\al)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian.
 \index{moment matching}% strictindex
 \index{Gaussian!projection}% strictindex
 \end{rem}
