@@ -153,9 +153,9 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="25%" align="center" valign="top">
-  <a href="monge-triangular-rearrangement.ipynb"><img src="thumbnails/monge-triangular-rearrangement.png" alt="Triangular rearrangement between two silhouettes" width="210"></a><br>
-  <strong>Triangular rearrangement between two silhouettes</strong><br>
-  <a href="monge-triangular-rearrangement.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-triangular-rearrangement.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+  <a href="monge-tree-mccann-interpolation.ipynb"><img src="thumbnails/monge-tree-mccann-interpolation.png" alt="McCann interpolation on a finite tree" width="210"></a><br>
+  <strong>McCann interpolation on a tree</strong><br>
+  <a href="monge-tree-mccann-interpolation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-tree-mccann-interpolation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
 </tr>
@@ -164,19 +164,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="monge-triangular-rearrangement.ipynb"><img src="thumbnails/monge-triangular-rearrangement.png" alt="Triangular rearrangement between two silhouettes" width="210"></a><br>
+  <strong>Triangular rearrangement between two silhouettes</strong><br>
+  <a href="monge-triangular-rearrangement.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-triangular-rearrangement.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="monge-gaussian-w2-geodesic.ipynb"><img src="thumbnails/monge-gaussian-w2-geodesic.png" alt="Gaussian W2 geodesics, Bures ellipses, and covariance cone" width="210"></a><br>
   <strong>Gaussian W2 geodesics and Bures cone</strong><br>
   <a href="monge-gaussian-w2-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-gaussian-w2-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="monge-gaussian-fr-mean-geodesic.ipynb"><img src="thumbnails/monge-gaussian-fr-mean-geodesic.png" alt="Fisher-Rao and Wasserstein geodesics for one-dimensional Gaussians" width="210"></a><br>
   <strong>Gaussian W2 and Fisher-Rao geodesics</strong><br>
   <a href="monge-gaussian-fr-mean-geodesic.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-gaussian-fr-mean-geodesic.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="monge-gaussian-fr-vs-bures-cone.ipynb"><img src="thumbnails/monge-gaussian-fr-vs-bures-cone.png" alt="Bures and Fisher-Rao covariance paths near the PSD boundary" width="210"></a><br>
   <strong>Bures and Fisher-Rao covariance paths</strong><br>
   <a href="monge-gaussian-fr-vs-bures-cone.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/monge-gaussian-fr-vs-bures-cone.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -541,6 +547,27 @@ Colab from the badge. The Colab links target the `main` branch of
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="sinkhorn-positive-feature-sketching.ipynb"><img src="thumbnails/sinkhorn-positive-feature-sketching.png" alt="Positive-feature sketches of a Sinkhorn plan" width="210"></a><br>
+  <strong>Positive-feature Sinkhorn sketches</strong><br>
+  <a href="sinkhorn-positive-feature-sketching.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-positive-feature-sketching.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-doubly-positive-counterexample.ipynb"><img src="thumbnails/sinkhorn-doubly-positive-counterexample.png" alt="Doubly positive but not totally positive kernel" width="210"></a><br>
+  <strong>Doubly-positive kernel counterexample</strong><br>
+  <a href="sinkhorn-doubly-positive-counterexample.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-doubly-positive-counterexample.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
   <a href="sinkhorn-mfunctions-nonvariational-scaling.ipynb"><img src="thumbnails/sinkhorn-mfunctions-nonvariational-scaling.png" alt="Monotone non-variational Sinkhorn scaling" width="210"></a><br>
   <strong>Monotone non-variational scaling</strong><br>
   <a href="sinkhorn-mfunctions-nonvariational-scaling.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-mfunctions-nonvariational-scaling.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -868,19 +895,25 @@ Colab from the badge. The Colab links target the `main` branch of
 <table>
 <tr>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
+  <a href="gradflow-discrepancy-density-comparison.ipynb"><img src="thumbnails/gradflow-discrepancy-density-comparison.png" alt="Discrepancy gradient-flow density comparison" width="210"></a><br>
+  <strong>Discrepancy gradient-flow densities</strong><br>
+  <a href="gradflow-discrepancy-density-comparison.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-discrepancy-density-comparison.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="25%" align="center" valign="top">
   <a href="gradflow-interaction-particles.ipynb"><img src="thumbnails/gradflow-interaction-particles.png" alt="Interaction-energy particle flow" width="210"></a><br>
   <strong>Interaction-energy particle flow</strong><br>
   <a href="gradflow-interaction-particles.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-interaction-particles.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="gradflow-particle-objective-geometries.ipynb"><img src="thumbnails/gradflow-particle-objective-geometries.png" alt="Particle trajectories for different discrepancy geometries" width="210"></a><br>
   <strong>Particle trajectories for different discrepancy geometries</strong><br>
   <a href="gradflow-particle-objective-geometries.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-particle-objective-geometries.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%" align="center" valign="top">
+<td width="25%" align="center" valign="top">
   <a href="gradflow-fokker-planck-three-representations.ipynb"><img src="thumbnails/gradflow-fokker-planck-three-representations.png" alt="Three Fokker-Planck representations" width="210"></a><br>
   <strong>Three Fokker-Planck representations</strong><br>
   <a href="gradflow-fokker-planck-three-representations.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gradflow-fokker-planck-three-representations.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>

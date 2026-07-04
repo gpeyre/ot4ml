@@ -1302,7 +1302,7 @@ In one dimension, the flow reduces to
 \]
 as long as $1+u_t''>0$.  This scalar case is useful for visualization because the potential curves can be plotted directly and the positivity condition is exactly the monotonicity of $x\mapsto x+u_t'(x)$.  Figure~\ref{fig:sinkhorn-continuous-epsilon-flow} shows this evolution from the zero initialization for two smooth pairs of marginals.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}cc@{}}
@@ -1548,6 +1548,369 @@ The first term is the statistical fluctuation of the entropic map, whereas the l
 \index{exact OT}% strictindex
 \index{entropic!smoothing}% strictindex
 \end{rem}
+
+\section{Sketching Sinkhorn in Linear Time}
+\label{sec-sketching-sinkhorn}
+\index{Sinkhorn!sketching}% strictindex
+\index{linear-time Sinkhorn}% strictindex
+\index{positive random features}% strictindex
+\index{kernel!low-rank approximation}% strictindex
+\index{sample complexity!kernel sketching}% strictindex
+
+The statistical results above explain why entropic OT is attractive at fixed temperature, but they also expose a computational tension. Sampling the marginals replaces the input laws by empirical measures and reduces the problem to finitely many support points; subsampling or coarsening these supports is governed by the sample-complexity estimates of this chapter. Even after the supports are fixed, however, a Sinkhorn sweep still costs \(O(nm)\), because it repeatedly applies the Gibbs kernel to vectors. Kernel sketching attacks this second bottleneck: it keeps the sampled marginals fixed and samples, or otherwise compresses, the feature representation of the kernel used by Sinkhorn. The drawback of this sketching approach is that the additional approximation error induced by the kernel sketch is dimension-dependent, so the number of features needed for a fixed accuracy typically grows with the ambient dimension.
+
+\paragraph{PSD kernels and ordinary feature sketches.}
+The RKHS/MMD section, Section~\ref{sec-rkhs-mmd}, already used positive semidefinite kernels to define Hilbertian discrepancies between measures. Recall that a symmetric kernel \(k:\Xx\times\Xx\to\RR\) is positive semidefinite if, for every finite family \((x_i)_{i=1}^n\), the Gram matrix \((k(x_i,x_j))_{ij}\) is positive semidefinite. Many scalable kernel methods start from an integral feature representation
+\[
+	k(x,y)=\int_Z \dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\rho(z),
+	\qquad
+	\phi:\Xx\times Z\to\RR^p,
+\]
+where \(\rho\) is a latent distribution. Drawing \(z_1,\ldots,z_r\sim\rho\) gives the Monte-Carlo sketch
+\[
+	\widetilde k_r(x,y)
+	=
+	\frac1r\sum_{\ell=1}^r
+	\dotp{\phi(x,z_\ell)}{\phi(y,z_\ell)}_{\RR^p}.
+\]
+This is the classical random-feature principle. For data points \((x_i)_{i=1}^n\), the dense Gram matrix \(K=(k(x_i,x_j))_{ij}\) is replaced by \(\widetilde K=\Phi\Phi^\top\), where \(\Phi\in\RR^{n\times rp}\) is the sampled feature matrix with entries \(\Phi_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell)\), \(1\leq \ell\leq r\), \(1\leq q\leq p\). The number \(r\) of sampled latent variables is thus a second sample size, distinct from the number of data points. At this stage no positivity of \(\phi\) is assumed; signed or oscillatory features are exactly what make Fourier sketches useful.
+\index{positive semidefinite kernel}% strictindex
+\index{random features}% strictindex
+\index{kernel!ridge regression}% strictindex
+
+For translation-invariant kernels on \(\RR^d\), Bochner's theorem gives the standard Fourier sketch. If \(k(x,y)=\kappa(x-y)\) and \(\kappa(t)=\int e^{\mathrm{i}\dotp{\omega}{t}}\,d\Lambda(\omega)\), with \(\Lambda\) a positive spectral measure, one may use real features \(\phi(x,\omega)=(\cos\dotp{\omega}{x},\sin\dotp{\omega}{x})\). For the Gaussian kernel \(k_\sigma(x,y)=\exp(-\norm{x-y}^2/(2\sigma^2))\), this corresponds to \(\omega\sim\Gaussian(0,\sigma^{-2}\Id)\). This random Fourier feature construction was introduced by Rahimi and Recht to accelerate large-scale kernel machines~\cite{RahimiRecht2007RandomFeatures}; its statistical role for kernel ridge regression and related supervised methods is analyzed, for instance, in~\cite{RudiRosasco2017RandomFeatures,AvronKapralovMusco2017RandomFourierKRR}.
+\index{Fourier!random features}% strictindex
+\index{Bochner theorem}% strictindex
+\index{Gaussian!kernel}% strictindex
+
+\paragraph{Application to Sinkhorn kernels.}
+Let
+\[
+	\alpha=\sum_{i=1}^n a_i\delta_{x_i},
+	\qquad
+	\beta=\sum_{j=1}^m b_j\delta_{y_j},
+	\qquad
+	K_{ij}=k_\epsilon(x_i,y_j)\eqdef e^{-c(x_i,y_j)/\epsilon}.
+\]
+Assume here that the weights are positive and that \(K_{ij}>0\). The Sinkhorn scaling equations are
+\[
+	u=\frac{a}{Kv},
+	\qquad
+	v=\frac{b}{K^\top u},
+\]
+where divisions are componentwise. The factorization used by Sinkhorn is rectangular, because the source points \(x_i\) and target points \(y_j\) need not coincide. Starting from the same sketch \(k(x,y)\simeq r^{-1}\sum_{\ell=1}^r\dotp{\phi(x,z_\ell)}{\phi(y,z_\ell)}_{\RR^p}\), set \(R=rp\) and flatten the pair \((\ell,q)\) into a single column index. Define
+\[
+	(\Phi_X)_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell),
+	\qquad
+	(\Phi_Y)_{j,(\ell,q)}=r^{-1/2}\phi_q(y_j,z_\ell).
+\]
+Then \(\Phi_X\in\RR^{n\times R}\), \(\Phi_Y\in\RR^{m\times R}\), and
+\[
+	\widetilde K_{ij}
+	=
+	(\Phi_X\Phi_Y^\top)_{ij}
+	=
+	\frac1r\sum_{\ell=1}^r
+	\dotp{\phi(x_i,z_\ell)}{\phi(y_j,z_\ell)}_{\RR^p}
+	\simeq K_{ij}.
+\]
+When the two supports are the same, one has \(\Phi_X=\Phi_Y=\Phi\) and this reduces to the symmetric Gram approximation \(\widetilde K=\Phi\Phi^\top\). In the rectangular case, if \(K\) is replaced by the rank-\(R\) factorization \(\widetilde K=\Phi_X\Phi_Y^\top\), the two matrix-vector products are evaluated as
+\[
+	\widetilde K v=\Phi_X(\Phi_Y^\top v),
+	\qquad
+	\widetilde K^\top u=\Phi_Y(\Phi_X^\top u),
+\]
+so each scaling sweep costs \(O((n+m)R)\) operations and stores only \(O((n+m)R)\) numbers. The difficulty is that Sinkhorn is not a generic kernel method: it divides by \(\widetilde K v\) and, in dual variables, applies logarithms. Thus one needs \(\widetilde K_{ij}>0\), preferably with a relative error on the entries, because \(-\epsilon\log K_{ij}\) is the effective cost. This is a more stringent requirement than the usual spectral or Frobenius approximation of a PSD Gram matrix.
+\index{Gibbs kernel}% strictindex
+\index{matrix-vector product}% strictindex
+
+The next proposition is not a substitute for the sharp low-rank Sinkhorn theory. It is an elementary concentration lemma whose role is to isolate the two facts that matter for Sinkhorn: positivity of the approximate kernel and accuracy after taking logarithms. The full algorithmic statements rely on more refined Nystr\"om or Gaussian-kernel approximations together with stability of Sinkhorn scaling~\cite{AltschulerBachRudiWeed2018QuadraticTransport,AltschulerBachRudiNilesWeed2019NystromSinkhorn}.
+
+\begin{prop}[Finite positivity and logarithmic accuracy]
+\label{prop-sinkhorn-sketch-positive-guarantee}
+Let \(K_{ij}=\EE h_{ij}(Z)>0\) for \(1\leq i\leq n\), \(1\leq j\leq m\), where \(|h_{ij}(Z)|\leq M\) almost surely. Let
+\[
+	\widetilde K_{ij}=\frac1r\sum_{\ell=1}^r h_{ij}(Z_\ell),
+	\qquad
+	Z_1,\ldots,Z_r\sim\rho.
+\]
+Then, for every \(\eta>0\),
+\[
+	\PP\pa{\max_{i,j}\abs{\widetilde K_{ij}-K_{ij}}>\eta}
+	\leq
+	2nm\exp\pa{-\frac{r\eta^2}{2M^2}}.
+\]
+In particular, if \(\kappa\eqdef\min_{i,j}K_{ij}>0\), \(\eta<\kappa\), and the event above does not occur, then \(\widetilde K\) is entrywise positive. If moreover \(\eta\leq\kappa/2\), then the sketched cost \(\widetilde c_{ij}=-\epsilon\log \widetilde K_{ij}\) satisfies
+\[
+	\max_{i,j}\abs{\widetilde c_{ij}-c_{ij}}
+	\leq
+	\frac{2\epsilon\eta}{\kappa}.
+\]
+If, more sharply, the relative variables \(\zeta_{ij}(Z)\eqdef h_{ij}(Z)/K_{ij}\) satisfy \(|\zeta_{ij}(Z)|\leq\psi\) almost surely, then for every \(0<\delta\leq1/2\),
+\[
+	\PP\pa{
+	\max_{i,j}\abs{\frac{\widetilde K_{ij}}{K_{ij}}-1}>\delta}
+	\leq
+	2nm\exp\pa{-\frac{r\delta^2}{2\psi^2}}.
+\]
+On the complementary event,
+\[
+	\widetilde K_{ij}>0
+	\quad\hbox{and}\quad
+	\max_{i,j}\abs{\widetilde c_{ij}-c_{ij}}
+	\leq
+	2\epsilon\delta .
+\]
+\end{prop}
+
+\begin{proof}
+For a fixed pair \((i,j)\), Hoeffding's inequality applied to bounded variables in \([-M,M]\) gives
+\[
+	\PP\pa{\abs{\widetilde K_{ij}-K_{ij}}>\eta}
+	\leq 2\exp\pa{-\frac{r\eta^2}{2M^2}}.
+\]
+A union bound over the \(nm\) entries gives the first claim. If \(\max_{ij}\abs{\widetilde K_{ij}-K_{ij}}\leq\eta<\kappa\), then \(\widetilde K_{ij}\geq\kappa-\eta>0\). Writing \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\), one has \(|s_{ij}|\leq\eta/\kappa\leq1/2\), hence \(|\log(1+s_{ij})|\leq2|s_{ij}|\), which proves the absolute logarithmic bound. Applying the same Hoeffding argument to \(\zeta_{ij}(Z)\), whose expectation is \(1\), gives the relative estimate. On the corresponding event, \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\) with \(|s_{ij}|\leq\delta\leq1/2\), so positivity and the bound \(\epsilon|\log(1+s_{ij})|\leq2\epsilon\delta\) follow.
+\end{proof}
+
+This proposition is deliberately elementary, but it pinpoints the obstruction. When \(\epsilon\) is small or the data diameter is large, \(\kappa=\min K_{ij}\) can be exponentially small, so an ordinary signed sketch may need a very large \(r\) just to keep all entries positive. What Sinkhorn really needs is relative control of the kernel, equivalently additive control of the sketched costs. Positive features do not solve the whole approximation problem, but they remove the most basic failure mode: negative entries in \(\widetilde K\).
+\index{Hoeffding inequality}% strictindex
+\index{relative error}% strictindex
+\index{logarithmic error}% strictindex
+
+The dimension dependence is unavoidable in the worst case. For the quadratic cost on points contained in a radius-\(R\) ball of \(\RR^d\), the Nystr\"om analysis of Altschuler, Bach, Rudi and Niles-Weed~\cite{AltschulerBachRudiNilesWeed2019NystromSinkhorn} studies \(K_{ij}=\exp(-\eta\norm{x_i-x_j}^2)\) and bounds the effective rank by a quantity of the form
+\[
+	r_\ast(X,\eta,\epsilon_0)
+	\lesssim
+	\pa{\eta R^2+\log(n/\epsilon_0)}^d
+\]
+up to universal constants and harmless logarithms. Thus the resulting Sinkhorn computation is near-linear in \(n\) once this rank is fixed, but the required rank is polynomial in the inverse kernel bandwidth, with exponent \(d\) and only logarithmic dependence on \(n\) in this bound. When the same machinery is used to approximate unregularized quadratic OT to additive accuracy \(\tau\), one takes \(\eta\) of order \(\tau^{-1}\log n\), so the complexity contains a factor \(\tau^{-O(d)}\), often summarized informally as an \(\epsilon^{-d}\)-type dependence on the target precision. The same work also explains why this can be much better on data with lower intrinsic dimension.
+\index{Nystr\"om approximation}% strictindex
+\index{effective dimension}% strictindex
+\index{Gaussian!kernel rank}% strictindex
+
+\paragraph{Positive features and total positivity.}
+A positive feature sketch asks for more than positive semidefiniteness. In finite dimension, let
+\[
+	\mathrm{DNN}_n=\enscond{A\in\RR^{n\times n}}{A\succeq0,\ A_{ij}\geq0},
+	\qquad
+	\mathrm{CP}_n=\enscond{BB^\top}{B\in\RR_+^{n\times q}\hbox{ for some }q\geq1}.
+\]
+Matrices in \(\mathrm{DNN}_n\) are called doubly nonnegative, while matrices in \(\mathrm{CP}_n\) are completely positive. One always has \(\mathrm{CP}_n\subset\mathrm{DNN}_n\), with equality for \(n\leq4\) and strict inclusion for \(n\geq5\)~\cite{BermanShakedMonderer2003,AnstreicherBurerDuer2009}. Checking membership in the completely positive cone is computationally hard: strong membership is NP-hard, and weak membership for the completely positive cone and its copositive dual is NP-hard~\cite{DickinsonGijben2014}. This is why certifying positive sketchability is substantially harder than checking that a kernel is PSD and pointwise nonnegative.
+\index{doubly nonnegative matrix}% strictindex
+\index{completely positive matrix}% strictindex
+\index{copositive matrix}% strictindex
+
+For kernels, it is useful to distinguish the two corresponding notions. A kernel \(k\) is \emph{doubly positive} if every finite Gram matrix belongs to \(\mathrm{DNN}_n\), i.e. if \(k\) is PSD and pointwise nonnegative. It is \emph{totally positive} in the positive-feature sense if every finite Gram matrix belongs to \(\mathrm{CP}_n\). This terminology should not be confused with Karlin's classical total positivity, which concerns nonnegativity of all minors of an ordered kernel~\cite{Karlin1968TotalPositivity}; it is a complete-positive-type condition, studied for instance in~\cite{DeCorteOliveiraFilhoVallentin2022}.
+\index{doubly positive kernel}% strictindex
+\index{totally positive kernel}% strictindex
+\index{complete-positive kernel}% strictindex
+
+The positive-feature construction of Scetbon and Cuturi~\cite{ScetbonCuturi2020PositiveFeatures} makes the reason for this definition direct. If
+\[
+	k(x,y)=\int_Z\dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\rho(z),
+	\qquad
+	\phi(x,z)\in\RR_+^p,
+\]
+then every finite Gram matrix is a conic combination of rank-one matrices \(vv^\top\) with \(v\geq0\), and hence is completely positive. Conversely, on a fixed finite set, \(K\in\mathrm{CP}_n\) is exactly the existence of a nonnegative factorization \(K=BB^\top\). Thus total positivity in this sense is precisely the kernel-level condition behind positive random features. For rectangular source--target matrices, one applies the same statement to the Gram matrix on the union of the sampled source and target points and then extracts its \(n\times m\) cross block.
+
+\begin{prop}[Basic closure of totally positive kernels]
+\label{prop-totally-positive-kernel-closure}
+Nonnegative sums and pointwise products of totally positive kernels are totally positive. In particular, positive autocorrelations
+\[
+	k(x,y)=\int g(u-x)g(u-y)\,du,
+	\qquad g\geq0,
+\]
+and all nonnegative mixtures of such kernels are totally positive.
+\end{prop}
+
+\begin{proof}
+For sums, concatenate the nonnegative features and rescale them by the square roots of the nonnegative coefficients. For products, tensor the nonnegative features:
+\[
+	\dotp{\phi_1(x,z_1)}{\phi_1(y,z_1)}
+	\dotp{\phi_2(x,z_2)}{\phi_2(y,z_2)}
+	=
+	\dotp{\phi_1(x,z_1)\otimes\phi_2(x,z_2)}{\phi_1(y,z_1)\otimes\phi_2(y,z_2)}.
+\]
+The tensor feature remains entrywise nonnegative. The autocorrelation formula is already a positive feature representation with latent variable \(u\) and scalar feature \(g(u-x)\).
+\end{proof}
+
+The Gaussian Gibbs kernels used by Sinkhorn admit an especially simple positive feature representation, which is the construction exploited by Scetbon and Cuturi~\cite{ScetbonCuturi2020PositiveFeatures}. The same construction extends to the generalized Gaussian kernels \(e^{-\norm{x-y}^p/\epsilon}\) for \(0<p\leq2\), because radial stable kernels are mixtures of Gaussian kernels. This is the Schoenberg--Bernstein mechanism behind the positive definiteness of radial stable kernels~\cite{schoenberg38,berg84harmonic}.
+
+\begin{prop}[Generalized Gaussian positive features]
+\label{prop-gaussian-positive-features}
+Let \(0<p\leq2\), \(\epsilon>0\), and
+	\[
+		k_{p,\epsilon}(x,y)
+		=
+		\exp\pa{-\frac{\norm{x-y}^p}{\epsilon}},
+		\qquad x,y\in\RR^d .
+	\]
+Set \(a=p/2\in(0,1]\). Let \(S_a\) be the positive \(a\)-stable random variable normalized by
+\[
+	\EE\pa{e^{-tS_a}}=e^{-t^a},
+	\qquad t\geq0,
+\]
+and set \(\Lambda=\epsilon^{-1/a}S_a\). Denote by \(\nu_{a,\epsilon}\) the law of \(\Lambda\). Then
+\[
+	\exp\pa{-\frac{t^a}{\epsilon}}
+	=
+	\int_0^{+\infty} e^{-\lambda t}\,d\nu_{a,\epsilon}(\lambda),
+	\qquad t\geq0.
+\]
+Equivalently, for a nonnegative random variable \(\Lambda\sim\nu_{a,\epsilon}\),
+\[
+	k_{p,\epsilon}(x,y)
+	=
+	\EE_\Lambda\exp\pa{-\Lambda\norm{x-y}^2}.
+\]
+Fix a centering point \(x_0\in\RR^d\), let \(Z\sim\Gaussian(0,\Id_d)\), independent of \(\Lambda\), and set
+\[
+	q_x(\Lambda)=\sqrt{2\Lambda}\,(x-x_0),
+	\qquad
+	\phi_p(x,\Lambda,Z)
+	=
+	\exp\pa{\dotp{Z}{q_x(\Lambda)}-\norm{q_x(\Lambda)}^2}.
+\]
+Then
+\[
+	k_{p,\epsilon}(x,y)
+	=
+	\EE_{\Lambda,Z}\pa{\phi_p(x,\Lambda,Z)\phi_p(y,\Lambda,Z)} .
+\]
+Thus \(k_{p,\epsilon}\) is totally positive in the complete-positive sense. In particular, if \((\Lambda_\ell,Z_\ell)_{\ell=1}^r\) are i.i.d. copies of \((\Lambda,Z)\), then
+\[
+	\widetilde k_{p,\epsilon}(x,y)
+	=
+	\sum_{\ell=1}^r
+	\varphi_\ell(x)\varphi_\ell(y),
+	\qquad
+	\varphi_\ell(x)=r^{-1/2}\phi_p(x,\Lambda_\ell,Z_\ell),
+\]
+is an unbiased nonnegative feature sketch of \(k_{p,\epsilon}\).
+
+For \(p=2\), the mixing law reduces to the Dirac mass \(\nu_{1,\epsilon}=\delta_{1/\epsilon}\), which recovers the usual Gaussian feature formula.
+\end{prop}
+
+\begin{proof}
+The function \(s\mapsto e^{-s^a}\) is completely monotone for \(0<a\leq1\). Bernstein's theorem therefore gives the Laplace-transform representation of a positive \(a\)-stable random variable \(S_a\). The scaling \(\Lambda=\epsilon^{-1/a}S_a\) gives
+\[
+	\EE e^{-t\Lambda}
+	=
+	\exp\pa{-\frac{t^a}{\epsilon}},
+\]
+which is the displayed representation by \(\nu_{a,\epsilon}\). Applying this identity with \(t=\norm{x-y}^2\) gives the Gaussian-mixture formula.
+
+Conditionally on \(\Lambda=\lambda\), the Gaussian moment-generating function gives
+\[
+\begin{aligned}
+	\EE_Z\pa{\phi_p(x,\lambda,Z)\phi_p(y,\lambda,Z)}
+	&=
+	\exp\pa{-\norm{q_x(\lambda)}^2-\norm{q_y(\lambda)}^2}
+	\EE_Z\pa{\exp\dotp{Z}{q_x(\lambda)+q_y(\lambda)}} \\
+	&=
+	\exp\pa{-\frac12\norm{q_x(\lambda)-q_y(\lambda)}^2}
+	=
+	\exp\pa{-\lambda\norm{x-y}^2}.
+\end{aligned}
+\]
+Taking the expectation over \(\Lambda\) gives \(k_{p,\epsilon}\). Since \(\phi_p\) is positive, this is a positive-feature representation; hence every finite Gram matrix is completely positive. The Monte-Carlo sketch is just the empirical average of this representation.
+\end{proof}
+
+\begin{rem}[The range \(0<p\leq2\)]
+The restriction \(0<p\leq2\) is essential. Schoenberg's theorem says that \(x\mapsto e^{-\gamma\norm{x}^p}\) is positive definite on every Euclidean space precisely in this range. For \(p>2\), the generalized Gaussian kernel is not positive definite in general: there are finite Euclidean point clouds for which the Gram matrix has a negative eigenvalue. Thus no universal positive-feature factorization of the above type should be expected. Constants in the cost, such as using \(\norm{x-y}^p/p\), are absorbed by rescaling \(\epsilon\).
+\end{rem}
+\index{generalized Gaussian kernel}% strictindex
+\index{Schoenberg theorem}% strictindex
+\index{positive random features}% strictindex
+
+Choosing \(x_0\) near the data can reduce the dynamic range of the features without changing the kernel. More generally, Gaussian scale mixtures give many radial totally positive kernels, including standard covariance families used in Gaussian processes~\cite{rasmussen2006gaussian}.
+\index{Gaussian!scale mixture}% strictindex
+\index{positive autocorrelation}% strictindex
+
+The gap between doubly positive and totally positive kernels is real. On the circle, consider
+\[
+	k_\lambda(x,y)=\lambda+\cos^2\pa{\frac{x-y}{2}},
+	\qquad \lambda>0.
+\]
+This kernel is PSD and strictly positive pointwise, since \(\cos^2(t/2)=(1+\cos t)/2\) has nonnegative Fourier coefficients and \(\lambda\) adds a positive constant mode. For \(\lambda=1/20\), however, its Gram matrix on five equally spaced points is not completely positive. The Horn copositive matrix \(H\) satisfies \(\langle H,B\rangle\geq0\) for every completely positive matrix \(B\), but the five-point Gram matrix \(K\) gives
+\[
+	\langle H,K\rangle
+	=
+	\frac{21}{4}-\frac{5\sqrt5}{2}<0.
+\]
+Thus \(K\in\mathrm{DNN}_5\setminus\mathrm{CP}_5\), and the kernel is doubly positive but not totally positive. Figure~\ref{fig:sinkhorn-doubly-positive-counterexample} displays this finite certificate.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.94\linewidth]{figures/sinkhorn-doubly-positive-counterexample--counterexample.pdf}
+\caption{\emph{A doubly positive kernel that is not totally positive.}
+The periodic kernel \(k_\lambda(t)=\lambda+\cos^2(t/2)\), with \(\lambda=1/20\), is positive semidefinite and pointwise positive. On five equally spaced points, its Gram matrix is entrywise positive and PSD, but the Horn copositive certificate gives \(\langle H,K\rangle<0\), so this finite restriction is not completely positive and cannot admit a nonnegative Gram factorization.}
+\label{fig:sinkhorn-doubly-positive-counterexample}
+\end{figure}
+\index{Horn matrix}% strictindex
+\index{copositive certificate}% strictindex
+
+\paragraph{Positive sketches for Sinkhorn.}
+For the \(p\)-power cost \(c_p(x,y)=\norm{x-y}^p\), with \(0<p\leq2\), the Sinkhorn Gibbs kernel is the generalized Gaussian kernel
+\[
+	k_{p,\epsilon}(x,y)=\exp\pa{-\frac{\norm{x-y}^p}{\epsilon}}.
+\]
+For \(p\geq1\), this is the usual \(p\)-Wasserstein power cost; for \(0<p<1\), it should be read simply as a concave power transport cost. The factor \(1/p\), often used in the definition of \(\Wass_p^p\), only rescales \(\epsilon\). Proposition~\ref{prop-gaussian-positive-features} gives a positive factorization of this kernel. With \(r\) draws \((\Lambda_\ell,Z_\ell)\sim\nu_{p/2,\epsilon}\otimes\Gaussian(0,\Id_d)\), define the normalized features
+\[
+	\varphi_\ell(x)=r^{-1/2}\phi_p(x,\Lambda_\ell,Z_\ell),
+	\qquad 1\leq \ell\leq r .
+\]
+They satisfy
+\[
+	\widetilde k_{p,\epsilon}(x,y)
+	=
+	\sum_{\ell=1}^r\varphi_\ell(x)\varphi_\ell(y)
+	\geq0,
+	\qquad
+	\EE[\widetilde k_{p,\epsilon}(x,y)]=k_{p,\epsilon}(x,y).
+\]
+The corresponding matrices \((\Phi_X)_{i\ell}=\varphi_\ell(x_i)\) and \((\Phi_Y)_{j\ell}=\varphi_\ell(y_j)\) give a positive factorization \(\widetilde K=\Phi_X\Phi_Y^\top\). Sinkhorn can therefore be run safely on the sketched kernel, and the resulting plan is represented as
+\[
+	\widetilde P
+	=
+	\diag(u)\Phi_X\Phi_Y^\top\diag(v)
+	=
+	LR^\top,
+	\qquad
+	L=\diag(u)\Phi_X,
+	\quad
+	R=\diag(v)\Phi_Y .
+\]
+The output is the exact entropic coupling for the sketched effective cost \(\widetilde c_{p,\epsilon}=-\epsilon\log\widetilde k_{p,\epsilon}\), and it approximates the original \(W_p\)-type entropic problem only insofar as this logarithmic kernel approximation is accurate. This kernel-sketching route is complementary to worst-case near-linear Sinkhorn analyses~\cite{altschuler2017near}, low-rank Gaussian-kernel approximations for quadratic transport~\cite{AltschulerBachRudiWeed2018QuadraticTransport}, and factored-coupling models in which the coupling itself is constrained to have low rank~\cite{scetbon2021lowrank}.
+\index{positive random features}% strictindex
+\index{entropic!plan}% strictindex
+\index{low-rank!coupling}% strictindex
+
+Figure~\ref{fig:sinkhorn-positive-feature-sketching} shows the object that is changed by this approximation. The displayed figure uses the \(p=2\) Gaussian Gibbs kernel, so the exact effective cost is \(c(x,y)=|x-y|^2\). A sufficiently rich positive-feature sketch produces both a visually close sketched plan and a faithful approximation of this quadratic cost in logarithmic scale. Coarser sketches still enforce the prescribed marginals after Sinkhorn scaling, but their effective costs become rounded wells rather than parallel quadratic level sets, which explains the loss of geometric concentration in the coupling.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{cccc}
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--exact.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--rank-040.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--rank-010.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--rank-003.pdf} \\[-.15em]
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--cost-exact.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--cost-rank-040.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--cost-rank-010.pdf} &
+\includegraphics[width=.22\linewidth]{figures/sinkhorn-positive-feature-sketching--cost-rank-003.pdf} \\[-.2em]
+exact dense kernel & positive sketch, \(r=40\) & positive sketch, \(r=10\) & positive sketch, \(r=3\)
+\end{tabular}
+\caption{\emph{Positive-feature sketches of a Sinkhorn plan.}
+The top row shows entropic couplings between one-dimensional Gaussian mixtures, with red and blue marginal curves around each coupling image. The bottom row shows the matching effective costs \(\widetilde c_\epsilon(x,y)=-\epsilon\log\widetilde k_\epsilon(x,y)\), rendered as images with black level sets. The left column is the dense kernel, whose effective cost is \( |x-y|^2\). The other columns solve Sinkhorn with positive features for this Gaussian special case of ranks \(40\), \(10\), and \(3\). The rank-\(40\) sketch remains close to the dense plan and to the quadratic cost, while lower ranks preserve the marginals but blur the transport geometry because the logarithmic kernel approximation has become too coarse. The displayed sketch uses Gaussian quadrature for reproducibility; random positive features use the same nonnegative factorization identity.}
+\label{fig:sinkhorn-positive-feature-sketching}
+\end{figure}
+
+\paragraph{Connection with linear attention.}
+The same algebra appears in transformer attention, studied later from a continuous-depth transport viewpoint in Section~\ref{sec-transformer-depth-evolution}. A softmax attention matrix has entries proportional to \(\exp(\dotp{q_i}{k_j})\); linear-attention methods replace this positive kernel by features \(\Phi(q_i)^\top\Phi(k_j)\), so that attention can be applied as \(\Phi(Q)(\Phi(K)^\top V)\) rather than by forming the full \(n\times n\) matrix~\cite{Katharopoulos2020LinearAttention,Choromanski2021Performer,Wang2020Linformer,Xiong2021Nystromformer}. Sinkhorn sketching is the transport analogue of this idea: replace the Gibbs matrix by a positive feature factorization, keep only the scaling vectors and feature factors, and control the approximation in the logarithmic scale relevant to entropic potentials. The analogy is useful because both settings ask for scalable positive kernel algebra. The transport case is more constrained, however, since the approximate kernel is reused inside nonlinear normalizations until the prescribed marginals are reached for the sketched problem.
+\index{transformer}% strictindex
+\index{attention!linear}% strictindex
+\index{softmax attention}% strictindex
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

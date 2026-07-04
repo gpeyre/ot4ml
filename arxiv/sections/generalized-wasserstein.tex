@@ -1476,6 +1476,95 @@ This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-
 \label{fig:spectral-wasserstein-gauge}
 \end{figure}
 
+\section{Conditional Wasserstein Distances}
+\label{sec-conditional-wasserstein-distances}
+
+Many applications compare probability laws while keeping an external condition fixed: a class label, a time variable, a spatial location, or, later in Section~\ref{sec-conditional-wasserstein-resnets}, the depth of a residual network. The resulting geometry is a fiberwise, or conditional, version of optimal transport. It is based on disintegration of measures and is closely related to conditional and constrained variants of transport used in weak transport and conditional simulation~\cite{Villani09,SantambrogioBook,backhoff2019weak,oliver2014minimization,BarboniPeyreVialard2024ConditionalResNets}.
+\index{conditional Wasserstein distance}% strictindex
+\index{conditional optimal transport}% strictindex
+\index{disintegration}% strictindex
+
+\begin{defn}[Conditional couplings and conditional OT]\label{def-conditional-ot}
+	Let $(S,\lambda)$ be a standard Borel probability space of conditions and let $(\Omega,\dist)$ be a Polish metric space. For $p\geq1$, denote by $\Pp_{p,\lambda}(S\times\Omega)$ the set of probability measures on $S\times\Omega$ whose first marginal is $\lambda$ and whose disintegration
+	\[
+		\alpha(\d s,\d x)=\alpha_s(\d x)\lambda(\d s)
+	\]
+	satisfies $\int_S\int_\Omega \dist(x,x_0)^p\,\d\alpha_s(x)\d\lambda(s)<+\infty$ for some, hence every, $x_0\in\Omega$.
+
+	For $\alpha,\beta\in\Pp_{p,\lambda}(S\times\Omega)$, a conditional coupling is a measure
+	\[
+		\Pi(\d s,\d x,\d y)
+		=
+		\pi_s(\d x,\d y)\lambda(\d s)
+	\]
+	such that $\pi_s\in\Couplings(\alpha_s,\beta_s)$ for $\lambda$-a.e. $s$. The set of such couplings is denoted $\Couplings_\lambda(\alpha,\beta)$.
+	For a Borel family of lower-semicontinuous costs $c_s:\Omega\times\Omega\to\RR\cup\{+\infty\}$ bounded from below, the conditional OT value is
+	\begin{equation}\label{eq-conditional-ot-general}
+		\begin{aligned}
+		\MK_c^\lambda(\alpha,\beta)
+		&\eqdef
+		\inf_{\Pi\in\Couplings_\lambda(\alpha,\beta)}
+		\int_S\int_{\Omega\times\Omega} c_s(x,y)\d\pi_s(x,y)\d\lambda(s) \\
+		&=
+		\int_S
+		\inf_{\pi_s\in\Couplings(\alpha_s,\beta_s)}
+		\int_{\Omega\times\Omega} c_s(x,y)\d\pi_s(x,y)
+		\d\lambda(s).
+		\end{aligned}
+	\end{equation}
+\end{defn}
+
+The equality in~\eqref{eq-conditional-ot-general} follows from measurable selection of fiberwise optimal plans, or from measurable near-optimal selections when minimizers are not available. Equivalently, conditional transport is ordinary transport on $S\times\Omega$ with an infinite cost for moving mass between different values of $s$.
+\index{conditional coupling}% strictindex
+\index{fiber}% strictindex
+
+\begin{defn}[Conditional Wasserstein distance]\label{def-conditional-wasserstein-distance}
+	For $c_s(x,y)=\dist(x,y)^p$, define
+	\begin{equation}\label{eq-conditional-wasserstein-distance}
+		\Wass_{p,\lambda}(\alpha,\beta)
+		\eqdef
+		\left(
+		\int_S \Wass_p^p(\alpha_s,\beta_s)\d\lambda(s)
+		\right)^{1/p}.
+	\end{equation}
+\end{defn}
+
+\begin{prop}[Metric property]\label{prop-conditional-wasserstein-distance}
+	For $p\geq1$, $\Wass_{p,\lambda}$ is a distance on $\Pp_{p,\lambda}(S\times\Omega)$.
+\end{prop}
+\begin{proof}
+	Non-negativity and symmetry follow from the corresponding properties of $\Wass_p$ on each fiber. If $\Wass_{p,\lambda}(\alpha,\beta)=0$, then $\Wass_p(\alpha_s,\beta_s)=0$ for $\lambda$-a.e. $s$, hence $\alpha_s=\beta_s$ for $\lambda$-a.e. $s$ and the disintegrated measures $\alpha$ and $\beta$ coincide. For the triangle inequality, let $\gamma\in\Pp_{p,\lambda}(S\times\Omega)$. Since $\Wass_p(\alpha_s,\gamma_s)\leq\Wass_p(\alpha_s,\beta_s)+\Wass_p(\beta_s,\gamma_s)$ for a.e. $s$, Minkowski's inequality in $L^p(S,\lambda)$ gives
+	\[
+		\Wass_{p,\lambda}(\alpha,\gamma)
+		\leq
+		\Wass_{p,\lambda}(\alpha,\beta)+\Wass_{p,\lambda}(\beta,\gamma).
+	\]
+\end{proof}
+
+\begin{prop}[Conditional geodesics]\label{prop-conditional-wasserstein-geodesics}
+	Assume that $(\Omega,\dist)$ is a geodesic Polish space and let $\alpha^0,\alpha^1\in\Pp_{p,\lambda}(S\times\Omega)$. For $\lambda$-a.e. $s$, choose a constant-speed $\Wass_p$ geodesic $t\mapsto\alpha^t_s$ between $\alpha^0_s$ and $\alpha^1_s$, measurably in $s$, and set
+	\[
+		\alpha^t(\d s,\d x)=\alpha^t_s(\d x)\lambda(\d s).
+	\]
+	Then $t\mapsto\alpha^t$ is a constant-speed geodesic for $\Wass_{p,\lambda}$.
+\end{prop}
+\begin{proof}
+	For $0\leq r\leq t\leq1$, the fiberwise geodesic property gives
+	\[
+		\Wass_p(\alpha^r_s,\alpha^t_s)
+		=
+		(t-r)\Wass_p(\alpha^0_s,\alpha^1_s)
+		\quad\text{for }\lambda\text{-a.e. }s.
+	\]
+	Integrating the $p$th power over $S$ gives
+	\[
+		\Wass_{p,\lambda}(\alpha^r,\alpha^t)
+		=
+		(t-r)\Wass_{p,\lambda}(\alpha^0,\alpha^1).
+	\]
+	Hence the conditional curve has constant speed and realizes the distance between its endpoints. In Euclidean space one may take, for each $s$, an optimal plan $\pi_s\in\Couplings(\alpha^0_s,\alpha^1_s)$ and set $\alpha^t_s=((1-t)\mathrm p_1+t\mathrm p_2)_\sharp\pi_s$, where $\mathrm p_1,\mathrm p_2$ are the two coordinate projections. On a general geodesic space, the same construction uses a measurable family of optimal dynamical plans; when geodesics are non-unique, different measurable selections can produce different conditional geodesics.
+\end{proof}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

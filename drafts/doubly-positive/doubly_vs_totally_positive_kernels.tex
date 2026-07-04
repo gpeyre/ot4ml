@@ -1,0 +1,393 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1.05in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rp}{\mathbb{R}_{+}}
+\newcommand{\PSD}{\mathsf{PSD}}
+\newcommand{\NN}{\mathsf{NN}}
+\newcommand{\DNN}{\mathsf{DNN}}
+\newcommand{\CP}{\mathsf{CP}}
+\newcommand{\DP}{\mathsf{DP}}
+\newcommand{\TP}{\mathsf{TP}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Adj}{\operatorname{Adj}}
+\newcommand{\one}{\mathbf{1}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\title{Doubly Positive and Totally Positive Kernels\\
+\large A compact account for positive sketching}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Terminology.}
+In the matrix literature, the standard names are \emph{doubly nonnegative} and
+\emph{completely positive}.  Below I use \emph{doubly positive} and
+\emph{totally positive} for the analogous kernel notions, because the latter is
+what is needed for positive feature sketching.  To avoid ambiguity, note that
+``totally positive'' here does \emph{not} mean Karlin's total positivity, i.e.
+nonnegativity of all minors of a two-variable kernel; it means ``completely
+positive type'' in the sense of the completely positive matrix cone
+\cite{Karlin1968,DeCorte2022}.
+
+\section{The finite-dimensional model}
+
+For a symmetric matrix $A\in\R^{n\times n}$, define
+\[
+\DNN_n := \{A\in\R^{n\times n}: A\succeq 0,\ A_{ij}\ge 0\ \forall i,j\}
+\]
+and
+\[
+\CP_n := \{A\in\R^{n\times n}: A=BB^\top\text{ for some }B\ge 0\}.
+\]
+Equivalently,
+\[
+\CP_n=\operatorname{cone}\{vv^\top: v\in\Rp^n\}.
+\]
+Thus every completely positive matrix is doubly nonnegative:
+\[
+\CP_n\subseteq \DNN_n.
+\]
+The classical finite-dimensional fact is
+\[
+\boxed{\CP_n=\DNN_n\quad\text{for }n\le 4,}
+\qquad
+\boxed{\CP_n\subsetneq\DNN_n\quad\text{for }n\ge 5.}
+\]
+See, for example, the monograph of Berman and Shaked-Monderer
+\cite{BermanShakedMonderer2003}; the $5\times5$ difference is discussed in
+Anstreicher--Burer--Duer \cite{AnstreicherBurerDuer2009}.
+
+\section{Kernel analogues}
+
+Let $X$ be a set and let
+\[
+k:X\times X\to\R
+\]
+be symmetric.  For points $x_1,\dots,x_n\in X$, write
+\[
+K[x_1,\dots,x_n] := \big(k(x_i,x_j)\big)_{i,j=1}^n.
+\]
+
+\begin{definition}[Doubly positive kernel]
+A kernel $k$ is \emph{doubly positive}, written $k\in\DP(X)$, if
+\[
+K[x_1,\dots,x_n]\in\DNN_n
+\]
+for every finite choice $x_1,\dots,x_n\in X$.  Equivalently,
+$k$ is positive semidefinite and pointwise nonnegative:
+\[
+\sum_{i,j=1}^n c_i c_j k(x_i,x_j)\ge 0
+\quad\text{for all }c_i\in\R,
+\qquad
+k(x,y)\ge 0\quad\forall x,y\in X.
+\]
+\end{definition}
+
+\begin{definition}[Totally positive / completely positive-type kernel]
+A kernel $k$ is \emph{totally positive}, written $k\in\TP(X)$, if
+\[
+K[x_1,\dots,x_n]\in\CP_n
+\]
+for every finite choice $x_1,\dots,x_n\in X$.
+\end{definition}
+
+The inclusion
+\[
+\TP(X)\subseteq\DP(X)
+\]
+is immediate from $\CP_n\subseteq\DNN_n$.  Consequently, on a fixed sample of
+$n\le4$ points the doubly positive and totally positive tests coincide, whereas
+from $n=5$ onward they can differ.  The point is that $\TP(X)$ is the
+kernel-level condition corresponding to nonnegative Gram factorizations on every
+finite sample.
+
+\section{Why total positivity is the sketching condition}
+
+A positive sketch of $k$ is an integral representation
+\begin{equation}\label{eq:positive-sketch}
+ k(x,y)
+ =
+ \int_Z \langle \phi(x,z),\phi(y,z)\rangle_{\R^p}\,d\mu(z),
+ \qquad
+ \phi(x,z)\in\Rp^p.
+\end{equation}
+This is the structure used by positive random features: the feature map takes
+values in the positive orthant, and finite random features approximate the
+integral by a finite sum \cite{ScetbonCuturi2020}.
+
+Fix $x_1,\dots,x_n\in X$.  For each coordinate $a=1,\dots,p$ and latent point
+$z\in Z$, set
+\[
+v_{a,z}:=\big(\phi_a(x_1,z),\dots,\phi_a(x_n,z)\big)^\top\in\Rp^n.
+\]
+Then \eqref{eq:positive-sketch} gives
+\[
+K[x_1,\dots,x_n]
+=
+\sum_{a=1}^p\int_Z v_{a,z}v_{a,z}^\top\,d\mu(z).
+\]
+Since $\CP_n$ is a closed convex cone, the matrix belongs to $\CP_n$.
+Therefore
+\[
+\boxed{\text{positive sketch} \quad\Longrightarrow\quad k\in\TP(X).}
+\]
+Conversely, when $X$ itself is finite, this condition is exactly sufficient:
+$K\in\CP_n$ means $K=BB^\top$ with $B\ge0$, so one can take the columns of $B$
+as positive features.  For general spaces, $\TP(X)$ is the finite-restriction
+condition; analytic treatments often define the corresponding cone as the
+closure of conic combinations of rank-one kernels $f\otimes f$ with $f\ge0$
+\cite{DeCorte2022}.
+
+\section{Complexity}
+
+For a fixed finite sample, checking $K\in\DNN_n$ is tractable: one checks
+entrywise nonnegativity and positive semidefiniteness.  Checking
+$K\in\CP_n$ is very different.  As $n$ varies, the strong membership problem
+for the completely positive cone is NP-hard, and even weak membership for the
+completely positive cone and its dual copositive cone is NP-hard
+\cite{DickinsonGijben2014}.  Thus, for finite data, membership in $\TP$ is
+exactly the computationally difficult part; for an infinite kernel, global
+membership in $\TP(X)$ asks for this condition on every finite restriction.
+
+\section{Examples}
+
+\begin{example}[Finite positive features]
+If $h:X\to\Rp^r$ and
+\[
+k(x,y)=\langle h(x),h(y)\rangle_{\R^r},
+\]
+then $k\in\TP(X)$, with the trivial sketch $Z=\{\ast\}$ and
+$\phi(x,\ast)=h(x)$.
+\end{example}
+
+\begin{example}[Positive autocorrelations]
+Let $X=\R^d$ and $k(x,y)=\psi(x-y)$.  Suppose there are functions
+$g_\ell\in L^2(\R^d)$, $g_\ell\ge0$, such that
+\[
+\psi(t)=\sum_\ell \int_{\R^d} g_\ell(u)g_\ell(u+t)\,du.
+\]
+Then $k\in\TP(\R^d)$ because
+\[
+k(x,y)=\sum_\ell \int_{\R^d} g_\ell(u-x)g_\ell(u-y)\,du,
+\]
+so one may take $z=(u,\ell)$ and
+\[
+\phi(x,(u,\ell))=g_\ell(u-x)e_\ell.
+\]
+For instance, $g=\mathbf{1}_{[0,1]}$ on $\R$ gives the triangular kernel
+\[
+k(x,y)=(1-|x-y|)_+.
+\]
+\end{example}
+
+\begin{example}[Gaussian kernel]
+For
+\[
+k_\varepsilon(x,y)=\exp\!\left(-\frac{\|x-y\|^2}{2\varepsilon}\right),
+\]
+set
+\[
+g_\varepsilon(u)=\left(\frac{2}{\pi\varepsilon}\right)^{d/4}
+\exp\!\left(-\frac{\|u\|^2}{\varepsilon}\right).
+\]
+Then
+\[
+\int_{\R^d} g_\varepsilon(u-x)g_\varepsilon(u-y)\,du
+=
+\exp\!\left(-\frac{\|x-y\|^2}{2\varepsilon}\right),
+\]
+and hence $k_\varepsilon\in\TP(\R^d)$.  This is the clean Lebesgue-measure
+version of the Gaussian positive-feature construction.
+\end{example}
+
+\begin{example}[Gaussian scale mixtures]
+If
+\[
+k(x,y)=F(\|x-y\|^2),
+\qquad
+F(s)=\int_0^\infty e^{-as}\,d\nu(a),
+\]
+for a finite positive measure $\nu$, then $k\in\TP(\R^d)$ by mixing the Gaussian
+sketches.  Equivalently, any completely monotone radial kernel
+$F(\|x-y\|^2)$ is totally positive.  This includes squared-exponential kernels,
+rational-quadratic kernels, inverse-multiquadrics, and Matern kernels via their
+standard Gaussian-mixture representations; see, e.g., Rasmussen--Williams for
+standard Gaussian-process covariance families \cite{RasmussenWilliams2006}.
+\end{example}
+
+\section{Closure properties}
+
+\begin{proposition}[Sums and pointwise products]
+Both $\DP(X)$ and $\TP(X)$ are stable under nonnegative sums and pointwise
+products.  More precisely, if $k_1,k_2\in\TP(X)$ and $a_1,a_2\ge0$, then
+\[
+a_1k_1+a_2k_2\in\TP(X),
+\qquad
+k_1k_2\in\TP(X),
+\]
+where $(k_1k_2)(x,y)=k_1(x,y)k_2(x,y)$.
+\end{proposition}
+
+\begin{proof}
+For sums, take the disjoint union of the latent spaces and scale the features
+by $\sqrt{a_1}$ and $\sqrt{a_2}$.  For products, if
+\[
+k_i(x,y)=\int_{Z_i}\langle \phi_i(x,z_i),\phi_i(y,z_i)\rangle\,d\mu_i(z_i),
+\]
+then
+\[
+k_1(x,y)k_2(x,y)
+=
+\int_{Z_1\times Z_2}
+\big\langle
+\phi_1(x,z_1)\otimes\phi_2(x,z_2),
+\phi_1(y,z_1)\otimes\phi_2(y,z_2)
+\big\rangle
+\,d\mu_1(z_1)d\mu_2(z_2),
+\]
+and the tensor-product feature is still entrywise nonnegative.  The same
+statements for $\DP(X)$ follow from the Schur product theorem and entrywise
+nonnegativity.
+\end{proof}
+
+\section{Counterexamples}
+
+\subsection*{A finite kernel: doubly positive but not totally positive}
+Let $C_5$ be the cycle graph on five vertices and let
+\[
+A_t=I_5+t\,\Adj(C_5).
+\]
+The eigenvalues of $\Adj(C_5)$ are $2\cos(2\pi j/5)$, $j=0,\dots,4$; hence
+$A_t\succeq0$ for $0\le t\le 1/\varphi$, where
+$\varphi=(1+\sqrt5)/2$.  Thus, for example,
+\[
+A_{3/5}\in\DNN_5.
+\]
+But $A_t\notin\CP_5$ for $t>1/2$.  Indeed, if $A_t=BB^\top$ with $B\ge0$,
+then the zero entries of $A_t$ force every column of $B$ to be supported on a
+clique of $C_5$.  Since $C_5$ has no triangles, each column is supported on a
+single vertex or on one edge.  To produce the off-diagonal value $t$ on a fixed
+edge, the corresponding columns contribute at least $2t$ to the two diagonal
+entries, by $u^2+v^2\ge 2uv$.  Summing over the five edges gives
+\[
+\operatorname{tr}(A_t)\ge 10t.
+\]
+But $\operatorname{tr}(A_t)=5$, so complete positivity would imply
+$t\le1/2$.  Therefore $A_{3/5}$ is doubly nonnegative but not completely
+positive.  On the finite space $X=\{1,\dots,5\}$, the kernel
+$k(i,j)=(A_{3/5})_{ij}$ is doubly positive but not totally positive.
+
+\subsection*{A translation-invariant counterexample on \texorpdfstring{$\R$}{R}}
+The gap is not merely a finite-space pathology.  Define
+\[
+\psi(t)=\frac{9}{10}\left[
+\frac{\sqrt5}{5}
++\frac{5-\sqrt5}{5}\cos\!\left(\frac{2\pi t}{5}\right)
++\frac19\right],
+\qquad
+k(x,y)=\psi(x-y).
+\]
+This kernel is continuous, translation-invariant, positive definite, and
+strictly positive pointwise: it is a positive linear combination of
+$1,e^{2\pi i t/5},e^{-2\pi i t/5}$, and its minimum is positive.  Also
+$\psi(0)=1$.
+
+For $x_j=j$, $j=0,\dots,4$, the Gram matrix is
+\[
+K[x_0,\dots,x_4]=\frac{9}{10}\left(W+\frac19J\right),
+\]
+where $J$ is the all-ones matrix and
+\[
+W=
+\begin{pmatrix}
+1&a&0&0&a\\
+a&1&a&0&0\\
+0&a&1&a&0\\
+0&0&a&1&a\\
+a&0&0&a&1
+\end{pmatrix},
+\qquad
+ a=\frac{\sqrt5-1}{2}.
+\]
+Let
+\[
+H=
+\begin{pmatrix}
+1&-1&1&1&-1\\
+-1&1&-1&1&1\\
+1&-1&1&-1&1\\
+1&1&-1&1&-1\\
+-1&1&1&-1&1
+\end{pmatrix}
+\]
+be the Horn copositive matrix.  Every completely positive matrix $B$ satisfies
+$\langle H,B\rangle\ge0$, while
+\[
+\left\langle H,\frac{9}{10}\left(W+\frac19J\right)\right\rangle
+=\frac{9}{10}\left(5(2-\sqrt5)+\frac59\right)<0.
+\]
+Hence this finite restriction is not completely positive, and $k$ is doubly
+positive but not totally positive.  Thus translation invariance and strict
+pointwise positivity do not by themselves imply positive sketchability.
+
+\bibliographystyle{alpha}
+\begin{thebibliography}{99}
+
+\bibitem[ABD09]{AnstreicherBurerDuer2009}
+Kurt M. Anstreicher, Samuel Burer, and Mirjam Duer.
+\newblock The difference between $5\times5$ doubly nonnegative and completely positive matrices.
+\newblock \emph{Linear Algebra and its Applications}, 431(9):1539--1552, 2009.
+
+\bibitem[BSM03]{BermanShakedMonderer2003}
+Abraham Berman and Naomi Shaked-Monderer.
+\newblock \emph{Completely Positive Matrices}.
+\newblock World Scientific, 2003.
+
+\bibitem[DGL21]{DeCorte2022}
+Erwin DeCorte, Fernando M\'ario de Oliveira Filho, and Frank Vallentin.
+\newblock Complete positivity and distance-avoiding sets.
+\newblock \emph{Mathematical Programming}, 191:487--558, 2022.
+
+\bibitem[DG14]{DickinsonGijben2014}
+Peter J. C. Dickinson and Luuk Gijben.
+\newblock On the computational complexity of membership problems for the completely positive cone and its dual.
+\newblock \emph{Computational Optimization and Applications}, 57(2):403--415, 2014.
+
+\bibitem[Kar68]{Karlin1968}
+Samuel Karlin.
+\newblock \emph{Total Positivity, Volume I}.
+\newblock Stanford University Press, 1968.
+
+\bibitem[RW06]{RasmussenWilliams2006}
+Carl Edward Rasmussen and Christopher K. I. Williams.
+\newblock \emph{Gaussian Processes for Machine Learning}.
+\newblock MIT Press, 2006.
+
+\bibitem[SC20]{ScetbonCuturi2020}
+Meyer Scetbon and Marco Cuturi.
+\newblock Linear time Sinkhorn divergences using positive features.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 33, 2020.
+
+\end{thebibliography}
+
+\end{document}
