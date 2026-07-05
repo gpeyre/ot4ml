@@ -569,6 +569,21 @@ def polish_compact_text(text: str) -> str:
         ): (
             "We use the analytic compactness and lower-semicontinuity theorem for the logarithmic-mean action."
         ),
+        (
+            r"\paragraph{Geodesic distances from quadratic tangent norms.}"
+            "\n"
+            r"\["
+            "\n"
+            r"q_\alpha(w,z)"
+        ): (
+            r"\paragraph{Geodesic distances from quadratic tangent norms.}"
+            "\n"
+            r"Here \(q_\alpha\) is quadratic and represented by an operator \(Q_\alpha\)."
+            "\n"
+            r"\["
+            "\n"
+            r"q_\alpha(w,z)"
+        ),
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
