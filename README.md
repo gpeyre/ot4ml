@@ -98,10 +98,10 @@ are documented in [`myst/README.md`](myst/README.md).
 
 ## Course Slides
 
-- [Monge and Kantorovich](https://speakerdeck.com/gpeyre/computational-ot-number-1-monge-and-kantorovitch)
-- [Entropic Regularization](https://speakerdeck.com/gpeyre/computational-ot-number-2-entropic-regularization)
-- [Dual and Semidiscrete](https://speakerdeck.com/gpeyre/computational-ot-number-1-dual-and-semidiscrete)
-- [Gradient Flow and Diffusion Models](https://speakerdeck.com/gpeyre/computational-ot-number-4-gradient-flow-and-diffusion-models)
+- Monge and Kantorovich: [interactive slides](slides/1-monge-kantorovich/index.html), [SpeakerDeck](https://speakerdeck.com/gpeyre/computational-ot-number-1-monge-and-kantorovitch)
+- Entropic Regularization: [interactive slides](slides/2-entropic-regularization/index.html), [SpeakerDeck](https://speakerdeck.com/gpeyre/computational-ot-number-2-entropic-regularization)
+- Dual and Semidiscrete: [interactive slides](slides/3-dual-semidiscrete/index.html), [SpeakerDeck](https://speakerdeck.com/gpeyre/computational-ot-number-1-dual-and-semidiscrete)
+- Gradient Flow and Diffusion Models: [interactive slides](slides/4-dynamic-flows/index.html), [SpeakerDeck](https://speakerdeck.com/gpeyre/computational-ot-number-4-gradient-flow-and-diffusion-models)
 
 ## Further Resources
 

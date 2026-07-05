@@ -1,0 +1,827 @@
+---
+pagetitle: "Entropic Regularization and Sinkhorn"
+format:
+  revealjs:
+    theme: ../_common/ot4ml-reveal.scss
+    html-math-method: katex
+    width: 1280
+    height: 720
+    margin: 0.055
+    slide-number: true
+    center: false
+    transition: fade
+    chalkboard: false
+    preview-links: auto
+    footer: "OT4ML - Entropic Regularization"
+execute:
+  echo: false
+  warning: false
+  message: false
+resources:
+  - assets/
+  - interactive.js
+include-after-body:
+  text: |
+    <script src="interactive.js?v=20260705"></script>
+---
+
+# Entropic Regularization and Sinkhorn {.title-slide}
+
+<div class="subtitle">Fast differentiable optimal transport through entropy, scaling, and dual potentials.</div>
+
+<div class="author-line">Gabriel Peyré</div>
+
+<div class="affiliation-line">CNRS and École normale supérieure, PSL Université</div>
+
+<div class="logo-line" style="margin-top:1.1rem;">Optimal Transport for Machine Learners</div>
+
+## Why regularize OT?
+
+<div class="two-col-wide">
+<div>
+
+Kantorovich OT is geometrically meaningful but often expensive and non-smooth as a function of the data.
+
+Entropic regularization trades exact sparsity for:
+
+- fast matrix scaling iterations,
+- differentiable losses,
+- stable dual potentials,
+- better statistical behavior at fixed regularization.
+
+</div>
+<div class="panel">
+<img src="assets/plan-eps-medium.png" alt="Entropic transport plan">
+<div class="caption">Entropy thickens the transport plan around low-cost pairs.</div>
+</div>
+</div>
+
+## Roadmap: entropic OT and Sinkhorn
+
+<div class="roadmap">
+  <div class="roadmap-card current"><h3>1&#46; Entropic OT</h3><img src="assets/roadmap-entropic.png" alt="Roadmap entropic figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Sinkhorn convergence</h3><img src="assets/roadmap-convergence.png" alt="Roadmap convergence figure"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Extensions and debiasing</h3><img src="assets/roadmap-extensions.png" alt="Roadmap extensions figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Statistics</h3><img src="assets/roadmap-statistics.png" alt="Roadmap statistics figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning</h3><img src="assets/roadmap-generative.png" alt="Roadmap generative figure"></div>
+</div>
+
+## Discrete entropic OT
+
+::: {.definition-box}
+<span class="box-title">Entropic regularization.</span>
+For histograms $a\in\Sigma_n$, $b\in\Sigma_m$, cost matrix $C$, and $\varepsilon>0$,
+$$
+\mathcal L_{C,\varepsilon}(a,b)
+=
+\min_{P\in U(a,b)}
+\langle C,P\rangle
++
+\varepsilon\sum_{i,j}P_{i,j}\big(\log P_{i,j}-1\big),
+$$
+where $U(a,b)=\{P\geq 0:P\mathbb 1_m=a,\ P^\top\mathbb 1_n=b\}$.
+:::
+
+The entropy term makes the objective strictly convex on the positive orthant.
+
+## Relative entropy form
+
+::: {.definition-box}
+<span class="box-title">KL form.</span>
+Using the product reference $a\otimes b$, the same minimization can be written, up to an additive constant independent of $P$, as
+$$
+\min_{P\in U(a,b)}
+\langle C,P\rangle+
+\varepsilon\operatorname{KL}(P\mid a\otimes b),
+$$
+where
+$$
+\operatorname{KL}(P\mid Q)=\sum_{i,j}P_{i,j}\log\frac{P_{i,j}}{Q_{i,j}}-P_{i,j}+Q_{i,j}.
+$$
+:::
+
+This is the discrete static Schroedinger problem.
+
+## Probabilistic interpretation
+
+Let $(X,Y)$ have joint law $P$ and marginals $a,b$. Then
+$$
+\operatorname{KL}(P\mid a\otimes b)=I(X;Y),
+$$
+the mutual information between $X$ and $Y$.
+
+::: {.result-box}
+<span class="box-title">Interpretation.</span>
+Entropic OT minimizes expected transport cost while penalizing dependence between the source and target labels.
+:::
+
+Small $\varepsilon$ allows near-deterministic transport. Large $\varepsilon$ pushes toward independence.
+
+## Continuous formulation
+
+::: {.definition-box}
+<span class="box-title">Continuous entropic OT.</span>
+For probability measures $\alpha,\beta$,
+$$
+\mathcal L_{c,\varepsilon}(\alpha,\beta)
+=
+\inf_{\pi\in\Gamma(\alpha,\beta)}
+\int c(x,y)\,d\pi(x,y)
++
+\varepsilon\operatorname{KL}(\pi\mid \alpha\otimes\beta).
+$$
+Here $\operatorname{KL}(\pi\mid q)=\int\log(d\pi/dq)\,d\pi$ if $\pi\ll q$, and $+\infty$ otherwise.
+:::
+
+Under the usual compactness and lower-semicontinuity assumptions, the value converges to the Kantorovich cost as $\varepsilon\to0$.
+
+## Schrödinger path-space viewpoint
+
+<div class="two-col-wide">
+<div>
+
+A dynamic version replaces straight-line transport by a controlled Brownian bridge problem. The static coupling is the endpoint law of a path measure.
+
+In the historical “lazy gas” interpretation of Schrödinger's problem, one observes an unlikely final cloud and asks for the most likely Brownian path ensemble producing it.
+
+::: {.result-box}
+<span class="box-title">Static endpoint reduction.</span>
+For Brownian reference dynamics, optimizing over path laws with fixed endpoint marginals reduces to an entropic problem over the endpoint coupling.
+:::
+
+</div>
+<div class="panel">
+<div class="figure-row">
+<img src="assets/path-ot.png" style="width:24%" alt="Path optimal transport figure">
+<img src="assets/path-small.png" style="width:24%" alt="Path small figure">
+<img src="assets/path-medium.png" style="width:24%" alt="Path medium figure">
+<img src="assets/path-large.png" style="width:24%" alt="Path large figure">
+</div>
+<div class="caption">Increasing $\varepsilon$ turns OT rays into Brownian bridges.</div>
+</div>
+</div>
+
+## Impact of $\varepsilon$
+
+<div class="figure-row">
+<img src="assets/plan-eps-small.png" style="width:24%" alt="Entropic plan for small epsilon">
+<img src="assets/plan-eps-medium.png" style="width:24%" alt="Entropic plan for medium epsilon">
+<img src="assets/plan-eps-large.png" style="width:24%" alt="Entropic plan for large epsilon">
+<img src="assets/plan-eps-xlarge.png" style="width:24%" alt="Entropic plan for very large epsilon">
+</div>
+
+::: {.result-box}
+<span class="box-title">Effect.</span>
+As $\varepsilon$ increases, the coupling becomes smoother and less sparse. As $\varepsilon$ decreases, it concentrates near the OT support.
+:::
+
+## Interactive: $\varepsilon$ controls the coupling
+
+<div class="two-col-wide">
+<div>
+
+For $K_\varepsilon=e^{-C/\varepsilon}$, the optimal coupling has the form
+$$
+P_\varepsilon=\operatorname{diag}(u)K_\varepsilon\operatorname{diag}(v).
+$$
+
+Move the slider to see the coupling sharpen or diffuse.
+
+</div>
+<div class="interactive-panel">
+<canvas id="sinkhorn-epsilon-canvas"></canvas>
+<div class="slider-row"><span>sharp</span><input id="sinkhorn-epsilon-slider" type="range" min="-4.2" max="-0.3" value="-2.8" step="0.02"><span id="sinkhorn-epsilon-label">eps</span></div>
+</div>
+</div>
+
+## Sinkhorn scaling form
+
+::: {.theorem-box}
+<span class="box-title">Scaling form.</span>
+Let $K=e^{-C/\varepsilon}$ with positive entries. The entropic optimizer is unique and satisfies
+$$
+P=\operatorname{diag}(u)K\operatorname{diag}(v),
+$$
+where $u\in\mathbb R_+^n$ and $v\in\mathbb R_+^m$ enforce the two marginals.
+Equivalently,
+$$
+u\odot(Kv)=a,
+\qquad
+v\odot(K^\top u)=b.
+$$
+:::
+
+This reduces a constrained convex optimization problem to a matrix scaling problem.
+
+## Sinkhorn algorithm
+
+::: {.algorithm-box}
+<span class="box-title">Sinkhorn scaling / IPFP / RAS.</span>
+Input: histograms $a,b$, kernel $K=e^{-C/\varepsilon}$.  
+Output: scaled coupling $P$ with marginals $a,b$.
+
+1. Initialize $v^{(0)}=\mathbb 1_m$.
+2. For $\ell=0,1,2,\ldots$, update
+$$
+u^{(\ell+1)}=\frac{a}{K v^{(\ell)}},
+\qquad
+v^{(\ell+1)}=\frac{b}{K^\top u^{(\ell+1)}}.
+$$
+3. Return $P^{(\ell)}=\operatorname{diag}(u^{(\ell)})K\operatorname{diag}(v^{(\ell)})$.
+:::
+
+All divisions are entrywise.
+
+The same matrix-scaling iteration appears under several names: Sinkhorn scaling, IPFP in statistics, and RAS in economics and input-output analysis.
+
+## Matrix scaling has a long history
+
+Sinkhorn is one member of a broader matrix-scaling family.
+
+::: {.result-box}
+<span class="box-title">Sinkhorn, IPFP, RAS.</span>
+Given a positive matrix $K$, the goal is to find diagonal scalings $u,v>0$ such that
+$$
+\operatorname{diag}(u)K\operatorname{diag}(v)\mathbb 1=a,
+\qquad
+\operatorname{diag}(v)K^\top\operatorname{diag}(u)\mathbb 1=b.
+$$
+The same alternating normalization appears in statistics, economics, input-output tables, and entropy-regularized OT.
+:::
+
+The OT contribution is to choose the matrix as the Gibbs kernel $K=e^{-C/\varepsilon}$.
+
+## Sinkhorn half-steps
+
+<div class="figure-row">
+<img src="assets/scaling-initial.png" style="width:23%" alt="Scaling initial figure">
+<img src="assets/scaling-row1.png" style="width:23%" alt="First row-scaling half-step">
+<img src="assets/scaling-col1.png" style="width:23%" alt="First column-scaling half-step">
+<img src="assets/scaling-row2.png" style="width:23%" alt="Second row-scaling half-step">
+</div>
+
+Each half-step fixes one marginal and breaks the other. Alternating the two projections converges to the intersection.
+
+## Computational structure
+
+For dense kernels, one Sinkhorn iteration costs $O(nm)$.
+
+::: {.result-box}
+<span class="box-title">When Sinkhorn is fast.</span>
+Sinkhorn is fastest when $K$ has exploitable structure: convolution, separability, low rank, multiscale structure, or GPU-friendly matrix operations.
+:::
+
+This explains its role in machine learning: it is differentiable and easy to batch.
+
+## Perron-Frobenius viewpoint
+
+Hilbert-metric convergence comes from positive operators, not only from convex analysis.
+
+::: {.theorem-box}
+<span class="box-title">Positive operator intuition.</span>
+A positive linear map contracts the projective geometry of the cone. Sinkhorn alternates two such positive maps, and the resulting contraction explains a linear convergence mechanism when the kernel is strictly positive and well conditioned.
+:::
+
+This is the conceptual bridge between classical Perron-Frobenius theory, Rothblum-type matrix-scaling convergence analyses, and the Hilbert-metric proof later in this deck.
+
+## Other convex regularizers
+
+::: {.definition-box}
+<span class="box-title">General regularized OT.</span>
+Entropy can be replaced by a convex divergence:
+$$
+\min_{P\in U(a,b)} \langle C,P\rangle+
+\varepsilon D_\varphi(P\mid a\otimes b).
+$$
+For $Q=a\otimes b$, this means
+$$
+D_\varphi(P\mid Q)=\sum_{i,j}Q_{i,j}\,
+\varphi\!\left(\frac{P_{i,j}}{Q_{i,j}}\right).
+$$
+:::
+
+Different choices of $\varphi$ change both the smoothness and sparsity of the optimal coupling.
+
+## Regularizer profiles
+
+Each convex regularizer changes the scalar penalty applied to the density ratio $P_{i,j}/(a_i b_j)$.
+
+<div class="figure-row">
+<img src="assets/regularizers-kl.png" style="width:31%;max-height:260px" alt="KL regularizer profile">
+<img src="assets/regularizers-quadratic.png" style="width:31%;max-height:260px" alt="Quadratic regularizer profile">
+<img src="assets/regularizers-burg.png" style="width:31%;max-height:260px" alt="Burg regularizer profile">
+</div>
+
+## Interactive: entropy spreads mass
+
+<div class="two-col">
+<div>
+
+Entropy replaces a sparse assignment by a Gibbs-weighted cloud around low-cost pairs. Increasing $\varepsilon$ therefore thickens the plan and improves smoothness.
+
+The panel shows the same marginals while only the regularization strength changes.
+
+</div>
+<div class="interactive-panel">
+<canvas id="entropy-spread-canvas"></canvas>
+<div class="slider-row"><span>sparse</span><input id="entropy-spread-slider" type="range" min="-4.5" max="-0.15" value="-2.1" step="0.02"><span id="entropy-spread-label">eps</span></div>
+</div>
+</div>
+
+## Roadmap: convergence analysis
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Entropic OT</h3><img src="assets/roadmap-entropic.png" alt="Roadmap entropic figure"></div>
+  <div class="roadmap-card current"><h3>2&#46; Sinkhorn convergence</h3><img src="assets/roadmap-convergence.png" alt="Roadmap convergence figure"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Extensions and debiasing</h3><img src="assets/roadmap-extensions.png" alt="Roadmap extensions figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Statistics</h3><img src="assets/roadmap-statistics.png" alt="Roadmap statistics figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning</h3><img src="assets/roadmap-generative.png" alt="Roadmap generative figure"></div>
+</div>
+
+## Bregman projection view
+
+::: {.result-box}
+<span class="box-title">Iterative KL projections.</span>
+Sinkhorn is alternating Bregman projection for the KL divergence onto the affine marginal constraint sets
+$$
+\mathcal C_a=\{P:P\mathbb 1_m=a\},
+\qquad
+\mathcal C_b=\{P:P^\top\mathbb 1_n=b\}.
+$$
+:::
+
+The initial matrix is the Gibbs kernel $K=e^{-C/\varepsilon}$, and each projection is a multiplicative rescaling.
+
+## Dual problem
+
+::: {.theorem-box}
+<span class="box-title">Entropic dual.</span>
+The discrete entropic problem has dual
+$$
+\max_{f,g}
+\langle f,a\rangle+\langle g,b\rangle
+-
+\varepsilon\sum_{i,j}a_i b_j
+\left(e^{(f_i+g_j-C_{i,j})/\varepsilon}-1\right).
+$$
+At optimality,
+$$
+P_{i,j}=a_i b_j e^{(f_i+g_j-C_{i,j})/\varepsilon}.
+$$
+:::
+
+With the convention $P=\operatorname{diag}(u)K\operatorname{diag}(v)$, one has
+$u_i=a_i e^{f_i/\varepsilon}$ and $v_j=b_j e^{g_j/\varepsilon}$.
+
+## Soft c-transforms
+
+::: {.definition-box}
+<span class="box-title">Soft c-transform.</span>
+For a function $f$ on the source support,
+$$
+f^{c,\varepsilon}(y_j)
+=-\varepsilon\log\sum_i a_i
+\exp\left(\frac{f_i-C_{i,j}}{\varepsilon}\right).
+$$
+:::
+
+Dual block maximization alternates soft transforms:
+$$
+g\leftarrow f^{c,\varepsilon},
+\qquad
+f\leftarrow g^{\bar c,\varepsilon}.
+$$
+
+## Stabilized log-domain Sinkhorn
+
+For small $\varepsilon$, $K=e^{-C/\varepsilon}$ can underflow. Stabilized implementations store log-scalings, equivalently dual potentials.
+
+::: {.result-box}
+<span class="box-title">Stabilized log-domain updates.</span>
+Instead of scaling vectors $u,v$, store potentials
+$$
+f_i=\varepsilon\log(u_i/a_i),
+\qquad
+g_j=\varepsilon\log(v_j/b_j).
+$$
+The updates are soft $c$-transforms computed with log-sum-exp operations.
+:::
+
+This keeps the Sinkhorn iteration stable when $\varepsilon$ is small and the Gibbs kernel has entries below machine precision.
+
+## Log-domain update steps
+
+::: {.algorithm-box .small .compact-eq}
+<span class="box-title">Stabilized Sinkhorn iteration.</span>
+Input: histograms $a,b$, cost matrix $C$, regularization $\varepsilon>0$.  
+Output: stabilized dual potentials $f,g$.
+
+1. Initialize $f=0$.
+2. Repeat until convergence:
+$$
+\begin{aligned}
+g_j \leftarrow -\varepsilon\log\sum_i a_i
+  \exp\!\left(\frac{f_i-C_{i,j}}{\varepsilon}\right),\\
+f_i \leftarrow -\varepsilon\log\sum_j b_j
+\exp\!\left(\frac{g_j-C_{i,j}}{\varepsilon}\right).
+\end{aligned}
+$$
+3. Recover $P_{i,j}=a_i b_j \exp((f_i+g_j-C_{i,j})/\varepsilon)$.
+:::
+
+This is numerically stable because it uses log-sum-exp operations.
+
+## Dual potentials and $\varepsilon$
+
+<div class="figure-row">
+<img src="assets/dual-eps-small.png" style="width:31%" alt="Dual potential for small epsilon">
+<img src="assets/dual-eps-medium.png" style="width:31%" alt="Dual potential for medium epsilon">
+<img src="assets/dual-eps-large.png" style="width:31%" alt="Dual potential for large epsilon">
+</div>
+
+The potentials approach unregularized Kantorovich potentials as $\varepsilon\to 0$ and become smoother as $\varepsilon$ grows.
+
+## Hilbert projective metric
+
+::: {.definition-box}
+<span class="box-title">Hilbert metric.</span>
+For positive vectors $u,v$,
+$$
+d_H(u,v)=\log\max_i\frac{u_i}{v_i}
+-
+\log\min_i\frac{u_i}{v_i}.
+$$
+:::
+
+It ignores global scaling. This is exactly what is needed because Sinkhorn scalings are unique only up to reciprocal multiplication.
+
+## Linear contraction mechanism
+
+::: {.theorem-box}
+<span class="box-title">Positive maps contract projectively.</span>
+Positive linear maps are nonexpansive in Hilbert metric, and strictly positive matrices contract under quantitative irreducibility assumptions.
+:::
+
+Applied to $K$ and $K^\top$, this yields linear convergence of Sinkhorn in a projective metric.
+
+<div class="figure-row">
+<img src="assets/linear-rate-errors.png" style="width:56%;max-height:205px" alt="Sinkhorn linear rate">
+</div>
+
+## Monotone and variation viewpoints
+
+The log-domain map
+$$
+f\mapsto (f^{c,\varepsilon})^{\bar c,\varepsilon}
+$$
+is order-preserving and commutes with additive constants.
+
+::: {.result-box}
+<span class="box-title">Topical-map intuition.</span>
+Order preservation plus translation invariance implies nonexpansiveness for the variation seminorm
+$$
+\|f\|_{\mathrm{var}}=\max_i f_i-\min_i f_i.
+$$
+:::
+
+This gives a robust way to read Sinkhorn as a monotone fixed-point iteration.
+
+## Geometry of the regularized path
+
+<div class="two-col">
+<div>
+
+Entropy acts like a barrier inside the transport polytope. The solution follows a central path as $\varepsilon$ decreases.
+
+</div>
+<div class="panel">
+<img src="assets/entropy-geometry-path.png" alt="Entropy central path">
+</div>
+</div>
+
+## Roadmap: extensions and debiasing
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Entropic OT</h3><img src="assets/roadmap-entropic.png" alt="Roadmap entropic figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Sinkhorn convergence</h3><img src="assets/roadmap-convergence.png" alt="Roadmap convergence figure"></div>
+  <div class="roadmap-card current"><h3>3&#46; Extensions and debiasing</h3><img src="assets/roadmap-extensions.png" alt="Roadmap extensions figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Statistics</h3><img src="assets/roadmap-statistics.png" alt="Roadmap statistics figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning</h3><img src="assets/roadmap-generative.png" alt="Roadmap generative figure"></div>
+</div>
+
+## Unbalanced entropic OT
+
+::: {.definition-box}
+<span class="box-title">KL-unbalanced formulation.</span>
+Instead of enforcing exact marginals, penalize deviations:
+$$
+\min_{P\geq 0}
+\langle C,P\rangle+
+\varepsilon\operatorname{KL}(P\mid a\otimes b)
++\tau\operatorname{KL}(P\mathbb 1\mid a)
++\tau\operatorname{KL}(P^\top\mathbb 1\mid b).
+$$
+:::
+
+This allows mass creation and destruction when matching every unit of mass is unnatural.
+The associated dynamic viewpoint is geodesic unbalanced OT: particles can move while their mass is also allowed to grow or decay.
+
+## Generalized Sinkhorn for unbalanced OT
+
+For the KL marginal penalty, the updates become damped:
+$$
+u\leftarrow \left(\frac{a}{K v}\right)^{\tau/(\tau+\varepsilon)},
+\qquad
+v\leftarrow \left(\frac{b}{K^\top u}\right)^{\tau/(\tau+\varepsilon)}.
+$$
+
+::: {.result-box}
+<span class="box-title">Balanced limit.</span>
+As $\tau\to +\infty$, the exponent tends to one and one recovers ordinary Sinkhorn scaling.
+:::
+
+## Marginal penalties matter
+
+<div class="figure-row">
+<img src="assets/unbalanced-div-kl.png" style="width:31%" alt="Unbalanced div KL figure">
+<img src="assets/unbalanced-div-tv.png" style="width:31%" alt="Unbalanced div total variation figure">
+<img src="assets/unbalanced-div-burg.png" style="width:31%" alt="Unbalanced div burg figure">
+</div>
+
+Different divergences encode different ways of ignoring or creating mass.
+
+## Balanced versus unbalanced interpolation
+
+<div class="figure-row">
+<img src="assets/unbalanced-small.png" style="width:31%" alt="Unbalanced small figure">
+<img src="assets/unbalanced-medium.png" style="width:31%" alt="Unbalanced medium figure">
+<img src="assets/unbalanced-large.png" style="width:31%" alt="Unbalanced large figure">
+</div>
+
+Small marginal penalty favors local mass variation; large penalty approaches balanced OT.
+
+## Entropic barycenters
+
+::: {.definition-box}
+<span class="box-title">Entropic Wasserstein barycenter.</span>
+Given input measures $(\beta_s)_s$ and weights $(\lambda_s)_s$, compute
+$$
+\min_\alpha \sum_s \lambda_s\mathcal L_{c,\varepsilon}(\alpha,\beta_s).
+$$
+:::
+
+Sinkhorn-like updates alternate between transport couplings and the barycenter weights.
+
+<div class="figure-row">
+<img src="assets/barycenter-shapes.png" style="width:38%;max-height:175px" alt="Entropic barycenter shapes">
+</div>
+
+## Kernel norms and MMD
+
+::: {.definition-box}
+<span class="box-title">MMD.</span>
+For a reproducing kernel Hilbert space $\mathcal H$,
+$$
+\operatorname{MMD}_k(\alpha,\beta)
+=
+\sup_{\|f\|_\mathcal H\leq 1}
+\int f\,d(\alpha-\beta).
+$$
+:::
+
+MMD is not an OT distance, but it is another differentiable discrepancy with favorable sample complexity.
+
+<div class="figure-row">
+<img src="assets/mmd-witness.png" style="width:46%;max-height:170px" alt="MMD witness">
+</div>
+
+## Sinkhorn divergence
+
+::: {.definition-box}
+<span class="box-title">Debiased Sinkhorn loss.</span>
+The Sinkhorn divergence is
+$$
+S_\varepsilon(\alpha,\beta)
+=
+\mathcal L_{c,\varepsilon}(\alpha,\beta)
+-\frac12\mathcal L_{c,\varepsilon}(\alpha,\alpha)
+-\frac12\mathcal L_{c,\varepsilon}(\beta,\beta).
+$$
+:::
+
+The correction removes the entropic self-bias: $S_\varepsilon(\alpha,\alpha)=0$, while preserving differentiability.
+
+## Debiasing effect
+
+<div class="figure-grid-2x3" style="grid-template-columns:repeat(2,1fr);gap:0.45rem 0.65rem">
+<div class="panel tight">
+<img src="assets/debias-raw-small.png" style="max-height:180px" alt="Raw Sinkhorn descent for small epsilon">
+<div class="caption">Raw, small $\varepsilon$.</div>
+</div>
+<div class="panel tight">
+<img src="assets/debias-debiased-small.png" style="max-height:180px" alt="Debiased Sinkhorn descent for small epsilon">
+<div class="caption">Debiased, small $\varepsilon$.</div>
+</div>
+<div class="panel tight">
+<img src="assets/debias-raw-large.png" style="max-height:180px" alt="Raw Sinkhorn descent for large epsilon">
+<div class="caption">Raw, large $\varepsilon$.</div>
+</div>
+<div class="panel tight">
+<img src="assets/debias-debiased-large.png" style="max-height:180px" alt="Debiased Sinkhorn descent for large epsilon">
+<div class="caption">Debiased, large $\varepsilon$.</div>
+</div>
+</div>
+
+## Positivity and limits
+
+::: {.theorem-box}
+<span class="box-title">Sinkhorn divergence behavior.</span>
+For many standard costs, $S_\varepsilon$ is nonnegative and separates probability measures. Moreover,
+$$
+S_\varepsilon(\alpha,\beta)\to W_c(\alpha,\beta)
+\quad\text{as }\varepsilon\to 0,
+$$
+while large $\varepsilon$ connects to kernel norms and MMD-type limits.
+:::
+
+This gives a continuum between OT geometry and kernel discrepancies.
+
+## Roadmap: statistical behavior
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Entropic OT</h3><img src="assets/roadmap-entropic.png" alt="Roadmap entropic figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Sinkhorn convergence</h3><img src="assets/roadmap-convergence.png" alt="Roadmap convergence figure"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Extensions and debiasing</h3><img src="assets/roadmap-extensions.png" alt="Roadmap extensions figure"></div>
+  <div class="roadmap-card current"><h3>4&#46; Statistics</h3><img src="assets/roadmap-statistics.png" alt="Roadmap statistics figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning</h3><img src="assets/roadmap-generative.png" alt="Roadmap generative figure"></div>
+</div>
+
+## Curse of dimensionality for exact OT
+
+For empirical measures $\hat\alpha_n$, exact OT suffers from dimension-dependent rates:
+$$
+\mathbb E\, W_p(\hat\alpha_n,\alpha)
+\asymp n^{-1/d}
+$$
+in the high-dimensional absolutely continuous regime, up to known endpoint variations.
+
+::: {.result-box}
+<span class="box-title">Message.</span>
+Exact OT is geometrically rich but statistically expensive in high dimension.
+:::
+
+## Fixed $\varepsilon$ changes the statistics
+
+At fixed $\varepsilon>0$, entropic OT and Sinkhorn divergences are smoother functionals of the empirical measure.
+
+::: {.theorem-box}
+<span class="box-title">Parametric behavior at fixed $\varepsilon$.</span>
+Under regularity assumptions, empirical Sinkhorn divergences admit $n^{-1/2}$-type fluctuations, with constants depending on $\varepsilon$.
+:::
+
+The price is bias: fixed $\varepsilon$ does not equal exact OT.
+
+## Bias-variance tradeoff
+
+<div class="two-col">
+<div>
+
+Small $\varepsilon$ reduces bias but makes computation and statistics harder. Large $\varepsilon$ smooths the problem but changes the geometry.
+
+</div>
+<div class="panel">
+<img src="assets/bias-variance-d3.png" alt="Sinkhorn bias variance tradeoff">
+</div>
+</div>
+
+## Entropy estimates exact OT through three errors
+
+For empirical data, the approximation to exact OT contains:
+
+1. sampling error,
+2. regularization bias,
+3. numerical optimization error.
+
+::: {.result-box}
+<span class="box-title">Practical rule.</span>
+Choose $\varepsilon$ large enough for stable estimation and fast Sinkhorn iterations, but small enough to retain the desired OT geometry.
+:::
+
+## Smoothness and high dimension
+
+<div class="two-col-wide">
+<div>
+
+If the inputs have smooth densities, smoothing or regularization can exploit this smoothness. In high dimension, generic smoothing is itself costly.
+
+This is one reason entropic OT is attractive in practice: it provides a differentiable approximation with scalable linear-algebra structure.
+
+</div>
+<div class="panel">
+<img src="assets/bias-variance-d6.png" alt="Bias variance dimension 6">
+</div>
+</div>
+
+## Roadmap: learning with Sinkhorn
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Entropic OT</h3><img src="assets/roadmap-entropic.png" alt="Roadmap entropic figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Sinkhorn convergence</h3><img src="assets/roadmap-convergence.png" alt="Roadmap convergence figure"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Extensions and debiasing</h3><img src="assets/roadmap-extensions.png" alt="Roadmap extensions figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Statistics</h3><img src="assets/roadmap-statistics.png" alt="Roadmap statistics figure"></div>
+  <div class="roadmap-card current"><h3>5&#46; Learning</h3><img src="assets/roadmap-generative.png" alt="Roadmap generative figure"></div>
+</div>
+
+## Generative model fitting
+
+::: {.definition-box}
+<span class="box-title">Sinkhorn training loss.</span>
+For a generator $g_\theta$ and latent law $\zeta$, train with
+$$
+\min_\theta
+S_\varepsilon\big((g_\theta)_\#\zeta,\beta\big).
+$$
+:::
+
+The differentiability of the entropic problem makes this compatible with automatic differentiation.
+Historically, the same training loop was used in Wasserstein, Sinkhorn, and MMD generative models, including progressive growing GAN experiments.
+
+## Discriminator versus generator viewpoint
+
+Kantorovich dual potentials play the role of smooth discriminators:
+$$
+\nabla_\theta S_\varepsilon((g_\theta)_\#\zeta,\beta)
+$$
+can be computed by differentiating through the generator and using the optimal dual potentials or coupling.
+
+<div class="figure-row">
+<img src="assets/gen-ot-rays.png" style="width:31%" alt="Generative optimal transport rays">
+<img src="assets/gen-sinkhorn-field.png" style="width:31%" alt="Generative Sinkhorn vector field">
+<img src="assets/gen-mmd-field.png" style="width:31%" alt="Generative MMD vector field">
+</div>
+
+## Automatic differentiation
+
+::: {.result-box}
+<span class="box-title">Envelope principle.</span>
+Once the optimal dual variables are computed, the derivative of the regularized transport value with respect to the cost is the optimal coupling:
+$$
+\frac{\partial \mathcal L_{C,\varepsilon}}{\partial C_{i,j}}=P_{i,j}^\star.
+$$
+With respect to weights, the derivatives are the optimal dual potentials, up to the usual additive normalization.
+:::
+
+This is the basic reason Sinkhorn losses integrate well into differentiable learning pipelines.
+
+## Training architecture
+
+<div class="two-col">
+<div>
+
+A typical mini-batch pipeline is:
+
+1. sample latent variables and data,
+2. build the cost matrix,
+3. run Sinkhorn iterations,
+4. backpropagate the Sinkhorn loss through the generator.
+
+</div>
+<div class="panel">
+<img src="assets/gen-w2-svgd.png" alt="Generative particles">
+</div>
+</div>
+
+## Open problems and design tensions
+
+::: {.result-box}
+<span class="box-title">Main tension.</span>
+Entropic OT is an approximation, a numerical method, a statistical smoother, and a differentiable loss. The best $\varepsilon$ depends on the role.
+:::
+
+Open directions include scalable approximations in high dimension, adaptive regularization, metric learning for costs, and robust generative training.
+
+## Summary
+
+<div class="three-col">
+<div class="panel center"><strong>Entropy</strong><br><span class="muted">smooths OT plans</span></div>
+<div class="panel center"><strong>Sinkhorn</strong><br><span class="muted">solves by scaling</span></div>
+<div class="panel center"><strong>Debiasing</strong><br><span class="muted">turns costs into losses</span></div>
+</div>
+
+::: {.result-box}
+<span class="box-title">Takeaway.</span>
+Entropic regularization transforms optimal transport into a scalable differentiable primitive for optimization, statistics, and learning.
+:::
+
+## Next deck
+
+<div class="two-col">
+<div>
+
+The next presentation focuses on duality, semi-discrete OT, $c$-transforms, and Wasserstein-1 type dual norms.
+
+</div>
+<div class="panel">
+<img src="../1-monge-kantorovich/assets/dual-potentials.png" alt="Dual potentials preview">
+</div>
+</div>

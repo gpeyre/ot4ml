@@ -1,0 +1,735 @@
+---
+pagetitle: "Duality, Wasserstein-1, and Semi-discrete OT"
+format:
+  revealjs:
+    theme: ../_common/ot4ml-reveal.scss
+    html-math-method: katex
+    width: 1280
+    height: 720
+    margin: 0.055
+    slide-number: true
+    center: false
+    transition: fade
+    chalkboard: false
+    preview-links: auto
+    footer: "OT4ML - Duality and Semi-discrete OT"
+execute:
+  echo: false
+  warning: false
+  message: false
+resources:
+  - assets/
+  - interactive.js
+include-after-body:
+  text: |
+    <script src="interactive.js?v=20260705"></script>
+---
+
+# Duality, Wasserstein-1, and Semi-discrete OT {.title-slide}
+
+<div class="subtitle">Dual potentials, Lipschitz witnesses, Laguerre cells, and quantization algorithms.</div>
+
+<div class="author-line">Gabriel Peyré</div>
+
+<div class="affiliation-line">CNRS and École normale supérieure, PSL Université</div>
+
+<div class="logo-line" style="margin-top:1.1rem;">Optimal Transport for Machine Learners</div>
+
+## Why duality matters
+
+<div class="two-col-wide">
+<div>
+
+Kantorovich relaxation turns OT into a linear program. Its dual exposes functions rather than couplings.
+
+This is useful because dual potentials:
+
+- certify optimality,
+- define gradients of OT losses,
+- produce $W_1$ witnesses and GAN critics,
+- drive semi-discrete algorithms.
+
+</div>
+<div class="panel">
+<img src="assets/dual-continuous-three.png" alt="Continuous Kantorovich potentials">
+<div class="caption">Dual potentials touch the cost on transported pairs.</div>
+</div>
+</div>
+
+## Roadmap: duality
+
+<div class="roadmap">
+  <div class="roadmap-card current"><h3>1&#46; Duality</h3><img src="assets/roadmap-dual.png" alt="Roadmap dual figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Wasserstein-1 and IPMs</h3><img src="assets/roadmap-w1.png" alt="Roadmap Wasserstein-1 thumbnail"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Semi-discrete OT</h3><img src="assets/roadmap-semidiscrete.png" alt="Roadmap semi-discrete figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Quantization</h3><img src="assets/roadmap-quantization.png" alt="Roadmap quantization figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning links</h3><img src="assets/roadmap-learning.png" alt="Roadmap learning figure"></div>
+</div>
+
+## Discrete primal and dual
+
+::: {.definition-box}
+<span class="box-title">Discrete Kantorovich primal.</span>
+For $a\in\Sigma_n$, $b\in\Sigma_m$ and $C\in\mathbb R^{n\times m}$,
+$$
+\mathcal L_C(a,b)=
+\min_{P\geq0}
+\langle C,P\rangle
+\quad\text{s.t.}\quad
+P\mathbb 1_m=a,
+\quad P^\top\mathbb 1_n=b.
+$$
+:::
+
+::: {.theorem-box}
+<span class="box-title">Discrete dual.</span>
+$$
+\mathcal L_C(a,b)=
+\max_{f\in\mathbb R^n,\ g\in\mathbb R^m}
+\langle f,a\rangle+\langle g,b\rangle
+\quad\text{s.t.}\quad
+f_i+g_j\leq C_{i,j}.
+$$
+:::
+
+## Lagrangian derivation
+
+The Lagrangian of the primal is
+$$
+\langle C,P\rangle+
+\langle f,a-P\mathbb 1_m\rangle+
+\langle g,b-P^\top\mathbb 1_n\rangle.
+$$
+
+Minimizing over $P\geq0$ gives a finite value if and only if
+$$
+C_{i,j}-f_i-g_j\geq0\quad\forall i,j.
+$$
+
+This yields the dual constraints $f_i+g_j\leq C_{i,j}$.
+
+## Complementary slackness
+
+::: {.theorem-box}
+<span class="box-title">Primal-dual contact.</span>
+If $P$ and $(f,g)$ are optimal, then
+$$
+P_{i,j}>0\quad\Longrightarrow\quad f_i+g_j=C_{i,j}.
+$$
+:::
+
+<div class="panel tight">
+<img src="assets/contacts.png" alt="Complementary slackness contacts">
+<div class="caption">Mass is transported only on the contact set of the dual constraint.</div>
+</div>
+
+## Discrete dual witnesses
+
+Dual variables are not just algebraic multipliers: they are certificates explaining which transport edges can be active.
+
+<div class="figure-grid-2x3">
+<img src="assets/dual-discrete-balanced-top.png" alt="Balanced discrete dual potentials">
+<img src="assets/dual-discrete-shifted-top.png" alt="Shifted discrete dual potentials">
+<img src="assets/dual-discrete-three-top.png" alt="Three-mode discrete dual potentials">
+<img src="assets/dual-discrete-balanced-bottom.png" alt="Balanced discrete optimal map">
+<img src="assets/dual-discrete-shifted-bottom.png" alt="Shifted discrete optimal map">
+<img src="assets/dual-discrete-three-bottom.png" alt="Three-mode discrete optimal map">
+</div>
+
+## Continuous duality
+
+::: {.theorem-box}
+<span class="box-title">Kantorovich duality.</span>
+On Polish spaces, for a lower-semicontinuous cost $c$ bounded from below,
+$$
+\mathcal L_c(\alpha,\beta)
+=
+\sup_{f,g}
+\int f\,d\alpha+
+\int g\,d\beta
+\quad\text{s.t.}\quad
+f(x)+g(y)\leq c(x,y).
+$$
+:::
+
+Here "Polish" means complete and separable after choosing a compatible metric. This is the infinite-dimensional analogue of the finite LP dual.
+
+## Continuous potentials
+
+For quadratic cost in one dimension, optimal potentials encode the monotone transport map through their derivatives.
+
+<div class="figure-grid-2x3">
+<img src="assets/dual-continuous-balanced-top.png" alt="Balanced continuous Kantorovich potentials">
+<img src="assets/dual-continuous-shifted-top.png" alt="Shifted continuous Kantorovich potentials">
+<img src="assets/dual-continuous-three-top.png" alt="Three-mode continuous Kantorovich potentials">
+<img src="assets/dual-continuous-balanced-bottom.png" alt="Balanced monotone transport map from potentials">
+<img src="assets/dual-continuous-shifted-bottom.png" alt="Shifted monotone transport map from potentials">
+<img src="assets/dual-continuous-three-bottom.png" alt="Three-mode monotone transport map from potentials">
+</div>
+
+## c-transform
+
+::: {.definition-box}
+<span class="box-title">c-transform.</span>
+For a function $f$ on $X$, define
+$$
+f^c(y)=\inf_{x\in X}\big(c(x,y)-f(x)\big).
+$$
+Similarly, for $g$ on $Y$,
+$$
+g^{\bar c}(x)=\inf_{y\in Y}\big(c(x,y)-g(y)\big).
+$$
+:::
+
+The dual can be optimized by replacing one potential by the largest admissible companion.
+
+## c-concavity
+
+::: {.result-box}
+<span class="box-title">Reduction to one potential.</span>
+At optimum one can impose
+$$
+g=f^c,
+\qquad
+f=g^{\bar c}.
+$$
+Thus dual potentials are fixed points of alternating c-transforms, up to non-uniqueness.
+:::
+
+<div class="figure-row">
+<img src="assets/c-transform-p1.png" style="width:31%" alt="c-transform for p equals one">
+<img src="assets/c-transform-p2.png" style="width:31%" alt="c-transform for p equals two">
+<img src="assets/c-transform-p4.png" style="width:31%" alt="c-transform for p equals four">
+</div>
+
+## Triple c-transform closure
+
+The identity $f^{ccc}=f^c$ explains why alternating c-transforms stabilize.
+
+::: {.theorem-box}
+<span class="box-title">Closure identity.</span>
+For the c-transform, one always has
+$$
+f^{ccc}=f^c,
+$$
+with the appropriate alternation between $X$ and $Y$.
+:::
+
+Proof idea: the inequality $f^{cc}\geq f$ implies $f^{ccc}\leq f^c$, while applying the defining inequality of the c-transform in the reverse direction gives $f^{ccc}\geq f^c$.
+
+## Interactive: changing the cost exponent
+
+<div class="two-col">
+<div>
+
+The $c$-transform closes a potential under the constraint $f(x)+g(y)\leq c(x,y)$. Changing the cost exponent changes the envelope selected by the dual constraint.
+
+Here $c_p(x,y)=|x-y|^p$ and the slider controls $p$.
+
+</div>
+<div class="interactive-panel">
+<canvas id="c-transform-exponent-canvas"></canvas>
+<div class="slider-row"><span>flat</span><input id="c-transform-exponent-slider" type="range" min="1" max="4" value="2" step="0.02"><span id="c-transform-exponent-label">p = 2.00</span></div>
+</div>
+</div>
+
+## Alternating c-transforms
+
+Alternating minimization in the dual repeatedly closes potentials by c-transforms:
+
+::: {.algorithm-box}
+<span class="box-title">Alternating c-transform closure.</span>
+Input: initial source potential $f$.  
+Output: dual feasible potentials $(f,g)$ after stabilization.
+
+1. Set an initial source potential $f$.
+2. Repeat the closure updates
+$$
+g\leftarrow f^c,\qquad
+f\leftarrow g^{\bar c}.
+$$
+3. Stop when the potentials are numerically stable.
+:::
+
+Useful warning: this reveals the dual structure, but it is not by itself a fast generic OT solver.
+
+## c-transform closure geometry
+
+The source and target closures can be viewed as envelopes of admissible potentials.
+
+<div class="figure-row">
+<div class="panel tight">
+<img src="assets/alt-source.png" style="max-height:285px" alt="Source c-transform closure">
+</div>
+<div class="panel tight">
+<img src="assets/alt-target.png" style="max-height:285px" alt="Target c-transform closure">
+</div>
+</div>
+
+## Existence of dual optimizers
+
+::: {.theorem-box}
+<span class="box-title">Lipschitz compactness principle.</span>
+When the cost is Lipschitz on compact supports, optimal potentials can be chosen uniformly Lipschitz. Arzela-Ascoli compactness then yields an optimizer.
+:::
+
+This proof idea is important because the dual problem is over functions, not finite-dimensional vectors.
+
+## Roadmap: Wasserstein-1 and integral probability metrics
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Duality</h3><img src="assets/roadmap-dual.png" alt="Roadmap dual figure"></div>
+  <div class="roadmap-card current"><h3>2&#46; Wasserstein-1 and IPMs</h3><img src="assets/roadmap-w1.png" alt="Roadmap Wasserstein-1 thumbnail"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Semi-discrete OT</h3><img src="assets/roadmap-semidiscrete.png" alt="Roadmap semi-discrete figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Quantization</h3><img src="assets/roadmap-quantization.png" alt="Roadmap quantization figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning links</h3><img src="assets/roadmap-learning.png" alt="Roadmap learning figure"></div>
+</div>
+
+## Kantorovich-Rubinstein formula
+
+For $c(x,y)=d(x,y)$, the dual simplifies dramatically.
+
+::: {.theorem-box}
+<span class="box-title">Wasserstein-1 duality.</span>
+$$
+W_1(\alpha,\beta)=
+\sup_{\operatorname{Lip}(f)\leq1}
+\int f\,d(\alpha-\beta).
+$$
+Here
+$$
+\operatorname{Lip}(f)=\sup_{x\neq y}\frac{|f(x)-f(y)|}{d(x,y)}.
+$$
+:::
+
+The witness $f$ is a 1-Lipschitz discriminator between the two measures.
+
+## Wasserstein-1 as a norm
+
+::: {.result-box}
+<span class="box-title">Norm viewpoint.</span>
+On signed measures with zero total mass,
+$$
+\|\alpha-\beta\|_{W_1}:=W_1(\alpha,\beta)
+$$
+is a norm whenever the ground metric is fixed.
+:::
+
+This places $W_1$ among dual norms defined by classes of test functions.
+
+## Integral probability metrics
+
+::: {.definition-box}
+<span class="box-title">Integral probability metric.</span>
+Given a symmetric class of test functions $\mathcal F$,
+$$
+D_\mathcal F(\alpha,\beta)=
+\sup_{f\in\mathcal F}\int f\,d(\alpha-\beta).
+$$
+:::
+
+Examples include total variation, Wasserstein-1, bounded-Lipschitz distances, and MMDs.
+
+## Dual witnesses compared
+
+<div class="figure-row">
+<img src="assets/ipm-tv.png" style="width:31%" alt="IPM total variation figure">
+<img src="assets/ipm-w1.png" style="width:31%" alt="IPM Wasserstein-1 witness">
+<img src="assets/ipm-mmd.png" style="width:31%" alt="IPM MMD figure">
+</div>
+
+Different function classes produce different witnesses and therefore different notions of discrepancy.
+
+## Wasserstein-1 on Euclidean domains
+
+For smooth $f$ on Euclidean domains, $\operatorname{Lip}(f)\leq1$ is equivalent to
+$$
+\|\nabla f(x)\|\leq1.
+$$
+
+This connects $W_1$ to Beckmann's continuous flux formulation:
+$$
+W_1(\alpha,\beta)=
+\min_{m}\int \|m(x)\|\,dx
+\quad\text{s.t.}\quad
+\operatorname{div}m=\alpha-\beta.
+$$
+
+## W1 on surfaces and subdomains
+
+The same Beckmann idea extends beyond flat Euclidean grids by replacing gradients and divergence with their geometric counterparts.
+
+::: {.result-box}
+<span class="box-title">Geometric message.</span>
+On meshes, surfaces, or subdomains, $W_1$ can be computed as a flow constrained by the geometry. Graph discretizations are the simplest finite-dimensional version of this idea.
+:::
+
+This is the setting of surface and subdomain $W_1$ solvers used in geometry processing, including the Solomon-Rustamov-Guibas-Butscher line of work. Graph flows are the simplest discrete proxy for this geometric formulation.
+
+## Wasserstein-1 on graphs
+
+On a graph, the Beckmann formulation becomes a sparse network-flow problem over edges:
+$$
+\min_{q}\sum_{e} w_e|q_e|
+\quad\text{s.t.}\quad
+Dq=a-b.
+$$
+Here $D$ is the signed vertex-edge incidence matrix and $q_e$ is the oriented mass flux on edge $e$.
+
+This can be much smaller than a full pairwise Kantorovich LP.
+
+<div class="figure-row">
+<div class="panel tight" style="width:45%"><img src="assets/w1-graph-regular.png" style="max-height:190px" alt="Wasserstein-1 graph regular figure"></div>
+<div class="panel tight" style="width:45%"><img src="assets/w1-graph-nonuniform.png" style="max-height:190px" alt="Wasserstein-1 graph nonuniform figure"></div>
+</div>
+
+## Graph flow visualization
+
+<div class="two-col">
+<div class="panel tight"><img src="assets/w1-graph-masses.png" alt="Graph signed masses"></div>
+<div class="panel tight"><img src="assets/w1-graph-flow.png" alt="Graph Wasserstein-1 flow"></div>
+</div>
+
+The edge flow is the sparse object that transports positive mass to negative mass through the graph geometry.
+
+## WGAN viewpoint
+
+::: {.example-box}
+<span class="box-title">Example: Wasserstein GAN.</span>
+A generator $g_\theta$ can be trained by minimizing
+$$
+\min_\theta W_1((g_\theta)_\#\zeta,\beta)
+=
+\min_\theta\sup_{\operatorname{Lip}(f)\leq1}
+\mathbb E f(g_\theta(Z))-\mathbb E f(Y).
+$$
+The discriminator is a parametrized approximation of a 1-Lipschitz Kantorovich potential.
+:::
+
+This is the machine-learning face of Kantorovich-Rubinstein duality.
+
+## Roadmap: semi-discrete OT
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Duality</h3><img src="assets/roadmap-dual.png" alt="Roadmap dual figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Wasserstein-1 and IPMs</h3><img src="assets/roadmap-w1.png" alt="Roadmap Wasserstein-1 thumbnail"></div>
+  <div class="roadmap-card current"><h3>3&#46; Semi-discrete OT</h3><img src="assets/roadmap-semidiscrete.png" alt="Roadmap semi-discrete figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Quantization</h3><img src="assets/roadmap-quantization.png" alt="Roadmap quantization figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning links</h3><img src="assets/roadmap-learning.png" alt="Roadmap learning figure"></div>
+</div>
+
+## Semi-discrete setting
+
+::: {.definition-box}
+<span class="box-title">Semi-discrete OT.</span>
+Let $\alpha$ be a continuous probability measure on $\mathbb R^d$ and
+$$
+\beta=\sum_{j=1}^m b_j\delta_{y_j}
+$$
+be discrete. For quadratic cost, one seeks a partition of the source domain whose cells have masses $b_j$.
+:::
+
+The unknown is not a full coupling matrix but a weighted spatial partition.
+
+## Laguerre cells
+
+::: {.definition-box}
+<span class="box-title">Laguerre cell.</span>
+For sites $y_j$ and weights $g_j$, the cell associated with $j$ is
+$$
+L_j(g)=\{x: \|x-y_j\|^2-g_j\leq \|x-y_k\|^2-g_k\quad\forall k\}.
+$$
+:::
+
+The semi-discrete map sends every $x\in L_j(g)$ to $y_j$.
+Optimal weights are characterized by the mass constraints
+$$
+\alpha(L_j(g))=b_j,\qquad j=1,\ldots,m.
+$$
+
+## Power diagrams
+
+<div class="figure-row">
+<img src="assets/laguerre-voronoi.png" style="width:31%" alt="Laguerre voronoi figure">
+<img src="assets/laguerre-weighted.png" style="width:31%" alt="Laguerre weighted figure">
+<img src="assets/laguerre-balanced.png" style="width:31%" alt="Laguerre balanced figure">
+</div>
+
+Voronoi cells become Laguerre cells when weights are introduced. The weights tune cell masses.
+
+## Interactive: one weight changes one cell
+
+<div class="two-col-wide">
+<div>
+
+Changing $g_j$ shifts the additive power distance
+$$
+\|x-y_j\|^2-g_j.
+$$
+Increasing $g_j$ makes site $j$ more attractive and expands its Laguerre cell.
+
+</div>
+<div class="interactive-panel">
+<canvas id="laguerre-weight-canvas"></canvas>
+<div class="slider-row"><span>smaller cell</span><input id="laguerre-weight-slider" type="range" min="-0.35" max="0.35" value="0" step="0.01"><span id="laguerre-weight-label">weight shift</span></div>
+</div>
+</div>
+
+## Semi-discrete dual
+
+For quadratic cost, the dual can be written as a concave maximization over weights:
+$$
+\max_{g\in\mathbb R^m}
+\int \min_j\big(\|x-y_j\|^2-g_j\big)\,d\alpha(x)
++
+\sum_{j=1}^m b_j g_j.
+$$
+
+::: {.result-box}
+<span class="box-title">Gradient.</span>
+The gradient component is
+$$
+\frac{\partial}{\partial g_j}=b_j-\alpha(L_j(g)).
+$$
+Thus dual ascent balances Laguerre cell masses.
+:::
+
+## Weight descent as mass balancing
+
+<div class="figure-row">
+<img src="assets/weight-under.png" style="width:31%" alt="Weight under figure">
+<img src="assets/weight-balanced.png" style="width:31%" alt="Weight balanced figure">
+<img src="assets/weight-over.png" style="width:31%" alt="Weight over figure">
+</div>
+
+The algorithm updates the weights until every cell has the prescribed mass.
+
+## Semi-discrete examples
+
+<div class="two-col">
+<div class="panel tight">
+<img src="assets/semidiscrete-gaussian.png" alt="Gaussian to discrete semi-discrete map">
+</div>
+<div class="panel tight">
+<img src="assets/semidiscrete-mixture.png" alt="Mixture to discrete semi-discrete map">
+</div>
+</div>
+
+Coloring makes the spatial map visible: each source cell is sent to one target atom.
+
+## Practical optimization
+
+::: {.algorithm-box}
+<span class="box-title">Semi-discrete dual ascent.</span>
+Input: density $\alpha$, sites $y_j$, target masses $b_j$.  
+Initialize weights $g$.  
+Repeat:
+$$
+L_j(g)=\{x: \|x-y_j\|^2-g_j\leq \|x-y_k\|^2-g_k\},
+$$
+$$
+g_j\leftarrow g_j+\tau\big(b_j-\alpha(L_j(g))\big).
+$$
+Output: the Laguerre partition and map $T(x)=y_j$ for $x\in L_j(g)$.
+:::
+
+Newton and quasi-Newton methods, especially L-BFGS variants, are typically used in high-quality implementations because the semi-discrete dual is a smooth concave objective away from cell degeneracies.
+
+## Roadmap: optimal quantization
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Duality</h3><img src="assets/roadmap-dual.png" alt="Roadmap dual figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Wasserstein-1 and IPMs</h3><img src="assets/roadmap-w1.png" alt="Roadmap Wasserstein-1 thumbnail"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Semi-discrete OT</h3><img src="assets/roadmap-semidiscrete.png" alt="Roadmap semi-discrete figure"></div>
+  <div class="roadmap-card current"><h3>4&#46; Quantization</h3><img src="assets/roadmap-quantization.png" alt="Roadmap quantization figure"></div>
+  <div class="roadmap-card dim"><h3>5&#46; Learning links</h3><img src="assets/roadmap-learning.png" alt="Roadmap learning figure"></div>
+</div>
+
+## Quantization problem
+
+::: {.definition-box}
+<span class="box-title">Optimal quantization.</span>
+For a source measure $\alpha$ and $m$ points $Y=(y_1,\ldots,y_m)$,
+$$
+Q_m(\alpha)=
+\min_{Y,b\in\Sigma_m}
+W_2^2\left(\alpha,\sum_{j=1}^m b_j\delta_{y_j}\right).
+$$
+For fixed sites $Y$, this equals
+$$
+\int \min_j\|x-y_j\|^2\,d\alpha(x)
+$$
+when the masses are free.
+:::
+
+The goal is to approximate a continuous measure by a small discrete measure.
+
+## Fixed versus free masses
+
+If the masses $b_j$ are fixed, semi-discrete OT gives the optimal cells for fixed sites. If the masses are free, the optimal cells are Voronoi cells.
+
+::: {.result-box}
+<span class="box-title">Centroid condition.</span>
+At an unconstrained local optimum for quadratic cost,
+$$
+y_j=\frac{\int_{V_j(Y)} x\,d\alpha(x)}{\alpha(V_j(Y))},
+$$
+where $V_j(Y)$ is the Voronoi cell of $y_j$.
+:::
+
+## Lloyd algorithm
+
+::: {.algorithm-box}
+<span class="box-title">Lloyd iteration.</span>
+Input: source measure $\alpha$, initial sites $Y$.  
+Repeat:
+
+1. Build Voronoi cells $V_j(Y)$.
+2. Replace each site by its cell centroid,
+$$
+y_j\leftarrow \frac{\int_{V_j(Y)}x\,d\alpha(x)}{\alpha(V_j(Y))}.
+$$
+
+Output: a centroidal Voronoi tessellation.
+:::
+
+## Lloyd iterations
+
+<div class="figure-row">
+<img src="assets/lloyd-initial.png" style="width:31%" alt="Lloyd initial figure">
+<img src="assets/lloyd-iter6.png" style="width:31%" alt="Lloyd iter6 figure">
+<img src="assets/lloyd-iter36.png" style="width:31%" alt="Lloyd iter36 figure">
+</div>
+
+Lloyd descent is simple and robust, but it is nonconvex and can converge to local minima.
+
+## Quantization on the line
+
+<div class="two-col">
+<div>
+
+In one dimension, quantiles give explicit optimal placements for equal masses. This is much better than random sampling for $W_2$ approximation.
+For $\alpha$ with quantile $F_\alpha^{-1}$,
+$$
+y_j=F_\alpha^{-1}\!\left(\frac{j-\frac12}{m}\right)
+$$
+is the canonical equal-mass placement.
+
+</div>
+<div class="panel">
+<div class="figure-row">
+<img src="assets/quantile-points.png" style="width:48%" alt="Quantile points figure">
+<img src="assets/quantile-rate.png" style="width:48%" alt="Quantile rate figure">
+</div>
+</div>
+</div>
+
+## Relaxed Lloyd flow
+
+<div class="two-col-wide">
+<div>
+
+A slowed-down Lloyd update can be viewed as a continuous-time descent on the quantization energy in configuration space.
+For small relaxation parameter $\eta$,
+$$
+y_j^{k+1}=(1-\eta)y_j^k+\eta\,\operatorname{centroid}(V_j(Y^k)).
+$$
+
+</div>
+<div class="panel">
+<div class="figure-row">
+<img src="assets/lloyd-flow-0.png" style="width:24%" alt="Lloyd flow 0 figure">
+<img src="assets/lloyd-flow-24.png" style="width:24%" alt="Lloyd flow 24 figure">
+<img src="assets/lloyd-flow-80.png" style="width:24%" alt="Lloyd flow 80 figure">
+<img src="assets/lloyd-flow-240.png" style="width:24%" alt="Lloyd flow 240 figure">
+</div>
+<div class="caption">Sites move toward a quantized representation of the target density.</div>
+</div>
+</div>
+
+## Energy decay
+
+<div class="two-col">
+<div>
+
+The energy need not be globally convex, but standard Lloyd updates decrease it at each alternating minimization step.
+
+</div>
+<div class="panel">
+<img src="assets/lloyd-energy.png" alt="Lloyd energy decay">
+</div>
+</div>
+
+## Roadmap: links to learning
+
+<div class="roadmap">
+  <div class="roadmap-card dim"><h3>1&#46; Duality</h3><img src="assets/roadmap-dual.png" alt="Roadmap dual figure"></div>
+  <div class="roadmap-card dim"><h3>2&#46; Wasserstein-1 and IPMs</h3><img src="assets/roadmap-w1.png" alt="Roadmap Wasserstein-1 thumbnail"></div>
+  <div class="roadmap-card dim"><h3>3&#46; Semi-discrete OT</h3><img src="assets/roadmap-semidiscrete.png" alt="Roadmap semi-discrete figure"></div>
+  <div class="roadmap-card dim"><h3>4&#46; Quantization</h3><img src="assets/roadmap-quantization.png" alt="Roadmap quantization figure"></div>
+  <div class="roadmap-card current"><h3>5&#46; Learning links</h3><img src="assets/roadmap-learning.png" alt="Roadmap learning figure"></div>
+</div>
+
+## Dual potentials as discriminators
+
+The $W_1$ dual is the mathematical core of Wasserstein GANs, while other IPMs replace the Lipschitz ball by another function class.
+
+<div class="three-col">
+<div class="panel center"><strong>TV</strong><br><span class="muted">bounded witnesses</span></div>
+<div class="panel center"><strong>Wasserstein-1</strong><br><span class="muted">Lipschitz witnesses</span></div>
+<div class="panel center"><strong>MMD</strong><br><span class="muted">RKHS witnesses</span></div>
+</div>
+
+## Semi-discrete maps in applications
+
+Semi-discrete OT appears when a continuous distribution is represented by a finite set of atoms:
+
+- mesh generation and remeshing,
+- color and texture processing,
+- sampling and quantization,
+- clustering with geometric costs,
+- scalable approximations of continuous OT.
+
+The computational object is a partition, not a dense coupling.
+
+## Linearized OT preview
+
+<div class="two-col">
+<div>
+
+Dual and semi-discrete ideas also feed linearized OT: fix a reference measure and embed nearby measures by displacement fields.
+
+</div>
+<div class="panel">
+<img src="assets/linear-ot-1d.png" alt="Linearized OT one-dimensional displacements">
+</div>
+</div>
+
+## Summary
+
+::: {.result-box}
+<span class="box-title">What this deck establishes.</span>
+Duality turns transport into potentials.
+For $W_1$, these are Lipschitz witnesses.
+In the semi-discrete quadratic case, they are Laguerre weights defining a power diagram.
+Quantization and Lloyd algorithms reuse this geometry.
+:::
+
+<div class="three-col">
+<div class="panel center"><strong>Duality</strong><br><span class="muted">certificates and gradients</span></div>
+<div class="panel center"><strong>Wasserstein-1</strong><br><span class="muted">Lipschitz witnesses</span></div>
+<div class="panel center"><strong>Laguerre</strong><br><span class="muted">cells and quantization</span></div>
+</div>
+
+## Next deck
+
+<div class="two-col">
+<div>
+
+The next presentation focuses on dynamic optimal transport and flows over probability measures.
+
+</div>
+<div class="panel">
+<img src="../2-entropic-regularization/assets/roadmap-generative.png" alt="Dynamic flows preview">
+</div>
+</div>
