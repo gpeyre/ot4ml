@@ -236,7 +236,13 @@ function setStatus(text) {
 function imageAsset(src) {
   if (imageAssets.has(src)) return imageAssets.get(src);
   const img = new Image();
-  const record = { image: img, state: "loading" };
+  const record = {
+    image: img,
+    state: "loading",
+    dataCache: new Map(),
+    grayCache: new Map(),
+    rgbCache: new Map(),
+  };
   img.onload = () => {
     record.state = "ready";
     scheduleRender();
@@ -250,13 +256,25 @@ function imageAsset(src) {
   return record;
 }
 
+function livePixelRatio() {
+  return Math.min(Math.max(window.devicePixelRatio || 1, 1) * 1.5, 3);
+}
+
 function rasterSizeForDisplay(width, minSize, maxSize) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = livePixelRatio();
   return Math.round(clamp(Math.ceil(width * dpr), minSize, maxSize));
+}
+
+function naturalSquareSize(record, fallback = 640) {
+  if (record.state !== "ready") return fallback;
+  const width = record.image.naturalWidth || fallback;
+  const height = record.image.naturalHeight || fallback;
+  return Math.max(1, Math.min(fallback, width, height));
 }
 
 function imageDataFromAsset(record, size) {
   if (record.state !== "ready") return null;
+  if (record.dataCache.has(size)) return record.dataCache.get(size);
   const tmp = document.createElement("canvas");
   tmp.width = size;
   tmp.height = size;
@@ -268,7 +286,9 @@ function imageDataFromAsset(record, size) {
   if ("imageSmoothingQuality" in ictx) ictx.imageSmoothingQuality = "high";
   ictx.drawImage(record.image, sx, sy, side, side, 0, 0, size, size);
   try {
-    return ictx.getImageData(0, 0, size, size).data;
+    const data = ictx.getImageData(0, 0, size, size).data;
+    record.dataCache.set(size, data);
+    return data;
   } catch {
     record.state = "error";
     return null;
@@ -276,22 +296,26 @@ function imageDataFromAsset(record, size) {
 }
 
 function grayImageFromAsset(record, size) {
+  if (record.grayCache.has(size)) return record.grayCache.get(size);
   const data = imageDataFromAsset(record, size);
   if (!data) return null;
   const out = new Array(size * size);
   for (let i = 0; i < out.length; i += 1) {
     out[i] = (0.2126 * data[4 * i] + 0.7152 * data[4 * i + 1] + 0.0722 * data[4 * i + 2]) / 255;
   }
+  record.grayCache.set(size, out);
   return out;
 }
 
 function rgbImageFromAsset(record, size) {
+  if (record.rgbCache.has(size)) return record.rgbCache.get(size);
   const data = imageDataFromAsset(record, size);
   if (!data) return null;
   const out = new Array(size * size);
   for (let i = 0; i < out.length; i += 1) {
     out[i] = [data[4 * i], data[4 * i + 1], data[4 * i + 2]];
   }
+  record.rgbCache.set(size, out);
   return out;
 }
 
@@ -304,7 +328,7 @@ function resizeCanvas(height) {
   const statusHeight = status.getBoundingClientRect().height || 18;
   const availableHeight = window.innerHeight - controlsHeight - actionsHeight - statusHeight - 54;
   const targetHeight = clamp(Math.min(height, availableHeight || height), 170, height);
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = livePixelRatio();
   canvas.style.height = `${targetHeight}px`;
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(targetHeight * dpr);
@@ -426,7 +450,7 @@ function inverseCdfSamples(xs, pdf, n) {
 }
 
 function drawQuantile() {
-  const n = val("n");
+  const n = Math.round(val("n"));
   const source = val("source");
   const target = val("target");
   const { ctx, w, h } = resizeCanvas(344);
@@ -477,7 +501,7 @@ function drawQuantile() {
   const sx = inverseCdfSamples(xs, spdf, n);
   const tx = inverseCdfSamples(xs, tpdf, n);
 
-  ctx.lineWidth = 0.75;
+  ctx.lineWidth = n > 120 ? 0.38 : n > 80 ? 0.5 : 0.75;
   for (let k = 0; k < n; k += 1) {
     ctx.strokeStyle = mixColor((k + 0.5) / n, RED, BLUE, 0.43);
     ctx.beginPath();
@@ -488,9 +512,10 @@ function drawQuantile() {
 
   function points(arr, y, color) {
     ctx.fillStyle = color;
+    const radius = n > 120 ? 1.45 : n > 80 ? 1.8 : 3;
     for (const x of arr) {
       ctx.beginPath();
-      ctx.arc(X(x), Y(y), 3, 0, 2 * Math.PI);
+      ctx.arc(X(x), Y(y), radius, 0, 2 * Math.PI);
       ctx.fill();
     }
   }
@@ -502,7 +527,7 @@ function drawQuantile() {
   ctx.fillText("source alpha", X(xMin) + 2, Y(sourceBase + 0.24));
   ctx.fillStyle = BLUE;
   ctx.fillText("target beta", X(xMin) + 2, Y(targetBase - 0.2));
-  setStatus(`${n} monotone pairs`);
+  setStatus(`${n} quantile levels; monotone pairs are ordered by cumulative mass`);
 }
 
 function lineAssignment(x, y, power) {
@@ -606,14 +631,16 @@ function drawHistogram() {
   const mean = val("mean");
   const sigma = val("sigma");
   const t = val("interp");
-  const { ctx, w } = resizeCanvas(342);
-  const gap = 34;
-  const leftW = Math.min(300, Math.max(132, Math.floor((w - gap - 46) * 0.44)));
-  const imgX = 22;
+  const { ctx, w, h } = resizeCanvas(342);
+  const pad = 20;
+  const imageGap = 10;
+  const imageTs = [0, 0.25, 0.5, 0.75, 1];
+  const imgW = Math.round(clamp(Math.min(124, (w - 2 * pad - imageGap * (imageTs.length - 1)) / imageTs.length, h - 206), 54, 124));
   const imgY = 30;
-  const imgW = leftW;
-  const size = rasterSizeForDisplay(imgW, 150, 300);
+  const totalImagesW = imageTs.length * imgW + (imageTs.length - 1) * imageGap;
+  const imgX0 = pad + Math.max(0, (w - 2 * pad - totalImagesW) / 2);
   const cat = imageAsset("assets/cat.jpg");
+  const size = rasterSizeForDisplay(Math.max(imgW, 96), 180, naturalSquareSize(cat, 640));
   const base = grayImageFromAsset(cat, size) || syntheticImage(size);
   const pairs = base.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const mapped = new Array(base.length);
@@ -623,28 +650,50 @@ function drawHistogram() {
     const u = (r + 0.5) / pairs.length;
     mapped[pairs[r][1]] = clamp(normalInv(lo + u * (hi - lo), mean, sigma), 0, 1);
   }
-  const img = base.map((v, i) => lerp(v, mapped[i], t));
-  const tmp = document.createElement("canvas");
-  tmp.width = size;
-  tmp.height = size;
-  const ictx = tmp.getContext("2d");
-  const data = ictx.createImageData(size, size);
-  for (let i = 0; i < img.length; i += 1) {
-    const g = Math.round(255 * clamp(img[i], 0, 1));
-    data.data[4 * i] = g;
-    data.data[4 * i + 1] = g;
-    data.data[4 * i + 2] = g;
-    data.data[4 * i + 3] = 255;
+  function makeImage(values) {
+    const tmp = document.createElement("canvas");
+    tmp.width = size;
+    tmp.height = size;
+    const ictx = tmp.getContext("2d");
+    const data = ictx.createImageData(size, size);
+    for (let i = 0; i < values.length; i += 1) {
+      const g = Math.round(255 * clamp(values[i], 0, 1));
+      data.data[4 * i] = g;
+      data.data[4 * i + 1] = g;
+      data.data[4 * i + 2] = g;
+      data.data[4 * i + 3] = 255;
+    }
+    ictx.putImageData(data, 0, 0);
+    return tmp;
   }
-  ictx.putImageData(data, 0, 0);
+
   ctx.imageSmoothingEnabled = true;
   if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(tmp, imgX, imgY, imgW, imgW);
-  ctx.strokeStyle = "#d8dee8";
-  ctx.strokeRect(imgX, imgY, imgW, imgW);
-  ctx.fillStyle = "#2f3b45";
-  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-  ctx.fillText(`t = ${t.toFixed(2)}`, imgX, imgY + imgW + 22);
+  let selected = 0;
+  let selectedDist = Infinity;
+  for (let k = 0; k < imageTs.length; k += 1) {
+    const d = Math.abs(t - imageTs[k]);
+    if (d < selectedDist) {
+      selectedDist = d;
+      selected = k;
+    }
+  }
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  for (let k = 0; k < imageTs.length; k += 1) {
+    const tau = imageTs[k];
+    const img = base.map((v, i) => lerp(v, mapped[i], tau));
+    const x = imgX0 + k * (imgW + imageGap);
+    ctx.drawImage(makeImage(img), x, imgY, imgW, imgW);
+    ctx.strokeStyle = k === selected ? mixColor(t, RED, BLUE, 0.95) : "#d8dee8";
+    ctx.lineWidth = k === selected ? 2 : 1;
+    ctx.strokeRect(x, imgY, imgW, imgW);
+    ctx.fillStyle = k === selected ? "#26333f" : "#6b7280";
+    ctx.fillText(`t=${tau.toFixed(2)}`, x + imgW / 2, imgY + imgW + 16);
+  }
+  ctx.textAlign = "left";
+
+  const img = base.map((v, i) => lerp(v, mapped[i], t));
 
   const bins = 42;
   const hist = Array(bins).fill(0);
@@ -655,10 +704,10 @@ function drawHistogram() {
     const x = (i + 0.5) / bins;
     return normalPdf(x, mean, sigma) / Math.max(hi - lo, 1e-9);
   });
-  const px = imgX + imgW + gap;
-  const py = 30;
-  const pw = Math.max(120, w - px - 22);
-  const ph = imgW;
+  const px = pad + 6;
+  const py = imgY + imgW + 36;
+  const pw = w - 2 * pad - 12;
+  const ph = Math.max(88, h - py - 36);
   const ymax = 1.12 * Math.max(...hist, ...target);
   const X = (x) => px + x * pw;
   const Y = (y) => py + ph - (y / ymax) * ph;
@@ -697,7 +746,7 @@ function drawHistogram() {
   ctx.fillStyle = BLUE;
   ctx.fillText("target law", px + pw - 78, py + 16);
   const imageSource = cat.state === "ready" ? `cat photograph, ${size}x${size}` : "synthetic fallback while the photograph loads";
-  setStatus(`target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
+  setStatus(`interpolated equalization images; target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
 }
 
 function rng(seed) {
@@ -1524,9 +1573,10 @@ function drawMongeColor() {
   const pad = 18;
   const gap = 18;
   const imageW = Math.min((w - 2 * pad - 2 * gap) / 3, h * 0.44);
-  const size = Math.round(clamp(Math.max(requestedSize, Math.ceil(imageW)), 96, 260));
   const beach = imageAsset("assets/beach.jpg");
   const flower = imageAsset("assets/flower.jpg");
+  const maxImageSize = Math.min(naturalSquareSize(beach, 640), targetMode === "flower" ? naturalSquareSize(flower, 640) : 640);
+  const size = rasterSizeForDisplay(imageW, Math.max(96, requestedSize), Math.max(260, maxImageSize));
   const source = rgbImageFromAsset(beach, size) || makePaletteImage(size, "beach", contrast);
   const target =
     targetMode === "flower" ? rgbImageFromAsset(flower, size) || makePaletteImage(size, "flower", contrast) : makePaletteImage(size, targetMode, contrast);
@@ -1774,11 +1824,28 @@ function histogramCurve(samples, xMin, xMax, bins) {
   return { xs, ys };
 }
 
+function smoothDensityCurve(samples, xMin, xMax, bins, bandwidth) {
+  const xs = Array.from({ length: bins }, (_, k) => lerp(xMin, xMax, (k + 0.5) / bins));
+  const ys = Array(bins).fill(0);
+  const h = Math.max(bandwidth, 1e-4);
+  const cutoff = 4 * h;
+  const norm = 1 / Math.max(samples.length * h * Math.sqrt(2 * Math.PI), 1e-12);
+  for (const sample of samples) {
+    const k0 = Math.max(0, Math.floor(((sample - cutoff - xMin) / (xMax - xMin)) * bins));
+    const k1 = Math.min(bins - 1, Math.ceil(((sample + cutoff - xMin) / (xMax - xMin)) * bins));
+    for (let k = k0; k <= k1; k += 1) {
+      const z = (xs[k] - sample) / h;
+      ys[k] += norm * Math.exp(-0.5 * z * z);
+    }
+  }
+  return { xs, ys };
+}
+
 function drawMongeQuantile() {
   const sourceName = val("mqSource");
   const targetName = val("mqTarget");
   const t = val("mqT");
-  const qn = val("mqSamples");
+  const qn = Math.round(val("mqSamples"));
   const xMin = -3.3;
   const xMax = 3.3;
   const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
@@ -1790,7 +1857,7 @@ function drawMongeQuantile() {
   const sq = inverseCdfSamples(xs, spdf, qn);
   const tq = inverseCdfSamples(xs, tpdf, qn);
   const qInterp = sq.map((x, i) => lerp(x, tq[i], t));
-  const currentHist = histogramCurve(qInterp, xMin, xMax, 90);
+  const currentHist = smoothDensityCurve(qInterp, xMin, xMax, 180, 0.052);
   const yMax = Math.max(...spdf, ...tpdf, ...currentHist.ys) * 1.08;
   const previewWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth : 760);
   const { ctx, w, h } = resizeCanvas(previewWidth < 720 ? 520 : 360);
@@ -1936,7 +2003,8 @@ function drawGaussian1d(ctx, box, t, shape) {
   const d0 = xs.map((x) => normalPdf(x, m0, s0));
   const d1 = xs.map((x) => normalPdf(x, m1, s1));
   const dt = xs.map((x) => normalPdf(x, mt, st));
-  const yMax = Math.max(...d0, ...d1, ...dt) * 1.08;
+  // Fix the vertical scale from the endpoint peaks so marginals do not breathe as t moves.
+  const yMax = (1.08 / (Math.sqrt(2 * Math.PI) * Math.min(s0, s1)));
   drawCurve(ctx, xs, d0, box, xMin, xMax, 0, yMax, "rgba(215,48,39,1)", 1.2);
   drawCurve(ctx, xs, d1, box, xMin, xMax, 0, yMax, "rgba(33,102,172,1)", 1.2);
   drawCurve(ctx, xs, dt, box, xMin, xMax, 0, yMax, mixColor(t, RED, BLUE, 1), 2.2);
@@ -2224,11 +2292,14 @@ function productPlan(a, b) {
 function drawCouplingMatrix(ctx, plan, a, b, box, title, barycentric = false) {
   const n = plan.length;
   const m = plan[0].length;
-  const strip = Math.min(42, Math.max(24, 0.16 * Math.min(box.w, box.h)));
-  const mx = box.x + strip;
-  const my = box.y + strip;
-  const mw = box.w - strip - 6;
-  const mh = box.h - strip - 6;
+  const strip = Math.min(38, Math.max(16, 0.12 * Math.min(box.w, box.h)));
+  const availableW = Math.max(1, box.w - strip - 8);
+  const availableH = Math.max(1, box.h - strip - 8);
+  const side = Math.max(1, Math.min(availableW, availableH));
+  const mx = box.x + strip + (availableW - side) / 2;
+  const my = box.y + strip + (availableH - side) / 2;
+  const mw = side;
+  const mh = side;
   ctx.fillStyle = "#fbfcfd";
   ctx.fillRect(box.x, box.y, box.w, box.h);
   ctx.strokeStyle = "#d8dee8";
@@ -2668,14 +2739,22 @@ function drawKantoGluing() {
   const { ctx, w, h } = resizeCanvas(420);
   const pad = 16;
   const gap = 18;
-  const bw = (w - 2 * pad - gap) / 2;
-  const bh = (h - 56 - gap) / 2;
-  const boxes = [
-    { x: pad, y: 42, w: bw, h: bh },
-    { x: pad + bw + gap, y: 42, w: bw, h: bh },
-    { x: pad, y: 42 + bh + gap, w: bw, h: bh },
-    { x: pad + bw + gap, y: 42 + bh + gap, w: bw, h: bh },
-  ];
+  const wide = w >= 760;
+  const boxes = [];
+  if (wide) {
+    const bw = (w - 2 * pad - 3 * gap) / 4;
+    const bh = h - 78;
+    for (let k = 0; k < 4; k += 1) boxes.push({ x: pad + k * (bw + gap), y: 50, w: bw, h: bh });
+  } else {
+    const bw = (w - 2 * pad - gap) / 2;
+    const bh = (h - 56 - gap) / 2;
+    boxes.push(
+      { x: pad, y: 42, w: bw, h: bh },
+      { x: pad + bw + gap, y: 42, w: bw, h: bh },
+      { x: pad, y: 42 + bh + gap, w: bw, h: bh },
+      { x: pad + bw + gap, y: 42 + bh + gap, w: bw, h: bh },
+    );
+  }
   drawCouplingMatrix(ctx, P, source, middle, boxes[0], "P: alpha to beta", false);
   drawCouplingMatrix(ctx, Q, middle, target, boxes[1], "Q: beta to gamma", false);
   drawCouplingMatrix(ctx, R, source, target, boxes[2], "glued R", false);
@@ -2750,14 +2829,16 @@ function binomialLaw(n, skew) {
 }
 
 function drawKantoClt() {
-  const n = val("kcltN");
+  const n = Math.round(val("kcltN"));
   const skew = val("kcltSkew");
   const law = binomialLaw(n, skew);
   const xMin = -4;
   const xMax = 4;
   const xs = Array.from({ length: 720 }, (_, i) => lerp(xMin, xMax, i / 719));
   const gaussian = xs.map((x) => normalPdf(x, 0, 1));
-  const yMax = Math.max(...gaussian, ...law.ps.map((p) => p * Math.sqrt(n))) * 1.15;
+  const dx = law.xs.length > 1 ? Math.abs(law.xs[1] - law.xs[0]) : 1;
+  const densities = law.ps.map((p) => p / Math.max(dx, 1e-12));
+  const yMax = Math.max(...gaussian, ...densities) * 1.15;
   const { ctx, w, h } = resizeCanvas(350);
   const box = { x: 34, y: 34, w: w - 58, h: h - 64 };
   drawFrame(ctx, box, "normalized Bernoulli sum");
@@ -2772,10 +2853,10 @@ function drawKantoClt() {
   const barW = Math.max(2, Math.min(16, box.w / Math.max(law.xs.length, 1) * 0.58));
   ctx.fillStyle = "rgba(123,50,148,.58)";
   for (let i = 0; i < law.xs.length; i += 1) {
-    const height = law.ps[i] * Math.sqrt(n);
+    const height = densities[i];
     ctx.fillRect(X(law.xs[i]) - barW / 2, Y(height), barW, Y(0) - Y(height));
   }
-  setStatus(`n = ${n}; skew = ${skew.toFixed(2)}; bars converge weakly toward the Gaussian curve`);
+  setStatus(`n = ${n}; skew = ${skew.toFixed(2)}; bar heights are masses divided by lattice spacing ${dx.toFixed(3)}`);
 }
 
 const DUAL_TARGETS = {
@@ -4682,41 +4763,6 @@ function regularizedPlanState(cost, a, b, epsilon, kind, iterations) {
   return { plan, row, col, error: 0.5 * (rowErr + colErr), f, g };
 }
 
-function drawRegularizerLawPanel(ctx, box, kind) {
-  drawFrame(ctx, box, "pointwise density law");
-  const sMin = -3;
-  const sMax = kind === "burg" ? 0.965 : 2.15;
-  const xs = Array.from({ length: 500 }, (_, i) => lerp(sMin, sMax, i / 499));
-  const ys = xs.map((s) => Math.min(regularizerLaw(kind, s), 7.5));
-  const yMax = Math.max(...ys, 1.25);
-  drawCurve(ctx, xs, ys, box, sMin, sMax, 0, yMax, VIOLET, 2.2);
-  const X = (x) => box.x + ((x - sMin) / (sMax - sMin)) * box.w;
-  const Y = (y) => box.y + box.h - (y / Math.max(yMax, 1e-12)) * box.h;
-  ctx.strokeStyle = "rgba(38,51,63,.22)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(box.x, Y(1));
-  ctx.lineTo(box.x + box.w, Y(1));
-  ctx.moveTo(X(0), box.y);
-  ctx.lineTo(X(0), box.y + box.h);
-  if (kind === "quadratic") {
-    ctx.moveTo(X(-1), box.y);
-    ctx.lineTo(X(-1), box.y + box.h);
-  }
-  ctx.stroke();
-  ctx.fillStyle = "rgba(251,252,253,.92)";
-  ctx.fillRect(box.x + 9, box.y + 8, 178, kind === "kl" ? 34 : 50);
-  ctx.fillStyle = "#26333f";
-  ctx.fillText(`r = h(s), ${regularizerLabel(kind)}`, box.x + 15, box.y + 24);
-  if (kind === "quadratic") {
-    ctx.fillStyle = RED;
-    ctx.fillText("threshold at s = -1", box.x + 15, box.y + 40);
-  } else if (kind === "burg") {
-    ctx.fillStyle = RED;
-    ctx.fillText("barrier as s approaches 1", box.x + 15, box.y + 40);
-  }
-}
-
 function drawSinkhornRegularizers() {
   const n = Math.round(val("srBins"));
   const epsilon = val("srEps");
@@ -4724,111 +4770,190 @@ function drawSinkhornRegularizers() {
   const source = val("srSource");
   const target = val("srTarget");
   const data = sinkhornGrid(n, source, target);
-  const iterations = kind === "burg" ? 120 : 72;
+  const iterations = epsilon < 0.025 ? (kind === "burg" ? 360 : 260) : epsilon < 0.06 ? (kind === "burg" ? 240 : 180) : kind === "burg" ? 150 : 96;
   const state = kind === "kl"
-    ? sinkhornState(data.cost, data.a, data.b, epsilon, 160)
+    ? sinkhornState(data.cost, data.a, data.b, epsilon, epsilon < 0.025 ? 520 : epsilon < 0.06 ? 340 : 190)
     : regularizedPlanState(data.cost, data.a, data.b, epsilon, kind, iterations);
   const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
-  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 610 : 390);
-  const vertical = w < 720;
-  const gap = 30;
-  const boxes = vertical
-    ? [
-        { x: 22, y: 40, w: w - 44, h: (h - 100) / 2 },
-        { x: 22, y: 40 + (h - 100) / 2 + gap, w: w - 44, h: (h - 100) / 2 },
-      ]
-    : [
-        { x: 22, y: 44, w: (w - 74) / 2, h: h - 82 },
-        { x: 22 + (w - 74) / 2 + gap, y: 44, w: (w - 74) / 2, h: h - 82 },
-      ];
-  drawRegularizerLawPanel(ctx, boxes[0], kind);
-  drawCouplingMatrix(ctx, state.plan, data.a, data.b, boxes[1], `${regularizerLabel(kind)} coupling`);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 570 : 390);
+  drawCouplingMatrix(ctx, state.plan, data.a, data.b, { x: 22, y: 44, w: w - 44, h: h - 82 }, `${regularizerLabel(kind)} coupling`);
   const maxMass = Math.max(...state.plan.flat(), 1e-12);
   const positive = state.plan.flat().filter((z) => z > 1e-5 * maxMass).length;
   setStatus(`${regularizerLabel(kind)}; epsilon ${epsilon.toFixed(3)}; marginal violation ${state.error.toExponential(1)}; ${positive} visible cells`);
 }
 
-function sinkhornCostForWeights(xs, a, b, epsilon) {
-  const cost = xs.map((x) => xs.map((y) => (x - y) ** 2));
-  const scale = medianPositive(cost);
-  const normalizedCost = cost.map((row) => row.map((z) => z / Math.max(scale, 1e-12)));
-  return sinkhornState(normalizedCost, a, b, epsilon, 130).value;
-}
-
-function debiasWeights(n, shift, spread) {
-  const xs = Array.from({ length: n }, (_, i) => lerp(-3.15, 3.15, i / Math.max(n - 1, 1)));
-  const target = discreteWeightsFromDensity(normalizedDensity(xs, { weights: [0.5, 0.5], means: [-1.0, 1.0], stds: [0.34, 0.34] }));
-  const model = discreteWeightsFromDensity(normalizedDensity(xs, { weights: [0.5, 0.5], means: [-1.0 + shift, 1.0 + shift], stds: [0.34 * spread, 0.34 * spread] }));
-  return { xs, model, target };
-}
-
-function drawDebiasObjectivePanel(ctx, box, epsilon, spread, shift) {
-  drawFrame(ctx, box, "raw and debiased objectives");
-  const shifts = Array.from({ length: 29 }, (_, i) => lerp(-1.25, 1.25, i / 28));
-  const raw = [];
-  const debiased = [];
-  for (const s of shifts) {
-    const data = debiasWeights(24, s, spread);
-    const cross = sinkhornCostForWeights(data.xs, data.model, data.target, epsilon);
-    const selfModel = sinkhornCostForWeights(data.xs, data.model, data.model, epsilon);
-    const selfTarget = sinkhornCostForWeights(data.xs, data.target, data.target, epsilon);
-    raw.push(cross);
-    debiased.push(cross - 0.5 * selfModel - 0.5 * selfTarget);
+function debiasPointClouds(n) {
+  const random = rng(5037);
+  const targetCenters = [
+    [-0.95, -0.32],
+    [0.12, 0.62],
+    [0.92, -0.16],
+  ];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = targetCenters[i % targetCenters.length];
+    target.push([c[0] + 0.18 * randn(random), c[1] + 0.15 * randn(random)]);
   }
-  const yMin = Math.min(...debiased, 0);
-  const yMax = Math.max(...raw, ...debiased, 1e-6);
-  drawCurve(ctx, shifts, raw, box, shifts[0], shifts[shifts.length - 1], yMin, yMax, "rgba(95,102,112,.8)", 1.75);
-  drawCurve(ctx, shifts, debiased, box, shifts[0], shifts[shifts.length - 1], yMin, yMax, VIOLET, 2.2);
-  const X = (x) => box.x + ((x - shifts[0]) / (shifts[shifts.length - 1] - shifts[0])) * box.w;
-  ctx.strokeStyle = "rgba(215,48,39,.7)";
-  ctx.lineWidth = 1.2;
+  const source = [];
+  for (let i = 0; i < n; i += 1) {
+    source.push([-0.2 + 0.22 * randn(random), -0.1 + 0.2 * randn(random)]);
+  }
+  return { source, target };
+}
+
+function kernelBarycentricForce(point, target, epsilon) {
+  const sigma2 = Math.max(epsilon * epsilon, 1e-4);
+  let sx = 0;
+  let sy = 0;
+  let sw = 0;
+  for (const q of target) {
+    const dx = q[0] - point[0];
+    const dy = q[1] - point[1];
+    const w = Math.exp(-(dx * dx + dy * dy) / (2 * sigma2));
+    sx += w * q[0];
+    sy += w * q[1];
+    sw += w;
+  }
+  if (sw < 1e-12) return [0, 0];
+  return [sx / sw - point[0], sy / sw - point[1]];
+}
+
+function selfRepulsionForce(points, index, epsilon) {
+  const sigma2 = Math.max(epsilon * epsilon, 1e-4);
+  const p = points[index];
+  let fx = 0;
+  let fy = 0;
+  let sw = 0;
+  for (let j = 0; j < points.length; j += 1) {
+    if (j === index) continue;
+    const q = points[j];
+    const dx = p[0] - q[0];
+    const dy = p[1] - q[1];
+    const d2 = dx * dx + dy * dy + 1e-5;
+    const w = Math.exp(-d2 / (2 * sigma2));
+    fx += w * dx / Math.sqrt(d2);
+    fy += w * dy / Math.sqrt(d2);
+    sw += w;
+  }
+  return sw > 1e-12 ? [fx / sw, fy / sw] : [0, 0];
+}
+
+function simulateDebiasCloud(source, target, epsilon, steps, correction) {
+  const dt = 0.16;
+  const snapshots = [];
+  let points = source.map((p) => p.slice());
+  const saveEvery = Math.max(1, Math.floor(steps / 18));
+  snapshots.push(points.map((p) => p.slice()));
+  for (let it = 0; it < steps; it += 1) {
+    const next = points.map((p) => p.slice());
+    for (let i = 0; i < points.length; i += 1) {
+      const attract = kernelBarycentricForce(points[i], target, epsilon);
+      const repel = correction > 0 ? selfRepulsionForce(points, i, epsilon) : [0, 0];
+      next[i][0] = clamp(points[i][0] + dt * (attract[0] + correction * repel[0]), -1.75, 1.75);
+      next[i][1] = clamp(points[i][1] + dt * (attract[1] + correction * repel[1]), -1.35, 1.35);
+    }
+    points = next;
+    if ((it + 1) % saveEvery === 0 || it + 1 === steps) snapshots.push(points.map((p) => p.slice()));
+  }
+  return snapshots;
+}
+
+function meanNearestDistance(points, target) {
+  let total = 0;
+  for (const p of points) {
+    let best = Infinity;
+    for (const q of target) {
+      const dx = p[0] - q[0];
+      const dy = p[1] - q[1];
+      best = Math.min(best, Math.sqrt(dx * dx + dy * dy));
+    }
+    total += best;
+  }
+  return total / Math.max(points.length, 1);
+}
+
+function drawDebiasCloudPanel(ctx, box, target, snapshots, title, note) {
+  const lim = { xmin: -1.55, xmax: 1.55, ymin: -1.18, ymax: 1.18 };
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  drawFrame(ctx, box, title);
+  ctx.save();
   ctx.beginPath();
-  ctx.moveTo(X(shift), box.y);
-  ctx.lineTo(X(shift), box.y + box.h);
-  ctx.stroke();
-  ctx.fillStyle = "rgba(251,252,253,.9)";
-  ctx.fillRect(box.x + 8, box.y + 8, 170, 36);
+  ctx.rect(box.x, box.y, box.w, box.h);
+  ctx.clip();
+
+  ctx.fillStyle = "rgba(33,102,172,.28)";
+  for (const q of target) {
+    ctx.beginPath();
+    ctx.arc(X(q), Y(q), 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  const n = snapshots[0].length;
+  const stride = Math.max(1, Math.floor(n / 22));
+  for (let i = 0; i < n; i += stride) {
+    for (let k = 1; k < snapshots.length; k += 1) {
+      const a = snapshots[k - 1][i];
+      const b = snapshots[k][i];
+      const t = k / Math.max(snapshots.length - 1, 1);
+      ctx.strokeStyle = mixColor(t, RED, BLUE, 0.34);
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(X(a), Y(a));
+      ctx.lineTo(X(b), Y(b));
+      ctx.stroke();
+    }
+  }
+
+  const first = snapshots[0];
+  const last = snapshots[snapshots.length - 1];
+  for (const p of first) {
+    ctx.fillStyle = "rgba(215,48,39,.32)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.0, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of last) {
+    ctx.fillStyle = "rgba(123,50,148,.78)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(251,252,253,.88)";
+  ctx.fillRect(box.x + 8, box.y + box.h - 34, box.w - 16, 24);
   ctx.fillStyle = "#4a5563";
-  ctx.fillText("gray: raw Sinkhorn", box.x + 14, box.y + 23);
-  ctx.fillStyle = VIOLET;
-  ctx.fillText("violet: debiased", box.x + 14, box.y + 39);
-  return { raw, debiased, shifts };
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(note, box.x + 14, box.y + box.h - 17);
 }
 
 function drawSinkhornDebias() {
   const epsilon = val("sdEps");
-  const shift = val("sdShift");
-  const spread = val("sdSpread");
-  const data = debiasWeights(42, shift, spread);
-  const cross = sinkhornCostForWeights(data.xs, data.model, data.target, epsilon);
-  const selfModel = sinkhornCostForWeights(data.xs, data.model, data.model, epsilon);
-  const selfTarget = sinkhornCostForWeights(data.xs, data.target, data.target, epsilon);
-  const debiased = cross - 0.5 * selfModel - 0.5 * selfTarget;
+  const correction = val("sdCorrection");
+  const steps = Math.round(val("sdSteps"));
+  const n = 72;
+  const data = debiasPointClouds(n);
+  const raw = simulateDebiasCloud(data.source, data.target, epsilon, steps, 0);
+  const debiased = simulateDebiasCloud(data.source, data.target, epsilon, steps, correction);
   const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
-  const { ctx, w, h } = resizeCanvas(frameWidth < 700 ? 560 : 360);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 700 ? 620 : 380);
   const vertical = w < 700;
   const gap = 30;
   const boxes = vertical
     ? [
-        { x: 24, y: 40, w: w - 48, h: (h - 100) / 2 },
-        { x: 24, y: 40 + (h - 100) / 2 + gap, w: w - 48, h: (h - 100) / 2 },
+        { x: 24, y: 44, w: w - 48, h: (h - 112) / 2 },
+        { x: 24, y: 44 + (h - 112) / 2 + gap, w: w - 48, h: (h - 112) / 2 },
       ]
     : [
-        { x: 24, y: 44, w: (w - 78) / 2, h: h - 84 },
-        { x: 24 + (w - 78) / 2 + gap, y: 44, w: (w - 78) / 2, h: h - 84 },
+        { x: 24, y: 44, w: (w - 78) / 2, h: h - 86 },
+        { x: 24 + (w - 78) / 2 + gap, y: 44, w: (w - 78) / 2, h: h - 86 },
       ];
-  drawFrame(ctx, boxes[0], "target and model densities");
-  const dMax = Math.max(...data.model, ...data.target);
-  drawCurve(ctx, data.xs, data.target, boxes[0], data.xs[0], data.xs[data.xs.length - 1], 0, dMax, BLUE, 1.9);
-  drawCurve(ctx, data.xs, data.model, boxes[0], data.xs[0], data.xs[data.xs.length - 1], 0, dMax, RED, 1.9);
-  ctx.fillStyle = "rgba(251,252,253,.9)";
-  ctx.fillRect(boxes[0].x + 9, boxes[0].y + 8, 112, 35);
-  ctx.fillStyle = BLUE;
-  ctx.fillText("target beta", boxes[0].x + 15, boxes[0].y + 23);
-  ctx.fillStyle = RED;
-  ctx.fillText("model alpha", boxes[0].x + 15, boxes[0].y + 39);
-  drawDebiasObjectivePanel(ctx, boxes[1], epsilon, spread, shift);
-  setStatus(`raw ${cross.toFixed(3)}; debiased ${debiased.toFixed(3)}; epsilon ${epsilon.toFixed(3)}; model shift ${shift.toFixed(2)}`);
+  drawDebiasCloudPanel(ctx, boxes[0], data.target, raw, "raw entropic loss", "target in blue; moving cloud remains too compact");
+  drawDebiasCloudPanel(ctx, boxes[1], data.target, debiased, "Sinkhorn divergence", "self-bias correction spreads the fitted cloud");
+  const rawCoverage = meanNearestDistance(data.target, raw[raw.length - 1]);
+  const debCoverage = meanNearestDistance(data.target, debiased[debiased.length - 1]);
+  setStatus(`2D debiasing effect; epsilon ${epsilon.toFixed(2)}; correction ${correction.toFixed(2)}; target-coverage distance raw ${rawCoverage.toFixed(2)}, debiased ${debCoverage.toFixed(2)}`);
 }
 
 function logSumExp(values) {
@@ -6012,7 +6137,7 @@ function drawOtProblemsBarycenter() {
   for (let s = 0; s < quantiles.length; s += 1) {
     for (let i = 0; i < levels; i += 1) qBar[i] += weights[s] * quantiles[s][i];
   }
-  const baryHist = histogramCurve(qBar, xMin, xMax, 96);
+  const baryHist = smoothDensityCurve(qBar, xMin, xMax, 220, 0.055);
   const yMax = Math.max(...pdfs.flat(), ...baryHist.ys) * 1.08;
   const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
   const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 720 : 410);
@@ -8271,19 +8396,37 @@ function drawMongePolar() {
 
 function drawKantoBirkhoff() {
   const theta = val("kbvMass");
+  const n = Math.round(val("kbvSize"));
   const { ctx, w, h } = resizeCanvas(405);
-  const n = 7;
   const leftW = Math.min(310, w * 0.42);
   const matrixBox = { x: 18, y: 48, w: leftW - 38, h: leftW - 38 };
   const graphBox = { x: leftW + 28, y: 48, w: w - leftW - 48, h: h - 76 };
-  const cycle = [[0, 1], [1, 1], [1, 4], [4, 4], [4, 6], [5, 6], [5, 2], [0, 2]];
-  const isolated = [[2, 0], [3, 5], [6, 3]];
+  const cycleLen = Math.max(3, n - 2);
+  const cycleRows = Array.from({ length: cycleLen }, (_, i) => i);
+  const cycleCols = Array.from({ length: cycleLen }, (_, i) => i);
+  const unusedRows = Array.from({ length: n - cycleLen }, (_, i) => cycleLen + i);
+  const unusedCols = Array.from({ length: n - cycleLen }, (_, i) => cycleLen + i);
+  const cycleCells = new Set();
+  const cycleEdges = [];
+  const isolated = [];
   const P = Array.from({ length: n }, () => Array(n).fill(0));
-  for (const [i, j] of isolated) P[i][j] = 1;
-  for (let k = 0; k < cycle.length; k += 2) {
-    P[cycle[k][0]][cycle[k][1]] = theta;
-    P[cycle[k + 1][0]][cycle[k + 1][1]] = 1 - theta;
+  for (let k = 0; k < cycleLen; k += 1) {
+    const r = cycleRows[k];
+    const c0 = cycleCols[k];
+    const c1 = cycleCols[(k + 1) % cycleLen];
+    P[r][c0] = theta;
+    P[r][c1] = 1 - theta;
+    cycleCells.add(`${r},${c0}`);
+    cycleCells.add(`${r},${c1}`);
+    cycleEdges.push([r, c0, theta]);
+    cycleEdges.push([r, c1, 1 - theta]);
   }
+  for (let k = 0; k < unusedRows.length; k += 1) {
+    const edge = [unusedRows[k], unusedCols[k]];
+    isolated.push(edge);
+    P[edge[0]][edge[1]] = 1;
+  }
+  const cycleColor = "#f59e0b";
   ctx.fillStyle = "#fbfcfd";
   ctx.fillRect(matrixBox.x - 8, matrixBox.y - 8, matrixBox.w + 16, matrixBox.h + 16);
   ctx.strokeStyle = "#d8dee8";
@@ -8291,15 +8434,16 @@ function drawKantoBirkhoff() {
   const cell = matrixBox.w / n;
   for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) {
     const z = P[i][j];
+    const inCycle = cycleCells.has(`${i},${j}`);
     const g = Math.round(255 - 215 * z);
-    ctx.fillStyle = `rgb(${g},${g},${g})`;
+    ctx.fillStyle = inCycle ? `rgba(245,158,11,${0.16 + 0.44 * z})` : `rgb(${g},${g},${g})`;
     ctx.fillRect(matrixBox.x + j * cell, matrixBox.y + i * cell, cell, cell);
-    ctx.strokeStyle = "#1f2933";
-    ctx.lineWidth = 0.55;
+    ctx.strokeStyle = inCycle ? cycleColor : "#1f2933";
+    ctx.lineWidth = inCycle ? 1.8 : 0.55;
     ctx.strokeRect(matrixBox.x + j * cell, matrixBox.y + i * cell, cell, cell);
     if (z > 0) {
-      ctx.fillStyle = z === 1 ? "#111827" : VIOLET;
-      ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+      ctx.fillStyle = inCycle ? "#7c2d12" : z === 1 ? "#111827" : VIOLET;
+      ctx.font = `${n > 8 ? 8 : 10}px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif`;
       ctx.textAlign = "center";
       ctx.fillText(z === 1 ? "1" : z.toFixed(2), matrixBox.x + (j + 0.5) * cell, matrixBox.y + (i + 0.58) * cell);
     }
@@ -8312,18 +8456,32 @@ function drawKantoBirkhoff() {
   const redX = graphBox.x + 42;
   const blueX = graphBox.x + graphBox.w - 42;
   const Y = (i) => graphBox.y + 28 + (i / (n - 1)) * (graphBox.h - 56);
-  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) if (P[i][j] > 0) {
-    const inCycle = cycle.some(([a, b]) => a === i && b === j);
-    ctx.strokeStyle = inCycle ? "rgba(123,50,148,.82)" : "rgba(0,0,0,.48)";
-    ctx.lineWidth = P[i][j] === 1 ? 2.1 : 1.05;
-    ctx.beginPath(); ctx.moveTo(redX, Y(i)); ctx.lineTo(blueX, Y(j)); ctx.stroke();
+  function drawBirkhoffEdge(i, j, color, width, dash = [], alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(redX, Y(i));
+    ctx.lineTo(blueX, Y(j));
+    ctx.stroke();
+    ctx.restore();
   }
+  for (const [i, j] of isolated) drawBirkhoffEdge(i, j, "rgba(0,0,0,.48)", 2.0);
+  for (const [i, j] of cycleEdges) drawBirkhoffEdge(i, j, "rgba(255,255,255,.92)", 6.0);
+  for (const [i, j, mass] of cycleEdges) drawBirkhoffEdge(i, j, cycleColor, mass > 0.5 ? 3.3 : 2.7, [7, 3], 0.95);
+  ctx.setLineDash([]);
   for (let i = 0; i < n; i += 1) {
     ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(redX, Y(i), 5, 0, 2 * Math.PI); ctx.fill();
     ctx.fillStyle = BLUE; ctx.beginPath(); ctx.arc(blueX, Y(i), 5, 0, 2 * Math.PI); ctx.fill();
   }
+  ctx.fillStyle = cycleColor;
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("orange dashed edges: minimal alternating cycle", graphBox.x + 14, graphBox.y + graphBox.h - 14);
   drawSmallLabel(ctx, "minimal alternating cycle", graphBox.x + graphBox.w / 2, 24);
-  setStatus(`cycle entries alternate ${theta.toFixed(2)} and ${(1 - theta).toFixed(2)}; perturbing around the cycle keeps all marginals.`);
+  setStatus(`${n}x${n} bistochastic plan; orange cycle has ${2 * cycleLen} alternating edges with masses ${theta.toFixed(2)} and ${(1 - theta).toFixed(2)}.`);
 }
 
 function drawKantoDRO() {
@@ -8415,7 +8573,8 @@ function bridgeCoupling(source, target, eps) {
 
 function drawSinkhornBridges() {
   const eps = val("sbrEps");
-  const paths = val("sbrPaths");
+  const paths = Math.round(val("sbrPaths"));
+  const steps = Math.round(val("sbrSteps"));
   const seed = val("sbrSeed");
   const random = rng(seed);
   const n = 6;
@@ -8437,21 +8596,28 @@ function drawSinkhornBridges() {
     const u = random() * total;
     let k = cum.findIndex((z) => z >= u); if (k < 0) k = cum.length - 1;
     const [i, j] = coupling[k]; const a = source[i]; const b = target[j];
+    const wx = [0];
+    const wy = [0];
+    for (let q = 1; q <= steps; q += 1) {
+      const dt = 1 / steps;
+      wx.push(wx[q - 1] + Math.sqrt(dt) * randn(random));
+      wy.push(wy[q - 1] + Math.sqrt(dt) * randn(random));
+    }
     ctx.strokeStyle = mixColor(r / Math.max(paths - 1, 1), RED, BLUE, 0.24); ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let q = 0; q <= 34; q += 1) {
-      const t = q / 34;
-      const noise = Math.sqrt(Math.max(eps, 0) * t * (1 - t)) * 0.22;
-      const wobble = noise * Math.sin((q + 1) * (1.7 + 0.31 * r));
-      const nx = -(b[1] - a[1]), ny = b[0] - a[0], nr = Math.max(Math.hypot(nx, ny), 1e-6);
-      const p = [lerp(a[0], b[0], t) + (wobble * nx) / nr, lerp(a[1], b[1], t) + (wobble * ny) / nr];
+    for (let q = 0; q <= steps; q += 1) {
+      const t = q / steps;
+      const scale = 0.18 * Math.sqrt(Math.max(eps, 0));
+      const bx = wx[q] - t * wx[steps];
+      const by = wy[q] - t * wy[steps];
+      const p = [lerp(a[0], b[0], t) + scale * bx, lerp(a[1], b[1], t) + scale * by];
       if (q === 0) ctx.moveTo(X(p), Y(p)); else ctx.lineTo(X(p), Y(p));
     }
     ctx.stroke();
   }
   for (const p of source) { ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(X(p), Y(p), 4, 0, 2 * Math.PI); ctx.fill(); }
   for (const p of target) { ctx.fillStyle = BLUE; ctx.beginPath(); ctx.arc(X(p), Y(p), 3.4, 0, 2 * Math.PI); ctx.fill(); }
-  setStatus(eps < 1e-5 ? "epsilon = 0: OT rays without Brownian noise" : `epsilon ${eps.toFixed(2)}: Brownian-bridge noise and coupling spread both increase`);
+  setStatus(eps < 1e-5 ? `epsilon = 0: OT rays with ${steps} polyline points` : `epsilon ${eps.toFixed(2)}: Brownian bridges use ${steps} discretization points`);
 }
 
 function nearestGridIndex(xs, x) {
@@ -9055,74 +9221,165 @@ function drawMongeCaffarelli() {
 
 function drawSinkhornEntropyGeometry() {
   const epsilon = val("segEps");
-  const costs = [0.22, 0.64, 1.0];
-  const soft = (eps) => {
-    const z = costs.map((c) => Math.exp(-c / Math.max(eps, 1e-4)));
-    const s = z.reduce((a, b) => a + b, 0);
-    return z.map((v) => v / s);
-  };
-  const bary = (p, box) => {
-    const A = [box.x + box.w / 2, box.y + 12];
-    const B = [box.x + 14, box.y + box.h - 14];
-    const C = [box.x + box.w - 14, box.y + box.h - 14];
-    return [
-      p[0] * A[0] + p[1] * B[0] + p[2] * C[0],
-      p[0] * A[1] + p[1] * B[1] + p[2] * C[1],
-    ];
-  };
+  const edges = Math.round(val("segEdges"));
   const { ctx, w, h } = resizeCanvas(410);
-  const boxes = beyondBoxes(w, h, 2, 720);
-  for (const [k, box] of boxes.entries()) {
-    drawFrame(ctx, box, k === 0 ? "linear LP geometry" : "entropy central path");
-    const A = bary([1, 0, 0], box);
-    const B = bary([0, 1, 0], box);
-    const C = bary([0, 0, 1], box);
-    ctx.fillStyle = "#fbfcfd";
-    ctx.beginPath();
-    ctx.moveTo(A[0], A[1]);
-    ctx.lineTo(B[0], B[1]);
-    ctx.lineTo(C[0], C[1]);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = "#26333f";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-    if (k === 0) {
-      for (let i = 0; i <= 28; i += 1) {
-        for (let j = 0; j <= 28 - i; j += 1) {
-          const p = [i / 28, j / 28, 1 - (i + j) / 28];
-          const valCost = costs[0] * p[0] + costs[1] * p[1] + costs[2] * p[2];
-          const q = bary(p, box);
-          ctx.fillStyle = mixColor(clamp((valCost - costs[0]) / (costs[2] - costs[0]), 0, 1), BLUE, RED, 0.18);
-          ctx.fillRect(q[0] - 2.2, q[1] - 2.2, 4.4, 4.4);
+  const box = { x: 26, y: 32, w: w - 52, h: h - 58 };
+  drawFrame(ctx, box, `log-barrier central path on a ${edges}-gon`);
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2 + 3;
+  const radius = 0.53 * Math.min(box.w, box.h);
+  const angle0 = -Math.PI / 2 + (edges % 2 === 0 ? Math.PI / edges : 0);
+  const vertices = Array.from({ length: edges }, (_, k) => [
+    cx + radius * Math.cos(angle0 + (2 * Math.PI * k) / edges),
+    cy + radius * Math.sin(angle0 + (2 * Math.PI * k) / edges),
+  ]);
+  const edgeData = [];
+  for (let k = 0; k < edges; k += 1) {
+    const a = vertices[k];
+    const b = vertices[(k + 1) % edges];
+    const ex = b[0] - a[0];
+    const ey = b[1] - a[1];
+    const len = Math.max(Math.hypot(ex, ey), 1e-12);
+    const centerCross = ex * (cy - a[1]) - ey * (cx - a[0]);
+    const sign = centerCross >= 0 ? 1 : -1;
+    edgeData.push({ a, b, ex, ey, len, sign });
+  }
+  const signedDistance = (e, p) => e.sign * (e.ex * (p[1] - e.a[1]) - e.ey * (p[0] - e.a[0])) / e.len;
+  const inside = (p) => edgeData.every((e) => signedDistance(e, p) >= 0);
+  const objective = (p, eps) => {
+    const rx = (p[0] - cx) / radius;
+    const ry = (p[1] - cy) / radius;
+    let barrier = 0;
+    for (const e of edgeData) {
+      const d = signedDistance(e, p);
+      if (d <= 1e-5) return Infinity;
+      barrier -= Math.log(d / radius);
+    }
+    return 0.92 * rx - 0.38 * ry + eps * barrier;
+  };
+  const grid = 86;
+  const values = [];
+  let vMin = Infinity;
+  let vMax = -Infinity;
+  let best = null;
+  let bestVal = Infinity;
+  for (let iy = 0; iy < grid; iy += 1) {
+    for (let ix = 0; ix < grid; ix += 1) {
+      const p = [box.x + ((ix + 0.5) / grid) * box.w, box.y + ((iy + 0.5) / grid) * box.h];
+      if (!inside(p)) {
+        values.push(Infinity);
+        continue;
+      }
+      const v = objective(p, epsilon);
+      values.push(v);
+      vMin = Math.min(vMin, v);
+      vMax = Math.max(vMax, v);
+      if (v < bestVal) {
+        bestVal = v;
+        best = p;
+      }
+    }
+  }
+  const finite = values.filter(Number.isFinite).sort((a, b) => a - b);
+  const lo = finite[Math.floor(0.04 * (finite.length - 1))] ?? vMin;
+  const hi = finite[Math.floor(0.94 * (finite.length - 1))] ?? vMax;
+  const cellW = box.w / grid;
+  const cellH = box.h / grid;
+  for (let iy = 0; iy < grid; iy += 1) {
+    for (let ix = 0; ix < grid; ix += 1) {
+      const v = values[iy * grid + ix];
+      if (!Number.isFinite(v)) continue;
+      const s = clamp((v - lo) / Math.max(hi - lo, 1e-12), 0, 1);
+      ctx.fillStyle = mixColor(s, BLUE, RED, 0.28);
+      ctx.fillRect(box.x + ix * cellW, box.y + iy * cellH, cellW + 0.5, cellH + 0.5);
+    }
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0][0], vertices[0][1]);
+  for (let k = 1; k < vertices.length; k += 1) ctx.lineTo(vertices[k][0], vertices[k][1]);
+  ctx.closePath();
+  ctx.clip();
+  const levels = Array.from({ length: 8 }, (_, k) => lerp(lo, hi, (k + 1) / 10));
+  ctx.strokeStyle = "rgba(38,51,63,.42)";
+  ctx.lineWidth = 0.8;
+  for (const level of levels) {
+    for (let iy = 0; iy < grid - 1; iy += 1) {
+      for (let ix = 0; ix < grid - 1; ix += 1) {
+        const ids = [iy * grid + ix, iy * grid + ix + 1, (iy + 1) * grid + ix + 1, (iy + 1) * grid + ix];
+        const vs = ids.map((id) => values[id]);
+        if (!vs.every(Number.isFinite)) continue;
+        const pts = [
+          [box.x + (ix + 0.5) * cellW, box.y + (iy + 0.5) * cellH],
+          [box.x + (ix + 1.5) * cellW, box.y + (iy + 0.5) * cellH],
+          [box.x + (ix + 1.5) * cellW, box.y + (iy + 1.5) * cellH],
+          [box.x + (ix + 0.5) * cellW, box.y + (iy + 1.5) * cellH],
+        ];
+        const crossings = [];
+        for (let e = 0; e < 4; e += 1) {
+          const v0 = vs[e];
+          const v1 = vs[(e + 1) % 4];
+          if ((v0 - level) * (v1 - level) > 0 || Math.abs(v0 - v1) < 1e-12) continue;
+          const t = clamp((level - v0) / (v1 - v0), 0, 1);
+          crossings.push([lerp(pts[e][0], pts[(e + 1) % 4][0], t), lerp(pts[e][1], pts[(e + 1) % 4][1], t)]);
+        }
+        if (crossings.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(crossings[0][0], crossings[0][1]);
+          ctx.lineTo(crossings[1][0], crossings[1][1]);
+          ctx.stroke();
         }
       }
-    } else {
-      ctx.beginPath();
-      const epsList = Array.from({ length: 80 }, (_, i) => Math.exp(lerp(Math.log(0.025), Math.log(2.0), i / 79)));
-      epsList.forEach((eps, i) => {
-        const q = bary(soft(eps), box);
-        if (i === 0) ctx.moveTo(q[0], q[1]);
-        else ctx.lineTo(q[0], q[1]);
-      });
-      ctx.strokeStyle = VIOLET;
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
     }
-    [[A, "1"], [B, "2"], [C, "3"]].forEach(([q, label], i) => {
-      ctx.fillStyle = i === 0 ? BLUE : i === 1 ? VIOLET : RED;
-      ctx.beginPath();
-      ctx.arc(q[0], q[1], 4, 0, 2 * Math.PI);
-      ctx.fill();
-      drawSmallLabel(ctx, `p${label}`, q[0], q[1] - 9, "#26333f", "center");
-    });
   }
-  const q = bary(soft(epsilon), boxes[1]);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0][0], vertices[0][1]);
+  for (let k = 1; k < vertices.length; k += 1) ctx.lineTo(vertices[k][0], vertices[k][1]);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,255,255,.05)";
+  ctx.fill();
+  ctx.strokeStyle = "#26333f";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  const epsList = Array.from({ length: 80 }, (_, i) => Math.exp(lerp(Math.log(0.025), Math.log(2.0), i / 79)));
+  ctx.beginPath();
+  for (let k = 0; k < epsList.length; k += 1) {
+    let arg = null;
+    let valBest = Infinity;
+    for (let iy = 0; iy < grid; iy += 2) {
+      for (let ix = 0; ix < grid; ix += 2) {
+        const p = [box.x + ((ix + 0.5) / grid) * box.w, box.y + ((iy + 0.5) / grid) * box.h];
+        if (!inside(p)) continue;
+        const v = objective(p, epsList[k]);
+        if (v < valBest) {
+          valBest = v;
+          arg = p;
+        }
+      }
+    }
+    if (!arg) continue;
+    if (k === 0) ctx.moveTo(arg[0], arg[1]);
+    else ctx.lineTo(arg[0], arg[1]);
+  }
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+  const q = best || [cx, cy];
+  ctx.strokeStyle = "rgba(255,255,255,.95)";
+  ctx.lineWidth = 4.8;
+  ctx.beginPath();
+  ctx.arc(q[0], q[1], 6.2, 0, 2 * Math.PI);
+  ctx.stroke();
   ctx.fillStyle = "#111827";
   ctx.beginPath();
   ctx.arc(q[0], q[1], 5, 0, 2 * Math.PI);
   ctx.fill();
-  setStatus(`soft minimizer p_i ∝ exp(-c_i/epsilon); epsilon ${epsilon.toFixed(3)} moves from barycenter-like to LP vertex.`);
+  ctx.fillStyle = "rgba(17,24,39,.85)";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = q[0] < cx ? "left" : "right";
+  ctx.fillText("current ε", q[0] + (q[0] < cx ? 9 : -9), q[1] - 9);
+  setStatus(`${edges}-edge polytope; colored background and contours show linear objective plus epsilon log barrier, epsilon=${epsilon.toFixed(3)}`);
 }
 
 function detMatrix(A) {
@@ -9921,7 +10178,7 @@ function init() {
     bind(drawLineCost);
   } else if (kind === "quantile") {
     controls.innerHTML = [
-      slider("n", "points", 52, 8, 140, 2),
+      slider("n", "levels", 120, 24, 280, 4),
       select("source", "source", Object.keys(MIXTURES), "two"),
       select("target", "target", Object.keys(MIXTURES), "three"),
     ].join("");
@@ -9992,7 +10249,7 @@ function init() {
       slider("mqT", "t", 0.5, 0, 1, 0.01),
       select("mqSource", "source", Object.keys(MIXTURES), "wide_two"),
       select("mqTarget", "target", Object.keys(MIXTURES), "three"),
-      slider("mqSamples", "levels", 180, 60, 360, 10),
+      slider("mqSamples", "levels", 720, 120, 1440, 60),
     ].join("");
     bind(drawMongeQuantile);
   } else if (kind === "mongetriangular") {
@@ -10197,17 +10454,17 @@ function init() {
   } else if (kind === "sinkhornregularizers") {
     controls.innerHTML = [
       select("srKind", "regularizer", ["kl", "burg", "quadratic"], "kl"),
-      slider("srEps", "epsilon", 0.24, 0.18, 0.55, 0.005),
-      slider("srBins", "bins", 28, 18, 42, 2),
+      slider("srEps", "epsilon", 0.075, 0.006, 0.55, 0.001),
+      slider("srBins", "bins", 30, 18, 48, 2),
       select("srSource", "source", Object.keys(MIXTURES), "wide_two"),
       select("srTarget", "target", Object.keys(MIXTURES), "three"),
     ].join("");
     bind(drawSinkhornRegularizers);
   } else if (kind === "sinkhorndebias") {
     controls.innerHTML = [
-      slider("sdEps", "epsilon", 0.24, 0.03, 0.85, 0.01),
-      slider("sdShift", "model shift", 0.55, -1.2, 1.2, 0.05),
-      slider("sdSpread", "model spread", 1, 0.65, 1.45, 0.05),
+      slider("sdEps", "smoothing", 0.55, 0.24, 0.95, 0.01),
+      slider("sdCorrection", "debias strength", 0.48, 0, 1.05, 0.01),
+      slider("sdSteps", "steps", 54, 18, 120, 2),
     ].join("");
     bind(drawSinkhornDebias);
   } else if (kind === "sinkhorncontinuous") {
@@ -10320,7 +10577,7 @@ function init() {
     controls.innerHTML = [
       slider("opbU", "u weight", 0.42, 0, 1, 0.01),
       slider("opbV", "v weight", 0.58, 0, 1, 0.01),
-      slider("opbLevels", "quantiles", 180, 60, 360, 10),
+      slider("opbLevels", "quantiles", 900, 180, 1800, 60),
     ].join("");
     bind(drawOtProblemsBarycenter);
   } else if (kind === "otproblemsgaussianbarycenter") {
@@ -10582,6 +10839,7 @@ function init() {
     bind(drawMongePolar);
   } else if (kind === "kantobirkhoff") {
     controls.innerHTML = [
+      slider("kbvSize", "matrix size", 7, 4, 10, 1),
       slider("kbvMass", "cycle mass", 0.36, 0.05, 0.95, 0.01),
     ].join("");
     bind(drawKantoBirkhoff);
@@ -10594,7 +10852,8 @@ function init() {
   } else if (kind === "sinkhornbridges") {
     controls.innerHTML = [
       slider("sbrEps", "epsilon", 0.22, 0, 0.7, 0.01),
-      slider("sbrPaths", "paths", 70, 18, 130, 2),
+      slider("sbrPaths", "paths", 82, 24, 180, 2),
+      slider("sbrSteps", "bridge points", 120, 48, 260, 4),
       slider("sbrSeed", "seed", 4210, 4200, 4280, 1),
     ].join("");
     bind(drawSinkhornBridges);
@@ -10663,6 +10922,7 @@ function init() {
   } else if (kind === "sinkhornentropygeometry") {
     controls.innerHTML = [
       slider("segEps", "epsilon", 0.18, 0.025, 1.2, 0.005),
+      slider("segEdges", "polytope edges", 3, 3, 6, 1),
     ].join("");
     bind(drawSinkhornEntropyGeometry);
   } else if (kind === "sinkhornbiasvariance") {

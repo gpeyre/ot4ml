@@ -153,13 +153,14 @@ function ot4mlDrawGaussianGeodesic() {
     const mt = (1 - t) * m0 + t * m1;
     const st = (1 - t) * s0 + t * s1;
     const xs = Array.from({ length: 360 }, (_, i) => -2.3 + 4.6 * i / 359);
-    const vals = xs.map(x => gaussian(x, mt, st));
-    const maxV = Math.max(...vals);
+    // Keep a fixed vertical scale: the interpolated curve must not be
+    // renormalized as its variance changes.
+    const yMax = 1.12 / Math.min(s0, s1);
     const pad = { left: 34, right: 22, top: 22, bottom: 34 };
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
     const X = x => pad.left + (x + 2.3) / 4.6 * plotW;
-    const Y = y => pad.top + plotH - y / maxV * plotH * 0.88;
+    const Y = y => pad.top + plotH - y / yMax * plotH;
 
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#ffffff';

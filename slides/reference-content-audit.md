@@ -156,3 +156,21 @@ The following visuals from the reference PDFs did not have a close book-generate
 - `4-DynamicFlows.pdf`: autoregressive-vs-transport visual, crowd-motion example, cell-diversity and single-cell multi-omics visuals, MOWGLI visual, trajectory-inference visual, and transformer/attention architecture visual, inserted in `slides/4-dynamic-flows/`.
 
 All extracted assets are stored under the corresponding deck `assets/` directory with a `ref-...` filename.
+
+## 2026-07-05 Equation-Polish Pass
+
+This pass rechecked the reference PDFs specifically for formula-level content that was compressed too much in the Quarto decks.
+
+Added or strengthened:
+
+- Deck 2 now spells out the entropy identity behind the probabilistic interpretation of entropic OT: `KL(P | a \otimes b)=I(X;Y)=H(a)+H(b)-H(P)`.
+- Deck 2 now includes the dynamic Schrodinger path-space optimization formula and the KL chain-rule decomposition showing why the endpoint coupling solves the static entropic problem.
+- Deck 2 now states the quantitative Hilbert-metric Birkhoff contraction formula used in the Sinkhorn linear-convergence explanation.
+- Deck 3 now includes the reduced one-potential Kantorovich dual value and its discrete `c`-transform version.
+- Deck 4 now includes the supervised two-layer mean-field risk functional and its first variation before the mean-field training PDE.
+
+Verification:
+
+- `python3 slides/check_slides.py` passes after the edits.
+- The modified decks 2, 3, and 4 render with Quarto to Reveal.js HTML.
+- The new formula slides were visually checked in the browser at 16:9; no overflow or broken math rendering was observed.
