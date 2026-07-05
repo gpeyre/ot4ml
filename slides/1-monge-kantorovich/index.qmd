@@ -49,6 +49,8 @@ Modern machine learning repeatedly asks for distances between probability laws:
 
 Optimal transport compares distributions by using the geometry of the ambient space.
 
+<div class="notation-key"><span class="src">source: $\alpha,x,a$</span><span class="tgt">target: $\beta,y,b$</span><span class="plan">transport: $T,\pi,P$</span></div>
+
 </div>
 <div class="panel">
 <img src="assets/generative-flow.png" alt="Generative transport trajectories">
@@ -60,15 +62,30 @@ Optimal transport compares distributions by using the geometry of the ambient sp
 
 ::: {.definition-box}
 <span class="box-title">Data and model distributions.</span>
-A model produces samples from $\alpha_\theta$, while observations come from a target law $\beta$. A geometric fitting objective has the form
+A model produces samples from <span class="src">$\alpha_\theta$</span>, while observations come from a target law <span class="tgt">$\beta$</span>. A geometric fitting objective has the form
 $$
-\min_\theta D(\alpha_\theta,\beta),
+\min_\theta D(\textcolor{#c7372f}{\alpha_\theta},\textcolor{#226db4}{\beta}),
 $$
 where $D$ is a discrepancy between probability measures.
 :::
 
+In practice, both laws are often empirical:
+$$
+\textcolor{#c7372f}{\alpha_\theta^n}
+=\frac1n\sum_{i=1}^n\delta_{\textcolor{#c7372f}{x_i(\theta)}},
+\qquad
+\textcolor{#226db4}{\widehat\beta_m}
+=\frac1m\sum_{j=1}^m\delta_{\textcolor{#226db4}{y_j}}.
+$$
+If $x_i(\theta)=g_\theta(z_i)$ for latent samples $z_i\sim\zeta$, this is the push-forward model
+$$
+\textcolor{#c7372f}{\alpha_\theta}=(g_\theta)_\#\zeta,
+\qquad
+\min_\theta D((g_\theta)_\#\zeta,\textcolor{#226db4}{\beta}).
+$$
+
 <div class="fragment">
-OT chooses $D$ by asking how much effort is needed to move the mass of $\alpha_\theta$ onto $\beta$.
+OT chooses $D$ by asking how much effort is needed to move the mass of <span class="src">$\alpha_\theta$</span> onto <span class="tgt">$\beta$</span>.
 </div>
 
 ## Computational OT in practice
@@ -97,8 +114,8 @@ This course uses the POT library and the numerical figures of the OT4ML book to 
 <div class="two-col">
 <div>
 
-Let $x_1,\ldots,x_n$ and $y_1,\ldots,y_n$ be two point clouds and let
-$c_{i,j}=c(x_i,y_j)$.
+Let <span class="src">$x_1,\ldots,x_n$</span> and <span class="tgt">$y_1,\ldots,y_n$</span> be two point clouds and let
+$c_{i,j}=c(\textcolor{#c7372f}{x_i},\textcolor{#226db4}{y_j})$.
 
 ::: {.definition-box}
 <span class="box-title">Permutation matching.</span>
@@ -107,11 +124,11 @@ $$
 \min_{\sigma \in \mathfrak S_n}
 \sum_{i=1}^n c_{i,\sigma(i)}.
 $$
-For $c(x,y)=\|x-y\|^p$, it matches points while paying a geometric displacement cost.
+For $c(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})=\|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^p$, it matches points while paying a geometric displacement cost.
 :::
 
-Equivalently, one minimizes $\langle C,P_\sigma\rangle$ over permutation matrices
-$(P_\sigma)_{i,j}=\mathbf 1_{\{j=\sigma(i)\}}$.
+Equivalently, one minimizes $\langle C,\textcolor{#7c5bbd}{P_\sigma}\rangle$ over permutation matrices
+$(\textcolor{#7c5bbd}{P_\sigma})_{i,j}=\mathbf 1_{\{j=\sigma(i)\}}$.
 
 </div>
 <div class="panel">
@@ -151,7 +168,7 @@ For convex costs on the real line, sorting solves the problem.
 
 ::: {.theorem-box}
 <span class="box-title">Monotone matching.</span>
-If $x_1 \leq \cdots \leq x_n$ and $y_1 \leq \cdots \leq y_n$, then for every convex increasing cost $h(|x-y|)$,
+If $\textcolor{#c7372f}{x_1} \leq \cdots \leq \textcolor{#c7372f}{x_n}$ and $\textcolor{#226db4}{y_1} \leq \cdots \leq \textcolor{#226db4}{y_n}$, then for every convex increasing cost $h(|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}|)$,
 $$
 \sigma(i)=i
 $$
@@ -168,21 +185,25 @@ The proof follows from the crossing inequality: replacing two crossing segments 
 
 ## Convex versus concave costs in 1D
 
-<div class="two-col">
-<div class="panel">
-<img src="assets/matching-2d-p05.png" alt="Concave-like matching display">
-<div class="caption">Small exponents encourage different pairing patterns.</div>
+<div class="assignment-1d-slide">
+<div class="panel assignment-1d-panel">
+<img src="assets/matching-1d-convex-concave-costs.png" alt="One-dimensional assignments for convex and concave powers">
+<div class="caption">Same ordered one-dimensional supports: convex $p=2$ matchings are monotone, while concave $p=1/2$ matchings create long crossing exchanges.</div>
+</div>
+
+<div class="assignment-1d-notes">
+<div>
+For $c_p(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})=|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}|^p$:
+
+- $p>1$: convexity gives the monotone rearrangement;
+- $p=1$: non-uniqueness can appear;
+- $0<p<1$: concavity favors different alternating-chain patterns.
 </div>
 <div>
 
-For $c_p(x,y)=|x-y|^p$:
+The line is special because order is global. Convex costs are solved by sorting; concave costs still exploit the one-dimensional order, but through recursive local matching indicators rather than monotone pairing.
 
-- $p>1$: convex geometry favors monotone rearrangement;
-- $0<p<1$: concavity changes the structure and requires different algorithms;
-- $p=1$: many solutions can coexist.
-
-The line is special because order is global. In dimension two, there is no total ordering compatible with all directions.
-
+</div>
 </div>
 </div>
 
@@ -192,7 +213,7 @@ The line is special because order is global. In dimension two, there is no total
 <iframe src="../../myst/live/linecost.html" title="Interactive one-dimensional transport costs"></iframe>
 </div>
 
-Use the controls to compare how the exponent in $|x-y|^p$ changes the matching geometry.
+Use the controls to compare how the exponent in $|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}|^p$ changes the matching geometry.
 
 ## Roadmap: continuous Monge formulation
 
@@ -208,21 +229,24 @@ Use the controls to compare how the exponent in $|x-y|^p$ changes the matching g
 
 ::: {.definition-box}
 <span class="box-title">Probability measure.</span>
-A probability measure $\alpha$ assigns masses $\alpha(A)\in[0,1]$ to measurable sets $A\subset X$, with $\alpha(X)=1$.
+A probability measure <span class="src">$\alpha$</span> assigns masses $\textcolor{#c7372f}{\alpha}(A)\in[0,1]$ to measurable sets $A\subset X$, with $\textcolor{#c7372f}{\alpha}(X)=1$.
 :::
 
 <div class="three-col">
 <div class="panel center">
 <strong>Discrete</strong>
-$$\alpha=\sum_i a_i\delta_{x_i}$$
+$$\textcolor{#c7372f}{\alpha}=\sum_i \textcolor{#c7372f}{a_i}\delta_{\textcolor{#c7372f}{x_i}}$$
 </div>
 <div class="panel center">
 <strong>Density</strong>
-$$d\alpha(x)=\rho_\alpha(x)\,dx$$
+$$d\textcolor{#c7372f}{\alpha}(\textcolor{#c7372f}{x})=\rho_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})\,d\textcolor{#c7372f}{x}$$
 </div>
 <div class="panel center">
 <strong>Random variable</strong>
-$$\alpha=\operatorname{Law}(X)$$
+$$
+\textcolor{#c7372f}{X}:\Omega\to X,\qquad
+\textcolor{#c7372f}{\alpha}(A)=\mathbb P(\textcolor{#c7372f}{X}\in A)
+$$
 </div>
 </div>
 
@@ -230,30 +254,32 @@ $$\alpha=\operatorname{Law}(X)$$
 
 ::: {.definition-box}
 <span class="box-title">Push-forward.</span>
-For a measurable map $T:X\to Y$, the push-forward $T_\#\alpha$ is defined by
+For a measurable map <span class="map">$T$</span> from a source space <span class="src">$X$</span> to a target space <span class="tgt">$Y$</span>, the push-forward $\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}$ is defined by
 $$
-(T_\#\alpha)(B)=\alpha(T^{-1}(B)).
+(\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha})(B)
+=
+\textcolor{#c7372f}{\alpha}(\textcolor{#7c5bbd}{T}^{-1}(B)).
 $$
 Equivalently, for all test functions $g$,
 $$
-\int_{Y} g(y)\,d(T_\#\alpha)(y)
+\int_{\textcolor{#226db4}{Y}} g(\textcolor{#226db4}{y})\,d(\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha})(\textcolor{#226db4}{y})
 =
-\int_{X} g(T(x))\,d\alpha(x).
+\int_{\textcolor{#c7372f}{X}} g(\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x}))\,d\textcolor{#c7372f}{\alpha}(\textcolor{#c7372f}{x}).
 $$
 :::
 
-If $\alpha=\sum_i a_i\delta_{x_i}$, then $T_\#\alpha=\sum_i a_i\delta_{T(x_i)}$.
+If $\textcolor{#c7372f}{\alpha}=\sum_i \textcolor{#c7372f}{a_i}\delta_{\textcolor{#c7372f}{x_i}}$, then $\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}=\sum_i \textcolor{#c7372f}{a_i}\delta_{\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x_i})}$.
 
 ## Density change of variables
 
 <div class="two-col">
 <div>
 
-When $T$ is a diffeomorphism between open subsets of $\mathbb R^d$,
+When <span class="map">$T$</span> is a diffeomorphism between open subsets of $\mathbb R^d$,
 $$
-\rho_{T_\#\alpha}(T(x))
+\rho_{\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}}(\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x}))
 =
-\frac{\rho_\alpha(x)}{|\det DT(x)|}.
+\frac{\rho_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})}{|\det D\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x})|}.
 $$
 
 The Jacobian determinant is not cosmetic: compression creates larger density.
@@ -268,10 +294,10 @@ The Jacobian determinant is not cosmetic: compression creates larger density.
 
 ::: {.definition-box}
 <span class="box-title">Monge problem.</span>
-Given probability measures $\alpha,\beta$ on $X$ and $Y$, Monge's formulation is
+Given probability measures <span class="src">$\alpha$ on $X$</span> and <span class="tgt">$\beta$ on $Y$</span>, Monge's formulation is
 $$
-\inf_{T_\#\alpha=\beta}
-\int_{X} c(x,T(x))\,d\alpha(x).
+\inf_{\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}=\textcolor{#226db4}{\beta}}
+\int_{\textcolor{#c7372f}{X}} c(\textcolor{#c7372f}{x},\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x}))\,d\textcolor{#c7372f}{\alpha}(\textcolor{#c7372f}{x}).
 $$
 :::
 
@@ -286,11 +312,11 @@ This is a nonlinear constraint: the unknown is a map, and the constraint imposes
 
 If
 $$
-\alpha=\frac1n\sum_{i=1}^n\delta_{x_i},
+\textcolor{#c7372f}{\alpha}=\frac1n\sum_{i=1}^n\delta_{\textcolor{#c7372f}{x_i}},
 \qquad
-\beta=\frac1n\sum_{j=1}^n\delta_{y_j},
+\textcolor{#226db4}{\beta}=\frac1n\sum_{j=1}^n\delta_{\textcolor{#226db4}{y_j}},
 $$
-then $T_\#\alpha=\beta$ means that $T(x_i)=y_{\sigma(i)}$ for some permutation $\sigma$.
+then $\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}=\textcolor{#226db4}{\beta}$ means that $\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x_i})=\textcolor{#226db4}{y_{\sigma(i)}}$ for some permutation $\sigma$.
 
 Thus finite equal-weight matching is a special case of Monge.
 
@@ -304,10 +330,10 @@ Thus finite equal-weight matching is a special case of Monge.
 
 ::: {.theorem-box}
 <span class="box-title">Brenier theorem.</span>
-Let $X=Y=\mathbb R^d$ and $c(x,y)=\|x-y\|^2$.
-If $\alpha$ is absolutely continuous, then the optimal Monge map is unique and
+Let <span class="src">$X$</span>$=$<span class="tgt">$Y$</span>$=\mathbb R^d$ and $c(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})=\|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^2$.
+If <span class="src">$\alpha$</span> is absolutely continuous, then the optimal Monge map is unique and
 $$
-T=\nabla\varphi
+\textcolor{#7c5bbd}{T}=\nabla\varphi
 $$
 for a convex function $\varphi$.
 :::
@@ -316,23 +342,14 @@ The theorem replaces arbitrary maps by gradients of convex potentials: geometry 
 
 ## Monge-Ampere equation
 
-<div class="two-col-wide">
-<div>
-
-If $T=\nabla\varphi$ is smooth and $\alpha,\beta$ have densities, then
+If $\textcolor{#7c5bbd}{T}=\nabla\varphi$ is smooth and <span class="src">$\alpha$</span>,<span class="tgt">$\beta$</span> have densities, then
 $$
-\rho_\alpha(x)
+\rho_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})
 =
-\rho_\beta(\nabla\varphi(x))\det(D^2\varphi(x)).
+\rho_{\textcolor{#226db4}{\beta}}(\nabla\varphi(\textcolor{#c7372f}{x}))\det(D^2\varphi(\textcolor{#c7372f}{x})).
 $$
 
 This nonlinear PDE is the analytic form of the mass conservation constraint.
-
-</div>
-<div class="panel">
-<img src="assets/shape-mccann-50.png" alt="Displacement interpolation midpoint">
-</div>
-</div>
 
 ## Regularity is geometric
 
@@ -340,31 +357,31 @@ Brenier maps are well behaved under geometric assumptions, but singularities app
 
 ::: {.result-box}
 <span class="box-title">Caffarelli principle.</span>
-For quadratic transport, convexity and smooth positive densities are central hypotheses behind regularity of the map $T=\nabla\varphi$.
+For quadratic transport, convexity and smooth positive densities are central hypotheses behind regularity of the map $\textcolor{#7c5bbd}{T}=\nabla\varphi$.
 :::
 
-<div class="figure-row">
-<img src="assets/shape-mccann-0.png" style="width:22%;max-height:160px" alt="source shape">
-<img src="assets/shape-mccann-50.png" style="width:22%;max-height:160px" alt="middle shape">
-<img src="assets/shape-mccann-100.png" style="width:22%;max-height:160px" alt="target shape">
+<div class="panel regularity-figure-panel">
+<img src="assets/monge-caffarelli-nonconvex-map.png" alt="McCann interpolation from a disk to two disks joined by a thin segment">
 </div>
-<div class="caption">Displacement interpolation makes geometry visible.</div>
+<div class="caption">Empirical quadratic OT interpolation from a disk to a connected non-convex two-disk target.</div>
 
 ## One-dimensional quantiles
 
 ::: {.definition-box}
 <span class="box-title">CDF and quantile.</span>
-For a probability $\alpha$ on $\mathbb R$,
+For a probability <span class="src">$\alpha$</span> on $\mathbb R$,
 $$
-F_\alpha(x)=\alpha((-\infty,x]),
+F_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})=\textcolor{#c7372f}{\alpha}((-\infty,\textcolor{#c7372f}{x}]),
 \qquad
-F_\alpha^{-1}(u)=\inf\{x:F_\alpha(x)\geq u\}.
+F_{\textcolor{#c7372f}{\alpha}}^{-1}(u)=\inf\{\textcolor{#c7372f}{x}:F_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})\geq u\}.
 $$
 :::
 
-If $\alpha$ has no atoms, the monotone Monge map from $\alpha$ to $\beta$ is
+If <span class="src">$\alpha$</span> has no atoms, the monotone Monge map from <span class="src">$\alpha$</span> to <span class="tgt">$\beta$</span> is
 $$
-T_{\alpha\to\beta}=F_\beta^{-1}\circ F_\alpha.
+\textcolor{#7c5bbd}{T_{\alpha\to\beta}}
+=
+\textcolor{#226db4}{F_\beta^{-1}}\circ \textcolor{#c7372f}{F_\alpha}.
 $$
 
 ## Interactive: quantile interpolation
@@ -374,8 +391,9 @@ $$
 
 The 1D Wasserstein geodesic is linear in quantile functions:
 $$
-F_{\alpha_t}^{-1}(u)
-=(1-t)F_\alpha^{-1}(u)+tF_\beta^{-1}(u).
+\textcolor{#7c5bbd}{F_{\alpha_t}^{-1}}(u)
+=(1-t)\textcolor{#c7372f}{F_\alpha^{-1}(u)}
++t\textcolor{#226db4}{F_\beta^{-1}(u)}.
 $$
 
 Move the slider to see the density induced by interpolating quantiles.
@@ -393,27 +411,39 @@ Move the slider to see the density induced by interpolating quantiles.
 <iframe src="../../myst/live/monge-quantile.html" title="Interactive monotone rearrangement and quantile transport"></iframe>
 </div>
 
-This is the exact one-dimensional Monge solution $T=F_\beta^{-1}\circ F_\alpha$.
+This is the exact one-dimensional Monge solution $\textcolor{#7c5bbd}{T}=\textcolor{#226db4}{F_\beta^{-1}}\circ\textcolor{#c7372f}{F_\alpha}$.
 
 ## Histogram equalization
 
 <div class="two-col-wide">
 <div class="panel tight">
 <div class="histogram-eq-grid">
-<img src="assets/histogram-eq-0.png" alt="input image" style="width:100%;max-height:220px;object-fit:contain">
-<img src="assets/histogram-eq-1.png" alt="equalized image" style="width:100%;max-height:220px;object-fit:contain">
-<img src="assets/histogram-hist-0.png" alt="input histogram" style="width:100%;max-height:120px;object-fit:contain">
-<img src="assets/histogram-hist-1.png" alt="equalized histogram" style="width:100%;max-height:120px;object-fit:contain">
+<div class="histogram-image-strip">
+<figure><img src="assets/histogram-eq-0.png" alt="input cat image"><figcaption>$t=0$</figcaption></figure>
+<figure><img src="assets/histogram-eq-25.png" alt="cat image at quarter intensity interpolation"><figcaption>$t=.25$</figcaption></figure>
+<figure><img src="assets/histogram-eq-50.png" alt="cat image at midpoint intensity interpolation"><figcaption>$t=.5$</figcaption></figure>
+<figure><img src="assets/histogram-eq-75.png" alt="cat image at three-quarter intensity interpolation"><figcaption>$t=.75$</figcaption></figure>
+<figure><img src="assets/histogram-eq-1.png" alt="equalized cat image"><figcaption>$t=1$</figcaption></figure>
+</div>
+<div class="histogram-hist-strip">
+<img src="assets/histogram-hist-0.png" alt="input intensity histogram">
+<img src="assets/histogram-hist-25.png" alt="transported intensity histogram at quarter interpolation">
+<img src="assets/histogram-hist-50.png" alt="transported intensity histogram at midpoint interpolation">
+<img src="assets/histogram-hist-75.png" alt="transported intensity histogram at three-quarter interpolation">
+<img src="assets/histogram-hist-1.png" alt="equalized intensity histogram">
+</div>
 </div>
 </div>
 <div>
 
 Histogram equalization is a direct application of monotone rearrangement:
 $$
-T=F_\beta^{-1}\circ F_\alpha.
+\textcolor{#7c5bbd}{T}
+=
+\textcolor{#226db4}{F_\beta^{-1}}\circ \textcolor{#c7372f}{F_\alpha}.
 $$
 
-Here $\alpha$ is the grayscale distribution of the input image and $\beta$ is the target grayscale distribution.
+Here <span class="src">$\alpha$</span> is the grayscale distribution of the input image and <span class="tgt">$\beta$</span> is the target grayscale distribution.
 
 </div>
 </div>
@@ -428,14 +458,14 @@ Here $\alpha$ is the grayscale distribution of the input image and $\beta$ is th
 
 ::: {.definition-box}
 <span class="box-title">Displacement interpolation.</span>
-If $T_\#\alpha=\beta$, the Monge interpolation is
+If $\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha}=\textcolor{#226db4}{\beta}$, the Monge interpolation is
 $$
-\alpha_t=((1-t)\operatorname{Id}+tT)_\#\alpha,
+\textcolor{#7c5bbd}{\alpha_t}=((1-t)\operatorname{Id}+t\textcolor{#7c5bbd}{T})_\#\textcolor{#c7372f}{\alpha},
 \qquad t\in[0,1].
 $$
-When $T$ is the quadratic optimal map, this is a constant-speed $W_2$ geodesic:
+When $\textcolor{#7c5bbd}{T}$ is the quadratic optimal map, this is a constant-speed $W_2$ geodesic:
 $$
-W_2(\alpha_s,\alpha_t)=|s-t|\,W_2(\alpha,\beta).
+W_2(\textcolor{#7c5bbd}{\alpha_s},\textcolor{#7c5bbd}{\alpha_t})=|s-t|\,W_2(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta}).
 $$
 :::
 
@@ -459,11 +489,11 @@ $$
 
 A color image can be viewed as a cloud in RGB space. Transporting one color distribution onto another gives a palette transfer.
 
-For each input pixel color $x\in\mathbb R^3$, apply an approximate OT map $T(x)$ in RGB space and display
+For each input pixel color <span class="src">$x\in\mathbb R^3$</span>, apply an approximate OT map <span class="map">$T(x)$</span> in RGB space and display
 $$
-x_t=(1-t)x+tT(x),
+\textcolor{#7c5bbd}{x_t}=(1-t)\textcolor{#c7372f}{x}+t\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x}),
 \qquad
-\alpha_t=((1-t)\operatorname{Id}+tT)_\#\alpha .
+\textcolor{#7c5bbd}{\alpha_t}=((1-t)\operatorname{Id}+t\textcolor{#7c5bbd}{T})_\#\textcolor{#c7372f}{\alpha}.
 $$
 
 The top row shows the impact on pixels, while the bottom row shows the moving RGB distribution.
@@ -475,7 +505,7 @@ The top row shows the impact on pixels, while the bottom row shows the moving RG
 
 ## Live panel: color transfer
 
-<div class="live-panel">
+<div class="live-panel tall">
 <iframe src="../../myst/live/monge-color.html" title="Interactive color transfer by optimal transport"></iframe>
 </div>
 
@@ -483,13 +513,13 @@ The top row shows the impact on pixels, while the bottom row shows the moving RG
 
 ::: {.result-box}
 <span class="box-title">Closed form for 1D Gaussians.</span>
-For $\alpha=\mathrm N(m_0,\sigma_0^2)$ and $\beta=\mathrm N(m_1,\sigma_1^2)$,
+For $\textcolor{#c7372f}{\alpha}=\mathrm N(\textcolor{#c7372f}{m_0},\textcolor{#c7372f}{\sigma_0^2})$ and $\textcolor{#226db4}{\beta}=\mathrm N(\textcolor{#226db4}{m_1},\textcolor{#226db4}{\sigma_1^2})$,
 $$
-T(x)=m_1+\frac{\sigma_1}{\sigma_0}(x-m_0),
+\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x})=\textcolor{#226db4}{m_1}+\frac{\textcolor{#226db4}{\sigma_1}}{\textcolor{#c7372f}{\sigma_0}}(\textcolor{#c7372f}{x}-\textcolor{#c7372f}{m_0}),
 $$
 and
 $$
-W_2^2(\alpha,\beta)=(m_0-m_1)^2+(\sigma_0-\sigma_1)^2.
+W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})=(\textcolor{#c7372f}{m_0}-\textcolor{#226db4}{m_1})^2+(\textcolor{#c7372f}{\sigma_0}-\textcolor{#226db4}{\sigma_1})^2.
 $$
 :::
 
@@ -501,13 +531,13 @@ $$
 
 ::: {.theorem-box}
 <span class="box-title">Gaussian optimal map.</span>
-For $\alpha=\mathrm N(m_0,\Sigma_0)$ and $\beta=\mathrm N(m_1,\Sigma_1)$,
+For $\textcolor{#c7372f}{\alpha}=\mathrm N(\textcolor{#c7372f}{m_0},\textcolor{#c7372f}{\Sigma_0})$ and $\textcolor{#226db4}{\beta}=\mathrm N(\textcolor{#226db4}{m_1},\textcolor{#226db4}{\Sigma_1})$,
 $$
-T(x)=m_1+A(x-m_0),
+\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{x})=\textcolor{#226db4}{m_1}+\textcolor{#7c5bbd}{A}(\textcolor{#c7372f}{x}-\textcolor{#c7372f}{m_0}),
 $$
 where
 $$
-A=\Sigma_0^{-1/2}\big(\Sigma_0^{1/2}\Sigma_1\Sigma_0^{1/2}\big)^{1/2}\Sigma_0^{-1/2}.
+\textcolor{#7c5bbd}{A}=\textcolor{#c7372f}{\Sigma_0}^{-1/2}\big(\textcolor{#c7372f}{\Sigma_0}^{1/2}\textcolor{#226db4}{\Sigma_1}\textcolor{#c7372f}{\Sigma_0}^{1/2}\big)^{1/2}\textcolor{#c7372f}{\Sigma_0}^{-1/2}.
 $$
 :::
 
@@ -519,15 +549,15 @@ The Gaussian formula is also a computational statement: the Brenier linear part 
 
 ::: {.result-box}
 <span class="box-title">Riccati viewpoint.</span>
-The covariance constraint $T_\#\mathrm N(m_0,\Sigma_0)=\mathrm N(m_1,\Sigma_1)$ imposes
+The covariance constraint $\textcolor{#7c5bbd}{T_\#}\mathrm N(\textcolor{#c7372f}{m_0},\textcolor{#c7372f}{\Sigma_0})=\mathrm N(\textcolor{#226db4}{m_1},\textcolor{#226db4}{\Sigma_1})$ imposes
 $$
-A\Sigma_0 A=\Sigma_1,\qquad A=A^\top\succeq0.
+\textcolor{#7c5bbd}{A}\textcolor{#c7372f}{\Sigma_0}\textcolor{#7c5bbd}{A}=\textcolor{#226db4}{\Sigma_1},\qquad \textcolor{#7c5bbd}{A}=\textcolor{#7c5bbd}{A}^\top\succeq0.
 $$
 This is an algebraic Riccati equation, whose unique symmetric positive solution is
 $$
-A=\Sigma_0^{-1/2}
-\big(\Sigma_0^{1/2}\Sigma_1\Sigma_0^{1/2}\big)^{1/2}
-\Sigma_0^{-1/2}.
+\textcolor{#7c5bbd}{A}=\textcolor{#c7372f}{\Sigma_0}^{-1/2}
+\big(\textcolor{#c7372f}{\Sigma_0}^{1/2}\textcolor{#226db4}{\Sigma_1}\textcolor{#c7372f}{\Sigma_0}^{1/2}\big)^{1/2}
+\textcolor{#c7372f}{\Sigma_0}^{-1/2}.
 $$
 :::
 
@@ -568,12 +598,12 @@ Move the slider to see the density and the corresponding pointwise affine map.
 
 The covariance contribution to Gaussian $W_2$ is the Bures metric:
 $$
-W_2^2(\alpha,\beta)
-=\|m_0-m_1\|^2+B^2(\Sigma_0,\Sigma_1),
+W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})
+=\|\textcolor{#c7372f}{m_0}-\textcolor{#226db4}{m_1}\|^2+B^2(\textcolor{#c7372f}{\Sigma_0},\textcolor{#226db4}{\Sigma_1}),
 $$
 $$
-B^2(\Sigma_0,\Sigma_1)
-=\operatorname{tr}\big(\Sigma_0+\Sigma_1-2(\Sigma_0^{1/2}\Sigma_1\Sigma_0^{1/2})^{1/2}\big).
+B^2(\textcolor{#c7372f}{\Sigma_0},\textcolor{#226db4}{\Sigma_1})
+=\operatorname{tr}\big(\textcolor{#c7372f}{\Sigma_0}+\textcolor{#226db4}{\Sigma_1}-2(\textcolor{#c7372f}{\Sigma_0}^{1/2}\textcolor{#226db4}{\Sigma_1}\textcolor{#c7372f}{\Sigma_0}^{1/2})^{1/2}\big).
 $$
 
 </div>
@@ -624,16 +654,16 @@ Monge maps can fail to exist when mass must split.
 
 ::: {.definition-box}
 <span class="box-title">Coupling.</span>
-A coupling between $\alpha$ and $\beta$ is a probability measure $\pi$ on $X\times Y$ such that
+A coupling between <span class="src">$\alpha$</span> and <span class="tgt">$\beta$</span> is a probability measure <span class="plan">$\pi$</span> on <span class="src">$X$</span>$\times$<span class="tgt">$Y$</span> such that
 $$
-(P_X)_\#\pi=\alpha,
+(\textcolor{#c7372f}{P_X})_\#\textcolor{#7c5bbd}{\pi}=\textcolor{#c7372f}{\alpha},
 \qquad
-(P_Y)_\#\pi=\beta.
+(\textcolor{#226db4}{P_Y})_\#\textcolor{#7c5bbd}{\pi}=\textcolor{#226db4}{\beta}.
 $$
-The set of all couplings is denoted $\Gamma(\alpha,\beta)$.
+The set of all couplings is denoted $\Gamma(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})$.
 :::
 
-The product coupling $\alpha\otimes\beta$ always belongs to $\Gamma(\alpha,\beta)$, so the feasible set is nonempty.
+The product coupling $\textcolor{#c7372f}{\alpha}\otimes\textcolor{#226db4}{\beta}$ always belongs to $\Gamma(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})$, so the feasible set is nonempty.
 
 ## Live panel: coupling geometry
 
@@ -648,18 +678,18 @@ The product coupling $\alpha\otimes\beta$ always belongs to $\Gamma(\alpha,\beta
 
 For discrete measures
 $$
-\alpha=\sum_i a_i\delta_{x_i},
+\textcolor{#c7372f}{\alpha}=\sum_i a_i\delta_{\textcolor{#c7372f}{x_i}},
 \qquad
-\beta=\sum_j b_j\delta_{y_j},
+\textcolor{#226db4}{\beta}=\sum_j b_j\delta_{\textcolor{#226db4}{y_j}},
 $$
-a coupling is a nonnegative matrix $P$ satisfying
+a coupling is a nonnegative matrix <span class="plan">$P$</span> satisfying
 $$
-P\mathbb 1_m=a,
+\textcolor{#7c5bbd}{P}\mathbb 1_m=\textcolor{#c7372f}{a},
 \qquad
-P^\top\mathbb 1_n=b.
+\textcolor{#7c5bbd}{P}^\top\mathbb 1_n=\textcolor{#226db4}{b}.
 $$
 This feasible polytope is denoted
-$U(a,b)=\{P\geq0:P\mathbb 1_m=a,\ P^\top\mathbb 1_n=b\}$.
+$U(\textcolor{#c7372f}{a},\textcolor{#226db4}{b})=\{\textcolor{#7c5bbd}{P}\geq0:\textcolor{#7c5bbd}{P}\mathbb 1_m=\textcolor{#c7372f}{a},\ \textcolor{#7c5bbd}{P}^\top\mathbb 1_n=\textcolor{#226db4}{b}\}$.
 
 </div>
 <div class="panel">
@@ -681,7 +711,7 @@ The same Kantorovich object appears in three numerical regimes.
 
 ::: {.result-box}
 <span class="box-title">Discrete, semi-discrete, continuous.</span>
-Discrete OT optimizes a matrix $P$. Semi-discrete OT optimizes Laguerre cells when one measure has a density and the other is finitely supported. Continuous OT studies a measure $\pi$ on $X\times Y$ and often recovers a map through regularity.
+Discrete OT optimizes a matrix <span class="plan">$P$</span>. Semi-discrete OT optimizes Laguerre cells when one measure has a density and the other is finitely supported. Continuous OT studies a measure <span class="plan">$\pi$</span> on <span class="src">$X$</span>$\times$<span class="tgt">$Y$</span> and often recovers a <span class="map">map</span> through regularity.
 :::
 
 The later decks revisit these regimes with duality, Sinkhorn scaling, and gradient-flow interpretations.
@@ -692,19 +722,19 @@ The later decks revisit these regimes with duality, Sinkhorn scaling, and gradie
 <span class="box-title">Kantorovich formulation.</span>
 The relaxed optimal transport problem is
 $$
-\mathcal L_c(\alpha,\beta)
+\mathcal L_c(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})
 =
-\inf_{\pi\in\Gamma(\alpha,\beta)}
-\int_{X\times Y} c(x,y)\,d\pi(x,y).
+\inf_{\textcolor{#7c5bbd}{\pi}\in\Gamma(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})}
+\int_{\textcolor{#c7372f}{X}\times\textcolor{#226db4}{Y}} c(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})\,d\textcolor{#7c5bbd}{\pi}(\textcolor{#c7372f}{x},\textcolor{#226db4}{y}).
 $$
 :::
 
 For finite measures, this is the linear program
 $$
-\min_{P\geq 0}\sum_{i,j} P_{i,j}C_{i,j}
+\min_{\textcolor{#7c5bbd}{P}\geq 0}\sum_{i,j} \textcolor{#7c5bbd}{P}_{i,j}C_{i,j}
 \quad\text{s.t.}\quad
-P\mathbb 1_m=a,
-\ P^\top\mathbb 1_n=b.
+\textcolor{#7c5bbd}{P}\mathbb 1_m=\textcolor{#c7372f}{a},
+\ \textcolor{#7c5bbd}{P}^\top\mathbb 1_n=\textcolor{#226db4}{b}.
 $$
 
 ## Live panel: transport plans
@@ -719,11 +749,11 @@ Changing the cost and marginals changes which entries of the plan become active.
 
 The product plan is the independent coupling:
 $$
-(\alpha\otimes\beta)(A\times B)=\alpha(A)\beta(B),
+(\textcolor{#c7372f}{\alpha}\otimes\textcolor{#226db4}{\beta})(A\times B)=\textcolor{#c7372f}{\alpha}(A)\textcolor{#226db4}{\beta}(B),
 \qquad
-P^\otimes_{i,j}=a_i b_j.
+\textcolor{#7c5bbd}{P^\otimes}_{i,j}=\textcolor{#c7372f}{a_i}\textcolor{#226db4}{b_j}.
 $$
-The OT plan instead minimizes $\langle C,P\rangle$ over $U(a,b)$.
+The OT plan instead minimizes $\langle C,\textcolor{#7c5bbd}{P}\rangle$ over $U(\textcolor{#c7372f}{a},\textcolor{#226db4}{b})$.
 
 <div class="figure-row">
 <div class="panel tight" style="width:44%">
@@ -750,14 +780,31 @@ The product coupling is feasible but usually diffuse; the optimal plan concentra
 <span class="box-title">Birkhoff-von Neumann theorem.</span>
 The set of bistochastic matrices is the convex hull of permutation matrices:
 $$
-\{P\geq 0: P\mathbb 1=\mathbb 1/n,
-P^\top\mathbb 1=\mathbb 1/n\}
-=\operatorname{conv}\{P_\sigma:\sigma\in\mathfrak S_n\}.
+\{\textcolor{#7c5bbd}{P}\geq 0: \textcolor{#7c5bbd}{P}\mathbb 1=\mathbb 1/n,
+\textcolor{#7c5bbd}{P}^\top\mathbb 1=\mathbb 1/n\}
+=\operatorname{conv}\{\textcolor{#7c5bbd}{P_\sigma}:\sigma\in\mathfrak S_n\}.
 $$
-Here $(P_\sigma)_{i,j}=\frac1n\mathbf 1_{\{j=\sigma(i)\}}$ has the prescribed uniform marginals.
+Here $(\textcolor{#7c5bbd}{P_\sigma})_{i,j}=\frac1n\mathbf 1_{\{j=\sigma(i)\}}$ has the prescribed uniform marginals.
 :::
 
 Hence, for equal weights, Kantorovich gives the same value as Monge whenever a permutation solution is required.
+
+## Extreme points give exactness
+
+The exactness mechanism is purely convex-geometric. For a compact polytope $C$ and a linear functional $\langle A,P\rangle$,
+$$
+\arg\min_{P\in C}\langle A,P\rangle
+\cap \operatorname{Extr}(C)\neq\varnothing.
+$$
+Indeed, a minimizer exists by compactness. If it is not extreme, write
+$P=(Q+R)/2$ with $Q\neq R$; linearity shows that $Q$ and $R$ are also minimizers. For a polytope, iterating this splitting reaches an extreme minimizer.
+
+For the bistochastic polytope,
+$$
+\operatorname{Extr}\{P\geq0:P\mathbf 1=\mathbf 1/n,\ P^\top\mathbf 1=\mathbf 1/n\}
+=\{P_\sigma:\sigma\in\mathfrak S_n\}.
+$$
+Thus the relaxed LP has a permutation optimizer.
 
 ## Live panel: Birkhoff polytope
 
@@ -767,7 +814,7 @@ Hence, for equal weights, Kantorovich gives the same value as Monge whenever a p
 
 ## Cycle certificate
 
-The proof finds a cycle in the support graph of a non-extreme bistochastic matrix. Moving mass around it decomposes $P$ into two feasible matrices.
+The proof finds a cycle in the support graph of a non-extreme bistochastic matrix. Moving mass around it decomposes <span class="plan">$P$</span> into two feasible matrices.
 
 <div class="figure-row">
 <div class="panel tight" style="width:36%"><img src="assets/birkhoff-matrix.png" style="max-height:250px" alt="Birkhoff matrix figure"></div>
@@ -823,12 +870,12 @@ Generic linear programming is only one possible computational route; problem-spe
 <span class="box-title">Wasserstein distance.</span>
 For $p\geq 1$ and a metric $d$ on $X$,
 $$
-W_p(\alpha,\beta)
+W_p(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})
 =
-\left(\inf_{\pi\in\Gamma(\alpha,\beta)}
-\int d(x,y)^p\,d\pi(x,y)\right)^{1/p}.
+\left(\inf_{\textcolor{#7c5bbd}{\pi}\in\Gamma(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})}
+\int d(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})^p\,d\textcolor{#7c5bbd}{\pi}(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})\right)^{1/p}.
 $$
-The finite-moment condition is $\int d(x,x_0)^p\,d\alpha(x)<+\infty$ for one, hence every, $x_0\in X$.
+The finite-moment condition is $\int d(\textcolor{#c7372f}{x},x_0)^p\,d\textcolor{#c7372f}{\alpha}(\textcolor{#c7372f}{x})<+\infty$ for one, hence every, $x_0\in X$.
 :::
 
 The cost is now tied to the geometry of the ground space.
@@ -839,12 +886,12 @@ The cost is now tied to the geometry of the ground space.
 <span class="box-title">Metric property.</span>
 On probability measures with finite $p$-moment, $W_p$ is a distance. In particular,
 $$
-W_p(\alpha,\gamma)
-\leq W_p(\alpha,\beta)+W_p(\beta,\gamma).
+W_p(\textcolor{#c7372f}{\alpha},\gamma)
+\leq W_p(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})+W_p(\textcolor{#226db4}{\beta},\gamma).
 $$
 :::
 
-Proof idea: glue optimal couplings for $(\alpha,\beta)$ and $(\beta,\gamma)$, then apply Minkowski to the induced pair $(X,Z)$.
+Proof idea: glue optimal couplings for $(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})$ and $(\textcolor{#226db4}{\beta},\gamma)$, then apply Minkowski to the induced pair $(X,Z)$.
 
 ## Triangle inequality by gluing
 
@@ -852,18 +899,39 @@ The proof mechanism is important: Wasserstein geometry is stable because transpo
 
 ::: {.result-box}
 <span class="box-title">Gluing argument.</span>
-Let $\pi^{01}\in\Gamma(\alpha_0,\alpha_1)$ and $\pi^{12}\in\Gamma(\alpha_1,\alpha_2)$. The gluing lemma gives a measure
-$\eta\in\mathcal P(X^3)$ such that
-$(x_0,x_1)_\#\eta=\pi^{01}$ and $(x_1,x_2)_\#\eta=\pi^{12}$.
-Then $\pi^{02}=(x_0,x_2)_\#\eta$ is admissible and
+Let $\textcolor{#7c5bbd}{\pi^{01}}\in\Gamma(\textcolor{#c7372f}{\alpha_0},\textcolor{#7c5bbd}{\alpha_1})$ and $\textcolor{#7c5bbd}{\pi^{12}}\in\Gamma(\textcolor{#7c5bbd}{\alpha_1},\textcolor{#226db4}{\alpha_2})$. The gluing lemma gives a measure
+$\textcolor{#7c5bbd}{\eta}\in\mathcal P(X^3)$ such that
+$(\textcolor{#c7372f}{x_0},\textcolor{#7c5bbd}{x_1})_\#\textcolor{#7c5bbd}{\eta}=\textcolor{#7c5bbd}{\pi^{01}}$ and $(\textcolor{#7c5bbd}{x_1},\textcolor{#226db4}{x_2})_\#\textcolor{#7c5bbd}{\eta}=\textcolor{#7c5bbd}{\pi^{12}}$.
+Then $\textcolor{#7c5bbd}{\pi^{02}}=(\textcolor{#c7372f}{x_0},\textcolor{#226db4}{x_2})_\#\textcolor{#7c5bbd}{\eta}$ is admissible and
 $$
-W_p(\alpha_0,\alpha_2)
+W_p(\textcolor{#c7372f}{\alpha_0},\textcolor{#226db4}{\alpha_2})
 \leq
-\left(\int d(x_0,x_2)^p\,d\eta\right)^{1/p}
+\left(\int d(\textcolor{#c7372f}{x_0},\textcolor{#226db4}{x_2})^p\,d\textcolor{#7c5bbd}{\eta}\right)^{1/p}
 \leq
-W_p(\alpha_0,\alpha_1)+W_p(\alpha_1,\alpha_2).
+W_p(\textcolor{#c7372f}{\alpha_0},\textcolor{#7c5bbd}{\alpha_1})+W_p(\textcolor{#7c5bbd}{\alpha_1},\textcolor{#226db4}{\alpha_2}).
 $$
 :::
+
+## Discrete gluing formula
+
+The finite proof used in the reference slides is the same idea written as a three-index coupling. If
+$P\in U(\textcolor{#c7372f}{a},\textcolor{#7c5bbd}{b})$ and
+$Q\in U(\textcolor{#7c5bbd}{b},\textcolor{#226db4}{c})$, set
+$$
+S_{i,j,k}=
+\begin{cases}
+\dfrac{P_{i,j}Q_{j,k}}{b_j}, & b_j>0,\\[0.55em]
+0, & b_j=0.
+\end{cases}
+$$
+Then
+$$
+\sum_k S_{i,j,k}=P_{i,j},\qquad
+\sum_i S_{i,j,k}=Q_{j,k},
+\qquad
+R_{i,k}:=\sum_j S_{i,j,k}\in U(\textcolor{#c7372f}{a},\textcolor{#226db4}{c}).
+$$
+Summing out the intermediate index $j$ gives the admissible coupling used for the triangle inequality.
 
 ## Live panel: gluing couplings
 
@@ -877,9 +945,9 @@ $$
 <span class="box-title">Topology.</span>
 On a compact metric space, convergence in $W_p$ is equivalent to weak convergence of probability measures:
 $$
-W_p(\alpha_n,\alpha)\to 0
+W_p(\textcolor{#7c5bbd}{\alpha_n},\textcolor{#c7372f}{\alpha})\to 0
 \quad\Longleftrightarrow\quad
-\int f\,d\alpha_n\to\int f\,d\alpha
+\int f\,d\textcolor{#7c5bbd}{\alpha_n}\to\int f\,d\textcolor{#c7372f}{\alpha}
 \quad\forall f\in C(X).
 $$
 :::
@@ -893,14 +961,14 @@ On noncompact spaces, finite moments must also be controlled.
 
 Kantorovich duality exposes potentials as certificates:
 $$
-\mathcal L_c(\alpha,\beta)
+\mathcal L_c(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})
 =
-\sup_{f(x)+g(y)\leq c(x,y)}
-\int f\,d\alpha+
-\int g\,d\beta.
+\sup_{f(\textcolor{#c7372f}{x})+g(\textcolor{#226db4}{y})\leq c(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})}
+\int f\,d\textcolor{#c7372f}{\alpha}+
+\int g\,d\textcolor{#226db4}{\beta}.
 $$
 
-At optimality, transported mass lives where $f(x)+g(y)=c(x,y)$.
+At optimality, transported mass lives where $f(\textcolor{#c7372f}{x})+g(\textcolor{#226db4}{y})=c(\textcolor{#c7372f}{x},\textcolor{#226db4}{y})$.
 
 </div>
 <div class="panel">
@@ -950,8 +1018,15 @@ ATAC-seq and single-cell data, cortical-surface MRI processing, bag-of-words doc
 
 The central limit theorem (CLT) says that rescaled sums converge in law:
 $$
-\frac{X_1+\cdots+X_n-nm}{\sqrt n}
-\Rightarrow \mathrm N(0,\Sigma).
+Y_n=\frac{X_1+\cdots+X_n}{\sqrt n}
+\Rightarrow \mathrm N(0,1)
+$$
+when $\mathbb E(X)=0$ and $\mathbb E(X^2)=1$.
+
+Writing $\mu_n=\operatorname{Law}(Y_n)$ and $\gamma=\mathrm N(0,1)$, a Berry-Esseen type estimate in Wasserstein distance is
+$$
+W_1(\mu_n,\gamma)\leq
+\frac{C\,\mathbb E(|X|^3)}{\sqrt n}.
 $$
 
 Wasserstein distances quantify how fast this convergence happens.
@@ -975,8 +1050,8 @@ Wasserstein distances quantify how fast this convergence happens.
 
 Wasserstein geometry turns variational problems over measures into PDEs. The JKO scheme is
 $$
-\alpha^{k+1}\in\arg\min_\alpha
-\frac{1}{2\tau}W_2^2(\alpha,\alpha^k)+\mathcal F(\alpha).
+\textcolor{#c7372f}{\alpha^{k+1}}\in\arg\min_{\textcolor{#c7372f}{\alpha}}
+\frac{1}{2\tau}W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#c7372f}{\alpha^k})+\mathcal F(\textcolor{#c7372f}{\alpha}).
 $$
 
 This is the implicit Euler scheme in the metric space of measures.
@@ -994,9 +1069,9 @@ This is the implicit Euler scheme in the metric space of measures.
 
 ::: {.definition-box}
 <span class="box-title">Wasserstein barycenter.</span>
-Given measures $(\beta_s)_s$ and weights $(\lambda_s)_s$, a barycenter solves
+Given measures <span class="tgt">$(\beta_s)_s$</span> and weights $(\lambda_s)_s$, a barycenter solves
 $$
-\min_\alpha \sum_s \lambda_s W_2^2(\alpha,\beta_s).
+\min_{\textcolor{#c7372f}{\alpha}} \sum_s \lambda_s W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta_s}).
 $$
 :::
 
@@ -1017,11 +1092,11 @@ Barycenters are the first place where transport becomes a geometric averaging op
 <div class="two-col-wide">
 <div>
 
-One-step generative models seek a map $g_\theta$ such that
+One-step generative models seek a map <span class="map">$g_\theta$</span> such that
 $$
-(g_\theta)_\#\zeta \approx \beta,
+\textcolor{#c7372f}{(g_\theta)_\#\zeta} \approx \textcolor{#226db4}{\beta},
 $$
-where $\zeta$ is a latent distribution and $\beta$ is the data distribution.
+where $\zeta$ is a latent distribution and <span class="tgt">$\beta$</span> is the data distribution.
 
 OT, Sinkhorn, MMD, and sliced-Wasserstein losses provide training discrepancies.
 
@@ -1060,8 +1135,8 @@ Optimal transport starts from matching, becomes Monge's map problem, relaxes to 
 
 The next presentation develops entropic regularization:
 $$
-\min_{\pi\in\Gamma(\alpha,\beta)}
-\int c\,d\pi + \varepsilon\operatorname{KL}(\pi\mid \alpha\otimes\beta),
+\min_{\textcolor{#7c5bbd}{\pi}\in\Gamma(\textcolor{#c7372f}{\alpha},\textcolor{#226db4}{\beta})}
+\int c\,d\textcolor{#7c5bbd}{\pi} + \varepsilon\operatorname{KL}(\textcolor{#7c5bbd}{\pi}\mid \textcolor{#c7372f}{\alpha}\otimes\textcolor{#226db4}{\beta}),
 $$
 leading to Sinkhorn iterations and differentiable transport losses.
 

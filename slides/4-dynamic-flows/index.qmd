@@ -37,7 +37,7 @@ include-after-body:
 
 ## Why dynamic flows?
 
-<div class="two-col-wide">
+<div class="two-col-wide" style="grid-template-columns:0.92fr 1.08fr;gap:0.82rem;">
 <div>
 
 Machine learning increasingly manipulates distributions by evolving them:
@@ -49,6 +49,8 @@ Machine learning increasingly manipulates distributions by evolving them:
 - biological trajectories and multi-omics integration.
 
 Dynamic OT gives a common language for these evolutions.
+
+<div class="notation-key"><span class="src">initial/source: $\alpha_0,X_0$</span><span class="tgt">final/target: $\alpha_1,X_1$</span><span class="plan">transport: $T,\pi$</span></div>
 
 </div>
 <div class="panel">
@@ -67,52 +69,176 @@ Dynamic OT gives a common language for these evolutions.
   <div class="roadmap-card dim"><h3>5&#46; Attention dynamics</h3><img src="assets/roadmap-transformers.png" alt="Roadmap transformers figure"></div>
 </div>
 
-## Auto-regressive models versus transport
+## Auto-regressive factorization
 
 <div class="two-col">
 <div>
 
-Auto-regressive models generate one token at a time. Transport models instead evolve a whole distribution or point cloud continuously.
+Auto-regressive models factor a high-dimensional law into conditional probabilities,
+$$
+p_\theta(z_1,\ldots,z_N)=\prod_{k=1}^N p_\theta(z_k\mid z_1,\ldots,z_{k-1}).
+$$
+Generation is sequential: each new token is sampled conditionally on the previous ones.
+
+::: {.result-box}
+<span class="box-title">Training objective.</span>
+Maximum likelihood becomes next-token prediction:
+$$
+\max_\theta\sum_{\ell}\sum_{k=1}^{N_\ell}
+\log p_\theta(z_k^\ell\mid z_{<k}^\ell).
+$$
+:::
+
+</div>
+<div class="panel tight">
+<img src="assets/ref-autoregressive-transport.png" alt="Comparison between autoregressive generation and transport" style="max-height:390px;object-fit:contain;">
+</div>
+</div>
+
+## Transport as a push-forward model
+
+Transport models construct a map or flow from a simple reference distribution to the data distribution.
 
 ::: {.result-box}
 <span class="box-title">Transport viewpoint.</span>
-Generation is the construction of a map or flow sending a simple reference law $\alpha_0$ to a data law $\alpha_1$.
+Generation is the construction of a <span class="map">map</span> $\textcolor{#7c5bbd}{T}$ or a <span class="map">flow</span> $\textcolor{#7c5bbd}{\Phi_t}$ such that
+$$
+\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha_0}=\textcolor{#226db4}{\alpha_1},
+\qquad
+(\textcolor{#7c5bbd}{\Phi_1})_\#\textcolor{#c7372f}{\alpha_0}=\textcolor{#226db4}{\alpha_1}.
+$$
+If $\textcolor{#c7372f}{X_0}\sim\textcolor{#c7372f}{\alpha_0}$, then $\textcolor{#226db4}{X_1}=\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{X_0})$ is a generated sample.
 :::
 
-</div>
-<div class="panel">
-<img src="assets/ref-autoregressive-transport.png" alt="Comparison between autoregressive generation and transport">
-</div>
-</div>
+For a continuous flow,
+$$
+\frac{d}{dt}\textcolor{#7c5bbd}{\Phi_t}(x)=v_t(\textcolor{#7c5bbd}{\Phi_t}(x)),
+\qquad
+\textcolor{#7c5bbd}{\Phi_0}=\operatorname{Id},
+\qquad
+\textcolor{#226db4}{X_1}=\textcolor{#7c5bbd}{\Phi_1}(\textcolor{#c7372f}{X_0}).
+$$
 
 ## Eulerian and Lagrangian descriptions
 
+<div class="two-col">
+<div>
+
 ::: {.definition-box}
 <span class="box-title">Two equivalent views.</span>
-A curve of measures $(\alpha_t)_{t\in[0,1]}$ can be described:
+A curve of measures $(\textcolor{#c7372f}{\alpha_t})_{t\in[0,1]}$ can be described:
 
 - in Eulerian form by a density and velocity field $(\rho_t,v_t)$,
-- in Lagrangian form by particle trajectories $\dot X_t=v_t(X_t)$.
-
-When $\alpha_t=\rho_t\,dx$, the velocity $v_t$ is an Eulerian field on space; when $X_t$ is random, $\alpha_t=\operatorname{Law}(X_t)$.
+- in Lagrangian form by particle trajectories
+  $\dot{\textcolor{#7c5bbd}{X_t}}=v_t(\textcolor{#7c5bbd}{X_t})$.
 :::
 
-The two descriptions are linked by the continuity equation
+</div>
+<div>
+
+The Eulerian law obeys
 $$
 \partial_t\rho_t+\operatorname{div}(\rho_t v_t)=0.
 $$
+If $\textcolor{#7c5bbd}{\Phi_t}$ solves
+$$
+\frac{d}{dt}\textcolor{#7c5bbd}{\Phi_t}(x)=v_t(\textcolor{#7c5bbd}{\Phi_t}(x)),
+\qquad
+\textcolor{#7c5bbd}{\Phi_0}(x)=x,
+$$
+then $\textcolor{#c7372f}{\alpha_t}=(\textcolor{#7c5bbd}{\Phi_t})_\#\textcolor{#c7372f}{\alpha_0}$.
 
-## Gradient structure links the two views
+</div>
+</div>
 
-This is the bridge from kinematics to optimization: the metric selects the velocity field.
+## Weak continuity equation
+
+The Eulerian equation is usually read weakly: for every smooth test function $\varphi$,
+$$
+\frac{d}{dt}\int_{\mathbb R^d}\varphi(x)\,d\textcolor{#c7372f}{\alpha_t}(x)
+=
+\int_{\mathbb R^d}\langle \nabla\varphi(x),v_t(x)\rangle\,d\textcolor{#c7372f}{\alpha_t}(x).
+$$
 
 ::: {.result-box}
-<span class="box-title">Wasserstein gradient.</span>
-For a functional $\mathcal F$, the steepest-descent velocity is
+<span class="box-title">Particle interpretation.</span>
+If $\textcolor{#7c5bbd}{X_t}$ solves $\dot{\textcolor{#7c5bbd}{X_t}}=v_t(\textcolor{#7c5bbd}{X_t})$, then the chain rule gives
 $$
-v_t=-\nabla\frac{\delta\mathcal F}{\delta\rho}(\rho_t),
+\frac{d}{dt}\mathbb E[\varphi(\textcolor{#7c5bbd}{X_t})]
+=
+\mathbb E[\langle\nabla\varphi(\textcolor{#7c5bbd}{X_t}),v_t(\textcolor{#7c5bbd}{X_t})\rangle],
+$$
+which is exactly the weak form with $\textcolor{#c7372f}{\alpha_t}=\operatorname{Law}(\textcolor{#7c5bbd}{X_t})$.
+:::
+
+This formula is the common language behind samples, neurons, tokens, and cells.
+
+## Otto metric and velocity reconstruction
+
+To turn a curve $\textcolor{#c7372f}{\alpha_t}$ into a geometric length, one chooses the least kinetic velocity realizing it.
+
+::: {.definition-box}
+<span class="box-title">Wasserstein tangent norm.</span>
+At $\textcolor{#c7372f}{\alpha}=\rho\,dx$, the velocity cost is
+$$
+\|v\|_{L^2(\textcolor{#c7372f}{\alpha})}^2
+=\int_{\mathbb R^d}\|v(x)\|^2\,d\textcolor{#c7372f}{\alpha}(x).
+$$
+Given $\dot{\textcolor{#c7372f}{\alpha}}$, one solves
+$$
+\min_v\left\{\int\|v\|^2\,d\textcolor{#c7372f}{\alpha}:
+\dot{\textcolor{#c7372f}{\alpha}}+\operatorname{div}(\textcolor{#c7372f}{\alpha}v)=0\right\}.
+$$
+:::
+
+This is the infinitesimal form of the Benamou-Brenier action used later for dynamic OT.
+
+## Velocity reconstruction
+
+The minimizer in the tangent problem is not arbitrary: it is a gradient field.
+
+::: {.result-box}
+<span class="box-title">Weighted Poisson equation.</span>
+The optimal velocity is $v=\nabla\psi$, where
+$$
+-\operatorname{div}(\textcolor{#c7372f}{\alpha}\nabla\psi)
+=\dot{\textcolor{#c7372f}{\alpha}},
 \qquad
-\partial_t\rho_t+\operatorname{div}(\rho_t v_t)=0.
+\Delta_{\textcolor{#c7372f}{\alpha}}\psi:=\operatorname{div}(\textcolor{#c7372f}{\alpha}\nabla\psi).
+$$
+Equivalently, $\psi=-\Delta_{\textcolor{#c7372f}{\alpha}}^{-1}\dot{\textcolor{#c7372f}{\alpha}}$ and $v=\nabla\psi$.
+:::
+
+This weighted Poisson inversion is the formal Riemannian structure behind Otto calculus. It is powerful, but intractable in high dimension unless the curve has special structure.
+
+## First variation of an energy
+
+The bridge from kinematics to optimization starts with the first variation of an energy.
+
+::: {.result-box}
+<span class="box-title">First variation.</span>
+For a functional $\mathcal F$, define its first variation by
+$$
+\mathcal F(\textcolor{#c7372f}{\alpha}+\tau\chi)
+=\mathcal F(\textcolor{#c7372f}{\alpha})
++\tau\int \frac{\delta\mathcal F}{\delta\alpha}\,d\chi+o(\tau).
+$$
+:::
+
+The scalar field $\delta\mathcal F/\delta\alpha$ plays the role of the Euclidean gradient, but it is converted into a transport velocity by taking a spatial gradient.
+
+## Wasserstein gradient equation
+
+The Wasserstein metric selects the steepest admissible transport velocity.
+
+::: {.result-box}
+<span class="box-title">Gradient flow PDE.</span>
+The steepest-descent velocity is
+$$
+v_t=-\nabla\frac{\delta\mathcal F}{\delta\alpha}(\textcolor{#c7372f}{\alpha_t}),
+\qquad
+\partial_t\textcolor{#c7372f}{\alpha_t}
++\operatorname{div}(\textcolor{#c7372f}{\alpha_t}v_t)=0.
 $$
 The Eulerian PDE and the Lagrangian particle ODE are two descriptions of the same gradient flow.
 :::
@@ -125,6 +251,20 @@ This viewpoint is reused for sampling, neural-network training, genomics, and at
 <div>
 
 A deterministic transport sampler moves particles from a simple source cloud to a target cloud. The slider shows a Lagrangian interpolation.
+If $\textcolor{#7c5bbd}{T_\#}\textcolor{#c7372f}{\alpha_0}=\textcolor{#226db4}{\alpha_1}$, the displacement path is
+$$
+\textcolor{#7c5bbd}{X_t}
+=(1-t)\textcolor{#c7372f}{X_0}
++t\,\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{X_0}),
+\qquad
+\textcolor{#c7372f}{\alpha_t}
+=((1-t)\operatorname{Id}+t\textcolor{#7c5bbd}{T})_\#\textcolor{#c7372f}{\alpha_0}.
+$$
+The velocity along each path is constant:
+$$
+\dot{\textcolor{#7c5bbd}{X_t}}
+=\textcolor{#7c5bbd}{T}(\textcolor{#c7372f}{X_0})-\textcolor{#c7372f}{X_0}.
+$$
 
 </div>
 <div class="interactive-panel">
@@ -147,15 +287,24 @@ The MyST panel exposes the same sampler with the book controls and notation.
 <span class="box-title">Interpolant.</span>
 A stochastic interpolant defines random variables
 $$
-X_t=I_t(X_0,X_1,Z),
-\qquad X_0\sim\alpha_0,
-\quad X_1\sim\alpha_1,
+\textcolor{#7c5bbd}{X_t}=I_t(\textcolor{#c7372f}{X_0},\textcolor{#226db4}{X_1},Z),
+\qquad \textcolor{#c7372f}{X_0}\sim\textcolor{#c7372f}{\alpha_0},
+\quad \textcolor{#226db4}{X_1}\sim\textcolor{#226db4}{\alpha_1},
 $$
 possibly with additional noise $Z$.
-Its conditional velocity is $u_t=\partial_t I_t(X_0,X_1,Z)$.
+Its conditional velocity is $u_t=\partial_t I_t(\textcolor{#c7372f}{X_0},\textcolor{#226db4}{X_1},Z)$.
 :::
 
-The goal of flow matching is to learn a vector field $v_t$ whose continuity equation reproduces the law of $X_t$.
+The goal of flow matching is to learn a vector field $v_t$ whose continuity equation reproduces the law of $\textcolor{#7c5bbd}{X_t}$.
+
+For the linear deterministic interpolant,
+$$
+\textcolor{#7c5bbd}{X_t}=(1-t)\textcolor{#c7372f}{X_0}+t\textcolor{#226db4}{X_1},
+\qquad
+u_t=\partial_t\textcolor{#7c5bbd}{X_t}
+=\textcolor{#226db4}{X_1}-\textcolor{#c7372f}{X_0}.
+$$
+The endpoint coupling may be independent, optimal, or learned.
 
 ## Live panel: flow-matching trajectories
 
@@ -179,37 +328,80 @@ The coupling between endpoints and the time schedule change the geometry of the 
 
 Let $u_t$ be the conditional velocity of the interpolant. A common objective is
 $$
-\min_v \int_0^1 \mathbb E\left[\|v_t(X_t)-u_t\|^2\right]dt.
+\min_v \int_0^1 \mathbb E\left[\|v_t(\textcolor{#7c5bbd}{X_t})-u_t\|^2\right]dt.
 $$
 
 ::: {.theorem-box}
 <span class="box-title">Flow matching identity.</span>
 The minimizer is the conditional expectation
 $$
-v_t(x)=\mathbb E[u_t\mid X_t=x],
+v_t(\textcolor{#7c5bbd}{x})=\mathbb E[u_t\mid \textcolor{#7c5bbd}{X_t}=\textcolor{#7c5bbd}{x}],
 $$
-and it transports the marginal law of $X_t$ through the continuity equation.
+and it transports the marginal law of $\textcolor{#7c5bbd}{X_t}$ through the continuity equation.
 :::
+
+## Independent convolution interpolant
+
+The reference flow-matching construction uses the independent endpoint coupling:
+$$
+\textcolor{#7c5bbd}{X_t}=(1-t)\textcolor{#c7372f}{X_0}+t\textcolor{#226db4}{X_1},
+\qquad
+\textcolor{#c7372f}{X_0}\sim\textcolor{#c7372f}{\alpha_0},\quad
+\textcolor{#226db4}{X_1}\sim\textcolor{#226db4}{\alpha_1},
+\quad \textcolor{#c7372f}{X_0}\perp \textcolor{#226db4}{X_1}.
+$$
+Then $u_t=\textcolor{#226db4}{X_1}-\textcolor{#c7372f}{X_0}$ and
+$$
+v_t(x)=\mathbb E[\textcolor{#226db4}{X_1}-\textcolor{#c7372f}{X_0}
+\mid (1-t)\textcolor{#c7372f}{X_0}+t\textcolor{#226db4}{X_1}=x],
+\qquad
+\partial_t\alpha_t+\operatorname{div}(\alpha_t v_t)=0.
+$$
+If $\textcolor{#c7372f}{\alpha_0}=\mathrm N(0,I)$ and $\rho_t=d\alpha_t/dx$, Tweedie's formula gives, for $t>0$,
+$$
+v_t(x)=\frac{x}{t}+\frac{1-t}{t}\nabla\log \rho_t(x).
+$$
+The reverse noising convention rewrites the same score identity with $1-t$ in the denominator, as in diffusion-model notation.
 
 ## Algorithm: flow matching training
 
 ::: {.algorithm-box}
 <span class="box-title">Flow matching from paired endpoint samples.</span>
-Input: endpoint sampler $(X_0,X_1)$, schedule $I_t$, conditional velocity $u_t$, network $v_\theta(t,x)$.  
+Input: endpoint sampler $(\textcolor{#c7372f}{X_0},\textcolor{#226db4}{X_1})$, schedule $I_t$, conditional velocity $u_t$, network $v_\theta(t,\textcolor{#7c5bbd}{x})$.<br>
 Output: trained vector field $v_\theta$.
 
-1. Sample a mini-batch $(x_0^r,x_1^r)_r$.
+1. Sample a mini-batch $(\textcolor{#c7372f}{x_0^r},\textcolor{#226db4}{x_1^r})_r$.
 2. Sample times $t_r\sim\mathrm U(0,1)$.
-3. Form $x_t^r=I_{t_r}(x_0^r,x_1^r)$ and $u_t^r=u_{t_r}(x_0^r,x_1^r)$.
-4. Minimize $\sum_r\|v_\theta(t_r,x_t^r)-u_t^r\|^2$ by stochastic gradient descent.
-5. Generate samples by integrating $\dot X_t=v_\theta(t,X_t)$ from $X_0\sim\alpha_0$.
+3. Form $\textcolor{#7c5bbd}{x_t^r}=I_{t_r}(\textcolor{#c7372f}{x_0^r},\textcolor{#226db4}{x_1^r})$ and $u_t^r=u_{t_r}(\textcolor{#c7372f}{x_0^r},\textcolor{#226db4}{x_1^r})$.
+4. Minimize $\sum_r\|v_\theta(t_r,\textcolor{#7c5bbd}{x_t^r})-u_t^r\|^2$ by stochastic gradient descent.
+5. Generate samples by integrating $\dot{\textcolor{#7c5bbd}{X_t}}=v_\theta(t,\textcolor{#7c5bbd}{X_t})$ from $\textcolor{#c7372f}{X_0}\sim\textcolor{#c7372f}{\alpha_0}$.
 :::
 
 ## Diffusion versus optimal transport
 
-<div class="two-col">
-<div class="panel tight"><img src="assets/diffusion-curves.png" alt="Diffusion curves"></div>
-<div class="panel tight"><img src="assets/ot-rays.png" alt="OT rays"></div>
+<div class="two-col-wide" style="grid-template-columns:1.08fr 0.92fr;">
+<div>
+
+Flow matching often fixes the path $\textcolor{#c7372f}{\alpha_t}$ and only fits the velocity:
+$$
+\min_{v_t}\int_0^1\|v_t\|_{L^2(\textcolor{#c7372f}{\alpha_t})}^2\,dt
+\quad\text{s.t.}\quad
+\partial_t\textcolor{#c7372f}{\alpha_t}
++\operatorname{div}(\textcolor{#c7372f}{\alpha_t}v_t)=0.
+$$
+Dynamic OT optimizes both the path and the velocity:
+$$
+W_2^2(\textcolor{#c7372f}{\alpha_0},\textcolor{#226db4}{\alpha_1})
+=
+\min_{\textcolor{#c7372f}{\alpha_t},v_t}
+\int_0^1\|v_t\|_{L^2(\textcolor{#c7372f}{\alpha_t})}^2\,dt.
+$$
+
+</div>
+<div class="figure-grid" style="gap:0.3rem;">
+<img src="assets/diffusion-curves.png" style="max-height:190px" alt="Diffusion curves">
+<img src="assets/ot-rays.png" style="max-height:190px" alt="OT rays">
+</div>
 </div>
 
 Diffusion-style paths can be more curved and noisy; OT paths are displacement-efficient but may be harder to parametrize in high dimension.
@@ -265,12 +457,12 @@ The schedule changes the speed at which the same endpoint problem is traversed.
 
 For quadratic cost,
 $$
-W_2^2(\alpha_0,\alpha_1)=
-\min_{\pi\in\Gamma(\alpha_0,\alpha_1)}
-\int \|x-y\|^2\,d\pi(x,y).
+W_2^2(\textcolor{#c7372f}{\alpha_0},\textcolor{#226db4}{\alpha_1})=
+\min_{\textcolor{#7c5bbd}{\pi}\in\Gamma(\textcolor{#c7372f}{\alpha_0},\textcolor{#226db4}{\alpha_1})}
+\int \|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^2\,d\textcolor{#7c5bbd}{\pi}(\textcolor{#c7372f}{x},\textcolor{#226db4}{y}).
 $$
 
-In the Monge case, $\alpha_t=((1-t)\operatorname{Id}+tT)_\#\alpha_0$ is a constant-speed geodesic.
+In the Monge case, $\textcolor{#7c5bbd}{\alpha_t}=((1-t)\operatorname{Id}+t\textcolor{#7c5bbd}{T})_\#\textcolor{#c7372f}{\alpha_0}$ is a constant-speed geodesic.
 
 Dynamic OT asks for an intrinsic description of this geodesic through velocities.
 
@@ -280,7 +472,7 @@ Dynamic OT asks for an intrinsic description of this geodesic through velocities
 <span class="box-title">Benamou-Brenier.</span>
 For absolutely continuous curves,
 $$
-\frac12 W_2^2(\alpha_0,\alpha_1)=
+\frac12 W_2^2(\textcolor{#c7372f}{\alpha_0},\textcolor{#226db4}{\alpha_1})=
 \min_{\rho_t,v_t}
 \int_0^1\int \frac12\|v_t(x)\|^2\rho_t(x)\,dx\,dt
 $$
@@ -319,14 +511,14 @@ This is convex because $(\rho,m)\mapsto \|m\|^2/\rho$ is the perspective of a qu
 
 ::: {.algorithm-box}
 <span class="box-title">Convex Benamou-Brenier discretization.</span>
-Input: endpoint densities $\rho_0,\rho_1$, space-time grid, time step $\Delta t$.  
+Input: endpoint densities $\rho_0,\rho_1$, space-time grid, time step $\Delta t$.<br>
 Output: density path $(\rho^k)_k$ and momenta $(m^k)_k$.
 
 1. Initialize a feasible interpolation $(\rho^k,m^k)_k$.
 2. Enforce the linear constraint $\partial_t\rho+\operatorname{div}m=0$.
 3. Minimize the convex action $\sum_k\Delta t\int \frac12\|m^k\|^2/\rho^k$.
 4. Recover velocities by $v^k=m^k/\rho^k$ where $\rho^k>0$.
-5. Read the geodesic as the curve $\alpha_k=\rho^k dx$.
+5. Read the geodesic as the curve $\textcolor{#c7372f}{\alpha_k}=\rho^k dx$.
 :::
 
 ## Dynamic geodesic example
@@ -365,7 +557,7 @@ $$
 $$
 The endpoint objective is
 $$
-\int \varphi_1\,d\alpha_1-\int \varphi_0\,d\alpha_0.
+\int \varphi_1\,d\textcolor{#226db4}{\alpha_1}-\int \varphi_0\,d\textcolor{#c7372f}{\alpha_0}.
 $$
 :::
 
@@ -397,30 +589,57 @@ Density, momentum, and potential are coupled by the continuity equation and Hami
 <span class="box-title">JKO scheme.</span>
 Given an energy $\mathcal F$, the implicit Euler step is
 $$
-\alpha^{k+1}\in\arg\min_\alpha
-\frac{1}{2\tau}W_2^2(\alpha,\alpha^k)+\mathcal F(\alpha).
+\textcolor{#c7372f}{\alpha^{k+1}}\in\arg\min_{\textcolor{#c7372f}{\alpha}}
+\frac{1}{2\tau}W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#c7372f}{\alpha^k})+\mathcal F(\textcolor{#c7372f}{\alpha}).
 $$
 :::
 
 As $\tau\to0$, this defines a gradient flow over probability measures.
 
+## Single Dirac reduces to gradient descent
+
+The JKO step extends ordinary implicit gradient descent. If
+$\textcolor{#c7372f}{\alpha^k}=\delta_{x^k}$ and
+$h(x)=\mathcal F(\delta_x)$, then
+$$
+W_2^2(\delta_x,\delta_{x^k})=\|x-x^k\|^2,
+$$
+so the JKO update becomes
+$$
+x^{k+1}\in\arg\min_x
+\frac{1}{2\tau}\|x-x^k\|^2+h(x).
+$$
+Letting $\tau\to0$ gives the classical ODE
+$$
+\dot x(t)=-\nabla h(x(t)).
+$$
+
+Thus Wasserstein gradient flows are the distributional analogue of Euclidean gradient flows.
+
 ## Algorithm: minimizing movements
 
 ::: {.algorithm-box}
 <span class="box-title">JKO time stepping.</span>
-Input: initial law $\alpha^0$, energy $\mathcal F$, step size $\tau$, number of steps $K$.  
-Output: approximate gradient-flow path $(\alpha^k)_{k=0}^K$.
+Input: initial law <span class="src">$\alpha^0$</span>, energy $\mathcal F$, step size $\tau$, number of steps $K$.<br>
+Output: approximate gradient-flow path $(\textcolor{#c7372f}{\alpha^k})_{k=0}^K$.
 
 1. Set $k=0$.
-2. Solve $\alpha^{k+1}\in\arg\min_\alpha \frac{1}{2\tau}W_2^2(\alpha,\alpha^k)+\mathcal F(\alpha)$.
+2. Solve $\textcolor{#c7372f}{\alpha^{k+1}}\in\arg\min_{\textcolor{#c7372f}{\alpha}} \frac{1}{2\tau}W_2^2(\textcolor{#c7372f}{\alpha},\textcolor{#c7372f}{\alpha^k})+\mathcal F(\textcolor{#c7372f}{\alpha})$.
 3. Set $k\leftarrow k+1$.
 4. Repeat until $k=K$.
-5. Interpolate the sequence to approximate the continuous curve $\alpha_t$.
+5. Interpolate the sequence to approximate the continuous curve $\textcolor{#c7372f}{\alpha_t}$.
 :::
 
 ## From JKO to PDE
 
-When the first variation $\delta\mathcal F/\delta\rho$ is smooth, the Wasserstein gradient flow satisfies
+For a perturbation of density $\rho+\tau\eta$, the first variation is defined by
+$$
+\mathcal F(\rho+\tau\eta)=
+\mathcal F(\rho)+
+\tau\int \frac{\delta\mathcal F}{\delta\rho}(\rho)(x)\eta(x)\,dx+o(\tau).
+$$
+
+When $\delta\mathcal F/\delta\rho$ is smooth, the Wasserstein gradient flow satisfies
 $$
 \partial_t\rho_t=
 \operatorname{div}\left(\rho_t\nabla\frac{\delta\mathcal F}{\delta\rho}(\rho_t)\right).
@@ -434,6 +653,33 @@ v_t=-\nabla\frac{\delta\mathcal F}{\delta\rho}(\rho_t),
 $$
 
 For example, $\delta\operatorname{Ent}(\rho)/\delta\rho=\log\rho+1$ gives the heat equation.
+
+## Basic Wasserstein gradients
+
+Writing $\rho=d\textcolor{#c7372f}{\alpha}/dx$, the velocity is
+$v=-\nabla_W\mathcal F(\textcolor{#c7372f}{\alpha})$ with
+$\nabla_W\mathcal F(\textcolor{#c7372f}{\alpha})=\nabla(\delta\mathcal F/\delta\rho)$.
+
+$$
+\begin{array}{lll}
+\text{Linear:} &
+\mathcal F(\textcolor{#c7372f}{\alpha})=\int h(x)\,d\textcolor{#c7372f}{\alpha}(x) &
+v(x)=-\nabla h(x)
+\\[0.45em]
+\text{Entropy:} &
+\mathcal F(\textcolor{#c7372f}{\alpha})=\int \rho(x)\log\rho(x)\,dx &
+\partial_t\rho=\Delta\rho
+\\[0.45em]
+\text{Interaction:} &
+\mathcal F(\textcolor{#c7372f}{\alpha})=\iint k(x,y)\,d\textcolor{#c7372f}{\alpha}(x)d\textcolor{#c7372f}{\alpha}(y) &
+v(x)=-2\int\nabla_x k(x,y)\,d\textcolor{#c7372f}{\alpha}(y).
+\end{array}
+$$
+
+For particles $\textcolor{#c7372f}{\alpha^N}=\frac1N\sum_i\delta_{X_i}$, the last line becomes an interacting ODE:
+$$
+\dot X_i=-\frac2N\sum_j\nabla_x k(X_i,X_j).
+$$
 
 ## JKO entropy steps
 
@@ -516,9 +762,9 @@ Entropy and porous-medium energies produce different spreading laws.
 
 ## Fokker-Planck and Langevin dynamics
 
-For relative entropy with respect to a target density $\beta\propto e^{-V}$,
+For relative entropy with respect to a target density <span class="tgt">$\beta\propto e^{-V}$</span>,
 $$
-\mathcal F(\alpha)=\operatorname{KL}(\alpha\mid\beta),
+\mathcal F(\textcolor{#c7372f}{\alpha})=\operatorname{KL}(\textcolor{#c7372f}{\alpha}\mid\textcolor{#226db4}{\beta}),
 $$
 the flow is the Fokker-Planck equation
 $$
@@ -560,34 +806,81 @@ The slider controls the Brownian amplitude in a two-well potential.
 
 ::: {.algorithm-box}
 <span class="box-title">Euler-Maruyama Fokker-Planck sampler.</span>
-Input: target potential $V$, step size $h$, particles $(X_i^0)_{i=1}^N$.  
-Output: empirical approximation $\alpha_t^N=\frac1N\sum_i\delta_{X_i^t}$.
+Input: target potential $V$, step size $h$, particles $(X_i^0)_{i=1}^N$.<br>
+Output: empirical approximation $\textcolor{#c7372f}{\alpha_t^N}=\frac1N\sum_i\delta_{X_i^t}$.
 
 1. For each step $k=0,\ldots,K-1$, sample $\xi_i^k\sim\mathrm N(0,I_d)$.
 2. Update $X_i^{k+1}=X_i^k-h\nabla V(X_i^k)+\sqrt{2h}\,\xi_i^k$.
-3. Approximate the law by $\alpha_{kh}^N=\frac1N\sum_i\delta_{X_i^k}$.
+3. Approximate the law by $\textcolor{#c7372f}{\alpha_{kh}^N}=\frac1N\sum_i\delta_{X_i^k}$.
 4. Estimate densities by KDE or solve the Fokker-Planck PDE directly when dimension permits.
 :::
 
 ## Three numerical representations
 
-<div class="figure-row">
-<img src="assets/fokker-langevin.png" style="width:31%" alt="Fokker-Planck Langevin figure">
-<img src="assets/fokker-kde.png" style="width:31%" alt="Fokker KDE figure">
-<img src="assets/fokker-grid.png" style="width:31%" alt="Fokker grid figure">
+<div class="oneliner-stack">
+<div class="oneliner-strip">
+<div class="oneliner-label">Langevin<br>particles</div>
+<img src="assets/fokker-langevin.png" alt="Fokker-Planck Langevin particle row">
+</div>
+<div class="oneliner-strip">
+<div class="oneliner-label">KDE-score<br>particles</div>
+<img src="assets/fokker-kde.png" alt="Fokker-Planck deterministic KDE-score particle row">
+</div>
+<div class="oneliner-strip">
+<div class="oneliner-label">Grid<br>PDE</div>
+<img src="assets/fokker-grid.png" alt="Fokker-Planck finite-difference density row">
+</div>
 </div>
 
-The same PDE can be approximated by stochastic particles, deterministic KDE-score particles, or a finite-difference density solver.
+<div class="caption">The same Fokker--Planck flow viewed as stochastic particles, deterministic KDE-score particles, and a finite-difference density solver.</div>
 
 ## Discrepancy-driven flows
 
-<div class="figure-row">
-<img src="assets/discrepancy-w2.png" style="width:31%" alt="Discrepancy Wasserstein-2 figure">
-<img src="assets/discrepancy-kl.png" style="width:31%" alt="Discrepancy KL figure">
-<img src="assets/discrepancy-ed.png" style="width:31%" alt="Discrepancy ed figure">
-</div>
+::: {.discrepancy-grid}
+::: {.discrepancy-card}
+<div class="discrepancy-title">Energy distance flow</div>
 
-Changing the discrepancy changes the geometry of the velocity field and the resulting motion.
+$$
+\begin{gathered}
+F(\alpha)=\mathrm{ED}(\alpha,\beta),\\
+\mathrm{ED}^2=2\int |F_\alpha-F_\beta|^2dx,\\
+\dot q_t(u)=\frac{2(u-F_\beta(q_t(u)))}{\mathrm{ED}(\alpha_t,\beta)} .
+\end{gathered}
+$$
+
+![](assets/discrepancy-ed.png){fig-alt="Energy-distance Wasserstein gradient flow density snapshots"}
+:::
+
+::: {.discrepancy-card}
+<div class="discrepancy-title">Unsquared $W_2$ flow</div>
+
+$$
+\begin{gathered}
+F(\alpha)=W_2(\alpha,\beta),\\
+\dot q_t(u)=-\frac{q_t(u)-q_\beta(u)}
+{W_2(\alpha_t,\beta)} .
+\end{gathered}
+$$
+
+![](assets/discrepancy-w2.png){fig-alt="Wasserstein-2 gradient flow density snapshots"}
+:::
+
+::: {.discrepancy-card}
+<div class="discrepancy-title">KL / Fokker--Planck flow</div>
+
+$$
+\begin{gathered}
+F(\alpha)=\mathrm{KL}(\alpha|\beta),\\
+\partial_t\rho_t
+=\partial_x\!\left(\rho_\beta\,\partial_x(\rho_t/\rho_\beta)\right).
+\end{gathered}
+$$
+
+![](assets/discrepancy-kl.png){fig-alt="KL Fokker-Planck density snapshots"}
+:::
+:::
+
+<div class="discrepancy-caption">All three panels use the same one-dimensional Gaussian-mixture source and target. The dashed black curve is the target density $\beta$; red-to-blue curves are density snapshots of $\alpha_t$. In the first two cards, $q_t=F_{\alpha_t}^{-1}$ denotes the quantile function.</div>
 
 ## Live panel: gradient-flow objectives
 
@@ -595,7 +888,9 @@ Changing the discrepancy changes the geometry of the velocity field and the resu
 <iframe src="../../myst/live/gradflow-objective.html" title="Interactive gradient-flow objectives"></iframe>
 </div>
 
-Different discrepancies create different velocities even with the same target.
+Different discrepancies create different velocities even with the same target. The Sinkhorn option follows the negative Wasserstein gradient of
+$\mathrm{OT}_\varepsilon(\alpha,\beta)-\frac12\mathrm{OT}_\varepsilon(\alpha,\alpha)$,
+so increasing the time slider now shows a genuine Sinkhorn-divergence descent.
 
 ## Particle objective geometries
 
@@ -614,7 +909,7 @@ Different losses induce very different particle forces: OT rays, local-density p
 <iframe src="../../myst/live/gradflow-mmd.html" title="Interactive mmd particle flow"></iframe>
 </div>
 
-The particle count changes how faithfully the flow explores the target geometry.
+The same source and target clouds are evolved with three kernel discrepancies: energy distance, Laplacian MMD, and Gaussian MMD. The bandwidth slider highlights the locality tradeoff of positive kernels.
 
 ## Constraints and unbalanced flows
 
@@ -645,8 +940,8 @@ Hard density caps create pressure-like effects in the transport dynamics.
 
 Congestion models combine transport, entropy, and a hard density cap. A typical energy is
 $$
-\mathcal F(\alpha)
-=\int \varphi\,d\alpha+\operatorname{Ent}(\alpha)+\iota_C(\alpha),
+\mathcal F(\textcolor{#c7372f}{\alpha})
+=\int \varphi\,d\textcolor{#c7372f}{\alpha}+\operatorname{Ent}(\textcolor{#c7372f}{\alpha})+\iota_C(\textcolor{#c7372f}{\alpha}),
 \qquad
 C=\{\rho\,dx:\rho(x)\leq \kappa(x)\}.
 $$
@@ -687,14 +982,6 @@ $$
 
 Unbalanced geometries add a scalar growth field to the transport velocity, allowing mass to appear or disappear.
 
-## Live panel: dynamic unbalanced flows
-
-<div class="live-panel">
-<iframe src="../../myst/live/dynamic-unbalanced.html" title="Interactive dynamic unbalanced flows"></iframe>
-</div>
-
-Unbalanced flows add growth and decay to pure transport.
-
 ## Roadmap: training and biology
 
 <div class="roadmap">
@@ -709,26 +996,26 @@ Unbalanced flows add growth and decay to pure transport.
 
 A two-layer model can be written as an integral over neurons:
 $$
-f_\alpha(z)=\int a\,\sigma(w^\top z)\,d\alpha(a,w).
+f_{\textcolor{#c7372f}{\alpha}}(z)=\int a\,\sigma(w^\top z)\,d\textcolor{#c7372f}{\alpha}(a,w).
 $$
 
-Here $\alpha$ is a probability measure over neuron parameters $(a,w)$. In the infinite-width limit, particle descent becomes a Wasserstein gradient flow for $\alpha_t$.
+Here <span class="src">$\alpha$</span> is a probability measure over neuron parameters $(a,w)$. In the infinite-width limit, particle descent becomes a Wasserstein gradient flow for <span class="src">$\alpha_t$</span>.
 
 ## Mean-field risk and first variation
 
 Write $\theta=(a,w)$ and $\varphi_\theta(z)=a\,\sigma(w^\top z)$. For supervised data law $\nu$ on pairs $(z,y)$,
 $$
-\mathcal R(\alpha)
-=\frac12\int |f_\alpha(z)-y|^2\,d\nu(z,y),
+\mathcal R(\textcolor{#c7372f}{\alpha})
+=\frac12\int |f_{\textcolor{#c7372f}{\alpha}}(z)-y|^2\,d\nu(z,y),
 \qquad
-f_\alpha(z)=\int \varphi_\theta(z)\,d\alpha(\theta).
+f_{\textcolor{#c7372f}{\alpha}}(z)=\int \varphi_\theta(z)\,d\textcolor{#c7372f}{\alpha}(\theta).
 $$
 
 The first variation is explicit:
 $$
-\frac{\delta\mathcal R}{\delta\alpha}(\theta)
+\frac{\delta\mathcal R}{\delta\textcolor{#c7372f}{\alpha}}(\theta)
 =
-\int (f_\alpha(z)-y)\,\varphi_\theta(z)\,d\nu(z,y).
+\int (f_{\textcolor{#c7372f}{\alpha}}(z)-y)\,\varphi_\theta(z)\,d\nu(z,y).
 $$
 Particle gradient descent differentiates this quantity with respect to the neuron parameter $\theta$.
 
@@ -738,16 +1025,16 @@ Particle gradient descent differentiates this quantity with respect to the neuro
 <iframe src="../../myst/live/gradflow-mlp.html" title="Interactive mean-field mlp training"></iframe>
 </div>
 
-The neuron distribution evolves as a Wasserstein gradient flow in parameter space.
+The neuron distribution evolves as a Wasserstein gradient flow in parameter space. The live panel shows angular concentration at several optimization times and lets one vary the number of teacher neurons.
 
 ## Mean-field training PDE
 
-For a risk functional $\mathcal R(\alpha)$, the mean-field dynamics has the form
+For a risk functional $\mathcal R(\textcolor{#c7372f}{\alpha})$, the mean-field dynamics has the form
 $$
-\partial_t\alpha_t+
-\operatorname{div}(\alpha_t v_t)=0,
+\partial_t\textcolor{#c7372f}{\alpha_t}+
+\operatorname{div}(\textcolor{#c7372f}{\alpha_t} v_t)=0,
 \qquad
-v_t=-\nabla\frac{\delta\mathcal R}{\delta\alpha}(\alpha_t).
+v_t=-\nabla\frac{\delta\mathcal R}{\delta\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{\alpha_t}).
 $$
 
 This is a training PDE, not merely an optimization algorithm in a finite parameter vector.
@@ -756,10 +1043,10 @@ This is a training PDE, not merely an optimization algorithm in a finite paramet
 
 For two-layer perceptrons, the empirical particle system is
 $$
-\alpha_t=\frac1m\sum_{k=1}^m \delta_{(a_k(t),w_k(t))}.
+\textcolor{#c7372f}{\alpha_t}=\frac1m\sum_{k=1}^m \delta_{(a_k(t),w_k(t))}.
 $$
 
-The mean-field limit replaces finite-dimensional parameter descent by descent of a functional $\mathcal R(\alpha)$.
+The mean-field limit replaces finite-dimensional parameter descent by descent of a functional $\mathcal R(\textcolor{#c7372f}{\alpha})$.
 
 ::: {.result-box}
 <span class="box-title">Qualitative theorem.</span>
@@ -793,7 +1080,7 @@ Changing the underlying transport geometry changes the training path and the ris
 <iframe src="../../myst/live/gradflow-mlp-muon.html" title="Interactive muon-type normalized dynamics"></iframe>
 </div>
 
-The normalized geometry changes the effective path through parameter space.
+The normalized geometry changes the effective path through parameter space. The live panel compares W2 and Muon-like dynamics through trajectories and multi-time angular concentration for selectable teacher neurons.
 
 ## Single-cell and multi-omics viewpoint
 
@@ -824,7 +1111,7 @@ Single-cell comparison is naturally a distribution problem rather than a pointwi
 <span class="box-title">Example: cell populations.</span>
 A sample is an empirical measure
 $$
-\alpha=\frac1n\sum_i\delta_{x_i}
+\textcolor{#c7372f}{\alpha}=\frac1n\sum_i\delta_{\textcolor{#c7372f}{x_i}}
 $$
 over cells represented by gene-expression, accessibility, or learned latent features. OT compares two populations by coupling cells while respecting the geometry of the feature space.
 :::
@@ -833,40 +1120,51 @@ The coupling is not only a number: it can be interpreted as a soft cell-to-cell 
 
 ## Paired multi-omics integration
 
-<div class="two-col-wide">
-<div>
-
 When several modalities describe the same biological system, OT can align their empirical laws through a shared latent geometry.
 
-::: {.result-box}
+::: {.result-box style="margin-bottom:0.45rem;"}
 <span class="box-title">Coupling across modalities.</span>
 Multi-omics integration often seeks nonnegative weights or maps that match several observed distributions at once. OT supplies the cost-sensitive alignment term, while additional constraints encode marker structure, sparsity, or temporal consistency.
 :::
 
-This is the same mathematical pattern as barycenters and multimarginal couplings, specialized to biological measurements. The MOWGLI model is a representative multi-omics example: it combines cost-sensitive OT couplings with low-rank factors to align modalities.
-
-</div>
 <div class="panel tight">
-<img src="assets/ref-mowgli.png" alt="MOWGLI multi-omics integration">
+<div style="display:grid;grid-template-columns:0.22fr 0.40fr 0.38fr;gap:14px;align-items:center;">
+<div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+<img src="assets/mowgli-logo.png" style="width:100%;max-height:94px;object-fit:contain;" alt="MOWGLI logo">
+<div class="small-note" style="text-align:center;">Representative model: MOWGLI combines OT couplings and low-rank factors.</div>
+</div>
+<img src="assets/mowgli-factorization.png" style="width:100%;max-height:285px;object-fit:contain;" alt="MOWGLI low-rank factorization and OT objective">
+<div>
+<img src="assets/mowgli-umap.png" style="width:100%;max-height:285px;object-fit:contain;" alt="MOWGLI UMAP cell clustering">
+<div class="small-note" style="text-align:center;margin-top:4px;">OT-aligned factors induce biologically meaningful clusters.</div>
 </div>
 </div>
+</div>
+
+This is the same mathematical pattern as barycenters and multimarginal couplings, specialized to biological measurements.
 
 ## Trajectory inference as transport
 
-<div class="two-col-wide">
-<div>
-
 Given observations at several times, one can infer a coupling or flow linking consecutive distributions.
 
-::: {.example-box}
+::: {.example-box style="margin-bottom:0.45rem;"}
 <span class="box-title">Example: developmental dynamics.</span>
-A population at time $t_k$ is a measure $\alpha_k$.
-OT-based trajectory inference connects $\alpha_k$ to $\alpha_{k+1}$ with geometry and growth priors.
+A population at time $t_k$ is a measure $\textcolor{#c7372f}{\alpha_k}$.
+OT-based trajectory inference connects $\textcolor{#c7372f}{\alpha_k}$ to $\textcolor{#226db4}{\alpha_{k+1}}$ with geometry and growth priors.
 :::
 
-</div>
 <div class="panel tight">
-<img src="assets/ref-trajectory-inference.png" alt="Trajectory inference using optimal transport">
+<div style="display:grid;grid-template-columns:0.30fr 0.70fr;gap:12px;align-items:center;">
+<div style="display:flex;flex-direction:column;gap:8px;">
+<img src="assets/trajectory-waddington.png" style="width:100%;max-height:145px;object-fit:contain;" alt="Waddington landscape sketch">
+<div class="small-note" style="text-align:center;">developmental landscape</div>
+<img src="assets/trajectory-couplings.png" style="width:100%;max-height:118px;object-fit:contain;" alt="Transport couplings between consecutive times">
+<div class="small-note" style="text-align:center;">couplings between time slices</div>
+</div>
+<div>
+<img src="assets/trajectory-flow-map.png" style="width:100%;max-height:295px;object-fit:contain;" alt="Glued optimal transport trajectory field">
+<div class="small-note" style="text-align:center;margin-top:4px;">gluing local OT maps reconstructs a population trajectory.</div>
+</div>
 </div>
 </div>
 
@@ -916,11 +1214,11 @@ and, in the mean-field limit, a PDE for the token distribution.
 
 ## L2 attention and mean shift
 
-If attention scores use $-\|x-y\|^2/\varepsilon$, the continuum vector field resembles mean shift:
+If attention scores use $-\|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^2/\varepsilon$, the continuum vector field resembles mean shift:
 $$
-v_\alpha(x)=
-\frac{\int (y-x)e^{-\|x-y\|^2/\varepsilon}\,d\alpha(y)}
-{\int e^{-\|x-y\|^2/\varepsilon}\,d\alpha(y)}.
+v_{\textcolor{#c7372f}{\alpha}}(\textcolor{#c7372f}{x})=
+\frac{\int (\textcolor{#226db4}{y}-\textcolor{#c7372f}{x})e^{-\|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^2/\varepsilon}\,d\textcolor{#c7372f}{\alpha}(\textcolor{#226db4}{y})}
+{\int e^{-\|\textcolor{#c7372f}{x}-\textcolor{#226db4}{y}\|^2/\varepsilon}\,d\textcolor{#c7372f}{\alpha}(\textcolor{#226db4}{y})}.
 $$
 
 This moves particles toward local density modes.

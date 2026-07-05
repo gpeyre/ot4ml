@@ -256,13 +256,28 @@ function imageAsset(src) {
   return record;
 }
 
-function livePixelRatio() {
-  return Math.min(Math.max(window.devicePixelRatio || 1, 1) * 1.5, 3);
+function displayPixelRatio() {
+  return Math.max(window.devicePixelRatio || 1, 1);
 }
 
-function rasterSizeForDisplay(width, minSize, maxSize) {
-  const dpr = livePixelRatio();
-  return Math.round(clamp(Math.ceil(width * dpr), minSize, maxSize));
+function livePixelRatio() {
+  // Reveal scales whole slides with CSS transforms, so slide-embedded
+  // canvases need a slightly denser backing store to stay crisp.
+  return Math.min(displayPixelRatio() * 1.5, 3);
+}
+
+function imagePanelPixelRatio() {
+  // Photo-like panels should not use the extra Reveal oversampling: it
+  // upscales finite-resolution image assets and then the browser downsamples
+  // the canvas, which makes the photographs visibly blurry.
+  return Math.min(displayPixelRatio(), 2.5);
+}
+
+function rasterSizeForDisplay(width, minSize, maxSize, pixelRatio = livePixelRatio()) {
+  if (maxSize <= 0) return Math.max(1, Math.round(minSize));
+  const lo = Math.min(minSize, maxSize);
+  const hi = Math.max(minSize, maxSize);
+  return Math.round(clamp(Math.ceil(width * pixelRatio), lo, hi));
 }
 
 function naturalSquareSize(record, fallback = 640) {
@@ -319,7 +334,7 @@ function rgbImageFromAsset(record, size) {
   return out;
 }
 
-function resizeCanvas(height) {
+function resizeCanvas(height, options = {}) {
   const rect = canvas.getBoundingClientRect();
   const fallbackWidth = canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760;
   const w = Math.round(Math.max(300, rect.width || fallbackWidth || 760));
@@ -328,7 +343,7 @@ function resizeCanvas(height) {
   const statusHeight = status.getBoundingClientRect().height || 18;
   const availableHeight = window.innerHeight - controlsHeight - actionsHeight - statusHeight - 54;
   const targetHeight = clamp(Math.min(height, availableHeight || height), 170, height);
-  const dpr = livePixelRatio();
+  const dpr = options.pixelRatio || livePixelRatio();
   canvas.style.height = `${targetHeight}px`;
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(targetHeight * dpr);
@@ -631,16 +646,19 @@ function drawHistogram() {
   const mean = val("mean");
   const sigma = val("sigma");
   const t = val("interp");
-  const { ctx, w, h } = resizeCanvas(342);
+  const imagePixelRatio = imagePanelPixelRatio();
+  const { ctx, w, h } = resizeCanvas(342, { pixelRatio: imagePixelRatio });
   const pad = 20;
   const imageGap = 10;
   const imageTs = [0, 0.25, 0.5, 0.75, 1];
-  const imgW = Math.round(clamp(Math.min(124, (w - 2 * pad - imageGap * (imageTs.length - 1)) / imageTs.length, h - 206), 54, 124));
+  const cat = imageAsset("assets/cat.jpg");
+  const catSize = naturalSquareSize(cat, 640);
+  const maxDisplayW = cat.state === "ready" ? catSize / imagePixelRatio : 124;
+  const imgW = Math.round(clamp(Math.min(124, maxDisplayW, (w - 2 * pad - imageGap * (imageTs.length - 1)) / imageTs.length, h - 206), 54, 124));
   const imgY = 30;
   const totalImagesW = imageTs.length * imgW + (imageTs.length - 1) * imageGap;
   const imgX0 = pad + Math.max(0, (w - 2 * pad - totalImagesW) / 2);
-  const cat = imageAsset("assets/cat.jpg");
-  const size = rasterSizeForDisplay(Math.max(imgW, 96), 180, naturalSquareSize(cat, 640));
+  const size = rasterSizeForDisplay(Math.max(imgW, 96), 180, catSize, imagePixelRatio);
   const base = grayImageFromAsset(cat, size) || syntheticImage(size);
   const pairs = base.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const mapped = new Array(base.length);
@@ -1569,24 +1587,27 @@ function drawMongeColor() {
   const requestedSize = val("colorSize");
   const targetMode = val("colorTarget");
   const contrast = val("colorContrast");
-  const { ctx, w, h } = resizeCanvas(360);
+  const imagePixelRatio = imagePanelPixelRatio();
+  const { ctx, w, h } = resizeCanvas(430, { pixelRatio: imagePixelRatio });
   const pad = 18;
   const gap = 18;
-  const imageW = Math.min((w - 2 * pad - 2 * gap) / 3, h * 0.44);
   const beach = imageAsset("assets/beach.jpg");
   const flower = imageAsset("assets/flower.jpg");
   const maxImageSize = Math.min(naturalSquareSize(beach, 640), targetMode === "flower" ? naturalSquareSize(flower, 640) : 640);
-  const size = rasterSizeForDisplay(imageW, Math.max(96, requestedSize), Math.max(260, maxImageSize));
+  const maxDisplayW = maxImageSize / imagePixelRatio;
+  const imageW = Math.min((w - 2 * pad - 2 * gap) / 3, h * 0.55, maxDisplayW);
+  const minColorSize = Math.min(maxImageSize, Math.max(160, requestedSize));
+  const size = rasterSizeForDisplay(imageW, minColorSize, maxImageSize, imagePixelRatio);
   const source = rgbImageFromAsset(beach, size) || makePaletteImage(size, "beach", contrast);
   const target =
     targetMode === "flower" ? rgbImageFromAsset(flower, size) || makePaletteImage(size, "flower", contrast) : makePaletteImage(size, targetMode, contrast);
   const transported = transportedPalette(source, target, t);
-  const topY = 38;
+  const topY = 34;
   const startX = (w - 3 * imageW - 2 * gap) / 2;
   drawColorImage(ctx, source, size, startX, topY, imageW, "source");
   drawColorImage(ctx, transported, size, startX + imageW + gap, topY, imageW, `t = ${t.toFixed(2)}`);
   drawColorImage(ctx, target, size, startX + 2 * (imageW + gap), topY, imageW, "target");
-  const cloudY = topY + imageW + 48;
+  const cloudY = topY + imageW + 44;
   const cloudH = h - cloudY - 18;
   const cloudW = (w - 2 * pad - 2 * gap) / 3;
   drawRgbCloud(ctx, source, { x: pad, y: cloudY, w: cloudW, h: cloudH }, "source RGB");
@@ -2894,12 +2915,22 @@ function inverseFromCdfGrid(xs, cdf, u) {
   return lerp(xs[j - 1], xs[j], clamp(t, 0, 1));
 }
 
+function positivePlanEdges(plan, tolerance = 0) {
+  const edges = [];
+  for (let i = 0; i < plan.length; i += 1) {
+    for (let j = 0; j < plan[i].length; j += 1) {
+      if (plan[i][j] > tolerance) edges.push([i, j, plan[i][j]]);
+    }
+  }
+  return edges;
+}
+
 function supportPotentialsFromPlan(x, y, a, b, plan) {
   const n = x.length;
   const m = y.length;
   const f = Array(n).fill(null);
   const g = Array(m).fill(null);
-  const edges = edgesFromPlan(plan, 99999).filter((edge) => edge[2] > 1e-12);
+  const edges = positivePlanEdges(plan);
   const rowEdges = Array.from({ length: n }, () => []);
   for (const [i, j] of edges) rowEdges[i].push(j);
   function cost(i, j) {
@@ -2929,6 +2960,34 @@ function supportPotentialsFromPlan(x, y, a, b, plan) {
   for (let i = 0; i < n; i += 1) f[i] -= gauge;
   for (let j = 0; j < m; j += 1) g[j] += gauge;
   return { f, g, edges };
+}
+
+function weightedRange(values, weights, low = 0.015, high = 0.985) {
+  const pairs = values.map((value, i) => [value, Math.max(weights[i] || 0, 0)]).sort((a, b) => a[0] - b[0]);
+  const total = pairs.reduce((sum, pair) => sum + pair[1], 0);
+  if (total <= 1e-14) return [Math.min(...values), Math.max(...values)];
+  function quantile(q) {
+    let acc = 0;
+    for (const [value, mass] of pairs) {
+      acc += mass;
+      if (acc >= q * total) return value;
+    }
+    return pairs[pairs.length - 1][0];
+  }
+  return [quantile(low), quantile(high)];
+}
+
+function drawClampedCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width = 1.4) {
+  const X = (x) => box.x + ((x - xMin) / Math.max(xMax - xMin, 1e-12)) * box.w;
+  const Y = (y) => box.y + box.h - ((clamp(y, yMin, yMax) - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.beginPath();
+  for (let i = 0; i < xs.length; i += 1) {
+    if (i === 0) ctx.moveTo(X(xs[i]), Y(ys[i]));
+    else ctx.lineTo(X(xs[i]), Y(ys[i]));
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
 }
 
 function drawDensityStrips(ctx, box, xs, aDensity, bDensity, title) {
@@ -2967,7 +3026,8 @@ function drawDualDiscrete() {
   const a = discreteWeightsFromDensity(sourceDensity);
   const b = discreteWeightsFromDensity(targetDensity);
   const plan = weightedSweepPlan(a, b);
-  const { f, g, edges } = supportPotentialsFromPlan(xs, xs, a, b, plan);
+  const { f, g, edges: tightEdges } = supportPotentialsFromPlan(xs, xs, a, b, plan);
+  const edges = edgesFromPlan(plan, 99999);
   const { ctx, w, h } = resizeCanvas(390);
   const top = { x: 22, y: 34, w: w - 44, h: Math.max(130, h * 0.36) };
   const bottom = { x: 22, y: top.y + top.h + 48, w: w - 44, h: h - top.h - 86 };
@@ -2986,15 +3046,24 @@ function drawDualDiscrete() {
     ctx.stroke();
   }
   drawFrame(ctx, bottom, "dual potentials");
-  const yMin = Math.min(...f, ...g);
-  const yMax = Math.max(...f, ...g);
-  drawCurve(ctx, xs, f, bottom, xs[0], xs[xs.length - 1], yMin, yMax, RED, 1.9);
-  drawCurve(ctx, xs, g, bottom, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 1.9);
+  const [fLow, fHigh] = weightedRange(f, a);
+  const [gLow, gHigh] = weightedRange(g, b);
+  const pad = 0.06 * Math.max(fHigh - fLow, gHigh - gLow, 1e-3);
+  const yMin = Math.min(fLow, gLow) - pad;
+  const yMax = Math.max(fHigh, gHigh) + pad;
+  drawClampedCurve(ctx, xs, f, bottom, xs[0], xs[xs.length - 1], yMin, yMax, RED, 1.9);
+  drawClampedCurve(ctx, xs, g, bottom, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 1.9);
   ctx.fillStyle = RED;
   ctx.fillText("f", bottom.x + bottom.w - 34, bottom.y + 18);
   ctx.fillStyle = BLUE;
   ctx.fillText("g", bottom.x + bottom.w - 22, bottom.y + 18);
-  setStatus(`${bins} bins; ${pretty(target)} target; ${edges.length} tight equality entries; gauge <f,a> = 0`);
+  let minSlack = Infinity;
+  let contactSlack = 0;
+  for (let i = 0; i < xs.length; i += 1) {
+    for (let j = 0; j < xs.length; j += 1) minSlack = Math.min(minSlack, (xs[i] - xs[j]) ** 2 - f[i] - g[j]);
+  }
+  for (const [i, j] of tightEdges) contactSlack = Math.max(contactSlack, Math.abs((xs[i] - xs[j]) ** 2 - f[i] - g[j]));
+  setStatus(`${bins} bins; ${pretty(target)} target; feasible dual min slack ${minSlack.toExponential(1)}; tight-support error ${contactSlack.toExponential(1)}`);
 }
 
 function auctionRun(n, epsilon, spread, seed) {
@@ -5436,9 +5505,13 @@ function drawSidePlanPanel(ctx, box, xs, plan, sourceDensity, targetDensity, row
   const m = plan[0].length;
   const strip = Math.min(54, Math.max(34, 0.27 * Math.min(box.w, box.h)));
   const gap = 3;
-  const left = { x: box.x, y: box.y + strip + gap, w: strip, h: box.h - strip - gap - 1 };
-  const top = { x: box.x + strip + gap, y: box.y, w: box.w - strip - gap - 1, h: strip };
-  const mat = { x: box.x + strip + gap, y: box.y + strip + gap, w: box.w - strip - gap - 1, h: box.h - strip - gap - 1 };
+  const side = Math.max(1, Math.min(box.w - strip - gap - 1, box.h - strip - gap - 1));
+  const block = strip + gap + side;
+  const originX = box.x + Math.max(0, (box.w - block) / 2);
+  const originY = box.y + Math.max(0, (box.h - block) / 2);
+  const left = { x: originX, y: originY + strip + gap, w: strip, h: side };
+  const top = { x: originX + strip + gap, y: originY, w: side, h: strip };
+  const mat = { x: originX + strip + gap, y: originY + strip + gap, w: side, h: side };
 
   ctx.fillStyle = "white";
   ctx.fillRect(box.x, box.y, box.w, box.h);
@@ -5468,7 +5541,7 @@ function drawSidePlanPanel(ctx, box, xs, plan, sourceDensity, targetDensity, row
   ctx.fillStyle = "#26333f";
   ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(title, mat.x + mat.w / 2, box.y + box.h + 17);
+  ctx.fillText(title, mat.x + mat.w / 2, Math.min(box.y + box.h + 17, mat.y + mat.h + 17));
   ctx.textAlign = "left";
 }
 
@@ -7338,40 +7411,126 @@ function gfDrawPoints(ctx, box, lim, pts, color, radius, alpha = 0.95) {
   }
 }
 
+function gfMmdTargetCloud(count, centers, seed) {
+  const random = rng(seed + 911);
+  const target = [];
+  for (let i = 0; i < count; i += 1) {
+    const c = centers[i % centers.length];
+    const spread = i % 2 === 0 ? 0.22 : 0.27;
+    target.push([c[0] + spread * randn(random), c[1] + 0.82 * spread * randn(random)]);
+  }
+  return target;
+}
+
+function gfMmdKernelGradient(kind, p, q, bandwidth) {
+  const dx = p[0] - q[0];
+  const dy = p[1] - q[1];
+  const r2 = dx * dx + dy * dy;
+  const r = Math.sqrt(r2 + 1e-10);
+  if (kind === "energy") {
+    return [-dx / r, -dy / r];
+  }
+  if (kind === "laplacian") {
+    const k = Math.exp(-r / Math.max(bandwidth, 1e-4));
+    const scale = -k / Math.max(bandwidth * r, 1e-8);
+    return [scale * dx, scale * dy];
+  }
+  const sigma2 = Math.max(bandwidth * bandwidth, 1e-8);
+  const k = Math.exp(-r2 / (2 * sigma2));
+  return [-(dx / sigma2) * k, -(dy / sigma2) * k];
+}
+
+function gfMmdVelocity(index, pts, target, kind, bandwidth) {
+  const p = pts[index];
+  let sx = 0;
+  let sy = 0;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (j === index) continue;
+    const g = gfMmdKernelGradient(kind, p, pts[j], bandwidth);
+    sx += g[0];
+    sy += g[1];
+  }
+  sx /= Math.max(pts.length, 1);
+  sy /= Math.max(pts.length, 1);
+  let tx = 0;
+  let ty = 0;
+  for (const q of target) {
+    const g = gfMmdKernelGradient(kind, p, q, bandwidth);
+    tx += g[0];
+    ty += g[1];
+  }
+  tx /= Math.max(target.length, 1);
+  ty /= Math.max(target.length, 1);
+  return gfClipVelocity(-2 * (sx - tx), -2 * (sy - ty), 2.8);
+}
+
+function gfRunMmdKernelFlow(initial, target, kind, bandwidth, time) {
+  let pts = initial.map((p) => p.slice());
+  const trajectories = pts.map((p) => [p.slice()]);
+  const steps = Math.round((kind === "energy" ? 105 : 125) * time);
+  const dt = kind === "energy" ? 0.032 : kind === "laplacian" ? 0.034 : 0.037;
+  const storeEvery = Math.max(4, Math.round(steps / 24));
+  for (let s = 0; s < steps; s += 1) {
+    const velocities = pts.map((_, i) => gfMmdVelocity(i, pts, target, kind, bandwidth));
+    pts = pts.map((p, i) => [p[0] + dt * velocities[i][0], p[1] + dt * velocities[i][1]]);
+    if (s % storeEvery === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { pts, trajectories };
+}
+
+function gfKernelTitle(kind, bandwidth) {
+  if (kind === "energy") return "energy distance  k=-|x-y|";
+  if (kind === "laplacian") return `Laplacian  sigma=${bandwidth.toFixed(2)}`;
+  return `Gaussian  sigma=${bandwidth.toFixed(2)}`;
+}
+
 function drawGradflowMMD() {
   const n = Math.round(val("gfmParticles"));
   const separation = val("gfmSeparation");
   const bandwidth = val("gfmBandwidth");
+  const time = val("gfmTime");
   const seed = Math.round(val("gfmSeed"));
   const centers = gfTargetCenters(separation);
-  let pts = gfInitialCloud(n, seed);
-  const initial = pts.map((p) => p.slice());
-  const trajectories = pts.map((p) => [p.slice()]);
-  const steps = 92;
-  const dt = 0.055;
-  for (let s = 0; s < steps; s += 1) {
-    const next = pts.map((p, i) => {
-      const a = gfTeacherForce(p, centers, bandwidth);
-      const r = gfRepulsion(i, pts, 0.06, 0.34);
-      return [p[0] + dt * (1.35 * a[0] + r[0]), p[1] + dt * (1.35 * a[1] + r[1])];
-    });
-    pts = next;
-    if (s % 5 === 0 || s === steps - 1) {
-      for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
-    }
+  const target = gfMmdTargetCloud(Math.max(90, Math.min(180, 2 * n)), centers, seed);
+  const initial = gfInitialCloud(n, seed);
+  const runs = ["energy", "laplacian", "gaussian"].map((kind) => ({
+    kind,
+    ...gfRunMmdKernelFlow(initial, target, kind, bandwidth, time),
+  }));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 610 : 365);
+  const pad = 22;
+  const gap = 18;
+  const compact = w < 620;
+  const panelW = compact ? w - 2 * pad : (w - 2 * pad - 2 * gap) / 3;
+  const panelH = compact ? (h - 56 - 2 * gap) / 3 : h - 64;
+  const boxes = [0, 1, 2].map((i) =>
+    compact
+      ? { x: pad, y: 30 + i * (panelH + gap), w: panelW, h: panelH }
+      : { x: pad + i * (panelW + gap), y: 34, w: panelW, h: panelH },
+  );
+  let lim = 2.25;
+  for (const p of [...initial, ...target, ...runs.flatMap((run) => run.pts)]) {
+    lim = Math.max(lim, 1.08 * Math.max(Math.abs(p[0]), Math.abs(p[1])));
   }
-  const { ctx, w, h } = resizeCanvas(404);
-  const box = { x: 22, y: 34, w: w - 44, h: h - 62 };
-  drawFrame(ctx, box, "deterministic MMD-type particle flow");
-  const lim = 2.25;
-  gfDrawTarget(ctx, box, lim, centers);
-  gfDrawTrajectories(ctx, box, lim, trajectories, Math.max(1, Math.floor(n / 45)));
-  gfDrawPoints(ctx, box, lim, initial.filter((_, i) => i % Math.max(1, Math.floor(n / 90)) === 0), RED, 2.2, 0.72);
-  gfDrawPoints(ctx, box, lim, pts.filter((_, i) => i % Math.max(1, Math.floor(n / 130)) === 0), BLUE, 2.5, 0.9);
-  let coverage = 0;
-  for (const p of pts) coverage += Math.min(...centers.map((c) => Math.hypot(p[0] - c[0], p[1] - c[1])));
-  coverage /= Math.max(pts.length, 1);
-  setStatus(`${n} particles; kernel width ${bandwidth.toFixed(2)}; teacher separation ${separation.toFixed(2)}; mean distance to nearest mode ${coverage.toFixed(2)}`);
+  lim = Math.min(lim, 3.4);
+  const gaps = [];
+  runs.forEach((run, idx) => {
+    const box = boxes[idx];
+    drawFrame(ctx, box, gfKernelTitle(run.kind, bandwidth));
+    gfDrawTarget(ctx, box, lim, centers);
+    gfDrawPoints(ctx, box, lim, target.filter((_, i) => i % 2 === 0), BLUE, 1.35, 0.18);
+    gfDrawTrajectories(ctx, box, lim, run.trajectories, Math.max(1, Math.floor(n / 42)));
+    gfDrawPoints(ctx, box, lim, initial.filter((_, i) => i % Math.max(1, Math.floor(n / 90)) === 0), RED, 2.0, 0.62);
+    gfDrawPoints(ctx, box, lim, run.pts.filter((_, i) => i % Math.max(1, Math.floor(n / 120)) === 0), BLUE, 2.35, 0.86);
+    let coverage = 0;
+    for (const p of run.pts) coverage += Math.min(...centers.map((c) => Math.hypot(p[0] - c[0], p[1] - c[1])));
+    coverage /= Math.max(run.pts.length, 1);
+    gaps.push(`${run.kind.slice(0, 3)} ${coverage.toFixed(2)}`);
+  });
+  setStatus(`${n} particles; bandwidth ${bandwidth.toFixed(2)}; time ${time.toFixed(2)}; final distance to nearest mode: ${gaps.join(" | ")}`);
 }
 
 function drawGradflowInteraction() {
@@ -7438,25 +7597,87 @@ function gfSourceTargetClouds(n, seed) {
   return { source, target };
 }
 
+function gfObjectiveLabel(geometry) {
+  if (geometry === "ot_rays") return "Monge rays";
+  if (geometry === "mmd") return "MMD-type flow";
+  if (geometry === "sinkhorn") return "Sinkhorn divergence";
+  if (geometry === "drifting") return "normalized drifting";
+  return pretty(geometry);
+}
+
+function gfSquaredCostMatrix(x, y) {
+  return x.map((p) => y.map((q) => 0.5 * ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2)));
+}
+
+function gfUniformMass(n) {
+  return Array(n).fill(1 / Math.max(n, 1));
+}
+
+function gfClipVelocity(vx, vy, maxSpeed) {
+  const speed = Math.hypot(vx, vy);
+  if (speed <= maxSpeed) return [vx, vy];
+  return [(maxSpeed * vx) / speed, (maxSpeed * vy) / speed];
+}
+
+function gfSinkhornDivergenceVelocities(pts, target, epsilon) {
+  const n = pts.length;
+  const m = target.length;
+  const a = gfUniformMass(n);
+  const b = gfUniformMass(m);
+  const pxy = sinkhornPlan(gfSquaredCostMatrix(pts, target), a, b, epsilon);
+  const pxx = sinkhornPlan(gfSquaredCostMatrix(pts, pts), a, a, epsilon);
+  const velocities = [];
+  for (let i = 0; i < n; i += 1) {
+    let gx = 0;
+    let gy = 0;
+    for (let j = 0; j < m; j += 1) {
+      gx += pxy[i][j] * (pts[i][0] - target[j][0]);
+      gy += pxy[i][j] * (pts[i][1] - target[j][1]);
+    }
+    let selfX = 0;
+    let selfY = 0;
+    for (let j = 0; j < n; j += 1) {
+      const mass = pxx[i][j] + pxx[j][i];
+      selfX += mass * (pts[i][0] - pts[j][0]);
+      selfY += mass * (pts[i][1] - pts[j][1]);
+    }
+    gx -= 0.5 * selfX;
+    gy -= 0.5 * selfY;
+    velocities.push(gfClipVelocity(-gx / Math.max(a[i], 1e-12), -gy / Math.max(a[i], 1e-12), 3.1));
+  }
+  return velocities;
+}
+
 function drawGradflowObjective() {
   const geometry = val("gfoGeometry");
   const smooth = val("gfoSmooth");
+  const time = val("gfoTime");
   const n = Math.round(val("gfoParticles"));
   const seed = Math.round(val("gfoSeed"));
   const { source, target } = gfSourceTargetClouds(n, seed);
   const pts = source.map((p) => p.slice());
   const trajectories = pts.map((p) => [p.slice()]);
-  const steps = geometry === "ot_rays" ? 1 : 80;
+  const baseSteps = geometry === "sinkhorn" ? 112 : 96;
+  const steps = geometry === "ot_rays" ? 1 : Math.round(baseSteps * time);
+  const storeEvery = Math.max(4, Math.round(steps / 26));
   for (let s = 0; s < steps; s += 1) {
-    for (let i = 0; i < n; i += 1) {
-      let vx = 0;
-      let vy = 0;
-      if (geometry === "ot_rays") {
-        vx = target[i][0] - source[i][0];
-        vy = target[i][1] - source[i][1];
+    if (geometry === "ot_rays") {
+      for (let i = 0; i < n; i += 1) {
+        const vx = target[i][0] - source[i][0];
+        const vy = target[i][1] - source[i][1];
         pts[i][0] = source[i][0] + vx;
         pts[i][1] = source[i][1] + vy;
-      } else {
+      }
+    } else if (geometry === "sinkhorn") {
+      const velocities = gfSinkhornDivergenceVelocities(pts, target, smooth);
+      for (let i = 0; i < n; i += 1) {
+        pts[i][0] += 0.045 * velocities[i][0];
+        pts[i][1] += 0.045 * velocities[i][1];
+      }
+    } else {
+      for (let i = 0; i < n; i += 1) {
+        let vx = 0;
+        let vy = 0;
         let wx = 0;
         let wy = 0;
         let wt = 0;
@@ -7480,23 +7701,27 @@ function drawGradflowObjective() {
           vx /= len;
           vy /= len;
         }
-        const rate = geometry === "sinkhorn" ? 0.075 : 0.052;
+        const rate = geometry === "drifting" ? 0.048 : 0.056;
         pts[i][0] += rate * vx;
         pts[i][1] += rate * vy;
       }
     }
-    if (s % 5 === 0 || s === steps - 1 || geometry === "ot_rays") {
+    if (s % storeEvery === 0 || s === steps - 1 || geometry === "ot_rays") {
       for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
     }
   }
   const { ctx, w, h } = resizeCanvas(394);
   const box = { x: 22, y: 34, w: w - 44, h: h - 62 };
-  drawFrame(ctx, box, pretty(geometry));
+  drawFrame(ctx, box, gfObjectiveLabel(geometry));
   gfDrawTrajectories(ctx, box, 2.25, trajectories, 1);
   gfDrawPoints(ctx, box, 2.25, target, BLUE, 2.6, 0.72);
   gfDrawPoints(ctx, box, 2.25, source, RED, 2.5, 0.68);
   gfDrawPoints(ctx, box, 2.25, pts, VIOLET, 2.4, 0.78);
-  setStatus(`${pretty(geometry)} geometry; smoothing ${smooth.toFixed(2)}; ${n} source particles`);
+  let targetGap = 0;
+  for (const p of pts) targetGap += Math.min(...target.map((q) => Math.hypot(p[0] - q[0], p[1] - q[1])));
+  targetGap /= Math.max(pts.length, 1);
+  const epsText = geometry === "sinkhorn" ? `epsilon ${smooth.toFixed(2)}` : `smoothing ${smooth.toFixed(2)}`;
+  setStatus(`${gfObjectiveLabel(geometry)}; ${epsText}; time ${time.toFixed(2)}; mean nearest-target distance ${targetGap.toFixed(2)}`);
 }
 
 function drawSoftBlob(ctx, box, lim, center, radius, color, alpha) {
@@ -7514,131 +7739,413 @@ function drawSoftBlob(ctx, box, lim, center, radius, color, alpha) {
   ctx.fill();
 }
 
+function fokkerTarget(shift) {
+  return {
+    centers: [[shift - 0.44, 0.45], [shift + 0.58, -0.34]],
+    sigmas: [0.30, 0.36],
+    weights: [0.53, 0.47],
+  };
+}
+
+function gaussianMixtureDensity2D(point, target) {
+  let value = 0;
+  for (let k = 0; k < target.centers.length; k += 1) {
+    const c = target.centers[k];
+    const s = target.sigmas[k];
+    const dx = point[0] - c[0];
+    const dy = point[1] - c[1];
+    value += target.weights[k] * Math.exp(-0.5 * (dx * dx + dy * dy) / (s * s)) / (2 * Math.PI * s * s);
+  }
+  return value;
+}
+
+function gaussianMixtureScore2D(point, target) {
+  const numer = [0, 0];
+  let denom = 0;
+  for (let k = 0; k < target.centers.length; k += 1) {
+    const c = target.centers[k];
+    const s = target.sigmas[k];
+    const dx = point[0] - c[0];
+    const dy = point[1] - c[1];
+    const variance = Math.max(s * s, 1e-12);
+    const w = target.weights[k] * Math.exp(-0.5 * (dx * dx + dy * dy) / variance) / variance;
+    numer[0] += w * (c[0] - point[0]) / variance;
+    numer[1] += w * (c[1] - point[1]) / variance;
+    denom += w;
+  }
+  return [numer[0] / Math.max(denom, 1e-12), numer[1] / Math.max(denom, 1e-12)];
+}
+
+function fokkerInitialCloud(n, seed) {
+  const random = rng(seed);
+  return Array.from({ length: n }, () => [-0.30 + 0.30 * randn(random), 0.05 + 0.30 * randn(random)]);
+}
+
+function simulateFokkerParticles(kind, n, seed, target, diffusion, finalTime) {
+  const random = rng(seed);
+  let pts = fokkerInitialCloud(n, seed + 17);
+  const paths = pts.map((p) => [p.slice()]);
+  const dt = kind === "langevin" ? 0.033 : 0.030;
+  const steps = Math.max(1, Math.round(finalTime / dt));
+  const storeEvery = Math.max(1, Math.floor(steps / 36));
+  const bandwidth = 0.20 + 0.12 * Math.sqrt(diffusion);
+  for (let step = 0; step < steps; step += 1) {
+    const prev = pts;
+    pts = prev.map((p, i) => {
+      const targetScore = gaussianMixtureScore2D(p, target);
+      let vx = diffusion * targetScore[0];
+      let vy = diffusion * targetScore[1];
+      if (kind === "kde") {
+        const densityScore = kdeScoreAtPoint(p, prev, bandwidth);
+        vx -= diffusion * densityScore[0];
+        vy -= diffusion * densityScore[1];
+      }
+      const speed = Math.hypot(vx, vy);
+      if (speed > 3.2) {
+        vx *= 3.2 / speed;
+        vy *= 3.2 / speed;
+      }
+      const noiseScale = kind === "langevin" ? Math.sqrt(2 * diffusion * dt) : 0;
+      return [
+        p[0] + dt * vx + noiseScale * randn(random),
+        p[1] + dt * vy + noiseScale * randn(random),
+      ];
+    });
+    if (step % storeEvery === 0 || step === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) paths[i].push(pts[i].slice());
+    }
+  }
+  return { points: pts, paths };
+}
+
+function kdeScoreAtPoint(point, pts, bandwidth, skip = -1) {
+  const h2 = Math.max(bandwidth * bandwidth, 1e-8);
+  let wx = 0;
+  let wy = 0;
+  let total = 0;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (j === skip && pts.length > 8) continue;
+    const q = pts[j];
+    const dx = q[0] - point[0];
+    const dy = q[1] - point[1];
+    const w = Math.exp(-0.5 * (dx * dx + dy * dy) / h2);
+    wx += w * dx;
+    wy += w * dy;
+    total += w;
+  }
+  return [wx / Math.max(total * h2, 1e-12), wy / Math.max(total * h2, 1e-12)];
+}
+
+function squareRowBoxes(w, h, count) {
+  const gap = 22;
+  const side = Math.max(84, Math.min((w - 40 - gap * (count - 1)) / count, h - 84));
+  const total = count * side + gap * (count - 1);
+  const x0 = (w - total) / 2;
+  const y0 = 44 + Math.max(0, (h - 82 - side) / 2);
+  return Array.from({ length: count }, (_, i) => ({ x: x0 + i * (side + gap), y: y0, w: side, h: side }));
+}
+
+function densityValuesOnSquare(resolution, lim, densityFn) {
+  const values = new Array(resolution * resolution);
+  for (let j = 0; j < resolution; j += 1) {
+    const y = lerp(lim, -lim, (j + 0.5) / resolution);
+    for (let i = 0; i < resolution; i += 1) {
+      const x = lerp(-lim, lim, (i + 0.5) / resolution);
+      values[j * resolution + i] = densityFn([x, y]);
+    }
+  }
+  return values;
+}
+
+function drawDensityImageAndContours(ctx, box, values, resolution, color, opacity = 0.72, contourColor = "rgba(18,24,32,.32)") {
+  const sorted = values.filter(Number.isFinite).slice().sort((a, b) => a - b);
+  const cap = sorted[Math.max(0, Math.floor(0.965 * (sorted.length - 1)))] || 1;
+  const [r, g, b] = rgb(color);
+  const cw = box.w / resolution;
+  const ch = box.h / resolution;
+  for (let j = 0; j < resolution; j += 1) {
+    for (let i = 0; i < resolution; i += 1) {
+      const s = clamp(values[j * resolution + i] / Math.max(cap, 1e-12), 0, 1);
+      if (s < 0.012) continue;
+      ctx.fillStyle = `rgba(${r},${g},${b},${opacity * Math.pow(s, 0.62)})`;
+      ctx.fillRect(box.x + i * cw, box.y + j * ch, cw + 0.45, ch + 0.45);
+    }
+  }
+  const levels = [0.16, 0.30, 0.48, 0.68].map((s) => s * cap);
+  ctx.strokeStyle = contourColor;
+  ctx.lineWidth = 0.75;
+  for (const level of levels) {
+    ctx.beginPath();
+    for (let j = 1; j < resolution - 1; j += 1) {
+      for (let i = 1; i < resolution - 1; i += 1) {
+        const here = values[j * resolution + i];
+        const right = values[j * resolution + i + 1];
+        const down = values[(j + 1) * resolution + i];
+        const x = box.x + (i + 0.5) * cw;
+        const y = box.y + (j + 0.5) * ch;
+        if ((here - level) * (right - level) < 0) {
+          ctx.moveTo(x, y - 0.30 * ch);
+          ctx.lineTo(x, y + 0.30 * ch);
+        }
+        if ((here - level) * (down - level) < 0) {
+          ctx.moveTo(x - 0.30 * cw, y);
+          ctx.lineTo(x + 0.30 * cw, y);
+        }
+      }
+    }
+    ctx.stroke();
+  }
+}
+
+function drawFokkerTrajectoryPanel(ctx, box, lim, targetValues, targetResolution, sim, title, pointColor, progress) {
+  drawFrame(ctx, box, title);
+  drawDensityImageAndContours(ctx, box, targetValues, targetResolution, BLUE, 0.18, "rgba(33,102,172,.25)");
+  const pathIndex = Math.max(1, Math.round(progress * (sim.paths[0].length - 1)));
+  const { X, Y } = gfMap(box, lim);
+  const stride = Math.max(1, Math.floor(sim.paths.length / 56));
+  for (let i = 0; i < sim.paths.length; i += stride) {
+    const path = sim.paths[i];
+    ctx.beginPath();
+    for (let k = 0; k <= pathIndex; k += 1) {
+      const p = path[k];
+      if (k === 0) ctx.moveTo(X(p[0]), Y(p[1]));
+      else ctx.lineTo(X(p[0]), Y(p[1]));
+    }
+    ctx.strokeStyle = mixColor(i / Math.max(sim.paths.length - 1, 1), RED, BLUE, 0.36);
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+  }
+  const current = sim.paths.map((path) => path[pathIndex]);
+  gfDrawPoints(ctx, box, lim, current, pointColor, 1.9, 0.76);
+}
+
+function initialFokkerGrid(resolution, lim) {
+  const values = densityValuesOnSquare(resolution, lim, (p) => normalPdf(p[0], -0.30, 0.30) * normalPdf(p[1], 0.05, 0.30));
+  return normalizeGridDensity(values, resolution, lim);
+}
+
+function normalizeGridDensity(values, resolution, lim) {
+  const dx = (2 * lim) / resolution;
+  const mass = values.reduce((sum, value) => sum + Math.max(value, 0), 0) * dx * dx;
+  return values.map((value) => Math.max(value, 0) / Math.max(mass, 1e-12));
+}
+
+function simulateFokkerGrid(resolution, lim, target, diffusion, finalTime) {
+  let rho = initialFokkerGrid(resolution, lim);
+  const dx = (2 * lim) / resolution;
+  const dt = Math.min(0.010, 0.38 * dx * dx / Math.max(4 * diffusion, 1e-6));
+  const steps = Math.max(1, Math.round(finalTime / dt));
+  const snapshots = [rho.slice()];
+  const storeAt = new Set([Math.round(steps * 0.25), Math.round(steps * 0.5), Math.round(steps * 0.75), steps - 1]);
+  const scoreGrid = densityValuesOnSquare(resolution, lim, (p) => {
+    const s = gaussianMixtureScore2D(p, target);
+    return [diffusion * s[0], diffusion * s[1]];
+  });
+  for (let step = 0; step < steps; step += 1) {
+    const next = rho.slice();
+    for (let j = 0; j < resolution; j += 1) {
+      for (let i = 0; i < resolution; i += 1) {
+        const id = j * resolution + i;
+        const center = rho[id];
+        const left = i > 0 ? rho[id - 1] : center;
+        const right = i + 1 < resolution ? rho[id + 1] : center;
+        const up = j > 0 ? rho[id - resolution] : center;
+        const down = j + 1 < resolution ? rho[id + resolution] : center;
+        const vRight = 0.5 * (scoreGrid[id][0] + (i + 1 < resolution ? scoreGrid[id + 1][0] : 0));
+        const vLeft = 0.5 * ((i > 0 ? scoreGrid[id - 1][0] : 0) + scoreGrid[id][0]);
+        const vDown = 0.5 * (scoreGrid[id][1] + (j + 1 < resolution ? scoreGrid[id + resolution][1] : 0));
+        const vUp = 0.5 * ((j > 0 ? scoreGrid[id - resolution][1] : 0) + scoreGrid[id][1]);
+        const fluxRight = i + 1 < resolution ? vRight * (vRight >= 0 ? center : right) : 0;
+        const fluxLeft = i > 0 ? vLeft * (vLeft >= 0 ? left : center) : 0;
+        const fluxDown = j + 1 < resolution ? vDown * (vDown >= 0 ? center : down) : 0;
+        const fluxUp = j > 0 ? vUp * (vUp >= 0 ? up : center) : 0;
+        const transport = -((fluxRight - fluxLeft) + (fluxDown - fluxUp)) / dx;
+        const laplacian = (left + right + up + down - 4 * center) / (dx * dx);
+        next[id] = center + dt * (transport + diffusion * laplacian);
+      }
+    }
+    rho = normalizeGridDensity(next, resolution, lim);
+    if (storeAt.has(step)) snapshots.push(rho.slice());
+  }
+  return { rho, snapshots, dt };
+}
+
+function drawFokkerGridPanel(ctx, box, lim, grid, title) {
+  drawFrame(ctx, box, title);
+  const resolution = Math.round(Math.sqrt(grid.rho.length));
+  const colors = [RED, VIOLET, BLUE];
+  for (let k = 0; k < grid.snapshots.length; k += 1) {
+    const t = k / Math.max(grid.snapshots.length - 1, 1);
+    const color = k === grid.snapshots.length - 1 ? BLUE : mixHexColor(t, RED, BLUE);
+    drawDensityImageAndContours(ctx, box, grid.snapshots[k], resolution, color, k === grid.snapshots.length - 1 ? 0.44 : 0.16, `rgba(${rgb(colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]).join(",")},.30)`);
+  }
+}
+
 function drawGradflowFokker() {
   const time = val("gffTime");
   const sigma = val("gffSigma");
   const shift = val("gffShift");
   const seed = Math.round(val("gffSeed"));
-  const { ctx, w, h } = resizeCanvas(468);
-  const gap = 14;
-  const boxH = (h - 66 - 2 * gap) / 3;
-  const boxes = [
-    { x: 22, y: 36, w: w - 44, h: boxH },
-    { x: 22, y: 36 + boxH + gap, w: w - 44, h: boxH },
-    { x: 22, y: 36 + 2 * (boxH + gap), w: w - 44, h: boxH },
-  ];
-  const centers = [[shift - 0.45, 0.34], [shift + 0.55, -0.28]];
-  const labels = ["independent Langevin particles", "deterministic score particles", "grid Fokker-Planck density"];
-  for (let b = 0; b < 3; b += 1) drawFrame(ctx, boxes[b], labels[b]);
-  const lim = 2.3;
-  const n = 80;
-  const steps = Math.round(28 + 42 * time);
-  for (let row = 0; row < 2; row += 1) {
-    const random = rng(seed + 17 * row);
-    let pts = gfInitialCloud(n, seed + 29 * row, -0.95, 0.0, 0.32);
-    const trajectories = pts.map((p) => [p.slice()]);
-    for (let s = 0; s < steps; s += 1) {
-      pts = pts.map((p, i) => {
-        const f = gfTeacherForce(p, centers, 0.72);
-        let vx = 0.88 * f[0];
-        let vy = 0.88 * f[1];
-        if (row === 1) {
-          const r = gfRepulsion(i, pts, 0.07 + 0.04 * sigma, 0.46);
-          vx += r[0];
-          vy += r[1];
-        }
-        const noise = row === 0 ? sigma * Math.sqrt(0.035) : 0;
-        return [p[0] + 0.052 * vx + noise * randn(random), p[1] + 0.052 * vy + noise * randn(random)];
-      });
-      if (s % 8 === 0 || s === steps - 1) {
-        for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
-      }
-    }
-    gfDrawTarget(ctx, boxes[row], lim, centers);
-    gfDrawTrajectories(ctx, boxes[row], lim, trajectories, 8);
-    gfDrawPoints(ctx, boxes[row], lim, pts, row === 0 ? BLUE : VIOLET, 2.0, 0.65);
-  }
-  gfDrawTarget(ctx, boxes[2], lim, centers);
-  const mix = clamp(time, 0, 1);
-  drawSoftBlob(ctx, boxes[2], lim, [-0.95 * (1 - mix) + centers[0][0] * mix, centers[0][1] * mix], 0.72 + sigma, BLUE, 0.32);
-  drawSoftBlob(ctx, boxes[2], lim, [-0.95 * (1 - mix) + centers[1][0] * mix, centers[1][1] * mix], 0.72 + sigma, BLUE, 0.28);
-  drawSoftBlob(ctx, boxes[2], lim, [-0.95, 0], 0.55 + 0.35 * sigma, RED, 0.2 * (1 - mix));
-  setStatus(`time ${time.toFixed(2)}; noise sigma ${sigma.toFixed(2)}; target shift ${shift.toFixed(2)}`);
+  const diffusion = 0.055 + 0.20 * sigma;
+  const finalTime = 0.45 + 4.15 * time;
+  const target = fokkerTarget(shift);
+  const lim = 2.35;
+  const particles = 180;
+  const targetResolution = 64;
+  const targetValues = densityValuesOnSquare(targetResolution, lim, (p) => gaussianMixtureDensity2D(p, target));
+  const langevin = simulateFokkerParticles("langevin", particles, seed, target, diffusion, finalTime);
+  const kde = simulateFokkerParticles("kde", particles, seed, target, diffusion, finalTime);
+  const grid = simulateFokkerGrid(50, lim, target, diffusion, finalTime);
+  const { ctx, w, h } = resizeCanvas(382);
+  const boxes = squareRowBoxes(w, h, 3);
+  drawFokkerTrajectoryPanel(ctx, boxes[0], lim, targetValues, targetResolution, langevin, "Langevin particles", BLUE, 1);
+  drawFokkerTrajectoryPanel(ctx, boxes[1], lim, targetValues, targetResolution, kde, "KDE-score particles", VIOLET, 1);
+  drawFokkerGridPanel(ctx, boxes[2], lim, grid, "grid Fokker-Planck PDE");
+  setStatus(`physical time ${finalTime.toFixed(2)}; diffusion ${diffusion.toFixed(3)}; target is a two-Gaussian mixture shifted by ${shift.toFixed(2)}`);
 }
 
 function angleDiff(a, b) {
   return Math.atan2(Math.sin(b - a), Math.cos(b - a));
 }
 
-function drawGradflowMLP() {
-  const n = Math.round(val("gflNeurons"));
-  const angle = (Math.PI / 180) * val("gflAngle");
-  const time = val("gflTime");
-  const seed = Math.round(val("gflSeed"));
+function mlpTeacherAngles(count, spread) {
+  if (count <= 1) return [Math.PI / 2];
+  return Array.from({ length: count }, (_, i) => Math.PI / 2 - spread + (2 * spread * i) / Math.max(count - 1, 1));
+}
+
+function mlpAngularHistogram(pts, bins) {
+  const hist = Array(bins).fill(0);
+  for (const p of pts) {
+    const a = (Math.atan2(p[1], p[0]) + 2 * Math.PI) % (2 * Math.PI);
+    const k = Math.min(bins - 1, Math.floor((a / (2 * Math.PI)) * bins));
+    hist[k] += Math.max(0.06, Math.hypot(p[0], p[1]) ** 2);
+  }
+  return hist.map((v, k) => 0.2 * hist[(k + bins - 1) % bins] + 0.6 * v + 0.2 * hist[(k + 1) % bins]);
+}
+
+function simulateMeanFieldMLP(n, seed, teachers, finalTime) {
   const random = rng(seed);
-  const teachers = [Math.PI / 2 - angle, Math.PI / 2 + angle];
-  const pts = [];
+  let pts = [];
   for (let i = 0; i < n; i += 1) {
     const a = 2 * Math.PI * random();
     const r = 0.22 + 0.24 * random();
     pts.push([r * Math.cos(a), r * Math.sin(a)]);
   }
+  const initial = pts.map((p) => p.slice());
   const trajectories = pts.map((p) => [p.slice()]);
-  const steps = Math.round(30 + 90 * time);
-  for (let s = 0; s < steps; s += 1) {
-    for (let i = 0; i < n; i += 1) {
-      const p = pts[i];
+  const steps = Math.round(42 + 120 * finalTime);
+  const snapshotSteps = [0, 0.16, 0.34, 0.58, 0.78, 1].map((t) => Math.round(t * steps));
+  const snapshots = [];
+  const snapshotSet = new Set(snapshotSteps);
+  const storeEvery = Math.max(5, Math.round(steps / 24));
+  for (let s = 0; s <= steps; s += 1) {
+    if (snapshotSet.has(s)) snapshots.push({ time: (finalTime * s) / Math.max(steps, 1), pts: pts.map((p) => p.slice()) });
+    if (s === steps) break;
+    pts = pts.map((p) => {
       let a = Math.atan2(p[1], p[0]);
-      let r = Math.hypot(p[0], p[1]);
-      const diffs = teachers.map((th) => angleDiff(a, th));
-      const best = Math.abs(diffs[0]) < Math.abs(diffs[1]) ? diffs[0] : diffs[1];
-      a += 0.045 * best;
-      r += 0.025 * (1.25 - r) + 0.014 * Math.cos(best);
-      pts[i][0] = r * Math.cos(a);
-      pts[i][1] = r * Math.sin(a);
-    }
-    if (s % 7 === 0 || s === steps - 1) {
-      for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
+      let r = Math.max(0.04, Math.hypot(p[0], p[1]));
+      let best = angleDiff(a, teachers[0]);
+      for (let k = 1; k < teachers.length; k += 1) {
+        const d = angleDiff(a, teachers[k]);
+        if (Math.abs(d) < Math.abs(best)) best = d;
+      }
+      a += 0.048 * best;
+      r += 0.025 * (1.24 - r) + 0.016 * Math.max(0, Math.cos(best));
+      return [r * Math.cos(a), r * Math.sin(a)];
+    });
+    if (s % storeEvery === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
     }
   }
-  const { ctx, w, h } = resizeCanvas(404);
-  const gap = 34;
-  const left = { x: 20, y: 42, w: (w - 54 - gap) * 0.55, h: h - 70 };
-  const right = { x: left.x + left.w + gap, y: 42, w: (w - 54 - gap) * 0.45, h: h - 70 };
-  drawFrame(ctx, left, "neuron trajectories");
-  drawFrame(ctx, right, "angular concentration");
-  const lim = 1.7;
-  const { X, Y } = gfMap(left, lim);
+  return { initial, pts, trajectories, snapshots };
+}
+
+function drawMlpTeacherRays(ctx, box, lim, teachers, alpha = 0.52) {
+  const { X, Y } = gfMap(box, lim);
+  ctx.save();
   ctx.setLineDash([5, 4]);
-  ctx.strokeStyle = "rgba(35,45,55,.55)";
+  ctx.strokeStyle = `rgba(20,25,30,${alpha})`;
+  ctx.lineWidth = 1.05;
   for (const th of teachers) {
     ctx.beginPath();
     ctx.moveTo(X(0), Y(0));
-    ctx.lineTo(X(1.55 * Math.cos(th)), Y(1.55 * Math.sin(th)));
+    ctx.lineTo(X(1.52 * Math.cos(th)), Y(1.52 * Math.sin(th)));
     ctx.stroke();
   }
-  ctx.setLineDash([]);
-  gfDrawTrajectories(ctx, left, lim, trajectories, Math.max(1, Math.floor(n / 70)));
-  gfDrawPoints(ctx, left, lim, pts, BLUE, 2.1, 0.78);
+  ctx.restore();
+}
 
-  const bins = 36;
-  const hist = Array(bins).fill(0);
-  for (const p of pts) {
-    const a = (Math.atan2(p[1], p[0]) + 2 * Math.PI) % (2 * Math.PI);
-    const k = Math.min(bins - 1, Math.floor((a / (2 * Math.PI)) * bins));
-    hist[k] += Math.hypot(p[0], p[1]) ** 2;
+function drawMlpAngularStack(ctx, box, teachers, snapshots, title = "angular concentration over optimization time") {
+  drawFrame(ctx, box, title);
+  const bins = 48;
+  const hists = snapshots.map((snapshot) => mlpAngularHistogram(snapshot.pts, bins));
+  const maxH = Math.max(...hists.flat(), 1);
+  const labelW = 34;
+  const inner = { x: box.x + labelW, y: box.y + 12, w: box.w - labelW - 8, h: box.h - 22 };
+  const gap = 5;
+  const rowH = (inner.h - gap * (snapshots.length - 1)) / snapshots.length;
+  ctx.save();
+  ctx.font = "10.5px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let s = 0; s < snapshots.length; s += 1) {
+    const row = { x: inner.x, y: inner.y + s * (rowH + gap), w: inner.w, h: rowH };
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(row.x, row.y, row.w, row.h);
+    ctx.strokeStyle = "#e2e7ef";
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(row.x, row.y, row.w, row.h);
+    for (const th of teachers) {
+      const theta = (th + 2 * Math.PI) % (2 * Math.PI);
+      const x = row.x + (theta / (2 * Math.PI)) * row.w;
+      ctx.strokeStyle = "rgba(20,25,30,.42)";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, row.y + 1);
+      ctx.lineTo(x, row.y + row.h - 1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const color = mixColor(s / Math.max(snapshots.length - 1, 1), RED, BLUE, 0.68);
+    ctx.fillStyle = color;
+    for (let k = 0; k < bins; k += 1) {
+      const barW = row.w / bins;
+      const x = row.x + k * barW;
+      const barH = (hists[s][k] / maxH) * (row.h - 4);
+      ctx.fillRect(x, row.y + row.h - 2 - barH, Math.max(1, 0.8 * barW), barH);
+    }
+    ctx.fillStyle = "#41505f";
+    ctx.fillText(`t=${snapshots[s].time.toFixed(2)}`, box.x + labelW - 6, row.y + row.h / 2);
   }
-  const maxH = Math.max(...hist, 1);
-  for (let k = 0; k < bins; k += 1) {
-    const x0 = right.x + (k / bins) * right.w;
-    const x1 = right.x + ((k + 0.78) / bins) * right.w;
-    const y = right.y + right.h - (hist[k] / maxH) * right.h;
-    ctx.fillStyle = mixColor(k / (bins - 1), RED, BLUE, 0.58);
-    ctx.fillRect(x0, y, Math.max(1, x1 - x0), right.y + right.h - y);
-  }
-  ctx.strokeStyle = "#d8dee8";
-  ctx.strokeRect(right.x, right.y, right.w, right.h);
-  setStatus(`${n} neurons; teacher rays at +/- ${val("gflAngle").toFixed(0)} degrees; displayed time ${time.toFixed(2)}`);
+  ctx.restore();
+}
+
+function drawGradflowMLP() {
+  const n = Math.round(val("gflNeurons"));
+  const angle = (Math.PI / 180) * val("gflAngle");
+  const finalTime = val("gflTime");
+  const teacherCount = parseInt(val("gflTeachers"), 10);
+  const seed = Math.round(val("gflSeed"));
+  const teachers = mlpTeacherAngles(teacherCount, angle);
+  const sim = simulateMeanFieldMLP(n, seed, teachers, finalTime);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 610 : 430);
+  const gap = frameWidth < 720 ? 22 : 34;
+  const compact = w < 640;
+  const left = compact ? { x: 22, y: 34, w: w - 44, h: Math.max(190, h * 0.46) } : { x: 20, y: 42, w: (w - 54 - gap) * 0.52, h: h - 70 };
+  const right = compact
+    ? { x: 22, y: left.y + left.h + gap, w: w - 44, h: h - left.h - gap - 46 }
+    : { x: left.x + left.w + gap, y: 42, w: (w - 54 - gap) * 0.48, h: h - 70 };
+  drawFrame(ctx, left, "neuron trajectories");
+  const lim = 2.05;
+  drawMlpTeacherRays(ctx, left, lim, teachers);
+  gfDrawTrajectories(ctx, left, lim, sim.trajectories, Math.max(1, Math.floor(n / 70)));
+  gfDrawPoints(ctx, left, lim, sim.initial.filter((_, i) => i % Math.max(1, Math.floor(n / 130)) === 0), RED, 1.65, 0.48);
+  gfDrawPoints(ctx, left, lim, sim.pts, BLUE, 2.15, 0.78);
+  drawMlpAngularStack(ctx, right, teachers, sim.snapshots);
+  const finalHist = mlpAngularHistogram(sim.pts, 48);
+  const concentration = Math.max(...finalHist) / Math.max(finalHist.reduce((sum, v) => sum + v, 0), 1e-12);
+  setStatus(`${n} neurons; ${teacherCount} teacher ray${teacherCount > 1 ? "s" : ""}; final time ${finalTime.toFixed(2)}; peak angular mass ${(100 * concentration).toFixed(1)}%`);
 }
 
 function gmAtoms(gap) {
@@ -7822,15 +8329,127 @@ function drawNoisingSnapshot(ctx, box, atoms, sigma, mode, title, highlight) {
 }
 
 function drawGenerativeDiffusion2D() {
-  const time = val("gmd2Time");
+  const progress = val("gmd2Time");
   const gap = val("gmd2Gap");
   const sigma = val("gmd2Sigma");
+  const samples = Math.round(val("gmd2Samples"));
+  const seed = Math.round(val("gmd2Seed"));
   const atoms = gmAtoms(gap);
-  const { ctx, w, h } = resizeCanvas(420);
+  const random = rng(seed);
+  const starts = Array.from({ length: samples }, () => [sigma * randn(random), sigma * randn(random)]);
+  const targetCopies = replicatedAtoms(atoms, samples);
+  const assignment = hungarian(costMatrix(starts, targetCopies, 2));
+  const otTargets = assignment.map((j) => targetCopies[j]);
+  const diffusionPaths = vpReverseDiffusionPaths(starts, atoms, sigma);
+  const otPaths = straightSamplingPaths(starts, otTargets, diffusionPaths[0].length);
+  const allPoints = starts.concat(atoms).concat(diffusionPaths.flatMap((path) => [path[path.length - 1]]));
+  const limBox = limits(allPoints);
+  const lim = Math.max(Math.abs(limBox.xmin), Math.abs(limBox.xmax), Math.abs(limBox.ymin), Math.abs(limBox.ymax), 1.35) + 0.24;
+  const { ctx, w, h } = resizeCanvas(430);
   const boxes = beyondBoxes(w, h, 2, 760);
-  drawNoisingSnapshot(ctx, boxes[0], atoms, sigma, "linear", `linear bridge, t=${time.toFixed(2)}`, time);
-  drawNoisingSnapshot(ctx, boxes[1], atoms, sigma, "vp", "OU / variance-preserving bridge", time);
-  setStatus(`selected time ${time.toFixed(2)}; atom gap ${gap.toFixed(2)}; Gaussian endpoint sigma ${sigma.toFixed(2)}`);
+  const index = Math.round(progress * (diffusionPaths[0].length - 1));
+  drawSamplingTrajectoryPanel(ctx, boxes[0], diffusionPaths, starts, atoms, lim, index, "reverse OU score flow", false);
+  drawSamplingTrajectoryPanel(ctx, boxes[1], otPaths, starts, atoms, lim, index, "quadratic OT rays", true);
+  setStatus(`same ${samples} Gaussian samples; progress ${progress.toFixed(2)}; OU reverse field uses the exact Gaussian-mixture score; right panel uses the quadratic OT matching`);
+}
+
+function replicatedAtoms(atoms, n) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) out.push(atoms[i % atoms.length].slice());
+  return out;
+}
+
+function vpMixtureScore(z, tau, atoms, sigma) {
+  const a = Math.exp(-tau);
+  const b = Math.sqrt(Math.max(1 - a * a, 1e-12));
+  const variance = Math.max((b * sigma) ** 2, 1e-8);
+  const logs = atoms.map((c) => -0.5 * ((z[0] - a * c[0]) ** 2 + (z[1] - a * c[1]) ** 2) / variance);
+  const maxLog = Math.max(...logs);
+  const weights = logs.map((ell) => Math.exp(ell - maxLog));
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  let sx = 0;
+  let sy = 0;
+  for (let k = 0; k < atoms.length; k += 1) {
+    const r = weights[k] / Math.max(total, 1e-300);
+    sx += r * (a * atoms[k][0] - z[0]) / variance;
+    sy += r * (a * atoms[k][1] - z[1]) / variance;
+  }
+  return [sx, sy];
+}
+
+function vpForwardVelocity(z, tau, atoms, sigma) {
+  const score = vpMixtureScore(z, tau, atoms, sigma);
+  return [-z[0] - sigma * sigma * score[0], -z[1] - sigma * sigma * score[1]];
+}
+
+function vpRk4Step(z, tau, dt, atoms, sigma) {
+  const k1 = vpForwardVelocity(z, tau, atoms, sigma);
+  const k2 = vpForwardVelocity([z[0] + 0.5 * dt * k1[0], z[1] + 0.5 * dt * k1[1]], tau + 0.5 * dt, atoms, sigma);
+  const k3 = vpForwardVelocity([z[0] + 0.5 * dt * k2[0], z[1] + 0.5 * dt * k2[1]], tau + 0.5 * dt, atoms, sigma);
+  const k4 = vpForwardVelocity([z[0] + dt * k3[0], z[1] + dt * k3[1]], tau + dt, atoms, sigma);
+  return [
+    z[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+    z[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+  ];
+}
+
+function vpReverseDiffusionPaths(starts, atoms, sigma) {
+  const tauStart = 4.2;
+  const tauEnd = 0.012;
+  const steps = 132;
+  return starts.map((start) => {
+    let z = start.slice();
+    const path = [z.slice()];
+    for (let k = 0; k < steps; k += 1) {
+      const tau = lerp(tauStart, tauEnd, k / steps);
+      const nextTau = lerp(tauStart, tauEnd, (k + 1) / steps);
+      z = vpRk4Step(z, tau, nextTau - tau, atoms, sigma);
+      path.push(z.slice());
+    }
+    return path;
+  });
+}
+
+function straightSamplingPaths(starts, targets, steps) {
+  return starts.map((p, i) => {
+    const q = targets[i];
+    return Array.from({ length: steps }, (_, k) => {
+      const t = k / Math.max(steps - 1, 1);
+      return [lerp(p[0], q[0], t), lerp(p[1], q[1], t)];
+    });
+  });
+}
+
+function drawSamplingTrajectoryPanel(ctx, box, paths, starts, atoms, lim, index, title, otStyle) {
+  drawFrame(ctx, box, title);
+  const proj = gfMap(box, lim);
+  const stride = Math.max(1, Math.floor(paths.length / 72));
+  const safeIndex = clamp(index, 0, paths[0].length - 1);
+  for (let i = 0; i < paths.length; i += stride) {
+    const path = paths[i];
+    ctx.beginPath();
+    for (let k = 0; k <= safeIndex; k += 1) {
+      const p = path[k];
+      if (k === 0) ctx.moveTo(proj.X(p[0]), proj.Y(p[1]));
+      else ctx.lineTo(proj.X(p[0]), proj.Y(p[1]));
+    }
+    ctx.strokeStyle = otStyle ? "rgba(123,50,148,.30)" : mixColor(i / Math.max(paths.length - 1, 1), RED, BLUE, 0.35);
+    ctx.lineWidth = otStyle ? 0.85 : 1.05;
+    ctx.stroke();
+  }
+  if (safeIndex > 3 && safeIndex < paths[0].length - 4) {
+    for (let i = 0; i < paths.length; i += Math.max(stride * 6, 6)) {
+      const p = paths[i][safeIndex - 2];
+      const q = paths[i][safeIndex + 2];
+      drawTinyArrow(ctx, proj.X(p[0]), proj.Y(p[1]), proj.X(q[0]) - proj.X(p[0]), proj.Y(q[1]) - proj.Y(p[1]), "rgba(40,45,55,.42)", 0.9);
+    }
+  }
+  gfDrawPoints(ctx, box, lim, starts, RED, 1.9, 0.50);
+  gfDrawPoints(ctx, box, lim, atoms, BLUE, 4.4, 0.95);
+  if (safeIndex > 0 && safeIndex < paths[0].length - 1) {
+    const current = paths.map((path) => path[safeIndex]);
+    gfDrawPoints(ctx, box, lim, current, VIOLET, 1.8, 0.50);
+  }
 }
 
 function drawTrajectoryFamily(ctx, box, starts, atoms, mode, title, bendScale, straight = false) {
@@ -8023,7 +8642,7 @@ function simulateMeanShift(n, seed, bandwidth, time) {
   return { initial, snapshots, trajectories, physicalTime: steps * dt };
 }
 
-function meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize = 62) {
+function meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize = 112) {
   const nx = gridSize;
   const ny = Math.max(18, Math.round(gridSize * box.h / Math.max(box.w, 1)));
   const values = new Float64Array(nx * ny);
@@ -8046,20 +8665,36 @@ function meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize = 62) {
 }
 
 function drawMeanShiftDensity(ctx, box, lim, pts, bandwidth, color, opacity = 0.9, contours = true) {
-  const { values, nx, ny } = meanShiftDensityGrid(box, lim, pts, bandwidth);
+  const gridSize = Math.max(92, Math.min(156, Math.round(box.w / 3.0)));
+  const { values, nx, ny } = meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize);
   const sorted = Array.from(values).sort((a, b) => a - b);
   const cap = sorted[Math.max(0, Math.floor(0.96 * (sorted.length - 1)))] || 1;
   const [r, g, b] = rgb(color);
-  const cw = box.w / nx;
-  const ch = box.h / ny;
+
+  const offscreen = document.createElement("canvas");
+  offscreen.width = nx;
+  offscreen.height = ny;
+  const offCtx = offscreen.getContext("2d");
+  const image = offCtx.createImageData(nx, ny);
   for (let j = 0; j < ny; j += 1) {
     for (let i = 0; i < nx; i += 1) {
       const value = clamp(values[j * nx + i] / Math.max(cap, 1e-12), 0, 1);
-      if (value <= 0.015) continue;
-      ctx.fillStyle = `rgba(${r},${g},${b},${opacity * Math.pow(value, 0.68)})`;
-      ctx.fillRect(box.x + i * cw, box.y + j * ch, cw + 0.6, ch + 0.6);
+      const idx = 4 * (j * nx + i);
+      image.data[idx] = r;
+      image.data[idx + 1] = g;
+      image.data[idx + 2] = b;
+      image.data[idx + 3] = value <= 0.01 ? 0 : Math.round(255 * opacity * Math.pow(value, 0.62));
     }
   }
+  offCtx.putImageData(image, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(offscreen, box.x, box.y, box.w, box.h);
+  ctx.restore();
+
+  const cw = box.w / nx;
+  const ch = box.h / ny;
   if (!contours) return;
   for (const level of [0.22, 0.42, 0.64]) {
     ctx.strokeStyle = `rgba(${r},${g},${b},${0.18 + 0.22 * level})`;
@@ -8114,41 +8749,25 @@ function drawGenerativeMeanShift() {
   const { ctx, w, h } = resizeCanvas(frameWidth < 700 ? 640 : 430);
   const lim = 1.8;
   const gap = 14;
-  const leftW = frameWidth < 700 ? w - 36 : Math.max(230, 0.34 * (w - 42));
-  const rightCount = frameWidth < 700 ? 2 : 4;
+  const finalSnapshot = sim.snapshots[sim.snapshots.length - 1];
+  const leftW = frameWidth < 700 ? w - 36 : Math.max(250, 0.42 * (w - 42));
   const left = { x: 18, y: 40, w: leftW, h: frameWidth < 700 ? 250 : h - 82 };
   drawFrame(ctx, left, "trajectories on initial density");
-  drawMeanShiftDensity(ctx, left, lim, sim.initial, bandwidth, RED, 0.55, true);
+  drawMeanShiftDensity(ctx, left, lim, sim.initial, bandwidth, RED, 0.48, true);
   drawTimeColoredTrajectories(ctx, left, lim, sim.trajectories, Math.max(1, Math.floor(n / 34)));
   gfDrawPoints(ctx, left, lim, sim.initial, RED, 1.65, 0.62);
-  gfDrawPoints(ctx, left, lim, sim.snapshots[sim.snapshots.length - 1], BLUE, 1.7, 0.72);
+  gfDrawPoints(ctx, left, lim, finalSnapshot, BLUE, 1.7, 0.72);
 
-  const snapshotBoxes = [];
+  let densityBox;
   if (frameWidth < 700) {
-    const boxW = (w - 36 - gap) / 2;
-    const y0 = left.y + left.h + 52;
-    for (let k = 0; k < 4; k += 1) {
-      snapshotBoxes.push({
-        x: 18 + (k % 2) * (boxW + gap),
-        y: y0 + Math.floor(k / 2) * 150,
-        w: boxW,
-        h: 118,
-      });
-    }
+    densityBox = { x: 18, y: left.y + left.h + 52, w: w - 36, h: 250 };
   } else {
     const rightX = left.x + left.w + gap;
-    const boxW = (w - rightX - 18 - gap * (rightCount - 1)) / rightCount;
-    for (let k = 0; k < 4; k += 1) {
-      snapshotBoxes.push({ x: rightX + k * (boxW + gap), y: 40, w: boxW, h: h - 82 });
-    }
+    densityBox = { x: rightX, y: 40, w: w - rightX - 18, h: h - 82 };
   }
-  for (let k = 0; k < 4; k += 1) {
-    const box = snapshotBoxes[k];
-    const t = (k + 1) / 4;
-    drawFrame(ctx, box, `density t${k + 1}`);
-    drawMeanShiftDensity(ctx, box, lim, sim.snapshots[k], bandwidth, mixHexColor(t), 0.88, true);
-    drawSmallLabel(ctx, `t=${(t * sim.physicalTime).toFixed(2)}`, box.x + box.w / 2, box.y + box.h + 18, "#56616f", "center");
-  }
+  drawFrame(ctx, densityBox, "density at selected time");
+  drawMeanShiftDensity(ctx, densityBox, lim, finalSnapshot, bandwidth, BLUE, 0.86, true);
+  drawSmallLabel(ctx, `t=${sim.physicalTime.toFixed(2)}`, densityBox.x + densityBox.w / 2, densityBox.y + densityBox.h + 18, "#56616f", "center");
   setStatus(`mean-shift PDE; ${n} particles; bandwidth ${bandwidth.toFixed(2)}; displayed time ${sim.physicalTime.toFixed(2)}`);
 }
 
@@ -9257,63 +9876,146 @@ function drawSinkhornEntropyGeometry() {
     }
     return 0.92 * rx - 0.38 * ry + eps * barrier;
   };
-  const grid = 86;
-  const values = [];
+  const objectiveDerivatives = (p, eps) => {
+    const grad = [0.92 / radius, -0.38 / radius];
+    const hess = [0, 0, 0];
+    let value = 0.92 * ((p[0] - cx) / radius) - 0.38 * ((p[1] - cy) / radius);
+    for (const e of edgeData) {
+      const d = signedDistance(e, p);
+      if (d <= 1e-8) return null;
+      const gd = [-e.sign * e.ey / e.len, e.sign * e.ex / e.len];
+      value -= eps * Math.log(d / radius);
+      grad[0] -= eps * gd[0] / d;
+      grad[1] -= eps * gd[1] / d;
+      const scale = eps / (d * d);
+      hess[0] += scale * gd[0] * gd[0];
+      hess[1] += scale * gd[0] * gd[1];
+      hess[2] += scale * gd[1] * gd[1];
+    }
+    return { value, grad, hess };
+  };
+  const minimizeObjective = (eps) => {
+    let p = [cx, cy];
+    for (let it = 0; it < 50; it += 1) {
+      const state = objectiveDerivatives(p, eps);
+      if (!state) break;
+      const { value, grad, hess } = state;
+      const det = hess[0] * hess[2] - hess[1] * hess[1];
+      if (Math.abs(det) < 1e-16) break;
+      const step = [
+        (hess[2] * grad[0] - hess[1] * grad[1]) / det,
+        (-hess[1] * grad[0] + hess[0] * grad[1]) / det,
+      ];
+      const decrement = grad[0] * step[0] + grad[1] * step[1];
+      if (Math.sqrt(Math.max(decrement, 0)) < 1e-5) break;
+      let tau = 1;
+      let accepted = false;
+      for (let ls = 0; ls < 28; ls += 1) {
+        const q = [p[0] - tau * step[0], p[1] - tau * step[1]];
+        const qState = objectiveDerivatives(q, eps);
+        if (qState && qState.value <= value - 1e-4 * tau * decrement) {
+          p = q;
+          accepted = true;
+          break;
+        }
+        tau *= 0.5;
+      }
+      if (!accepted) break;
+    }
+    return p;
+  };
+  const shadeRgb = (s) => {
+    const t = clamp(s, 0, 1);
+    const left = rgb(BLUE);
+    const mid = rgb(VIOLET);
+    const right = rgb(RED);
+    let ca;
+    let cb;
+    let u;
+    if (t < 0.5) {
+      ca = left;
+      cb = mid;
+      u = t / 0.5;
+    } else {
+      ca = mid;
+      cb = right;
+      u = (t - 0.5) / 0.5;
+    }
+    const wash = 0.70;
+    return [0, 1, 2].map((i) => Math.round(255 * wash + (1 - wash) * lerp(ca[i], cb[i], u)));
+  };
+  const fieldW = Math.min(560, Math.max(340, Math.round(box.w * 1.35)));
+  const fieldH = Math.min(420, Math.max(260, Math.round(box.h * 1.35)));
+  const values = new Float64Array(fieldW * fieldH);
   let vMin = Infinity;
   let vMax = -Infinity;
-  let best = null;
-  let bestVal = Infinity;
-  for (let iy = 0; iy < grid; iy += 1) {
-    for (let ix = 0; ix < grid; ix += 1) {
-      const p = [box.x + ((ix + 0.5) / grid) * box.w, box.y + ((iy + 0.5) / grid) * box.h];
+  const finite = [];
+  for (let iy = 0; iy < fieldH; iy += 1) {
+    for (let ix = 0; ix < fieldW; ix += 1) {
+      const id = iy * fieldW + ix;
+      const p = [box.x + ((ix + 0.5) / fieldW) * box.w, box.y + ((iy + 0.5) / fieldH) * box.h];
       if (!inside(p)) {
-        values.push(Infinity);
+        values[id] = Infinity;
         continue;
       }
       const v = objective(p, epsilon);
-      values.push(v);
+      values[id] = v;
       vMin = Math.min(vMin, v);
       vMax = Math.max(vMax, v);
-      if (v < bestVal) {
-        bestVal = v;
-        best = p;
-      }
+      finite.push(v);
     }
   }
-  const finite = values.filter(Number.isFinite).sort((a, b) => a - b);
+  finite.sort((a, b) => a - b);
   const lo = finite[Math.floor(0.04 * (finite.length - 1))] ?? vMin;
   const hi = finite[Math.floor(0.94 * (finite.length - 1))] ?? vMax;
-  const cellW = box.w / grid;
-  const cellH = box.h / grid;
-  for (let iy = 0; iy < grid; iy += 1) {
-    for (let ix = 0; ix < grid; ix += 1) {
-      const v = values[iy * grid + ix];
-      if (!Number.isFinite(v)) continue;
+  const imgCanvas = document.createElement("canvas");
+  imgCanvas.width = fieldW;
+  imgCanvas.height = fieldH;
+  const imgCtx = imgCanvas.getContext("2d");
+  const image = imgCtx.createImageData(fieldW, fieldH);
+  for (let iy = 0; iy < fieldH; iy += 1) {
+    for (let ix = 0; ix < fieldW; ix += 1) {
+      const id = iy * fieldW + ix;
+      const v = values[id];
+      const offset = 4 * id;
+      if (!Number.isFinite(v)) {
+        image.data[offset + 3] = 0;
+        continue;
+      }
       const s = clamp((v - lo) / Math.max(hi - lo, 1e-12), 0, 1);
-      ctx.fillStyle = mixColor(s, BLUE, RED, 0.28);
-      ctx.fillRect(box.x + ix * cellW, box.y + iy * cellH, cellW + 0.5, cellH + 0.5);
+      const col = shadeRgb(s);
+      image.data[offset] = col[0];
+      image.data[offset + 1] = col[1];
+      image.data[offset + 2] = col[2];
+      image.data[offset + 3] = 255;
     }
   }
+  imgCtx.putImageData(image, 0, 0);
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(vertices[0][0], vertices[0][1]);
   for (let k = 1; k < vertices.length; k += 1) ctx.lineTo(vertices[k][0], vertices[k][1]);
   ctx.closePath();
   ctx.clip();
-  const levels = Array.from({ length: 8 }, (_, k) => lerp(lo, hi, (k + 1) / 10));
-  ctx.strokeStyle = "rgba(38,51,63,.42)";
-  ctx.lineWidth = 0.8;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(imgCanvas, box.x, box.y, box.w, box.h);
+  const levels = Array.from({ length: 10 }, (_, k) => lerp(lo, hi, (k + 1) / 12));
+  ctx.strokeStyle = "rgba(18,24,32,.58)";
+  ctx.lineWidth = 0.72;
+  const px = (ix) => box.x + ((ix + 0.5) / fieldW) * box.w;
+  const py = (iy) => box.y + ((iy + 0.5) / fieldH) * box.h;
   for (const level of levels) {
-    for (let iy = 0; iy < grid - 1; iy += 1) {
-      for (let ix = 0; ix < grid - 1; ix += 1) {
-        const ids = [iy * grid + ix, iy * grid + ix + 1, (iy + 1) * grid + ix + 1, (iy + 1) * grid + ix];
+    for (let iy = 0; iy < fieldH - 1; iy += 1) {
+      for (let ix = 0; ix < fieldW - 1; ix += 1) {
+        const ids = [iy * fieldW + ix, iy * fieldW + ix + 1, (iy + 1) * fieldW + ix + 1, (iy + 1) * fieldW + ix];
         const vs = ids.map((id) => values[id]);
         if (!vs.every(Number.isFinite)) continue;
         const pts = [
-          [box.x + (ix + 0.5) * cellW, box.y + (iy + 0.5) * cellH],
-          [box.x + (ix + 1.5) * cellW, box.y + (iy + 0.5) * cellH],
-          [box.x + (ix + 1.5) * cellW, box.y + (iy + 1.5) * cellH],
-          [box.x + (ix + 0.5) * cellW, box.y + (iy + 1.5) * cellH],
+          [px(ix), py(iy)],
+          [px(ix + 1), py(iy)],
+          [px(ix + 1), py(iy + 1)],
+          [px(ix), py(iy + 1)],
         ];
         const crossings = [];
         for (let e = 0; e < 4; e += 1) {
@@ -9345,27 +10047,14 @@ function drawSinkhornEntropyGeometry() {
   const epsList = Array.from({ length: 80 }, (_, i) => Math.exp(lerp(Math.log(0.025), Math.log(2.0), i / 79)));
   ctx.beginPath();
   for (let k = 0; k < epsList.length; k += 1) {
-    let arg = null;
-    let valBest = Infinity;
-    for (let iy = 0; iy < grid; iy += 2) {
-      for (let ix = 0; ix < grid; ix += 2) {
-        const p = [box.x + ((ix + 0.5) / grid) * box.w, box.y + ((iy + 0.5) / grid) * box.h];
-        if (!inside(p)) continue;
-        const v = objective(p, epsList[k]);
-        if (v < valBest) {
-          valBest = v;
-          arg = p;
-        }
-      }
-    }
-    if (!arg) continue;
+    const arg = minimizeObjective(epsList[k]);
     if (k === 0) ctx.moveTo(arg[0], arg[1]);
     else ctx.lineTo(arg[0], arg[1]);
   }
   ctx.strokeStyle = VIOLET;
   ctx.lineWidth = 2.4;
   ctx.stroke();
-  const q = best || [cx, cy];
+  const q = minimizeObjective(epsilon);
   ctx.strokeStyle = "rgba(255,255,255,.95)";
   ctx.lineWidth = 4.8;
   ctx.beginPath();
@@ -9850,9 +10539,10 @@ function drawHWIEntropyDecay() {
   setStatus(`OU flow to N(0,1); H=${H[H.length - 1].toFixed(3)}, I=${I[I.length - 1].toFixed(3)}, W=${W[W.length - 1].toFixed(3)} at final time.`);
 }
 
-function mlpSurrogate(kind, n, seed, angleDeg, steps) {
+function mlpSurrogate(kind, n, seed, angleDeg, steps, teacherCount = 2) {
   const random = rng(seed);
-  const teachers = [-angleDeg, angleDeg].map((a) => [(Math.cos((Math.PI / 180) * a)), Math.sin((Math.PI / 180) * a)]);
+  const teacherAngles = mlpTeacherAngles(teacherCount, (Math.PI / 180) * angleDeg);
+  const teachers = teacherAngles.map((a) => [Math.cos(a), Math.sin(a)]);
   let pts = [];
   for (let i = 0; i < n; i += 1) {
     const th = 2 * Math.PI * random();
@@ -9862,6 +10552,9 @@ function mlpSurrogate(kind, n, seed, angleDeg, steps) {
   const traj = pts.map((p) => [p.slice()]);
   const risks = [];
   const hist = [];
+  const snapshotSteps = [0, 0.16, 0.34, 0.58, 0.78, 1].map((t) => Math.round(t * steps));
+  const snapshotSet = new Set(snapshotSteps);
+  const snapshots = [];
   for (let s = 0; s <= steps; s += 1) {
     let risk = 0;
     const angles = [];
@@ -9873,12 +10566,21 @@ function mlpSurrogate(kind, n, seed, angleDeg, steps) {
       angles.push(Math.atan2(p[1], p[0]));
     }
     risks.push(risk / n);
+    if (snapshotSet.has(s)) snapshots.push({ time: s / Math.max(steps, 1), pts: pts.map((p) => p.slice()) });
     if (s === steps) hist.push(...angles);
     if (s === steps) break;
     pts = pts.map((p) => {
       const r = Math.max(Math.hypot(p[0], p[1]), 1e-8);
       const u = [p[0] / r, p[1] / r];
-      const target = teachers[0][0] * u[0] + teachers[0][1] * u[1] > teachers[1][0] * u[0] + teachers[1][1] * u[1] ? teachers[0] : teachers[1];
+      let target = teachers[0];
+      let bestDot = target[0] * u[0] + target[1] * u[1];
+      for (let k = 1; k < teachers.length; k += 1) {
+        const dot = teachers[k][0] * u[0] + teachers[k][1] * u[1];
+        if (dot > bestDot) {
+          bestDot = dot;
+          target = teachers[k];
+        }
+      }
       let vx = target[0] - u[0] + 0.24 * (1 - r) * u[0];
       let vy = target[1] - u[1] + 0.24 * (1 - r) * u[1];
       if (kind === "muon") {
@@ -9891,58 +10593,41 @@ function mlpSurrogate(kind, n, seed, angleDeg, steps) {
     });
     if (s % 4 === 0 || s === steps - 1) for (let i = 0; i < n; i += 1) traj[i].push(pts[i].slice());
   }
-  return { pts, traj, risks, hist, teachers };
+  return { pts, traj, risks, hist, teachers, teacherAngles, snapshots };
 }
 
 function drawMLPW2Muon() {
   const n = Math.round(val("mlpmNeurons"));
   const angle = val("mlpmAngle");
   const steps = Math.round(val("mlpmSteps"));
+  const teacherCount = parseInt(val("mlpmTeachers"), 10);
   const seed = Math.round(val("mlpmSeed"));
-  const w2 = mlpSurrogate("w2", n, seed, angle, steps);
-  const muon = mlpSurrogate("muon", n, seed, angle, steps);
-  const { ctx, w, h } = resizeCanvas(560);
+  const w2 = mlpSurrogate("w2", n, seed, angle, steps, teacherCount);
+  const muon = mlpSurrogate("muon", n, seed, angle, steps, teacherCount);
+  const { ctx, w, h } = resizeCanvas(610);
+  const topY = 38;
+  const topH = Math.min(214, Math.max(120, h * 0.38));
+  const bottomY = topY + topH + 48;
+  const bottomH = Math.max(70, h - bottomY - 24);
   const boxesTop = [
-    { x: 36, y: 40, w: (w - 96) / 2, h: 210 },
-    { x: 60 + (w - 96) / 2, y: 40, w: (w - 96) / 2, h: 210 },
+    { x: 34, y: topY, w: (w - 92) / 2, h: topH },
+    { x: 58 + (w - 92) / 2, y: topY, w: (w - 92) / 2, h: topH },
   ];
   const boxesBottom = [
-    { x: 36, y: 308, w: (w - 96) / 2, h: 170 },
-    { x: 60 + (w - 96) / 2, y: 308, w: (w - 96) / 2, h: 170 },
+    { x: 34, y: bottomY, w: (w - 92) / 2, h: bottomH },
+    { x: 58 + (w - 92) / 2, y: bottomY, w: (w - 92) / 2, h: bottomH },
   ];
   [["W2 particle flow", w2], ["normalized Muon-like flow", muon]].forEach(([title, sim], k) => {
     const box = boxesTop[k];
     drawFrame(ctx, box, title);
-    const lim = 1.45;
-    const proj = gfMap(box, lim);
-    for (const v of sim.teachers) {
-      ctx.strokeStyle = "rgba(20,20,20,.45)";
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(proj.X(0), proj.Y(0));
-      ctx.lineTo(proj.X(1.25 * v[0]), proj.Y(1.25 * v[1]));
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    const lim = 2.05;
+    drawMlpTeacherRays(ctx, box, lim, sim.teacherAngles, 0.48);
     gfDrawTrajectories(ctx, box, lim, sim.traj, Math.max(1, Math.floor(n / 46)));
     gfDrawPoints(ctx, box, lim, sim.pts, k === 0 ? VIOLET : BLUE, 2.1, 0.82);
   });
-  drawFrame(ctx, boxesBottom[0], "risk surrogate");
-  const xs = Array.from({ length: w2.risks.length }, (_, i) => i / Math.max(w2.risks.length - 1, 1));
-  const ymax = Math.max(...w2.risks, ...muon.risks) * 1.05;
-  drawCurve(ctx, xs, w2.risks, boxesBottom[0], 0, 1, 0, ymax, VIOLET, 2.1);
-  drawCurve(ctx, xs, muon.risks, boxesBottom[0], 0, 1, 0, ymax, BLUE, 2.1);
-  drawFrame(ctx, boxesBottom[1], "final angular density");
-  const bins = 60;
-  const histW = Array(bins).fill(0);
-  const histM = Array(bins).fill(0);
-  for (const a of w2.hist) histW[Math.floor(((a + Math.PI) / (2 * Math.PI)) * bins) % bins] += 1;
-  for (const a of muon.hist) histM[Math.floor(((a + Math.PI) / (2 * Math.PI)) * bins) % bins] += 1;
-  const xang = Array.from({ length: bins }, (_, i) => -180 + (360 * (i + 0.5)) / bins);
-  const yH = Math.max(...histW, ...histM, 1);
-  drawCurve(ctx, xang, histW, boxesBottom[1], -180, 180, 0, yH, VIOLET, 1.8);
-  drawCurve(ctx, xang, histM, boxesBottom[1], -180, 180, 0, yH, BLUE, 1.8);
-  setStatus(`surrogate normalized training dynamics; final risk W2=${w2.risks[w2.risks.length - 1].toFixed(3)}, Muon=${muon.risks[muon.risks.length - 1].toFixed(3)}.`);
+  drawMlpAngularStack(ctx, boxesBottom[0], w2.teacherAngles, w2.snapshots, "W2 angular concentration");
+  drawMlpAngularStack(ctx, boxesBottom[1], muon.teacherAngles, muon.snapshots, "Muon angular concentration");
+  setStatus(`${teacherCount} teacher ray${teacherCount > 1 ? "s" : ""}; final risk W2=${w2.risks[w2.risks.length - 1].toFixed(3)}, Muon=${muon.risks[muon.risks.length - 1].toFixed(3)} after ${steps} steps.`);
 }
 
 function normalizeDensity(xs, values) {
@@ -10231,7 +10916,7 @@ function init() {
   } else if (kind === "mongecolor") {
     controls.innerHTML = [
       slider("colorT", "t", 0.62, 0, 1, 0.01),
-      slider("colorSize", "resolution", 160, 80, 240, 8),
+      slider("colorSize", "resolution", 320, 120, 472, 8),
       select("colorTarget", "target", ["flower", "orchid", "forest"], "flower"),
       slider("colorContrast", "contrast", 1, 0.55, 1.35, 0.05),
     ].join("");
@@ -10665,9 +11350,10 @@ function init() {
     bind(drawGradflowMultispecies);
   } else if (kind === "gradflowmmd") {
     controls.innerHTML = [
-      slider("gfmParticles", "particles", 64, 10, 180, 2),
+      slider("gfmParticles", "particles", 60, 10, 120, 2),
       slider("gfmSeparation", "mode gap", 2.1, 1.0, 3.2, 0.05),
-      slider("gfmBandwidth", "kernel width", 0.62, 0.28, 1.25, 0.01),
+      slider("gfmBandwidth", "kernel bandwidth", 0.62, 0.22, 1.45, 0.01),
+      slider("gfmTime", "time", 1.0, 0.35, 1.9, 0.05),
       slider("gfmSeed", "seed", 3104, 3100, 3180, 1),
     ].join("");
     bind(drawGradflowMMD);
@@ -10682,7 +11368,8 @@ function init() {
   } else if (kind === "gradflowobjective") {
     controls.innerHTML = [
       select("gfoGeometry", "geometry", ["ot_rays", "mmd", "sinkhorn", "drifting"], "sinkhorn"),
-      slider("gfoSmooth", "smoothing", 0.55, 0.18, 1.1, 0.01),
+      slider("gfoSmooth", "epsilon / smoothing", 0.55, 0.18, 1.1, 0.01),
+      slider("gfoTime", "time", 1.35, 0.55, 2.25, 0.05),
       slider("gfoParticles", "particles", 28, 10, 48, 2),
       slider("gfoSeed", "seed", 3302, 3300, 3380, 1),
     ].join("");
@@ -10690,7 +11377,7 @@ function init() {
   } else if (kind === "gradflowfokker") {
     controls.innerHTML = [
       slider("gffTime", "time", 0.64, 0, 1, 0.01),
-      slider("gffSigma", "noise", 0.34, 0, 0.9, 0.01),
+      slider("gffSigma", "diffusion", 0.34, 0.02, 0.9, 0.01),
       slider("gffShift", "target shift", 0.62, 0.0, 1.4, 0.01),
       slider("gffSeed", "seed", 3408, 3400, 3480, 1),
     ].join("");
@@ -10698,8 +11385,9 @@ function init() {
   } else if (kind === "gradflowmlp") {
     controls.innerHTML = [
       slider("gflNeurons", "neurons", 90, 28, 160, 2),
+      select("gflTeachers", "teacher neurons", ["1", "2", "3", "6"], "2"),
       slider("gflAngle", "ray angle", 34, 12, 70, 1),
-      slider("gflTime", "time", 0.72, 0, 1, 0.01),
+      slider("gflTime", "final time", 1.0, 0.2, 1.8, 0.01),
       slider("gflSeed", "seed", 3506, 3500, 3580, 1),
     ].join("");
     bind(drawGradflowMLP);
@@ -10736,9 +11424,11 @@ function init() {
     bind(drawGenerativeDiffusion1D);
   } else if (kind === "generativediffusion2d") {
     controls.innerHTML = [
-      slider("gmd2Time", "time", 0.58, 0, 1, 0.01),
-      slider("gmd2Gap", "atom gap", 1.15, 0.65, 1.75, 0.01),
-      slider("gmd2Sigma", "noise", 0.54, 0.24, 0.95, 0.01),
+      slider("gmd2Time", "progress", 1.0, 0, 1, 0.01),
+      slider("gmd2Gap", "atom gap", 1.18, 0.65, 1.75, 0.01),
+      slider("gmd2Sigma", "init sigma", 0.58, 0.30, 0.92, 0.01),
+      slider("gmd2Samples", "samples", 66, 24, 120, 3),
+      slider("gmd2Seed", "seed", 3704, 3700, 3780, 1),
     ].join("");
     bind(drawGenerativeDiffusion2D);
   } else if (kind === "generativetrajectories") {
@@ -10994,7 +11684,8 @@ function init() {
   } else if (kind === "gradflowmlpmuon") {
     controls.innerHTML = [
       slider("mlpmNeurons", "neurons", 92, 36, 180, 2),
-      slider("mlpmAngle", "teacher angle", 38, 15, 75, 1),
+      select("mlpmTeachers", "teacher neurons", ["1", "2", "3", "6"], "2"),
+      slider("mlpmAngle", "ray spread", 38, 15, 75, 1),
       slider("mlpmSteps", "steps", 86, 24, 160, 2),
       slider("mlpmSeed", "seed", 4830, 4820, 4890, 1),
     ].join("");
