@@ -1552,8 +1552,7 @@ $\int V\,\d\alpha$.
 The Hellinger integrand illustrates why the qualifier "flat reference" matters.
 In dimension $d=1$, with $\phi_H(r)=(\sqrt r-1)^2$, the flat-reference
 integrand $g(s)=b\,\phi_H(s/b)$ satisfies McCann's criterion after subtracting
-the irrelevant constant $b$: the normalized integrand
-$\widetilde g(s)=s-2\sqrt{bs}$ is convex and
+the irrelevant constant $b$: for $\widetilde g(s)=s-2\sqrt{bs}$,
 
 ```{math}
 r\widetilde g(r^{-1})=1-2\sqrt{br}
