@@ -1,1 +1,0 @@
-import{b as t}from"/ot4ml/myst/_build/html/build/_shared/chunk-7DW7L33J.js?ot4ml-expanded-chapters=1";var s=class{constructor(i){this.init=i,this.records=this.init()}static{t(this,"ImperativeState")}reset(){this.records=this.init()}};export{s as a};

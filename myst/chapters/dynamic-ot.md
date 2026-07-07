@@ -777,20 +777,9 @@ A_2(a,w)=a\norm{w}^2,
 
 The same action can be written in momentum variables, and this is the form in
 which convexity and metric properties are easiest to read. Set $\mu=\alpha w$,
-so that $\mu$ is a vector-valued measure. At the measure level, define
-
-```{math}
-:label: eq-general-measure-momentum-action
-\mathbb J_A(\alpha,\mu)
-\eqdef
-\begin{cases}
-\mathbb A\!\big(\alpha,\d\mu/\d\alpha\big), & \mu\ll\alpha,\\
-+\infty, & \text{otherwise}.
-\end{cases}
-```
-
-When the local description is written with the same reference $\lambda$, so
-that $\alpha=a\lambda$ and $\mu=m\lambda$, the pointwise momentum perspective is
+so that $\mu$ is a vector-valued measure. When the local description is written
+with the same reference $\lambda$, so that $\alpha=a\lambda$ and
+$\mu=m\lambda$, the pointwise momentum perspective is
 
 ```{math}
 :label: eq-general-momentum-perspective
@@ -803,9 +792,26 @@ A(a,m/a), & a>0,\\
 \end{cases}
 ```
 
-so that $\mathbb J_A(\alpha,\mu)=\int J_A(a(x),m(x))\d\lambda(x)$. This
-zero-density convention is the lower-semicontinuous one for the superlinear
-actions used below; other growths use the corresponding recession extension.
+and the measure action relative to $\lambda$ is
+
+```{math}
+:label: eq-general-measure-momentum-action
+\mathbb J_{A,\lambda}(\alpha,\mu)
+\eqdef
+\int
+J_A\!\left(
+\frac{\d\alpha}{\d\lambda},
+\frac{\d\mu}{\d\lambda}
+\right)\d\lambda,
+```
+
+with value $+\infty$ if $\alpha$ or the total variation $|\mu|$ is not absolutely continuous with
+respect to $\lambda$. This zero-density convention is the lower-semicontinuous
+one for the superlinear actions used below; other growths use the corresponding
+recession extension. If $A$ is positively $1$-homogeneous in $a$, then $J_A$ is
+jointly $1$-homogeneous: $J_A(\eta a,\eta m)=\eta J_A(a,m)$. In that intrinsic
+case the value of $\mathbb J_{A,\lambda}$ is independent of the dominating
+reference measure, and we write simply $\mathbb J_A$.
 For $A_2(a,w)=a\norm{w}^2$, one recovers the quadratic perspective
 
 ```{math}
@@ -880,6 +886,8 @@ variational principle.
 (prop-homogeneous-dynamic-action-distance)=
 :::{admonition} Proposition: Homogeneous Dynamic Actions Define Distances
 :class: important
+Fix a reference measure $\lambda$, omitted from the notation only in the
+intrinsic case where $\mathbb J_{A,\lambda}$ does not depend on $\lambda$.
 Assume that the momentum perspective $J_A$ defined in
 {eq}`eq-general-momentum-perspective` is lower semicontinuous, convex in
 $(a,m)$, even in $m$, and satisfies $J_A(a,0)=0$. Assume moreover that for some
@@ -907,26 +915,28 @@ A(a,w)=0 \Longleftrightarrow w=0
 Define, on every fixed-mass class,
 
 ```{math}
-\mathsf D_A(\alpha_0,\alpha_1)
+\mathsf D_{A,\lambda}(\alpha_0,\alpha_1)
 \eqdef
 \inf_{\substack{\partial_t\alpha_t+\diverg\mu_t=0\\
 \alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
 \left(
-\int_0^1\mathbb J_A(\alpha_t,\mu_t)\,\d t
+\int_0^1\mathbb J_{A,\lambda}(\alpha_t,\mu_t)\,\d t
 \right)^{1/r}.
 ```
 
 After the usual lower-semicontinuous relaxation assuming that zero-action values
-are attained, $\mathsf D_A$ is an extended distance on each finite-action
+are attained, $\mathsf D_{A,\lambda}$ is an extended distance on each finite-action
 component: it is symmetric, satisfies the triangle inequality, and
-$\mathsf D_A(\alpha_0,\alpha_1)=0$ only when $\alpha_0=\alpha_1$.
+$\mathsf D_{A,\lambda}(\alpha_0,\alpha_1)=0$ only when $\alpha_0=\alpha_1$.
+In the intrinsic case, we write $\mathsf D_A$.
 :::
 
 :::{dropdown} Proof
 Zero self-distance is obtained by the constant curve. Conversely, zero relaxed
-action forces $\mathbb J_A(\alpha_t,\mu_t)=0$ a.e., hence $\mu_t=0$ a.e.; the
-continuity equation then gives $\alpha_0=\alpha_1$. Symmetry follows by time
-reversal and evenness in $m$. For the triangle inequality, concatenate two almost optimal curves with
+action forces $\mathbb J_{A,\lambda}(\alpha_t,\mu_t)=0$ a.e., hence
+$\mu_t=0$ a.e.; the continuity equation then gives $\alpha_0=\alpha_1$.
+Symmetry follows by time reversal and evenness in $m$. For the triangle
+inequality, concatenate two almost optimal curves with
 actions $E_1,E_2$, allocating time fractions $\tau$ and $1-\tau$. By
 $r$-homogeneity the action is $\tau^{1-r}E_1+(1-\tau)^{1-r}E_2$. Optimizing in
 $\tau$ gives $(E_1^{1/r}+E_2^{1/r})^r$, and the result follows after taking
@@ -955,8 +965,7 @@ J_p(a,m)=
 ```
 
 With $A=A_p$, Proposition {ref}`prop-homogeneous-dynamic-action-distance` gives
-the usual identity $\mathsf D_{A_p}=\Wass_p$. For gradient-flow purposes one
-uses the corresponding squared metric speed
+the usual identity $\mathsf D_{A_p}=\Wass_p$. The corresponding squared length-space normalization is
 
 ```{math}
 \mathbb A_p(\alpha,w)
@@ -968,7 +977,7 @@ This is the squared version of the $p$-homogeneous action: minimizing
 $\int_0^1\mathbb A_p(\alpha_t,v_t)\d t$ gives $\Wass_p^2$ after
 constant-speed reparametrization. Thus $A_p,J_p$ denote the local
 $p$-homogeneous velocity and momentum densities, whereas $\mathbb A_p$ denotes
-the squared tangent action used later in the PMO. The endpoint $p=1$ can be
+the squared tangent action used in the length formulation. The endpoint $p=1$ can be
 treated separately: $J_1(a,m)=\norm m$, and the dynamic problem collapses to
 Beckmann's formulation of $\Wass_1$ {cite:p}`Beckmann52`.
 :::
@@ -1542,11 +1551,18 @@ $i\neq j$. Write
 ```
 
 for the symmetric edge measure, the finite counterpart of the jump measure used
-above. Write a probability $p\in\Sigma_n$ in density form $p_i=\pi_i\rho_i$,
-where
+above. The transported object is a mass histogram
 
 ```{math}
-\Sigma_n\eqdef\left\{p\in\RR_+^n:\sum_i p_i=1\right\}.
+\Sigma_n\eqdef\left\{a\in\RR_+^n:\sum_i a_i=1\right\}.
+```
+
+Relative densities only enter as auxiliary variables with respect to the
+invariant law:
+
+```{math}
+\rho_i(a)\eqdef \frac{a_i}{\pi_i},
+\qquad a_i=\pi_i\rho_i(a).
 ```
 
 The logarithmic mean $\theta$ defined in {eq}`eq-logarithmic-mean` is the
@@ -1559,22 +1575,27 @@ $\psi\in\RR^n$, set
 \bar\nabla\psi(i,j)\eqdef\psi_j-\psi_i.
 ```
 
-The finite nonlocal divergence is encoded by
+The finite nonlocal divergence is encoded by the density Onsager operator and by
+its mass form
 
 ```{math}
 :label: eq-discrete-markov-onsager
 (\mathcal K_\rho\psi)_i
 \eqdef
 \sum_j K_{ij}\theta(\rho_i,\rho_j)(\psi_i-\psi_j),
+\qquad
+(\mathcal L_a\psi)_i
+\eqdef
+\pi_i(\mathcal K_{\rho(a)}\psi)_i.
 ```
 
 with tangent action
 
 ```{math}
 :label: eq-discrete-markov-action
-\mathbb A_K(\rho,\psi)
+\mathbb A_K(a,\psi)
 \eqdef
-\frac12\sum_{i,j}\mathsf J_{ij}\theta(\rho_i,\rho_j)
+\frac12\sum_{i,j}\mathsf J_{ij}\theta(\rho_i(a),\rho_j(a))
 (\bar\nabla\psi(i,j))^2.
 ```
 
@@ -1586,18 +1607,18 @@ The discrete transport distance is
 
 ```{math}
 :label: eq-discrete-markov-distance
-\mathcal W_K^2(\rho^0,\rho^1)
+\mathcal W_K^2(a_0,a_1)
 \eqdef
-\inf_{\rho_t,\psi_t}
-\int_0^1\mathbb A_K(\rho_t,\psi_t)\,\d t,
+\inf_{a_t,\psi_t}
+\int_0^1\mathbb A_K(a_t,\psi_t)\,\d t,
 \qquad
-\dot\rho_t+\mathcal K_{\rho_t}\psi_t=0,
+\dot a_t+\mathcal L_{a_t}\psi_t=0,
 ```
 
-with endpoints $\rho_0=\rho^0$, $\rho_1=\rho^1$. Equivalently, one can write
-the same formula in edge-flux variables: flux is only allowed along edges where
-$K_{ij}>0$, and the denominator in the kinetic energy is the logarithmic mean
-of the two endpoint densities.
+with endpoint conditions $a_{t=0}=a_0$ and $a_{t=1}=a_1$. Equivalently, one can
+write the same formula in edge-flux variables: flux is only allowed along edges
+where $K_{ij}>0$, and the denominator in the kinetic energy is the logarithmic
+mean of the two relative endpoint densities $\rho_i(a)=a_i/\pi_i$.
 
 The first nontrivial finite Markov geometries already show how the logarithmic
 mean bends the simplex. In both examples below, take the uniform random walk on
@@ -1606,12 +1627,12 @@ the complete neighbor graph, so $\pi_i=1/n$ and $K_{ij}=1/(n-1)$ for $i\neq j$.
 :::{admonition} Example: Two-point complete graph
 :class: ot4ml-example
 
-On $\Sigma_2$, write $p=(r,1-r)$ and $q=(s,1-s)$. Since there is only one edge, the discrete dynamic problem reduces to the scalar Riemannian length
+On $\Sigma_2$, write $a_0=(r,1-r)$ and $a_1=(s,1-s)$. Since there is only one edge, the discrete dynamic problem reduces to the scalar Riemannian length
 
 ```{math}
 :label: eq-two-state-markov-distance
 
-\mathcal W_K(p,q)
+\mathcal W_K(a_0,a_1)
 =
 \left|\int_s^r \frac{\d u}{\sqrt{\theta(u,1-u)}}\right|,
 \qquad
@@ -1625,60 +1646,62 @@ This formula is closed but not Euclidean: the logarithmic mean changes the cost 
 :::{admonition} Example: Three-point complete graph
 :class: ot4ml-example
 
-On $\Sigma_3$, the complete-neighbor graph is a triangle. For $p\in\operatorname{int}(\Sigma_3)$, set
+On $\Sigma_3$, the complete-neighbor graph is a triangle. For $a\in\operatorname{int}(\Sigma_3)$, set
 
 ```{math}
-a_{ij}(p)\eqdef\frac12\theta(p_i,p_j),
+\Theta_{ij}(a)\eqdef\frac12\theta(a_i,a_j),
 \qquad 1\leq i<j\leq3.
 ```
 
-For a tangent vector $u\in\RR^3$ with $u_1+u_2+u_3=0$, orient the edges as $1\to2$, $1\to3$, $2\to3$. The squared norm induced by the discrete Wasserstein metric is
+For a fixed $a$, write $\Theta_{ij}=\Theta_{ij}(a)$.
+
+For a tangent vector $h\in\RR^3$ with $h_1+h_2+h_3=0$, orient the edges as $1\to2$, $1\to3$, $2\to3$. The squared norm induced by the discrete Wasserstein metric is
 
 ```{math}
 :label: eq-three-state-markov-norm
 
-\|u\|_p^2
+\|h\|_a^2
 =
-\min_{q_{12},q_{13},q_{23}}
+\min_{m_{12},m_{13},m_{23}}
 \left\{
-\frac{q_{12}^2}{a_{12}}+
-\frac{q_{13}^2}{a_{13}}+
-\frac{q_{23}^2}{a_{23}}
+\frac{m_{12}^2}{\Theta_{12}}+
+\frac{m_{13}^2}{\Theta_{13}}+
+\frac{m_{23}^2}{\Theta_{23}}
 \right\},
 ```
 
 subject to
 
 ```{math}
-u_1+q_{12}+q_{13}=0,
+h_1+m_{12}+m_{13}=0,
 \qquad
-u_2-q_{12}+q_{23}=0,
+h_2-m_{12}+m_{23}=0,
 \qquad
-u_3-q_{13}-q_{23}=0.
+h_3-m_{13}-m_{23}=0.
 ```
 
-Eliminating the three edge fluxes gives an explicit formula. With $D=a_{12}^{-1}+a_{13}^{-1}+a_{23}^{-1}$,
+Eliminating the three edge fluxes gives an explicit formula. With $D=\Theta_{12}^{-1}+\Theta_{13}^{-1}+\Theta_{23}^{-1}$,
 
 ```{math}
-q_{12}^*=\frac{u_2/a_{23}-u_1/a_{13}}{D},
+m_{12}^*=\frac{h_2/\Theta_{23}-h_1/\Theta_{13}}{D},
 \qquad
-q_{13}^*=-u_1-q_{12}^*,
+m_{13}^*=-h_1-m_{12}^*,
 \qquad
-q_{23}^*=q_{12}^*-u_2,
+m_{23}^*=m_{12}^*-h_2,
 ```
 
-and $\|u\|_p^2$ is obtained by inserting these values in {eq}`eq-three-state-markov-norm`. Therefore
+and $\|h\|_a^2$ is obtained by inserting these values in {eq}`eq-three-state-markov-norm`. Therefore
 
 ```{math}
 :label: eq-three-state-markov-distance
 
-\mathcal W_K^2(p^0,p^1)
+\mathcal W_K^2(a_0,a_1)
 =
-\inf_{p_t\in\operatorname{int}(\Sigma_3)}
-\int_0^1\|\dot p_t\|_{p_t}^2\,\d t,
+\inf_{a_t\in\operatorname{int}(\Sigma_3)}
+\int_0^1\|\dot a_t\|_{a_t}^2\,\d t,
 \qquad
-p_0=p^0,
-\quad p_1=p^1.
+a_{t=0}=a_0,
+\quad a_{t=1}=a_1.
 ```
 
 Thus the three-state distance is an explicit two-dimensional Riemannian geodesic problem on the open triangle. The formula is simple enough to compute directly, but it already shows the main difference with Euclidean geometry on the simplex: the local metric depends nonlinearly on the current density through logarithmic edge mobilities.
@@ -1695,8 +1718,8 @@ show_book_figure("discrete-markov-simplex-distances")
 ```
 
 *Discrete Wasserstein distances on small Markov-chain simplices. The left panel shows
-the closed-form profiles $p\mapsto \mathcal W_K(a_p,a_{p_0})$, with
-$a_p=(p,1-p)$, for several anchors $p_0$ on $\Sigma_2$. The middle panel shows
+the closed-form profiles $r\mapsto \mathcal W_K(a_r,a_{r_0})$, with
+$a_r=(r,1-r)$, for several anchors $r_0$ on $\Sigma_2$. The middle panel shows
 numerical level sets of $\mathcal W_K(a,\bar a)$ on $\Sigma_3$, where
 $\bar a=(1/3,1/3,1/3)$, using the local Riemannian norm induced by the
 complete-neighbor Markov chain. The right panel shows the corresponding level

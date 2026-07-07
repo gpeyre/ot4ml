@@ -1617,27 +1617,6 @@ improves when $\epsilon$ is large or the covariance scales overlap well, and
 deteriorates in the small-temperature limit where the entropic coupling
 approaches a deterministic Brenier map.
 
-(alg-gaussian-sinkhorn-closed-form)=
-:::{admonition} Algorithm: Closed-form Gaussian Sinkhorn coupling
-:class: ot4ml-algorithm
-
-**Input:** Gaussian marginals $\al=\Gaussian(\mean_\al,\cov_\al)$, $\be=\Gaussian(\mean_\be,\cov_\be)$, scale $\epsilon>0$.
-
-**Output:** Gaussian entropic coupling covariance.
-
-**Compute singular value decomposition**
-$\cov_\al^{1/2}\cov_\be^{1/2} = U\diag(\sigma_i)V^\top .$
-
-**For** each $\sigma_i>0$ **do**
-
-> $s_i=\frac{\sqrt{\epsilon^2+16\sigma_i^2}-\epsilon}{4\sigma_i}.$
-
-**Set** cross-covariance:
-$K_\epsilon = \cov_\al^{1/2}U\diag(s_i)V^\top\cov_\be^{1/2}.$
-**Return** Gaussian coupling with means $(\mean_\al,\mean_\be)$, marginal covariances $(\cov_\al,\cov_\be)$, and cross-covariance $K_\epsilon$.
-:::
-
-
 (sec-continuous-epsilon-sinkhorn)=
 ## Continuous $\varepsilon$-Sinkhorn Flow
 

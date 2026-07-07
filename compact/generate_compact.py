@@ -147,8 +147,8 @@ def strip_citations(text: str) -> str:
         "using the convexity properties of soft transforms",
     )
     text = text.replace(
-        r"\begin{prop}[Basic geodesically convex energies]\label{prop-basic-geodesic-convexity}",
-        r"\begin{prop}[Basic geodesically convex energies]\phantomsection\label{prop-basic-geodesic-convexity}",
+        r"\begin{prop}[Geodesic convexity of linear and quadratic energies]\label{prop-basic-geodesic-convexity}",
+        r"\begin{prop}[Geodesic convexity of linear and quadratic energies]\phantomsection\label{prop-basic-geodesic-convexity}",
     )
     text = re.sub(r"\\,\s*([,.;:])", r"\1", text)
     text = re.sub(r"\s+([,.;:])", r"\1", text)

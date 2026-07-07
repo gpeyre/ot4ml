@@ -1268,43 +1268,331 @@ It is $\lambda$-geodesically convex if the right-hand side is improved by
 :::
 
 (prop-basic-geodesic-convexity)=
-:::{admonition} Proposition: Basic Geodesically Convex Energies
+:::{admonition} Proposition: Geodesic Convexity of Linear and Quadratic Energies
 :class: important
 The following formal statements hold on $\Pp_2(\RR^d)$.
 
-1. If $h$ is convex, then $\alpha\mapsto\int h\d\alpha$ is geodesically
-   convex; if $h$ is $\lambda$-strongly convex, it is
-   $\lambda$-geodesically convex.
-2. If $W(x-y)$ is convex as a function of the displacement, then
-   $\alpha\mapsto\frac12\iint W(x-y)\d\alpha(x)\d\alpha(y)$ is
-   geodesically convex.
-3. Shannon entropy $\alpha\mapsto\int\rho\log\rho\,\d x$ is geodesically
+1. If $h$ is convex, then the linear energy
+   $\alpha\mapsto\int h\d\alpha$ is geodesically convex; if $h$ is
+   $\lambda$-strongly convex, it is $\lambda$-geodesically convex.
+   Conversely, geodesic convexity for all Dirac endpoints forces $h$ to be
    convex.
-4. The relative entropy $\KL(\alpha|\gamma)$ with
-   $\d\gamma=e^{-V}\d x/Z$ is $\lambda$-geodesically convex when $V$ is
-   $\lambda$-strongly convex.
+2. More generally, if $H_k:(\RR^d)^k\to\RR\cup\{+\infty\}$ is convex, then
+   the polynomial energy
+   $\alpha\mapsto \int H_k(x_1,\ldots,x_k)\d\alpha(x_1)\cdots\d\alpha(x_k)$
+   is geodesically convex whenever the integral is well defined. In
+   particular,
+   $\alpha\mapsto\frac12\iint W(x,y)\d\alpha(x)\d\alpha(y)$ is
+   geodesically convex when $W$ is convex on $\RR^d\times\RR^d$.
 :::
 
 :::{dropdown} Proof
-Along a Monge geodesic $X_t=(1-t)X_0+tX_1$, convexity of $h$ gives
-$h(X_t)\leq(1-t)h(X_0)+t h(X_1)$, and strong convexity gives the additional
-quadratic term; integrating proves the first claim.
+Let $\pi$ be an optimal coupling between $\alpha_0$ and $\alpha_1$, and write
+$X_t=(1-t)X_0+tX_1$ under $(X_0,X_1)\sim\pi$. Convexity of $h$ gives the
+linear-energy statement after integration; testing on Dirac masses gives the
+converse.
 
-The interaction claim follows similarly by applying convexity of $W$ to
-pairwise differences
-$X_t-X_t'=(1-t)(X_0-X_0')+t(X_1-X_1')$ and integrating over two independent
-copies. The entropy claim is McCann's displacement-convexity theorem; at the
-density level it follows from the concavity of the Jacobian determinant under
-the interpolation of optimal maps. Finally,
+For the polynomial statement, take $k$ independent copies of the same optimal
+coupling. Then
+$X_t^\ell=(1-t)X_0^\ell+tX_1^\ell$, and convexity of $H_k$ on the product
+space gives
 
 ```{math}
-\KL(\alpha|\gamma)
-=
-\int\rho\log\rho\,\d x+\int V\d\alpha+\mathrm{constant},
+H_k(X_t^1,\ldots,X_t^k)
+\leq
+(1-t)H_k(X_0^1,\ldots,X_0^k)
++tH_k(X_1^1,\ldots,X_1^k).
 ```
 
-so it is the sum of displacement-convex entropy and a
-$\lambda$-geodesically convex linear potential.
+Integrating over the product coupling proves the claim.
+:::
+
+The polynomial criterion is useful but restrictive for kernel losses. The
+RKHS/MMD kernels introduced in Section {ref}`sec-rkhs-mmd` are usually chosen
+for positive definiteness and statistical smoothing, not for convexity as
+functions of $(x,y)$. Gaussian and Laplace kernels, for instance, are not
+convex on $\RR^d\times\RR^d$, so positive definiteness of $k$ does not imply
+that $\alpha\mapsto\MMD_k^2(\alpha,\beta)$ is geodesically convex. In fact, such
+MMD losses are not geodesically convex in general. One-dimensional monotone
+transport gives a sharper exception for distance-type kernels, because ordered
+quantiles keep the sign of pairwise differences fixed along geodesics; this is
+the one-dimensional displacement-convexity mechanism emphasized, for instance,
+in {cite:p}`SantambrogioBook`.
+
+(prop-1d-interaction-halfline-convex)=
+:::{admonition} Proposition: One-Dimensional Interactions and Energy-Distance MMD
+:class: important
+Let $\varphi:\RR_+\to\RR$ be continuous with at most quadratic growth, and define
+on $\Pp_2(\RR)$
+
+```{math}
+\mathcal I_\varphi(\alpha)
+\eqdef
+\frac12\iint \varphi(|x-y|)\d\alpha(x)\d\alpha(y).
+```
+
+Then $\mathcal I_\varphi$ is geodesically convex for $\Wass_2$ on
+$\Pp_2(\RR)$ if and only if $\varphi$ is convex on $\RR_+$.
+
+Fix also $\beta\in\Pp_2(\RR)$. For the conditionally positive kernel
+$k(x,y)=-|x-y|$ from Definition {ref}`def-positive-kernels`, the squared MMD,
+equivalently the squared energy distance,
+
+```{math}
+\mathcal E_\beta(\alpha)
+\eqdef
+\MMD_k^2(\alpha,\beta)
+=
+\iint -|x-y|\,\d(\alpha-\beta)(x)\d(\alpha-\beta)(y),
+```
+
+is geodesically convex as a function of $\alpha$.
+:::
+
+:::{dropdown} Proof
+Let $Q_0,Q_1$ be the quantile functions of $\alpha_0,\alpha_1$, and let
+$Q_t=(1-t)Q_0+tQ_1$ be the quantile function of the one-dimensional $\Wass_2$
+geodesic $\alpha_t$. For $r>s$, monotonicity gives
+$Q_i(r)-Q_i(s)\geq0$ for $i=0,1$, and hence
+
+```{math}
+Q_t(r)-Q_t(s)
+=
+(1-t)(Q_0(r)-Q_0(s))+t(Q_1(r)-Q_1(s)).
+```
+
+Using the symmetry of the double integral and the quantile parametrization,
+one can write
+
+```{math}
+\mathcal I_\varphi(\alpha_t)
+=
+\int_0^1\int_0^r
+\varphi(Q_t(r)-Q_t(s))\,\d s\,\d r.
+```
+
+Convexity of $\varphi$ on $\RR_+$ gives the desired convexity after
+integration.
+
+Conversely, test geodesic convexity on two-point measures
+$\alpha_i=\frac12(\delta_0+\delta_{a_i})$, with $a_i\geq0$. Their monotone
+geodesic is
+$\alpha_t=\frac12(\delta_0+\delta_{(1-t)a_0+t a_1})$. Since
+
+```{math}
+\mathcal I_\varphi(\alpha_t)
+=
+\frac14\varphi(0)+\frac14\varphi((1-t)a_0+t a_1),
+```
+
+geodesic convexity of $\mathcal I_\varphi$ gives the ordinary convexity
+inequality for $\varphi$ on $\RR_+$, after the identical
+$\frac14\varphi(0)$ terms cancel.
+
+For the energy distance, the function $\varphi(r)=-r$ is affine on $\RR_+$, so
+the self-interaction $-\iint |x-y|\d\alpha(x)\d\alpha(y)$ is affine along
+one-dimensional Wasserstein geodesics even though $z\mapsto-|z|$ is not convex
+on $\RR$. Write $Q_\beta$ for the quantile function of $\beta$. Expanding the
+MMD and dropping the term depending only on $\beta$ gives
+
+```{math}
+\mathcal E_\beta(\alpha)
+=
+2\int_0^1\!\!\int_0^1 |Q_\alpha(r)-Q_\beta(s)|\,\d r\,\d s
+-
+\int_0^1\!\!\int_0^1 |Q_\alpha(r)-Q_\alpha(s)|\,\d r\,\d s
++\mathrm{constant}.
+```
+
+Here the constant is independent of $\alpha$. The positive cross-distance term
+is convex in $Q_\alpha$, since the absolute value is convex and $Q_t$ is affine
+in $t$. The self-distance term is affine along quantile geodesics because
+
+```{math}
+\int_0^1\!\!\int_0^1 |Q_t(r)-Q_t(s)|\,\d r\,\d s
+=
+2\int_0^1\int_0^r (Q_t(r)-Q_t(s))\,\d s\,\d r.
+```
+
+Thus $\alpha\mapsto\mathcal E_\beta(\alpha)$ is geodesically convex.
+:::
+
+This one-dimensional result is the mechanism behind the favorable behavior of
+energy-distance particle flows discussed earlier in this chapter and in recent
+analyses of distance-kernel MMD flows
+{cite:p}`DuongRuxSteinSteidl2024DistanceMMD`. It should not be read as a
+general MMD statement: for a typical positive definite kernel $k$, the
+decomposition
+
+```{math}
+\MMD_k^2(\alpha,\beta)
+=
+\iint k\,\d\alpha\d\alpha
+-2\iint k\,\d\alpha\d\beta
++\mathrm{constant}
+```
+
+contains neither a convex self-interaction nor a convex cross term along
+Wasserstein geodesics.
+
+Internal energies require a different mechanism: convexity is hidden in the
+Jacobian determinant of the transport map, not in a pointwise convex integrand
+along particles. The precise criterion is McCann's displacement-convexity
+theorem.
+
+(thm-mccann-internal-energy)=
+:::{admonition} Theorem: McCann Displacement Convexity for Internal Energies
+:class: important
+Let $g:[0,+\infty)\to\RR\cup\{+\infty\}$ be convex with $g(0)=0$, and define
+
+```{math}
+\psi(r)=r^d g(r^{-d}), \qquad r>0.
+```
+
+If $\psi$ is convex and nonincreasing on $(0,+\infty)$, then
+
+```{math}
+\mathcal U_g(\alpha)
+=
+\begin{cases}
+\displaystyle \int_{\RR^d} g(\rho(x))\,\d x, & \alpha=\rho\d x,\\
++\infty, & \text{otherwise},
+\end{cases}
+```
+
+is geodesically convex on $\Pp_2(\RR^d)$.
+:::
+
+:::{dropdown} Proof
+For smooth positive densities, let $T$ be the Brenier map from
+$\alpha_0=\rho_0\d x$ to $\alpha_1=\rho_1\d x$, set
+$T_t=(1-t)\Id+tT$, and write
+$J_t=\det((1-t)I+t\nabla T)$. Since
+$\rho_t(T_t)J_t=\rho_0$ and $\det^{1/d}$ is concave,
+
+```{math}
+\left(\frac{J_t}{\rho_0}\right)^{1/d}
+\geq
+(1-t)\rho_0^{-1/d}+t\rho_1(T)^{-1/d}.
+```
+
+With $s_t=(J_t/\rho_0)^{1/d}$, the change of variables $y=T_t(x)$ gives
+
+```{math}
+\int g(\rho_t(y))\,\d y
+=
+\int \rho_0(x)\psi(s_t(x))\,\d x.
+```
+
+The monotonicity and convexity of $\psi$ then yield the geodesic convexity
+inequality. The general case follows by approximation and lower
+semicontinuity.
+:::
+
+This theorem applies to $g(s)=s\log s$ and to porous-medium powers
+$g(s)=s^m/(m-1)$, $m>1$, and more generally to the fast-diffusion range
+$m\geq1-1/d$ when the energy is well defined, with $m=1$ understood as
+the entropy limit.
+
+(prop-kl-gibbs-geodesic-convexity)=
+:::{admonition} Proposition: Geodesic Convexity of KL for Gibbs Targets
+:class: important
+Let $\beta=Z^{-1}e^{-V}\d x$ be a probability measure on $\RR^d$. If $V$ is
+$\lambda$-strongly convex, then the relative entropy
+
+```{math}
+\alpha\mapsto \KL(\alpha|\beta)
+```
+
+is $\lambda$-geodesically convex on $(\Pp_2(\RR^d),\Wass_2)$, with the
+convention $\KL(\alpha|\beta)=+\infty$ when $\alpha$ is not absolutely
+continuous with respect to $\beta$.
+:::
+
+:::{dropdown} Proof
+If $\KL(\alpha|\beta)<+\infty$, then $\alpha=\rho\d x$ and
+
+```{math}
+\KL(\alpha|\beta)
+=
+\int\rho\log\rho\,\d x+\int V\d\alpha+\log Z.
+```
+
+The first term is the Shannon entropy and is $0$-geodesically convex by
+Theorem {ref}`thm-mccann-internal-energy`. The second term is the linear energy
+generated by $V$, hence it is $\lambda$-geodesically convex by
+Proposition {ref}`prop-basic-geodesic-convexity`. Adding the constant $\log Z$
+does not affect convexity, and the sum of a $0$-geodesically convex functional
+and a $\lambda$-geodesically convex functional is $\lambda$-geodesically convex.
+:::
+
+:::{admonition} Remark: Flat references and general $\phi$-divergences
+:class: ot4ml-remark
+
+The Csiszár $\phi$-divergences defined in Equation {eq}`eq-phi-div-web` behave
+like internal energies only in special reference geometries. If
+$\beta=b\,\mathbf 1_\Omega\,\d x$ is proportional to Lebesgue measure on a
+bounded convex domain, then
+
+```{math}
+D_\phi(\alpha|\beta)
+=
+\int_\Omega b\,\phi(\rho(x)/b)\,\d x,
+\qquad
+\alpha=\rho\,\d x,
+```
+
+so McCann's theorem applies whenever the integrand $g(s)=b\,\phi(s/b)$ satisfies
+the displacement-convexity condition. For a nonuniform target $\beta$, this
+reduction is no longer available and a generic $\phi$-divergence is not expected
+to be geodesically convex. The KL case in Proposition
+{ref}`prop-kl-gibbs-geodesic-convexity` is exceptional because the logarithm
+splits the density ratio into Shannon entropy plus the linear potential energy
+$\int V\,\d\alpha$.
+
+A concrete Gaussian test already shows the obstruction. Let
+$\beta=\mathcal N(0,1)$ on $\mathbb R$ and $\alpha_m=\mathcal N(m,1)$. The
+family $m\mapsto\alpha_m$ is a $\Wass_2$-geodesic family, since the geodesic
+between $\alpha_{m_0}$ and $\alpha_{m_1}$ is
+$\alpha_{(1-t)m_0+t m_1}$. For the Hellinger entropy
+$\phi_H(r)=(\sqrt r-1)^2$, writing
+
+```{math}
+r_m(x)=\frac{\d\alpha_m}{\d\beta}(x)=\exp(mx-m^2/2),
+```
+
+one obtains
+
+```{math}
+D_{\phi_H}(\alpha_m|\beta)
+=
+\int(\sqrt{r_m}-1)^2\,\d\beta
+=
+2\left(1-e^{-m^2/8}\right).
+```
+
+Its second derivative is
+
+```{math}
+\frac{\d^2}{\d m^2}D_{\phi_H}(\alpha_m|\beta)
+=
+\frac12 e^{-m^2/8}\left(1-\frac{m^2}{4}\right),
+```
+
+which is negative for $|m|>2$. Thus the Hellinger $\phi$-divergence to a
+Gaussian target is not even $0$-geodesically convex. More generally, Gaussian
+translations reduce the question for any $\phi$ to ordinary convexity of
+
+```{math}
+m\mapsto
+\mathbb E_{X\sim\mathcal N(0,1)}
+\left[\phi\left(e^{mX-m^2/2}\right)\right],
+```
+
+which need not hold. The KL integrand is special because this function is
+$m^2/2$, up to the usual normalization. By contrast, even the reverse KL
+integrand $g(s)=-\log s$ does not satisfy McCann's criterion in the
+flat-reference case.
 :::
 
 ### Geodesically Convex Constraints
@@ -1868,15 +2156,19 @@ rate. The distance-to-the-set bound follows because $\alpha_\infty$ is one
 minimizer.
 :::
 
-**Literature and attribution.** The exponential decay of the energy gap is the
-direct metric-gradient-flow analogue of the classical PL argument. Similar
-slope-based statements are standard in the theory of curves of maximal slope
-{cite:p}`ambrosio2006gradient` and in Wasserstein gradient flows under
-functional inequalities such as logarithmic Sobolev and HWI inequalities,
-discussed below. We are not aware of a reference that states the final
-$\Wass_2$-distance-to-$\operatorname{Argmin}f$ estimate in exactly the form of
-the theorem above; the tail-length refinement used here was communicated to us
-by Raphaël Barboni.
+(rem-wasserstein-pl-literature-attribution)=
+:::{admonition} Remark: Literature and Attribution
+:class: ot4ml-remark
+
+The exponential decay of the energy gap is the direct metric-gradient-flow
+analogue of the classical PL argument. Similar slope-based statements are
+standard in the theory of curves of maximal slope {cite:p}`ambrosio2006gradient`
+and in Wasserstein gradient flows under functional inequalities such as
+logarithmic Sobolev and HWI inequalities, discussed below. We are not aware of a
+reference that states the final $\Wass_2$-distance-to-$\operatorname{Argmin}f$
+estimate in exactly the form of the theorem above; the tail-length refinement
+used here was communicated to us by Raphaël Barboni.
+:::
 
 ### Geodesic Strong Convexity
 
@@ -1949,167 +2241,23 @@ selected by the flow. The PL formulation is useful because it separates the
 first-order energy-dissipation mechanism from the stronger curvature
 requirement of geodesic convexity.
 
-(prop-convex-flow-examples)=
-:::{admonition} Proposition: Convex Examples Covered by the Theory
-:class: important
-The hypotheses of the energy-decay proposition are satisfied in the following
-standard cases, at least at the formal smooth level used here.
+:::{admonition} Remark: Convergence rates for classical examples
+:class: ot4ml-remark
 
-1. For $f(\alpha)=\int h\d\alpha$, geodesic convexity holds when $h$ is
-   convex. If $h$ is $\lambda$-strongly convex, then $f$ is
-   $\lambda$-geodesically convex; the PL proposition and theorem give the
-   exponential rate.
-2. For
-   $f(\alpha)=\frac12\iint W(x-y)\d\alpha(x)\d\alpha(y)$, geodesic convexity
-   holds when $W$ is convex and even. This covers repulsive or attractive
-   pairwise models whose displacement cost has no non-convex wells.
-3. Shannon entropy and, more generally, McCann displacement-convex internal
-   energies generate diffusion-type Wasserstein gradient flows.
-4. If $\gamma=Z^{-1}e^{-V}\d x$ and $V$ is $\lambda$-strongly convex, then
-   $\KL(\alpha|\gamma)$ is $\lambda$-geodesically convex. Its flow is the
-   Fokker--Planck equation with invariant law $\gamma$.
+The examples needed to apply this implication have already been isolated
+above. Proposition {ref}`prop-basic-geodesic-convexity` gives
+$\lambda$-geodesic convexity for linear energies generated by
+$\lambda$-strongly convex potentials, and for the polynomial and pairwise
+interaction energies covered there when the corresponding finite-dimensional
+integrand is strongly convex. Theorem {ref}`thm-mccann-internal-energy` gives
+displacement convexity of internal energies, including entropy-type examples,
+and Proposition {ref}`prop-kl-gibbs-geodesic-convexity` adds the important
+nonflat case $\KL(\cdot|\beta)$ when $\d\beta=Z^{-1}e^{-V}\d x$ and $V$ is
+strongly convex. Whenever these criteria yield a positive convexity constant,
+Proposition {ref}`prop-strong-geodesic-convexity-implies-pl` turns it into a
+Wasserstein--PL inequality, and Theorem {ref}`thm-wasserstein-pl-convergence`
+gives the corresponding linear convergence rates.
 :::
-
-:::{dropdown} Proof
-Let $(\alpha_t)_t$ be the McCann interpolation between $\alpha_0$ and
-$\alpha_1$, written with an optimal coupling as
-$X_t=(1-t)X_0+tX_1$. For a linear energy, Jensen's inequality gives
-
-```{math}
-h(X_t)\leq(1-t)h(X_0)+t h(X_1),
-```
-
-and the strong convexity version gives the additional term
-$-\frac{\lambda}{2}t(1-t)\norm{X_0-X_1}^2$. Integrating over the optimal
-coupling proves geodesic convexity and $\lambda$-geodesic convexity.
-
-For interaction energies, use two independent copies of the optimal coupling.
-The pairwise displacement evolves as
-
-```{math}
-X_t-X_t'
-=
-(1-t)(X_0-X_0')+t(X_1-X_1').
-```
-
-Convexity of $W$ gives the convexity inequality after integration over the
-product coupling. Evenness of $W$ ensures that the interaction is symmetric in
-the two particles and matches the usual factor $1/2$ in
-{eq}`eq-quadratic-func`.
-
-The entropy claim is McCann's displacement-convexity theorem. For smooth
-positive densities and Brenier maps, it follows from the change-of-variables
-formula and the concavity of the determinant along positive matrices; the
-general statement is obtained by approximation. Finally,
-
-```{math}
-\KL(\alpha|\gamma)
-=
-\int\rho\log\rho\,\d x+\int V\d\alpha+\log Z,
-```
-
-so it is the sum of the displacement-convex entropy and the
-$\lambda$-geodesically convex linear potential generated by $V$. The
-energy-decay proposition gives dissipation and the convex $O(1/t)$ estimate in
-these cases, while the PL theorem upgrades positively curved cases to
-exponential convergence.
-:::
-
-The interaction criterion above asks for convexity of the kernel on the whole
-ambient space. In one dimension there is a sharper self-interaction mechanism:
-along Wasserstein geodesics, quantiles remain ordered, so distances between two
-ordered copies of the same moving measure evolve by convex combinations inside
-$\RR_+$. This is the quantile form of one-dimensional displacement convexity
-discussed in standard references such as {cite:p}`SantambrogioBook`, and it
-explains why the negative-distance kernel can behave better in one dimension
-than its non-convex ambient formula suggests
-{cite:p}`DuongRuxSteinSteidl2024DistanceMMD`.
-
-(prop-1d-interaction-halfline-convex)=
-:::{admonition} Proposition: One-Dimensional Self-Interaction Kernels
-:class: important
-Let $\varphi:\RR_+\to\RR$ be convex and assume that the following integrals are
-finite. On $\Pp_2(\RR)$, define
-
-```{math}
-\mathcal I_\varphi(\alpha)
-\eqdef
-\frac12\iint \varphi(|x-y|)\d\alpha(x)\d\alpha(y).
-```
-
-Then $\mathcal I_\varphi$ is geodesically convex for $\Wass_2$ on
-$\Pp_2(\RR)$. In particular, the choice $\varphi(r)=-r$ is admissible, even
-though $z\mapsto-|z|$ is not convex on $\RR$.
-
-Fix also $\beta\in\Pp_2(\RR)$. For the conditionally positive definite kernel
-$k(x,y)=-|x-y|$, the squared MMD, equivalently the squared energy distance,
-
-```{math}
-\mathcal E_\beta(\alpha)
-\eqdef
-\MMD_k^2(\alpha,\beta)
-=
-\iint -|x-y|\,\d(\alpha-\beta)(x)\d(\alpha-\beta)(y),
-```
-
-is geodesically convex as a function of $\alpha$.
-:::
-
-:::{dropdown} Proof
-Let $Q_0,Q_1$ be the quantile functions of $\alpha_0,\alpha_1$, and let
-$Q_t=(1-t)Q_0+tQ_1$ be the quantile function of the one-dimensional $\Wass_2$
-geodesic $\alpha_t$. For $r>s$, monotonicity gives $Q_i(r)-Q_i(s)\geq0$ for
-$i=0,1$, and hence
-
-```{math}
-Q_t(r)-Q_t(s)
-=
-(1-t)(Q_0(r)-Q_0(s))+t(Q_1(r)-Q_1(s)).
-```
-
-Using the symmetry of the double integral and ignoring the diagonal, one can
-write
-
-```{math}
-\mathcal I_\varphi(\alpha_t)
-=
-\int_0^1\int_0^r
-\varphi(Q_t(r)-Q_t(s))\,\d s\,\d r.
-```
-
-Convexity of $\varphi$ on $\RR_+$ gives the desired convexity after integration.
-For $\varphi(r)=-r$, the inequality is an equality because $\varphi$ is affine
-on $\RR_+$.
-
-For the energy distance, write $Q_\beta$ for the quantile function of $\beta$
-and express the functional in quantile variables:
-
-```{math}
-\mathcal E_\beta(\alpha)
-=
-2\int_0^1\!\!\int_0^1 |Q_\alpha(r)-Q_\beta(s)|\,\d r\,\d s
--
-\int_0^1\!\!\int_0^1 |Q_\alpha(r)-Q_\alpha(s)|\,\d r\,\d s
-+\mathrm{constant}.
-```
-
-The positive cross-distance term is convex in $Q_\alpha$, since the absolute
-value is convex and $Q_t$ is affine in $t$. The self-distance term is affine
-along quantile geodesics because
-
-```{math}
-\int_0^1\!\!\int_0^1 |Q_t(r)-Q_t(s)|\,\d r\,\d s
-=
-2\int_0^1\int_0^r (Q_t(r)-Q_t(s))\,\d s\,\d r.
-```
-
-Thus $\alpha\mapsto\mathcal E_\beta(\alpha)$ is geodesically convex.
-:::
-
-The last statement should be read for the full energy-distance combination. The
-raw attractive term $\alpha\mapsto-\iint |x-y|\,\d\alpha(x)\d\beta(y)$ alone is
-concave in quantile variables; convexity comes from the MMD combination, namely a
-positive cross-distance term minus an affine self-distance term.
 
 ### Convexity and Curvature
 
@@ -3836,7 +3984,7 @@ The construction becomes especially transparent for translation-invariant
 kernels. A power-law jump kernel turns the entropy flow into a
 fractional heat equation.
 
-On $X=\RR^d$, let
+On $\mathcal X=\RR^d$, let
 
 ```{math}
 K_s(x,\d y)
@@ -3962,8 +4110,9 @@ is designed so that the reversible Markov chain itself becomes an entropy
 gradient flow. This is the discrete counterpart of the fact that the heat
 equation is the Wasserstein gradient flow of Shannon entropy.
 
-For densities $\rho_i=p_i/\pi_i$ with respect to the invariant law $\pi$, the
-entropy relative to $\pi$ is
+For masses $a_i=\pi_i\rho_i$, or equivalently relative densities
+$\rho_i=a_i/\pi_i$ with respect to the invariant law $\pi$, the entropy relative
+to $\pi$ is
 
 ```{math}
 \operatorname{Ent}_\pi(\rho)\eqdef\sum_i\pi_i\rho_i\log\rho_i.
@@ -3995,8 +4144,8 @@ of the Markov chain,
 \dot\rho_i(t)=\sum_jK_{ij}\bigl(\rho_j(t)-\rho_i(t)\bigr).
 ```
 
-Equivalently, for the masses $p_i(t)=\pi_i\rho_i(t)$, this is
-$\dot p_i(t)=\sum_j(p_j(t)K_{ji}-p_i(t)K_{ij})$.
+Equivalently, for the masses $a_i(t)=\pi_i\rho_i(t)$, this is
+$\dot a_i(t)=\sum_j(a_j(t)K_{ji}-a_i(t)K_{ij})$.
 :::
 
 :::{dropdown} Proof
