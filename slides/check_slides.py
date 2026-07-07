@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parent
@@ -57,6 +58,7 @@ def should_check_reference(ref: str) -> bool:
     """Decide whether a reference should resolve on disk."""
     if ref.startswith(("http://", "https://", "mailto:", "#")):
         return False
+    ref = urlsplit(ref).path
     return (
         ref.endswith(".html")
         or ref.startswith(("assets", "../", "../../"))
@@ -66,6 +68,7 @@ def should_check_reference(ref: str) -> bool:
 
 def resolve_reference(deck_dir: Path, ref: str) -> Path:
     """Resolve a QMD-local reference to an absolute filesystem path."""
+    ref = urlsplit(ref).path
     if ref.startswith(("../", "../../")):
         return (deck_dir / ref).resolve()
     return deck_dir / ref
@@ -131,10 +134,11 @@ def check_landing_page() -> list[str]:
     for ref in refs:
         if ref.startswith(("http://", "https://", "mailto:", "#")):
             continue
-        if re.fullmatch(r"[1-4]-[^/]+/index\.html", ref):
+        ref_path = urlsplit(ref).path
+        if re.fullmatch(r"[1-4]-[^/]+/index\.html", ref_path):
             skipped_rendered += 1
             continue
-        target = (ROOT / ref).resolve()
+        target = (ROOT / ref_path).resolve()
         if not target.exists():
             missing.append(ref)
 

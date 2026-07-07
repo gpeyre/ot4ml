@@ -267,10 +267,10 @@ function livePixelRatio() {
 }
 
 function imagePanelPixelRatio() {
-  // Photo-like panels should not use the extra Reveal oversampling: it
-  // upscales finite-resolution image assets and then the browser downsamples
-  // the canvas, which makes the photographs visibly blurry.
-  return Math.min(displayPixelRatio(), 2.5);
+  // Image-heavy panels are displayed inside Reveal iframes, which are often
+  // scaled by the slide renderer. Use the same oversampling as vector panels;
+  // the actual photo display sizes below are capped by source resolution.
+  return livePixelRatio();
 }
 
 function rasterSizeForDisplay(width, minSize, maxSize, pixelRatio = livePixelRatio()) {
@@ -341,7 +341,11 @@ function resizeCanvas(height, options = {}) {
   const controlsHeight = controls.getBoundingClientRect().height || 0;
   const actionsHeight = actions ? actions.getBoundingClientRect().height || 0 : 0;
   const statusHeight = status.getBoundingClientRect().height || 18;
-  const availableHeight = window.innerHeight - controlsHeight - actionsHeight - statusHeight - 54;
+  const controlReserve = options.sideControls ? 0 : controlsHeight;
+  const actionReserve = options.tight ? 0 : actionsHeight;
+  const statusReserve = options.sideControls ? 0 : statusHeight;
+  const verticalReserve = options.sideControls ? 24 : options.tight ? 24 : 54;
+  const availableHeight = window.innerHeight - controlReserve - actionReserve - statusReserve - verticalReserve;
   const targetHeight = clamp(Math.min(height, availableHeight || height), 170, height);
   const dpr = options.pixelRatio || livePixelRatio();
   canvas.style.height = `${targetHeight}px`;
@@ -647,18 +651,17 @@ function drawHistogram() {
   const sigma = val("sigma");
   const t = val("interp");
   const imagePixelRatio = imagePanelPixelRatio();
-  const { ctx, w, h } = resizeCanvas(342, { pixelRatio: imagePixelRatio });
-  const pad = 20;
-  const imageGap = 10;
-  const imageTs = [0, 0.25, 0.5, 0.75, 1];
+  const { ctx, w, h } = resizeCanvas(390, { pixelRatio: imagePixelRatio });
+  const pad = 22;
+  const gap = 30;
   const cat = imageAsset("assets/cat.jpg");
   const catSize = naturalSquareSize(cat, 640);
-  const maxDisplayW = cat.state === "ready" ? catSize / imagePixelRatio : 124;
-  const imgW = Math.round(clamp(Math.min(124, maxDisplayW, (w - 2 * pad - imageGap * (imageTs.length - 1)) / imageTs.length, h - 206), 54, 124));
-  const imgY = 30;
-  const totalImagesW = imageTs.length * imgW + (imageTs.length - 1) * imageGap;
-  const imgX0 = pad + Math.max(0, (w - 2 * pad - totalImagesW) / 2);
-  const size = rasterSizeForDisplay(Math.max(imgW, 96), 180, catSize, imagePixelRatio);
+  const maxDisplayW = cat.state === "ready" ? catSize / imagePixelRatio : 230;
+  const horizontal = w >= 680;
+  const imgW = horizontal
+    ? Math.round(clamp(Math.min(maxDisplayW, (w - 2 * pad - gap) * 0.40, h - 92), 150, 235))
+    : Math.round(clamp(Math.min(maxDisplayW, w - 2 * pad, h * 0.48), 140, 230));
+  const size = rasterSizeForDisplay(Math.max(imgW, 160), 260, catSize, imagePixelRatio);
   const base = grayImageFromAsset(cat, size) || syntheticImage(size);
   const pairs = base.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const mapped = new Array(base.length);
@@ -685,33 +688,10 @@ function drawHistogram() {
     return tmp;
   }
 
+  const img = base.map((v, i) => lerp(v, mapped[i], t));
+  const imgCanvas = makeImage(img);
   ctx.imageSmoothingEnabled = true;
   if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
-  let selected = 0;
-  let selectedDist = Infinity;
-  for (let k = 0; k < imageTs.length; k += 1) {
-    const d = Math.abs(t - imageTs[k]);
-    if (d < selectedDist) {
-      selectedDist = d;
-      selected = k;
-    }
-  }
-  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-  ctx.textAlign = "center";
-  for (let k = 0; k < imageTs.length; k += 1) {
-    const tau = imageTs[k];
-    const img = base.map((v, i) => lerp(v, mapped[i], tau));
-    const x = imgX0 + k * (imgW + imageGap);
-    ctx.drawImage(makeImage(img), x, imgY, imgW, imgW);
-    ctx.strokeStyle = k === selected ? mixColor(t, RED, BLUE, 0.95) : "#d8dee8";
-    ctx.lineWidth = k === selected ? 2 : 1;
-    ctx.strokeRect(x, imgY, imgW, imgW);
-    ctx.fillStyle = k === selected ? "#26333f" : "#6b7280";
-    ctx.fillText(`t=${tau.toFixed(2)}`, x + imgW / 2, imgY + imgW + 16);
-  }
-  ctx.textAlign = "left";
-
-  const img = base.map((v, i) => lerp(v, mapped[i], t));
 
   const bins = 42;
   const hist = Array(bins).fill(0);
@@ -722,13 +702,26 @@ function drawHistogram() {
     const x = (i + 0.5) / bins;
     return normalPdf(x, mean, sigma) / Math.max(hi - lo, 1e-9);
   });
-  const px = pad + 6;
-  const py = imgY + imgW + 36;
-  const pw = w - 2 * pad - 12;
-  const ph = Math.max(88, h - py - 36);
+  const imgX = horizontal ? pad + 6 : (w - imgW) / 2;
+  const imgY = horizontal ? 50 : 28;
+  const px = horizontal ? imgX + imgW + gap : pad + 8;
+  const py = horizontal ? imgY : imgY + imgW + 44;
+  const pw = horizontal ? w - px - pad - 8 : w - 2 * pad - 16;
+  const ph = horizontal ? imgW : Math.max(92, h - py - 34);
   const ymax = 1.12 * Math.max(...hist, ...target);
   const X = (x) => px + x * pw;
   const Y = (y) => py + ph - (y / ymax) * ph;
+
+  ctx.drawImage(imgCanvas, imgX, imgY, imgW, imgW);
+  ctx.strokeStyle = mixColor(t, RED, BLUE, 0.95);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(imgX, imgY, imgW, imgW);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`equalized image, t = ${t.toFixed(2)}`, imgX + imgW / 2, imgY + imgW + 18);
+  ctx.textAlign = "left";
+
   ctx.strokeStyle = "#d8dee8";
   ctx.lineWidth = 1;
   ctx.strokeRect(px, py, pw, ph);
@@ -761,10 +754,12 @@ function drawHistogram() {
   ctx.fillStyle = "#4a5563";
   ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.fillText("gray level", px + pw - 62, py + ph + 20);
+  ctx.fillStyle = mixColor(t, RED, BLUE, 0.95);
+  ctx.fillText("current histogram", px + 12, py + 16);
   ctx.fillStyle = BLUE;
   ctx.fillText("target law", px + pw - 78, py + 16);
   const imageSource = cat.state === "ready" ? `cat photograph, ${size}x${size}` : "synthetic fallback while the photograph loads";
-  setStatus(`interpolated equalization images; target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
+  setStatus(`histogram equalization by monotone transport; target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
 }
 
 function rng(seed) {
@@ -1869,7 +1864,8 @@ function drawMongeQuantile() {
   const qn = Math.round(val("mqSamples"));
   const xMin = -3.3;
   const xMax = 3.3;
-  const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
+  const gridSize = Math.max(1800, 2 * qn);
+  const xs = Array.from({ length: gridSize }, (_, i) => lerp(xMin, xMax, i / (gridSize - 1)));
   const spdf = xs.map((x) => mixPdf(sourceName, x));
   const tpdf = xs.map((x) => mixPdf(targetName, x));
   const scdf = cumulative(spdf);
@@ -2310,10 +2306,10 @@ function productPlan(a, b) {
   return a.map((ai) => b.map((bj) => ai * bj));
 }
 
-function drawCouplingMatrix(ctx, plan, a, b, box, title, barycentric = false) {
+function drawCouplingMatrix(ctx, plan, a, b, box, title, barycentric = false, options = {}) {
   const n = plan.length;
   const m = plan[0].length;
-  const strip = Math.min(38, Math.max(16, 0.12 * Math.min(box.w, box.h)));
+  const strip = options.strip ?? Math.min(38, Math.max(16, 0.12 * Math.min(box.w, box.h)));
   const availableW = Math.max(1, box.w - strip - 8);
   const availableH = Math.max(1, box.h - strip - 8);
   const side = Math.max(1, Math.min(availableW, availableH));
@@ -2552,8 +2548,18 @@ function drawKantoMatrix() {
   const a = mixtureWeights(source, bins);
   const b = mixtureWeights(target, bins);
   const plan = mode === "product" ? productPlan(a, b) : weightedSweepPlan(a, b);
-  const { ctx, w, h } = resizeCanvas(390);
-  drawCouplingMatrix(ctx, plan, a, b, { x: 22, y: 52, w: w - 44, h: h - 78 }, `${mode} coupling, ${bins} bins`, mode !== "product");
+  const { ctx, w, h } = resizeCanvas(460, { tight: true, sideControls: true });
+  const marginX = 12;
+  const titleGap = 20;
+  const bottomGap = 4;
+  const boxSide = Math.min(w - 2 * marginX, h - titleGap - bottomGap);
+  const box = {
+    x: (w - boxSide) / 2,
+    y: titleGap,
+    w: boxSide,
+    h: boxSide,
+  };
+  drawCouplingMatrix(ctx, plan, a, b, box, `${mode} coupling, ${bins} bins`, mode !== "product", { strip: 26 });
   setStatus(`${mode === "product" ? bins * bins : edgesFromPlan(plan, 9999).length} positive entries`);
 }
 
@@ -5018,11 +5024,11 @@ function drawSinkhornDebias() {
         { x: 24, y: 44, w: (w - 78) / 2, h: h - 86 },
         { x: 24 + (w - 78) / 2 + gap, y: 44, w: (w - 78) / 2, h: h - 86 },
       ];
-  drawDebiasCloudPanel(ctx, boxes[0], data.target, raw, "raw entropic loss", "target in blue; moving cloud remains too compact");
-  drawDebiasCloudPanel(ctx, boxes[1], data.target, debiased, "Sinkhorn divergence", "self-bias correction spreads the fitted cloud");
+  drawDebiasCloudPanel(ctx, boxes[0], data.target, raw, "raw entropic loss", "lambda = 0: no self-cost subtraction");
+  drawDebiasCloudPanel(ctx, boxes[1], data.target, debiased, `debiased loss, lambda = ${correction.toFixed(2)}`, "lambda = 0.50 gives the classical Sinkhorn divergence");
   const rawCoverage = meanNearestDistance(data.target, raw[raw.length - 1]);
   const debCoverage = meanNearestDistance(data.target, debiased[debiased.length - 1]);
-  setStatus(`2D debiasing effect; epsilon ${epsilon.toFixed(2)}; correction ${correction.toFixed(2)}; target-coverage distance raw ${rawCoverage.toFixed(2)}, debiased ${debCoverage.toFixed(2)}`);
+  setStatus(`2D debiasing; lambda=0.50 is the classical Sinkhorn divergence; target coverage raw ${rawCoverage.toFixed(2)}, debiased ${debCoverage.toFixed(2)}`);
 }
 
 function logSumExp(values) {
@@ -5840,7 +5846,7 @@ function drawLinearOTDensities(ctx, box, xs, refPdf, aPdf, bPdf) {
 
 function drawLinearOTBarycenter(ctx, box, xs, aPdf, bPdf, qBar, t) {
   drawFrame(ctx, box, `linear barycenter t = ${t.toFixed(2)}`);
-  const hist = histogramCurve(qBar, xs[0], xs[xs.length - 1], 90);
+  const hist = smoothDensityCurve(qBar, xs[0], xs[xs.length - 1], 260, 0.05);
   const yMax = Math.max(...hist.ys, ...aPdf, ...bPdf) * 1.08;
   drawCurve(ctx, xs, aPdf, box, xs[0], xs[xs.length - 1], 0, yMax, "rgba(215,48,39,.35)", 1.1);
   drawCurve(ctx, xs, bPdf, box, xs[0], xs[xs.length - 1], 0, yMax, "rgba(33,102,172,.35)", 1.1);
@@ -5861,7 +5867,8 @@ function drawGeneralizedLinearOT() {
   const betaName = val("glotBeta");
   const xMin = -3.35;
   const xMax = 3.35;
-  const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
+  const gridSize = Math.max(1800, 2 * levels);
+  const xs = Array.from({ length: gridSize }, (_, i) => lerp(xMin, xMax, i / (gridSize - 1)));
   const refPdf = xs.map((x) => mixPdf(refName, x));
   const aPdf = xs.map((x) => mixPdf(alphaName, x));
   const bPdf = xs.map((x) => mixPdf(betaName, x));
@@ -10916,7 +10923,7 @@ function init() {
   } else if (kind === "mongecolor") {
     controls.innerHTML = [
       slider("colorT", "t", 0.62, 0, 1, 0.01),
-      slider("colorSize", "resolution", 320, 120, 472, 8),
+      slider("colorSize", "resolution", 480, 160, 640, 8),
       select("colorTarget", "target", ["flower", "orchid", "forest"], "flower"),
       slider("colorContrast", "contrast", 1, 0.55, 1.35, 0.05),
     ].join("");
@@ -10980,7 +10987,7 @@ function init() {
     bind(drawKantoCouplings);
   } else if (kind === "kantomatrix") {
     controls.innerHTML = [
-      slider("kmBins", "bins", 48, 12, 120, 4),
+      slider("kmBins", "bins", 40, 12, 120, 4),
       select("kmMode", "plan", ["optimal", "product"], "optimal"),
       select("kmSource", "source", Object.keys(MIXTURES), "two"),
       select("kmTarget", "target", Object.keys(MIXTURES), "three"),
@@ -11148,7 +11155,7 @@ function init() {
   } else if (kind === "sinkhorndebias") {
     controls.innerHTML = [
       slider("sdEps", "smoothing", 0.55, 0.24, 0.95, 0.01),
-      slider("sdCorrection", "debias strength", 0.48, 0, 1.05, 0.01),
+      slider("sdCorrection", "debias lambda", 0.5, 0, 1.05, 0.01),
       slider("sdSteps", "steps", 54, 18, 120, 2),
     ].join("");
     bind(drawSinkhornDebias);
@@ -11229,7 +11236,7 @@ function init() {
   } else if (kind === "generalizedlinearot") {
     controls.innerHTML = [
       slider("glotT", "weight", 0.5, 0, 1, 0.01),
-      slider("glotLevels", "quantiles", 180, 60, 360, 10),
+      slider("glotLevels", "quantiles", 1440, 240, 2400, 120),
       select("glotRef", "reference", Object.keys(MIXTURES), "one"),
       select("glotAlpha", "alpha", Object.keys(MIXTURES), "two"),
       select("glotBeta", "beta", Object.keys(MIXTURES), "three"),

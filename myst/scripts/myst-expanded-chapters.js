@@ -15,6 +15,13 @@ const serverPatchMarker = 'ot4ml-expanded-chapters-server-patch';
 const assetVersion = '?ot4ml-expanded-chapters=1';
 const defaultBuildBaseUrl = '/ot4ml/myst/_build/html';
 const defaultBuildPort = process.env.MYST_BUILD_PORT || process.env.PORT || '3000';
+const obsoleteNotationPatterns = [
+  'eq-normalized-spectral-tangent-norm',
+  '\\mathcal N_{\\gamma',
+  '\\mathcal A_A',
+  '\\mathsf D_A',
+  '\\ell_{A',
+];
 
 function hasEnv(name) {
   return Object.prototype.hasOwnProperty.call(process.env, name);
@@ -351,6 +358,19 @@ function patchTemplateZip() {
   return result.status === 0;
 }
 
+function removeObsoleteGeneratedPageData() {
+  let removed = 0;
+  const pageDataRoot = path.join(htmlRoot, 'build');
+  for (const file of walk(pageDataRoot, (full, name) => name.endsWith('.md'))) {
+    const text = fs.readFileSync(file, 'utf8');
+    if (obsoleteNotationPatterns.some((pattern) => text.includes(pattern))) {
+      fs.unlinkSync(file);
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
 function patchGeneratedSite() {
   const result = {
     html: patchHtml(),
@@ -361,6 +381,7 @@ function patchGeneratedSite() {
     favicons: copyFaviconFiles(),
     server: patchServerFiles(),
   };
+  result.stalePageData = removeObsoleteGeneratedPageData();
   patchTemplateZip();
   return result;
 }
