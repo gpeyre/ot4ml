@@ -1,0 +1,11718 @@
+"use strict";
+
+const controls = document.getElementById("controls");
+const canvas = document.getElementById("canvas");
+const status = document.getElementById("status");
+let actions = null;
+const params = new URLSearchParams(window.location.search);
+const knownKinds = [
+  "linecost",
+  "quantile",
+  "histogram",
+  "circle",
+  "cost",
+  "resolution",
+  "regularization",
+  "duplication",
+  "hungarian",
+  "mongecolor",
+  "mongeshape",
+  "mongequantile",
+  "mongetriangular",
+  "mongegaussian",
+  "mongegaussianmetrics",
+  "mongegaussiancone",
+  "kantocouplings",
+  "kantomatrix",
+  "kantosplitting",
+  "kantobarrier",
+  "kantoplan",
+  "kantogluing",
+  "kantowow",
+  "kantoclt",
+  "dualdiscrete",
+  "dualauction",
+  "dualcontinuous",
+  "dualenvelope",
+  "dualalternate",
+  "semilaguerre",
+  "semilloyd",
+  "semiquantization",
+  "w1graph",
+  "dualnormipm",
+  "dualnormphi",
+  "sinkhornscaling",
+  "sinkhornepsilon",
+  "sinkhornsoftc",
+  "sinkhornregularizers",
+  "sinkhorndebias",
+  "sinkhorncontinuous",
+  "sinkhorncapacity1d",
+  "sinkhorncomplex",
+  "sinkhornhopfcole",
+  "sinkhornadvancedconvergence",
+  "sinkhornadvancedgaussian",
+  "sinkhornadvancedsamples",
+  "generalizedunbalanced",
+  "generalizedsliced",
+  "generalizedlinearot",
+  "generalizedspectral",
+  "generalizedprocrustes",
+  "otproblemsbarycenter",
+  "otproblemsgaussianbarycenter",
+  "lowrankot",
+  "otproblemsmetric",
+  "otproblemsweak",
+  "dynamicbb",
+  "dynamicunbalanced",
+  "dynamicmarkovsimplex",
+  "gradflowjko",
+  "gradflowdiffusion",
+  "gradflowconstraint",
+  "gradflowmultispecies",
+  "gradflowmmd",
+  "gradflowinteraction",
+  "gradflowobjective",
+  "gradflowfokker",
+  "gradflowmlp",
+  "gradflowfractional",
+  "gradflowmomentummmd",
+  "generativeflow",
+  "generativediffusion1d",
+  "generativediffusion2d",
+  "generativetrajectories",
+  "generativeschedule",
+  "generativedrifting",
+  "generativemeanshift",
+  "generativemomentmeasure",
+  "generativegaussianclosure",
+  "beyondvector",
+  "beyondmatrix",
+  "beyondgromov",
+  "beyondgromovdistortion",
+  "beyondfusedgromov",
+  "mongejacobian",
+  "mongepolar",
+  "kantobirkhoff",
+  "kantodro",
+  "sinkhornbridges",
+  "partialot1d",
+  "partialot2d",
+  "capacityot2d",
+  "slicedradon",
+  "sinkhorngeodesicheat",
+  "sinkhornsketching",
+  "generativew2svgd",
+  "gradflowmomentumentropy",
+  "mongecaffarelli",
+  "sinkhornentropygeometry",
+  "sinkhornbiasvariance",
+  "sinkhorndoublypositive",
+  "sinkhornmfunctions",
+  "multimarginalcoulomb",
+  "martingalekernels",
+  "generativew2sliced",
+  "inverseotforward",
+  "inverseotgap",
+  "gradflowbrunnminkowski",
+  "gradflowhwi",
+  "gradflowmlpmuon",
+];
+const pathKind = knownKinds.find((name) => window.location.pathname.includes(name));
+const kind = document.body.dataset.kind || params.get("kind") || pathKind || "quantile";
+const imageAssets = new Map();
+
+const RED = "#d73027";
+const BLUE = "#2166ac";
+const VIOLET = "#7b3294";
+const MIXTURES = {
+  one: { weights: [1.0], means: [0.0], stds: [0.58] },
+  two: { weights: [0.58, 0.42], means: [-2.05, -0.15], stds: [0.32, 0.48] },
+  wide_two: { weights: [0.42, 0.58], means: [-1.7, 1.25], stds: [0.62, 0.42] },
+  three: { weights: [0.5, 0.31, 0.19], means: [-1.78, 0.1, 1.72], stds: [0.25, 0.56, 0.31] },
+};
+const SHAPES = ["disk", "annulus", "two_blobs", "three_blobs", "crescent"];
+const WEIGHTS = ["uniform", "angular", "right_heavy"];
+
+let currentRender = null;
+let renderTimer = null;
+
+window.addEventListener("error", (event) => {
+  showError(event.error || event.message || "The interactive demo could not be initialized.");
+});
+
+function showError(error) {
+  document.querySelector(".ot4ml-panel").classList.add("ot4ml-error");
+  controls.innerHTML = "";
+  const message = error && error.message ? error.message : String(error);
+  status.textContent = `Interactive demo error: ${message}`;
+}
+
+function clamp(x, a, b) {
+  return Math.max(a, Math.min(b, x));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function pretty(value) {
+  return String(value).replaceAll("_", " ");
+}
+
+function formatNumber(value, step) {
+  const text = String(step);
+  const digits = text.includes(".") ? text.split(".")[1].length : 0;
+  return Number(value).toFixed(Math.min(digits, 3));
+}
+
+function normalPdf(x, mean, std) {
+  const z = (x - mean) / std;
+  return Math.exp(-0.5 * z * z) / (std * Math.sqrt(2 * Math.PI));
+}
+
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  const z = Math.abs(x);
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+  const t = 1 / (1 + p * z);
+  const y = 1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-z * z));
+  return sign * y;
+}
+
+function erfinv(x) {
+  const clipped = clamp(x, -0.999999, 0.999999);
+  const a = 0.147;
+  const sign = clipped < 0 ? -1 : 1;
+  const lx = Math.log(1 - clipped * clipped);
+  const first = 2 / (Math.PI * a) + lx / 2;
+  return sign * Math.sqrt(Math.sqrt(first * first - lx / a) - first);
+}
+
+function normalCdf(x, mean, sigma) {
+  return 0.5 * (1 + erf((x - mean) / (sigma * Math.SQRT2)));
+}
+
+function normalInv(u, mean, sigma) {
+  return mean + sigma * Math.SQRT2 * erfinv(2 * u - 1);
+}
+
+function mixPdf(name, x) {
+  const p = MIXTURES[name];
+  let value = 0;
+  for (let k = 0; k < p.weights.length; k += 1) {
+    value += p.weights[k] * normalPdf(x, p.means[k], p.stds[k]);
+  }
+  return value;
+}
+
+function rgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function mixColor(t, a = RED, b = BLUE, alpha = 1) {
+  const ca = rgb(a);
+  const cb = rgb(b);
+  return `rgba(${Math.round(lerp(ca[0], cb[0], t))},${Math.round(lerp(ca[1], cb[1], t))},${Math.round(lerp(ca[2], cb[2], t))},${alpha})`;
+}
+
+function mixHexColor(t, a = RED, b = BLUE) {
+  const ca = rgb(a);
+  const cb = rgb(b);
+  const bytes = [0, 1, 2].map((i) => clamp(Math.round(lerp(ca[i], cb[i], t)), 0, 255).toString(16).padStart(2, "0"));
+  return `#${bytes.join("")}`;
+}
+
+function setStatus(text) {
+  status.textContent = text || "";
+}
+
+function imageAsset(src) {
+  if (imageAssets.has(src)) return imageAssets.get(src);
+  const img = new Image();
+  const record = {
+    image: img,
+    state: "loading",
+    dataCache: new Map(),
+    grayCache: new Map(),
+    rgbCache: new Map(),
+  };
+  img.onload = () => {
+    record.state = "ready";
+    scheduleRender();
+  };
+  img.onerror = () => {
+    record.state = "error";
+    scheduleRender();
+  };
+  img.src = src;
+  imageAssets.set(src, record);
+  return record;
+}
+
+function displayPixelRatio() {
+  return Math.max(window.devicePixelRatio || 1, 1);
+}
+
+function livePixelRatio() {
+  // Reveal scales whole slides with CSS transforms, so slide-embedded
+  // canvases need a slightly denser backing store to stay crisp.
+  return Math.min(displayPixelRatio() * 1.5, 3);
+}
+
+function imagePanelPixelRatio() {
+  // Image-heavy panels are displayed inside Reveal iframes, which are often
+  // scaled by the slide renderer. Use the same oversampling as vector panels;
+  // the actual photo display sizes below are capped by source resolution.
+  return livePixelRatio();
+}
+
+function rasterSizeForDisplay(width, minSize, maxSize, pixelRatio = livePixelRatio()) {
+  if (maxSize <= 0) return Math.max(1, Math.round(minSize));
+  const lo = Math.min(minSize, maxSize);
+  const hi = Math.max(minSize, maxSize);
+  return Math.round(clamp(Math.ceil(width * pixelRatio), lo, hi));
+}
+
+function naturalSquareSize(record, fallback = 640) {
+  if (record.state !== "ready") return fallback;
+  const width = record.image.naturalWidth || fallback;
+  const height = record.image.naturalHeight || fallback;
+  return Math.max(1, Math.min(fallback, width, height));
+}
+
+function imageDataFromAsset(record, size) {
+  if (record.state !== "ready") return null;
+  if (record.dataCache.has(size)) return record.dataCache.get(size);
+  const tmp = document.createElement("canvas");
+  tmp.width = size;
+  tmp.height = size;
+  const ictx = tmp.getContext("2d", { willReadFrequently: true });
+  const side = Math.min(record.image.naturalWidth || size, record.image.naturalHeight || size);
+  const sx = ((record.image.naturalWidth || side) - side) / 2;
+  const sy = ((record.image.naturalHeight || side) - side) / 2;
+  ictx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ictx) ictx.imageSmoothingQuality = "high";
+  ictx.drawImage(record.image, sx, sy, side, side, 0, 0, size, size);
+  try {
+    const data = ictx.getImageData(0, 0, size, size).data;
+    record.dataCache.set(size, data);
+    return data;
+  } catch {
+    record.state = "error";
+    return null;
+  }
+}
+
+function grayImageFromAsset(record, size) {
+  if (record.grayCache.has(size)) return record.grayCache.get(size);
+  const data = imageDataFromAsset(record, size);
+  if (!data) return null;
+  const out = new Array(size * size);
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = (0.2126 * data[4 * i] + 0.7152 * data[4 * i + 1] + 0.0722 * data[4 * i + 2]) / 255;
+  }
+  record.grayCache.set(size, out);
+  return out;
+}
+
+function rgbImageFromAsset(record, size) {
+  if (record.rgbCache.has(size)) return record.rgbCache.get(size);
+  const data = imageDataFromAsset(record, size);
+  if (!data) return null;
+  const out = new Array(size * size);
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = [data[4 * i], data[4 * i + 1], data[4 * i + 2]];
+  }
+  record.rgbCache.set(size, out);
+  return out;
+}
+
+function resizeCanvas(height, options = {}) {
+  const rect = canvas.getBoundingClientRect();
+  const fallbackWidth = canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760;
+  const w = Math.round(Math.max(300, rect.width || fallbackWidth || 760));
+  const controlsHeight = controls.getBoundingClientRect().height || 0;
+  const actionsHeight = actions ? actions.getBoundingClientRect().height || 0 : 0;
+  const statusHeight = status.getBoundingClientRect().height || 18;
+  const controlReserve = options.sideControls ? 0 : controlsHeight;
+  const actionReserve = options.tight ? 0 : actionsHeight;
+  const statusReserve = options.sideControls ? 0 : statusHeight;
+  const verticalReserve = options.sideControls ? 24 : options.tight ? 24 : 54;
+  const availableHeight = window.innerHeight - controlReserve - actionReserve - statusReserve - verticalReserve;
+  const targetHeight = clamp(Math.min(height, availableHeight || height), 170, height);
+  const dpr = options.pixelRatio || livePixelRatio();
+  canvas.style.height = `${targetHeight}px`;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(targetHeight * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, targetHeight);
+  return { ctx, w, h: targetHeight };
+}
+
+function slider(id, label, value, min, max, step) {
+  const formatted = formatNumber(value, step);
+  return `<label class="ot4ml-control">${label} <span class="ot4ml-readout" data-for="${id}" data-step="${step}">${formatted}</span><span class="ot4ml-slider-row"><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${value}"><input class="ot4ml-number" id="${id}Number" type="number" min="${min}" max="${max}" step="${step}" value="${formatted}" data-sync-for="${id}" aria-label="${label} value"></span></label>`;
+}
+
+function select(id, label, options, value) {
+  const optionMarkup = options
+    .map((option) => `<option value="${option}"${option === value ? " selected" : ""}>${pretty(option)}</option>`)
+    .join("");
+  return `<label class="ot4ml-control">${label}<select id="${id}">${optionMarkup}</select></label>`;
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el.tagName === "SELECT" ? el.value : Number(el.value);
+}
+
+function applyNumberInput(el, finalize = false) {
+  const range = document.getElementById(el.dataset.syncFor);
+  const value = Number(el.value);
+  if (!range || !Number.isFinite(value)) return false;
+  range.value = String(clamp(value, Number(range.min), Number(range.max)));
+  if (finalize) el.value = formatNumber(range.value, range.step);
+  return true;
+}
+
+function numberInputFor(id) {
+  return document.querySelector(`input[type="number"][data-sync-for="${id}"]`);
+}
+
+function syncReadouts(forceNumbers = false) {
+  document.querySelectorAll(".ot4ml-readout").forEach((node) => {
+    const el = document.getElementById(node.dataset.for);
+    const formatted = formatNumber(el.value, node.dataset.step);
+    node.textContent = formatted;
+    const number = numberInputFor(el.id);
+    if (number && (forceNumbers || document.activeElement !== number)) number.value = formatted;
+  });
+}
+
+function scheduleRender() {
+  window.clearTimeout(renderTimer);
+  renderTimer = window.setTimeout(() => {
+    if (currentRender) currentRender();
+  }, 35);
+}
+
+function installPanelActions() {
+  if (actions) return;
+  actions = document.createElement("div");
+  actions.className = "ot4ml-actions";
+  const openUrl = new URL(window.location.href);
+  openUrl.searchParams.delete("kind");
+  actions.innerHTML = `<button type="button" class="ot4ml-action" id="resetControls">Reset</button><a class="ot4ml-action" href="${openUrl.href}" target="_blank" rel="noopener">Open larger</a>`;
+  controls.insertAdjacentElement("afterend", actions);
+  document.getElementById("resetControls").addEventListener("click", () => {
+    controls.querySelectorAll("input, select").forEach((el) => {
+      if (el.tagName === "SELECT") {
+        const fallback = Array.from(el.options).findIndex((option) => option.defaultSelected);
+        el.selectedIndex = fallback >= 0 ? fallback : 0;
+      } else {
+        el.value = el.defaultValue;
+      }
+      if (el.type === "number" && el.dataset.syncFor) applyNumberInput(el, true);
+    });
+    syncReadouts(true);
+    if (currentRender) currentRender();
+  });
+}
+
+function bind(render) {
+  currentRender = render;
+  installPanelActions();
+  controls.querySelectorAll("input, select").forEach((el) => {
+    el.addEventListener("input", () => {
+      if (el.type === "number" && el.dataset.syncFor && !applyNumberInput(el)) return;
+      syncReadouts();
+      scheduleRender();
+    });
+    el.addEventListener("change", () => {
+      if (el.type === "number" && el.dataset.syncFor && !applyNumberInput(el, true)) {
+        syncReadouts(true);
+        return;
+      }
+      syncReadouts(true);
+      render();
+    });
+  });
+  syncReadouts();
+  render();
+}
+
+function inverseCdfSamples(xs, pdf, n) {
+  const cdf = new Array(pdf.length);
+  let total = 0;
+  for (let i = 0; i < pdf.length; i += 1) {
+    total += pdf[i];
+    cdf[i] = total;
+  }
+  for (let i = 0; i < cdf.length; i += 1) cdf[i] /= total;
+  const out = [];
+  for (let k = 0; k < n; k += 1) {
+    const u = (k + 0.5) / n;
+    let j = 1;
+    while (j < cdf.length && cdf[j] < u) j += 1;
+    const t = (u - cdf[j - 1]) / Math.max(cdf[j] - cdf[j - 1], 1e-12);
+    out.push(lerp(xs[j - 1], xs[j], clamp(t, 0, 1)));
+  }
+  return out;
+}
+
+function drawQuantile() {
+  const n = Math.round(val("n"));
+  const source = val("source");
+  const target = val("target");
+  const { ctx, w, h } = resizeCanvas(344);
+  const margin = { l: 34, r: 18, t: 20, b: 24 };
+  const xMin = -3.3;
+  const xMax = 3.3;
+  const X = (x) => margin.l + ((x - xMin) / (xMax - xMin)) * (w - margin.l - margin.r);
+  const Y = (y) => margin.t + (1 - y) * (h - margin.t - margin.b);
+  const xs = Array.from({ length: 820 }, (_, i) => lerp(xMin, xMax, i / 819));
+  const spdf = xs.map((x) => mixPdf(source, x));
+  const tpdf = xs.map((x) => mixPdf(target, x));
+  const maxPdf = Math.max(...spdf, ...tpdf);
+  const scale = 0.27 / maxPdf;
+  const sourceBase = 0.76;
+  const targetBase = 0.24;
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.beginPath();
+  ctx.moveTo(X(xMin), Y(sourceBase));
+  ctx.lineTo(X(xMax), Y(sourceBase));
+  ctx.moveTo(X(xMin), Y(targetBase));
+  ctx.lineTo(X(xMax), Y(targetBase));
+  ctx.stroke();
+
+  function curve(pdf, base, sign, color) {
+    ctx.beginPath();
+    ctx.moveTo(X(xs[0]), Y(base));
+    for (let i = 0; i < xs.length; i += 1) ctx.lineTo(X(xs[i]), Y(base + sign * scale * pdf[i]));
+    ctx.lineTo(X(xs[xs.length - 1]), Y(base));
+    ctx.closePath();
+    ctx.fillStyle = color === RED ? "rgba(215,48,39,.14)" : "rgba(33,102,172,.14)";
+    ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < xs.length; i += 1) {
+      const px = X(xs[i]);
+      const py = Y(base + sign * scale * pdf[i]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+
+  curve(spdf, sourceBase, 1, RED);
+  curve(tpdf, targetBase, -1, BLUE);
+  const sx = inverseCdfSamples(xs, spdf, n);
+  const tx = inverseCdfSamples(xs, tpdf, n);
+
+  ctx.lineWidth = n > 120 ? 0.38 : n > 80 ? 0.5 : 0.75;
+  for (let k = 0; k < n; k += 1) {
+    ctx.strokeStyle = mixColor((k + 0.5) / n, RED, BLUE, 0.43);
+    ctx.beginPath();
+    ctx.moveTo(X(sx[k]), Y(sourceBase));
+    ctx.lineTo(X(tx[k]), Y(targetBase));
+    ctx.stroke();
+  }
+
+  function points(arr, y, color) {
+    ctx.fillStyle = color;
+    const radius = n > 120 ? 1.45 : n > 80 ? 1.8 : 3;
+    for (const x of arr) {
+      ctx.beginPath();
+      ctx.arc(X(x), Y(y), radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  points(sx, sourceBase, RED);
+  points(tx, targetBase, BLUE);
+  ctx.fillStyle = RED;
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("source alpha", X(xMin) + 2, Y(sourceBase + 0.24));
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target beta", X(xMin) + 2, Y(targetBase - 0.2));
+  setStatus(`${n} quantile levels; monotone pairs are ordered by cumulative mass`);
+}
+
+function lineAssignment(x, y, power) {
+  const cost = x.map((xi) => y.map((yj) => Math.abs(xi - yj) ** power));
+  return hungarian(cost);
+}
+
+function drawOneDimensionalPanel(ctx, box, source, target, assignment, power, title) {
+  const all = source.concat(target);
+  const xmin = Math.min(...all) - 0.28;
+  const xmax = Math.max(...all) + 0.28;
+  const X = (x) => box.x + ((x - xmin) / Math.max(xmax - xmin, 1e-9)) * box.w;
+  const ySource = box.y + 0.30 * box.h;
+  const yTarget = box.y + 0.74 * box.h;
+
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 12, ySource);
+  ctx.lineTo(box.x + box.w - 12, ySource);
+  ctx.moveTo(box.x + 12, yTarget);
+  ctx.lineTo(box.x + box.w - 12, yTarget);
+  ctx.stroke();
+
+  for (let i = 0; i < assignment.length; i += 1) {
+    const j = assignment[i];
+    ctx.strokeStyle = `rgba(123,50,148,${power < 1 ? 0.38 : 0.30})`;
+    ctx.lineWidth = power < 1 ? 0.9 : 0.75;
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), ySource);
+    ctx.lineTo(X(target[j]), yTarget);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = RED;
+  for (const x of source) {
+    ctx.beginPath();
+    ctx.arc(X(x), ySource, 3.1, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = BLUE;
+  for (const y of target) {
+    ctx.beginPath();
+    ctx.arc(X(y), yTarget, 3.1, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${title}, p = ${power.toFixed(2)}`, box.x + box.w / 2, box.y + 18);
+  ctx.textAlign = "left";
+}
+
+function drawLineCost() {
+  setStatus("computing one-dimensional assignments...");
+  const n = val("n1d");
+  const sourceName = val("lineSource");
+  const targetName = val("lineTarget");
+  const pConvex = val("pConvex");
+  const pConcave = val("pConcave");
+  const xMin = -3.3;
+  const xMax = 3.3;
+  const xs = Array.from({ length: 900 }, (_, i) => lerp(xMin, xMax, i / 899));
+  const spdf = xs.map((x) => mixPdf(sourceName, x));
+  const tpdf = xs.map((x) => mixPdf(targetName, x));
+  const source = inverseCdfSamples(xs, spdf, n);
+  const target = inverseCdfSamples(xs, tpdf, n);
+  const convex = lineAssignment(source, target, pConvex);
+  const concave = lineAssignment(source, target, pConcave);
+  const { ctx, w, h } = resizeCanvas(310);
+  const gap = 18;
+  const boxW = (w - 34 - gap) / 2;
+  const boxH = h - 44;
+  drawOneDimensionalPanel(ctx, { x: 12, y: 34, w: boxW, h: boxH }, source, target, convex, pConvex, "convex");
+  drawOneDimensionalPanel(ctx, { x: 12 + boxW + gap, y: 34, w: boxW, h: boxH }, source, target, concave, pConcave, "concave");
+  setStatus(`${n} points; convex costs are monotone, concave costs favor long exchanges`);
+}
+
+function syntheticImage(size) {
+  const out = [];
+  for (let iy = 0; iy < size; iy += 1) {
+    const y = -1 + (2 * iy) / (size - 1);
+    for (let ix = 0; ix < size; ix += 1) {
+      const x = -1 + (2 * ix) / (size - 1);
+      const base = 0.5 + 0.25 * x - 0.18 * y;
+      const blob = 0.28 * Math.exp(-7 * ((x + 0.22) ** 2 + (y - 0.05) ** 2));
+      const ridge = 0.18 * Math.exp(-24 * (y + 0.45 + 0.25 * Math.sin(4 * x)) ** 2);
+      const texture = 0.035 * Math.sin(18 * x + 5 * y) * Math.sin(11 * y);
+      out.push(clamp(base + blob - ridge + texture, 0, 1));
+    }
+  }
+  return out;
+}
+
+function drawHistogram() {
+  const mean = val("mean");
+  const sigma = val("sigma");
+  const t = val("interp");
+  const imagePixelRatio = imagePanelPixelRatio();
+  const { ctx, w, h } = resizeCanvas(390, { pixelRatio: imagePixelRatio });
+  const pad = 22;
+  const gap = 30;
+  const cat = imageAsset("assets/cat.jpg");
+  const catSize = naturalSquareSize(cat, 640);
+  const maxDisplayW = cat.state === "ready" ? catSize / imagePixelRatio : 230;
+  const horizontal = w >= 680;
+  const imgW = horizontal
+    ? Math.round(clamp(Math.min(maxDisplayW, (w - 2 * pad - gap) * 0.40, h - 92), 150, 235))
+    : Math.round(clamp(Math.min(maxDisplayW, w - 2 * pad, h * 0.48), 140, 230));
+  const size = rasterSizeForDisplay(Math.max(imgW, 160), 260, catSize, imagePixelRatio);
+  const base = grayImageFromAsset(cat, size) || syntheticImage(size);
+  const pairs = base.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const mapped = new Array(base.length);
+  const lo = normalCdf(0, mean, sigma);
+  const hi = normalCdf(1, mean, sigma);
+  for (let r = 0; r < pairs.length; r += 1) {
+    const u = (r + 0.5) / pairs.length;
+    mapped[pairs[r][1]] = clamp(normalInv(lo + u * (hi - lo), mean, sigma), 0, 1);
+  }
+  function makeImage(values) {
+    const tmp = document.createElement("canvas");
+    tmp.width = size;
+    tmp.height = size;
+    const ictx = tmp.getContext("2d");
+    const data = ictx.createImageData(size, size);
+    for (let i = 0; i < values.length; i += 1) {
+      const g = Math.round(255 * clamp(values[i], 0, 1));
+      data.data[4 * i] = g;
+      data.data[4 * i + 1] = g;
+      data.data[4 * i + 2] = g;
+      data.data[4 * i + 3] = 255;
+    }
+    ictx.putImageData(data, 0, 0);
+    return tmp;
+  }
+
+  const img = base.map((v, i) => lerp(v, mapped[i], t));
+  const imgCanvas = makeImage(img);
+  ctx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
+
+  const bins = 42;
+  const hist = Array(bins).fill(0);
+  for (const v of img) hist[Math.min(bins - 1, Math.floor(v * bins))] += 1;
+  const dx = 1 / bins;
+  for (let i = 0; i < bins; i += 1) hist[i] /= img.length * dx;
+  const target = Array.from({ length: bins }, (_, i) => {
+    const x = (i + 0.5) / bins;
+    return normalPdf(x, mean, sigma) / Math.max(hi - lo, 1e-9);
+  });
+  const imgX = horizontal ? pad + 6 : (w - imgW) / 2;
+  const imgY = horizontal ? 50 : 28;
+  const px = horizontal ? imgX + imgW + gap : pad + 8;
+  const py = horizontal ? imgY : imgY + imgW + 44;
+  const pw = horizontal ? w - px - pad - 8 : w - 2 * pad - 16;
+  const ph = horizontal ? imgW : Math.max(92, h - py - 34);
+  const ymax = 1.12 * Math.max(...hist, ...target);
+  const X = (x) => px + x * pw;
+  const Y = (y) => py + ph - (y / ymax) * ph;
+
+  ctx.drawImage(imgCanvas, imgX, imgY, imgW, imgW);
+  ctx.strokeStyle = mixColor(t, RED, BLUE, 0.95);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(imgX, imgY, imgW, imgW);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`equalized image, t = ${t.toFixed(2)}`, imgX + imgW / 2, imgY + imgW + 18);
+  ctx.textAlign = "left";
+
+  ctx.strokeStyle = "#d8dee8";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px, py, pw, ph);
+  ctx.fillStyle = mixColor(t, RED, BLUE, 0.24);
+  for (let i = 0; i < bins; i += 1) {
+    const x0 = X(i / bins);
+    const x1 = X((i + 0.86) / bins);
+    ctx.fillRect(x0, Y(hist[i]), Math.max(1, x1 - x0), py + ph - Y(hist[i]));
+  }
+  ctx.beginPath();
+  for (let i = 0; i < bins; i += 1) {
+    const x = X((i + 0.5) / bins);
+    const y = Y(hist[i]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = mixColor(t, RED, BLUE, 0.95);
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.beginPath();
+  for (let i = 0; i < bins; i += 1) {
+    const x = X((i + 0.5) / bins);
+    const y = Y(target[i]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = BLUE;
+  ctx.lineWidth = 1.25;
+  ctx.stroke();
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("gray level", px + pw - 62, py + ph + 20);
+  ctx.fillStyle = mixColor(t, RED, BLUE, 0.95);
+  ctx.fillText("current histogram", px + 12, py + 16);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target law", px + pw - 78, py + 16);
+  const imageSource = cat.state === "ready" ? `cat photograph, ${size}x${size}` : "synthetic fallback while the photograph loads";
+  setStatus(`histogram equalization by monotone transport; target mean ${mean.toFixed(2)}, sigma ${sigma.toFixed(3)}; ${imageSource}`);
+}
+
+function rng(seed) {
+  let a = seed >>> 0;
+  return function random() {
+    a += 0x6d2b79f5;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randn(random) {
+  const u = Math.max(random(), 1e-12);
+  const v = random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function sampleCloud(shape, n, random) {
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    if (shape === "disk") {
+      const th = 2 * Math.PI * random();
+      const rad = 0.52 * Math.sqrt(random());
+      pts.push([rad * Math.cos(th), rad * Math.sin(th)]);
+    } else if (shape === "annulus") {
+      const th = 2 * Math.PI * random();
+      const inner = 0.82;
+      const outer = 1.04;
+      const rad = Math.sqrt(inner * inner + random() * (outer * outer - inner * inner));
+      pts.push([rad * Math.cos(th), rad * Math.sin(th)]);
+    } else if (shape === "two_blobs") {
+      const c = random() < 0.5 ? [-0.72, -0.18] : [0.72, 0.18];
+      pts.push([c[0] + 0.22 * randn(random), c[1] + 0.18 * randn(random)]);
+    } else if (shape === "three_blobs") {
+      const centers = [[-0.78, -0.45], [0.78, -0.35], [0.0, 0.75]];
+      const c = centers[Math.floor(3 * random())];
+      pts.push([c[0] + 0.18 * randn(random), c[1] + 0.18 * randn(random)]);
+    } else {
+      const th = lerp(-0.92 * Math.PI, 0.92 * Math.PI, random());
+      const rad = 0.82 + 0.13 * randn(random);
+      pts.push([0.15 + rad * Math.cos(th), 0.72 * rad * Math.sin(th)]);
+    }
+  }
+  return pts;
+}
+
+function circleDistance(a, b) {
+  const d = Math.abs(a - b);
+  return Math.min(d, 1 - d);
+}
+
+function sampleAngles(n, random, offset = 0) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const base = (i + 0.5 + 0.22 * Math.sin(1.7 * i + offset)) / n;
+    out.push((base + 0.045 * (random() - 0.5) + 1) % 1);
+  }
+  out.sort((a, b) => a - b);
+  return out;
+}
+
+function bestCircleShift(source, target, power) {
+  let best = 0;
+  let bestCost = Infinity;
+  const n = source.length;
+  for (let s = 0; s < n; s += 1) {
+    let cost = 0;
+    for (let k = 0; k < n; k += 1) {
+      cost += circleDistance(source[k], target[(k + s) % n]) ** power;
+    }
+    if (cost < bestCost) {
+      bestCost = cost;
+      best = s;
+    }
+  }
+  return [best, bestCost];
+}
+
+function liftedAngle(a, cut) {
+  return a < cut ? a + 1 : a;
+}
+
+function drawCircle() {
+  const n = val("circleN");
+  const power = val("circleP");
+  const seed = val("circleSeed");
+  const mode = val("circleMode");
+  const manual = Math.round(val("circleShift")) % n;
+  const random = rng(seed);
+  const source = sampleAngles(n, random, 0.2);
+  const target = sampleAngles(n, random, 1.9);
+  const [optimal, bestCost] = bestCircleShift(source, target, power);
+  const shift = mode === "optimal" ? optimal : manual;
+  const cut = (source[0] + 0.985) % 1;
+  const { ctx, w, h } = resizeCanvas(354);
+  const leftW = Math.min(0.42 * w, 310);
+  const cx = 24 + leftW / 2;
+  const cy = 42 + Math.min(leftW, h - 68) / 2;
+  const radius = Math.min(leftW, h - 76) * 0.38;
+
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(12, 24, leftW + 24, h - 44);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(12, 24, leftW + 24, h - 44);
+  ctx.strokeStyle = "#2f3b45";
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+  ctx.stroke();
+
+  const point = (angle, r) => {
+    const th = 2 * Math.PI * angle - Math.PI / 2;
+    return [cx + r * Math.cos(th), cy + r * Math.sin(th)];
+  };
+  for (let k = 0; k < n; k += 1) {
+    const [x0, y0] = point(source[k], radius);
+    const [x1, y1] = point(target[(k + shift) % n], radius * 0.76);
+    ctx.strokeStyle = "rgba(123,50,148,.34)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  }
+  const [gx, gy] = point(cut, radius);
+  ctx.strokeStyle = "#1b9e77";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(gx, gy);
+  ctx.stroke();
+  for (const a of source) {
+    const [x, y] = point(a, radius);
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.6, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const a of target) {
+    const [x, y] = point(a, radius * 0.76);
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.6, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  const rx = leftW + 58;
+  const rw = w - rx - 22;
+  const top = 68;
+  const redY = top + 74;
+  const blueY = top + 176;
+  const X = (a) => rx + ((a - cut) / 1) * rw;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(rx - 12, 24, rw + 24, h - 44);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(rx - 12, 24, rw + 24, h - 44);
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rx, redY);
+  ctx.lineTo(rx + rw, redY);
+  ctx.moveTo(rx, blueY);
+  ctx.lineTo(rx + rw, blueY);
+  ctx.stroke();
+  ctx.strokeStyle = "#1b9e77";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(rx, top + 38);
+  ctx.lineTo(rx, blueY + 42);
+  ctx.moveTo(rx + rw, top + 38);
+  ctx.lineTo(rx + rw, blueY + 42);
+  ctx.stroke();
+  for (let k = 0; k < n; k += 1) {
+    const sx = liftedAngle(source[k], cut);
+    const ty = liftedAngle(target[(k + shift) % n], cut);
+    ctx.strokeStyle = "rgba(123,50,148,.38)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(X(sx), redY);
+    ctx.lineTo(X(ty), blueY);
+    ctx.stroke();
+  }
+  for (const a of source) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(liftedAngle(a, cut)), redY, 3.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const a of target) {
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(liftedAngle(a, cut)), blueY, 3.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("circular problem", cx, 42);
+  ctx.fillText("unfolded interval", rx + rw / 2, 42);
+  ctx.textAlign = "left";
+  setStatus(`displayed shift ${shift}; optimal shift ${optimal}; cost ${bestCost.toFixed(4)}`);
+}
+
+function limits(points) {
+  let xmin = Infinity;
+  let xmax = -Infinity;
+  let ymin = Infinity;
+  let ymax = -Infinity;
+  for (const p of points) {
+    xmin = Math.min(xmin, p[0]);
+    xmax = Math.max(xmax, p[0]);
+    ymin = Math.min(ymin, p[1]);
+    ymax = Math.max(ymax, p[1]);
+  }
+  const dx = Math.max(xmax - xmin, 1e-6);
+  const dy = Math.max(ymax - ymin, 1e-6);
+  return { xmin: xmin - 0.16 * dx, xmax: xmax + 0.16 * dx, ymin: ymin - 0.16 * dy, ymax: ymax + 0.16 * dy };
+}
+
+function costMatrix(x, y, p) {
+  return x.map((xi) => y.map((yj) => Math.hypot(xi[0] - yj[0], xi[1] - yj[1]) ** p));
+}
+
+function hungarian(cost) {
+  const n = cost.length;
+  const m = cost[0].length;
+  const u = Array(n + 1).fill(0);
+  const v = Array(m + 1).fill(0);
+  const p = Array(m + 1).fill(0);
+  const way = Array(m + 1).fill(0);
+  for (let i = 1; i <= n; i += 1) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = Array(m + 1).fill(Infinity);
+    const used = Array(m + 1).fill(false);
+    do {
+      used[j0] = true;
+      const i0 = p[j0];
+      let delta = Infinity;
+      let j1 = 0;
+      for (let j = 1; j <= m; j += 1) {
+        if (!used[j]) {
+          const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+          if (cur < minv[j]) {
+            minv[j] = cur;
+            way[j] = j0;
+          }
+          if (minv[j] < delta) {
+            delta = minv[j];
+            j1 = j;
+          }
+        }
+      }
+      for (let j = 0; j <= m; j += 1) {
+        if (used[j]) {
+          u[p[j]] += delta;
+          v[j] -= delta;
+        } else {
+          minv[j] -= delta;
+        }
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do {
+      const j1 = way[j0];
+      p[j0] = p[j1];
+      j0 = j1;
+    } while (j0 !== 0);
+  }
+  const ans = Array(n).fill(-1);
+  for (let j = 1; j <= m; j += 1) {
+    if (p[j] > 0) ans[p[j] - 1] = j - 1;
+  }
+  return ans;
+}
+
+function targetWeights(y, mode, strength) {
+  let weights = [];
+  if (mode === "uniform") {
+    weights = y.map(() => 1);
+  } else if (mode === "angular") {
+    weights = y.map((point) => 0.18 + (0.5 + 0.5 * Math.cos(Math.atan2(point[1], point[0]) - 0.65)) ** (1 + 2 * strength));
+  } else {
+    const xs = y.map((point) => point[0]);
+    const mn = Math.min(...xs);
+    const mx = Math.max(...xs);
+    weights = y.map((point) => 0.15 + Math.exp(strength * (2 * (point[0] - mn) / Math.max(mx - mn, 1e-9) - 1)));
+  }
+  const total = weights.reduce((a, b) => a + b, 0);
+  return weights.map((z) => z / total);
+}
+
+function medianPositive(mat) {
+  const vals = [];
+  for (const row of mat) {
+    for (const z of row) {
+      if (z > 1e-12) vals.push(z);
+    }
+  }
+  vals.sort((a, b) => a - b);
+  return vals[Math.floor(vals.length / 2)] || 1;
+}
+
+function greedyPlan(cost, a, b) {
+  const n = cost.length;
+  const m = cost[0].length;
+  const supply = a.slice();
+  const demand = b.slice();
+  const plan = Array.from({ length: n }, () => Array(m).fill(0));
+  const pairs = [];
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) pairs.push([cost[i][j], i, j]);
+  }
+  pairs.sort((x, y) => x[0] - y[0]);
+  for (const [, i, j] of pairs) {
+    const mass = Math.min(supply[i], demand[j]);
+    if (mass > 1e-12) {
+      plan[i][j] = mass;
+      supply[i] -= mass;
+      demand[j] -= mass;
+    }
+  }
+  return plan;
+}
+
+function sinkhornPlan(cost, a, b, eps) {
+  const n = cost.length;
+  const m = cost[0].length;
+  const scale = medianPositive(cost);
+  const K = cost.map((row) => row.map((c) => Math.exp(-c / Math.max(scale * eps, 1e-8))));
+  const u = Array(n).fill(1);
+  const v = Array(m).fill(1);
+  for (let it = 0; it < 90; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+      u[i] = a[i] / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b[j] / Math.max(s, 1e-300);
+    }
+  }
+  return K.map((row, i) => row.map((k, j) => u[i] * k * v[j]));
+}
+
+function edgesFromPlan(plan, maxEdges = 220) {
+  const out = [];
+  for (let i = 0; i < plan.length; i += 1) {
+    for (let j = 0; j < plan[i].length; j += 1) {
+      if (plan[i][j] > 1e-10) out.push([i, j, plan[i][j]]);
+    }
+  }
+  out.sort((a, b) => b[2] - a[2]);
+  return out.slice(0, maxEdges);
+}
+
+function drawTransport(ctx, x, y, edges, weights, title, box, lim) {
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const maxMass = Math.max(...edges.map((edge) => edge[2]), 1e-12);
+  for (const [i, j, mass] of edges) {
+    const s = Math.sqrt(mass / maxMass);
+    ctx.strokeStyle = `rgba(123,50,148,${0.12 + 0.58 * s})`;
+    ctx.lineWidth = 0.25 + 1.55 * s;
+    ctx.beginPath();
+    ctx.moveTo(X(x[i]), Y(x[i]));
+    ctx.lineTo(X(y[j]), Y(y[j]));
+    ctx.stroke();
+  }
+  for (const point of x) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(point), Y(point), 3.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  for (let j = 0; j < y.length; j += 1) {
+    const radius = 3.4 + 3 * Math.sqrt((weights?.[j] || 1 / y.length) * y.length);
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(y[j]), Y(y[j]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function drawCostSweep() {
+  setStatus("computing assignments...");
+  const n = val("n2");
+  const source = val("source2");
+  const target = val("target2");
+  const seed = val("seed2");
+  const powers = [val("p1"), val("p2"), val("p3")];
+  const random = rng(seed);
+  const x = sampleCloud(source, n, random);
+  const y = sampleCloud(target, n, random);
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(372);
+  const gap = 18;
+  const top = 36;
+  const bottom = 18;
+  const bw = (w - 34 - 2 * gap) / 3;
+  const bh = h - top - bottom;
+  for (let k = 0; k < powers.length; k += 1) {
+    const cost = costMatrix(x, y, powers[k]);
+    const assign = hungarian(cost);
+    const edges = assign.map((j, i) => [i, j, 1]);
+    drawTransport(ctx, x, y, edges, null, `p = ${powers[k].toFixed(1)}`, { x: 12 + k * (bw + gap), y: top, w: bw, h: bh }, lim);
+  }
+  setStatus(`${n} by ${n} exact assignments`);
+}
+
+function drawRegularization() {
+  setStatus("computing plans...");
+  const ns = val("ns");
+  const nt = val("nt");
+  const seed = val("seedr");
+  const mode = val("wmode");
+  const strength = val("strength");
+  const eps = [0, val("eps1"), val("eps2")];
+  const random = rng(seed);
+  const x = sampleCloud("disk", ns, random);
+  const y = sampleCloud("annulus", nt, random);
+  const b = targetWeights(y, mode, strength);
+  const a = Array(ns).fill(1 / ns);
+  const cost = costMatrix(x, y, 2);
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(372);
+  const gap = 18;
+  const top = 36;
+  const bottom = 18;
+  const bw = (w - 34 - 2 * gap) / 3;
+  const bh = h - top - bottom;
+  for (let k = 0; k < eps.length; k += 1) {
+    const plan = eps[k] <= 0 ? greedyPlan(cost, a, b) : sinkhornPlan(cost, a, b, eps[k]);
+    const title = eps[k] <= 0 ? "sparse plan" : `eps = ${eps[k].toFixed(3)}`;
+    drawTransport(ctx, x, y, edgesFromPlan(plan, 260), b, title, { x: 12 + k * (bw + gap), y: top, w: bw, h: bh }, lim);
+  }
+  setStatus(`${ns} sources, ${nt} weighted targets`);
+}
+
+function multiplicities(n, maxMultiplicity, total, random) {
+  const out = Array(n).fill(1);
+  let extras = total - n;
+  let guard = 0;
+  while (extras > 0 && guard < 10000) {
+    const i = Math.floor(random() * n);
+    if (out[i] < maxMultiplicity) {
+      out[i] += 1;
+      extras -= 1;
+    }
+    guard += 1;
+  }
+  return out;
+}
+
+function expandedIndices(mult) {
+  const out = [];
+  for (let i = 0; i < mult.length; i += 1) {
+    for (let k = 0; k < mult[i]; k += 1) out.push(i);
+  }
+  return out;
+}
+
+function collapsedDuplicatedAssignment(x, y, kmult, lmult) {
+  const rows = expandedIndices(kmult);
+  const cols = expandedIndices(lmult);
+  const cost = rows.map((i) => cols.map((j) => Math.hypot(x[i][0] - y[j][0], x[i][1] - y[j][1]) ** 2));
+  const assign = hungarian(cost);
+  const counts = Array.from({ length: x.length }, () => Array(y.length).fill(0));
+  for (let r = 0; r < assign.length; r += 1) {
+    counts[rows[r]][cols[assign[r]]] += 1;
+  }
+  const total = rows.length;
+  return counts.map((row) => row.map((z) => z / total));
+}
+
+function drawDuplicatedTransport(ctx, x, y, plan, sourceWeights, targetWeights, title, box, lim) {
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const edges = edgesFromPlan(plan, 260);
+  const maxMass = Math.max(...edges.map((edge) => edge[2]), 1e-12);
+  for (const [i, j, mass] of edges) {
+    const s = Math.sqrt(mass / maxMass);
+    ctx.strokeStyle = `rgba(123,50,148,${0.14 + 0.58 * s})`;
+    ctx.lineWidth = 0.35 + 1.65 * s;
+    ctx.beginPath();
+    ctx.moveTo(X(x[i]), Y(x[i]));
+    ctx.lineTo(X(y[j]), Y(y[j]));
+    ctx.stroke();
+  }
+  const sourceScale = sourceWeights.length * Math.max(...sourceWeights);
+  const targetScale = targetWeights.length * Math.max(...targetWeights);
+  for (let i = 0; i < x.length; i += 1) {
+    const radius = 3.1 + 3.2 * Math.sqrt((sourceWeights[i] * x.length) / Math.max(sourceScale, 1e-9));
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(x[i]), Y(x[i]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  for (let j = 0; j < y.length; j += 1) {
+    const radius = 3.1 + 3.2 * Math.sqrt((targetWeights[j] * y.length) / Math.max(targetScale, 1e-9));
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(y[j]), Y(y[j]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function drawDuplication() {
+  setStatus("solving duplicated assignment...");
+  const n = val("dupN");
+  const maxMultiplicity = val("dupMax");
+  const seed = val("dupSeed");
+  const random = rng(seed);
+  const x = sampleCloud("disk", n, random);
+  const y = sampleCloud("annulus", n, random);
+  const total = n + Math.round((maxMultiplicity - 1) * 0.55 * n);
+  const kmult = multiplicities(n, maxMultiplicity, total, random);
+  const lmult = multiplicities(n, maxMultiplicity, total, random);
+  const plan = collapsedDuplicatedAssignment(x, y, kmult, lmult);
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(372);
+  const sourceWeights = kmult.map((z) => z / total);
+  const targetWeights = lmult.map((z) => z / total);
+  drawDuplicatedTransport(
+    ctx,
+    x,
+    y,
+    plan,
+    sourceWeights,
+    targetWeights,
+    `multiplicities in {1,...,${maxMultiplicity}}`,
+    { x: 18, y: 42, w: w - 36, h: h - 66 },
+    lim,
+  );
+  setStatus(`${total} duplicated particles collapsed onto ${n} source and ${n} target sites`);
+}
+
+function hungarianSnapshots(cost) {
+  const n = cost.length;
+  const m = cost[0].length;
+  const u = Array(n + 1).fill(0);
+  const v = Array(m + 1).fill(0);
+  const p = Array(m + 1).fill(0);
+  const way = Array(m + 1).fill(0);
+  const snapshots = [Array(n).fill(-1)];
+  for (let i = 1; i <= n; i += 1) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = Array(m + 1).fill(Infinity);
+    const used = Array(m + 1).fill(false);
+    do {
+      used[j0] = true;
+      const i0 = p[j0];
+      let delta = Infinity;
+      let j1 = 0;
+      for (let j = 1; j <= m; j += 1) {
+        if (!used[j]) {
+          const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+          if (cur < minv[j]) {
+            minv[j] = cur;
+            way[j] = j0;
+          }
+          if (minv[j] < delta) {
+            delta = minv[j];
+            j1 = j;
+          }
+        }
+      }
+      for (let j = 0; j <= m; j += 1) {
+        if (used[j]) {
+          u[p[j]] += delta;
+          v[j] -= delta;
+        } else {
+          minv[j] -= delta;
+        }
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do {
+      const j1 = way[j0];
+      p[j0] = p[j1];
+      j0 = j1;
+    } while (j0 !== 0);
+    const assign = Array(n).fill(-1);
+    for (let j = 1; j <= m; j += 1) {
+      if (p[j] > 0) assign[p[j] - 1] = j - 1;
+    }
+    snapshots.push(assign);
+  }
+  return snapshots;
+}
+
+function drawAssignmentMatrix(ctx, assignment, title, box) {
+  const n = assignment.length;
+  const cell = Math.min(box.w, box.h) / n;
+  const ox = box.x + (box.w - n * cell) / 2;
+  const oy = box.y + (box.h - n * cell) / 2;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      const value = assignment[i] < 0 ? 1 / n : assignment[i] === j ? 1 : 0;
+      const gray = Math.round(255 * (1 - value));
+      ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+      ctx.fillRect(ox + j * cell, oy + i * cell, Math.ceil(cell), Math.ceil(cell));
+    }
+  }
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 0.35;
+  for (let k = 0; k <= n; k += 1) {
+    ctx.beginPath();
+    ctx.moveTo(ox, oy + k * cell);
+    ctx.lineTo(ox + n * cell, oy + k * cell);
+    ctx.moveTo(ox + k * cell, oy);
+    ctx.lineTo(ox + k * cell, oy + n * cell);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 7);
+  ctx.textAlign = "left";
+}
+
+function drawHungarian() {
+  const n = val("hungarianN");
+  const spread = val("hungarianSpread");
+  const seed = val("hungarianSeed");
+  const random = rng(seed);
+  const x = Array.from({ length: n }, (_, i) => (i + 0.5) / n);
+  const y = Array.from({ length: n }, (_, i) => clamp((i + 0.5) / n + spread * 0.02 * randn(random), 0, 1));
+  y.sort((a, b) => a - b);
+  const cost = x.map((xi) => y.map((yj) => (xi - yj) ** 2));
+  const snapshots = hungarianSnapshots(cost);
+  const ids = [0, Math.ceil(n / 4), Math.ceil(n / 2), Math.ceil((3 * n) / 4), n];
+  const { ctx, w, h } = resizeCanvas(310);
+  const gap = 10;
+  const boxW = (w - 24 - 4 * gap) / 5;
+  const boxH = h - 50;
+  for (let k = 0; k < ids.length; k += 1) {
+    const step = ids[k];
+    const title = step === 0 ? "initial" : step === n ? "final" : `${step} aug.`;
+    drawAssignmentMatrix(ctx, snapshots[step], title, { x: 12 + k * (boxW + gap), y: 40, w: boxW, h: boxH });
+  }
+  setStatus(`${n} augmentations; flat rows are still unmatched`);
+}
+
+function colorCss(color, alpha = 1) {
+  return `rgba(${Math.round(clamp(color[0], 0, 255))},${Math.round(clamp(color[1], 0, 255))},${Math.round(clamp(color[2], 0, 255))},${alpha})`;
+}
+
+function mixRgbArray(a, b, t) {
+  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+}
+
+function luminance(color) {
+  return 0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2];
+}
+
+function paletteColor(mode, u, v, contrast) {
+  const wave = Math.sin(7 * u + 3 * v) * Math.sin(5 * v);
+  if (mode === "beach") {
+    const water = v < 0.55 ? 1 : clamp(1 - 3.2 * (v - 0.55), 0, 1);
+    const sand = 1 - water;
+    return [
+      70 + contrast * (35 * sand + 15 * u + 7 * wave),
+      120 + contrast * (55 * sand + 52 * water - 8 * v),
+      145 + contrast * (80 * water - 35 * sand + 4 * wave),
+    ];
+  }
+  if (mode === "forest") {
+    const leaf = 0.5 + 0.5 * Math.sin(11 * u + 4 * v);
+    return [
+      38 + contrast * (34 * v + 32 * leaf),
+      84 + contrast * (96 * (1 - 0.45 * v) + 25 * wave),
+      52 + contrast * (34 * u + 20 * leaf),
+    ];
+  }
+  if (mode === "orchid") {
+    const petal = Math.exp(-9 * ((u - 0.52) ** 2 + (v - 0.48) ** 2));
+    return [
+      90 + contrast * (110 * petal + 54 * u),
+      52 + contrast * (32 * (1 - v) + 18 * wave),
+      112 + contrast * (92 * petal + 32 * v),
+    ];
+  }
+  const petal = Math.exp(-11 * ((u - 0.48) ** 2 + (v - 0.42) ** 2));
+  const leaf = Math.exp(-18 * ((u - 0.72) ** 2 + (v - 0.72) ** 2));
+  return [
+    100 + contrast * (112 * petal + 20 * wave),
+    58 + contrast * (44 * leaf + 20 * v),
+    68 + contrast * (78 * petal + 16 * u),
+  ];
+}
+
+function makePaletteImage(size, mode, contrast) {
+  const colors = [];
+  for (let iy = 0; iy < size; iy += 1) {
+    const v = iy / Math.max(size - 1, 1);
+    for (let ix = 0; ix < size; ix += 1) {
+      const u = ix / Math.max(size - 1, 1);
+      colors.push(paletteColor(mode, u, v, contrast));
+    }
+  }
+  return colors;
+}
+
+function transportedPalette(source, target, t) {
+  const orderSource = source
+    .map((color, index) => ({ index, key: luminance(color) + 0.012 * color[2] }))
+    .sort((a, b) => a.key - b.key || a.index - b.index);
+  const orderTarget = target
+    .map((color, index) => ({ color, key: luminance(color) + 0.012 * color[2], index }))
+    .sort((a, b) => a.key - b.key || a.index - b.index);
+  const mapped = Array(source.length);
+  for (let k = 0; k < orderSource.length; k += 1) mapped[orderSource[k].index] = orderTarget[k].color;
+  return source.map((color, index) => mixRgbArray(color, mapped[index], t));
+}
+
+function drawColorImage(ctx, colors, size, x, y, width, title) {
+  const tmp = document.createElement("canvas");
+  tmp.width = size;
+  tmp.height = size;
+  const ictx = tmp.getContext("2d");
+  const data = ictx.createImageData(size, size);
+  for (let i = 0; i < colors.length; i += 1) {
+    data.data[4 * i] = clamp(colors[i][0], 0, 255);
+    data.data[4 * i + 1] = clamp(colors[i][1], 0, 255);
+    data.data[4 * i + 2] = clamp(colors[i][2], 0, 255);
+    data.data[4 * i + 3] = 255;
+  }
+  ictx.putImageData(data, 0, 0);
+  const previousSmoothing = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = true;
+  if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(tmp, x, y, width, width);
+  ctx.imageSmoothingEnabled = previousSmoothing;
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(x, y, width, width);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, x + width / 2, y - 9);
+  ctx.textAlign = "left";
+}
+
+function drawRgbCloud(ctx, colors, box, title) {
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#edf0f5";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 0.18 * box.w, box.y + 0.82 * box.h);
+  ctx.lineTo(box.x + 0.84 * box.w, box.y + 0.82 * box.h);
+  ctx.moveTo(box.x + 0.18 * box.w, box.y + 0.82 * box.h);
+  ctx.lineTo(box.x + 0.18 * box.w, box.y + 0.18 * box.h);
+  ctx.moveTo(box.x + 0.18 * box.w, box.y + 0.82 * box.h);
+  ctx.lineTo(box.x + 0.52 * box.w, box.y + 0.52 * box.h);
+  ctx.stroke();
+  const stride = Math.max(1, Math.floor(colors.length / 420));
+  for (let i = 0; i < colors.length; i += stride) {
+    const c = colors[i];
+    const r = c[0] / 255;
+    const g = c[1] / 255;
+    const b = c[2] / 255;
+    const px = box.x + (0.50 + 0.38 * (r - g) + 0.13 * b) * box.w;
+    const py = box.y + (0.84 - 0.52 * b - 0.18 * r - 0.08 * g) * box.h;
+    ctx.fillStyle = colorCss(c, 0.72);
+    ctx.beginPath();
+    ctx.arc(px, py, 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 9);
+  ctx.textAlign = "left";
+}
+
+function drawMongeColor() {
+  const t = val("colorT");
+  const requestedSize = val("colorSize");
+  const targetMode = val("colorTarget");
+  const contrast = val("colorContrast");
+  const imagePixelRatio = imagePanelPixelRatio();
+  const { ctx, w, h } = resizeCanvas(430, { pixelRatio: imagePixelRatio });
+  const pad = 18;
+  const gap = 18;
+  const beach = imageAsset("assets/beach.jpg");
+  const flower = imageAsset("assets/flower.jpg");
+  const maxImageSize = Math.min(naturalSquareSize(beach, 640), targetMode === "flower" ? naturalSquareSize(flower, 640) : 640);
+  const maxDisplayW = maxImageSize / imagePixelRatio;
+  const imageW = Math.min((w - 2 * pad - 2 * gap) / 3, h * 0.55, maxDisplayW);
+  const minColorSize = Math.min(maxImageSize, Math.max(160, requestedSize));
+  const size = rasterSizeForDisplay(imageW, minColorSize, maxImageSize, imagePixelRatio);
+  const source = rgbImageFromAsset(beach, size) || makePaletteImage(size, "beach", contrast);
+  const target =
+    targetMode === "flower" ? rgbImageFromAsset(flower, size) || makePaletteImage(size, "flower", contrast) : makePaletteImage(size, targetMode, contrast);
+  const transported = transportedPalette(source, target, t);
+  const topY = 34;
+  const startX = (w - 3 * imageW - 2 * gap) / 2;
+  drawColorImage(ctx, source, size, startX, topY, imageW, "source");
+  drawColorImage(ctx, transported, size, startX + imageW + gap, topY, imageW, `t = ${t.toFixed(2)}`);
+  drawColorImage(ctx, target, size, startX + 2 * (imageW + gap), topY, imageW, "target");
+  const cloudY = topY + imageW + 44;
+  const cloudH = h - cloudY - 18;
+  const cloudW = (w - 2 * pad - 2 * gap) / 3;
+  drawRgbCloud(ctx, source, { x: pad, y: cloudY, w: cloudW, h: cloudH }, "source RGB");
+  drawRgbCloud(ctx, transported, { x: pad + cloudW + gap, y: cloudY, w: cloudW, h: cloudH }, "transported");
+  drawRgbCloud(ctx, target, { x: pad + 2 * (cloudW + gap), y: cloudY, w: cloudW, h: cloudH }, "target RGB");
+  const sourceLabel = beach.state === "ready" && (targetMode !== "flower" || flower.state === "ready") ? "photograph colors" : "palette fallback";
+  setStatus(`ranked RGB map with ${size * size} colors; ${sourceLabel}; target ${pretty(targetMode)}`);
+}
+
+function sampleHeart(n, random) {
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const th = 2 * Math.PI * ((i + 0.5) / n + 0.035 * (random() - 0.5));
+    const rad = Math.sqrt(random());
+    const bx = (16 * Math.sin(th) ** 3) / 17;
+    const by = (13 * Math.cos(th) - 5 * Math.cos(2 * th) - 2 * Math.cos(3 * th) - Math.cos(4 * th)) / 17;
+    pts.push([0.78 * rad * bx, -0.08 + 0.78 * rad * (by - 0.16)]);
+  }
+  return pts;
+}
+
+function drawScatterPanel(ctx, points, box, lim, color, title, radius = 3.2) {
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  for (let i = 0; i < points.length; i += 1) {
+    const fill = typeof color === "function" ? color(i) : color;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(X(points[i]), Y(points[i]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function drawPairedMapPanel(ctx, source, target, assignment, box, lim, title, alpha = 0.32) {
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  for (let i = 0; i < source.length; i += 1) {
+    const j = assignment[i];
+    ctx.strokeStyle = `rgba(123,50,148,${alpha})`;
+    ctx.lineWidth = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), Y(source[i]));
+    ctx.lineTo(X(target[j]), Y(target[j]));
+    ctx.stroke();
+  }
+  for (const p of source) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.7, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of target) {
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.7, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function exactShapeTransport(n, sourceName, seed) {
+  const random = rng(seed);
+  const source = sampleCloud(sourceName, n, random);
+  const target = sampleHeart(n, random);
+  const assignment = hungarian(costMatrix(source, target, 2));
+  return { source, target, assignment };
+}
+
+function interpolateAssigned(source, target, assignment, t) {
+  return source.map((p, i) => {
+    const q = target[assignment[i]];
+    return [lerp(p[0], q[0], t), lerp(p[1], q[1], t)];
+  });
+}
+
+function drawMongeShape() {
+  setStatus("solving a small quadratic assignment...");
+  const n = val("shapeN");
+  const sourceName = val("shapeSource");
+  const seed = val("shapeSeed");
+  const t = val("shapeT");
+  const { source, target, assignment } = exactShapeTransport(n, sourceName, seed);
+  const current = interpolateAssigned(source, target, assignment, t);
+  const lim = limits(source.concat(target, current));
+  const { ctx, w, h } = resizeCanvas(370);
+  const pad = 18;
+  const gap = 18;
+  const bw = (w - 2 * pad - 2 * gap) / 3;
+  const box = (k) => ({ x: pad + k * (bw + gap), y: 44, w: bw, h: h - 70 });
+  drawPairedMapPanel(ctx, source, target, assignment, box(0), lim, "Monge map");
+  drawScatterPanel(ctx, current, box(1), lim, (i) => mixColor(t, RED, BLUE, 0.86), `particles, t = ${t.toFixed(2)}`, 3.4);
+  drawScatterPanel(ctx, source, box(2), lim, RED, "source", 2.5);
+  const right = box(2);
+  const X = (p) => right.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * right.w;
+  const Y = (p) => right.y + right.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * right.h;
+  for (const p of target) {
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = BLUE;
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("target overlay", right.x + right.w / 2, right.y + 16);
+  ctx.textAlign = "left";
+  setStatus(`${n} transported particles; exact assignment used as a small Monge map`);
+}
+
+function triangularPairing(source, target) {
+  const sOrder = source.map((p, i) => i).sort((i, j) => source[i][0] - source[j][0] || source[i][1] - source[j][1]);
+  const tOrder = target.map((p, i) => i).sort((i, j) => target[i][0] - target[j][0] || target[i][1] - target[j][1]);
+  const assigned = Array(source.length);
+  const pivot = Array(source.length);
+  for (let r = 0; r < source.length; r += 1) {
+    const i = sOrder[r];
+    const j = tOrder[r];
+    assigned[i] = target[j];
+    pivot[i] = [target[j][0], source[i][1]];
+  }
+  return { assigned, pivot };
+}
+
+function triangularPosition(source, assigned, pivot, progress) {
+  const q = progress <= 0.5 ? progress * 2 : (progress - 0.5) * 2;
+  return source.map((p, i) => {
+    if (progress <= 0.5) return [lerp(p[0], pivot[i][0], q), p[1]];
+    return [pivot[i][0], lerp(pivot[i][1], assigned[i][1], q)];
+  });
+}
+
+function drawMongeTriangular() {
+  const n = val("triN");
+  const progress = val("triProgress");
+  const seed = val("triSeed");
+  const sourceName = val("triSource");
+  const random = rng(seed);
+  const source = sampleCloud(sourceName, n, random);
+  const target = sampleHeart(n, random);
+  const { assigned, pivot } = triangularPairing(source, target);
+  const current = triangularPosition(source, assigned, pivot, progress);
+  const lim = limits(source.concat(target, pivot, current));
+  const { ctx, w, h } = resizeCanvas(360);
+  const pad = 18;
+  const gap = 18;
+  const bw = (w - 2 * pad - 2 * gap) / 3;
+  const box = (k) => ({ x: pad + k * (bw + gap), y: 44, w: bw, h: h - 70 });
+  drawScatterPanel(ctx, source, box(0), lim, RED, "source", 3.1);
+  drawScatterPanel(ctx, current, box(1), lim, (i) => mixColor(progress, RED, BLUE, 0.88), progress <= 0.5 ? "horizontal stage" : "vertical stage", 3.4);
+  drawScatterPanel(ctx, target, box(2), lim, BLUE, "target", 3.1);
+
+  const mid = box(1);
+  const X = (p) => mid.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * mid.w;
+  const Y = (p) => mid.y + mid.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * mid.h;
+  const stride = Math.max(1, Math.floor(n / 42));
+  ctx.lineWidth = 0.45;
+  for (let i = 0; i < n; i += stride) {
+    ctx.strokeStyle = "rgba(123,50,148,.24)";
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), Y(source[i]));
+    ctx.lineTo(X(pivot[i]), Y(pivot[i]));
+    ctx.lineTo(X(assigned[i]), Y(assigned[i]));
+    ctx.stroke();
+  }
+  setStatus(`${n} particles; coordinate-wise rearrangement progress ${progress.toFixed(2)}`);
+}
+
+function cumulative(pdf) {
+  const cdf = [];
+  let total = 0;
+  for (const v of pdf) total += v;
+  let running = 0;
+  for (const v of pdf) {
+    running += v;
+    cdf.push(running / Math.max(total, 1e-12));
+  }
+  return cdf;
+}
+
+function drawFrame(ctx, box, title) {
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function drawCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width = 1.4) {
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.beginPath();
+  for (let i = 0; i < xs.length; i += 1) {
+    if (i === 0) ctx.moveTo(X(xs[i]), Y(ys[i]));
+    else ctx.lineTo(X(xs[i]), Y(ys[i]));
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function histogramCurve(samples, xMin, xMax, bins) {
+  const hist = Array(bins).fill(0);
+  for (const x of samples) {
+    const k = Math.floor(((x - xMin) / (xMax - xMin)) * bins);
+    if (k >= 0 && k < bins) hist[k] += 1;
+  }
+  const dx = (xMax - xMin) / bins;
+  const xs = [];
+  const ys = [];
+  for (let k = 0; k < bins; k += 1) {
+    xs.push(xMin + (k + 0.5) * dx);
+    ys.push(hist[k] / Math.max(samples.length * dx, 1e-12));
+  }
+  return { xs, ys };
+}
+
+function smoothDensityCurve(samples, xMin, xMax, bins, bandwidth) {
+  const xs = Array.from({ length: bins }, (_, k) => lerp(xMin, xMax, (k + 0.5) / bins));
+  const ys = Array(bins).fill(0);
+  const h = Math.max(bandwidth, 1e-4);
+  const cutoff = 4 * h;
+  const norm = 1 / Math.max(samples.length * h * Math.sqrt(2 * Math.PI), 1e-12);
+  for (const sample of samples) {
+    const k0 = Math.max(0, Math.floor(((sample - cutoff - xMin) / (xMax - xMin)) * bins));
+    const k1 = Math.min(bins - 1, Math.ceil(((sample + cutoff - xMin) / (xMax - xMin)) * bins));
+    for (let k = k0; k <= k1; k += 1) {
+      const z = (xs[k] - sample) / h;
+      ys[k] += norm * Math.exp(-0.5 * z * z);
+    }
+  }
+  return { xs, ys };
+}
+
+function drawMongeQuantile() {
+  const sourceName = val("mqSource");
+  const targetName = val("mqTarget");
+  const t = val("mqT");
+  const qn = Math.round(val("mqSamples"));
+  const xMin = -3.3;
+  const xMax = 3.3;
+  const gridSize = Math.max(1800, 2 * qn);
+  const xs = Array.from({ length: gridSize }, (_, i) => lerp(xMin, xMax, i / (gridSize - 1)));
+  const spdf = xs.map((x) => mixPdf(sourceName, x));
+  const tpdf = xs.map((x) => mixPdf(targetName, x));
+  const scdf = cumulative(spdf);
+  const tcdf = cumulative(tpdf);
+  const qGrid = Array.from({ length: qn }, (_, i) => (i + 0.5) / qn);
+  const sq = inverseCdfSamples(xs, spdf, qn);
+  const tq = inverseCdfSamples(xs, tpdf, qn);
+  const qInterp = sq.map((x, i) => lerp(x, tq[i], t));
+  const currentHist = smoothDensityCurve(qInterp, xMin, xMax, 180, 0.052);
+  const yMax = Math.max(...spdf, ...tpdf, ...currentHist.ys) * 1.08;
+  const previewWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth : 760);
+  const { ctx, w, h } = resizeCanvas(previewWidth < 720 ? 520 : 360);
+  const cols = w < 720 ? 2 : 4;
+  const rows = Math.ceil(4 / cols);
+  const pad = 18;
+  const gap = 20;
+  const bw = (w - 2 * pad - (cols - 1) * gap) / cols;
+  const bh = (h - 48 - (rows - 1) * gap) / rows;
+  const box = (k) => ({
+    x: pad + (k % cols) * (bw + gap),
+    y: 38 + Math.floor(k / cols) * (bh + gap),
+    w: bw,
+    h: bh,
+  });
+  drawFrame(ctx, box(0), "densities");
+  drawCurve(ctx, xs, spdf, box(0), xMin, xMax, 0, yMax, RED, 1.5);
+  drawCurve(ctx, xs, tpdf, box(0), xMin, xMax, 0, yMax, BLUE, 1.5);
+  drawFrame(ctx, box(1), "cumulative");
+  drawCurve(ctx, xs, scdf, box(1), xMin, xMax, 0, 1, RED, 1.5);
+  drawCurve(ctx, xs, tcdf, box(1), xMin, xMax, 0, 1, BLUE, 1.5);
+  drawFrame(ctx, box(2), "quantiles");
+  drawCurve(ctx, qGrid, sq, box(2), 0, 1, xMin, xMax, RED, 1.4);
+  drawCurve(ctx, qGrid, tq, box(2), 0, 1, xMin, xMax, BLUE, 1.4);
+  drawCurve(ctx, qGrid, qInterp, box(2), 0, 1, xMin, xMax, mixColor(t, RED, BLUE, 1), 2.2);
+  drawFrame(ctx, box(3), `geodesic t = ${t.toFixed(2)}`);
+  drawCurve(ctx, currentHist.xs, currentHist.ys, box(3), xMin, xMax, 0, yMax, mixColor(t, RED, BLUE, 1), 2.1);
+  drawCurve(ctx, xs, spdf, box(3), xMin, xMax, 0, yMax, "rgba(215,48,39,.32)", 1);
+  drawCurve(ctx, xs, tpdf, box(3), xMin, xMax, 0, yMax, "rgba(33,102,172,.32)", 1);
+  setStatus(`${qn} quantile levels; Q_t = (1-t) Q_alpha + t Q_beta`);
+}
+
+function matMul2(A, B) {
+  return [
+    [A[0][0] * B[0][0] + A[0][1] * B[1][0], A[0][0] * B[0][1] + A[0][1] * B[1][1]],
+    [A[1][0] * B[0][0] + A[1][1] * B[1][0], A[1][0] * B[0][1] + A[1][1] * B[1][1]],
+  ];
+}
+
+function matAdd2(A, B) {
+  return [
+    [A[0][0] + B[0][0], A[0][1] + B[0][1]],
+    [A[1][0] + B[1][0], A[1][1] + B[1][1]],
+  ];
+}
+
+function matScale2(A, s) {
+  return [
+    [s * A[0][0], s * A[0][1]],
+    [s * A[1][0], s * A[1][1]],
+  ];
+}
+
+function eigSym2(A) {
+  const a = A[0][0];
+  const b = A[0][1];
+  const d = A[1][1];
+  const tr = (a + d) / 2;
+  const rad = Math.sqrt(((a - d) / 2) ** 2 + b * b);
+  const l1 = Math.max(tr + rad, 1e-10);
+  const l2 = Math.max(tr - rad, 1e-10);
+  const angle = 0.5 * Math.atan2(2 * b, a - d);
+  return { values: [l1, l2], angle };
+}
+
+function symFromEig(values, angle, transform) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const l1 = transform(values[0]);
+  const l2 = transform(values[1]);
+  return [
+    [l1 * c * c + l2 * s * s, (l1 - l2) * c * s],
+    [(l1 - l2) * c * s, l1 * s * s + l2 * c * c],
+  ];
+}
+
+function sqrtSym2(A) {
+  const eig = eigSym2(A);
+  return symFromEig(eig.values, eig.angle, Math.sqrt);
+}
+
+function invSqrtSym2(A) {
+  const eig = eigSym2(A);
+  return symFromEig(eig.values, eig.angle, (x) => 1 / Math.sqrt(x));
+}
+
+function covarianceFromAxes(angleDeg, sx, sy) {
+  const th = (angleDeg * Math.PI) / 180;
+  const c = Math.cos(th);
+  const s = Math.sin(th);
+  const a = sx * sx;
+  const b = sy * sy;
+  return [
+    [a * c * c + b * s * s, (a - b) * c * s],
+    [(a - b) * c * s, a * s * s + b * c * c],
+  ];
+}
+
+function buresInterpolateCov(S0, S1, t) {
+  const S0sqrt = sqrtSym2(S0);
+  const S0invsqrt = invSqrtSym2(S0);
+  const middle = matMul2(matMul2(S0sqrt, S1), S0sqrt);
+  const A = matMul2(matMul2(S0invsqrt, sqrtSym2(middle)), S0invsqrt);
+  const B = matAdd2(matScale2([[1, 0], [0, 1]], 1 - t), matScale2(A, t));
+  return matMul2(matMul2(B, S0), B);
+}
+
+function drawCovEllipse(ctx, mean, cov, box, lim, color, width = 1.7, alpha = 1) {
+  const eig = eigSym2(cov);
+  const angle = eig.angle;
+  const r1 = 2 * Math.sqrt(eig.values[0]);
+  const r2 = 2 * Math.sqrt(eig.values[1]);
+  const ca = Math.cos(angle);
+  const sa = Math.sin(angle);
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.beginPath();
+  for (let k = 0; k <= 120; k += 1) {
+    const th = (2 * Math.PI * k) / 120;
+    const x = mean[0] + r1 * Math.cos(th) * ca - r2 * Math.sin(th) * sa;
+    const y = mean[1] + r1 * Math.cos(th) * sa + r2 * Math.sin(th) * ca;
+    if (k === 0) ctx.moveTo(X([x, y]), Y([x, y]));
+    else ctx.lineTo(X([x, y]), Y([x, y]));
+  }
+  ctx.strokeStyle = color.replace("1)", `${alpha})`);
+  ctx.lineWidth = width;
+  ctx.stroke();
+  ctx.fillStyle = color.replace("1)", `${Math.min(alpha, 0.18)})`);
+  ctx.fill();
+}
+
+function drawGaussian1d(ctx, box, t, shape) {
+  drawFrame(ctx, box, "one-dimensional geodesic");
+  const xMin = -3.2;
+  const xMax = 3.2;
+  const xs = Array.from({ length: 520 }, (_, i) => lerp(xMin, xMax, i / 519));
+  const m0 = -1.1;
+  const m1 = 1.08;
+  const s0 = 0.32 + 0.05 * shape;
+  const s1 = 0.82 - 0.04 * shape;
+  const mt = lerp(m0, m1, t);
+  const st = lerp(s0, s1, t);
+  const d0 = xs.map((x) => normalPdf(x, m0, s0));
+  const d1 = xs.map((x) => normalPdf(x, m1, s1));
+  const dt = xs.map((x) => normalPdf(x, mt, st));
+  // Fix the vertical scale from the endpoint peaks so marginals do not breathe as t moves.
+  const yMax = (1.08 / (Math.sqrt(2 * Math.PI) * Math.min(s0, s1)));
+  drawCurve(ctx, xs, d0, box, xMin, xMax, 0, yMax, "rgba(215,48,39,1)", 1.2);
+  drawCurve(ctx, xs, d1, box, xMin, xMax, 0, yMax, "rgba(33,102,172,1)", 1.2);
+  drawCurve(ctx, xs, dt, box, xMin, xMax, 0, yMax, mixColor(t, RED, BLUE, 1), 2.2);
+}
+
+function drawGaussian2d(ctx, box, mode, t, shape, angle) {
+  drawFrame(ctx, box, pretty(mode));
+  const anis = shape;
+  const mean0 = mode === "rotated_anisotropies" ? [-0.78, -0.18] : [-0.85, -0.08];
+  const mean1 = mode === "rotated_anisotropies" ? [0.78, 0.24] : [0.82, 0.14];
+  const S0 = covarianceFromAxes(mode === "rotated_anisotropies" ? angle : -28, 0.22 * anis, 0.18);
+  const S1 = mode === "rotated_anisotropies" ? covarianceFromAxes(-angle, 0.18 * anis, 0.14) : covarianceFromAxes(0, 0.34, 0.34);
+  const St = buresInterpolateCov(S0, S1, t);
+  const meant = [lerp(mean0[0], mean1[0], t), lerp(mean0[1], mean1[1], t)];
+  const lim = { xmin: -1.85, xmax: 1.85, ymin: -1.35, ymax: 1.35 };
+  ctx.strokeStyle = "#edf0f5";
+  ctx.lineWidth = 1;
+  for (let k = 1; k < 4; k += 1) {
+    const x = box.x + (k * box.w) / 4;
+    ctx.beginPath();
+    ctx.moveTo(x, box.y);
+    ctx.lineTo(x, box.y + box.h);
+    ctx.stroke();
+  }
+  drawCovEllipse(ctx, mean0, S0, box, lim, "rgba(215,48,39,1)", 1.3, 0.42);
+  drawCovEllipse(ctx, mean1, S1, box, lim, "rgba(33,102,172,1)", 1.3, 0.42);
+  drawCovEllipse(ctx, meant, St, box, lim, mixColor(t, RED, BLUE, 1), 2.5, 0.92);
+}
+
+function drawMongeGaussian() {
+  const mode = val("gaussMode");
+  const t = val("gaussT");
+  const shape = val("gaussShape");
+  const angle = val("gaussAngle");
+  const { ctx, w, h } = resizeCanvas(390);
+  const pad = 18;
+  const gap = 22;
+  if (mode === "one_dimensional") {
+    drawGaussian1d(ctx, { x: pad, y: 42, w: w - 2 * pad, h: h - 68 }, t, shape);
+  } else {
+    const bw = (w - 2 * pad - gap) / 2;
+    drawGaussian2d(ctx, { x: pad, y: 42, w: bw, h: h - 68 }, mode, t, shape, angle);
+    drawGaussian1d(ctx, { x: pad + bw + gap, y: 42, w: bw, h: h - 68 }, t, shape);
+  }
+  setStatus(`Gaussian geodesic at t = ${t.toFixed(2)}; covariance follows the Bures interpolation`);
+}
+
+function fisherRaoGaussian1d(m0, s0, m1, s1, t) {
+  const x0 = m0 / Math.SQRT2;
+  const x1 = m1 / Math.SQRT2;
+  if (Math.abs(x1 - x0) < 1e-7) {
+    return [m0, s0 * (s1 / s0) ** t];
+  }
+  const center = (x1 * x1 + s1 * s1 - x0 * x0 - s0 * s0) / (2 * (x1 - x0));
+  const radius = Math.hypot(x0 - center, s0);
+  const th0 = Math.atan2(s0, x0 - center);
+  const th1 = Math.atan2(s1, x1 - center);
+  const q0 = Math.tan(th0 / 2);
+  const q1 = Math.tan(th1 / 2);
+  const th = 2 * Math.atan(q0 * (q1 / q0) ** t);
+  return [Math.SQRT2 * (center + radius * Math.cos(th)), radius * Math.sin(th)];
+}
+
+function drawGaussianMetricCurve(ctx, box, points, color, width = 1.8, dash = []) {
+  const mMin = -2.25;
+  const mMax = 2.25;
+  const sMin = 0.06;
+  const sMax = 1.45;
+  const X = (m) => box.x + ((m - mMin) / (mMax - mMin)) * box.w;
+  const Y = (s) => box.y + box.h - ((s - sMin) / (sMax - sMin)) * box.h;
+  ctx.save();
+  ctx.setLineDash(dash);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  points.forEach((p, k) => (k ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))));
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawDashedDensity(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width = 1.5) {
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.save();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  xs.forEach((x, i) => (i ? ctx.lineTo(X(x), Y(ys[i])) : ctx.moveTo(X(x), Y(ys[i]))));
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMongeGaussianMetrics() {
+  const t = val("gmetT");
+  const m1 = val("gmetMean");
+  const s0 = val("gmetSigma0");
+  const s1 = val("gmetSigma1");
+  const m0 = -1.15;
+  const w2 = [lerp(m0, m1, t), lerp(s0, s1, t)];
+  const fr = fisherRaoGaussian1d(m0, s0, m1, s1, t);
+  const { ctx, w, h } = resizeCanvas(410);
+  const gap = 24;
+  const left = { x: 22, y: 38, w: (w - 66) * 0.46, h: h - 72 };
+  const right = { x: left.x + left.w + gap, y: 38, w: w - left.x - left.w - gap - 22, h: h - 72 };
+  for (const box of [left, right]) {
+    ctx.fillStyle = "#fbfcfd";
+    ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.strokeStyle = "#d8dee8";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
+  }
+  const mMin = -2.25, mMax = 2.25, sMin = 0.06, sMax = 1.45;
+  const Xp = (m) => left.x + ((m - mMin) / (mMax - mMin)) * left.w;
+  const Yp = (s) => left.y + left.h - ((s - sMin) / (sMax - sMin)) * left.h;
+  ctx.strokeStyle = "rgba(31,41,51,.16)";
+  ctx.lineWidth = 0.8;
+  for (let k = 1; k < 5; k += 1) {
+    const y = left.y + (k * left.h) / 5;
+    ctx.beginPath(); ctx.moveTo(left.x, y); ctx.lineTo(left.x + left.w, y); ctx.stroke();
+  }
+  const w2Curve = [];
+  const frCurve = [];
+  for (let i = 0; i <= 120; i += 1) {
+    const u = i / 120;
+    w2Curve.push([lerp(m0, m1, u), lerp(s0, s1, u)]);
+    frCurve.push(fisherRaoGaussian1d(m0, s0, m1, s1, u));
+  }
+  drawGaussianMetricCurve(ctx, left, w2Curve, VIOLET, 2.2);
+  drawGaussianMetricCurve(ctx, left, frCurve, "#111827", 1.8, [5, 4]);
+  for (const [m, s, col] of [[m0, s0, RED], [m1, s1, BLUE], [w2[0], w2[1], VIOLET], [fr[0], fr[1], "#111827"]]) {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(Xp(m), Yp(s), col === "#111827" ? 4 : 4.8, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  drawSmallLabel(ctx, "parameter half-plane (m, sigma)", left.x + left.w / 2, 22);
+  ctx.fillStyle = VIOLET; ctx.fillText("W2", left.x + 12, left.y + 20);
+  ctx.fillStyle = "#111827"; ctx.fillText("Fisher-Rao", left.x + 12, left.y + 38);
+  const xs = Array.from({ length: 420 }, (_, i) => lerp(-4.2, 4.2, i / 419));
+  const source = xs.map((x) => normalPdf(x, m0, s0));
+  const target = xs.map((x) => normalPdf(x, m1, s1));
+  const w2Pdf = xs.map((x) => normalPdf(x, w2[0], w2[1]));
+  const frPdf = xs.map((x) => normalPdf(x, fr[0], fr[1]));
+  const ymax = Math.max(...source, ...target, ...w2Pdf, ...frPdf) * 1.15;
+  drawCurve(ctx, xs, source, right, -4.2, 4.2, 0, ymax, "rgba(215,48,39,.42)", 1.4);
+  drawCurve(ctx, xs, target, right, -4.2, 4.2, 0, ymax, "rgba(33,102,172,.42)", 1.4);
+  drawCurve(ctx, xs, w2Pdf, right, -4.2, 4.2, 0, ymax, VIOLET, 2.1);
+  drawDashedDensity(ctx, xs, frPdf, right, -4.2, 4.2, 0, ymax, "#111827", 1.8);
+  drawSmallLabel(ctx, "current density: W2 solid, FR dashed", right.x + right.w / 2, 22);
+  setStatus(`t=${t.toFixed(2)}; W2 uses straight (m,sigma), Fisher-Rao is the hyperbolic geodesic in the upper half-plane.`);
+}
+
+function spdPow2(A, power) {
+  const eig = eigSym2(A);
+  return symFromEig(eig.values, eig.angle, (x) => Math.max(x, 1e-10) ** power);
+}
+
+function fisherRaoCovariance(S0, S1, t) {
+  const S0sqrt = spdPow2(S0, 0.5);
+  const S0invsqrt = spdPow2(S0, -0.5);
+  const middle = matMul2(matMul2(S0invsqrt, S1), S0invsqrt);
+  return matMul2(matMul2(S0sqrt, spdPow2(middle, t)), S0sqrt);
+}
+
+function coneCoords(S) {
+  const a = S[0][0];
+  const b = S[1][1];
+  const c = S[0][1];
+  return [(a + b) / Math.SQRT2, (a - b) / Math.SQRT2, Math.SQRT2 * c];
+}
+
+function drawCovarianceConePath(ctx, box, paths, tIndex) {
+  drawFrame(ctx, box, "PSD cone coordinates");
+  const points = paths.flatMap((path) => path.map(coneCoords));
+  const uMin = Math.min(...points.map((p) => p[1])) - 0.08;
+  const uMax = Math.max(...points.map((p) => p[1])) + 0.08;
+  const vMin = Math.min(...points.map((p) => p[2])) - 0.08;
+  const vMax = Math.max(...points.map((p) => p[2])) + 0.08;
+  const X = (u) => box.x + ((u - uMin) / Math.max(uMax - uMin, 1e-12)) * box.w;
+  const Y = (v) => box.y + box.h - ((v - vMin) / Math.max(vMax - vMin, 1e-12)) * box.h;
+  ctx.strokeStyle = "rgba(38,51,63,.12)";
+  ctx.lineWidth = 1;
+  for (let k = 1; k < 5; k += 1) {
+    const x = box.x + (k * box.w) / 5;
+    ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y + box.h); ctx.stroke();
+    const y = box.y + (k * box.h) / 5;
+    ctx.beginPath(); ctx.moveTo(box.x, y); ctx.lineTo(box.x + box.w, y); ctx.stroke();
+  }
+  function curve(path, color, width, dash = []) {
+    ctx.save();
+    ctx.setLineDash(dash);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    path.forEach((S, k) => {
+      const p = coneCoords(S);
+      if (k === 0) ctx.moveTo(X(p[1]), Y(p[2]));
+      else ctx.lineTo(X(p[1]), Y(p[2]));
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+  curve(paths[0], VIOLET, 2.2);
+  curve(paths[1], "#111827", 1.8, [5, 4]);
+  paths.forEach((path, idx) => {
+    const p = coneCoords(path[tIndex]);
+    ctx.fillStyle = idx === 0 ? VIOLET : "#111827";
+    ctx.beginPath();
+    ctx.arc(X(p[1]), Y(p[2]), idx === 0 ? 4.5 : 3.7, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 150, 48);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("Bures path", box.x + 16, box.y + 27);
+  ctx.fillStyle = "#111827";
+  ctx.fillText("Fisher-Rao path", box.x + 16, box.y + 45);
+}
+
+function drawGaussianConeMetrics() {
+  const t = val("gconeT");
+  const angle = val("gconeAngle");
+  const anis = val("gconeAniso");
+  const floor = val("gconeFloor");
+  const S0 = covarianceFromAxes(-22, 0.58, 0.31);
+  const rankOne = covarianceFromAxes(angle, anis, 0.018);
+  const S1Bures = rankOne;
+  const S1Fr = matAdd2(rankOne, [[floor, 0], [0, floor]]);
+  const steps = 120;
+  const bPath = [];
+  const frPath = [];
+  for (let k = 0; k <= steps; k += 1) {
+    const u = k / steps;
+    bPath.push(buresInterpolateCov(S0, S1Bures, u));
+    frPath.push(fisherRaoCovariance(S0, S1Fr, u));
+  }
+  const idx = Math.round(t * steps);
+  const { ctx, w, h } = resizeCanvas(400);
+  const gap = 24;
+  const left = { x: 22, y: 44, w: (w - 68) * 0.46, h: h - 78 };
+  const right = { x: 22 + left.w + gap, y: 44, w: w - left.w - gap - 44, h: h - 78 };
+  drawCovarianceConePath(ctx, left, [bPath, frPath], idx);
+  drawFrame(ctx, right, "current covariance ellipse");
+  const lim = { xmin: -1.55, xmax: 1.55, ymin: -1.25, ymax: 1.25 };
+  drawCovEllipse(ctx, [-0.38, 0.05], S0, right, lim, "rgba(215,48,39,1)", 1.3, 0.26);
+  drawCovEllipse(ctx, [0.38, 0.02], S1Bures, right, lim, "rgba(33,102,172,1)", 1.3, 0.32);
+  drawCovEllipse(ctx, [0, 0.02], bPath[idx], right, lim, VIOLET, 2.2, 0.72);
+  drawCovEllipse(ctx, [0, -0.08], frPath[idx], right, lim, "#111827", 1.8, 0.58);
+  drawSmallLabel(ctx, "ellipses: Bures solid, Fisher-Rao black", right.x + right.w / 2, 26);
+  setStatus(`t=${t.toFixed(2)}; Fisher-Rao endpoint floor ${floor.toFixed(3)} keeps the path inside the open SPD cone`);
+}
+
+function normalizeWeights(weights) {
+  const total = weights.reduce((a, b) => a + b, 0);
+  return weights.map((z) => z / Math.max(total, 1e-12));
+}
+
+function mixtureWeights(name, n) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3.1, 3.1, (i + 0.5) / n));
+  return normalizeWeights(xs.map((x) => mixPdf(name, x)));
+}
+
+function weightedSweepPlan(a, b) {
+  const plan = Array.from({ length: a.length }, () => Array(b.length).fill(0));
+  const r = a.slice();
+  const s = b.slice();
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    const mass = Math.min(r[i], s[j]);
+    plan[i][j] = mass;
+    r[i] -= mass;
+    s[j] -= mass;
+    if (r[i] <= 1e-12) i += 1;
+    if (s[j] <= 1e-12) j += 1;
+  }
+  return plan;
+}
+
+function productPlan(a, b) {
+  return a.map((ai) => b.map((bj) => ai * bj));
+}
+
+function drawCouplingMatrix(ctx, plan, a, b, box, title, barycentric = false, options = {}) {
+  const n = plan.length;
+  const m = plan[0].length;
+  const strip = options.strip ?? Math.min(38, Math.max(16, 0.12 * Math.min(box.w, box.h)));
+  const availableW = Math.max(1, box.w - strip - 8);
+  const availableH = Math.max(1, box.h - strip - 8);
+  const side = Math.max(1, Math.min(availableW, availableH));
+  const mx = box.x + strip + (availableW - side) / 2;
+  const my = box.y + strip + (availableH - side) / 2;
+  const mw = side;
+  const mh = side;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const maxMass = Math.max(...plan.flat(), 1e-12);
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const value = plan[i][j] / maxMass;
+      const gray = Math.round(255 - 235 * Math.sqrt(value));
+      ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+      ctx.fillRect(mx + (j * mw) / m, my + (i * mh) / n, Math.ceil(mw / m), Math.ceil(mh / n));
+    }
+  }
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 0.25;
+  for (let i = 0; i <= n; i += Math.max(1, Math.ceil(n / 18))) {
+    ctx.beginPath();
+    ctx.moveTo(mx, my + (i * mh) / n);
+    ctx.lineTo(mx + mw, my + (i * mh) / n);
+    ctx.stroke();
+  }
+  for (let j = 0; j <= m; j += Math.max(1, Math.ceil(m / 18))) {
+    ctx.beginPath();
+    ctx.moveTo(mx + (j * mw) / m, my);
+    ctx.lineTo(mx + (j * mw) / m, my + mh);
+    ctx.stroke();
+  }
+  const maxA = Math.max(...a, 1e-12);
+  const maxB = Math.max(...b, 1e-12);
+  ctx.fillStyle = "rgba(215,48,39,.62)";
+  for (let i = 0; i < n; i += 1) {
+    const h = (a[i] / maxA) * (mh / n) * 0.86;
+    ctx.fillRect(mx - 6 - (a[i] / maxA) * (strip - 12), my + (i * mh) / n, (a[i] / maxA) * (strip - 12), Math.max(1, h));
+  }
+  ctx.fillStyle = "rgba(33,102,172,.62)";
+  for (let j = 0; j < m; j += 1) {
+    const h = (b[j] / maxB) * (strip - 12);
+    ctx.fillRect(mx + (j * mw) / m, my - 6 - h, Math.max(1, (mw / m) * 0.86), h);
+  }
+  if (barycentric) {
+    ctx.strokeStyle = "#1b9e77";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i < n; i += 1) {
+      let mean = 0;
+      for (let j = 0; j < m; j += 1) mean += plan[i][j] * (j + 0.5);
+      mean /= Math.max(a[i], 1e-12);
+      const x = mx + (mean / m) * mw;
+      const y = my + ((i + 0.5) / n) * mh;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
+}
+
+function topPlanEdges(plan, maxEdges) {
+  const edges = [];
+  for (let i = 0; i < plan.length; i += 1) {
+    for (let j = 0; j < plan[i].length; j += 1) {
+      if (plan[i][j] > 1e-12) edges.push({ i, j, mass: plan[i][j] });
+    }
+  }
+  edges.sort((a, b) => b.mass - a.mass);
+  return edges.slice(0, maxEdges);
+}
+
+function lowRankFactorPlan(data, rank, epsilon) {
+  const n = data.xs.length;
+  const r = Math.max(1, rank);
+  const z = Array.from({ length: r }, (_, k) => lerp(data.xs[0], data.xs[n - 1], (k + 0.5) / r));
+  const g = Array(r).fill(1 / r);
+  const costXZ = data.xs.map((x) => z.map((zk) => (x - zk) ** 2));
+  const costYZ = data.xs.map((y) => z.map((zk) => (y - zk) ** 2));
+  const Q = sinkhornPlan(costXZ, data.a, g, epsilon);
+  const R = sinkhornPlan(costYZ, data.b, g, epsilon);
+  const plan = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      let value = 0;
+      for (let k = 0; k < r; k += 1) value += (Q[i][k] * R[j][k]) / Math.max(g[k], 1e-12);
+      plan[i][j] = value;
+    }
+  }
+  return { z, g, Q, R, plan };
+}
+
+function drawLowRankFactorGraph(ctx, box, xs, a, b, factor) {
+  drawFrame(ctx, box, "factorization through latent atoms");
+  const yMin = xs[0];
+  const yMax = xs[xs.length - 1];
+  const Y = (x) => box.y + box.h - ((x - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  const xSource = box.x + 0.14 * box.w;
+  const xLatent = box.x + 0.50 * box.w;
+  const xTarget = box.x + 0.86 * box.w;
+  ctx.strokeStyle = "rgba(95,102,112,.16)";
+  ctx.lineWidth = 1;
+  for (const x of [xSource, xLatent, xTarget]) {
+    ctx.beginPath();
+    ctx.moveTo(x, box.y + 10);
+    ctx.lineTo(x, box.y + box.h - 10);
+    ctx.stroke();
+  }
+  const qEdges = topPlanEdges(factor.Q, 90);
+  const rEdges = topPlanEdges(factor.R, 90);
+  const qMax = Math.max(...qEdges.map((e) => e.mass), 1e-12);
+  const rMax = Math.max(...rEdges.map((e) => e.mass), 1e-12);
+  for (const edge of qEdges) {
+    const t = edge.j / Math.max(factor.z.length - 1, 1);
+    ctx.strokeStyle = mixColor(t, RED, VIOLET, 0.10 + 0.32 * Math.sqrt(edge.mass / qMax));
+    ctx.lineWidth = 0.45 + 1.35 * Math.sqrt(edge.mass / qMax);
+    ctx.beginPath();
+    ctx.moveTo(xSource, Y(xs[edge.i]));
+    ctx.lineTo(xLatent, Y(factor.z[edge.j]));
+    ctx.stroke();
+  }
+  for (const edge of rEdges) {
+    const t = edge.j / Math.max(factor.z.length - 1, 1);
+    ctx.strokeStyle = mixColor(t, VIOLET, BLUE, 0.10 + 0.32 * Math.sqrt(edge.mass / rMax));
+    ctx.lineWidth = 0.45 + 1.35 * Math.sqrt(edge.mass / rMax);
+    ctx.beginPath();
+    ctx.moveTo(xLatent, Y(factor.z[edge.j]));
+    ctx.lineTo(xTarget, Y(xs[edge.i]));
+    ctx.stroke();
+  }
+  function drawColumn(points, weights, x, color, radiusScale) {
+    const maxWeight = Math.max(...weights, 1e-12);
+    for (let i = 0; i < points.length; i += 1) {
+      const radius = 2.2 + radiusScale * Math.sqrt(weights[i] / maxWeight);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, Y(points[i]), radius, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.85)";
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    }
+  }
+  drawColumn(xs.filter((_, i) => i % 2 === 0), a.filter((_, i) => i % 2 === 0), xSource, RED, 3.2);
+  drawColumn(factor.z, factor.g, xLatent, VIOLET, 5.4);
+  drawColumn(xs.filter((_, i) => i % 2 === 0), b.filter((_, i) => i % 2 === 0), xTarget, BLUE, 3.2);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 162, 52);
+  ctx.fillStyle = RED;
+  ctx.fillText("source", box.x + 16, box.y + 26);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(`${factor.z.length} latent atoms`, box.x + 16, box.y + 42);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target", box.x + 16, box.y + 58);
+}
+
+function drawLowRankOT() {
+  const rank = Math.round(val("lrRank"));
+  const epsilon = val("lrEps");
+  const bins = Math.round(val("lrBins"));
+  const source = val("lrSource");
+  const target = val("lrTarget");
+  const data = sinkhornGrid(bins, source, target);
+  const full = sinkhornState(data.cost, data.a, data.b, epsilon, 180).plan;
+  const factor = lowRankFactorPlan(data, rank, epsilon);
+  let l1 = 0;
+  for (let i = 0; i < full.length; i += 1) for (let j = 0; j < full[i].length; j += 1) l1 += Math.abs(full[i][j] - factor.plan[i][j]);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 690 : 410);
+  const vertical = w < 760;
+  const gap = 22;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 42, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + (h - 118) / 3 + gap, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + 2 * ((h - 118) / 3 + gap), w: w - 44, h: (h - 118) / 3 },
+      ]
+    : [
+        { x: 18, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + (w - 72) / 3 + gap, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 48, w: (w - 72) / 3, h: h - 84 },
+      ];
+  drawLowRankFactorGraph(ctx, boxes[0], data.xs, data.a, data.b, factor);
+  drawCouplingMatrix(ctx, full, data.a, data.b, boxes[1], "full entropic plan");
+  drawCouplingMatrix(ctx, factor.plan, data.a, data.b, boxes[2], `rank ${rank} factor plan`);
+  setStatus(`rank ${rank}; epsilon ${epsilon.toFixed(3)}; ${bins} bins; L1 discrepancy with full entropic plan ${l1.toFixed(3)}`);
+}
+
+function drawKantoCouplings() {
+  const n = val("kcN");
+  const mode = val("kcMode");
+  const seed = val("kcSeed");
+  const sourceShape = val("kcSource");
+  const targetShape = val("kcTarget");
+  const random = rng(seed);
+  const x = sampleCloud(sourceShape, n, random);
+  const y = sampleCloud(targetShape, n, random);
+  const a = Array(n).fill(1 / n);
+  const b = mode === "splitting" ? targetWeights(y, "angular", 1.8) : Array(n).fill(1 / n);
+  const cost = costMatrix(x, y, 2);
+  let plan;
+  let title;
+  if (mode === "graph") {
+    const assign = hungarian(cost);
+    plan = Array.from({ length: n }, () => Array(n).fill(0));
+    for (let i = 0; i < n; i += 1) plan[i][assign[i]] = 1 / n;
+    title = "deterministic graph";
+  } else if (mode === "product") {
+    plan = productPlan(a, b);
+    title = "product coupling";
+  } else if (mode === "entropic") {
+    plan = sinkhornPlan(cost, a, b, 0.08);
+    title = "entropic plan";
+  } else {
+    plan = greedyPlan(cost, a, b);
+    title = "sparse splitting plan";
+  }
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(370);
+  drawTransport(ctx, x, y, edgesFromPlan(plan, 320), b, title, { x: 18, y: 42, w: w - 36, h: h - 68 }, lim);
+  setStatus(`${n} sources, ${n} targets; ${edgesFromPlan(plan, 9999).length} positive displayed arcs`);
+}
+
+function drawKantoMatrix() {
+  const bins = val("kmBins");
+  const mode = val("kmMode");
+  const source = val("kmSource");
+  const target = val("kmTarget");
+  const a = mixtureWeights(source, bins);
+  const b = mixtureWeights(target, bins);
+  const plan = mode === "product" ? productPlan(a, b) : weightedSweepPlan(a, b);
+  const { ctx, w, h } = resizeCanvas(460, { tight: true, sideControls: true });
+  const marginX = 12;
+  const titleGap = 20;
+  const bottomGap = 4;
+  const boxSide = Math.min(w - 2 * marginX, h - titleGap - bottomGap);
+  const box = {
+    x: (w - boxSide) / 2,
+    y: titleGap,
+    w: boxSide,
+    h: boxSide,
+  };
+  drawCouplingMatrix(ctx, plan, a, b, box, `${mode} coupling, ${bins} bins`, mode !== "product", { strip: 26 });
+  setStatus(`${mode === "product" ? bins * bins : edgesFromPlan(plan, 9999).length} positive entries`);
+}
+
+function drawKantoSplitting() {
+  const n = val("ksN");
+  const imbalance = val("ksImbalance");
+  const seed = val("ksSeed");
+  const random = rng(seed);
+  const x = sampleCloud("disk", n, random);
+  const y = sampleCloud("annulus", n, random);
+  const a = Array(n).fill(1 / n);
+  const raw = y.map((p) => 0.2 + Math.exp(imbalance * (p[0] + 0.25 * p[1])));
+  const b = normalizeWeights(raw);
+  const plan = greedyPlan(costMatrix(x, y, 2), a, b);
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(370);
+  const gap = 22;
+  const bw = (w - 44 - gap) / 2;
+  const assign = hungarian(costMatrix(x, y, 2));
+  drawTransport(ctx, x, y, assign.map((j, i) => [i, j, 1 / n]), null, "uniform permutation", { x: 18, y: 44, w: bw, h: h - 70 }, lim);
+  drawTransport(ctx, x, y, edgesFromPlan(plan, 260), b, "nonuniform splitting", { x: 18 + bw + gap, y: 44, w: bw, h: h - 70 }, lim);
+  setStatus(`target imbalance ${imbalance.toFixed(1)}; sparse plan has ${edgesFromPlan(plan, 9999).length} positive arcs`);
+}
+
+function barrierValueAt(x, y, angle, eps) {
+  const v0 = [0.5, 0.08];
+  const v1 = [0.08, 0.88];
+  const v2 = [0.92, 0.88];
+  const det = (v1[1] - v2[1]) * (v0[0] - v2[0]) + (v2[0] - v1[0]) * (v0[1] - v2[1]);
+  const l0 = ((v1[1] - v2[1]) * (x - v2[0]) + (v2[0] - v1[0]) * (y - v2[1])) / det;
+  const l1 = ((v2[1] - v0[1]) * (x - v2[0]) + (v0[0] - v2[0]) * (y - v2[1])) / det;
+  const l2 = 1 - l0 - l1;
+  if (l0 <= 0 || l1 <= 0 || l2 <= 0) return Infinity;
+  const ell = [Math.cos((angle * Math.PI) / 180), Math.sin((angle * Math.PI) / 180)];
+  return ell[0] * x + ell[1] * y - eps * (Math.log(l0) + Math.log(l1) + Math.log(l2));
+}
+
+function bestBarrierPoint(angle, eps, resolution = 70) {
+  let best = [0.5, 0.5];
+  let bestValue = Infinity;
+  for (let iy = 0; iy <= resolution; iy += 1) {
+    for (let ix = 0; ix <= resolution; ix += 1) {
+      const x = ix / resolution;
+      const y = iy / resolution;
+      const z = barrierValueAt(x, y, angle, eps);
+      if (z < bestValue) {
+        bestValue = z;
+        best = [x, y];
+      }
+    }
+  }
+  return best;
+}
+
+function drawKantoBarrier() {
+  const eps = val("kbEps");
+  const angle = val("kbAngle");
+  const { ctx, w, h } = resizeCanvas(360);
+  const box = { x: 28, y: 28, w: w - 56, h: h - 56 };
+  const toX = (x) => box.x + x * box.w;
+  const toY = (y) => box.y + y * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  const grid = 86;
+  let minV = Infinity;
+  let maxV = -Infinity;
+  const values = [];
+  for (let iy = 0; iy < grid; iy += 1) {
+    for (let ix = 0; ix < grid; ix += 1) {
+      const z = barrierValueAt((ix + 0.5) / grid, (iy + 0.5) / grid, angle, eps);
+      values.push(z);
+      if (Number.isFinite(z)) {
+        minV = Math.min(minV, z);
+        maxV = Math.max(maxV, z);
+      }
+    }
+  }
+  const cellW = box.w / grid;
+  const cellH = box.h / grid;
+  for (let iy = 0; iy < grid; iy += 1) {
+    for (let ix = 0; ix < grid; ix += 1) {
+      const z = values[iy * grid + ix];
+      if (!Number.isFinite(z)) continue;
+      const u = clamp((z - minV) / Math.max(maxV - minV, 1e-12), 0, 1);
+      const gray = Math.round(250 - 120 * (1 - u));
+      ctx.fillStyle = `rgb(${gray},${gray + 2},${Math.min(255, gray + 10)})`;
+      ctx.fillRect(toX(ix / grid), toY(iy / grid), Math.ceil(cellW), Math.ceil(cellH));
+    }
+  }
+  const verts = [[0.5, 0.08], [0.08, 0.88], [0.92, 0.88]];
+  ctx.strokeStyle = "#2f3b45";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(toX(verts[0][0]), toY(verts[0][1]));
+  ctx.lineTo(toX(verts[1][0]), toY(verts[1][1]));
+  ctx.lineTo(toX(verts[2][0]), toY(verts[2][1]));
+  ctx.closePath();
+  ctx.stroke();
+  const epsPath = [0.6, 0.32, 0.16, 0.08, 0.035, 0.015];
+  ctx.strokeStyle = "#7b3294";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  epsPath.forEach((e, k) => {
+    const p = bestBarrierPoint(angle, e, 64);
+    if (k === 0) ctx.moveTo(toX(p[0]), toY(p[1]));
+    else ctx.lineTo(toX(p[0]), toY(p[1]));
+  });
+  ctx.stroke();
+  const point = bestBarrierPoint(angle, eps, 90);
+  ctx.fillStyle = "#d73027";
+  ctx.beginPath();
+  ctx.arc(toX(point[0]), toY(point[1]), 6, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(`epsilon = ${eps.toFixed(3)}`, box.x + 8, box.y + 20);
+  setStatus("grid-search view of a logarithmic-barrier central path");
+}
+
+function drawPlanInterpolationPanel(ctx, x, y, plan, t, box, lim, threshold) {
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const edges = edgesFromPlan(plan, 380).filter((e) => e[2] >= threshold);
+  const maxMass = Math.max(...edges.map((e) => e[2]), 1e-12);
+  for (const [i, j, mass] of edges) {
+    ctx.strokeStyle = `rgba(92,92,92,${0.12 + 0.30 * Math.sqrt(mass / maxMass)})`;
+    ctx.lineWidth = 0.45 + 1.1 * Math.sqrt(mass / maxMass);
+    ctx.beginPath();
+    ctx.moveTo(X(x[i]), Y(x[i]));
+    ctx.lineTo(X(y[j]), Y(y[j]));
+    ctx.stroke();
+  }
+  for (const p of x) {
+    ctx.fillStyle = "rgba(215,48,39,.18)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 4.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of y) {
+    ctx.fillStyle = "rgba(33,102,172,.18)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 4.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const [i, j, mass] of edges) {
+    const p = [lerp(x[i][0], y[j][0], t), lerp(x[i][1], y[j][1], t)];
+    ctx.fillStyle = mixColor(t, RED, BLUE, 0.86);
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.2 + 7 * Math.sqrt(mass / maxMass), 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+}
+
+function drawKantoPlan() {
+  const ns = val("kpSourceN");
+  const nt = val("kpTargetN");
+  const t = val("kpT");
+  const eps = val("kpEps");
+  const seed = val("kpSeed");
+  const random = rng(seed);
+  const x = sampleCloud("two_blobs", ns, random);
+  const y = sampleCloud("three_blobs", nt, random);
+  const a = Array(ns).fill(1 / ns);
+  const b = targetWeights(y, "right_heavy", 1.2);
+  const cost = costMatrix(x, y, 2);
+  const plan = eps <= 0.002 ? greedyPlan(cost, a, b) : sinkhornPlan(cost, a, b, eps);
+  const lim = limits(x.concat(y));
+  const { ctx, w, h } = resizeCanvas(370);
+  drawPlanInterpolationPanel(ctx, x, y, plan, t, { x: 18, y: 42, w: w - 36, h: h - 68 }, lim, 1e-4);
+  setStatus(`${edgesFromPlan(plan, 9999).length} active pairs; t = ${t.toFixed(2)}, epsilon = ${eps.toFixed(3)}`);
+}
+
+function multiplyGlued(P, b, Q) {
+  const n = P.length;
+  const p = b.length;
+  const m = Q[0].length;
+  const R = Array.from({ length: n }, () => Array(m).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < p; j += 1) {
+      if (b[j] <= 1e-12) continue;
+      for (let k = 0; k < m; k += 1) R[i][k] += (P[i][j] * Q[j][k]) / b[j];
+    }
+  }
+  return R;
+}
+
+function drawKantoGluing() {
+  const n = val("kgBins");
+  const mid = val("kgMid");
+  const source = mixtureWeights("two", n);
+  const middle = mixtureWeights("wide_two", mid);
+  const target = mixtureWeights("three", n);
+  const P = weightedSweepPlan(source, middle);
+  const Q = weightedSweepPlan(middle, target);
+  const R = multiplyGlued(P, middle, Q);
+  const D = weightedSweepPlan(source, target);
+  const { ctx, w, h } = resizeCanvas(420);
+  const pad = 16;
+  const gap = 18;
+  const wide = w >= 760;
+  const boxes = [];
+  if (wide) {
+    const bw = (w - 2 * pad - 3 * gap) / 4;
+    const bh = h - 78;
+    for (let k = 0; k < 4; k += 1) boxes.push({ x: pad + k * (bw + gap), y: 50, w: bw, h: bh });
+  } else {
+    const bw = (w - 2 * pad - gap) / 2;
+    const bh = (h - 56 - gap) / 2;
+    boxes.push(
+      { x: pad, y: 42, w: bw, h: bh },
+      { x: pad + bw + gap, y: 42, w: bw, h: bh },
+      { x: pad, y: 42 + bh + gap, w: bw, h: bh },
+      { x: pad + bw + gap, y: 42 + bh + gap, w: bw, h: bh },
+    );
+  }
+  drawCouplingMatrix(ctx, P, source, middle, boxes[0], "P: alpha to beta", false);
+  drawCouplingMatrix(ctx, Q, middle, target, boxes[1], "Q: beta to gamma", false);
+  drawCouplingMatrix(ctx, R, source, target, boxes[2], "glued R", false);
+  drawCouplingMatrix(ctx, D, source, target, boxes[3], "direct OT", false);
+  setStatus(`glued matrix R = P diag(1/beta) Q with ${mid} intermediate bins`);
+}
+
+function gaussianMixtureDensity(components, x) {
+  return components.reduce((s, c) => s + c.w * normalPdf(x, c.m, c.s), 0);
+}
+
+function drawKantoWow() {
+  const t = val("kwT");
+  const separation = val("kwSep");
+  const mode = val("kwMode");
+  const left = [
+    { w: 0.36, m: -separation, s: 0.28 },
+    { w: 0.34, m: -0.05, s: 0.36 },
+    { w: 0.30, m: 1.42, s: 0.24 },
+  ];
+  const right = [
+    { w: 0.30, m: -1.35, s: 0.38 },
+    { w: 0.42, m: 0.32, s: 0.25 },
+    { w: 0.28, m: separation, s: 0.48 },
+  ];
+  const componentPairs = mode === "crossed" ? [2, 1, 0] : [0, 1, 2];
+  const componentInterp = left.map((c, i) => {
+    const d = right[componentPairs[i]];
+    return { w: lerp(c.w, d.w, t), m: lerp(c.m, d.m, t), s: lerp(c.s, d.s, t) };
+  });
+  const xMin = -3.2;
+  const xMax = 3.2;
+  const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
+  const leftPdf = xs.map((x) => gaussianMixtureDensity(left, x));
+  const rightPdf = xs.map((x) => gaussianMixtureDensity(right, x));
+  const compPdf = xs.map((x) => gaussianMixtureDensity(componentInterp, x));
+  const sq = inverseCdfSamples(xs, leftPdf, 260);
+  const tq = inverseCdfSamples(xs, rightPdf, 260);
+  const qt = sq.map((x, i) => lerp(x, tq[i], t));
+  const hist = histogramCurve(qt, xMin, xMax, 100);
+  const yMax = Math.max(...leftPdf, ...rightPdf, ...compPdf, ...hist.ys) * 1.08;
+  const { ctx, w, h } = resizeCanvas(370);
+  const gap = 22;
+  const bw = (w - 42 - gap) / 2;
+  const box0 = { x: 18, y: 46, w: bw, h: h - 72 };
+  const box1 = { x: 18 + bw + gap, y: 46, w: bw, h: h - 72 };
+  drawFrame(ctx, box0, "component law");
+  drawCurve(ctx, xs, leftPdf, box0, xMin, xMax, 0, yMax, "rgba(215,48,39,.32)", 1);
+  drawCurve(ctx, xs, rightPdf, box0, xMin, xMax, 0, yMax, "rgba(33,102,172,.32)", 1);
+  drawCurve(ctx, xs, compPdf, box0, xMin, xMax, 0, yMax, mixColor(t, RED, BLUE, 1), 2.1);
+  drawFrame(ctx, box1, "collapsed W2");
+  drawCurve(ctx, xs, leftPdf, box1, xMin, xMax, 0, yMax, "rgba(215,48,39,.32)", 1);
+  drawCurve(ctx, xs, rightPdf, box1, xMin, xMax, 0, yMax, "rgba(33,102,172,.32)", 1);
+  drawCurve(ctx, hist.xs, hist.ys, box1, xMin, xMax, 0, yMax, mixColor(t, RED, BLUE, 1), 2.1);
+  setStatus(`t = ${t.toFixed(2)}; component matching mode: ${pretty(mode)}`);
+}
+
+function binomialLaw(n, skew) {
+  const p = clamp(0.5 + skew, 0.08, 0.92);
+  const mean = 2 * p - 1;
+  const variance = 4 * p * (1 - p);
+  const xs = [];
+  const ps = [];
+  let prob = (1 - p) ** n;
+  for (let k = 0; k <= n; k += 1) {
+    const raw = (2 * k - n - n * mean) / Math.sqrt(Math.max(n * variance, 1e-12));
+    xs.push(raw);
+    ps.push(prob);
+    if (k < n) prob *= ((n - k) / (k + 1)) * (p / (1 - p));
+  }
+  return { xs, ps: normalizeWeights(ps) };
+}
+
+function drawKantoClt() {
+  const n = Math.round(val("kcltN"));
+  const skew = val("kcltSkew");
+  const law = binomialLaw(n, skew);
+  const xMin = -4;
+  const xMax = 4;
+  const xs = Array.from({ length: 720 }, (_, i) => lerp(xMin, xMax, i / 719));
+  const gaussian = xs.map((x) => normalPdf(x, 0, 1));
+  const dx = law.xs.length > 1 ? Math.abs(law.xs[1] - law.xs[0]) : 1;
+  const densities = law.ps.map((p) => p / Math.max(dx, 1e-12));
+  const yMax = Math.max(...gaussian, ...densities) * 1.15;
+  const { ctx, w, h } = resizeCanvas(350);
+  const box = { x: 34, y: 34, w: w - 58, h: h - 64 };
+  drawFrame(ctx, box, "normalized Bernoulli sum");
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (y) => box.y + box.h - (y / yMax) * box.h;
+  ctx.strokeStyle = "#d8dee8";
+  ctx.beginPath();
+  ctx.moveTo(box.x, Y(0));
+  ctx.lineTo(box.x + box.w, Y(0));
+  ctx.stroke();
+  drawCurve(ctx, xs, gaussian, box, xMin, xMax, 0, yMax, "#4a5563", 1.8);
+  const barW = Math.max(2, Math.min(16, box.w / Math.max(law.xs.length, 1) * 0.58));
+  ctx.fillStyle = "rgba(123,50,148,.58)";
+  for (let i = 0; i < law.xs.length; i += 1) {
+    const height = densities[i];
+    ctx.fillRect(X(law.xs[i]) - barW / 2, Y(height), barW, Y(0) - Y(height));
+  }
+  setStatus(`n = ${n}; skew = ${skew.toFixed(2)}; bar heights are masses divided by lattice spacing ${dx.toFixed(3)}`);
+}
+
+const DUAL_TARGETS = {
+  balanced: { weights: [0.5, 0.5], means: [-1.05, 1.08], stds: [0.42, 0.44] },
+  shifted: { weights: [0.58, 0.42], means: [0.2, 1.86], stds: [0.34, 0.36] },
+  three_mode: { weights: [0.43, 0.34, 0.23], means: [-1.65, 0.1, 1.72], stds: [0.26, 0.36, 0.3] },
+};
+
+function mixturePdfSpec(spec, x) {
+  let out = 0;
+  for (let k = 0; k < spec.weights.length; k += 1) out += spec.weights[k] * normalPdf(x, spec.means[k], spec.stds[k]);
+  return out;
+}
+
+function normalizedDensity(xs, spec) {
+  const density = xs.map((x) => mixturePdfSpec(spec, x));
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const total = density.reduce((a, b) => a + b, 0) * dx;
+  return density.map((z) => z / Math.max(total, 1e-12));
+}
+
+function discreteWeightsFromDensity(density) {
+  const total = density.reduce((a, b) => a + b, 0);
+  return density.map((z) => z / Math.max(total, 1e-12));
+}
+
+function inverseFromCdfGrid(xs, cdf, u) {
+  const target = clamp(u, 0, 1);
+  let j = 1;
+  while (j < cdf.length && cdf[j] < target) j += 1;
+  if (j >= cdf.length) return xs[xs.length - 1];
+  const lo = cdf[j - 1] || 0;
+  const hi = cdf[j];
+  const t = (target - lo) / Math.max(hi - lo, 1e-12);
+  return lerp(xs[j - 1], xs[j], clamp(t, 0, 1));
+}
+
+function positivePlanEdges(plan, tolerance = 0) {
+  const edges = [];
+  for (let i = 0; i < plan.length; i += 1) {
+    for (let j = 0; j < plan[i].length; j += 1) {
+      if (plan[i][j] > tolerance) edges.push([i, j, plan[i][j]]);
+    }
+  }
+  return edges;
+}
+
+function supportPotentialsFromPlan(x, y, a, b, plan) {
+  const n = x.length;
+  const m = y.length;
+  const f = Array(n).fill(null);
+  const g = Array(m).fill(null);
+  const edges = positivePlanEdges(plan);
+  const rowEdges = Array.from({ length: n }, () => []);
+  for (const [i, j] of edges) rowEdges[i].push(j);
+  function cost(i, j) {
+    return (x[i] - y[j]) ** 2;
+  }
+  for (let start = 0; start < n; start += 1) {
+    if (rowEdges[start].length === 0 || f[start] !== null) continue;
+    f[start] = 0;
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [i, j] of edges) {
+        if (f[i] !== null && g[j] === null) {
+          g[j] = cost(i, j) - f[i];
+          changed = true;
+        }
+        if (g[j] !== null && f[i] === null) {
+          f[i] = cost(i, j) - g[j];
+          changed = true;
+        }
+      }
+    }
+  }
+  for (let i = 0; i < n; i += 1) if (f[i] === null) f[i] = 0;
+  for (let j = 0; j < m; j += 1) if (g[j] === null) g[j] = Math.min(...x.map((xi, i) => (xi - y[j]) ** 2 - f[i]));
+  const gauge = f.reduce((sum, z, i) => sum + z * a[i], 0);
+  for (let i = 0; i < n; i += 1) f[i] -= gauge;
+  for (let j = 0; j < m; j += 1) g[j] += gauge;
+  return { f, g, edges };
+}
+
+function weightedRange(values, weights, low = 0.015, high = 0.985) {
+  const pairs = values.map((value, i) => [value, Math.max(weights[i] || 0, 0)]).sort((a, b) => a[0] - b[0]);
+  const total = pairs.reduce((sum, pair) => sum + pair[1], 0);
+  if (total <= 1e-14) return [Math.min(...values), Math.max(...values)];
+  function quantile(q) {
+    let acc = 0;
+    for (const [value, mass] of pairs) {
+      acc += mass;
+      if (acc >= q * total) return value;
+    }
+    return pairs[pairs.length - 1][0];
+  }
+  return [quantile(low), quantile(high)];
+}
+
+function drawClampedCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width = 1.4) {
+  const X = (x) => box.x + ((x - xMin) / Math.max(xMax - xMin, 1e-12)) * box.w;
+  const Y = (y) => box.y + box.h - ((clamp(y, yMin, yMax) - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.beginPath();
+  for (let i = 0; i < xs.length; i += 1) {
+    if (i === 0) ctx.moveTo(X(xs[i]), Y(ys[i]));
+    else ctx.lineTo(X(xs[i]), Y(ys[i]));
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function drawDensityStrips(ctx, box, xs, aDensity, bDensity, title) {
+  drawFrame(ctx, box, title);
+  const yMid = box.y + box.h / 2;
+  const maxDensity = Math.max(...aDensity, ...bDensity, 1e-12);
+  const X = (x) => box.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.w;
+  const H = (z) => (z / maxDensity) * (box.h * 0.38);
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.beginPath();
+  ctx.moveTo(box.x + 8, yMid);
+  ctx.lineTo(box.x + box.w - 8, yMid);
+  ctx.stroke();
+  const dx = xs.length > 1 ? X(xs[1]) - X(xs[0]) : box.w;
+  for (let i = 0; i < xs.length; i += 1) {
+    const px = X(xs[i]) - dx * 0.46;
+    ctx.fillStyle = "rgba(215,48,39,.32)";
+    ctx.fillRect(px, yMid - H(aDensity[i]), Math.max(1, dx * 0.9), H(aDensity[i]));
+    ctx.fillStyle = "rgba(33,102,172,.32)";
+    ctx.fillRect(px, yMid, Math.max(1, dx * 0.9), H(bDensity[i]));
+  }
+  ctx.fillStyle = RED;
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("alpha", box.x + 8, yMid - box.h * 0.34);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("beta", box.x + 8, yMid + box.h * 0.38);
+}
+
+function drawDualDiscrete() {
+  const bins = Math.round(val("ddBins"));
+  const source = val("ddSource");
+  const target = val("ddTarget");
+  const xs = Array.from({ length: bins }, (_, i) => lerp(-3, 3, (i + 0.5) / bins));
+  const sourceDensity = normalizedDensity(xs, MIXTURES[source]);
+  const targetDensity = normalizedDensity(xs, DUAL_TARGETS[target]);
+  const a = discreteWeightsFromDensity(sourceDensity);
+  const b = discreteWeightsFromDensity(targetDensity);
+  const plan = weightedSweepPlan(a, b);
+  const { f, g, edges: tightEdges } = supportPotentialsFromPlan(xs, xs, a, b, plan);
+  const edges = edgesFromPlan(plan, 99999);
+  const { ctx, w, h } = resizeCanvas(390);
+  const top = { x: 22, y: 34, w: w - 44, h: Math.max(130, h * 0.36) };
+  const bottom = { x: 22, y: top.y + top.h + 48, w: w - 44, h: h - top.h - 86 };
+  drawDensityStrips(ctx, top, xs, sourceDensity, targetDensity, "marginals and active support");
+  const X = (x) => top.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * top.w;
+  const yA = top.y + top.h * 0.28;
+  const yB = top.y + top.h * 0.72;
+  const maxMass = Math.max(...edges.map((edge) => edge[2]), 1e-12);
+  for (const [i, j, mass] of edges) {
+    const s = Math.sqrt(mass / maxMass);
+    ctx.strokeStyle = `rgba(123,50,148,${0.16 + 0.42 * s})`;
+    ctx.lineWidth = 0.4 + 1.3 * s;
+    ctx.beginPath();
+    ctx.moveTo(X(xs[i]), yA);
+    ctx.lineTo(X(xs[j]), yB);
+    ctx.stroke();
+  }
+  drawFrame(ctx, bottom, "dual potentials");
+  const [fLow, fHigh] = weightedRange(f, a);
+  const [gLow, gHigh] = weightedRange(g, b);
+  const pad = 0.06 * Math.max(fHigh - fLow, gHigh - gLow, 1e-3);
+  const yMin = Math.min(fLow, gLow) - pad;
+  const yMax = Math.max(fHigh, gHigh) + pad;
+  drawClampedCurve(ctx, xs, f, bottom, xs[0], xs[xs.length - 1], yMin, yMax, RED, 1.9);
+  drawClampedCurve(ctx, xs, g, bottom, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 1.9);
+  ctx.fillStyle = RED;
+  ctx.fillText("f", bottom.x + bottom.w - 34, bottom.y + 18);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("g", bottom.x + bottom.w - 22, bottom.y + 18);
+  let minSlack = Infinity;
+  let contactSlack = 0;
+  for (let i = 0; i < xs.length; i += 1) {
+    for (let j = 0; j < xs.length; j += 1) minSlack = Math.min(minSlack, (xs[i] - xs[j]) ** 2 - f[i] - g[j]);
+  }
+  for (const [i, j] of tightEdges) contactSlack = Math.max(contactSlack, Math.abs((xs[i] - xs[j]) ** 2 - f[i] - g[j]));
+  setStatus(`${bins} bins; ${pretty(target)} target; feasible dual min slack ${minSlack.toExponential(1)}; tight-support error ${contactSlack.toExponential(1)}`);
+}
+
+function auctionRun(n, epsilon, spread, seed) {
+  const random = rng(seed);
+  const x = Array.from({ length: n }, (_, i) => (i + 0.5) / n);
+  const y = Array.from({ length: n }, (_, i) => clamp((i + 0.5) / n + spread * 0.018 * randn(random), 0, 1));
+  y.sort((a, b) => a - b);
+  const profit = x.map((xi) => y.map((yj) => -((xi - yj) ** 2)));
+  const prices = Array(n).fill(0);
+  const assignment = Array(n).fill(-1);
+  const owner = Array(n).fill(-1);
+  const snapshots = [{ assignment: assignment.slice(), prices: prices.slice(), bid: null }];
+  let guard = 0;
+  while (assignment.some((j) => j < 0) && guard < 5000) {
+    const i = assignment.findIndex((j) => j < 0);
+    const reduced = profit[i].map((z, j) => z - prices[j]);
+    let best = 0;
+    let second = -Infinity;
+    for (let j = 1; j < n; j += 1) if (reduced[j] > reduced[best]) best = j;
+    for (let j = 0; j < n; j += 1) if (j !== best) second = Math.max(second, reduced[j]);
+    const increment = reduced[best] - second + epsilon;
+    const previous = owner[best];
+    if (previous >= 0) assignment[previous] = -1;
+    owner[best] = i;
+    assignment[i] = best;
+    prices[best] += increment;
+    snapshots.push({ assignment: assignment.slice(), prices: prices.slice(), bid: { i, j: best, increment } });
+    guard += 1;
+  }
+  return snapshots;
+}
+
+function drawAuctionPrices(ctx, prices, box, title) {
+  drawFrame(ctx, box, title);
+  const maxPrice = Math.max(...prices, 1e-8);
+  const barW = box.w / prices.length;
+  for (let j = 0; j < prices.length; j += 1) {
+    const bh = (prices[j] / maxPrice) * (box.h - 34);
+    ctx.fillStyle = "rgba(33,102,172,.52)";
+    ctx.fillRect(box.x + j * barW + 2, box.y + box.h - 14 - bh, Math.max(1, barW - 4), bh);
+  }
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("target prices", box.x + 8, box.y + 18);
+}
+
+function drawDualAuction() {
+  const n = Math.round(val("daN"));
+  const epsilon = val("daEps");
+  const progress = val("daProgress");
+  const spread = val("daSpread");
+  const snapshots = auctionRun(n, epsilon, spread, 2161);
+  const index = Math.round(progress * (snapshots.length - 1));
+  const snap = snapshots[index];
+  const { ctx, w, h } = resizeCanvas(390);
+  const gap = 24;
+  const matrixW = Math.min(330, (w - 52 - gap) * 0.48);
+  const matrixBox = { x: 22, y: 48, w: matrixW, h: h - 78 };
+  const priceBox = { x: 22 + matrixW + gap, y: 48, w: w - matrixW - gap - 44, h: h - 78 };
+  drawAssignmentMatrix(ctx, snap.assignment, `bid ${index} / ${snapshots.length - 1}`, matrixBox);
+  drawAuctionPrices(ctx, snap.prices, priceBox, "dual prices");
+  if (snap.bid) {
+    ctx.fillStyle = VIOLET;
+    ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.fillText(`last bid: source ${snap.bid.i + 1} -> target ${snap.bid.j + 1}`, priceBox.x + 8, priceBox.y + priceBox.h - 34);
+    ctx.fillText(`price increment ${snap.bid.increment.toExponential(2)}`, priceBox.x + 8, priceBox.y + priceBox.h - 16);
+  }
+  setStatus(`bid ${index}/${snapshots.length - 1}; ${snap.assignment.filter((j) => j >= 0).length}/${n} assigned; epsilon = ${epsilon.toExponential(1)}`);
+}
+
+function continuousDualPotentials(sourceName, targetName, gridN) {
+  const xs = Array.from({ length: gridN }, (_, i) => lerp(-3.2, 3.2, i / (gridN - 1)));
+  const alpha = normalizedDensity(xs, MIXTURES[sourceName]);
+  const beta = normalizedDensity(xs, DUAL_TARGETS[targetName]);
+  const acdf = cumulative(alpha);
+  const bcdf = cumulative(beta);
+  const T = xs.map((x, i) => inverseFromCdfGrid(xs, bcdf, acdf[i]));
+  const dx = xs[1] - xs[0];
+  const fp = xs.map((x, i) => 2 * (x - T[i]));
+  const f = Array(gridN).fill(0);
+  for (let i = 1; i < gridN; i += 1) f[i] = f[i - 1] + 0.5 * (fp[i] + fp[i - 1]) * dx;
+  const gauge = f.reduce((sum, z, i) => sum + z * alpha[i], 0) / Math.max(alpha.reduce((a, b) => a + b, 0), 1e-12);
+  for (let i = 0; i < gridN; i += 1) f[i] -= gauge;
+  const g = xs.map((y) => Math.min(...xs.map((x, i) => (x - y) ** 2 - f[i])));
+  return { xs, alpha, beta, T, f, g };
+}
+
+function drawDualContinuous() {
+  const source = val("dcSource");
+  const target = val("dcTarget");
+  const gridN = Math.round(val("dcGrid"));
+  const data = continuousDualPotentials(source, target, gridN);
+  const { xs, alpha, beta, T, f, g } = data;
+  const { ctx, w, h } = resizeCanvas(392);
+  const top = { x: 22, y: 34, w: w - 44, h: Math.max(126, h * 0.34) };
+  const bottom = { x: 22, y: top.y + top.h + 48, w: w - 44, h: h - top.h - 86 };
+  drawDensityStrips(ctx, top, xs, alpha, beta, "densities and monotone graph");
+  const X = (x) => top.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * top.w;
+  const yA = top.y + top.h * 0.27;
+  const yB = top.y + top.h * 0.73;
+  ctx.strokeStyle = "rgba(123,50,148,.32)";
+  ctx.lineWidth = 0.75;
+  const stride = Math.max(1, Math.floor(gridN / 34));
+  for (let i = 0; i < gridN; i += stride) {
+    ctx.beginPath();
+    ctx.moveTo(X(xs[i]), yA);
+    ctx.lineTo(X(T[i]), yB);
+    ctx.stroke();
+  }
+  drawFrame(ctx, bottom, "continuous dual potentials");
+  const yMin = Math.min(...f, ...g);
+  const yMax = Math.max(...f, ...g);
+  drawCurve(ctx, xs, f, bottom, xs[0], xs[xs.length - 1], yMin, yMax, RED, 1.9);
+  drawCurve(ctx, xs, g, bottom, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 1.9);
+  ctx.fillStyle = RED;
+  ctx.fillText("f", bottom.x + bottom.w - 34, bottom.y + 18);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("g = f^c", bottom.x + bottom.w - 78, bottom.y + 36);
+  setStatus(`${gridN} grid points; ${pretty(target)} target; f'(x) = 2(x - T(x)) from monotone quantiles`);
+}
+
+function dualEnvelopeAtoms(n, amplitude, seed) {
+  const random = rng(seed);
+  const atoms = Array.from({ length: n }, (_, i) => lerp(-2.5, 2.5, (i + 0.5) / n) + 0.1 * randn(random));
+  atoms.sort((a, b) => a - b);
+  const values = atoms.map((x, i) => amplitude * (0.55 * Math.sin(1.9 * x + 0.7) + 0.28 * Math.cos(3.3 * x - i) + 0.12 * randn(random)));
+  return { atoms, values };
+}
+
+function drawDashedCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width = 1.4, dash = [5, 4]) {
+  ctx.save();
+  ctx.setLineDash(dash);
+  drawCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, width);
+  ctx.restore();
+}
+
+function drawDualEnvelope() {
+  const p = val("dePower");
+  const n = Math.round(val("deAtoms"));
+  const amplitude = val("deAmp");
+  const { atoms, values } = dualEnvelopeAtoms(n, amplitude, 2309);
+  const ys = Array.from({ length: 520 }, (_, i) => lerp(-3.15, 3.15, i / 519));
+  const curves = atoms.map((x, i) => ys.map((y) => Math.abs(x - y) ** p - values[i]));
+  const env = ys.map((_, k) => Math.min(...curves.map((curve) => curve[k])));
+  const active = new Set(ys.map((_, k) => curves.reduce((best, curve, i) => (curve[k] < curves[best][k] ? i : best), 0)));
+  const sampledCurves = curves.flatMap((curve) => curve.filter((_, i) => i % 12 === 0));
+  const yMin = Math.min(...env, ...values) - 0.12;
+  const yMax = Math.max(...sampledCurves, ...values) + 0.12;
+  const { ctx, w, h } = resizeCanvas(370);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, "lower envelope c-transform");
+  for (const curve of curves) drawCurve(ctx, ys, curve, box, -3.15, 3.15, yMin, yMax, "rgba(95,102,112,.34)", 0.9);
+  drawCurve(ctx, ys, env, box, -3.15, 3.15, yMin, yMax, VIOLET, 2.25);
+  const X = (x) => box.x + ((x + 3.15) / 6.3) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.fillStyle = RED;
+  for (let i = 0; i < atoms.length; i += 1) {
+    ctx.beginPath();
+    ctx.arc(X(atoms[i]), Y(values[i]), 4.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  setStatus(`${n} atoms; ${active.size} active envelope pieces; p = ${p.toFixed(2)}`);
+}
+
+function initialDualPotential(grid, roughness, phase) {
+  return grid.map((x) => {
+    const smooth = 0.34 * Math.cos(1.25 * x + phase) - 0.08 * x * x;
+    const rough = roughness * (0.16 * Math.sin(5.2 * x - 0.8 * phase) + 0.08 * Math.sin(10.4 * x + phase));
+    const bump = 0.18 * Math.exp(-8 * (x + 0.8 * Math.cos(phase)) ** 2);
+    return smooth + rough + bump;
+  });
+}
+
+function bilinearCTransform(values, fromGrid, toGrid) {
+  return toGrid.map((y) => Math.min(...fromGrid.map((x, i) => -x * y - values[i])));
+}
+
+function drawDualAlternate() {
+  const side = val("dalSide");
+  const roughness = val("dalRough");
+  const gridN = Math.round(val("dalGrid"));
+  const grid = Array.from({ length: gridN }, (_, i) => lerp(-1.8, 1.8, i / (gridN - 1)));
+  const phase = side === "source" ? 0.2 : 1.7;
+  const initial = initialDualPotential(grid, roughness, phase);
+  const oneSided = bilinearCTransform(initial, grid, grid);
+  const closure = bilinearCTransform(oneSided, grid, grid);
+  const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const responseShifted = oneSided.map((z) => z + mean(initial) - mean(oneSided));
+  const all = initial.concat(responseShifted, closure);
+  const yMin = Math.min(...all) - 0.08;
+  const yMax = Math.max(...all) + 0.08;
+  const { ctx, w, h } = resizeCanvas(370);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, side === "source" ? "source-side hard transform" : "target-side hard transform");
+  const accent = side === "source" ? RED : BLUE;
+  drawCurve(ctx, grid, initial, box, grid[0], grid[grid.length - 1], yMin, yMax, mixColor(0.28, accent, "#ffffff", 0.95), 1.35);
+  drawDashedCurve(ctx, grid, responseShifted, box, grid[0], grid[grid.length - 1], yMin, yMax, "rgba(95,102,112,.75)", 1.25, [6, 5]);
+  drawCurve(ctx, grid, closure, box, grid[0], grid[grid.length - 1], yMin, yMax, accent, 2.35);
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("pale: initial", box.x + 10, box.y + 18);
+  ctx.fillText("dashed: one-sided response", box.x + 10, box.y + 36);
+  ctx.fillStyle = accent;
+  ctx.fillText("dark: double-transform closure", box.x + 10, box.y + 54);
+  setStatus(`${side} side; roughness ${roughness.toFixed(1)}; hard closure after one double transform`);
+}
+
+const SEMI_DOMAIN = { xmin: -1.8, xmax: 1.8, ymin: -1.25, ymax: 1.25 };
+
+function hslRgb(h, s, l) {
+  const sat = s / 100;
+  const light = l / 100;
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const hp = ((h % 360) + 360) % 360 / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let rgbPrime = [0, 0, 0];
+  if (hp < 1) rgbPrime = [c, x, 0];
+  else if (hp < 2) rgbPrime = [x, c, 0];
+  else if (hp < 3) rgbPrime = [0, c, x];
+  else if (hp < 4) rgbPrime = [0, x, c];
+  else if (hp < 5) rgbPrime = [x, 0, c];
+  else rgbPrime = [c, 0, x];
+  const m = light - c / 2;
+  return rgbPrime.map((v) => Math.round(255 * (v + m)));
+}
+
+function semiRgb(i, n) {
+  return hslRgb((28 + 137.508 * i) % 360, 58, n > 26 ? 58 : 62);
+}
+
+function semiDensity(x, y, mode) {
+  const gaussian = (cx, cy, sx, sy, amp) => {
+    const dx = (x - cx) / sx;
+    const dy = (y - cy) / sy;
+    return amp * Math.exp(-0.5 * (dx * dx + dy * dy));
+  };
+  if (mode === "right_blob") {
+    return gaussian(0.62, 0.02, 0.48, 0.56, 1.0) + gaussian(1.15, 0.56, 0.26, 0.24, 0.42);
+  }
+  if (mode === "ring") {
+    const r = Math.hypot(x - 0.5, 0.92 * y);
+    return 0.92 * Math.exp(-0.5 * ((r - 0.62) / 0.13) ** 2) + gaussian(0.35, -0.05, 0.22, 0.24, 0.32);
+  }
+  return (
+    gaussian(0.18, -0.38, 0.34, 0.24, 0.64) +
+    gaussian(0.75, 0.38, 0.26, 0.3, 0.86) +
+    gaussian(1.22, -0.05, 0.24, 0.42, 0.44)
+  );
+}
+
+function makeSemiGrid(nx, ny, mode) {
+  const points = [];
+  let total = 0;
+  let maxDensity = 0;
+  for (let iy = 0; iy < ny; iy += 1) {
+    const y = lerp(SEMI_DOMAIN.ymax, SEMI_DOMAIN.ymin, iy / (ny - 1));
+    for (let ix = 0; ix < nx; ix += 1) {
+      const x = lerp(SEMI_DOMAIN.xmin, SEMI_DOMAIN.xmax, ix / (nx - 1));
+      const density = semiDensity(x, y, mode);
+      maxDensity = Math.max(maxDensity, density);
+      total += density;
+      points.push({ x, y, density, w: density });
+    }
+  }
+  for (const point of points) point.w /= Math.max(total, 1e-12);
+  return { nx, ny, points, maxDensity };
+}
+
+function semiSites(m, seed) {
+  const random = rng(seed);
+  const sites = [];
+  for (let j = 0; j < m; j += 1) {
+    const stripe = (j + 0.5) / m;
+    const x = clamp(-1.42 + 0.68 * random() + 0.1 * randn(random), -1.62, -0.35);
+    const y = clamp(lerp(-0.98, 0.98, stripe) + 0.2 * randn(random), -1.08, 1.08);
+    sites.push([x, y]);
+  }
+  sites.sort((a, b) => a[1] - b[1]);
+  return sites;
+}
+
+function semiTargetWeights(sites, mode) {
+  let weights;
+  if (mode === "vertical") {
+    weights = sites.map((p) => 0.18 + Math.exp(1.15 * p[1]));
+  } else if (mode === "right_heavy") {
+    weights = sites.map((p) => 0.18 + Math.exp(2.2 * (p[0] + 1.62)));
+  } else {
+    weights = sites.map(() => 1);
+  }
+  const total = weights.reduce((sum, z) => sum + z, 0);
+  return weights.map((z) => z / Math.max(total, 1e-12));
+}
+
+function assignSemiCells(grid, sites, gamma = null) {
+  const labels = new Array(grid.points.length);
+  for (let p = 0; p < grid.points.length; p += 1) {
+    const point = grid.points[p];
+    let best = 0;
+    let bestValue = Infinity;
+    for (let j = 0; j < sites.length; j += 1) {
+      const dx = point.x - sites[j][0];
+      const dy = point.y - sites[j][1];
+      const value = dx * dx + dy * dy - (gamma ? gamma[j] : 0);
+      if (value < bestValue) {
+        bestValue = value;
+        best = j;
+      }
+    }
+    labels[p] = best;
+  }
+  return labels;
+}
+
+function semiCellMasses(labels, grid, m) {
+  const masses = Array(m).fill(0);
+  for (let i = 0; i < labels.length; i += 1) masses[labels[i]] += grid.points[i].w;
+  return masses;
+}
+
+function runSemiLaguerre(m, steps, targetMode, densityMode, seed) {
+  const grid = makeSemiGrid(96, 68, densityMode);
+  const sites = semiSites(m, seed);
+  const target = semiTargetWeights(sites, targetMode);
+  const gamma = Array(m).fill(0);
+  let labels = assignSemiCells(grid, sites, gamma);
+  let masses = semiCellMasses(labels, grid, m);
+  for (let it = 0; it < steps; it += 1) {
+    const gain = 0.92 / Math.sqrt(1 + 0.06 * it);
+    for (let j = 0; j < m; j += 1) gamma[j] += gain * (target[j] - masses[j]);
+    const mean = gamma.reduce((sum, z) => sum + z, 0) / m;
+    for (let j = 0; j < m; j += 1) gamma[j] = clamp(gamma[j] - mean, -2.5, 2.5);
+    labels = assignSemiCells(grid, sites, gamma);
+    masses = semiCellMasses(labels, grid, m);
+  }
+  return { grid, sites, target, gamma, labels, masses };
+}
+
+function semiProjection(box) {
+  return {
+    X: (x) => box.x + ((x - SEMI_DOMAIN.xmin) / (SEMI_DOMAIN.xmax - SEMI_DOMAIN.xmin)) * box.w,
+    Y: (y) => box.y + box.h - ((y - SEMI_DOMAIN.ymin) / (SEMI_DOMAIN.ymax - SEMI_DOMAIN.ymin)) * box.h,
+  };
+}
+
+function drawSemiCells(ctx, box, grid, labels, sites, title, weights = null) {
+  drawFrame(ctx, box, title);
+  const tmp = document.createElement("canvas");
+  tmp.width = grid.nx;
+  tmp.height = grid.ny;
+  const ictx = tmp.getContext("2d");
+  const data = ictx.createImageData(grid.nx, grid.ny);
+  for (let i = 0; i < grid.points.length; i += 1) {
+    const color = semiRgb(labels[i], sites.length);
+    const k = 4 * i;
+    const densityShade = clamp(grid.points[i].density / Math.max(grid.maxDensity, 1e-12), 0, 1);
+    data.data[k] = Math.round(lerp(248, color[0], 0.45 + 0.18 * densityShade));
+    data.data[k + 1] = Math.round(lerp(250, color[1], 0.45 + 0.18 * densityShade));
+    data.data[k + 2] = Math.round(lerp(253, color[2], 0.45 + 0.18 * densityShade));
+    data.data[k + 3] = 255;
+  }
+  ictx.putImageData(data, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, box.x, box.y, box.w, box.h);
+  ctx.imageSmoothingEnabled = true;
+  const { X, Y } = semiProjection(box);
+  const densityStride = grid.points.length > 5000 ? 3 : 2;
+  for (let i = 0; i < grid.points.length; i += densityStride) {
+    const point = grid.points[i];
+    const shade = clamp(point.density / Math.max(grid.maxDensity, 1e-12), 0, 1);
+    if (shade < 0.08) continue;
+    ctx.fillStyle = `rgba(215,48,39,${0.035 + 0.19 * shade})`;
+    ctx.fillRect(X(point.x) - 0.8, Y(point.y) - 0.8, 1.6, 1.6);
+  }
+  ctx.strokeStyle = "#c7d0dc";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  for (let j = 0; j < sites.length; j += 1) {
+    const color = semiRgb(j, sites.length);
+    const radius = weights ? 3.2 + 18 * Math.sqrt(weights[j]) : 5.2;
+    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+    ctx.beginPath();
+    ctx.arc(X(sites[j][0]), Y(sites[j][1]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.92)";
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(38,51,63,.35)";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+}
+
+function semiBoxes(w, h) {
+  if (w < 620) {
+    const boxH = (h - 92) / 2;
+    return [
+      { x: 22, y: 38, w: w - 44, h: boxH },
+      { x: 22, y: 38 + boxH + 54, w: w - 44, h: boxH },
+    ];
+  }
+  const gap = 24;
+  const boxW = (w - 44 - gap) / 2;
+  return [
+    { x: 22, y: 44, w: boxW, h: h - 78 },
+    { x: 22 + boxW + gap, y: 44, w: boxW, h: h - 78 },
+  ];
+}
+
+function drawSemiLaguerre() {
+  const m = Math.round(val("slSites"));
+  const steps = Math.round(val("slSteps"));
+  const targetMode = val("slMass");
+  const densityMode = val("slDensity");
+  const seed = Math.round(val("slSeed"));
+  const data = runSemiLaguerre(m, steps, targetMode, densityMode, seed);
+  const initialLabels = assignSemiCells(data.grid, data.sites, Array(m).fill(0));
+  const { ctx, w, h } = resizeCanvas(398);
+  const boxes = semiBoxes(w, h);
+  drawSemiCells(ctx, boxes[0], data.grid, initialLabels, data.sites, "ordinary Voronoi cells", data.target);
+  drawSemiCells(ctx, boxes[1], data.grid, data.labels, data.sites, "Laguerre cells after dual updates", data.target);
+  const maxError = Math.max(...data.masses.map((mass, j) => Math.abs(mass - data.target[j])));
+  setStatus(`${m} sites; ${steps} dual updates; max mass error ${maxError.toFixed(3)}; target ${pretty(targetMode)}`);
+}
+
+function runSemiLloyd(m, iterations, densityMode, seed) {
+  const grid = makeSemiGrid(96, 68, densityMode);
+  const initialSites = semiSites(m, seed);
+  let sites = initialSites.map((p) => p.slice());
+  let labels = assignSemiCells(grid, sites);
+  let masses = semiCellMasses(labels, grid, m);
+  for (let it = 0; it < iterations; it += 1) {
+    const sx = Array(m).fill(0);
+    const sy = Array(m).fill(0);
+    masses = Array(m).fill(0);
+    for (let i = 0; i < grid.points.length; i += 1) {
+      const j = labels[i];
+      const point = grid.points[i];
+      masses[j] += point.w;
+      sx[j] += point.w * point.x;
+      sy[j] += point.w * point.y;
+    }
+    for (let j = 0; j < m; j += 1) {
+      if (masses[j] > 1e-9) sites[j] = [sx[j] / masses[j], sy[j] / masses[j]];
+    }
+    labels = assignSemiCells(grid, sites);
+  }
+  masses = semiCellMasses(labels, grid, m);
+  let objective = 0;
+  for (let i = 0; i < grid.points.length; i += 1) {
+    const point = grid.points[i];
+    const site = sites[labels[i]];
+    objective += point.w * ((point.x - site[0]) ** 2 + (point.y - site[1]) ** 2);
+  }
+  return { grid, initialSites, sites, labels, masses, objective };
+}
+
+function drawSemiLloyd() {
+  const m = Math.round(val("llSites"));
+  const iterations = Math.round(val("llIter"));
+  const densityMode = val("llDensity");
+  const seed = Math.round(val("llSeed"));
+  const data = runSemiLloyd(m, iterations, densityMode, seed);
+  const initialLabels = assignSemiCells(data.grid, data.initialSites);
+  const { ctx, w, h } = resizeCanvas(398);
+  const boxes = semiBoxes(w, h);
+  drawSemiCells(ctx, boxes[0], data.grid, initialLabels, data.initialSites, "initial Voronoi cells");
+  drawSemiCells(ctx, boxes[1], data.grid, data.labels, data.sites, `Lloyd iteration ${iterations}`);
+  const nonempty = data.masses.filter((mass) => mass > 1e-4).length;
+  setStatus(`${m} codepoints; ${iterations} centroid updates; ${nonempty}/${m} nonempty cells; objective ${data.objective.toFixed(3)}`);
+}
+
+function cdfFromDensityGrid(xs, pdf) {
+  const cdf = Array(xs.length).fill(0);
+  let total = 0;
+  for (let i = 1; i < xs.length; i += 1) {
+    total += 0.5 * (pdf[i - 1] + pdf[i]) * (xs[i] - xs[i - 1]);
+    cdf[i] = total;
+  }
+  for (let i = 0; i < cdf.length; i += 1) cdf[i] /= Math.max(total, 1e-12);
+  cdf[cdf.length - 1] = 1;
+  return cdf;
+}
+
+function quantileFromGrid(xs, cdf, u) {
+  const target = clamp(u, 0, 1);
+  if (target <= 0) return xs[0];
+  if (target >= 1) return xs[xs.length - 1];
+  let j = 1;
+  while (j < cdf.length && cdf[j] < target) j += 1;
+  const lo = cdf[j - 1];
+  const hi = cdf[j];
+  return lerp(xs[j - 1], xs[j], (target - lo) / Math.max(hi - lo, 1e-12));
+}
+
+function quantizationErrorData(xs, cdf, n, random, subsamples = 10) {
+  const deterministic = [];
+  const randomAtoms = Array.from({ length: n }, () => quantileFromGrid(xs, cdf, random())).sort((a, b) => a - b);
+  let deterministicError = 0;
+  let randomError = 0;
+  for (let k = 0; k < n; k += 1) {
+    const q = [];
+    for (let s = 0; s < subsamples; s += 1) {
+      q.push(quantileFromGrid(xs, cdf, (k + (s + 0.5) / subsamples) / n));
+    }
+    const y = q.reduce((a, b) => a + b, 0) / q.length;
+    deterministic.push(y);
+    for (const value of q) {
+      deterministicError += ((value - y) ** 2) / (n * subsamples);
+      randomError += ((value - randomAtoms[k]) ** 2) / (n * subsamples);
+    }
+  }
+  return { deterministic, randomAtoms, deterministicError, randomError };
+}
+
+function drawQuantizationRates() {
+  const densityName = val("sqDensity");
+  const n = Math.round(val("sqAtoms"));
+  const seed = Math.round(val("sqSeed"));
+  const trials = Math.round(val("sqTrials"));
+  const xMin = -3.25;
+  const xMax = 3.25;
+  const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
+  const pdf = normalizedDensity(xs, MIXTURES[densityName]);
+  const cdf = cdfFromDensityGrid(xs, pdf);
+  const random = rng(seed);
+  const selected = quantizationErrorData(xs, cdf, n, random, 16);
+  const sizes = [6, 8, 12, 16, 24, 32, 48, 64, 96, 128];
+  const deterministicErrors = [];
+  const randomErrors = [];
+  for (const m of sizes) {
+    const det = quantizationErrorData(xs, cdf, m, rng(seed + 17 * m), 10).deterministicError;
+    let avg = 0;
+    for (let r = 0; r < trials; r += 1) {
+      avg += quantizationErrorData(xs, cdf, m, rng(seed + 1009 * r + 31 * m), 8).randomError / trials;
+    }
+    deterministicErrors.push(det);
+    randomErrors.push(avg);
+  }
+
+  const { ctx, w, h } = resizeCanvas(386);
+  const gap = 24;
+  const left = { x: 28, y: 48, w: (w - 72 - gap) * 0.54, h: h - 88 };
+  const right = { x: left.x + left.w + gap, y: 48, w: w - left.x - left.w - gap - 28, h: h - 88 };
+  const yMax = Math.max(...pdf) * 1.12;
+  const yMin = -0.16 * yMax;
+  drawFrame(ctx, left, `equal-weight quantizers, n=${n}`);
+  drawCurve(ctx, xs, pdf, left, xMin, xMax, yMin, yMax, "rgba(38,51,63,.55)", 1.4);
+  const X = (x) => left.x + ((x - xMin) / (xMax - xMin)) * left.w;
+  const Y = (y) => left.y + left.h - ((y - yMin) / (yMax - yMin)) * left.h;
+  ctx.strokeStyle = "#cfd6e2";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(left.x, Y(0));
+  ctx.lineTo(left.x + left.w, Y(0));
+  ctx.stroke();
+  for (let k = 0; k < selected.deterministic.length; k += 1) {
+    const x = selected.deterministic[k];
+    const color = mixColor(k / Math.max(selected.deterministic.length - 1, 1), RED, BLUE, 0.88);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(X(x), Y(0));
+    ctx.lineTo(X(x), Y(0.105 * yMax));
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(X(x), Y(0.105 * yMax), 2.7, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const x of selected.randomAtoms) {
+    ctx.strokeStyle = "rgba(80,88,98,.36)";
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(X(x), Y(-0.015 * yMax));
+    ctx.lineTo(X(x), Y(-0.105 * yMax));
+    ctx.stroke();
+    ctx.fillStyle = "rgba(80,88,98,.58)";
+    ctx.beginPath();
+    ctx.arc(X(x), Y(-0.105 * yMax), 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = VIOLET;
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("optimal bin averages", left.x + 10, left.y + 18);
+  ctx.fillStyle = "#66717f";
+  ctx.fillText("one random draw", left.x + 10, left.y + left.h - 10);
+
+  drawFrame(ctx, right, "mean squared W2 error");
+  const logN = sizes.map((m) => Math.log10(m));
+  const logDet = deterministicErrors.map((e) => Math.log10(Math.max(e, 1e-14)));
+  const logRnd = randomErrors.map((e) => Math.log10(Math.max(e, 1e-14)));
+  const lxMin = Math.min(...logN) - 0.04;
+  const lxMax = Math.max(...logN) + 0.04;
+  const lyMin = Math.min(...logDet, ...logRnd) - 0.18;
+  const lyMax = Math.max(...logDet, ...logRnd) + 0.18;
+  const XR = (x) => right.x + ((x - lxMin) / (lxMax - lxMin)) * right.w;
+  const YR = (y) => right.y + right.h - ((y - lyMin) / (lyMax - lyMin)) * right.h;
+  ctx.strokeStyle = "rgba(38,51,63,.18)";
+  ctx.lineWidth = 0.8;
+  for (const m of [8, 16, 32, 64, 128]) {
+    ctx.beginPath();
+    ctx.moveTo(XR(Math.log10(m)), right.y);
+    ctx.lineTo(XR(Math.log10(m)), right.y + right.h);
+    ctx.stroke();
+  }
+  function drawLogLine(values, color, width) {
+    ctx.beginPath();
+    values.forEach((v, i) => (i ? ctx.lineTo(XR(logN[i]), YR(v)) : ctx.moveTo(XR(logN[i]), YR(v))));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+    for (let i = 0; i < values.length; i += 1) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(XR(logN[i]), YR(values[i]), 2.6, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  drawLogLine(logRnd, "rgba(76,86,98,.72)", 1.8);
+  drawLogLine(logDet, VIOLET, 2.2);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("deterministic ~ m^-2", right.x + 12, right.y + 20);
+  ctx.fillStyle = "#56616f";
+  ctx.fillText("random average ~ m^-1", right.x + 12, right.y + 38);
+  ctx.fillStyle = "#6b7280";
+  ctx.fillText("m", right.x + right.w - 14, right.y + right.h + 20);
+  ctx.fillText("log scale", right.x + 10, right.y + right.h + 20);
+  setStatus(`n=${n}; deterministic squared error ${selected.deterministicError.toExponential(2)}; random draw squared error ${selected.randomError.toExponential(2)}; ${trials} trials per rate point`);
+}
+
+function capacityConstrainedPlan(cost, a, b, epsilon, kappa, iterations) {
+  const n = a.length;
+  const m = b.length;
+  const scale = medianPositive(cost);
+  const K = cost.map((row, i) => row.map((c, j) => a[i] * b[j] * Math.exp(-c / Math.max(scale * epsilon, 1e-8))));
+  let P = K.map((row) => row.slice());
+  let R1 = Array.from({ length: n }, () => Array(m).fill(1));
+  let R2 = Array.from({ length: n }, () => Array(m).fill(1));
+  let R3 = Array.from({ length: n }, () => Array(m).fill(1));
+  const U = a.map((ai) => b.map((bj) => kappa * ai * bj));
+  const safeDiv = (x, y) => x / Math.max(y, 1e-300);
+  for (let it = 0; it < iterations; it += 1) {
+    let Z = P.map((row, i) => row.map((p, j) => p * R1[i][j]));
+    for (let i = 0; i < n; i += 1) {
+      const s = Z[i].reduce((x, y) => x + y, 0);
+      const r = safeDiv(a[i], s);
+      for (let j = 0; j < m; j += 1) P[i][j] = Z[i][j] * r;
+    }
+    R1 = Z.map((row, i) => row.map((z, j) => safeDiv(z, P[i][j])));
+
+    Z = P.map((row, i) => row.map((p, j) => p * R2[i][j]));
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += Z[i][j];
+      const r = safeDiv(b[j], s);
+      for (let i = 0; i < n; i += 1) P[i][j] = Z[i][j] * r;
+    }
+    R2 = Z.map((row, i) => row.map((z, j) => safeDiv(z, P[i][j])));
+
+    Z = P.map((row, i) => row.map((p, j) => p * R3[i][j]));
+    for (let i = 0; i < n; i += 1) {
+      for (let j = 0; j < m; j += 1) P[i][j] = Math.min(Z[i][j], U[i][j]);
+    }
+    R3 = Z.map((row, i) => row.map((z, j) => safeDiv(z, P[i][j])));
+  }
+  let saturated = 0;
+  let active = 0;
+  let rowErr = 0;
+  let colErr = 0;
+  for (let i = 0; i < n; i += 1) {
+    let s = 0;
+    for (let j = 0; j < m; j += 1) {
+      s += P[i][j];
+      if (P[i][j] > 1e-8) active += 1;
+      if (P[i][j] > 0.98 * U[i][j]) saturated += 1;
+    }
+    rowErr = Math.max(rowErr, Math.abs(s - a[i]));
+  }
+  for (let j = 0; j < m; j += 1) {
+    let s = 0;
+    for (let i = 0; i < n; i += 1) s += P[i][j];
+    colErr = Math.max(colErr, Math.abs(s - b[j]));
+  }
+  return { plan: P, saturated, active, rowErr, colErr };
+}
+
+function drawCapacityConstrained1D() {
+  const n = Math.round(val("capN"));
+  const kappa = val("capKappa");
+  const epsilon = val("capEps");
+  const iterations = Math.round(val("capIter"));
+  const sourceName = val("capSource");
+  const targetName = val("capTarget");
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3.1, 3.1, (i + 0.5) / n));
+  const a = normalizeWeights(xs.map((x) => mixPdf(sourceName, x)));
+  const b = normalizeWeights(xs.map((x) => mixPdf(targetName, x)));
+  const cost = xs.map((x) => xs.map((y) => (x - y) ** 2));
+  const unconstrained = sinkhornPlan(cost, a, b, epsilon);
+  const constrained = capacityConstrainedPlan(cost, a, b, epsilon, kappa, iterations);
+  const { ctx, w, h } = resizeCanvas(390);
+  const gap = 24;
+  const boxW = (w - 44 - gap) / 2;
+  const boxes = [
+    { x: 22, y: 46, w: boxW, h: h - 76 },
+    { x: 22 + boxW + gap, y: 46, w: boxW, h: h - 76 },
+  ];
+  drawCouplingMatrix(ctx, unconstrained, a, b, boxes[0], "unconstrained entropic plan", true);
+  drawCouplingMatrix(ctx, constrained.plan, a, b, boxes[1], `capacity cap kappa=${kappa.toFixed(2)}`, true);
+  ctx.fillStyle = VIOLET;
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(`${constrained.saturated} saturated cells`, boxes[1].x + 12, boxes[1].y + boxes[1].h - 10);
+  setStatus(`capacity ratio P_ij/(a_i b_j) <= ${kappa.toFixed(2)}; active cells ${constrained.active}; row error ${constrained.rowErr.toExponential(1)}, column error ${constrained.colErr.toExponential(1)}`);
+}
+
+function logMean(a, b) {
+  const x = Math.max(a, 1e-9);
+  const y = Math.max(b, 1e-9);
+  if (Math.abs(x - y) < 1e-8) return 0.5 * (x + y);
+  return (x - y) / (Math.log(x) - Math.log(y));
+}
+
+function twoStateMarkovDistanceProfile(p0, samples = 360) {
+  const xs = Array.from({ length: samples }, (_, i) => (i + 0.5) / samples);
+  const speed = xs.map((p) => 1 / Math.sqrt(Math.max(logMean(p, 1 - p), 1e-12)));
+  const primitive = Array(samples).fill(0);
+  for (let i = 1; i < samples; i += 1) primitive[i] = primitive[i - 1] + 0.5 * (speed[i - 1] + speed[i]) * (xs[i] - xs[i - 1]);
+  function interp(p) {
+    const t = clamp((p - xs[0]) / (xs[xs.length - 1] - xs[0]), 0, 1) * (samples - 1);
+    const i = Math.min(samples - 2, Math.floor(t));
+    return lerp(primitive[i], primitive[i + 1], t - i);
+  }
+  const anchor = interp(p0);
+  return { xs, ys: xs.map((p) => Math.abs(interp(p) - anchor)) };
+}
+
+function markovNorm3(p, u) {
+  const a12 = logMean(p[0], p[1]);
+  const a13 = logMean(p[0], p[2]);
+  const a23 = logMean(p[1], p[2]);
+  const D = 1 / a12 + 1 / a13 + 1 / a23;
+  const q12 = (u[1] / a23 - u[0] / a13) / D;
+  const q13 = -u[0] - q12;
+  const q23 = q12 - u[1];
+  return q12 ** 2 / a12 + q13 ** 2 / a13 + q23 ** 2 / a23;
+}
+
+function markovTriangleDistances(N) {
+  const nodes = [];
+  const id = new Map();
+  for (let i = 0; i <= N; i += 1) {
+    for (let j = 0; j <= N - i; j += 1) {
+      const k = N - i - j;
+      const idx = nodes.length;
+      id.set(`${i},${j}`, idx);
+      nodes.push({ i, j, p: [i / N, j / N, k / N] });
+    }
+  }
+  let start = 0;
+  let best = Infinity;
+  for (let r = 0; r < nodes.length; r += 1) {
+    const p = nodes[r].p;
+    const d = (p[0] - 1 / 3) ** 2 + (p[1] - 1 / 3) ** 2 + (p[2] - 1 / 3) ** 2;
+    if (d < best) {
+      best = d;
+      start = r;
+    }
+  }
+  const dist = Array(nodes.length).fill(Infinity);
+  const used = Array(nodes.length).fill(false);
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]];
+  dist[start] = 0;
+  for (let step = 0; step < nodes.length; step += 1) {
+    let v = -1;
+    let dv = Infinity;
+    for (let r = 0; r < nodes.length; r += 1) {
+      if (!used[r] && dist[r] < dv) {
+        dv = dist[r];
+        v = r;
+      }
+    }
+    if (v < 0) break;
+    used[v] = true;
+    const node = nodes[v];
+    for (const [di, dj] of dirs) {
+      const ni = node.i + di;
+      const nj = node.j + dj;
+      if (ni < 0 || nj < 0 || ni + nj > N) continue;
+      const widx = id.get(`${ni},${nj}`);
+      const q = nodes[widx];
+      const mid = [
+        0.5 * (node.p[0] + q.p[0]),
+        0.5 * (node.p[1] + q.p[1]),
+        0.5 * (node.p[2] + q.p[2]),
+      ];
+      const u = [q.p[0] - node.p[0], q.p[1] - node.p[1], q.p[2] - node.p[2]];
+      const length = Math.sqrt(Math.max(markovNorm3(mid, u), 0));
+      if (dist[v] + length < dist[widx]) dist[widx] = dist[v] + length;
+    }
+  }
+  return { nodes, dist };
+}
+
+function trianglePoint(box, p) {
+  const ax = box.x + box.w / 2;
+  const ay = box.y + 8;
+  const bx = box.x + 10;
+  const by = box.y + box.h - 8;
+  const cx = box.x + box.w - 10;
+  const cy = box.y + box.h - 8;
+  return [p[0] * ax + p[1] * bx + p[2] * cx, p[0] * ay + p[1] * by + p[2] * cy];
+}
+
+function drawTriangleDistanceCloud(ctx, box, nodes, values, title, color = VIOLET) {
+  drawFrame(ctx, box, title);
+  const maxValue = Math.max(...values.filter(Number.isFinite), 1e-12);
+  for (let r = 0; r < nodes.length; r += 1) {
+    const p = nodes[r].p;
+    const [x, y] = trianglePoint(box, p);
+    const t = clamp(values[r] / maxValue, 0, 1);
+    ctx.fillStyle = mixColor(t, "#f7f9fc", color, 0.88);
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(1.2, Math.min(box.w, box.h) / 95), 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  const center = trianglePoint(box, [1 / 3, 1 / 3, 1 / 3]);
+  ctx.fillStyle = "#26333f";
+  ctx.beginPath();
+  ctx.arc(center[0], center[1], 3.2, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function drawDynamicMarkovSimplex() {
+  const p0 = val("dmP0");
+  const grid = Math.round(val("dmGrid"));
+  const profile = twoStateMarkovDistanceProfile(p0);
+  const tri = markovTriangleDistances(grid);
+  const tvValues = tri.nodes.map((node) => 0.5 * (Math.abs(node.p[0] - 1 / 3) + Math.abs(node.p[1] - 1 / 3) + Math.abs(node.p[2] - 1 / 3)));
+  const { ctx, w, h } = resizeCanvas(385);
+  const gap = 20;
+  const leftW = Math.max(210, Math.min(310, (w - 60) * 0.34));
+  const box0 = { x: 22, y: 48, w: leftW, h: h - 78 };
+  const triW = (w - 52 - leftW - 2 * gap) / 2;
+  const box1 = { x: 22 + leftW + gap, y: 48, w: triW, h: h - 78 };
+  const box2 = { x: box1.x + triW + gap, y: 48, w: triW, h: h - 78 };
+  drawFrame(ctx, box0, "two-state distance profile");
+  drawCurve(ctx, profile.xs, profile.ys, box0, 0, 1, 0, Math.max(...profile.ys) * 1.08, VIOLET, 2);
+  const x0 = box0.x + p0 * box0.w;
+  ctx.strokeStyle = "rgba(38,51,63,.35)";
+  ctx.beginPath();
+  ctx.moveTo(x0, box0.y);
+  ctx.lineTo(x0, box0.y + box0.h);
+  ctx.stroke();
+  ctx.fillStyle = "#26333f";
+  ctx.fillText(`anchor p0=${p0.toFixed(2)}`, box0.x + 10, box0.y + 18);
+  drawTriangleDistanceCloud(ctx, box1, tri.nodes, tri.dist, "Markov-chain W_K", VIOLET);
+  drawTriangleDistanceCloud(ctx, box2, tri.nodes, tvValues.map(Math.sqrt), "0/1-ground W2", BLUE);
+  setStatus(`Sigma_3 grid ${grid}; black dot is the uniform law; colors show distance from the center under two geometries`);
+}
+
+function momentPotentialDerivatives(x, quad, quartic, tilt) {
+  return {
+    u: 0.5 * quad * x * x + 0.25 * quartic * x ** 4 + tilt * x,
+    du: quad * x + quartic * x ** 3 + tilt,
+    d2u: quad + 3 * quartic * x * x,
+  };
+}
+
+function drawMomentMeasureForward() {
+  const quad = val("mmQuad");
+  const quartic = val("mmQuartic");
+  const tilt = val("mmTilt");
+  const samples = Math.round(val("mmSamples"));
+  const xMin = -4;
+  const xMax = 4;
+  const xs = Array.from({ length: samples }, (_, i) => lerp(xMin, xMax, i / (samples - 1)));
+  const derivs = xs.map((x) => momentPotentialDerivatives(x, quad, quartic, tilt));
+  const raw = derivs.map((d) => Math.exp(-d.u));
+  const dx = (xMax - xMin) / (samples - 1);
+  const Z = raw.reduce((a, b, i) => a + b * (i === 0 || i === raw.length - 1 ? 0.5 : 1), 0) * dx;
+  const rho = raw.map((z) => z / Math.max(Z, 1e-12));
+  const ys = derivs.map((d) => d.du);
+  const eta = rho.map((r, i) => r / Math.max(derivs[i].d2u, 1e-9));
+  const yMin = Math.min(...ys);
+  const yMax = Math.max(...ys);
+  let meanY = 0;
+  for (let i = 0; i < samples; i += 1) meanY += ys[i] * rho[i] * dx;
+  const { ctx, w, h } = resizeCanvas(385);
+  const gap = 22;
+  const boxW = (w - 52 - 2 * gap) / 3;
+  const boxes = [
+    { x: 22, y: 48, w: boxW, h: h - 78 },
+    { x: 22 + boxW + gap, y: 48, w: boxW, h: h - 78 },
+    { x: 22 + 2 * (boxW + gap), y: 48, w: boxW, h: h - 78 },
+  ];
+  drawFrame(ctx, boxes[0], "source rho_u ∝ exp(-u)");
+  drawCurve(ctx, xs, rho, boxes[0], xMin, xMax, 0, Math.max(...rho) * 1.12, RED, 2.1);
+  drawFrame(ctx, boxes[1], "monotone map y = u'(x)");
+  drawCurve(ctx, xs, ys, boxes[1], xMin, xMax, yMin, yMax, VIOLET, 2.1);
+  for (let k = 0; k <= 4; k += 1) {
+    const i = Math.round((k + 0.5) * (samples - 1) / 5);
+    const x = xs[i];
+    const y = ys[i];
+    const X0 = boxes[1].x + ((x - xMin) / (xMax - xMin)) * boxes[1].w;
+    const Y0 = boxes[1].y + boxes[1].h - ((y - yMin) / (yMax - yMin)) * boxes[1].h;
+    ctx.fillStyle = mixColor(k / 4, RED, BLUE, 0.92);
+    ctx.beginPath();
+    ctx.arc(X0, Y0, 3.1, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  drawFrame(ctx, boxes[2], "moment measure (u')#rho_u");
+  drawCurve(ctx, ys, eta, boxes[2], yMin, yMax, 0, Math.max(...eta) * 1.12, BLUE, 2.1);
+  const zeroX = boxes[2].x + ((0 - yMin) / (yMax - yMin)) * boxes[2].w;
+  ctx.strokeStyle = "rgba(38,51,63,.25)";
+  ctx.beginPath();
+  ctx.moveTo(zeroX, boxes[2].y);
+  ctx.lineTo(zeroX, boxes[2].y + boxes[2].h);
+  ctx.stroke();
+  setStatus(`u(x)=0.5*${quad.toFixed(2)}x^2+0.25*${quartic.toFixed(2)}x^4+${tilt.toFixed(2)}x; moment-measure mean ${meanY.toExponential(2)}`);
+}
+
+function w1Points(side, seed) {
+  const random = rng(seed);
+  const pts = [];
+  for (let row = 0; row < side; row += 1) {
+    for (let col = 0; col < side; col += 1) {
+      const x = lerp(-1, 1, col / (side - 1)) + 0.035 * randn(random);
+      const y = lerp(-1, 1, row / (side - 1)) + 0.035 * randn(random);
+      pts.push([clamp(x, -1.08, 1.08), clamp(y, -1.08, 1.08)]);
+    }
+  }
+  return pts;
+}
+
+function w1EdgeKey(i, j) {
+  return i < j ? `${i}:${j}` : `${j}:${i}`;
+}
+
+function w1Edges(points, side, mode) {
+  const edges = [];
+  function add(i, j) {
+    const length = Math.hypot(points[i][0] - points[j][0], points[i][1] - points[j][1]);
+    edges.push({ i: Math.min(i, j), j: Math.max(i, j), length, key: w1EdgeKey(i, j) });
+  }
+  for (let row = 0; row < side; row += 1) {
+    for (let col = 0; col < side; col += 1) {
+      const i = row * side + col;
+      if (col + 1 < side) add(i, i + 1);
+      if (row + 1 < side) add(i, i + side);
+      if (mode === "diagonal" && row + 1 < side && col + 1 < side) {
+        if ((row + col) % 2 === 0) add(i, i + side + 1);
+        else add(i + 1, i + side);
+      }
+    }
+  }
+  return edges;
+}
+
+function w1Masses(points, mode, count) {
+  const order = points.map((p, i) => ({ p, i }));
+  let positive;
+  let negative;
+  if (mode === "corner_swap") {
+    positive = order.slice().sort((a, b) => a.p[0] + a.p[1] - (b.p[0] + b.p[1])).slice(0, count).map((z) => z.i);
+    negative = order.slice().sort((a, b) => b.p[0] + b.p[1] - (a.p[0] + a.p[1])).slice(0, count).map((z) => z.i);
+  } else if (mode === "center_out") {
+    positive = order.slice().sort((a, b) => Math.hypot(a.p[0], a.p[1]) - Math.hypot(b.p[0], b.p[1])).slice(0, count).map((z) => z.i);
+    const used = new Set(positive);
+    negative = order.slice()
+      .filter((z) => !used.has(z.i))
+      .sort((a, b) => Math.hypot(b.p[0], b.p[1]) - Math.hypot(a.p[0], a.p[1]))
+      .slice(0, count)
+      .map((z) => z.i);
+  } else {
+    positive = order.slice().sort((a, b) => a.p[0] - b.p[0]).slice(0, count).map((z) => z.i);
+    const used = new Set(positive);
+    negative = order.slice()
+      .filter((z) => !used.has(z.i))
+      .sort((a, b) => b.p[0] - a.p[0])
+      .slice(0, count)
+      .map((z) => z.i);
+  }
+  const masses = Array(points.length).fill(0);
+  for (const i of positive) masses[i] += 1 / count;
+  for (const i of negative) masses[i] -= 1 / count;
+  return masses;
+}
+
+function w1Adjacency(n, edges) {
+  const adj = Array.from({ length: n }, () => []);
+  const edgeMap = new Map();
+  for (const edge of edges) {
+    edgeMap.set(edge.key, edge);
+    adj[edge.i].push({ to: edge.j, length: edge.length, key: edge.key });
+    adj[edge.j].push({ to: edge.i, length: edge.length, key: edge.key });
+  }
+  return { adj, edgeMap };
+}
+
+function w1Dijkstra(source, adj) {
+  const n = adj.length;
+  const dist = Array(n).fill(Infinity);
+  const prev = Array(n).fill(-1);
+  const used = Array(n).fill(false);
+  dist[source] = 0;
+  for (let step = 0; step < n; step += 1) {
+    let u = -1;
+    for (let i = 0; i < n; i += 1) if (!used[i] && (u < 0 || dist[i] < dist[u])) u = i;
+    if (u < 0 || !Number.isFinite(dist[u])) break;
+    used[u] = true;
+    for (const edge of adj[u]) {
+      const nd = dist[u] + edge.length;
+      if (nd < dist[edge.to]) {
+        dist[edge.to] = nd;
+        prev[edge.to] = u;
+      }
+    }
+  }
+  return { dist, prev };
+}
+
+function w1Path(prev, source, target) {
+  const path = [target];
+  let u = target;
+  while (u !== source && prev[u] >= 0) {
+    u = prev[u];
+    path.push(u);
+  }
+  path.reverse();
+  return path[0] === source ? path : [];
+}
+
+function routeW1Flow(points, edges, masses) {
+  const { adj, edgeMap } = w1Adjacency(points.length, edges);
+  const supply = masses.map((z, i) => ({ i, amount: Math.max(z, 0) })).filter((z) => z.amount > 1e-10);
+  const demand = masses.map((z, i) => ({ i, amount: Math.max(-z, 0) })).filter((z) => z.amount > 1e-10);
+  const flow = new Map(edges.map((edge) => [edge.key, 0]));
+  let cost = 0;
+  for (const source of supply) {
+    while (source.amount > 1e-10 && demand.some((z) => z.amount > 1e-10)) {
+      const tree = w1Dijkstra(source.i, adj);
+      let best = -1;
+      for (let k = 0; k < demand.length; k += 1) {
+        if (demand[k].amount > 1e-10 && (best < 0 || tree.dist[demand[k].i] < tree.dist[demand[best].i])) best = k;
+      }
+      const target = demand[best];
+      const amount = Math.min(source.amount, target.amount);
+      const path = w1Path(tree.prev, source.i, target.i);
+      for (let p = 0; p + 1 < path.length; p += 1) {
+        const a = path[p];
+        const b = path[p + 1];
+        const key = w1EdgeKey(a, b);
+        const edge = edgeMap.get(key);
+        const sign = a === edge.i && b === edge.j ? 1 : -1;
+        flow.set(key, flow.get(key) + sign * amount);
+      }
+      cost += amount * tree.dist[target.i];
+      source.amount -= amount;
+      target.amount -= amount;
+    }
+  }
+  return { flow, cost };
+}
+
+function graphProjection(box) {
+  return {
+    X: (p) => box.x + ((p[0] + 1.16) / 2.32) * box.w,
+    Y: (p) => box.y + box.h - ((p[1] + 1.16) / 2.32) * box.h,
+  };
+}
+
+function drawW1Arrow(ctx, x0, y0, x1, y1, width, color) {
+  const angle = Math.atan2(y1 - y0, x1 - x0);
+  const trim = 8 + width;
+  const sx = x0 + trim * Math.cos(angle);
+  const sy = y0 + trim * Math.sin(angle);
+  const ex = x1 - trim * Math.cos(angle);
+  const ey = y1 - trim * Math.sin(angle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  const head = 5.5 + width;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex - head * Math.cos(angle - 0.45), ey - head * Math.sin(angle - 0.45));
+  ctx.lineTo(ex - head * Math.cos(angle + 0.45), ey - head * Math.sin(angle + 0.45));
+  ctx.closePath();
+  ctx.fill();
+  ctx.lineCap = "butt";
+}
+
+function drawW1GraphPanel(ctx, box, points, edges, masses, flow, title) {
+  drawFrame(ctx, box, title);
+  const { X, Y } = graphProjection(box);
+  ctx.strokeStyle = "#d7dee8";
+  ctx.lineWidth = 1;
+  for (const edge of edges) {
+    ctx.beginPath();
+    ctx.moveTo(X(points[edge.i]), Y(points[edge.i]));
+    ctx.lineTo(X(points[edge.j]), Y(points[edge.j]));
+    ctx.stroke();
+  }
+  if (flow) {
+    const maxFlow = Math.max(...Array.from(flow.values()).map((z) => Math.abs(z)), 1e-12);
+    for (const edge of edges) {
+      const amount = flow.get(edge.key) || 0;
+      if (Math.abs(amount) < 1e-10) continue;
+      const forward = amount > 0;
+      const a = forward ? edge.i : edge.j;
+      const b = forward ? edge.j : edge.i;
+      const scale = Math.sqrt(Math.abs(amount) / maxFlow);
+      drawW1Arrow(ctx, X(points[a]), Y(points[a]), X(points[b]), Y(points[b]), 1.3 + 3.4 * scale, `rgba(123,50,148,${0.34 + 0.5 * scale})`);
+    }
+  }
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#8c98a6";
+  ctx.lineWidth = 0.8;
+  for (const point of points) {
+    ctx.beginPath();
+    ctx.arc(X(point), Y(point), 2.3, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+  }
+  const maxMass = Math.max(...masses.map((z) => Math.abs(z)), 1e-12);
+  for (let i = 0; i < points.length; i += 1) {
+    const mass = masses[i];
+    if (Math.abs(mass) < 1e-10) continue;
+    const radius = 5.2 + 13 * Math.sqrt(Math.abs(mass) / maxMass);
+    ctx.fillStyle = mass > 0 ? "rgba(215,48,39,.78)" : "rgba(33,102,172,.78)";
+    ctx.beginPath();
+    ctx.arc(X(points[i]), Y(points[i]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.9)";
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+  }
+}
+
+function drawW1Graph() {
+  const side = Math.round(val("wgSide"));
+  const mode = val("wgMode");
+  const count = Math.round(val("wgCount"));
+  const graphMode = val("wgGraph");
+  const seed = Math.round(val("wgSeed"));
+  const points = w1Points(side, seed);
+  const edges = w1Edges(points, side, graphMode);
+  const masses = w1Masses(points, mode, Math.min(count, Math.floor(points.length / 2)));
+  const routed = routeW1Flow(points, edges, masses);
+  const { ctx, w, h } = resizeCanvas(398);
+  const boxes = semiBoxes(w, h);
+  drawW1GraphPanel(ctx, boxes[0], points, edges, masses, null, "signed measure r");
+  drawW1GraphPanel(ctx, boxes[1], points, edges, masses, routed.flow, "shortest-path flow");
+  const activeEdges = Array.from(routed.flow.values()).filter((z) => Math.abs(z) > 1e-10).length;
+  setStatus(`${side} x ${side} graph; ${count} sources and sinks; ${activeEdges} active edges; routed cost ${routed.cost.toFixed(3)}`);
+}
+
+function ipmDensity(x, separation, mode, side) {
+  if (mode === "scale") {
+    const mean = side === "source" ? -0.18 * separation : 0.18 * separation;
+    const sigma = side === "source" ? 0.42 : 0.72;
+    return normalPdf(x, mean, sigma);
+  }
+  if (mode === "three_mode") {
+    if (side === "source") {
+      return 0.56 * normalPdf(x, -0.92 - 0.25 * separation, 0.34) + 0.28 * normalPdf(x, 0.14, 0.28) + 0.16 * normalPdf(x, 1.34, 0.38);
+    }
+    return 0.42 * normalPdf(x, -1.12, 0.38) + 0.32 * normalPdf(x, 0.52 + 0.28 * separation, 0.31) + 0.26 * normalPdf(x, 1.62, 0.3);
+  }
+  const shift = side === "source" ? -0.5 * separation : 0.5 * separation;
+  const secondary = side === "source" ? -1.22 : 1.22;
+  return 0.72 * normalPdf(x, shift, 0.48) + 0.28 * normalPdf(x, secondary + 0.18 * shift, 0.32);
+}
+
+function normalizeGridDensity(values, dx) {
+  const total = values.reduce((sum, z) => sum + z, 0) * dx;
+  return values.map((z) => z / Math.max(total, 1e-12));
+}
+
+function centeredUnit(values) {
+  const mean = values.reduce((sum, z) => sum + z, 0) / values.length;
+  const centered = values.map((z) => z - mean);
+  const maxAbs = Math.max(...centered.map((z) => Math.abs(z)), 1e-12);
+  return centered.map((z) => z / maxAbs);
+}
+
+function ipmData(separation, kernelSigma, mode) {
+  const xs = Array.from({ length: 520 }, (_, i) => lerp(-3.4, 3.4, i / 519));
+  const dx = xs[1] - xs[0];
+  const alpha = normalizeGridDensity(xs.map((x) => ipmDensity(x, separation, mode, "source")), dx);
+  const beta = normalizeGridDensity(xs.map((x) => ipmDensity(x, separation, mode, "target")), dx);
+  const signed = alpha.map((z, i) => z - beta[i]);
+  const cumulativeDiff = [];
+  let running = 0;
+  for (let i = 0; i < xs.length; i += 1) {
+    running += signed[i] * dx;
+    cumulativeDiff.push(running);
+  }
+  const w1Derivative = cumulativeDiff.map((z) => -Math.sign(z));
+  const w1Witness = Array(xs.length).fill(0);
+  for (let i = 1; i < xs.length; i += 1) w1Witness[i] = w1Witness[i - 1] + 0.5 * (w1Derivative[i] + w1Derivative[i - 1]) * dx;
+  const mmdWitness = xs.map((x) => {
+    let sum = 0;
+    for (let j = 0; j < xs.length; j += 3) {
+      const d = (x - xs[j]) / kernelSigma;
+      sum += signed[j] * Math.exp(-0.5 * d * d) * dx * 3;
+    }
+    return sum;
+  });
+  const tvWitness = signed.map((z) => Math.sign(z));
+  const witnesses = {
+    w1: centeredUnit(w1Witness),
+    mmd: centeredUnit(mmdWitness),
+    tv: tvWitness,
+  };
+  const w1 = cumulativeDiff.reduce((sum, z) => sum + Math.abs(z) * dx, 0);
+  const tv = signed.reduce((sum, z) => sum + Math.abs(z) * dx, 0);
+  const mmd = Math.sqrt(Math.max(0, signed.reduce((sum, z, i) => sum + z * mmdWitness[i] * dx, 0)));
+  return { xs, alpha, beta, signed, witnesses, values: { w1, mmd, tv } };
+}
+
+function drawIpmWitnessPanel(ctx, box, data, witnessName, title) {
+  drawFrame(ctx, box, title);
+  const constraints = {
+    w1: "constraint: Lip(f) <= 1",
+    mmd: "constraint: ||f||_H <= 1",
+    tv: "constraint: ||f||_inf <= 1",
+  };
+  const maxDensity = Math.max(...data.alpha, ...data.beta, 1e-12);
+  const X = (x) => box.x + ((x - data.xs[0]) / (data.xs[data.xs.length - 1] - data.xs[0])) * box.w;
+  const YDensity = (z) => box.y + box.h * 0.68 - (z / maxDensity) * box.h * 0.43;
+  const YWitness = (z) => box.y + box.h * 0.55 - z * box.h * 0.3;
+  const baseline = box.y + box.h * 0.68;
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 8, baseline);
+  ctx.lineTo(box.x + box.w - 8, baseline);
+  ctx.stroke();
+  function densityFill(values, color) {
+    ctx.beginPath();
+    ctx.moveTo(X(data.xs[0]), baseline);
+    for (let i = 0; i < data.xs.length; i += 1) ctx.lineTo(X(data.xs[i]), YDensity(values[i]));
+    ctx.lineTo(X(data.xs[data.xs.length - 1]), baseline);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  densityFill(data.alpha, "rgba(215,48,39,.16)");
+  densityFill(data.beta, "rgba(33,102,172,.16)");
+  drawCurve(ctx, data.xs, data.alpha, { x: box.x, y: box.y + box.h * 0.25, w: box.w, h: box.h * 0.43 }, data.xs[0], data.xs[data.xs.length - 1], 0, maxDensity, RED, 1.6);
+  drawCurve(ctx, data.xs, data.beta, { x: box.x, y: box.y + box.h * 0.25, w: box.w, h: box.h * 0.43 }, data.xs[0], data.xs[data.xs.length - 1], 0, maxDensity, BLUE, 1.6);
+  const witness = data.witnesses[witnessName];
+  ctx.beginPath();
+  for (let i = 0; i < data.xs.length; i += 1) {
+    const px = X(data.xs[i]);
+    const py = YWitness(witness[i]);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 2.15;
+  ctx.stroke();
+  const compactLegend = box.h < 190;
+  const legendY = compactLegend ? box.y + box.h - 11 : box.y + box.h - 35;
+  ctx.fillStyle = "rgba(251,252,253,.88)";
+  ctx.fillRect(box.x + 7, legendY - 15, 148, 18);
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("alpha", box.x + 10, legendY);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("beta", box.x + 52, legendY);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("witness", box.x + 90, legendY);
+  ctx.fillStyle = "#667085";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(constraints[witnessName], box.x + 10, box.y + 18);
+}
+
+function drawDualNormIpm() {
+  const separation = val("ipmSep");
+  const kernelSigma = val("ipmSigma");
+  const mode = val("ipmMode");
+  const data = ipmData(separation, kernelSigma, mode);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 620 : 390);
+  const pad = 22;
+  const gap = w < 760 ? 28 : 18;
+  const vertical = w < 760;
+  const boxes = vertical
+    ? [
+        { x: pad, y: 38, w: w - 2 * pad, h: (h - 112) / 3 },
+        { x: pad, y: 38 + (h - 112) / 3 + gap, w: w - 2 * pad, h: (h - 112) / 3 },
+        { x: pad, y: 38 + 2 * ((h - 112) / 3 + gap), w: w - 2 * pad, h: (h - 112) / 3 },
+      ]
+    : [
+        { x: pad, y: 44, w: (w - 2 * pad - 2 * gap) / 3, h: h - 80 },
+        { x: pad + (w - 2 * pad - 2 * gap) / 3 + gap, y: 44, w: (w - 2 * pad - 2 * gap) / 3, h: h - 80 },
+        { x: pad + 2 * ((w - 2 * pad - 2 * gap) / 3 + gap), y: 44, w: (w - 2 * pad - 2 * gap) / 3, h: h - 80 },
+      ];
+  drawIpmWitnessPanel(ctx, boxes[0], data, "w1", "Wasserstein-1 witness");
+  drawIpmWitnessPanel(ctx, boxes[1], data, "mmd", "MMD witness");
+  drawIpmWitnessPanel(ctx, boxes[2], data, "tv", "total variation witness");
+  setStatus(`IPM values: W1 ${data.values.w1.toFixed(3)}; MMD ${data.values.mmd.toFixed(3)}; TV ${data.values.tv.toFixed(3)}; kernel sigma ${kernelSigma.toFixed(2)}`);
+}
+
+function phiValue(kind, s, gamma) {
+  const z = Math.max(s, 1e-8);
+  if (kind === "kl") return z * Math.log(z) - z + 1;
+  if (kind === "reverse_kl") return -Math.log(z) + z - 1;
+  if (kind === "hellinger") return (Math.sqrt(z) - 1) ** 2;
+  if (kind === "tv") return Math.abs(z - 1);
+  if (kind === "jensen_shannon") return z * Math.log(z) - (z + 1) * Math.log((z + 1) / 2);
+  const g = Math.abs(gamma - 1) < 1e-4 ? 1.0001 : Math.abs(gamma) < 1e-4 ? 0.0001 : gamma;
+  return (z ** g - g * z + g - 1) / (g * (g - 1));
+}
+
+function phiLabel(kind) {
+  if (kind === "kl") return "KL";
+  if (kind === "reverse_kl") return "reverse KL";
+  if (kind === "hellinger") return "Hellinger";
+  if (kind === "tv") return "total variation";
+  if (kind === "jensen_shannon") return "Jensen-Shannon";
+  return "power";
+}
+
+function phiDiscreteData(mismatch, zeros, kind, gamma) {
+  const n = 18;
+  const bRaw = Array.from({ length: n }, (_, i) => {
+    const x = (i + 0.5) / n;
+    return 0.15 + 0.7 * Math.exp(-26 * (x - 0.38) ** 2) + 0.45 * Math.exp(-36 * (x - 0.72) ** 2);
+  });
+  for (let i = 0; i < Math.round(zeros); i += 1) bRaw[n - 1 - i] *= 0.015;
+  const aRaw = bRaw.map((z, i) => {
+    const x = (i + 0.5) / n;
+    return z * Math.exp(mismatch * (1.35 * Math.sin(2 * Math.PI * (x - 0.12)) + 0.45 * Math.cos(4 * Math.PI * x)));
+  });
+  const sumB = bRaw.reduce((a, b) => a + b, 0);
+  const sumA = aRaw.reduce((a, b) => a + b, 0);
+  const b = bRaw.map((z) => z / sumB);
+  const a = aRaw.map((z) => z / sumA);
+  const ratio = a.map((z, i) => z / Math.max(b[i], 1e-10));
+  const contrib = ratio.map((r, i) => b[i] * phiValue(kind, r, gamma));
+  const divergence = contrib.reduce((sum, z) => sum + z, 0);
+  return { a, b, ratio, contrib, divergence };
+}
+
+function drawPhiGenerators(ctx, box, kind, gamma) {
+  drawFrame(ctx, box, "generator functions");
+  const ss = Array.from({ length: 420 }, (_, i) => lerp(0.04, 3.25, i / 419));
+  const families = ["kl", "reverse_kl", "hellinger", "tv", "jensen_shannon", "power"];
+  const yMax = Math.max(...ss.map((s) => Math.min(3.2, phiValue(kind, s, gamma))), 1.1);
+  const X = (s) => box.x + ((s - ss[0]) / (ss[ss.length - 1] - ss[0])) * box.w;
+  const Y = (z) => box.y + box.h - (z / yMax) * box.h;
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(X(1), box.y);
+  ctx.lineTo(X(1), box.y + box.h);
+  ctx.moveTo(box.x, Y(0));
+  ctx.lineTo(box.x + box.w, Y(0));
+  ctx.stroke();
+  for (const family of families) {
+    const active = family === kind;
+    ctx.beginPath();
+    for (let i = 0; i < ss.length; i += 1) {
+      const y = Y(Math.min(yMax, phiValue(family, ss[i], gamma)));
+      if (i === 0) ctx.moveTo(X(ss[i]), y);
+      else ctx.lineTo(X(ss[i]), y);
+    }
+    ctx.strokeStyle = active ? VIOLET : "rgba(95,102,112,.28)";
+    ctx.lineWidth = active ? 2.3 : 1;
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("s = density ratio", box.x + box.w - 112, box.y + box.h - 8);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(phiLabel(kind), box.x + 10, box.y + 18);
+  const note = box.w < 380 ? "normalized at s = 1" : "all generators normalized at s = 1";
+  ctx.fillStyle = "rgba(251,252,253,.88)";
+  ctx.fillRect(box.x + 7, box.y + box.h - 21, box.w < 380 ? 116 : 192, 16);
+  ctx.fillStyle = "#667085";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(note, box.x + 10, box.y + box.h - 8);
+}
+
+function drawPhiDiscrete(ctx, box, data) {
+  drawFrame(ctx, box, "discrete ratio penalties");
+  const n = data.a.length;
+  const maxMass = Math.max(...data.a, ...data.b, 1e-12);
+  const maxRatio = Math.max(...data.ratio, 1.2);
+  const maxContrib = Math.max(...data.contrib, 1e-12);
+  const barW = box.w / n;
+  const massBase = box.y + box.h * 0.72;
+  for (let i = 0; i < n; i += 1) {
+    const x = box.x + (i + 0.5) * barW;
+    const rb = 3.2 + 12 * Math.sqrt(data.b[i] / maxMass);
+    const ra = 3.2 + 12 * Math.sqrt(data.a[i] / maxMass);
+    ctx.fillStyle = "rgba(33,102,172,.22)";
+    ctx.beginPath();
+    ctx.arc(x - 3, massBase, rb, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = BLUE;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(215,48,39,.72)";
+    ctx.beginPath();
+    ctx.arc(x + 3, massBase - 22, ra, 0, 2 * Math.PI);
+    ctx.fill();
+    const yRatio = box.y + box.h * 0.48 - (data.ratio[i] / maxRatio) * box.h * 0.32;
+    ctx.fillStyle = VIOLET;
+    ctx.beginPath();
+    ctx.arc(x, yRatio, 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+    const h = (data.contrib[i] / maxContrib) * box.h * 0.3;
+    ctx.strokeStyle = "rgba(230,126,34,.78)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, box.y + box.h - 12);
+    ctx.lineTo(x, box.y + box.h - 12 - h);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 6, massBase);
+  ctx.lineTo(box.x + box.w - 6, massBase);
+  ctx.stroke();
+  const compact = box.w < 380;
+  const legendY = box.y + box.h - 10;
+  ctx.fillStyle = "rgba(251,252,253,.88)";
+  ctx.fillRect(box.x + 7, legendY - 15, compact ? 153 : 270, 18);
+  ctx.fillStyle = RED;
+  ctx.font = `${compact ? 10 : 12}px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif`;
+  ctx.fillText(compact ? "a" : "alpha mass", box.x + 10, legendY);
+  ctx.fillStyle = BLUE;
+  ctx.fillText(compact ? "b" : "beta mass", box.x + (compact ? 33 : 78), legendY);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(compact ? "a/b" : "ratio", box.x + (compact ? 56 : 142), legendY);
+  ctx.fillStyle = "#b25a16";
+  ctx.fillText(compact ? "b phi" : "local penalty", box.x + (compact ? 94 : 184), legendY);
+}
+
+function drawDualNormPhi() {
+  const kind = val("phiFamily");
+  const gamma = val("phiGamma");
+  const mismatch = val("phiMismatch");
+  const zeros = val("phiZeros");
+  const data = phiDiscreteData(mismatch, zeros, kind, gamma);
+  const { ctx, w, h } = resizeCanvas(390);
+  const gap = 24;
+  const vertical = w < 680;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 38, w: w - 44, h: (h - 92) / 2 },
+        { x: 22, y: 38 + (h - 92) / 2 + 54, w: w - 44, h: (h - 92) / 2 },
+      ]
+    : [
+        { x: 22, y: 44, w: (w - 68) / 2, h: h - 80 },
+        { x: 22 + (w - 68) / 2 + gap, y: 44, w: (w - 68) / 2, h: h - 80 },
+      ];
+  drawPhiGenerators(ctx, boxes[0], kind, gamma);
+  drawPhiDiscrete(ctx, boxes[1], data);
+  setStatus(`D_phi(a|b) for ${phiLabel(kind)}: ${data.divergence.toFixed(3)}; mismatch ${mismatch.toFixed(2)}; near-zero beta bins ${Math.round(zeros)}`);
+}
+
+function sinkhornSpec(name, shift = 0, spread = 1) {
+  const base = MIXTURES[name] || MIXTURES.three;
+  return {
+    weights: base.weights.slice(),
+    means: base.means.map((x) => x + shift),
+    stds: base.stds.map((x) => x * spread),
+  };
+}
+
+function sinkhornGrid(n, sourceName, targetName, sourceShift = 0, sourceSpread = 1) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3.15, 3.15, i / Math.max(n - 1, 1)));
+  const sourceDensity = normalizedDensity(xs, sinkhornSpec(sourceName, sourceShift, sourceSpread));
+  const targetDensity = normalizedDensity(xs, sinkhornSpec(targetName, 0, 1));
+  const a = discreteWeightsFromDensity(sourceDensity);
+  const b = discreteWeightsFromDensity(targetDensity);
+  const cost = xs.map((x) => xs.map((y) => (x - y) ** 2));
+  const scale = medianPositive(cost);
+  const normalizedCost = cost.map((row) => row.map((z) => z / Math.max(scale, 1e-12)));
+  return { xs, a, b, sourceDensity, targetDensity, cost: normalizedCost };
+}
+
+function sinkhornState(cost, a, b, epsilon, halfSteps) {
+  const n = a.length;
+  const m = b.length;
+  const eps = Math.max(epsilon, 1e-4);
+  const K = cost.map((row) => row.map((c) => Math.exp(-c / eps)));
+  const u = Array(n).fill(1);
+  const v = Array(m).fill(1);
+  for (let step = 0; step < halfSteps; step += 1) {
+    if (step % 2 === 0) {
+      for (let i = 0; i < n; i += 1) {
+        let s = 0;
+        for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+        u[i] = a[i] / Math.max(s, 1e-300);
+      }
+    } else {
+      for (let j = 0; j < m; j += 1) {
+        let s = 0;
+        for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+        v[j] = b[j] / Math.max(s, 1e-300);
+      }
+    }
+  }
+  let plan = K.map((row, i) => row.map((k, j) => u[i] * k * v[j]));
+  if (halfSteps === 0) {
+    const totalK = plan.flat().reduce((sum, z) => sum + z, 0);
+    plan = plan.map((row) => row.map((z) => z / Math.max(totalK, 1e-300)));
+  }
+  const row = plan.map((r) => r.reduce((sum, z) => sum + z, 0));
+  const col = Array(m).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < m; j += 1) col[j] += plan[i][j];
+  const rowErr = row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0);
+  const colErr = col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0);
+  let transport = 0;
+  let kl = 0;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const p = plan[i][j];
+      transport += p * cost[i][j];
+      if (p > 0) kl += p * Math.log(p / Math.max(a[i] * b[j], 1e-300));
+    }
+  }
+  return { K, u, v, plan, row, col, error: 0.5 * (rowErr + colErr), value: transport + eps * kl, transport, kl };
+}
+
+function drawSinkhornMarginalPanel(ctx, box, xs, a, b, row, col) {
+  drawFrame(ctx, box, "marginal constraints");
+  const gap = 28;
+  const top = { x: box.x + 10, y: box.y + 28, w: box.w - 20, h: (box.h - 62 - gap) / 2 };
+  const bottom = { x: box.x + 10, y: box.y + 28 + (box.h - 62 - gap) / 2 + gap, w: box.w - 20, h: (box.h - 62 - gap) / 2 };
+  const maxTop = Math.max(...a, ...row, 1e-12);
+  const maxBottom = Math.max(...b, ...col, 1e-12);
+  drawCurve(ctx, xs, a, top, xs[0], xs[xs.length - 1], 0, maxTop, RED, 1.7);
+  drawCurve(ctx, xs, row, top, xs[0], xs[xs.length - 1], 0, maxTop, VIOLET, 2.0);
+  drawCurve(ctx, xs, b, bottom, xs[0], xs[xs.length - 1], 0, maxBottom, BLUE, 1.7);
+  drawCurve(ctx, xs, col, bottom, xs[0], xs[xs.length - 1], 0, maxBottom, VIOLET, 2.0);
+  ctx.fillStyle = "rgba(251,252,253,.9)";
+  ctx.fillRect(top.x + 6, top.y + 6, 168, 34);
+  ctx.fillStyle = RED;
+  ctx.fillText("source a", top.x + 10, top.y + 18);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("current row sums", top.x + 10, top.y + 34);
+  ctx.fillStyle = "rgba(251,252,253,.9)";
+  ctx.fillRect(bottom.x + 6, bottom.y + 6, 178, 34);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target b", bottom.x + 10, bottom.y + 18);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("current column sums", bottom.x + 10, bottom.y + 34);
+}
+
+function drawSinkhornScaling() {
+  const n = Math.round(val("shBins"));
+  const epsilon = val("shEps");
+  const halfSteps = Math.round(val("shSteps"));
+  const source = val("shSource");
+  const target = val("shTarget");
+  const data = sinkhornGrid(n, source, target);
+  const state = sinkhornState(data.cost, data.a, data.b, epsilon, halfSteps);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 650 : 392);
+  const vertical = w < 720;
+  const gap = 28;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 40, w: w - 44, h: (h - 98) / 2 },
+        { x: 22, y: 40 + (h - 98) / 2 + gap, w: w - 44, h: (h - 98) / 2 },
+      ]
+    : [
+        { x: 22, y: 44, w: (w - 70) / 2, h: h - 82 },
+        { x: 22 + (w - 70) / 2 + gap, y: 44, w: (w - 70) / 2, h: h - 82 },
+      ];
+  const title = halfSteps === 0 ? "normalized Gibbs kernel" : `after ${halfSteps} half-steps`;
+  drawCouplingMatrix(ctx, state.plan, state.row, state.col, boxes[0], title);
+  drawSinkhornMarginalPanel(ctx, boxes[1], data.xs, data.a, data.b, state.row, state.col);
+  const phase = halfSteps === 0 ? "initial" : halfSteps % 2 === 1 ? "row-scaled" : "column-scaled";
+  setStatus(`${phase}; epsilon ${epsilon.toFixed(3)}; marginal violation ${state.error.toExponential(2)}`);
+}
+
+function drawSinkhornPotentialsPanel(ctx, box, xs, a, b, state, epsilon) {
+  drawFrame(ctx, box, "dual potentials and marginals");
+  const f = state.u.map((z) => epsilon * Math.log(Math.max(z, 1e-300)));
+  const g = state.v.map((z) => epsilon * Math.log(Math.max(z, 1e-300)));
+  const fMean = f.reduce((sum, z, i) => sum + z * a[i], 0);
+  const gMean = g.reduce((sum, z, i) => sum + z * b[i], 0);
+  const fp = f.map((z) => z - fMean);
+  const gp = g.map((z) => z - gMean);
+  const potBox = { x: box.x + 10, y: box.y + 28, w: box.w - 20, h: box.h * 0.52 };
+  const densBox = { x: box.x + 10, y: box.y + box.h * 0.67, w: box.w - 20, h: box.h * 0.24 };
+  const yMin = Math.min(...fp, ...gp);
+  const yMax = Math.max(...fp, ...gp);
+  drawCurve(ctx, xs, fp, potBox, xs[0], xs[xs.length - 1], yMin, yMax, RED, 1.9);
+  drawCurve(ctx, xs, gp, potBox, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 1.9);
+  const dMax = Math.max(...a, ...b, 1e-12);
+  drawCurve(ctx, xs, a, densBox, xs[0], xs[xs.length - 1], 0, dMax, "rgba(215,48,39,.72)", 1.4);
+  drawCurve(ctx, xs, b, densBox, xs[0], xs[xs.length - 1], 0, dMax, "rgba(33,102,172,.72)", 1.4);
+  ctx.fillStyle = "rgba(251,252,253,.9)";
+  ctx.fillRect(box.x + 16, box.y + 34, 118, 35);
+  ctx.fillStyle = RED;
+  ctx.fillText("epsilon log u", box.x + 22, box.y + 48);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("epsilon log v", box.x + 22, box.y + 64);
+}
+
+function drawSinkhornEpsilon() {
+  const n = Math.round(val("seBins"));
+  const epsilon = val("seEps");
+  const source = val("seSource");
+  const target = val("seTarget");
+  const data = sinkhornGrid(n, source, target);
+  const state = sinkhornState(data.cost, data.a, data.b, epsilon, 180);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 620 : 392);
+  const vertical = w < 720;
+  const gap = 28;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 40, w: w - 44, h: (h - 98) / 2 },
+        { x: 22, y: 40 + (h - 98) / 2 + gap, w: w - 44, h: (h - 98) / 2 },
+      ]
+    : [
+        { x: 22, y: 44, w: (w - 70) / 2, h: h - 82 },
+        { x: 22 + (w - 70) / 2 + gap, y: 44, w: (w - 70) / 2, h: h - 82 },
+      ];
+  drawCouplingMatrix(ctx, state.plan, data.a, data.b, boxes[0], `coupling, epsilon = ${epsilon.toFixed(3)}`);
+  drawSinkhornPotentialsPanel(ctx, boxes[1], data.xs, data.a, data.b, state, epsilon);
+  setStatus(`epsilon ${epsilon.toFixed(3)}; transport ${state.transport.toFixed(3)}; KL ${state.kl.toFixed(3)}; marginal violation ${state.error.toExponential(1)}`);
+}
+
+function softCAtoms(count, roughness) {
+  const ys = Array.from({ length: count }, (_, i) => lerp(-2.35, 2.35, (i + 0.5) / count));
+  const g = ys.map((y, i) => roughness * (0.34 * Math.sin(1.8 * y + 0.55) + 0.16 * Math.cos(3.2 * y - 0.4 * i)));
+  const b = Array(count).fill(1 / count);
+  return { ys, g, b };
+}
+
+function drawSinkhornSoftC() {
+  const epsilon = val("sscEps");
+  const count = Math.round(val("sscAtoms"));
+  const roughness = val("sscRough");
+  const { ys, g, b } = softCAtoms(count, roughness);
+  const xs = Array.from({ length: 560 }, (_, i) => lerp(-3.05, 3.05, i / 559));
+  const shifted = ys.map((y, j) => xs.map((x) => 0.5 * (x - y) ** 2 - g[j]));
+  const hard = xs.map((_, k) => Math.min(...shifted.map((curve) => curve[k])));
+  const soft = xs.map((_, k) => {
+    const h = shifted.map((curve) => curve[k]);
+    const mn = Math.min(...h);
+    let s = 0;
+    for (let j = 0; j < h.length; j += 1) s += b[j] * Math.exp(-(h[j] - mn) / Math.max(epsilon, 1e-5));
+    return mn - epsilon * Math.log(Math.max(s, 1e-300));
+  });
+  const all = shifted.flatMap((curve) => curve.filter((_, i) => i % 8 === 0)).concat(hard, soft);
+  const yMin = Math.min(...all) - 0.08;
+  const yMax = Math.max(...all) + 0.08;
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 640 ? 500 : 360);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 76 };
+  drawFrame(ctx, box, "hard and soft c-transforms");
+  for (const curve of shifted) drawCurve(ctx, xs, curve, box, xs[0], xs[xs.length - 1], yMin, yMax, "rgba(95,102,112,.25)", 0.9);
+  drawCurve(ctx, xs, hard, box, xs[0], xs[xs.length - 1], yMin, yMax, "#4a5563", 1.4);
+  drawCurve(ctx, xs, soft, box, xs[0], xs[xs.length - 1], yMin, yMax, VIOLET, 2.35);
+  const X = (x) => box.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.fillStyle = RED;
+  for (let j = 0; j < ys.length; j += 1) {
+    ctx.beginPath();
+    ctx.arc(X(ys[j]), Y(-g[j]), 4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(251,252,253,.9)";
+  ctx.fillRect(box.x + 9, box.y + 8, 166, 52);
+  ctx.fillStyle = "#4a5563";
+  ctx.fillText("gray: hard envelope", box.x + 15, box.y + 24);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("violet: soft minimum", box.x + 15, box.y + 40);
+  ctx.fillStyle = RED;
+  ctx.fillText("red: shifted atoms", box.x + 15, box.y + 56);
+  setStatus(`${count} atoms; epsilon ${epsilon.toFixed(3)}; soft minimum approaches the hard envelope as epsilon decreases`);
+}
+
+function regularizerLabel(kind) {
+  if (kind === "burg") return "Burg barrier";
+  if (kind === "quadratic") return "quadratic penalty";
+  return "KL entropy";
+}
+
+function regularizerLaw(kind, s) {
+  if (kind === "burg") return 1 / Math.max(1 - Math.min(s, 0.9995), 1e-6);
+  if (kind === "quadratic") return Math.max(0, 1 + s);
+  return Math.exp(clamp(s, -36, 36));
+}
+
+function solveRegularizedShift(kind, terms, weights, epsilon, target) {
+  const evaluate = (shift) => {
+    let sum = 0;
+    for (let k = 0; k < terms.length; k += 1) {
+      sum += weights[k] * regularizerLaw(kind, (shift + terms[k]) / epsilon);
+    }
+    return sum;
+  };
+  let low = Math.min(...terms.map((t) => -t)) - 10 * epsilon - 8;
+  let high;
+  if (kind === "burg") {
+    high = Math.min(...terms.map((t) => epsilon - t)) - 1e-8;
+  } else {
+    high = Math.max(...terms.map((t) => -t)) + 10 * epsilon + 8;
+    let guard = 0;
+    while (evaluate(high) < target && guard < 20) {
+      high += 6 * epsilon + 1;
+      guard += 1;
+    }
+  }
+  let guard = 0;
+  while (evaluate(low) > target && guard < 20) {
+    low -= 6 * epsilon + 1;
+    guard += 1;
+  }
+  for (let it = 0; it < 34; it += 1) {
+    const mid = 0.5 * (low + high);
+    if (evaluate(mid) < target) low = mid;
+    else high = mid;
+  }
+  return 0.5 * (low + high);
+}
+
+function regularizedPlanState(cost, a, b, epsilon, kind, iterations) {
+  const n = a.length;
+  const m = b.length;
+  const eps = Math.max(epsilon, 1e-4);
+  const f = Array(n).fill(0);
+  const g = Array(m).fill(0);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      const terms = cost[i].map((c, j) => g[j] - c);
+      f[i] = solveRegularizedShift(kind, terms, b, eps, 1);
+    }
+    for (let j = 0; j < m; j += 1) {
+      const terms = cost.map((row, i) => f[i] - row[j]);
+      g[j] = solveRegularizedShift(kind, terms, a, eps, 1);
+    }
+    const center = f.reduce((sum, z, i) => sum + z * a[i], 0);
+    for (let i = 0; i < n; i += 1) f[i] -= center;
+    for (let j = 0; j < m; j += 1) g[j] += center;
+  }
+  const plan = Array.from({ length: n }, () => Array(m).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      plan[i][j] = a[i] * b[j] * regularizerLaw(kind, (f[i] + g[j] - cost[i][j]) / eps);
+    }
+  }
+  const row = plan.map((r) => r.reduce((sum, z) => sum + z, 0));
+  const col = Array(m).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < m; j += 1) col[j] += plan[i][j];
+  const rowErr = row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0);
+  const colErr = col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0);
+  return { plan, row, col, error: 0.5 * (rowErr + colErr), f, g };
+}
+
+function drawSinkhornRegularizers() {
+  const n = Math.round(val("srBins"));
+  const epsilon = val("srEps");
+  const kind = val("srKind");
+  const source = val("srSource");
+  const target = val("srTarget");
+  const data = sinkhornGrid(n, source, target);
+  const iterations = epsilon < 0.025 ? (kind === "burg" ? 360 : 260) : epsilon < 0.06 ? (kind === "burg" ? 240 : 180) : kind === "burg" ? 150 : 96;
+  const state = kind === "kl"
+    ? sinkhornState(data.cost, data.a, data.b, epsilon, epsilon < 0.025 ? 520 : epsilon < 0.06 ? 340 : 190)
+    : regularizedPlanState(data.cost, data.a, data.b, epsilon, kind, iterations);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 570 : 390);
+  drawCouplingMatrix(ctx, state.plan, data.a, data.b, { x: 22, y: 44, w: w - 44, h: h - 82 }, `${regularizerLabel(kind)} coupling`);
+  const maxMass = Math.max(...state.plan.flat(), 1e-12);
+  const positive = state.plan.flat().filter((z) => z > 1e-5 * maxMass).length;
+  setStatus(`${regularizerLabel(kind)}; epsilon ${epsilon.toFixed(3)}; marginal violation ${state.error.toExponential(1)}; ${positive} visible cells`);
+}
+
+function debiasPointClouds(n) {
+  const random = rng(5037);
+  const targetCenters = [
+    [-0.95, -0.32],
+    [0.12, 0.62],
+    [0.92, -0.16],
+  ];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = targetCenters[i % targetCenters.length];
+    target.push([c[0] + 0.18 * randn(random), c[1] + 0.15 * randn(random)]);
+  }
+  const source = [];
+  for (let i = 0; i < n; i += 1) {
+    source.push([-0.2 + 0.22 * randn(random), -0.1 + 0.2 * randn(random)]);
+  }
+  return { source, target };
+}
+
+function kernelBarycentricForce(point, target, epsilon) {
+  const sigma2 = Math.max(epsilon * epsilon, 1e-4);
+  let sx = 0;
+  let sy = 0;
+  let sw = 0;
+  for (const q of target) {
+    const dx = q[0] - point[0];
+    const dy = q[1] - point[1];
+    const w = Math.exp(-(dx * dx + dy * dy) / (2 * sigma2));
+    sx += w * q[0];
+    sy += w * q[1];
+    sw += w;
+  }
+  if (sw < 1e-12) return [0, 0];
+  return [sx / sw - point[0], sy / sw - point[1]];
+}
+
+function selfRepulsionForce(points, index, epsilon) {
+  const sigma2 = Math.max(epsilon * epsilon, 1e-4);
+  const p = points[index];
+  let fx = 0;
+  let fy = 0;
+  let sw = 0;
+  for (let j = 0; j < points.length; j += 1) {
+    if (j === index) continue;
+    const q = points[j];
+    const dx = p[0] - q[0];
+    const dy = p[1] - q[1];
+    const d2 = dx * dx + dy * dy + 1e-5;
+    const w = Math.exp(-d2 / (2 * sigma2));
+    fx += w * dx / Math.sqrt(d2);
+    fy += w * dy / Math.sqrt(d2);
+    sw += w;
+  }
+  return sw > 1e-12 ? [fx / sw, fy / sw] : [0, 0];
+}
+
+function simulateDebiasCloud(source, target, epsilon, steps, correction) {
+  const dt = 0.16;
+  const snapshots = [];
+  let points = source.map((p) => p.slice());
+  const saveEvery = Math.max(1, Math.floor(steps / 18));
+  snapshots.push(points.map((p) => p.slice()));
+  for (let it = 0; it < steps; it += 1) {
+    const next = points.map((p) => p.slice());
+    for (let i = 0; i < points.length; i += 1) {
+      const attract = kernelBarycentricForce(points[i], target, epsilon);
+      const repel = correction > 0 ? selfRepulsionForce(points, i, epsilon) : [0, 0];
+      next[i][0] = clamp(points[i][0] + dt * (attract[0] + correction * repel[0]), -1.75, 1.75);
+      next[i][1] = clamp(points[i][1] + dt * (attract[1] + correction * repel[1]), -1.35, 1.35);
+    }
+    points = next;
+    if ((it + 1) % saveEvery === 0 || it + 1 === steps) snapshots.push(points.map((p) => p.slice()));
+  }
+  return snapshots;
+}
+
+function meanNearestDistance(points, target) {
+  let total = 0;
+  for (const p of points) {
+    let best = Infinity;
+    for (const q of target) {
+      const dx = p[0] - q[0];
+      const dy = p[1] - q[1];
+      best = Math.min(best, Math.sqrt(dx * dx + dy * dy));
+    }
+    total += best;
+  }
+  return total / Math.max(points.length, 1);
+}
+
+function drawDebiasCloudPanel(ctx, box, target, snapshots, title, note) {
+  const lim = { xmin: -1.55, xmax: 1.55, ymin: -1.18, ymax: 1.18 };
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  drawFrame(ctx, box, title);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(box.x, box.y, box.w, box.h);
+  ctx.clip();
+
+  ctx.fillStyle = "rgba(33,102,172,.28)";
+  for (const q of target) {
+    ctx.beginPath();
+    ctx.arc(X(q), Y(q), 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  const n = snapshots[0].length;
+  const stride = Math.max(1, Math.floor(n / 22));
+  for (let i = 0; i < n; i += stride) {
+    for (let k = 1; k < snapshots.length; k += 1) {
+      const a = snapshots[k - 1][i];
+      const b = snapshots[k][i];
+      const t = k / Math.max(snapshots.length - 1, 1);
+      ctx.strokeStyle = mixColor(t, RED, BLUE, 0.34);
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(X(a), Y(a));
+      ctx.lineTo(X(b), Y(b));
+      ctx.stroke();
+    }
+  }
+
+  const first = snapshots[0];
+  const last = snapshots[snapshots.length - 1];
+  for (const p of first) {
+    ctx.fillStyle = "rgba(215,48,39,.32)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.0, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of last) {
+    ctx.fillStyle = "rgba(123,50,148,.78)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(251,252,253,.88)";
+  ctx.fillRect(box.x + 8, box.y + box.h - 34, box.w - 16, 24);
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(note, box.x + 14, box.y + box.h - 17);
+}
+
+function drawSinkhornDebias() {
+  const epsilon = val("sdEps");
+  const correction = val("sdCorrection");
+  const steps = Math.round(val("sdSteps"));
+  const n = 72;
+  const data = debiasPointClouds(n);
+  const raw = simulateDebiasCloud(data.source, data.target, epsilon, steps, 0);
+  const debiased = simulateDebiasCloud(data.source, data.target, epsilon, steps, correction);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 700 ? 620 : 380);
+  const vertical = w < 700;
+  const gap = 30;
+  const boxes = vertical
+    ? [
+        { x: 24, y: 44, w: w - 48, h: (h - 112) / 2 },
+        { x: 24, y: 44 + (h - 112) / 2 + gap, w: w - 48, h: (h - 112) / 2 },
+      ]
+    : [
+        { x: 24, y: 44, w: (w - 78) / 2, h: h - 86 },
+        { x: 24 + (w - 78) / 2 + gap, y: 44, w: (w - 78) / 2, h: h - 86 },
+      ];
+  drawDebiasCloudPanel(ctx, boxes[0], data.target, raw, "raw entropic loss", "lambda = 0: no self-cost subtraction");
+  drawDebiasCloudPanel(ctx, boxes[1], data.target, debiased, `debiased loss, lambda = ${correction.toFixed(2)}`, "lambda = 0.50 gives the classical Sinkhorn divergence");
+  const rawCoverage = meanNearestDistance(data.target, raw[raw.length - 1]);
+  const debCoverage = meanNearestDistance(data.target, debiased[debiased.length - 1]);
+  setStatus(`2D debiasing; lambda=0.50 is the classical Sinkhorn divergence; target coverage raw ${rawCoverage.toFixed(2)}, debiased ${debCoverage.toFixed(2)}`);
+}
+
+function logSumExp(values) {
+  const maxv = Math.max(...values);
+  let total = 0;
+  for (const v of values) total += Math.exp(v - maxv);
+  return maxv + Math.log(Math.max(total, 1e-300));
+}
+
+function centeredPotential(values) {
+  const mean = values.reduce((a, b) => a + b, 0) / Math.max(values.length, 1);
+  return values.map((v) => v - mean);
+}
+
+function continuousSinkhornFlow(cost, a, b, epsilon, flowTime) {
+  const n = a.length;
+  const eps = Math.max(epsilon, 1e-4);
+  let f = Array(n).fill(0);
+  let g = Array(n).fill(0);
+  const steps = Math.max(1, Math.round(30 + 46 * flowTime));
+  const dt = Math.min(0.24, flowTime / steps + 0.035);
+  for (let step = 0; step < steps; step += 1) {
+    const targetF = Array(n);
+    for (let i = 0; i < n; i += 1) {
+      const row = Array(n);
+      for (let j = 0; j < n; j += 1) row[j] = (g[j] - cost[i][j]) / eps;
+      targetF[i] = eps * (Math.log(Math.max(a[i], 1e-300)) - logSumExp(row));
+    }
+    for (let i = 0; i < n; i += 1) f[i] += dt * (targetF[i] - f[i]);
+    const targetG = Array(n);
+    for (let j = 0; j < n; j += 1) {
+      const col = Array(n);
+      for (let i = 0; i < n; i += 1) col[i] = (f[i] - cost[i][j]) / eps;
+      targetG[j] = eps * (Math.log(Math.max(b[j], 1e-300)) - logSumExp(col));
+    }
+    for (let j = 0; j < n; j += 1) g[j] += dt * (targetG[j] - g[j]);
+    const shift = f.reduce((x, y) => x + y, 0) / n;
+    for (let i = 0; i < n; i += 1) f[i] -= shift;
+    for (let j = 0; j < n; j += 1) g[j] += shift;
+  }
+  const plan = cost.map((row, i) => row.map((c, j) => Math.exp((f[i] + g[j] - c) / eps)));
+  const row = plan.map((r) => r.reduce((sum, z) => sum + z, 0));
+  const col = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) col[j] += plan[i][j];
+  const err = 0.5 * (
+    row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0) +
+    col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0)
+  );
+  return { f: centeredPotential(f), g: centeredPotential(g), row, col, error: err, steps };
+}
+
+function drawContinuousSinkhorn() {
+  const epsilon = val("sceEps");
+  const flowTime = val("sceTime");
+  const n = Math.round(val("sceBins"));
+  const source = val("sceSource");
+  const target = val("sceTarget");
+  const data = sinkhornGrid(n, source, target);
+  const state = continuousSinkhornFlow(data.cost, data.a, data.b, epsilon, flowTime);
+  const exact = sinkhornState(data.cost, data.a, data.b, epsilon, 260);
+  const exactF = centeredPotential(exact.u.map((u) => epsilon * Math.log(Math.max(u, 1e-300))));
+  const exactG = centeredPotential(exact.v.map((v) => epsilon * Math.log(Math.max(v, 1e-300))));
+  const { ctx, w, h } = resizeCanvas(455);
+  const gap = 24;
+  const top = { x: 22, y: 38, w: w - 44, h: 126 };
+  const bottom = { x: 22, y: 38 + top.h + gap, w: w - 44, h: h - 38 - top.h - gap - 38 };
+  drawFrame(ctx, top, "marginals along the flow");
+  drawFrame(ctx, bottom, "dual potentials");
+  const densityMax = 1.08 * Math.max(...data.a, ...data.b, ...state.row, ...state.col);
+  drawCurve(ctx, data.xs, data.a, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, RED, 1.7);
+  drawCurve(ctx, data.xs, data.b, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, BLUE, 1.7);
+  drawCurve(ctx, data.xs, state.row, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, mixColor(0.45, RED, BLUE, 0.95), 2.0);
+  drawCurve(ctx, data.xs, state.col, top, data.xs[0], data.xs[data.xs.length - 1], 0, densityMax, mixColor(0.75, RED, BLUE, 0.95), 2.0);
+  const pMin = Math.min(...state.f, ...state.g, ...exactF, ...exactG);
+  const pMax = Math.max(...state.f, ...state.g, ...exactF, ...exactG);
+  drawDashedCurve(ctx, data.xs, exactF, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, RED, 1.15, [4, 4]);
+  drawDashedCurve(ctx, data.xs, exactG, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, BLUE, 1.15, [4, 4]);
+  drawCurve(ctx, data.xs, state.f, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, RED, 2.2);
+  drawCurve(ctx, data.xs, state.g, bottom, data.xs[0], data.xs[data.xs.length - 1], pMin, pMax, BLUE, 2.2);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(bottom.x + 8, bottom.y + 8, 205, 50);
+  ctx.fillStyle = RED;
+  ctx.fillText("f(t), dashed = fixed point", bottom.x + 14, bottom.y + 25);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("g(t), same gauge", bottom.x + 14, bottom.y + 43);
+  setStatus(`continuous relaxation time ${flowTime.toFixed(2)}; epsilon ${epsilon.toFixed(3)}; marginal L1 error ${state.error.toExponential(2)}`);
+}
+
+function cadd(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+function cmul(a, b) { return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]]; }
+function cdiv(a, b) {
+  const d = Math.max(b[0] * b[0] + b[1] * b[1], 1e-300);
+  return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d];
+}
+function cexp(z) {
+  const r = Math.exp(clamp(z[0], -60, 60));
+  return [r * Math.cos(z[1]), r * Math.sin(z[1])];
+}
+function clog(z) {
+  return [Math.log(Math.max(Math.hypot(z[0], z[1]), 1e-300)), Math.atan2(z[1], z[0])];
+}
+
+function complexSinkhornPotential(cost, a, b, eps0, eta, iterations) {
+  const n = a.length;
+  const m = b.length;
+  const eps = [eps0, eta];
+  const K = Array.from({ length: n }, () => Array(m));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      K[i][j] = cexp(cdiv([-cost[i][j], 0], eps));
+    }
+  }
+  const u = Array.from({ length: n }, () => [1, 0]);
+  const v = Array.from({ length: m }, () => [1, 0]);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = [0, 0];
+      for (let j = 0; j < m; j += 1) s = cadd(s, cmul(K[i][j], v[j]));
+      u[i] = cdiv([a[i], 0], s);
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = [0, 0];
+      for (let i = 0; i < n; i += 1) s = cadd(s, cmul(K[i][j], u[i]));
+      v[j] = cdiv([b[j], 0], s);
+    }
+  }
+  const f = u.map((z) => cmul(eps, clog(z)));
+  const mean = f.reduce((s, z, i) => cadd(s, [a[i] * z[0], a[i] * z[1]]), [0, 0]);
+  return f.map((z) => [z[0] - mean[0], z[1] - mean[1]]);
+}
+
+function drawComplexSinkhorn() {
+  const n = Math.round(val("cxBins"));
+  const eps0 = val("cxEps0");
+  const etaMax = val("cxEta");
+  const iterations = Math.round(val("cxIter"));
+  const data = sinkhornGrid(n, "wide_two", "three");
+  const etas = [-1, -0.5, 0, 0.5, 1].map((z) => z * etaMax);
+  const potentials = etas.map((eta) => complexSinkhornPotential(data.cost, data.a, data.b, eps0, eta, iterations));
+  const real0 = potentials[2].map((z) => z[0]);
+  const realCurves = potentials.map((curve) => curve.map((z, i) => z[0] - real0[i]));
+  const imagCurves = potentials.map((curve) => curve.map((z) => z[1]));
+  const yRMin = Math.min(...realCurves.flat()) - 0.02;
+  const yRMax = Math.max(...realCurves.flat()) + 0.02;
+  const yIMin = Math.min(...imagCurves.flat()) - 0.02;
+  const yIMax = Math.max(...imagCurves.flat()) + 0.02;
+  const { ctx, w, h } = resizeCanvas(390);
+  const gap = 24;
+  const boxes = [
+    { x: 22, y: 46, w: (w - 68) / 2, h: h - 82 },
+    { x: 22 + (w - 68) / 2 + gap, y: 46, w: (w - 68) / 2, h: h - 82 },
+  ];
+  drawFrame(ctx, boxes[0], "real perturbation");
+  drawFrame(ctx, boxes[1], "imaginary potential");
+  for (let k = 0; k < etas.length; k += 1) {
+    const color = k === 2 ? "#111827" : mixColor((etas[k] / etaMax + 1) / 2, BLUE, RED, 0.82);
+    const width = k === 2 ? 2.4 : 1.7;
+    drawCurve(ctx, data.xs, realCurves[k], boxes[0], data.xs[0], data.xs[data.xs.length - 1], yRMin, yRMax, color, width);
+    drawCurve(ctx, data.xs, imagCurves[k], boxes[1], data.xs[0], data.xs[data.xs.length - 1], yIMin, yIMax, color, width);
+  }
+  const yMax = Math.max(...data.a, ...data.b);
+  drawCurve(ctx, data.xs, data.a.map((z) => z * 0.12 * (yRMax - yRMin) / yMax + yRMin), boxes[0], data.xs[0], data.xs[data.xs.length - 1], yRMin, yRMax, "rgba(215,48,39,.22)", 1);
+  drawCurve(ctx, data.xs, data.b.map((z) => z * 0.12 * (yIMax - yIMin) / yMax + yIMin), boxes[1], data.xs[0], data.xs[data.xs.length - 1], yIMin, yIMax, "rgba(33,102,172,.22)", 1);
+  ctx.fillStyle = "#111827";
+  ctx.fillText("bold: eta = 0", boxes[0].x + 12, boxes[0].y + 20);
+  setStatus(`epsilon = ${eps0.toFixed(2)} + i eta, |eta| <= ${etaMax.toFixed(2)}; ${iterations} complex scaling iterations`);
+}
+
+function sinkhornTrace(cost, a, b, epsilon, maxHalfSteps) {
+  const n = a.length;
+  const m = b.length;
+  const eps = Math.max(epsilon, 1e-4);
+  const K = cost.map((row) => row.map((c) => Math.exp(-c / eps)));
+  const u = Array(n).fill(1);
+  const v = Array(m).fill(1);
+  const trace = [];
+  const measure = (step) => {
+    const row = Array(n).fill(0);
+    const col = Array(m).fill(0);
+    for (let i = 0; i < n; i += 1) {
+      for (let j = 0; j < m; j += 1) {
+        const p = u[i] * K[i][j] * v[j];
+        row[i] += p;
+        col[j] += p;
+      }
+    }
+    const rowErr = row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0);
+    const colErr = col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0);
+    trace.push({ step, error: Math.max(0.5 * (rowErr + colErr), 1e-14) });
+  };
+  measure(0);
+  for (let step = 0; step < maxHalfSteps; step += 1) {
+    if (step % 2 === 0) {
+      for (let i = 0; i < n; i += 1) {
+        let s = 0;
+        for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+        u[i] = a[i] / Math.max(s, 1e-300);
+      }
+    } else {
+      for (let j = 0; j < m; j += 1) {
+        let s = 0;
+        for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+        v[j] = b[j] / Math.max(s, 1e-300);
+      }
+    }
+    measure(step + 1);
+  }
+  return trace;
+}
+
+function drawAdvancedConvergence() {
+  const n = Math.round(val("sacBins"));
+  const epsilon = val("sacEps");
+  const halfSteps = Math.round(val("sacSteps"));
+  const source = val("sacSource");
+  const target = val("sacTarget");
+  const data = sinkhornGrid(n, source, target);
+  const trace = sinkhornTrace(data.cost, data.a, data.b, epsilon, halfSteps);
+  const steps = trace.map((z) => z.step);
+  const errors = trace.map((z) => z.error);
+  const costFlat = data.cost.flat();
+  const range = Math.max(...costFlat) - Math.min(...costFlat);
+  const lambda = Math.tanh(range / (2 * Math.max(epsilon, 1e-6)));
+  const linear = steps.map((s) => Math.max(errors[0] * Math.max(lambda, 1e-8) ** s, 1e-14));
+  const sublinear = steps.map((s) => Math.max(errors[0] / (s + 1), 1e-14));
+  const yLog = errors.concat(linear, sublinear).map((z) => Math.log10(Math.max(z, 1e-14)));
+  const yMin = Math.min(...yLog) - 0.15;
+  const yMax = Math.max(...yLog) + 0.15;
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 560 : 372);
+  const box = { x: 36, y: 44, w: w - 72, h: h - 88 };
+  drawFrame(ctx, box, "marginal residual and rate guides");
+  drawCurve(ctx, steps, errors.map((z) => Math.log10(z)), box, 0, halfSteps, yMin, yMax, VIOLET, 2.2);
+  drawDashedCurve(ctx, steps, sublinear.map((z) => Math.log10(z)), box, 0, halfSteps, yMin, yMax, "#5f6670", 1.4, [5, 4]);
+  drawDashedCurve(ctx, steps, linear.map((z) => Math.log10(z)), box, 0, halfSteps, yMin, yMax, BLUE, 1.4, [3, 4]);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 9, 228, 54);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("violet: actual Sinkhorn residual", box.x + 16, box.y + 25);
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("gray: O(1/k) guide", box.x + 16, box.y + 41);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("blue: global Hilbert bound", box.x + 16, box.y + 57);
+  const lambdaText = 1 - lambda < 1e-10 ? "near 1" : lambda > 0.99995 ? `1 - ${(1 - lambda).toExponential(1)}` : lambda.toFixed(4);
+  setStatus(`epsilon ${epsilon.toFixed(3)}; global Hilbert bound ${lambdaText}; final residual ${errors[errors.length - 1].toExponential(2)}`);
+}
+
+function singularValues2(mat) {
+  const a = mat[0][0];
+  const b = mat[0][1];
+  const c = mat[1][0];
+  const d = mat[1][1];
+  const s1 = a * a + b * b + c * c + d * d;
+  const det = (a * d - b * c) ** 2;
+  const disc = Math.sqrt(Math.max(0, s1 * s1 - 4 * det));
+  return [Math.sqrt(Math.max(0, 0.5 * (s1 + disc))), Math.sqrt(Math.max(0, 0.5 * (s1 - disc)))];
+}
+
+function rotateCov2(l1, l2, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return [
+    [l1 * c * c + l2 * s * s, (l1 - l2) * c * s],
+    [(l1 - l2) * c * s, l1 * s * s + l2 * c * c],
+  ];
+}
+
+function tauGaussian(epsilon, r) {
+  return (Math.sqrt(epsilon * epsilon + 16 * r * r) - epsilon) / Math.max(4 * r, 1e-12);
+}
+
+function psiGaussian(epsilon, r) {
+  const t = tauGaussian(epsilon, r);
+  return -2 * r * t - 0.5 * epsilon * Math.log(Math.max(1 - t * t, 1e-12));
+}
+
+function drawAdvancedGaussian() {
+  const epsilon = val("sagEps");
+  const anisotropy = val("sagAniso");
+  const angle = (Math.PI / 180) * val("sagAngle");
+  const Sigma = [[anisotropy, 0], [0, 1 / anisotropy]];
+  const Lambda = rotateCov2(1 / anisotropy, anisotropy, angle);
+  const SigmaSqrt = sqrtSym2(Sigma);
+  const LambdaSqrt = sqrtSym2(Lambda);
+  const singular = singularValues2(matMul2(SigmaSqrt, LambdaSqrt));
+  const selfSigma = eigSym2(Sigma).values;
+  const selfLambda = eigSym2(Lambda).values;
+  const smoothBures = singular.reduce((sum, r) => sum + psiGaussian(epsilon, r), 0)
+    - 0.5 * selfSigma.reduce((sum, r) => sum + psiGaussian(epsilon, r), 0)
+    - 0.5 * selfLambda.reduce((sum, r) => sum + psiGaussian(epsilon, r), 0);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 580 : 382);
+  const vertical = w < 720;
+  const gap = 30;
+  const boxes = vertical
+    ? [
+        { x: 30, y: 42, w: w - 60, h: (h - 104) / 2 },
+        { x: 30, y: 42 + (h - 104) / 2 + gap, w: w - 60, h: (h - 104) / 2 },
+      ]
+    : [
+        { x: 30, y: 46, w: (w - 90) / 2, h: h - 86 },
+        { x: 30 + (w - 90) / 2 + gap, y: 46, w: (w - 90) / 2, h: h - 86 },
+      ];
+  drawFrame(ctx, boxes[0], "Gaussian covariance geometry");
+  const lim = { xmin: -3.2, xmax: 3.2, ymin: -3.2, ymax: 3.2 };
+  drawCovEllipse(ctx, [-0.55, 0], Sigma, boxes[0], lim, "rgba(215,48,39,1)", 2, 0.18);
+  drawCovEllipse(ctx, [0.55, 0], Lambda, boxes[0], lim, "rgba(33,102,172,1)", 2, 0.18);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(boxes[0].x + 10, boxes[0].y + 10, 150, 38);
+  ctx.fillStyle = RED;
+  ctx.fillText("source covariance", boxes[0].x + 16, boxes[0].y + 26);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target covariance", boxes[0].x + 16, boxes[0].y + 42);
+  drawFrame(ctx, boxes[1], "singular-value shrinkage");
+  const rs = Array.from({ length: 360 }, (_, i) => lerp(0.05, 3.2, i / 359));
+  const taus = rs.map((r) => tauGaussian(epsilon, r));
+  drawCurve(ctx, rs, taus, boxes[1], 0.05, 3.2, 0, 1.02, VIOLET, 2.2);
+  const X = (x) => boxes[1].x + ((x - 0.05) / (3.2 - 0.05)) * boxes[1].w;
+  const Y = (y) => boxes[1].y + boxes[1].h - (y / 1.02) * boxes[1].h;
+  ctx.fillStyle = RED;
+  for (const r of singular) {
+    ctx.beginPath();
+    ctx.arc(X(r), Y(tauGaussian(epsilon, r)), 4.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(boxes[1].x + 10, boxes[1].y + 9, 176, 38);
+  ctx.fillStyle = "#26333f";
+  ctx.fillText("curve: tau_epsilon(r)", boxes[1].x + 16, boxes[1].y + 25);
+  ctx.fillStyle = RED;
+  ctx.fillText("dots: covariance modes", boxes[1].x + 16, boxes[1].y + 41);
+  setStatus(`epsilon ${epsilon.toFixed(3)}; modes ${singular.map((r) => r.toFixed(2)).join(", ")}; debiased covariance term ${smoothBures.toFixed(3)}`);
+}
+
+function drawAdvancedSamples() {
+  const dimension = Math.round(val("sasDim"));
+  const epsilon = val("sasEps");
+  const nMax = Math.round(val("sasNmax"));
+  const ns = Array.from({ length: 80 }, (_, i) => Math.round(Math.exp(lerp(Math.log(32), Math.log(nMax), i / 79))));
+  const exact = ns.map((n) => Math.pow(n, -1 / Math.max(dimension, 1)));
+  const mmd = ns.map((n) => 0.55 * Math.pow(n, -0.5));
+  const sinkhorn = ns.map((n) => epsilon + 0.018 * Math.pow(0.18 / epsilon, dimension / 2) * Math.pow(n, -0.5));
+  const all = exact.concat(mmd, sinkhorn).map((z) => Math.max(z, 1e-5));
+  const yMin = Math.log10(Math.min(...all)) - 0.1;
+  const yMax = Math.log10(Math.max(...all)) + 0.12;
+  const xs = ns.map((n) => Math.log10(n));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 650 ? 500 : 360);
+  const box = { x: 42, y: 42, w: w - 84, h: h - 82 };
+  drawFrame(ctx, box, "statistical scaling guides");
+  drawCurve(ctx, xs, exact.map((z) => Math.log10(z)), box, xs[0], xs[xs.length - 1], yMin, yMax, RED, 2.1);
+  drawCurve(ctx, xs, mmd.map((z) => Math.log10(z)), box, xs[0], xs[xs.length - 1], yMin, yMax, BLUE, 2.1);
+  drawCurve(ctx, xs, sinkhorn.map((z) => Math.log10(z)), box, xs[0], xs[xs.length - 1], yMin, yMax, VIOLET, 2.35);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 9, 220, 54);
+  ctx.fillStyle = RED;
+  ctx.fillText("red: exact OT n^{-1/d}", box.x + 16, box.y + 25);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("blue: MMD n^{-1/2}", box.x + 16, box.y + 41);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("violet: Sinkhorn bias + variance", box.x + 16, box.y + 57);
+  setStatus(`dimension ${dimension}; epsilon ${epsilon.toFixed(3)}; Sinkhorn guide is bias floor epsilon plus an epsilon-dependent parametric fluctuation`);
+}
+
+function mixtureDensityOnGrid(xs, components) {
+  const density = xs.map((x) => {
+    let value = 0;
+    for (const c of components) value += c.weight * normalPdf(x, c.mean, c.sigma);
+    return value;
+  });
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const total = density.reduce((sum, z) => sum + z, 0) * dx;
+  return density.map((z) => z / Math.max(total, 1e-12));
+}
+
+function weightsFromDensityAndDx(density, dx) {
+  const weights = density.map((z) => Math.max(z, 0) * dx);
+  const total = weights.reduce((sum, z) => sum + z, 0);
+  return weights.map((z) => z / Math.max(total, 1e-12));
+}
+
+function bookUnbalancedGrid(n) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3, 3, i / Math.max(n - 1, 1)));
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const sourceDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.62, mean: -1.35, sigma: 0.30 },
+    { weight: 0.38, mean: 0.35, sigma: 0.23 },
+  ]);
+  const targetDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.30, mean: -0.80, sigma: 0.28 },
+    { weight: 0.42, mean: 0.85, sigma: 0.32 },
+    { weight: 0.28, mean: 2.20, sigma: 0.20 },
+  ]);
+  const a = weightsFromDensityAndDx(sourceDensity, dx);
+  const b = weightsFromDensityAndDx(targetDensity, dx);
+  const rawCost = xs.map((x) => xs.map((y) => (x - y) ** 2));
+  const scale = medianPositive(rawCost);
+  const cost = rawCost.map((row) => row.map((z) => z / Math.max(scale, 1e-12)));
+  return { xs, dx, sourceDensity, targetDensity, a, b, cost };
+}
+
+function bookPartialGrid(n) {
+  const xs = Array.from({ length: n }, (_, i) => lerp(-3.15, 3.15, i / Math.max(n - 1, 1)));
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const sourceDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.56, mean: -2.08, sigma: 0.34 },
+    { weight: 0.44, mean: -0.76, sigma: 0.24 },
+  ]);
+  const targetDensity = mixtureDensityOnGrid(xs, [
+    { weight: 0.43, mean: 0.64, sigma: 0.26 },
+    { weight: 0.57, mean: 1.93, sigma: 0.36 },
+  ]);
+  const a = weightsFromDensityAndDx(sourceDensity, dx);
+  const b = weightsFromDensityAndDx(targetDensity, dx);
+  return { xs, dx, sourceDensity, targetDensity, a, b };
+}
+
+function densityPath(ctx, xs, density, box, sideScale, color, alpha, orientation, fill = true, lineWidth = 1) {
+  const [r, g, b] = rgb(color);
+  ctx.beginPath();
+  if (orientation === "top") {
+    const X = (x) => box.x + ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.w;
+    const Y = (z) => box.y + box.h - (z / Math.max(sideScale, 1e-12)) * box.h;
+    if (fill) ctx.moveTo(X(xs[0]), Y(0));
+    for (let i = 0; i < xs.length; i += 1) {
+      const px = X(xs[i]);
+      const py = Y(density[i]);
+      if (i === 0 && !fill) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    if (fill) {
+      ctx.lineTo(X(xs[xs.length - 1]), Y(0));
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    }
+    return;
+  }
+  const Y = (x) => box.y + box.h - ((x - xs[0]) / (xs[xs.length - 1] - xs[0])) * box.h;
+  const X = (z) => box.x + box.w - (z / Math.max(sideScale, 1e-12)) * box.w;
+  if (fill) ctx.moveTo(X(0), Y(xs[0]));
+  for (let i = 0; i < xs.length; i += 1) {
+    const px = X(density[i]);
+    const py = Y(xs[i]);
+    if (i === 0 && !fill) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  if (fill) {
+    ctx.lineTo(X(0), Y(xs[xs.length - 1]));
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+}
+
+function planColor(value) {
+  const t = clamp(value, 0, 1);
+  const base = [255, 255, 255];
+  const pale = [242, 231, 243];
+  const dark = rgb(VIOLET);
+  const mid = t < 0.42 ? t / 0.42 : (t - 0.42) / 0.58;
+  const a = t < 0.42 ? base : pale;
+  const b = t < 0.42 ? pale : dark;
+  const r = Math.round(lerp(a[0], b[0], mid));
+  const g = Math.round(lerp(a[1], b[1], mid));
+  const c = Math.round(lerp(a[2], b[2], mid));
+  return `rgb(${r},${g},${c})`;
+}
+
+function drawSidePlanPanel(ctx, box, xs, plan, sourceDensity, targetDensity, rowDensity, colDensity, title, sideScale, planScale) {
+  const n = plan.length;
+  const m = plan[0].length;
+  const strip = Math.min(54, Math.max(34, 0.27 * Math.min(box.w, box.h)));
+  const gap = 3;
+  const side = Math.max(1, Math.min(box.w - strip - gap - 1, box.h - strip - gap - 1));
+  const block = strip + gap + side;
+  const originX = box.x + Math.max(0, (box.w - block) / 2);
+  const originY = box.y + Math.max(0, (box.h - block) / 2);
+  const left = { x: originX, y: originY + strip + gap, w: strip, h: side };
+  const top = { x: originX + strip + gap, y: originY, w: side, h: strip };
+  const mat = { x: originX + strip + gap, y: originY + strip + gap, w: side, h: side };
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+
+  densityPath(ctx, xs, targetDensity, top, sideScale, BLUE, 0.10, "top", true);
+  densityPath(ctx, xs, colDensity, top, sideScale, VIOLET, 0.24, "top", true);
+  densityPath(ctx, xs, targetDensity, top, sideScale, BLUE, 0.95, "top", false, 1.05);
+  densityPath(ctx, xs, colDensity, top, sideScale, VIOLET, 0.92, "top", false, 1.15);
+
+  densityPath(ctx, xs, sourceDensity, left, sideScale, RED, 0.10, "left", true);
+  densityPath(ctx, xs, rowDensity, left, sideScale, VIOLET, 0.24, "left", true);
+  densityPath(ctx, xs, sourceDensity, left, sideScale, RED, 0.95, "left", false, 1.05);
+  densityPath(ctx, xs, rowDensity, left, sideScale, VIOLET, 0.92, "left", false, 1.15);
+
+  const cellW = mat.w / m;
+  const cellH = mat.h / n;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const value = Math.sqrt(plan[i][j] / Math.max(planScale, 1e-15));
+      ctx.fillStyle = planColor(value);
+      ctx.fillRect(mat.x + j * cellW, mat.y + mat.h - (i + 1) * cellH, Math.ceil(cellW) + 0.2, Math.ceil(cellH) + 0.2);
+    }
+  }
+  ctx.strokeStyle = "#30343b";
+  ctx.lineWidth = 1.05;
+  ctx.strokeRect(mat.x, mat.y, mat.w, mat.h);
+  ctx.fillStyle = "#26333f";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, mat.x + mat.w / 2, Math.min(box.y + box.h + 17, mat.y + mat.h + 17));
+  ctx.textAlign = "left";
+}
+
+function unbalancedState(cost, a, b, epsilon, tau, iterations) {
+  const n = a.length;
+  const m = b.length;
+  const eps = Math.max(epsilon, 1e-4);
+  const relaxedTau = Math.max(tau, 1e-4);
+  const rho = relaxedTau / (relaxedTau + eps);
+  const K = cost.map((row) => row.map((c) => Math.exp(-c / eps)));
+  const u = Array(n).fill(1);
+  const v = Array(m).fill(1);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+      u[i] = Math.max(a[i] / Math.max(s, 1e-300), 1e-300) ** rho;
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = Math.max(b[j] / Math.max(s, 1e-300), 1e-300) ** rho;
+    }
+  }
+  const plan = K.map((row, i) => row.map((k, j) => u[i] * k * v[j]));
+  const row = plan.map((r) => r.reduce((sum, z) => sum + z, 0));
+  const col = Array(m).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < m; j += 1) col[j] += plan[i][j];
+  let transport = 0;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) transport += plan[i][j] * cost[i][j];
+  }
+  const mass = plan.flat().reduce((sum, z) => sum + z, 0);
+  const destroyed = a.reduce((sum, z, i) => sum + Math.max(z - row[i], 0), 0);
+  const created = b.reduce((sum, z, j) => sum + Math.max(z - col[j], 0), 0);
+  const mismatch = 0.5 * (
+    row.reduce((sum, z, i) => sum + Math.abs(z - a[i]), 0) +
+    col.reduce((sum, z, j) => sum + Math.abs(z - b[j]), 0)
+  );
+  return { K, u, v, plan, row, col, mass, destroyed, created, mismatch, rho, transport };
+}
+
+function drawGeneralizedUnbalanced() {
+  const n = Math.round(val("guBins"));
+  const epsilon = val("guEps");
+  const tau = val("guTau");
+  const data = bookUnbalancedGrid(n);
+  const tauValues = [0.04, tau, 20.0];
+  const states = tauValues.map((t) => unbalancedState(data.cost, data.a, data.b, epsilon, t, 420));
+  const rowDensities = states.map((state) => state.row.map((z) => z / data.dx));
+  const colDensities = states.map((state) => state.col.map((z) => z / data.dx));
+  const sideScale = 1.05 * Math.max(
+    ...data.sourceDensity,
+    ...data.targetDensity,
+    ...rowDensities.flat(),
+    ...colDensities.flat(),
+  );
+  const planScale = Math.max(...states.flatMap((state) => state.plan.flat()), 1e-15);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 710 : 390);
+  const vertical = w < 760;
+  const gap = vertical ? 38 : 28;
+  const boxes = vertical
+    ? [
+        { x: 24, y: 32, w: w - 48, h: (h - 98) / 3 },
+        { x: 24, y: 32 + (h - 98) / 3 + gap, w: w - 48, h: (h - 98) / 3 },
+        { x: 24, y: 32 + 2 * ((h - 98) / 3 + gap), w: w - 48, h: (h - 98) / 3 },
+      ]
+    : [
+        { x: 18, y: 40, w: (w - 72) / 3, h: h - 72 },
+        { x: 18 + (w - 72) / 3 + gap, y: 40, w: (w - 72) / 3, h: h - 72 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 40, w: (w - 72) / 3, h: h - 72 },
+  ];
+  for (let k = 0; k < states.length; k += 1) {
+    const label = k === 0 ? "small tau" : k === 1 ? `tau=${tau.toFixed(2)}` : "large tau";
+    drawSidePlanPanel(ctx, boxes[k], data.xs, states[k].plan, data.sourceDensity, data.targetDensity, rowDensities[k], colDensities[k], label, sideScale, planScale);
+  }
+  const state = states[1];
+  setStatus(`book source/target; epsilon ${epsilon.toFixed(3)}; middle tau ${tau.toFixed(3)}; transported ${state.mass.toFixed(3)}; destroyed ${state.destroyed.toFixed(3)}; created ${state.created.toFixed(3)}`);
+}
+
+function generalizedShape(name, n, random) {
+  if (name === "heart") return sampleHeart(n, random);
+  return sampleCloud(name, n, random);
+}
+
+function projectionAssignment(source, target, angleDeg) {
+  const theta = (angleDeg * Math.PI) / 180;
+  const ux = Math.cos(theta);
+  const uy = Math.sin(theta);
+  const sp = source.map((p, i) => ({ i, z: ux * p[0] + uy * p[1] })).sort((a, b) => a.z - b.z || a.i - b.i);
+  const tp = target.map((p, i) => ({ i, z: ux * p[0] + uy * p[1] })).sort((a, b) => a.z - b.z || a.i - b.i);
+  const assignment = Array(source.length);
+  let projectedCost = 0;
+  let liftedCost = 0;
+  for (let r = 0; r < source.length; r += 1) {
+    const i = sp[r].i;
+    const j = tp[r].i;
+    assignment[i] = j;
+    projectedCost += (sp[r].z - tp[r].z) ** 2;
+    liftedCost += (source[i][0] - target[j][0]) ** 2 + (source[i][1] - target[j][1]) ** 2;
+  }
+  return {
+    assignment,
+    angle: angleDeg,
+    projectedCost: projectedCost / Math.max(source.length, 1),
+    liftedCost: liftedCost / Math.max(source.length, 1),
+  };
+}
+
+function bestProjectionAssignment(source, target, mode, manualAngle) {
+  if (mode === "manual") return projectionAssignment(source, target, manualAngle);
+  let best = null;
+  for (let k = 0; k < 72; k += 1) {
+    const candidate = projectionAssignment(source, target, (180 * k) / 72);
+    const score = mode === "max_projected" ? -candidate.projectedCost : candidate.liftedCost;
+    if (!best || score < best.score) best = { ...candidate, score };
+  }
+  return best;
+}
+
+function assignmentQuadraticCost(source, target, assignment) {
+  let total = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    const q = target[assignment[i]];
+    total += (source[i][0] - q[0]) ** 2 + (source[i][1] - q[1]) ** 2;
+  }
+  return total / Math.max(source.length, 1);
+}
+
+function exactAssignment(source, target) {
+  return hungarian(costMatrix(source, target, 2));
+}
+
+function drawDirectionAxis(ctx, box, lim, angleDeg) {
+  const theta = (angleDeg * Math.PI) / 180;
+  const r = 0.48 * Math.max(lim.xmax - lim.xmin, lim.ymax - lim.ymin);
+  const p0 = [-r * Math.cos(theta), -r * Math.sin(theta)];
+  const p1 = [r * Math.cos(theta), r * Math.sin(theta)];
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.strokeStyle = "rgba(27,158,119,.9)";
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(X(p0), Y(p0));
+  ctx.lineTo(X(p1), Y(p1));
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawProjectedQuantilePanel(ctx, source, target, assignmentData, box) {
+  drawFrame(ctx, box, "projected matching");
+  const theta = (assignmentData.angle * Math.PI) / 180;
+  const ux = Math.cos(theta);
+  const uy = Math.sin(theta);
+  const pairs = source.map((p, i) => ({
+    s: ux * p[0] + uy * p[1],
+    t: ux * target[assignmentData.assignment[i]][0] + uy * target[assignmentData.assignment[i]][1],
+    i,
+  })).sort((a, b) => a.s - b.s || a.i - b.i);
+  const vals = pairs.flatMap((p) => [p.s, p.t]);
+  const xMin = Math.min(...vals) - 0.08;
+  const xMax = Math.max(...vals) + 0.08;
+  const X = (x) => box.x + 14 + ((x - xMin) / Math.max(xMax - xMin, 1e-12)) * (box.w - 28);
+  const y0 = box.y + 0.34 * box.h;
+  const y1 = box.y + 0.72 * box.h;
+  ctx.strokeStyle = "#e5e9ef";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 14, y0);
+  ctx.lineTo(box.x + box.w - 14, y0);
+  ctx.moveTo(box.x + 14, y1);
+  ctx.lineTo(box.x + box.w - 14, y1);
+  ctx.stroke();
+  for (let r = 0; r < pairs.length; r += 1) {
+    ctx.strokeStyle = "rgba(123,50,148,.32)";
+    ctx.lineWidth = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(X(pairs[r].s), y0);
+    ctx.lineTo(X(pairs[r].t), y1);
+    ctx.stroke();
+  }
+  ctx.fillStyle = RED;
+  for (const pair of pairs) {
+    ctx.beginPath();
+    ctx.arc(X(pair.s), y0, 2.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = BLUE;
+  for (const pair of pairs) {
+    ctx.beginPath();
+    ctx.arc(X(pair.t), y1, 2.4, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 128, 34);
+  ctx.fillStyle = RED;
+  ctx.fillText("source shadow", box.x + 16, box.y + 25);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target shadow", box.x + 16, box.y + 41);
+}
+
+function drawGeneralizedSliced() {
+  const n = Math.round(val("gsPoints"));
+  const angle = val("gsAngle");
+  const mode = val("gsMode");
+  const sourceName = val("gsSource");
+  const targetName = val("gsTarget");
+  const seed = Math.round(val("gsSeed"));
+  const random = rng(seed);
+  const source = generalizedShape(sourceName, n, random);
+  const target = generalizedShape(targetName, n, random);
+  const sliced = bestProjectionAssignment(source, target, mode, angle);
+  const exact = exactAssignment(source, target);
+  const exactCost = assignmentQuadraticCost(source, target, exact);
+  const lim = limits(source.concat(target));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 720 : 410);
+  const vertical = w < 760;
+  const gap = 22;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 42, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + (h - 118) / 3 + gap, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + 2 * ((h - 118) / 3 + gap), w: w - 44, h: (h - 118) / 3 },
+      ]
+    : [
+        { x: 18, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + (w - 72) / 3 + gap, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 48, w: (w - 72) / 3, h: h - 84 },
+      ];
+  drawPairedMapPanel(ctx, source, target, sliced.assignment, boxes[0], lim, `slice ${sliced.angle.toFixed(1)} deg`, 0.25);
+  drawDirectionAxis(ctx, boxes[0], lim, sliced.angle);
+  drawProjectedQuantilePanel(ctx, source, target, sliced, boxes[1]);
+  drawPairedMapPanel(ctx, source, target, exact, boxes[2], lim, "quadratic W2 plan", 0.25);
+  const ratio = sliced.liftedCost / Math.max(exactCost, 1e-12);
+  setStatus(`angle ${sliced.angle.toFixed(1)} deg; projected cost ${sliced.projectedCost.toFixed(3)}; lifted cost ${sliced.liftedCost.toFixed(3)}; lifted/exact ${ratio.toFixed(2)}`);
+}
+
+function drawLinearOTMaps(ctx, box, qRef, qA, qB, qBar, t) {
+  drawFrame(ctx, box, "maps from reference");
+  const all = qRef.concat(qA, qB, qBar);
+  const xMin = Math.min(...qRef) - 0.12;
+  const xMax = Math.max(...qRef) + 0.12;
+  const yMin = Math.min(...all) - 0.12;
+  const yMax = Math.max(...all) + 0.12;
+  const X = (x) => box.x + ((x - xMin) / Math.max(xMax - xMin, 1e-12)) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.strokeStyle = "rgba(95,102,112,.28)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(X(xMin), Y(xMin));
+  ctx.lineTo(X(xMax), Y(xMax));
+  ctx.stroke();
+  function curve(ys, color, width) {
+    ctx.beginPath();
+    for (let i = 0; i < qRef.length; i += 1) {
+      const x = X(qRef[i]);
+      const y = Y(ys[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+  curve(qA, RED, 1.45);
+  curve(qB, BLUE, 1.45);
+  curve(qBar, mixColor(t, RED, BLUE, 1), 2.35);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 150, 52);
+  ctx.fillStyle = RED;
+  ctx.fillText("T_alpha", box.x + 16, box.y + 26);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("T_beta", box.x + 16, box.y + 42);
+  ctx.fillStyle = mixColor(t, RED, BLUE, 1);
+  ctx.fillText("averaged map", box.x + 16, box.y + 58);
+}
+
+function drawLinearOTDensities(ctx, box, xs, refPdf, aPdf, bPdf) {
+  drawFrame(ctx, box, "reference and targets");
+  const yMax = Math.max(...refPdf, ...aPdf, ...bPdf) * 1.08;
+  drawCurve(ctx, xs, refPdf, box, xs[0], xs[xs.length - 1], 0, yMax, "#5f6670", 1.5);
+  drawCurve(ctx, xs, aPdf, box, xs[0], xs[xs.length - 1], 0, yMax, RED, 1.65);
+  drawCurve(ctx, xs, bPdf, box, xs[0], xs[xs.length - 1], 0, yMax, BLUE, 1.65);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 126, 52);
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("rho", box.x + 16, box.y + 26);
+  ctx.fillStyle = RED;
+  ctx.fillText("alpha", box.x + 16, box.y + 42);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("beta", box.x + 16, box.y + 58);
+}
+
+function drawLinearOTBarycenter(ctx, box, xs, aPdf, bPdf, qBar, t) {
+  drawFrame(ctx, box, `linear barycenter t = ${t.toFixed(2)}`);
+  const hist = smoothDensityCurve(qBar, xs[0], xs[xs.length - 1], 260, 0.05);
+  const yMax = Math.max(...hist.ys, ...aPdf, ...bPdf) * 1.08;
+  drawCurve(ctx, xs, aPdf, box, xs[0], xs[xs.length - 1], 0, yMax, "rgba(215,48,39,.35)", 1.1);
+  drawCurve(ctx, xs, bPdf, box, xs[0], xs[xs.length - 1], 0, yMax, "rgba(33,102,172,.35)", 1.1);
+  drawCurve(ctx, hist.xs, hist.ys, box, xs[0], xs[xs.length - 1], 0, yMax, mixColor(t, RED, BLUE, 1), 2.3);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 158, 36);
+  ctx.fillStyle = mixColor(t, RED, BLUE, 1);
+  ctx.fillText("pushforward of averaged map", box.x + 16, box.y + 27);
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("faint: endpoints", box.x + 16, box.y + 43);
+}
+
+function drawGeneralizedLinearOT() {
+  const t = val("glotT");
+  const levels = Math.round(val("glotLevels"));
+  const refName = val("glotRef");
+  const alphaName = val("glotAlpha");
+  const betaName = val("glotBeta");
+  const xMin = -3.35;
+  const xMax = 3.35;
+  const gridSize = Math.max(1800, 2 * levels);
+  const xs = Array.from({ length: gridSize }, (_, i) => lerp(xMin, xMax, i / (gridSize - 1)));
+  const refPdf = xs.map((x) => mixPdf(refName, x));
+  const aPdf = xs.map((x) => mixPdf(alphaName, x));
+  const bPdf = xs.map((x) => mixPdf(betaName, x));
+  const qRef = inverseCdfSamples(xs, refPdf, levels);
+  const qA = inverseCdfSamples(xs, aPdf, levels);
+  const qB = inverseCdfSamples(xs, bPdf, levels);
+  const qBar = qA.map((x, i) => lerp(x, qB[i], t));
+  const lot2 = qA.reduce((sum, x, i) => sum + (x - qB[i]) ** 2, 0) / Math.max(levels, 1);
+  const baryMean = qBar.reduce((sum, x) => sum + x, 0) / Math.max(levels, 1);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 720 : 410);
+  const vertical = w < 760;
+  const gap = 22;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 42, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + (h - 118) / 3 + gap, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + 2 * ((h - 118) / 3 + gap), w: w - 44, h: (h - 118) / 3 },
+      ]
+    : [
+        { x: 18, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + (w - 72) / 3 + gap, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 48, w: (w - 72) / 3, h: h - 84 },
+      ];
+  drawLinearOTDensities(ctx, boxes[0], xs, refPdf, aPdf, bPdf);
+  drawLinearOTMaps(ctx, boxes[1], qRef, qA, qB, qBar, t);
+  drawLinearOTBarycenter(ctx, boxes[2], xs, aPdf, bPdf, qBar, t);
+  setStatus(`LOT distance ${Math.sqrt(lot2).toFixed(3)}; averaged map weight t = ${t.toFixed(2)}; barycenter mean ${baryMean.toFixed(3)}`);
+}
+
+function sampleBunnyCloud(n, random) {
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const u = random();
+    if (u < 0.5) {
+      const th = 2 * Math.PI * random();
+      const r = Math.sqrt(random());
+      pts.push([-0.18 + 0.66 * r * Math.cos(th), -0.12 + 0.36 * r * Math.sin(th)]);
+    } else if (u < 0.72) {
+      const th = 2 * Math.PI * random();
+      const r = Math.sqrt(random());
+      pts.push([0.42 + 0.28 * r * Math.cos(th), 0.2 + 0.24 * r * Math.sin(th)]);
+    } else if (u < 0.88) {
+      const th = 2 * Math.PI * random();
+      const r = Math.sqrt(random());
+      pts.push([0.33 + 0.11 * r * Math.cos(th), 0.62 + 0.36 * r * Math.sin(th)]);
+    } else {
+      const th = 2 * Math.PI * random();
+      const r = Math.sqrt(random());
+      pts.push([0.58 + 0.1 * r * Math.cos(th), 0.62 + 0.35 * r * Math.sin(th)]);
+    }
+  }
+  const cx = pts.reduce((s, p) => s + p[0], 0) / n;
+  const cy = pts.reduce((s, p) => s + p[1], 0) / n;
+  const scale = Math.max(...pts.map((p) => Math.hypot(p[0] - cx, p[1] - cy)), 1e-9);
+  return pts.map((p) => [(p[0] - cx) / scale, (p[1] - cy) / scale]);
+}
+
+function rigidTransformPoint(p, theta, t) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return [c * p[0] - s * p[1] + t[0], s * p[0] + c * p[1] + t[1]];
+}
+
+function procrustesUpdate(source, target, assignment) {
+  const n = source.length;
+  const xbar = [0, 0];
+  const ybar = [0, 0];
+  for (let i = 0; i < n; i += 1) {
+    xbar[0] += source[i][0] / n;
+    xbar[1] += source[i][1] / n;
+    const y = target[assignment[i]];
+    ybar[0] += y[0] / n;
+    ybar[1] += y[1] / n;
+  }
+  let m00 = 0;
+  let m01 = 0;
+  let m10 = 0;
+  let m11 = 0;
+  for (let i = 0; i < n; i += 1) {
+    const x = [source[i][0] - xbar[0], source[i][1] - xbar[1]];
+    const y = [target[assignment[i]][0] - ybar[0], target[assignment[i]][1] - ybar[1]];
+    m00 += y[0] * x[0];
+    m01 += y[0] * x[1];
+    m10 += y[1] * x[0];
+    m11 += y[1] * x[1];
+  }
+  const theta = Math.atan2(m10 - m01, m00 + m11);
+  const rx = rigidTransformPoint(xbar, theta, [0, 0]);
+  return { theta, t: [ybar[0] - rx[0], ybar[1] - rx[1]] };
+}
+
+function procrustesTrajectory(n, maxIter, trueAngle, trueT, damping, noise, seed) {
+  const random = rng(seed);
+  const source = sampleBunnyCloud(n, random);
+  const target = source.map((p) => {
+    const q = rigidTransformPoint(p, trueAngle, trueT);
+    return [q[0] + noise * randn(random), q[1] + noise * randn(random)];
+  });
+  let theta = 0;
+  let t = [0, 0];
+  const states = [];
+  for (let k = 0; k <= maxIter; k += 1) {
+    const moved = source.map((p) => rigidTransformPoint(p, theta, t));
+    const assignment = hungarian(costMatrix(moved, target, 2));
+    const cost = assignment.reduce((s, j, i) => s + Math.hypot(moved[i][0] - target[j][0], moved[i][1] - target[j][1]) ** 2, 0) / n;
+    states.push({ theta, t: t.slice(), moved, assignment, cost });
+    const update = procrustesUpdate(source, target, assignment);
+    const dtheta = Math.atan2(Math.sin(update.theta - theta), Math.cos(update.theta - theta));
+    theta += damping * dtheta;
+    t = [lerp(t[0], update.t[0], damping), lerp(t[1], update.t[1], damping)];
+  }
+  return { source, target, states };
+}
+
+function drawProcrustesAlignment() {
+  const n = Math.round(val("gprocN"));
+  const iter = Math.round(val("gprocIter"));
+  const angle = (Math.PI / 180) * val("gprocAngle");
+  const tx = val("gprocTx");
+  const ty = val("gprocTy");
+  const damping = val("gprocDamp");
+  const noise = val("gprocNoise");
+  const seed = Math.round(val("gprocSeed"));
+  const data = procrustesTrajectory(n, 12, angle, [tx, ty], damping, noise, seed);
+  const state = data.states[Math.min(iter, data.states.length - 1)];
+  const { ctx, w, h } = resizeCanvas(420);
+  const gap = 24;
+  const left = { x: 20, y: 34, w: (w - 64) * 0.62, h: h - 68 };
+  const right = { x: left.x + left.w + gap, y: 34, w: w - left.x - left.w - gap - 20, h: h - 68 };
+  const lim = limits(data.target.concat(...data.states.map((s) => s.moved)));
+  const X = (p) => left.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * left.w;
+  const Y = (p) => left.y + left.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * left.h;
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(left.x, left.y, left.w, left.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(left.x, left.y, left.w, left.h);
+  const skip = Math.max(1, Math.floor(n / 28));
+  for (let i = 0; i < state.assignment.length; i += skip) {
+    const j = state.assignment[i];
+    ctx.strokeStyle = "rgba(123,50,148,.24)";
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(X(state.moved[i]), Y(state.moved[i]));
+    ctx.lineTo(X(data.target[j]), Y(data.target[j]));
+    ctx.stroke();
+  }
+  for (const p of data.target) {
+    ctx.fillStyle = "rgba(18,24,31,.78)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.1, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of data.states[0].moved) {
+    ctx.fillStyle = "rgba(215,48,39,.16)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.5, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of state.moved) {
+    ctx.fillStyle = mixColor(iter / 12, RED, BLUE, 0.92);
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.1, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  drawSmallLabel(ctx, "current registered source, target, and OT links", left.x + left.w / 2, 22);
+
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(right.x, right.y, right.w, right.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(right.x, right.y, right.w, right.h);
+  const costs = data.states.map((s) => s.cost);
+  const cMax = Math.max(...costs);
+  const cMin = Math.min(...costs);
+  const px = (k) => right.x + 16 + (k / 12) * (right.w - 32);
+  const py = (c) => right.y + right.h - 24 - ((c - cMin) / Math.max(cMax - cMin, 1e-9)) * (right.h - 56);
+  ctx.strokeStyle = "rgba(38,51,63,.18)";
+  ctx.beginPath();
+  ctx.moveTo(right.x + 16, right.y + 16);
+  ctx.lineTo(right.x + 16, right.y + right.h - 24);
+  ctx.lineTo(right.x + right.w - 12, right.y + right.h - 24);
+  ctx.stroke();
+  ctx.beginPath();
+  costs.forEach((c, k) => (k ? ctx.lineTo(px(k), py(c)) : ctx.moveTo(px(k), py(c))));
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  for (let k = 0; k < costs.length; k += 1) {
+    ctx.fillStyle = k === iter ? BLUE : "rgba(123,50,148,.45)";
+    ctx.beginPath();
+    ctx.arc(px(k), py(costs[k]), k === iter ? 4.2 : 2.7, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("assignment cost", right.x + 20, right.y + 28);
+  ctx.fillText(`iteration ${iter}`, right.x + 20, right.y + right.h - 8);
+  setStatus(`iteration ${iter}; cost ${state.cost.toFixed(4)}; rotation ${(180 * state.theta / Math.PI).toFixed(1)} degrees; translation (${state.t[0].toFixed(2)}, ${state.t[1].toFixed(2)})`);
+}
+
+function covarianceForAssignment(source, target, assignment) {
+  const M = [[0, 0], [0, 0]];
+  const displacements = [];
+  for (let i = 0; i < source.length; i += 1) {
+    const q = target[assignment[i]];
+    const dx = source[i][0] - q[0];
+    const dy = source[i][1] - q[1];
+    displacements.push([dx, dy]);
+    M[0][0] += dx * dx;
+    M[0][1] += dx * dy;
+    M[1][1] += dy * dy;
+  }
+  const inv = 1 / Math.max(source.length, 1);
+  M[0][0] *= inv;
+  M[0][1] *= inv;
+  M[1][0] = M[0][1];
+  M[1][1] *= inv;
+  return { M, displacements };
+}
+
+function spectralGaugeValue(M, gauge, weight) {
+  const eig = eigSym2(M);
+  const l1 = eig.values[0];
+  const l2 = eig.values[1];
+  if (gauge === "lambda_max") return l1;
+  if (gauge === "weighted") return l1 + weight * l2;
+  return l1 + l2;
+}
+
+function spectralAssignment(source, target, gauge, weight, planMode, manualAngle) {
+  if (planMode === "manual_slice") {
+    const data = projectionAssignment(source, target, manualAngle);
+    const cov = covarianceForAssignment(source, target, data.assignment);
+    return { ...data, ...cov, value: spectralGaugeValue(cov.M, gauge, weight), label: "manual slice" };
+  }
+  if (gauge === "trace") {
+    const assignment = exactAssignment(source, target);
+    const cov = covarianceForAssignment(source, target, assignment);
+    return {
+      assignment,
+      angle: null,
+      projectedCost: 0,
+      liftedCost: assignmentQuadraticCost(source, target, assignment),
+      ...cov,
+      value: spectralGaugeValue(cov.M, gauge, weight),
+      label: "trace plan",
+    };
+  }
+  let best = null;
+  for (let k = 0; k < 90; k += 1) {
+    const data = projectionAssignment(source, target, (180 * k) / 90);
+    const cov = covarianceForAssignment(source, target, data.assignment);
+    const value = spectralGaugeValue(cov.M, gauge, weight);
+    if (!best || value < best.value) best = { ...data, ...cov, value, label: "spectral sweep" };
+  }
+  return best;
+}
+
+function drawCovarianceGaugePanel(ctx, box, M, gauge, weight) {
+  drawFrame(ctx, box, "displacement covariance");
+  const eig = eigSym2(M);
+  const lim = { xmin: -1.4, xmax: 1.4, ymin: -1.4, ymax: 1.4 };
+  drawCovEllipse(ctx, [0, 0], M, box, lim, "rgba(123,50,148,1)", 2.4, 0.88);
+  const maxEig = Math.max(eig.values[0], eig.values[1], 1e-12);
+  const barX = box.x + box.w - 82;
+  const barY = box.y + 22;
+  const barW = 22;
+  const barH = Math.min(88, box.h - 58);
+  ctx.fillStyle = "rgba(251,252,253,.94)";
+  ctx.fillRect(barX - 12, barY - 12, 78, barH + 44);
+  for (let k = 0; k < 2; k += 1) {
+    const h = (eig.values[k] / maxEig) * barH;
+    ctx.fillStyle = k === 0 ? VIOLET : "rgba(123,50,148,.42)";
+    ctx.fillRect(barX + k * 30, barY + barH - h, barW, h);
+    ctx.strokeStyle = "#d8dee8";
+    ctx.strokeRect(barX + k * 30, barY, barW, barH);
+  }
+  ctx.fillStyle = "#26333f";
+  ctx.fillText("lambda1", barX - 6, barY + barH + 17);
+  ctx.fillText("lambda2", barX + 24, barY + barH + 33);
+  const label = gauge === "weighted" ? `l1 + ${weight.toFixed(2)} l2` : pretty(gauge);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 146, 34);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(label, box.x + 16, box.y + 26);
+  ctx.fillStyle = "#4a5563";
+  ctx.fillText(`value ${spectralGaugeValue(M, gauge, weight).toFixed(3)}`, box.x + 16, box.y + 42);
+}
+
+function drawGeneralizedSpectral() {
+  const n = Math.round(val("gwPoints"));
+  const t = val("gwT");
+  const angle = val("gwAngle");
+  const gauge = val("gwGauge");
+  const weight = val("gwWeight");
+  const planMode = val("gwPlan");
+  const seed = Math.round(val("gwSeed"));
+  const random = rng(seed);
+  const source = generalizedShape("two_blobs", n, random).map((p) => [p[0] - 0.22, p[1] + 0.06]);
+  const target = generalizedShape("heart", n, random).map((p) => [p[0] + 0.24, p[1] - 0.03]);
+  const plan = spectralAssignment(source, target, gauge, weight, planMode, angle);
+  const current = interpolateAssigned(source, target, plan.assignment, t);
+  const lim = limits(source.concat(target, current));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 720 : 410);
+  const vertical = w < 760;
+  const gap = 22;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 42, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + (h - 118) / 3 + gap, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + 2 * ((h - 118) / 3 + gap), w: w - 44, h: (h - 118) / 3 },
+      ]
+    : [
+        { x: 18, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + (w - 72) / 3 + gap, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 48, w: (w - 72) / 3, h: h - 84 },
+      ];
+  drawPairedMapPanel(ctx, source, target, plan.assignment, boxes[0], lim, plan.label, 0.25);
+  if (plan.angle !== null) drawDirectionAxis(ctx, boxes[0], lim, plan.angle);
+  drawScatterPanel(ctx, current, boxes[1], lim, (i) => mixColor(t, RED, BLUE, 0.88), `interpolation t = ${t.toFixed(2)}`, 3.2);
+  drawCovarianceGaugePanel(ctx, boxes[2], plan.M, gauge, weight);
+  const eig = eigSym2(plan.M).values;
+  const angleText = plan.angle === null ? "exact trace" : `${plan.angle.toFixed(1)} deg`;
+  setStatus(`${pretty(gauge)} gauge ${plan.value.toFixed(3)}; eigenvalues ${eig[0].toFixed(3)}, ${eig[1].toFixed(3)}; plan ${angleText}`);
+}
+
+function barycenterWeights(u, v) {
+  return [(1 - u) * (1 - v), u * (1 - v), (1 - u) * v, u * v];
+}
+
+function drawOtProblemsBarycenter() {
+  const u = val("opbU");
+  const v = val("opbV");
+  const levels = Math.round(val("opbLevels"));
+  const cornerNames = ["one", "two", "wide_two", "three"];
+  const colors = ["#5f6670", RED, BLUE, VIOLET];
+  const weights = barycenterWeights(u, v);
+  const xMin = -3.35;
+  const xMax = 3.35;
+  const xs = Array.from({ length: 760 }, (_, i) => lerp(xMin, xMax, i / 759));
+  const pdfs = cornerNames.map((name) => xs.map((x) => mixPdf(name, x)));
+  const quantiles = pdfs.map((pdf) => inverseCdfSamples(xs, pdf, levels));
+  const qGrid = Array.from({ length: levels }, (_, i) => (i + 0.5) / levels);
+  const qBar = Array(levels).fill(0);
+  for (let s = 0; s < quantiles.length; s += 1) {
+    for (let i = 0; i < levels; i += 1) qBar[i] += weights[s] * quantiles[s][i];
+  }
+  const baryHist = smoothDensityCurve(qBar, xMin, xMax, 220, 0.055);
+  const yMax = Math.max(...pdfs.flat(), ...baryHist.ys) * 1.08;
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 720 : 410);
+  const vertical = w < 760;
+  const gap = 22;
+  const boxes = vertical
+    ? [
+        { x: 22, y: 42, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + (h - 118) / 3 + gap, w: w - 44, h: (h - 118) / 3 },
+        { x: 22, y: 42 + 2 * ((h - 118) / 3 + gap), w: w - 44, h: (h - 118) / 3 },
+      ]
+    : [
+        { x: 18, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + (w - 72) / 3 + gap, y: 48, w: (w - 72) / 3, h: h - 84 },
+        { x: 18 + 2 * ((w - 72) / 3 + gap), y: 48, w: (w - 72) / 3, h: h - 84 },
+      ];
+  drawFrame(ctx, boxes[0], "four input densities");
+  for (let s = 0; s < pdfs.length; s += 1) drawCurve(ctx, xs, pdfs[s], boxes[0], xMin, xMax, 0, yMax, colors[s], 1.5);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(boxes[0].x + 10, boxes[0].y + 10, 154, 68);
+  for (let s = 0; s < cornerNames.length; s += 1) {
+    ctx.fillStyle = colors[s];
+    ctx.fillText(`${pretty(cornerNames[s])}: ${weights[s].toFixed(2)}`, boxes[0].x + 16, boxes[0].y + 26 + 16 * s);
+  }
+
+  drawFrame(ctx, boxes[1], "averaged quantiles");
+  for (let s = 0; s < quantiles.length; s += 1) drawCurve(ctx, qGrid, quantiles[s], boxes[1], 0, 1, xMin, xMax, colors[s], 1.1);
+  drawCurve(ctx, qGrid, qBar, boxes[1], 0, 1, xMin, xMax, mixColor(0.5 * (u + v), RED, BLUE, 1), 2.45);
+
+  drawFrame(ctx, boxes[2], "barycenter density");
+  const faint = ["rgba(95,102,112,.28)", "rgba(215,48,39,.24)", "rgba(33,102,172,.24)", "rgba(123,50,148,.24)"];
+  for (let s = 0; s < pdfs.length; s += 1) drawCurve(ctx, xs, pdfs[s], boxes[2], xMin, xMax, 0, yMax, faint[s], 0.9);
+  drawCurve(ctx, baryHist.xs, baryHist.ys, boxes[2], xMin, xMax, 0, yMax, mixColor(0.5 * (u + v), RED, BLUE, 1), 2.35);
+  const mean = qBar.reduce((sum, z) => sum + z, 0) / Math.max(levels, 1);
+  setStatus(`corner weights ${weights.map((z) => z.toFixed(2)).join(", ")}; quantile levels ${levels}; barycenter mean ${mean.toFixed(3)}`);
+}
+
+function weightedCovariance(covs, weights) {
+  let out = [[0, 0], [0, 0]];
+  for (let k = 0; k < covs.length; k += 1) out = matAdd2(out, matScale2(covs[k], weights[k]));
+  return out;
+}
+
+function buresBarycenterCov(covs, weights) {
+  let S = weightedCovariance(covs, weights);
+  for (let it = 0; it < 42; it += 1) {
+    const sqrtS = sqrtSym2(S);
+    let next = [[0, 0], [0, 0]];
+    for (let k = 0; k < covs.length; k += 1) {
+      const middle = matMul2(matMul2(sqrtS, covs[k]), sqrtS);
+      next = matAdd2(next, matScale2(sqrtSym2(middle), weights[k]));
+    }
+    S = next;
+  }
+  return S;
+}
+
+function gaussianBarycenterCorners(anisotropy, angle) {
+  return [
+    covarianceFromAxes(-angle, 0.34, 0.22),
+    covarianceFromAxes(angle, 0.24 * anisotropy, 0.16),
+    covarianceFromAxes(90 - angle, 0.2, 0.26 * anisotropy),
+    covarianceFromAxes(35 + 0.35 * angle, 0.3 * anisotropy, 0.18),
+  ];
+}
+
+function drawCovCollection(ctx, box, covs) {
+  drawFrame(ctx, box, "corner covariances");
+  const centers = [[-0.72, -0.52], [0.72, -0.52], [-0.72, 0.52], [0.72, 0.52]];
+  const colors = ["rgba(95,102,112,1)", "rgba(215,48,39,1)", "rgba(33,102,172,1)", "rgba(123,50,148,1)"];
+  const lim = { xmin: -1.45, xmax: 1.45, ymin: -1.15, ymax: 1.15 };
+  for (let k = 0; k < covs.length; k += 1) drawCovEllipse(ctx, centers[k], covs[k], box, lim, colors[k], 1.6, 0.62);
+}
+
+function drawBaryCovPanel(ctx, box, cov, euc, title) {
+  drawFrame(ctx, box, title);
+  const lim = { xmin: -1.45, xmax: 1.45, ymin: -1.15, ymax: 1.15 };
+  drawCovEllipse(ctx, [0, 0], euc, box, lim, "rgba(95,102,112,1)", 1.3, 0.32);
+  drawCovEllipse(ctx, [0, 0], cov, box, lim, "rgba(123,50,148,1)", 2.5, 0.86);
+  ctx.fillStyle = "rgba(251,252,253,.92)";
+  ctx.fillRect(box.x + 10, box.y + 10, 174, 36);
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("gray: Euclidean average", box.x + 16, box.y + 26);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText("violet: Bures barycenter", box.x + 16, box.y + 42);
+}
+
+function drawOtProblemsGaussianBarycenter() {
+  const u = val("opgU");
+  const v = val("opgV");
+  const anisotropy = val("opgAniso");
+  const angle = val("opgAngle");
+  const weights = barycenterWeights(u, v);
+  const covs = gaussianBarycenterCorners(anisotropy, angle);
+  const euc = weightedCovariance(covs, weights);
+  const bures = buresBarycenterCov(covs, weights);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 700 : 390);
+  const vertical = w < 760;
+  const gap = 24;
+  const boxes = vertical
+    ? [
+        { x: 24, y: 40, w: w - 48, h: (h - 98) / 2 },
+        { x: 24, y: 40 + (h - 98) / 2 + gap, w: w - 48, h: (h - 98) / 2 },
+      ]
+    : [
+        { x: 22, y: 44, w: (w - 72) / 2, h: h - 82 },
+        { x: 22 + (w - 72) / 2 + gap, y: 44, w: (w - 72) / 2, h: h - 82 },
+      ];
+  drawCovCollection(ctx, boxes[0], covs);
+  drawBaryCovPanel(ctx, boxes[1], bures, euc, `weights u=${u.toFixed(2)}, v=${v.toFixed(2)}`);
+  const eig = eigSym2(bures).values;
+  setStatus(`corner weights ${weights.map((z) => z.toFixed(2)).join(", ")}; Bures eigenvalues ${eig[0].toFixed(3)}, ${eig[1].toFixed(3)}; anisotropy ${anisotropy.toFixed(2)}`);
+}
+
+function mahalanobisCostMatrix(source, target, angleDeg, anisotropy) {
+  const th = (angleDeg * Math.PI) / 180;
+  const c = Math.cos(th);
+  const s = Math.sin(th);
+  const aniso = Math.max(anisotropy, 1e-4);
+  return source.map((p) => target.map((q) => {
+    const dx = p[0] - q[0];
+    const dy = p[1] - q[1];
+    const z1 = c * dx + s * dy;
+    const z2 = -s * dx + c * dy;
+    return (z1 * z1) / aniso + aniso * z2 * z2;
+  }));
+}
+
+function drawMetricUnitBall(ctx, box, angleDeg, anisotropy) {
+  const cx = box.x + box.w - 54;
+  const cy = box.y + 54;
+  const th = (angleDeg * Math.PI) / 180;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-th);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 28 * Math.sqrt(anisotropy), 28 / Math.sqrt(anisotropy), 0, 0, 2 * Math.PI);
+  ctx.fillStyle = "rgba(95,102,112,.10)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(95,102,112,.8)";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("unit ball", cx - 26, cy + 44);
+}
+
+function drawOtProblemsMetric() {
+  const n = Math.round(val("opmPoints"));
+  const anisotropy = val("opmAniso");
+  const angle = val("opmAngle");
+  const seed = Math.round(val("opmSeed"));
+  const random = rng(seed);
+  const source = sampleCloud("two_blobs", n, random);
+  const target = sampleCloud("three_blobs", n, random).map((p) => [p[0] + 0.18, p[1] - 0.05]);
+  const euclidean = hungarian(costMatrix(source, target, 2));
+  const metric = hungarian(mahalanobisCostMatrix(source, target, angle, anisotropy));
+  const lim = limits(source.concat(target));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 740 ? 660 : 380);
+  const vertical = w < 740;
+  const gap = 24;
+  const boxes = vertical
+    ? [
+        { x: 24, y: 42, w: w - 48, h: (h - 98) / 2 },
+        { x: 24, y: 42 + (h - 98) / 2 + gap, w: w - 48, h: (h - 98) / 2 },
+      ]
+    : [
+        { x: 20, y: 48, w: (w - 68) / 2, h: h - 84 },
+        { x: 20 + (w - 68) / 2 + gap, y: 48, w: (w - 68) / 2, h: h - 84 },
+      ];
+  drawTransport(ctx, source, target, euclidean.map((j, i) => [i, j, 1]), null, "Euclidean plan", boxes[0], lim);
+  drawTransport(ctx, source, target, metric.map((j, i) => [i, j, 1]), null, "learned metric plan", boxes[1], lim);
+  drawMetricUnitBall(ctx, boxes[1], angle, anisotropy);
+  const changed = metric.reduce((sum, j, i) => sum + (j === euclidean[i] ? 0 : 1), 0);
+  setStatus(`anisotropy ${anisotropy.toFixed(2)} at ${angle.toFixed(0)} deg; ${changed}/${n} assignments differ from Euclidean`);
+}
+
+function weakTransportData(n, split, spread, seed) {
+  const random = rng(seed);
+  const source = sampleCloud("disk", n, random).map((p) => [0.75 * p[0] - 0.12, 0.75 * p[1]]);
+  const target = sampleCloud("annulus", Math.max(n * 2, split * 8), random).map((p) => [p[0] + 0.2, p[1]]);
+  const conditionals = [];
+  const bary = [];
+  let fullCost = 0;
+  let weakCost = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    const ranked = target.map((q, j) => {
+      const d = Math.hypot(source[i][0] - q[0], source[i][1] - q[1]);
+      return { j, d };
+    }).sort((a, b) => a.d - b.d).slice(0, split);
+    const raw = ranked.map((r) => Math.exp(-(r.d * r.d) / Math.max(spread * spread, 1e-5)));
+    const total = raw.reduce((sum, z) => sum + z, 0);
+    let bx = 0;
+    let by = 0;
+    const edges = [];
+    for (let k = 0; k < ranked.length; k += 1) {
+      const weight = raw[k] / Math.max(total, 1e-12);
+      const q = target[ranked[k].j];
+      bx += weight * q[0];
+      by += weight * q[1];
+      fullCost += weight * ((source[i][0] - q[0]) ** 2 + (source[i][1] - q[1]) ** 2) / source.length;
+      edges.push({ j: ranked[k].j, weight });
+    }
+    weakCost += ((source[i][0] - bx) ** 2 + (source[i][1] - by) ** 2) / source.length;
+    conditionals.push(edges);
+    bary.push([bx, by]);
+  }
+  return { source, target, conditionals, bary, fullCost, weakCost };
+}
+
+function drawWeakConditionalPanel(ctx, box, lim, data, mode) {
+  drawFrame(ctx, box, mode === "full" ? "full conditional laws" : "barycentric projection");
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  if (mode === "full") {
+    for (let i = 0; i < data.source.length; i += 1) {
+      for (const edge of data.conditionals[i]) {
+        const q = data.target[edge.j];
+        ctx.strokeStyle = `rgba(123,50,148,${0.08 + 0.38 * edge.weight})`;
+        ctx.lineWidth = 0.35 + 2.1 * edge.weight;
+        ctx.beginPath();
+        ctx.moveTo(X(data.source[i]), Y(data.source[i]));
+        ctx.lineTo(X(q), Y(q));
+        ctx.stroke();
+      }
+    }
+  } else {
+    for (let i = 0; i < data.source.length; i += 1) {
+      ctx.strokeStyle = "rgba(123,50,148,.45)";
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(X(data.source[i]), Y(data.source[i]));
+      ctx.lineTo(X(data.bary[i]), Y(data.bary[i]));
+      ctx.stroke();
+    }
+    for (const p of data.bary) {
+      ctx.fillStyle = VIOLET;
+      ctx.beginPath();
+      ctx.arc(X(p), Y(p), 3.1, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    }
+  }
+  for (const p of data.target) {
+    ctx.fillStyle = "rgba(33,102,172,.72)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.3, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of data.source) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.2, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+}
+
+function drawOtProblemsWeak() {
+  const n = Math.round(val("opwSources"));
+  const split = Math.round(val("opwSplit"));
+  const spread = val("opwSpread");
+  const seed = Math.round(val("opwSeed"));
+  const data = weakTransportData(n, split, spread, seed);
+  const lim = limits(data.source.concat(data.target, data.bary));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 650 : 380);
+  const vertical = w < 720;
+  const gap = 24;
+  const boxes = vertical
+    ? [
+        { x: 24, y: 42, w: w - 48, h: (h - 98) / 2 },
+        { x: 24, y: 42 + (h - 98) / 2 + gap, w: w - 48, h: (h - 98) / 2 },
+      ]
+    : [
+        { x: 20, y: 48, w: (w - 68) / 2, h: h - 84 },
+        { x: 20 + (w - 68) / 2 + gap, y: 48, w: (w - 68) / 2, h: h - 84 },
+      ];
+  drawWeakConditionalPanel(ctx, boxes[0], lim, data, "full");
+  drawWeakConditionalPanel(ctx, boxes[1], lim, data, "bary");
+  const hiddenVariance = Math.max(data.fullCost - data.weakCost, 0);
+  setStatus(`split ${split}; full quadratic cost ${data.fullCost.toFixed(3)}; weak barycentric cost ${data.weakCost.toFixed(3)}; hidden conditional variance ${hiddenVariance.toFixed(3)}`);
+}
+
+function beyondBoxes(w, h, count, minWidth = 720) {
+  const gap = 24;
+  if (w < minWidth && count > 1) {
+    const usable = h - 58 - gap * (count - 1);
+    return Array.from({ length: count }, (_, i) => ({ x: 24, y: 42 + i * (usable / count + gap), w: w - 48, h: usable / count }));
+  }
+  return Array.from({ length: count }, (_, i) => ({ x: 20 + i * ((w - 40 - gap * (count - 1)) / count + gap), y: 44, w: (w - 40 - gap * (count - 1)) / count, h: h - 80 }));
+}
+
+function drawTinyArrow(ctx, x, y, dx, dy, color, width = 1.2) {
+  const len = Math.hypot(dx, dy);
+  if (len < 0.5) return;
+  const ux = dx / len;
+  const uy = dy / len;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + dx, y + dy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + dx, y + dy);
+  ctx.lineTo(x + dx - 4 * ux + 2.6 * uy, y + dy - 4 * uy - 2.6 * ux);
+  ctx.lineTo(x + dx - 4 * ux - 2.6 * uy, y + dy - 4 * uy + 2.6 * ux);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function vectorChannelField(x, t, coupling, separation) {
+  const src = [-0.78 - 0.18 * separation, 0.18];
+  const dst = [0.26, 0.82 + 0.16 * separation];
+  const centers = src.map((s, k) => lerp(s, dst[k], t));
+  const common = 0.5 * (centers[0] + centers[1]);
+  centers[0] = lerp(centers[0], common, coupling);
+  centers[1] = lerp(centers[1], common, coupling);
+  const amp1 = [1.05, 0.38];
+  const amp2 = [0.38, 0.98];
+  let u1 = 0;
+  let u2 = 0;
+  for (let k = 0; k < 2; k += 1) {
+    const g = Math.exp(-35 * (x - centers[k]) ** 2);
+    u1 += amp1[k] * g;
+    u2 += amp2[k] * g;
+  }
+  return [u1, u2];
+}
+
+function drawVectorPanel(ctx, box, coupling, separation, title) {
+  drawFrame(ctx, box, title);
+  const X = (x) => box.x + ((x + 1.25) / 2.5) * box.w;
+  const Y = (t) => box.y + box.h - t * box.h;
+  ctx.strokeStyle = "rgba(95,102,112,.18)";
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k += 1) {
+    const y = Y(k / 4);
+    ctx.beginPath();
+    ctx.moveTo(box.x, y);
+    ctx.lineTo(box.x + box.w, y);
+    ctx.stroke();
+  }
+  const times = Array.from({ length: 8 }, (_, i) => i / 7);
+  const xs = Array.from({ length: 36 }, (_, i) => -1.18 + (2.36 * i) / 35);
+  for (const t of times) {
+    for (const x of xs) {
+      const [u1, u2] = vectorChannelField(x, t, coupling, separation);
+      const mag = Math.hypot(u1, u2);
+      if (mag < 0.18) continue;
+      const ratio = u2 / Math.max(u1 + u2, 1e-6);
+      const color = mixColor(ratio, RED, BLUE, clamp(0.22 + 0.55 * mag, 0.18, 0.82));
+      drawTinyArrow(ctx, X(x), Y(t), 13 * u1 / (1 + mag), -13 * u2 / (1 + mag), color, 0.9 + 0.6 * Math.min(mag, 1));
+    }
+  }
+  ctx.fillStyle = RED;
+  ctx.fillText("channel 1", box.x + 14, box.y + box.h - 14);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("channel 2", box.x + box.w - 78, box.y + 20);
+}
+
+function drawBeyondVector() {
+  const coupling = val("bvCoupling");
+  const separation = val("bvSeparation");
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 650 : 380);
+  const boxes = beyondBoxes(w, h, 2, 720);
+  drawVectorPanel(ctx, boxes[0], 0, separation, "diagonal mobility");
+  drawVectorPanel(ctx, boxes[1], coupling, separation, `coupled mobility k=${coupling.toFixed(2)}`);
+  setStatus(`coupling ${coupling.toFixed(2)} bends local fibers toward the common channel direction while preserving both channel masses`);
+}
+
+function drawScreenEllipse(ctx, x, y, rx, ry, angle, color, alpha = 0.75) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, rx, ry, 0, 0, 2 * Math.PI);
+  ctx.fillStyle = color.replace("1)", `${alpha})`);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.25;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMatrixPanel(ctx, box, coupling, rotation, title) {
+  drawFrame(ctx, box, title);
+  const X = (x) => box.x + ((x + 1.15) / 2.3) * box.w;
+  const Y = (t) => box.y + box.h - t * box.h;
+  const src = [-0.72, 0.28];
+  const dst = [0.2, 0.82];
+  const times = Array.from({ length: 7 }, (_, i) => i / 6);
+  for (const t of times) {
+    const centers = src.map((s, k) => lerp(s, dst[k], t));
+    const common = 0.5 * (centers[0] + centers[1]);
+    for (let k = 0; k < 2; k += 1) {
+      const cx = lerp(centers[k], common, coupling);
+      const angle = (Math.PI / 180) * (k === 0 ? rotation * coupling * t : 90 - rotation * coupling * (1 - t));
+      const stretch = 1 + 1.7 * coupling + 0.35 * k;
+      const color = k === 0 ? "rgba(215,48,39,1)" : "rgba(33,102,172,1)";
+      drawScreenEllipse(ctx, X(cx), Y(t), 15 * stretch, 7 + 2.2 * k, angle, color, 0.42 + 0.22 * (1 - Math.abs(t - 0.5)));
+    }
+  }
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("time", box.x + 14, box.y + 20);
+  ctx.fillText("base space", box.x + box.w - 78, box.y + box.h - 14);
+}
+
+function drawBeyondMatrix() {
+  const coupling = val("bmCoupling");
+  const rotation = val("bmRotation");
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 650 : 380);
+  const boxes = beyondBoxes(w, h, 2, 720);
+  drawMatrixPanel(ctx, boxes[0], 0, rotation, "commuting tensor channels");
+  drawMatrixPanel(ctx, boxes[1], coupling, rotation, "coupled tensor fibers");
+  setStatus(`coupling ${coupling.toFixed(2)} and rotation ${rotation.toFixed(0)} deg show how non-commuting eigendirections add orientation to transported mass`);
+}
+
+function gromovBaseShape(n) {
+  return Array.from({ length: n }, (_, i) => {
+    const th = (2 * Math.PI * i) / n;
+    const r = 0.62 + 0.13 * Math.cos(3 * th) + 0.06 * Math.sin(5 * th);
+    return [r * Math.cos(th), 0.82 * r * Math.sin(th)];
+  });
+}
+
+function deformGromovShape(points, deformation, twist) {
+  return points.map((p) => {
+    const th = twist + deformation * 0.75 * p[1];
+    const c = Math.cos(th);
+    const s = Math.sin(th);
+    const x = c * p[0] - s * p[1];
+    const y = s * p[0] + c * p[1];
+    return [0.78 * x + deformation * 0.32 * x * y + 0.34, 1.0 * y + deformation * 0.18 * Math.sin(3 * x)];
+  });
+}
+
+function pairwiseDistances(points) {
+  return points.map((p) => points.map((q) => Math.hypot(p[0] - q[0], p[1] - q[1])));
+}
+
+function gromovResidual(source, target, assignment) {
+  const Ds = pairwiseDistances(source);
+  const Dt = pairwiseDistances(target);
+  const n = source.length;
+  const residual = Array.from({ length: n }, () => Array(n).fill(0));
+  let sum = 0;
+  let maxv = 0;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      const v = Math.abs(Ds[i][j] - Dt[assignment[i]][assignment[j]]);
+      residual[i][j] = v;
+      sum += v;
+      maxv = Math.max(maxv, v);
+    }
+  }
+  return { residual, mean: sum / (n * n), maxv };
+}
+
+function drawGromovCorrespondence(ctx, box, source, target, assignment, title, tintResidual = null) {
+  drawFrame(ctx, box, title);
+  const lim = limits(source.concat(target));
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  for (let i = 0; i < source.length; i += 1) {
+    const q = target[assignment[i]];
+    const alpha = tintResidual ? clamp(0.14 + 0.58 * tintResidual[i], 0.16, 0.82) : 0.32;
+    ctx.strokeStyle = `rgba(123,50,148,${alpha})`;
+    ctx.lineWidth = 0.85 + 1.35 * alpha;
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), Y(source[i]));
+    ctx.lineTo(X(q), Y(q));
+    ctx.stroke();
+  }
+  for (const p of target) {
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of source) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 3.4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+}
+
+function drawBeyondGromov() {
+  const n = Math.round(val("bgPoints"));
+  const deformation = val("bgDeform");
+  const twist = (Math.PI / 180) * val("bgTwist");
+  const source = gromovBaseShape(n).map((p) => [p[0] - 0.28, p[1]]);
+  const target = deformGromovShape(gromovBaseShape(n), deformation, twist);
+  const assignment = Array.from({ length: n }, (_, i) => i);
+  const stats = gromovResidual(source, target, assignment);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 740 ? 620 : 360);
+  const boxes = beyondBoxes(w, h, 2, 740);
+  drawGromovCorrespondence(ctx, boxes[0], source, target, assignment, "structural correspondence");
+  const rowResidual = stats.residual.map((row) => row.reduce((a, b) => a + b, 0) / Math.max(row.length, 1) / Math.max(stats.maxv, 1e-9));
+  drawGromovCorrespondence(ctx, boxes[1], source, target, assignment, "segments colored by distortion", rowResidual);
+  setStatus(`mean pairwise-distance residual ${stats.mean.toFixed(3)}; deformation ${deformation.toFixed(2)}; ${n} support points`);
+}
+
+function drawResidualMatrix(ctx, box, residual, maxv, title) {
+  drawFrame(ctx, box, title);
+  const n = residual.length;
+  const size = Math.min(box.w, box.h) - 34;
+  const x0 = box.x + 17 + (box.w - size - 34) / 2;
+  const y0 = box.y + 28;
+  const cell = size / n;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      const z = clamp(residual[i][j] / Math.max(maxv, 1e-9), 0, 1);
+      const g = Math.round(255 * (1 - z));
+      ctx.fillStyle = `rgb(${g},${g},${g})`;
+      ctx.fillRect(x0 + j * cell, y0 + i * cell, Math.ceil(cell), Math.ceil(cell));
+    }
+  }
+  ctx.strokeStyle = "#5f6670";
+  ctx.strokeRect(x0, y0, size, size);
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("white: low", x0, y0 + size + 18);
+  ctx.fillText("black: high", x0 + size - 74, y0 + size + 18);
+}
+
+function drawBeyondGromovDistortion() {
+  const n = Math.round(val("bgdPoints"));
+  const deformation = val("bgdDeform");
+  const shift = Math.round(val("bgdShift"));
+  const source = gromovBaseShape(n).map((p) => [p[0] - 0.3, p[1]]);
+  const target = deformGromovShape(gromovBaseShape(n), deformation, 0.45);
+  const assignment = Array.from({ length: n }, (_, i) => (i + shift + n) % n);
+  const stats = gromovResidual(source, target, assignment);
+  const rowResidual = stats.residual.map((row) => row.reduce((a, b) => a + b, 0) / Math.max(row.length, 1) / Math.max(stats.maxv, 1e-9));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 700 : 380);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawGromovCorrespondence(ctx, boxes[0], source, target, assignment, `hard correspondence shift ${shift}`, rowResidual);
+  drawResidualMatrix(ctx, boxes[1], stats.residual, stats.maxv, "|d_X - d_Y circ sigma|");
+  setStatus(`mean residual ${stats.mean.toFixed(3)}; max residual ${stats.maxv.toFixed(3)}; cyclic shift ${shift}`);
+}
+
+function fusedFeaturePoints(n, conflict) {
+  const source = [];
+  const target = [];
+  const sourceFeature = [];
+  const targetFeature = [];
+  for (let i = 0; i < n; i += 1) {
+    const th = (2 * Math.PI * i) / n;
+    const r = 0.72 + 0.08 * Math.sin(3 * th);
+    source.push([-0.42 + r * Math.cos(th), 0.82 * r * Math.sin(th)]);
+    target.push([0.42 + 0.72 * Math.cos(th + 0.22), 0.72 * Math.sin(th + 0.22)]);
+    sourceFeature.push(i < n / 2 ? 0 : 1);
+    const shifted = (i + Math.round(conflict * n / 2)) % n;
+    targetFeature.push(shifted < n / 2 ? 0 : 1);
+  }
+  return { source, target, sourceFeature, targetFeature };
+}
+
+function circularIndexDistance(i, j, n) {
+  const d = Math.abs(i - j);
+  return Math.min(d, n - d) / Math.max(n / 2, 1);
+}
+
+function drawFusedGromovPanel(ctx, box, data, assignment, title) {
+  drawFrame(ctx, box, title);
+  const lim = limits(data.source.concat(data.target));
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  for (let i = 0; i < assignment.length; i += 1) {
+    const j = assignment[i];
+    ctx.strokeStyle = data.sourceFeature[i] === data.targetFeature[j] ? "rgba(123,50,148,.38)" : "rgba(95,102,112,.18)";
+    ctx.lineWidth = data.sourceFeature[i] === data.targetFeature[j] ? 1.25 : 0.75;
+    ctx.beginPath();
+    ctx.moveTo(X(data.source[i]), Y(data.source[i]));
+    ctx.lineTo(X(data.target[j]), Y(data.target[j]));
+    ctx.stroke();
+  }
+  const drawPoint = (p, feature, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = feature === 0 ? "#ffffff" : "#26333f";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.3, 0, 2 * Math.PI);
+    ctx.fill();
+  };
+  for (let i = 0; i < data.target.length; i += 1) drawPoint(data.target[i], data.targetFeature[i], BLUE);
+  for (let i = 0; i < data.source.length; i += 1) drawPoint(data.source[i], data.sourceFeature[i], RED);
+}
+
+function drawBeyondFusedGromov() {
+  const n = Math.round(val("bfgPoints"));
+  const lambda = val("bfgLambda");
+  const conflict = val("bfgConflict");
+  const data = fusedFeaturePoints(n, conflict);
+  const cost = data.source.map((_, i) => data.target.map((__, j) => {
+    const feature = data.sourceFeature[i] === data.targetFeature[j] ? 0 : 1;
+    const geometry = circularIndexDistance(i, j, n) ** 2;
+    return (1 - lambda) * feature + lambda * geometry;
+  }));
+  const assignment = hungarian(cost);
+  const geometryAssignment = Array.from({ length: n }, (_, i) => i);
+  const featureMismatches = assignment.reduce((sum, j, i) => sum + (data.sourceFeature[i] === data.targetFeature[j] ? 0 : 1), 0);
+  const geometryChanges = assignment.reduce((sum, j, i) => sum + (j === geometryAssignment[i] ? 0 : 1), 0);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 650 : 360);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawFusedGromovPanel(ctx, boxes[0], data, geometryAssignment, "pure geometry ordering");
+  drawFusedGromovPanel(ctx, boxes[1], data, assignment, `fused lambda ${lambda.toFixed(2)}`);
+  setStatus(`geometry weight ${lambda.toFixed(2)}; feature mismatches ${featureMismatches}/${n}; ${geometryChanges}/${n} links differ from pure geometry; feature conflict ${conflict.toFixed(2)}`);
+}
+
+function dynamicClouds(n, targetName, seed) {
+  const randomSource = rng(seed);
+  const randomTarget = rng(seed + 97);
+  const source = sampleCloud("crescent", n, randomSource).map((p) => [0.82 * p[0] - 0.42, 0.84 * p[1] + 0.04]);
+  const target = sampleCloud(targetName, n, randomTarget).map((p) => [0.82 * p[0] + 0.42, 0.84 * p[1] - 0.04]);
+  return { source, target };
+}
+
+function dynamicProjection(box, lim) {
+  return {
+    X: (p) => box.x + ((p[0] - lim.xmin) / Math.max(lim.xmax - lim.xmin, 1e-9)) * box.w,
+    Y: (p) => box.y + box.h - ((p[1] - lim.ymin) / Math.max(lim.ymax - lim.ymin, 1e-9)) * box.h,
+  };
+}
+
+function drawDynamicGeodesicPanel(ctx, box, source, target, assignment, t, velocityScale, title, mode) {
+  drawFrame(ctx, box, title);
+  const pairedTarget = source.map((_, i) => target[assignment[i]]);
+  const current = source.map((p, i) => [lerp(p[0], pairedTarget[i][0], t), lerp(p[1], pairedTarget[i][1], t)]);
+  const lim = limits(source.concat(target, current));
+  const { X, Y } = dynamicProjection(box, lim);
+  const skip = Math.max(1, Math.ceil(source.length / 48));
+
+  if (mode === "paths") {
+    for (let i = 0; i < source.length; i += 1) {
+      const q = pairedTarget[i];
+      ctx.strokeStyle = "rgba(123,50,148,.20)";
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(X(source[i]), Y(source[i]));
+      ctx.lineTo(X(q), Y(q));
+      ctx.stroke();
+    }
+  } else {
+    for (let i = 0; i < source.length; i += skip) {
+      const p = current[i];
+      const q = pairedTarget[i];
+      const sx = X(source[i]);
+      const sy = Y(source[i]);
+      const tx = X(q);
+      const ty = Y(q);
+      const dx = velocityScale * 0.22 * (tx - sx);
+      const dy = velocityScale * 0.22 * (ty - sy);
+      drawTinyArrow(ctx, X(p) - 0.5 * dx, Y(p) - 0.5 * dy, dx, dy, "rgba(123,50,148,.66)", 1.1);
+    }
+  }
+
+  for (const p of target) {
+    ctx.fillStyle = "rgba(33,102,172,.24)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.8, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (const p of source) {
+    ctx.fillStyle = "rgba(215,48,39,.25)";
+    ctx.beginPath();
+    ctx.arc(X(p), Y(p), 2.8, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (let i = 0; i < current.length; i += 1) {
+    ctx.fillStyle = mixColor(t, RED, BLUE, 0.86);
+    ctx.beginPath();
+    ctx.arc(X(current[i]), Y(current[i]), mode === "paths" ? 3.1 : 3.35, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = RED;
+  ctx.fillText("source", box.x + 12, box.y + box.h - 12);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("target", box.x + box.w - 54, box.y + 18);
+}
+
+function drawDynamicBB() {
+  const t = val("dbbT");
+  const n = Math.round(val("dbbParticles"));
+  const velocityScale = val("dbbVelocity");
+  const targetName = val("dbbTarget");
+  const seed = Math.round(val("dbbSeed"));
+  const { source, target } = dynamicClouds(n, targetName, seed);
+  const assignment = hungarian(costMatrix(source, target, 2));
+  let action = 0;
+  for (let i = 0; i < n; i += 1) {
+    const q = target[assignment[i]];
+    action += (source[i][0] - q[0]) ** 2 + (source[i][1] - q[1]) ** 2;
+  }
+  action /= Math.max(n, 1);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 650 : 380);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawDynamicGeodesicPanel(ctx, boxes[0], source, target, assignment, t, velocityScale, `McCann interpolation, t=${t.toFixed(2)}`, "paths");
+  drawDynamicGeodesicPanel(ctx, boxes[1], source, target, assignment, t, velocityScale, "Eulerian velocity samples", "velocity");
+  setStatus(`t=${t.toFixed(2)}; ${n} matched characteristics; mean squared displacement ${action.toFixed(3)}; velocity scale ${velocityScale.toFixed(2)}`);
+}
+
+function dynamicMassCenters() {
+  return [[-0.58, 0.42], [0.58, -0.42]];
+}
+
+function drawMassBlob(ctx, proj, point, mass, color, alpha, label) {
+  if (mass <= 1e-4) return;
+  const radius = 8 + 18 * Math.sqrt(mass / 2);
+  const x = proj.X(point);
+  const y = proj.Y(point);
+  ctx.fillStyle = color.replace("1)", `${alpha})`);
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  if (label) {
+    ctx.fillStyle = "#26333f";
+    ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(label, x, y + 3.5);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawDynamicUnbalancedPanel(ctx, box, t, mismatch, reaction, title) {
+  drawFrame(ctx, box, title);
+  const centers = dynamicMassCenters();
+  const lim = { xmin: -1.05, xmax: 1.05, ymin: -0.92, ymax: 0.92 };
+  const proj = dynamicProjection(box, lim);
+  const commonMass = Math.max(1 - mismatch, 0.05);
+  const excess = 2 * mismatch;
+  const transported = excess * (1 - reaction);
+  const fading = excess * reaction * (1 - t);
+  const growing = excess * reaction * t;
+  const movingPoint = [lerp(centers[0][0], centers[1][0], t), lerp(centers[0][1], centers[1][1], t)];
+
+  ctx.strokeStyle = "rgba(123,50,148,.20)";
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.moveTo(proj.X(centers[0]), proj.Y(centers[0]));
+  ctx.lineTo(proj.X(centers[1]), proj.Y(centers[1]));
+  ctx.stroke();
+  if (transported > 0.01) {
+    const sx = proj.X(centers[0]);
+    const sy = proj.Y(centers[0]);
+    const tx = proj.X(centers[1]);
+    const ty = proj.Y(centers[1]);
+    const dx = 0.16 * (tx - sx);
+    const dy = 0.16 * (ty - sy);
+    drawTinyArrow(ctx, proj.X(movingPoint) - 0.5 * dx, proj.Y(movingPoint) - 0.5 * dy, dx, dy, "rgba(123,50,148,.70)", 1.4 + 1.6 * transported);
+  }
+
+  drawMassBlob(ctx, proj, centers[0], commonMass + fading, "rgba(215,48,39,1)", 0.17 + 0.28 * (1 - t), "");
+  drawMassBlob(ctx, proj, centers[1], commonMass + growing, "rgba(33,102,172,1)", 0.17 + 0.28 * t, "");
+  drawMassBlob(ctx, proj, movingPoint, transported, "rgba(123,50,148,1)", 0.20 + 0.42 * (1 - Math.abs(t - 0.5)), transported > 0.2 ? "move" : "");
+
+  ctx.fillStyle = RED;
+  ctx.beginPath();
+  ctx.arc(proj.X(centers[0]), proj.Y(centers[0]), 3.5, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = BLUE;
+  ctx.beginPath();
+  ctx.arc(proj.X(centers[1]), proj.Y(centers[1]), 3.5, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = "#5f6670";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(`transport ${transported.toFixed(2)}`, box.x + 12, box.y + box.h - 28);
+  ctx.fillText(`reaction ${(excess * reaction).toFixed(2)}`, box.x + 12, box.y + box.h - 12);
+}
+
+function drawDynamicUnbalanced() {
+  const t = val("dubT");
+  const mismatch = val("dubMismatch");
+  const reaction = val("dubReaction");
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 660 : 390);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawDynamicUnbalancedPanel(ctx, boxes[0], t, mismatch, 0, "balanced continuity equation");
+  drawDynamicUnbalancedPanel(ctx, boxes[1], t, mismatch, reaction, "reaction-transport balance");
+  const transported = 2 * mismatch * (1 - reaction);
+  const reacted = 2 * mismatch * reaction;
+  setStatus(`t=${t.toFixed(2)}; mismatch ${mismatch.toFixed(2)}; transported excess ${transported.toFixed(2)}; faded/recreated excess ${reacted.toFixed(2)}`);
+}
+
+function gfMap(box, lim) {
+  return {
+    X: (x) => box.x + ((x + lim) / (2 * lim)) * box.w,
+    Y: (y) => box.y + box.h - ((y + lim) / (2 * lim)) * box.h,
+  };
+}
+
+function gfQuantiles(xs, pdf, levels) {
+  const cdf = [];
+  let total = 0;
+  for (const v of pdf) total += Math.max(v, 0);
+  let running = 0;
+  for (const v of pdf) {
+    running += Math.max(v, 0);
+    cdf.push(running / Math.max(total, 1e-12));
+  }
+  return levels.map((u) => {
+    let j = 1;
+    while (j < cdf.length && cdf[j] < u) j += 1;
+    const lo = cdf[j - 1] || 0;
+    const hi = cdf[j] || 1;
+    const t = clamp((u - lo) / Math.max(hi - lo, 1e-12), 0, 1);
+    return lerp(xs[Math.max(0, j - 1)], xs[Math.min(xs.length - 1, j)], t);
+  });
+}
+
+function gfEntropyPdf(x, t, width) {
+  const s1 = Math.sqrt(width * width + 2 * t);
+  const s2 = Math.sqrt((0.72 * width) ** 2 + 2 * t);
+  return 0.6 * normalPdf(x, -0.72, s1) + 0.4 * normalPdf(x, 0.66, s2);
+}
+
+function drawGradflowJKO() {
+  const tau = val("gfjTau");
+  const steps = Math.round(val("gfjSteps"));
+  const width = val("gfjWidth");
+  const { ctx, w, h } = resizeCanvas(410);
+  const gap = 38;
+  const boxW = (w - 48 - gap) / 2;
+  const boxH = h - 62;
+  const left = { x: 18, y: 42, w: boxW, h: boxH };
+  const right = { x: 18 + boxW + gap, y: 42, w: boxW, h: boxH };
+  drawFrame(ctx, left, "density iterates");
+  drawFrame(ctx, right, "quantile motion");
+  const xs = Array.from({ length: 520 }, (_, i) => lerp(-3.2, 3.2, i / 519));
+  const times = Array.from({ length: steps + 1 }, (_, k) => k * tau);
+  const pdfs = times.map((time) => xs.map((x) => gfEntropyPdf(x, time, width)));
+  const yMax = 1.08 * Math.max(...pdfs.flat());
+  ctx.strokeStyle = "#ecf0f5";
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k += 1) {
+    const y = left.y + (k / 4) * left.h;
+    ctx.beginPath();
+    ctx.moveTo(left.x, y);
+    ctx.lineTo(left.x + left.w, y);
+    ctx.stroke();
+  }
+  for (let k = 0; k < pdfs.length; k += 1) {
+    drawCurve(ctx, xs, pdfs[k], left, -3.2, 3.2, 0, yMax, mixColor(k / Math.max(steps, 1)), k === pdfs.length - 1 ? 2.2 : 1.25);
+  }
+
+  const levels = [0.05, 0.12, 0.22, 0.34, 0.5, 0.66, 0.78, 0.88, 0.95];
+  const q = pdfs.map((pdf) => gfQuantiles(xs, pdf, levels));
+  const X = (time) => right.x + (time / Math.max(times[times.length - 1], 1e-9)) * right.w;
+  const Y = (value) => right.y + right.h - ((value + 3.2) / 6.4) * right.h;
+  ctx.strokeStyle = "#ecf0f5";
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k += 1) {
+    const y = right.y + (k / 4) * right.h;
+    ctx.beginPath();
+    ctx.moveTo(right.x, y);
+    ctx.lineTo(right.x + right.w, y);
+    ctx.stroke();
+  }
+  for (let j = 0; j < levels.length; j += 1) {
+    ctx.beginPath();
+    for (let k = 0; k < times.length; k += 1) {
+      const px = X(times[k]);
+      const py = Y(q[k][j]);
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = mixColor(levels[j], RED, BLUE, 0.82);
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#4a5563";
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText("x", left.x + left.w - 10, left.y + left.h + 19);
+  ctx.fillText("time", right.x + right.w - 28, right.y + right.h + 19);
+  setStatus(`${steps} JKO steps; tau=${tau.toFixed(2)}; final heat time ${(steps * tau).toFixed(2)}`);
+}
+
+function gfPorousPdf(xs, t, width, m) {
+  const radius = width * (1.45 + 1.05 * Math.pow(t + 0.05, 1 / (m + 1)));
+  const power = 1 / Math.max(m - 1, 0.08);
+  const raw = xs.map((x) => {
+    const z = 1 - (x / radius) ** 2;
+    return z > 0 ? z ** power : 0;
+  });
+  const dx = (xs[xs.length - 1] - xs[0]) / (xs.length - 1);
+  const mass = raw.reduce((a, b) => a + b, 0) * dx;
+  return raw.map((v) => v / Math.max(mass, 1e-12));
+}
+
+function transparentColor(color, alpha) {
+  const c = rgb(color);
+  return `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+}
+
+function drawFilledCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, alpha) {
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (y) => box.y + box.h - ((y - yMin) / Math.max(yMax - yMin, 1e-12)) * box.h;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]), Y(0));
+  for (let i = 0; i < xs.length; i += 1) ctx.lineTo(X(xs[i]), Y(ys[i]));
+  ctx.lineTo(X(xs[xs.length - 1]), Y(0));
+  ctx.closePath();
+  ctx.fillStyle = transparentColor(color, alpha);
+  ctx.fill();
+  drawCurve(ctx, xs, ys, box, xMin, xMax, yMin, yMax, color, 2);
+}
+
+function drawGradflowDiffusion() {
+  const time = val("gfdTime");
+  const m = val("gfdPower");
+  const width = val("gfdWidth");
+  const { ctx, w, h } = resizeCanvas(378);
+  const gap = 20;
+  const boxW = (w - 48 - 2 * gap) / 3;
+  const boxes = [
+    { x: 14, y: 44, w: boxW, h: h - 70 },
+    { x: 14 + boxW + gap, y: 44, w: boxW, h: h - 70 },
+    { x: 14 + 2 * (boxW + gap), y: 44, w: boxW, h: h - 70 },
+  ];
+  const xs = Array.from({ length: 520 }, (_, i) => lerp(-3.2, 3.2, i / 519));
+  const heat = xs.map((x) => normalPdf(x, 0, Math.sqrt(width * width + 2 * time)));
+  const porous = gfPorousPdf(xs, time, width, m);
+  const porousStrong = gfPorousPdf(xs, time, width, Math.min(8, m + 3));
+  const yMax = 1.12 * Math.max(...heat, ...porous, ...porousStrong);
+  drawFrame(ctx, boxes[0], "heat equation");
+  drawFrame(ctx, boxes[1], `porous m=${m.toFixed(1)}`);
+  drawFrame(ctx, boxes[2], "comparison");
+  drawFilledCurve(ctx, xs, heat, boxes[0], -3.2, 3.2, 0, yMax, BLUE, 0.18);
+  drawFilledCurve(ctx, xs, porous, boxes[1], -3.2, 3.2, 0, yMax, RED, 0.18);
+  drawCurve(ctx, xs, heat, boxes[2], -3.2, 3.2, 0, yMax, BLUE, 2);
+  drawCurve(ctx, xs, porous, boxes[2], -3.2, 3.2, 0, yMax, RED, 2);
+  drawCurve(ctx, xs, porousStrong, boxes[2], -3.2, 3.2, 0, yMax, VIOLET, 1.6);
+  ctx.fillStyle = BLUE;
+  ctx.fillText("heat", boxes[2].x + 10, boxes[2].y + 18);
+  ctx.fillStyle = RED;
+  ctx.fillText(`m=${m.toFixed(1)}`, boxes[2].x + 10, boxes[2].y + 36);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(`m=${Math.min(8, m + 3).toFixed(1)}`, boxes[2].x + 10, boxes[2].y + 54);
+  setStatus(`time ${time.toFixed(2)}; porous exponent m=${m.toFixed(1)}; compact front radius grows slowly as m increases`);
+}
+
+function normalizePdfArray(values, xs) {
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  const mass = values.reduce((sum, z) => sum + Math.max(z, 0), 0) * dx;
+  return values.map((z) => Math.max(z, 0) / Math.max(mass, 1e-12));
+}
+
+function capAndRedistributeDensity(values, xs, cap) {
+  let density = normalizePdfArray(values, xs);
+  const dx = xs.length > 1 ? xs[1] - xs[0] : 1;
+  for (let iter = 0; iter < 14; iter += 1) {
+    let excess = 0;
+    let free = 0;
+    for (let i = 0; i < density.length; i += 1) {
+      if (density[i] > cap) {
+        excess += (density[i] - cap) * dx;
+        density[i] = cap;
+      } else {
+        free += Math.max(cap - density[i], 0) * dx;
+      }
+    }
+    if (excess < 1e-8 || free < 1e-10) break;
+    for (let i = 0; i < density.length; i += 1) {
+      const room = Math.max(cap - density[i], 0);
+      density[i] += (excess * room) / Math.max(free, 1e-12);
+    }
+  }
+  return normalizePdfArray(density, xs);
+}
+
+function densityAtConstrainedTime(xs, time, cap, attraction) {
+  const center = -1.25 + (1 - Math.exp(-attraction * time)) * 2.15;
+  const sigma = Math.max(0.18, 0.65 * Math.exp(-0.7 * time));
+  const raw = xs.map((x) => normalPdf(x, center, sigma));
+  return capAndRedistributeDensity(raw, xs, cap);
+}
+
+function drawDensityRibbon(ctx, box, xs, density, xMin, xMax, yCenter, height, maxDensity, color) {
+  const X = (x) => box.x + ((x - xMin) / (xMax - xMin)) * box.w;
+  const Y = (z) => yCenter - (z / Math.max(maxDensity, 1e-12)) * height;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]), yCenter);
+  for (let i = 0; i < xs.length; i += 1) ctx.lineTo(X(xs[i]), Y(density[i]));
+  ctx.lineTo(X(xs[xs.length - 1]), yCenter);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = color.replace(/, ?0\.[0-9]+\)$/, ",.95)");
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+}
+
+function drawGradflowConstraint() {
+  const cap = val("gfcCap");
+  const attraction = val("gfcAttraction");
+  const finalTime = val("gfcTime");
+  const { ctx, w, h } = resizeCanvas(420);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, "density-constrained Wasserstein flow");
+  const xs = Array.from({ length: 560 }, (_, i) => lerp(-3.1, 3.1, i / 559));
+  const times = [0, 0.16, 0.34, 0.58, 0.82, 1].map((s) => s * finalTime);
+  const densities = times.map((t) => densityAtConstrainedTime(xs, t, cap, attraction));
+  const maxDensity = Math.max(cap, ...densities.flat()) * 1.05;
+  const rowGap = box.h / (times.length + 0.35);
+  ctx.strokeStyle = "rgba(95,102,112,.18)";
+  ctx.lineWidth = 1;
+  for (let k = 0; k < times.length; k += 1) {
+    const y = box.y + rowGap * (k + 0.9);
+    ctx.beginPath();
+    ctx.moveTo(box.x, y);
+    ctx.lineTo(box.x + box.w, y);
+    ctx.stroke();
+    drawDensityRibbon(ctx, box, xs, densities[k], -3.1, 3.1, y, rowGap * 0.72, maxDensity, mixColor(k / (times.length - 1), RED, BLUE, 0.42));
+    ctx.fillStyle = "#5f6670";
+    ctx.fillText(`t=${times[k].toFixed(2)}`, box.x + 8, y - rowGap * 0.52);
+  }
+  const capY = box.y + 11;
+  ctx.strokeStyle = "rgba(123,50,148,.55)";
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(box.x + 12, capY);
+  ctx.lineTo(box.x + box.w - 12, capY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = VIOLET;
+  ctx.fillText(`cap kappa=${cap.toFixed(2)}`, box.x + 18, capY - 5);
+  setStatus(`projected toy flow with density cap kappa=${cap.toFixed(2)}; attraction ${attraction.toFixed(2)}; final time ${finalTime.toFixed(2)}`);
+}
+
+function circularDistance01(x, c) {
+  let d = Math.abs(x - c);
+  d = Math.min(d, 1 - d);
+  return d;
+}
+
+function speciesProfile(xs, species, time, diffusion) {
+  const centers = [0.12, 0.33, 0.55, 0.73, 0.88];
+  const width = 0.045 + diffusion * Math.sqrt(time + 0.015);
+  const raw = [];
+  for (let i = 0; i < species; i += 1) {
+    raw.push(xs.map((x) => 0.08 + Math.exp(-(circularDistance01(x, centers[i]) ** 2) / (2 * width * width))));
+  }
+  const profiles = raw.map(() => Array(xs.length).fill(0));
+  for (let k = 0; k < xs.length; k += 1) {
+    const total = raw.reduce((sum, arr) => sum + arr[k], 0);
+    for (let i = 0; i < species; i += 1) profiles[i][k] = raw[i][k] / Math.max(total, 1e-12);
+  }
+  return profiles;
+}
+
+function drawStackedSpecies(ctx, box, xs, profiles, yBase, rowHeight) {
+  const X = (x) => box.x + x * box.w;
+  const colors = [RED, VIOLET, BLUE, "#f46d43", "#3288bd"];
+  let bottom = Array(xs.length).fill(yBase);
+  for (let s = 0; s < profiles.length; s += 1) {
+    const top = profiles[s].map((z, i) => bottom[i] - z * rowHeight);
+    ctx.beginPath();
+    ctx.moveTo(X(xs[0]), bottom[0]);
+    for (let k = 0; k < xs.length; k += 1) ctx.lineTo(X(xs[k]), top[k]);
+    for (let k = xs.length - 1; k >= 0; k -= 1) ctx.lineTo(X(xs[k]), bottom[k]);
+    ctx.closePath();
+    ctx.fillStyle = transparentColor(colors[s % colors.length], 0.55);
+    ctx.fill();
+    ctx.strokeStyle = transparentColor(colors[s % colors.length], 0.9);
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+    bottom = top;
+  }
+}
+
+function drawGradflowMultispecies() {
+  const species = Math.round(val("gmsSpecies"));
+  const diffusion = val("gmsDiffusion");
+  const finalTime = val("gmsTime");
+  const { ctx, w, h } = resizeCanvas(420);
+  const box = { x: 24, y: 42, w: w - 48, h: h - 74 };
+  drawFrame(ctx, box, "multi-species entropy flow with fixed total density");
+  const xs = Array.from({ length: 360 }, (_, i) => i / 359);
+  const times = [0, 0.18, 0.42, 0.7, 1].map((s) => s * finalTime);
+  const rowGap = box.h / (times.length + 0.15);
+  for (let r = 0; r < times.length; r += 1) {
+    const yBase = box.y + rowGap * (r + 0.9);
+    ctx.strokeStyle = "rgba(95,102,112,.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(box.x, yBase);
+    ctx.lineTo(box.x + box.w, yBase);
+    ctx.stroke();
+    drawStackedSpecies(ctx, box, xs, speciesProfile(xs, species, times[r], diffusion), yBase, rowGap * 0.74);
+    ctx.fillStyle = "#5f6670";
+    ctx.fillText(`t=${times[r].toFixed(2)}`, box.x + 8, yBase - rowGap * 0.55);
+  }
+  setStatus(`${species} positive species; independent heat-like smoothing followed by the pointwise constraint sum_i rho_i=1`);
+}
+
+function gfInitialCloud(n, seed, cx = -1.15, cy = -0.72, spread = 0.18) {
+  const random = rng(seed);
+  const pts = [];
+  for (let i = 0; i < n; i += 1) pts.push([cx + spread * randn(random), cy + spread * randn(random)]);
+  return pts;
+}
+
+function gfTargetCenters(separation) {
+  return [[-0.42 * separation, 0.42], [0.48 * separation, -0.36]];
+}
+
+function gfTeacherForce(p, centers, bandwidth) {
+  let wx = 0;
+  let wy = 0;
+  let wt = 0;
+  for (const c of centers) {
+    const dx = c[0] - p[0];
+    const dy = c[1] - p[1];
+    const wgt = Math.exp(-(dx * dx + dy * dy) / (2 * bandwidth * bandwidth));
+    wx += wgt * dx;
+    wy += wgt * dy;
+    wt += wgt;
+  }
+  return [wx / Math.max(wt, 1e-9), wy / Math.max(wt, 1e-9)];
+}
+
+function gfRepulsion(i, pts, scale, radius) {
+  let fx = 0;
+  let fy = 0;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (i === j) continue;
+    const dx = pts[i][0] - pts[j][0];
+    const dy = pts[i][1] - pts[j][1];
+    const r2 = dx * dx + dy * dy + 0.012;
+    const wgt = Math.exp(-r2 / (2 * radius * radius));
+    fx += scale * wgt * dx / r2;
+    fy += scale * wgt * dy / r2;
+  }
+  return [fx / Math.max(pts.length, 1), fy / Math.max(pts.length, 1)];
+}
+
+function gfDrawTarget(ctx, box, lim, centers) {
+  const { X, Y } = gfMap(box, lim);
+  for (const c of centers) {
+    ctx.strokeStyle = "rgba(33,102,172,.28)";
+    ctx.lineWidth = 1.1;
+    for (const r of [0.22, 0.38, 0.56]) {
+      ctx.beginPath();
+      ctx.ellipse(X(c[0]), Y(c[1]), (r / (2 * lim)) * box.w, (r / (2 * lim)) * box.h, 0, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+  }
+}
+
+function gfDrawTrajectories(ctx, box, lim, trajectories, stride = 1) {
+  const { X, Y } = gfMap(box, lim);
+  for (let i = 0; i < trajectories.length; i += stride) {
+    const path = trajectories[i];
+    ctx.beginPath();
+    for (let k = 0; k < path.length; k += 1) {
+      const p = path[k];
+      if (k === 0) ctx.moveTo(X(p[0]), Y(p[1]));
+      else ctx.lineTo(X(p[0]), Y(p[1]));
+    }
+    ctx.strokeStyle = mixColor(i / Math.max(trajectories.length - 1, 1), RED, BLUE, 0.35);
+    ctx.lineWidth = 1.05;
+    ctx.stroke();
+  }
+}
+
+function gfDrawPoints(ctx, box, lim, pts, color, radius, alpha = 0.95) {
+  const { X, Y } = gfMap(box, lim);
+  const [r, g, b] = rgb(color);
+  ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+  for (const p of pts) {
+    ctx.beginPath();
+    ctx.arc(X(p[0]), Y(p[1]), radius, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}
+
+function gfMmdTargetCloud(count, centers, seed) {
+  const random = rng(seed + 911);
+  const target = [];
+  for (let i = 0; i < count; i += 1) {
+    const c = centers[i % centers.length];
+    const spread = i % 2 === 0 ? 0.22 : 0.27;
+    target.push([c[0] + spread * randn(random), c[1] + 0.82 * spread * randn(random)]);
+  }
+  return target;
+}
+
+function gfMmdKernelGradient(kind, p, q, bandwidth) {
+  const dx = p[0] - q[0];
+  const dy = p[1] - q[1];
+  const r2 = dx * dx + dy * dy;
+  const r = Math.sqrt(r2 + 1e-10);
+  if (kind === "energy") {
+    return [-dx / r, -dy / r];
+  }
+  if (kind === "laplacian") {
+    const k = Math.exp(-r / Math.max(bandwidth, 1e-4));
+    const scale = -k / Math.max(bandwidth * r, 1e-8);
+    return [scale * dx, scale * dy];
+  }
+  const sigma2 = Math.max(bandwidth * bandwidth, 1e-8);
+  const k = Math.exp(-r2 / (2 * sigma2));
+  return [-(dx / sigma2) * k, -(dy / sigma2) * k];
+}
+
+function gfMmdVelocity(index, pts, target, kind, bandwidth) {
+  const p = pts[index];
+  let sx = 0;
+  let sy = 0;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (j === index) continue;
+    const g = gfMmdKernelGradient(kind, p, pts[j], bandwidth);
+    sx += g[0];
+    sy += g[1];
+  }
+  sx /= Math.max(pts.length, 1);
+  sy /= Math.max(pts.length, 1);
+  let tx = 0;
+  let ty = 0;
+  for (const q of target) {
+    const g = gfMmdKernelGradient(kind, p, q, bandwidth);
+    tx += g[0];
+    ty += g[1];
+  }
+  tx /= Math.max(target.length, 1);
+  ty /= Math.max(target.length, 1);
+  return gfClipVelocity(-2 * (sx - tx), -2 * (sy - ty), 2.8);
+}
+
+function gfRunMmdKernelFlow(initial, target, kind, bandwidth, time) {
+  let pts = initial.map((p) => p.slice());
+  const trajectories = pts.map((p) => [p.slice()]);
+  const steps = Math.round((kind === "energy" ? 105 : 125) * time);
+  const dt = kind === "energy" ? 0.032 : kind === "laplacian" ? 0.034 : 0.037;
+  const storeEvery = Math.max(4, Math.round(steps / 24));
+  for (let s = 0; s < steps; s += 1) {
+    const velocities = pts.map((_, i) => gfMmdVelocity(i, pts, target, kind, bandwidth));
+    pts = pts.map((p, i) => [p[0] + dt * velocities[i][0], p[1] + dt * velocities[i][1]]);
+    if (s % storeEvery === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { pts, trajectories };
+}
+
+function gfKernelTitle(kind, bandwidth) {
+  if (kind === "energy") return "energy distance  k=-|x-y|";
+  if (kind === "laplacian") return `Laplacian  sigma=${bandwidth.toFixed(2)}`;
+  return `Gaussian  sigma=${bandwidth.toFixed(2)}`;
+}
+
+function drawGradflowMMD() {
+  const n = Math.round(val("gfmParticles"));
+  const separation = val("gfmSeparation");
+  const bandwidth = val("gfmBandwidth");
+  const time = val("gfmTime");
+  const seed = Math.round(val("gfmSeed"));
+  const centers = gfTargetCenters(separation);
+  const target = gfMmdTargetCloud(Math.max(90, Math.min(180, 2 * n)), centers, seed);
+  const initial = gfInitialCloud(n, seed);
+  const runs = ["energy", "laplacian", "gaussian"].map((kind) => ({
+    kind,
+    ...gfRunMmdKernelFlow(initial, target, kind, bandwidth, time),
+  }));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 760 ? 610 : 365);
+  const pad = 22;
+  const gap = 18;
+  const compact = w < 620;
+  const panelW = compact ? w - 2 * pad : (w - 2 * pad - 2 * gap) / 3;
+  const panelH = compact ? (h - 56 - 2 * gap) / 3 : h - 64;
+  const boxes = [0, 1, 2].map((i) =>
+    compact
+      ? { x: pad, y: 30 + i * (panelH + gap), w: panelW, h: panelH }
+      : { x: pad + i * (panelW + gap), y: 34, w: panelW, h: panelH },
+  );
+  let lim = 2.25;
+  for (const p of [...initial, ...target, ...runs.flatMap((run) => run.pts)]) {
+    lim = Math.max(lim, 1.08 * Math.max(Math.abs(p[0]), Math.abs(p[1])));
+  }
+  lim = Math.min(lim, 3.4);
+  const gaps = [];
+  runs.forEach((run, idx) => {
+    const box = boxes[idx];
+    drawFrame(ctx, box, gfKernelTitle(run.kind, bandwidth));
+    gfDrawTarget(ctx, box, lim, centers);
+    gfDrawPoints(ctx, box, lim, target.filter((_, i) => i % 2 === 0), BLUE, 1.35, 0.18);
+    gfDrawTrajectories(ctx, box, lim, run.trajectories, Math.max(1, Math.floor(n / 42)));
+    gfDrawPoints(ctx, box, lim, initial.filter((_, i) => i % Math.max(1, Math.floor(n / 90)) === 0), RED, 2.0, 0.62);
+    gfDrawPoints(ctx, box, lim, run.pts.filter((_, i) => i % Math.max(1, Math.floor(n / 120)) === 0), BLUE, 2.35, 0.86);
+    let coverage = 0;
+    for (const p of run.pts) coverage += Math.min(...centers.map((c) => Math.hypot(p[0] - c[0], p[1] - c[1])));
+    coverage /= Math.max(run.pts.length, 1);
+    gaps.push(`${run.kind.slice(0, 3)} ${coverage.toFixed(2)}`);
+  });
+  setStatus(`${n} particles; bandwidth ${bandwidth.toFixed(2)}; time ${time.toFixed(2)}; final distance to nearest mode: ${gaps.join(" | ")}`);
+}
+
+function drawGradflowInteraction() {
+  const mode = val("gfiMode");
+  const strength = val("gfiStrength");
+  const n = Math.round(val("gfiParticles"));
+  const seed = Math.round(val("gfiSeed"));
+  const random = rng(seed);
+  let pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = (2 * Math.PI * i) / n + 0.32 * randn(random);
+    const r = 0.65 + 0.16 * randn(random);
+    pts.push([r * Math.cos(a), r * Math.sin(a)]);
+  }
+  const trajectories = pts.map((p) => [p.slice()]);
+  const steps = 150;
+  const dt = 0.035;
+  for (let s = 0; s < steps; s += 1) {
+    const next = pts.map((p, i) => {
+      let fx = 0;
+      let fy = 0;
+      for (let j = 0; j < n; j += 1) {
+        if (i === j) continue;
+        const dx = p[0] - pts[j][0];
+        const dy = p[1] - pts[j][1];
+        const r2 = dx * dx + dy * dy + 0.01;
+        const local = Math.exp(-r2 / 0.32);
+        const sign = mode === "attractive" ? -1 : 1;
+        fx += sign * strength * local * dx / Math.sqrt(r2);
+        fy += sign * strength * local * dy / Math.sqrt(r2);
+      }
+      fx /= n;
+      fy /= n;
+      if (mode === "balanced") {
+        fx += -0.38 * p[0];
+        fy += -0.38 * p[1];
+      }
+      return [p[0] + dt * fx, p[1] + dt * fy];
+    });
+    pts = next;
+    if (s % 6 === 0 || s === steps - 1) {
+      for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  const { ctx, w, h } = resizeCanvas(392);
+  const box = { x: 22, y: 34, w: w - 44, h: h - 62 };
+  drawFrame(ctx, box, `${pretty(mode)} kernel`);
+  gfDrawTrajectories(ctx, box, 1.95, trajectories, 1);
+  gfDrawPoints(ctx, box, 1.95, trajectories.map((p) => p[0]), RED, 2.1, 0.65);
+  gfDrawPoints(ctx, box, 1.95, pts, BLUE, 2.7, 0.9);
+  const radius = pts.reduce((sum, p) => sum + Math.hypot(p[0], p[1]), 0) / n;
+  setStatus(`${pretty(mode)} interaction; strength ${strength.toFixed(2)}; mean final radius ${radius.toFixed(2)}`);
+}
+
+function gfSourceTargetClouds(n, seed) {
+  const random = rng(seed);
+  const source = [];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    source.push([-1.1 + 0.22 * randn(random), -0.52 + 0.28 * randn(random)]);
+    const c = i % 2 === 0 ? [-0.2, 0.72] : [1.05, -0.12];
+    target.push([c[0] + 0.22 * randn(random), c[1] + 0.2 * randn(random)]);
+  }
+  return { source, target };
+}
+
+function gfObjectiveLabel(geometry) {
+  if (geometry === "ot_rays") return "Monge rays";
+  if (geometry === "mmd") return "MMD-type flow";
+  if (geometry === "sinkhorn") return "Sinkhorn divergence";
+  if (geometry === "drifting") return "normalized drifting";
+  return pretty(geometry);
+}
+
+function gfSquaredCostMatrix(x, y) {
+  return x.map((p) => y.map((q) => 0.5 * ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2)));
+}
+
+function gfUniformMass(n) {
+  return Array(n).fill(1 / Math.max(n, 1));
+}
+
+function gfClipVelocity(vx, vy, maxSpeed) {
+  const speed = Math.hypot(vx, vy);
+  if (speed <= maxSpeed) return [vx, vy];
+  return [(maxSpeed * vx) / speed, (maxSpeed * vy) / speed];
+}
+
+function gfSinkhornDivergenceVelocities(pts, target, epsilon) {
+  const n = pts.length;
+  const m = target.length;
+  const a = gfUniformMass(n);
+  const b = gfUniformMass(m);
+  const pxy = sinkhornPlan(gfSquaredCostMatrix(pts, target), a, b, epsilon);
+  const pxx = sinkhornPlan(gfSquaredCostMatrix(pts, pts), a, a, epsilon);
+  const velocities = [];
+  for (let i = 0; i < n; i += 1) {
+    let gx = 0;
+    let gy = 0;
+    for (let j = 0; j < m; j += 1) {
+      gx += pxy[i][j] * (pts[i][0] - target[j][0]);
+      gy += pxy[i][j] * (pts[i][1] - target[j][1]);
+    }
+    let selfX = 0;
+    let selfY = 0;
+    for (let j = 0; j < n; j += 1) {
+      const mass = pxx[i][j] + pxx[j][i];
+      selfX += mass * (pts[i][0] - pts[j][0]);
+      selfY += mass * (pts[i][1] - pts[j][1]);
+    }
+    gx -= 0.5 * selfX;
+    gy -= 0.5 * selfY;
+    velocities.push(gfClipVelocity(-gx / Math.max(a[i], 1e-12), -gy / Math.max(a[i], 1e-12), 3.1));
+  }
+  return velocities;
+}
+
+function drawGradflowObjective() {
+  const geometry = val("gfoGeometry");
+  const smooth = val("gfoSmooth");
+  const time = val("gfoTime");
+  const n = Math.round(val("gfoParticles"));
+  const seed = Math.round(val("gfoSeed"));
+  const { source, target } = gfSourceTargetClouds(n, seed);
+  const pts = source.map((p) => p.slice());
+  const trajectories = pts.map((p) => [p.slice()]);
+  const baseSteps = geometry === "sinkhorn" ? 112 : 96;
+  const steps = geometry === "ot_rays" ? 1 : Math.round(baseSteps * time);
+  const storeEvery = Math.max(4, Math.round(steps / 26));
+  for (let s = 0; s < steps; s += 1) {
+    if (geometry === "ot_rays") {
+      for (let i = 0; i < n; i += 1) {
+        const vx = target[i][0] - source[i][0];
+        const vy = target[i][1] - source[i][1];
+        pts[i][0] = source[i][0] + vx;
+        pts[i][1] = source[i][1] + vy;
+      }
+    } else if (geometry === "sinkhorn") {
+      const velocities = gfSinkhornDivergenceVelocities(pts, target, smooth);
+      for (let i = 0; i < n; i += 1) {
+        pts[i][0] += 0.045 * velocities[i][0];
+        pts[i][1] += 0.045 * velocities[i][1];
+      }
+    } else {
+      for (let i = 0; i < n; i += 1) {
+        let vx = 0;
+        let vy = 0;
+        let wx = 0;
+        let wy = 0;
+        let wt = 0;
+        for (const q of target) {
+          const dx = q[0] - pts[i][0];
+          const dy = q[1] - pts[i][1];
+          const wgt = Math.exp(-(dx * dx + dy * dy) / (2 * smooth * smooth));
+          wx += wgt * dx;
+          wy += wgt * dy;
+          wt += wgt;
+        }
+        vx += wx / Math.max(wt, 1e-9);
+        vy += wy / Math.max(wt, 1e-9);
+        if (geometry === "mmd" || geometry === "drifting") {
+          const r = gfRepulsion(i, pts, geometry === "drifting" ? 0.12 : 0.045, 0.42);
+          vx += r[0];
+          vy += r[1];
+        }
+        if (geometry === "drifting") {
+          const len = Math.max(Math.hypot(vx, vy), 1e-5);
+          vx /= len;
+          vy /= len;
+        }
+        const rate = geometry === "drifting" ? 0.048 : 0.056;
+        pts[i][0] += rate * vx;
+        pts[i][1] += rate * vy;
+      }
+    }
+    if (s % storeEvery === 0 || s === steps - 1 || geometry === "ot_rays") {
+      for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  const { ctx, w, h } = resizeCanvas(394);
+  const box = { x: 22, y: 34, w: w - 44, h: h - 62 };
+  drawFrame(ctx, box, gfObjectiveLabel(geometry));
+  gfDrawTrajectories(ctx, box, 2.25, trajectories, 1);
+  gfDrawPoints(ctx, box, 2.25, target, BLUE, 2.6, 0.72);
+  gfDrawPoints(ctx, box, 2.25, source, RED, 2.5, 0.68);
+  gfDrawPoints(ctx, box, 2.25, pts, VIOLET, 2.4, 0.78);
+  let targetGap = 0;
+  for (const p of pts) targetGap += Math.min(...target.map((q) => Math.hypot(p[0] - q[0], p[1] - q[1])));
+  targetGap /= Math.max(pts.length, 1);
+  const epsText = geometry === "sinkhorn" ? `epsilon ${smooth.toFixed(2)}` : `smoothing ${smooth.toFixed(2)}`;
+  setStatus(`${gfObjectiveLabel(geometry)}; ${epsText}; time ${time.toFixed(2)}; mean nearest-target distance ${targetGap.toFixed(2)}`);
+}
+
+function drawSoftBlob(ctx, box, lim, center, radius, color, alpha) {
+  const { X, Y } = gfMap(box, lim);
+  const cx = X(center[0]);
+  const cy = Y(center[1]);
+  const rr = (radius / (2 * lim)) * Math.min(box.w, box.h);
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr);
+  const [r, g, b] = rgb(color);
+  grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rr, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function fokkerTarget(shift) {
+  return {
+    centers: [[shift - 0.44, 0.45], [shift + 0.58, -0.34]],
+    sigmas: [0.30, 0.36],
+    weights: [0.53, 0.47],
+  };
+}
+
+function gaussianMixtureDensity2D(point, target) {
+  let value = 0;
+  for (let k = 0; k < target.centers.length; k += 1) {
+    const c = target.centers[k];
+    const s = target.sigmas[k];
+    const dx = point[0] - c[0];
+    const dy = point[1] - c[1];
+    value += target.weights[k] * Math.exp(-0.5 * (dx * dx + dy * dy) / (s * s)) / (2 * Math.PI * s * s);
+  }
+  return value;
+}
+
+function gaussianMixtureScore2D(point, target) {
+  const numer = [0, 0];
+  let denom = 0;
+  for (let k = 0; k < target.centers.length; k += 1) {
+    const c = target.centers[k];
+    const s = target.sigmas[k];
+    const dx = point[0] - c[0];
+    const dy = point[1] - c[1];
+    const variance = Math.max(s * s, 1e-12);
+    const w = target.weights[k] * Math.exp(-0.5 * (dx * dx + dy * dy) / variance) / variance;
+    numer[0] += w * (c[0] - point[0]) / variance;
+    numer[1] += w * (c[1] - point[1]) / variance;
+    denom += w;
+  }
+  return [numer[0] / Math.max(denom, 1e-12), numer[1] / Math.max(denom, 1e-12)];
+}
+
+function fokkerInitialCloud(n, seed) {
+  const random = rng(seed);
+  return Array.from({ length: n }, () => [-0.30 + 0.30 * randn(random), 0.05 + 0.30 * randn(random)]);
+}
+
+function simulateFokkerParticles(kind, n, seed, target, diffusion, finalTime) {
+  const random = rng(seed);
+  let pts = fokkerInitialCloud(n, seed + 17);
+  const paths = pts.map((p) => [p.slice()]);
+  const dt = kind === "langevin" ? 0.033 : 0.030;
+  const steps = Math.max(1, Math.round(finalTime / dt));
+  const storeEvery = Math.max(1, Math.floor(steps / 36));
+  const bandwidth = 0.20 + 0.12 * Math.sqrt(diffusion);
+  for (let step = 0; step < steps; step += 1) {
+    const prev = pts;
+    pts = prev.map((p, i) => {
+      const targetScore = gaussianMixtureScore2D(p, target);
+      let vx = diffusion * targetScore[0];
+      let vy = diffusion * targetScore[1];
+      if (kind === "kde") {
+        const densityScore = kdeScoreAtPoint(p, prev, bandwidth);
+        vx -= diffusion * densityScore[0];
+        vy -= diffusion * densityScore[1];
+      }
+      const speed = Math.hypot(vx, vy);
+      if (speed > 3.2) {
+        vx *= 3.2 / speed;
+        vy *= 3.2 / speed;
+      }
+      const noiseScale = kind === "langevin" ? Math.sqrt(2 * diffusion * dt) : 0;
+      return [
+        p[0] + dt * vx + noiseScale * randn(random),
+        p[1] + dt * vy + noiseScale * randn(random),
+      ];
+    });
+    if (step % storeEvery === 0 || step === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) paths[i].push(pts[i].slice());
+    }
+  }
+  return { points: pts, paths };
+}
+
+function kdeScoreAtPoint(point, pts, bandwidth, skip = -1) {
+  const h2 = Math.max(bandwidth * bandwidth, 1e-8);
+  let wx = 0;
+  let wy = 0;
+  let total = 0;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (j === skip && pts.length > 8) continue;
+    const q = pts[j];
+    const dx = q[0] - point[0];
+    const dy = q[1] - point[1];
+    const w = Math.exp(-0.5 * (dx * dx + dy * dy) / h2);
+    wx += w * dx;
+    wy += w * dy;
+    total += w;
+  }
+  return [wx / Math.max(total * h2, 1e-12), wy / Math.max(total * h2, 1e-12)];
+}
+
+function squareRowBoxes(w, h, count) {
+  const gap = 22;
+  const side = Math.max(84, Math.min((w - 40 - gap * (count - 1)) / count, h - 84));
+  const total = count * side + gap * (count - 1);
+  const x0 = (w - total) / 2;
+  const y0 = 44 + Math.max(0, (h - 82 - side) / 2);
+  return Array.from({ length: count }, (_, i) => ({ x: x0 + i * (side + gap), y: y0, w: side, h: side }));
+}
+
+function densityValuesOnSquare(resolution, lim, densityFn) {
+  const values = new Array(resolution * resolution);
+  for (let j = 0; j < resolution; j += 1) {
+    const y = lerp(lim, -lim, (j + 0.5) / resolution);
+    for (let i = 0; i < resolution; i += 1) {
+      const x = lerp(-lim, lim, (i + 0.5) / resolution);
+      values[j * resolution + i] = densityFn([x, y]);
+    }
+  }
+  return values;
+}
+
+function drawDensityImageAndContours(ctx, box, values, resolution, color, opacity = 0.72, contourColor = "rgba(18,24,32,.32)") {
+  const sorted = values.filter(Number.isFinite).slice().sort((a, b) => a - b);
+  const cap = sorted[Math.max(0, Math.floor(0.965 * (sorted.length - 1)))] || 1;
+  const [r, g, b] = rgb(color);
+  const cw = box.w / resolution;
+  const ch = box.h / resolution;
+  for (let j = 0; j < resolution; j += 1) {
+    for (let i = 0; i < resolution; i += 1) {
+      const s = clamp(values[j * resolution + i] / Math.max(cap, 1e-12), 0, 1);
+      if (s < 0.012) continue;
+      ctx.fillStyle = `rgba(${r},${g},${b},${opacity * Math.pow(s, 0.62)})`;
+      ctx.fillRect(box.x + i * cw, box.y + j * ch, cw + 0.45, ch + 0.45);
+    }
+  }
+  const levels = [0.16, 0.30, 0.48, 0.68].map((s) => s * cap);
+  ctx.strokeStyle = contourColor;
+  ctx.lineWidth = 0.75;
+  for (const level of levels) {
+    ctx.beginPath();
+    for (let j = 1; j < resolution - 1; j += 1) {
+      for (let i = 1; i < resolution - 1; i += 1) {
+        const here = values[j * resolution + i];
+        const right = values[j * resolution + i + 1];
+        const down = values[(j + 1) * resolution + i];
+        const x = box.x + (i + 0.5) * cw;
+        const y = box.y + (j + 0.5) * ch;
+        if ((here - level) * (right - level) < 0) {
+          ctx.moveTo(x, y - 0.30 * ch);
+          ctx.lineTo(x, y + 0.30 * ch);
+        }
+        if ((here - level) * (down - level) < 0) {
+          ctx.moveTo(x - 0.30 * cw, y);
+          ctx.lineTo(x + 0.30 * cw, y);
+        }
+      }
+    }
+    ctx.stroke();
+  }
+}
+
+function drawFokkerTrajectoryPanel(ctx, box, lim, targetValues, targetResolution, sim, title, pointColor, progress) {
+  drawFrame(ctx, box, title);
+  drawDensityImageAndContours(ctx, box, targetValues, targetResolution, BLUE, 0.18, "rgba(33,102,172,.25)");
+  const pathIndex = Math.max(1, Math.round(progress * (sim.paths[0].length - 1)));
+  const { X, Y } = gfMap(box, lim);
+  const stride = Math.max(1, Math.floor(sim.paths.length / 56));
+  for (let i = 0; i < sim.paths.length; i += stride) {
+    const path = sim.paths[i];
+    ctx.beginPath();
+    for (let k = 0; k <= pathIndex; k += 1) {
+      const p = path[k];
+      if (k === 0) ctx.moveTo(X(p[0]), Y(p[1]));
+      else ctx.lineTo(X(p[0]), Y(p[1]));
+    }
+    ctx.strokeStyle = mixColor(i / Math.max(sim.paths.length - 1, 1), RED, BLUE, 0.36);
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+  }
+  const current = sim.paths.map((path) => path[pathIndex]);
+  gfDrawPoints(ctx, box, lim, current, pointColor, 1.9, 0.76);
+}
+
+function initialFokkerGrid(resolution, lim) {
+  const values = densityValuesOnSquare(resolution, lim, (p) => normalPdf(p[0], -0.30, 0.30) * normalPdf(p[1], 0.05, 0.30));
+  return normalizeGridDensity(values, resolution, lim);
+}
+
+function normalizeGridDensity(values, resolution, lim) {
+  const dx = (2 * lim) / resolution;
+  const mass = values.reduce((sum, value) => sum + Math.max(value, 0), 0) * dx * dx;
+  return values.map((value) => Math.max(value, 0) / Math.max(mass, 1e-12));
+}
+
+function simulateFokkerGrid(resolution, lim, target, diffusion, finalTime) {
+  let rho = initialFokkerGrid(resolution, lim);
+  const dx = (2 * lim) / resolution;
+  const dt = Math.min(0.010, 0.38 * dx * dx / Math.max(4 * diffusion, 1e-6));
+  const steps = Math.max(1, Math.round(finalTime / dt));
+  const snapshots = [rho.slice()];
+  const storeAt = new Set([Math.round(steps * 0.25), Math.round(steps * 0.5), Math.round(steps * 0.75), steps - 1]);
+  const scoreGrid = densityValuesOnSquare(resolution, lim, (p) => {
+    const s = gaussianMixtureScore2D(p, target);
+    return [diffusion * s[0], diffusion * s[1]];
+  });
+  for (let step = 0; step < steps; step += 1) {
+    const next = rho.slice();
+    for (let j = 0; j < resolution; j += 1) {
+      for (let i = 0; i < resolution; i += 1) {
+        const id = j * resolution + i;
+        const center = rho[id];
+        const left = i > 0 ? rho[id - 1] : center;
+        const right = i + 1 < resolution ? rho[id + 1] : center;
+        const up = j > 0 ? rho[id - resolution] : center;
+        const down = j + 1 < resolution ? rho[id + resolution] : center;
+        const vRight = 0.5 * (scoreGrid[id][0] + (i + 1 < resolution ? scoreGrid[id + 1][0] : 0));
+        const vLeft = 0.5 * ((i > 0 ? scoreGrid[id - 1][0] : 0) + scoreGrid[id][0]);
+        const vDown = 0.5 * (scoreGrid[id][1] + (j + 1 < resolution ? scoreGrid[id + resolution][1] : 0));
+        const vUp = 0.5 * ((j > 0 ? scoreGrid[id - resolution][1] : 0) + scoreGrid[id][1]);
+        const fluxRight = i + 1 < resolution ? vRight * (vRight >= 0 ? center : right) : 0;
+        const fluxLeft = i > 0 ? vLeft * (vLeft >= 0 ? left : center) : 0;
+        const fluxDown = j + 1 < resolution ? vDown * (vDown >= 0 ? center : down) : 0;
+        const fluxUp = j > 0 ? vUp * (vUp >= 0 ? up : center) : 0;
+        const transport = -((fluxRight - fluxLeft) + (fluxDown - fluxUp)) / dx;
+        const laplacian = (left + right + up + down - 4 * center) / (dx * dx);
+        next[id] = center + dt * (transport + diffusion * laplacian);
+      }
+    }
+    rho = normalizeGridDensity(next, resolution, lim);
+    if (storeAt.has(step)) snapshots.push(rho.slice());
+  }
+  return { rho, snapshots, dt };
+}
+
+function drawFokkerGridPanel(ctx, box, lim, grid, title) {
+  drawFrame(ctx, box, title);
+  const resolution = Math.round(Math.sqrt(grid.rho.length));
+  const colors = [RED, VIOLET, BLUE];
+  for (let k = 0; k < grid.snapshots.length; k += 1) {
+    const t = k / Math.max(grid.snapshots.length - 1, 1);
+    const color = k === grid.snapshots.length - 1 ? BLUE : mixHexColor(t, RED, BLUE);
+    drawDensityImageAndContours(ctx, box, grid.snapshots[k], resolution, color, k === grid.snapshots.length - 1 ? 0.44 : 0.16, `rgba(${rgb(colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]).join(",")},.30)`);
+  }
+}
+
+function drawGradflowFokker() {
+  const time = val("gffTime");
+  const sigma = val("gffSigma");
+  const shift = val("gffShift");
+  const seed = Math.round(val("gffSeed"));
+  const diffusion = 0.055 + 0.20 * sigma;
+  const finalTime = 0.45 + 4.15 * time;
+  const target = fokkerTarget(shift);
+  const lim = 2.35;
+  const particles = 180;
+  const targetResolution = 64;
+  const targetValues = densityValuesOnSquare(targetResolution, lim, (p) => gaussianMixtureDensity2D(p, target));
+  const langevin = simulateFokkerParticles("langevin", particles, seed, target, diffusion, finalTime);
+  const kde = simulateFokkerParticles("kde", particles, seed, target, diffusion, finalTime);
+  const grid = simulateFokkerGrid(50, lim, target, diffusion, finalTime);
+  const { ctx, w, h } = resizeCanvas(382);
+  const boxes = squareRowBoxes(w, h, 3);
+  drawFokkerTrajectoryPanel(ctx, boxes[0], lim, targetValues, targetResolution, langevin, "Langevin particles", BLUE, 1);
+  drawFokkerTrajectoryPanel(ctx, boxes[1], lim, targetValues, targetResolution, kde, "KDE-score particles", VIOLET, 1);
+  drawFokkerGridPanel(ctx, boxes[2], lim, grid, "grid Fokker-Planck PDE");
+  setStatus(`physical time ${finalTime.toFixed(2)}; diffusion ${diffusion.toFixed(3)}; target is a two-Gaussian mixture shifted by ${shift.toFixed(2)}`);
+}
+
+function angleDiff(a, b) {
+  return Math.atan2(Math.sin(b - a), Math.cos(b - a));
+}
+
+function mlpTeacherAngles(count, spread) {
+  if (count <= 1) return [Math.PI / 2];
+  return Array.from({ length: count }, (_, i) => Math.PI / 2 - spread + (2 * spread * i) / Math.max(count - 1, 1));
+}
+
+function mlpAngularHistogram(pts, bins) {
+  const hist = Array(bins).fill(0);
+  for (const p of pts) {
+    const a = (Math.atan2(p[1], p[0]) + 2 * Math.PI) % (2 * Math.PI);
+    const k = Math.min(bins - 1, Math.floor((a / (2 * Math.PI)) * bins));
+    hist[k] += Math.max(0.06, Math.hypot(p[0], p[1]) ** 2);
+  }
+  return hist.map((v, k) => 0.2 * hist[(k + bins - 1) % bins] + 0.6 * v + 0.2 * hist[(k + 1) % bins]);
+}
+
+function simulateMeanFieldMLP(n, seed, teachers, finalTime) {
+  const random = rng(seed);
+  let pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = 2 * Math.PI * random();
+    const r = 0.22 + 0.24 * random();
+    pts.push([r * Math.cos(a), r * Math.sin(a)]);
+  }
+  const initial = pts.map((p) => p.slice());
+  const trajectories = pts.map((p) => [p.slice()]);
+  const steps = Math.round(42 + 120 * finalTime);
+  const snapshotSteps = [0, 0.16, 0.34, 0.58, 0.78, 1].map((t) => Math.round(t * steps));
+  const snapshots = [];
+  const snapshotSet = new Set(snapshotSteps);
+  const storeEvery = Math.max(5, Math.round(steps / 24));
+  for (let s = 0; s <= steps; s += 1) {
+    if (snapshotSet.has(s)) snapshots.push({ time: (finalTime * s) / Math.max(steps, 1), pts: pts.map((p) => p.slice()) });
+    if (s === steps) break;
+    pts = pts.map((p) => {
+      let a = Math.atan2(p[1], p[0]);
+      let r = Math.max(0.04, Math.hypot(p[0], p[1]));
+      let best = angleDiff(a, teachers[0]);
+      for (let k = 1; k < teachers.length; k += 1) {
+        const d = angleDiff(a, teachers[k]);
+        if (Math.abs(d) < Math.abs(best)) best = d;
+      }
+      a += 0.048 * best;
+      r += 0.025 * (1.24 - r) + 0.016 * Math.max(0, Math.cos(best));
+      return [r * Math.cos(a), r * Math.sin(a)];
+    });
+    if (s % storeEvery === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { initial, pts, trajectories, snapshots };
+}
+
+function drawMlpTeacherRays(ctx, box, lim, teachers, alpha = 0.52) {
+  const { X, Y } = gfMap(box, lim);
+  ctx.save();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = `rgba(20,25,30,${alpha})`;
+  ctx.lineWidth = 1.05;
+  for (const th of teachers) {
+    ctx.beginPath();
+    ctx.moveTo(X(0), Y(0));
+    ctx.lineTo(X(1.52 * Math.cos(th)), Y(1.52 * Math.sin(th)));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawMlpAngularStack(ctx, box, teachers, snapshots, title = "angular concentration over optimization time") {
+  drawFrame(ctx, box, title);
+  const bins = 48;
+  const hists = snapshots.map((snapshot) => mlpAngularHistogram(snapshot.pts, bins));
+  const maxH = Math.max(...hists.flat(), 1);
+  const labelW = 34;
+  const inner = { x: box.x + labelW, y: box.y + 12, w: box.w - labelW - 8, h: box.h - 22 };
+  const gap = 5;
+  const rowH = (inner.h - gap * (snapshots.length - 1)) / snapshots.length;
+  ctx.save();
+  ctx.font = "10.5px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let s = 0; s < snapshots.length; s += 1) {
+    const row = { x: inner.x, y: inner.y + s * (rowH + gap), w: inner.w, h: rowH };
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(row.x, row.y, row.w, row.h);
+    ctx.strokeStyle = "#e2e7ef";
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(row.x, row.y, row.w, row.h);
+    for (const th of teachers) {
+      const theta = (th + 2 * Math.PI) % (2 * Math.PI);
+      const x = row.x + (theta / (2 * Math.PI)) * row.w;
+      ctx.strokeStyle = "rgba(20,25,30,.42)";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, row.y + 1);
+      ctx.lineTo(x, row.y + row.h - 1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const color = mixColor(s / Math.max(snapshots.length - 1, 1), RED, BLUE, 0.68);
+    ctx.fillStyle = color;
+    for (let k = 0; k < bins; k += 1) {
+      const barW = row.w / bins;
+      const x = row.x + k * barW;
+      const barH = (hists[s][k] / maxH) * (row.h - 4);
+      ctx.fillRect(x, row.y + row.h - 2 - barH, Math.max(1, 0.8 * barW), barH);
+    }
+    ctx.fillStyle = "#41505f";
+    ctx.fillText(`t=${snapshots[s].time.toFixed(2)}`, box.x + labelW - 6, row.y + row.h / 2);
+  }
+  ctx.restore();
+}
+
+function drawGradflowMLP() {
+  const n = Math.round(val("gflNeurons"));
+  const angle = (Math.PI / 180) * val("gflAngle");
+  const finalTime = val("gflTime");
+  const teacherCount = parseInt(val("gflTeachers"), 10);
+  const seed = Math.round(val("gflSeed"));
+  const teachers = mlpTeacherAngles(teacherCount, angle);
+  const sim = simulateMeanFieldMLP(n, seed, teachers, finalTime);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 610 : 430);
+  const gap = frameWidth < 720 ? 22 : 34;
+  const compact = w < 640;
+  const left = compact ? { x: 22, y: 34, w: w - 44, h: Math.max(190, h * 0.46) } : { x: 20, y: 42, w: (w - 54 - gap) * 0.52, h: h - 70 };
+  const right = compact
+    ? { x: 22, y: left.y + left.h + gap, w: w - 44, h: h - left.h - gap - 46 }
+    : { x: left.x + left.w + gap, y: 42, w: (w - 54 - gap) * 0.48, h: h - 70 };
+  drawFrame(ctx, left, "neuron trajectories");
+  const lim = 2.05;
+  drawMlpTeacherRays(ctx, left, lim, teachers);
+  gfDrawTrajectories(ctx, left, lim, sim.trajectories, Math.max(1, Math.floor(n / 70)));
+  gfDrawPoints(ctx, left, lim, sim.initial.filter((_, i) => i % Math.max(1, Math.floor(n / 130)) === 0), RED, 1.65, 0.48);
+  gfDrawPoints(ctx, left, lim, sim.pts, BLUE, 2.15, 0.78);
+  drawMlpAngularStack(ctx, right, teachers, sim.snapshots);
+  const finalHist = mlpAngularHistogram(sim.pts, 48);
+  const concentration = Math.max(...finalHist) / Math.max(finalHist.reduce((sum, v) => sum + v, 0), 1e-12);
+  setStatus(`${n} neurons; ${teacherCount} teacher ray${teacherCount > 1 ? "s" : ""}; final time ${finalTime.toFixed(2)}; peak angular mass ${(100 * concentration).toFixed(1)}%`);
+}
+
+function gmAtoms(gap) {
+  return [[0, 0.62 * gap], [-0.58 * gap, -0.42 * gap], [0.66 * gap, -0.34 * gap]];
+}
+
+function gmSourceTarget(n, seed, gap = 1) {
+  const random = rng(seed);
+  const atoms = gmAtoms(gap);
+  const source = [];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = 2 * Math.PI * random();
+    const r = 0.34 + 0.24 * random();
+    source.push([-0.92 + r * Math.cos(a), 0.08 + 0.72 * r * Math.sin(a)]);
+    const c = atoms[i % atoms.length];
+    target.push([c[0] + 0.16 * randn(random), c[1] + 0.16 * randn(random)]);
+  }
+  return { source, target, atoms };
+}
+
+function gmPathPoint(p, q, t, curvature, side = 1) {
+  const x = lerp(p[0], q[0], t);
+  const y = lerp(p[1], q[1], t);
+  const dx = q[0] - p[0];
+  const dy = q[1] - p[1];
+  const len = Math.max(Math.hypot(dx, dy), 1e-8);
+  const bump = curvature * Math.sin(Math.PI * t);
+  return [x - side * bump * dy / len, y + side * bump * dx / len];
+}
+
+function drawGenerativeFlowPanel(ctx, box, source, target, assignment, time, curvature, title, curveMode) {
+  drawFrame(ctx, box, title);
+  const paired = source.map((_, i) => target[assignment[i]]);
+  const lim = limits(source.concat(target).concat(paired));
+  const range = Math.max(Math.abs(lim.xmin), Math.abs(lim.xmax), Math.abs(lim.ymin), Math.abs(lim.ymax), 1.4) + 0.22;
+  const proj = gfMap(box, range);
+  const stride = Math.max(1, Math.floor(source.length / 34));
+  for (let i = 0; i < source.length; i += stride) {
+    const side = i % 2 === 0 ? 1 : -1;
+    ctx.beginPath();
+    for (let k = 0; k <= 24; k += 1) {
+      const t = k / 24;
+      const z = curveMode ? gmPathPoint(source[i], paired[i], t, curvature, side) : gmPathPoint(source[i], paired[i], t, 0, side);
+      if (k === 0) ctx.moveTo(proj.X(z[0]), proj.Y(z[1]));
+      else ctx.lineTo(proj.X(z[0]), proj.Y(z[1]));
+    }
+    ctx.strokeStyle = curveMode ? "rgba(123,50,148,.28)" : "rgba(80,91,105,.22)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (i % (2 * stride) === 0) {
+      const z0 = curveMode ? gmPathPoint(source[i], paired[i], time, curvature, side) : gmPathPoint(source[i], paired[i], time, 0, side);
+      const z1 = curveMode ? gmPathPoint(source[i], paired[i], clamp(time + 0.05, 0, 1), curvature, side) : gmPathPoint(source[i], paired[i], clamp(time + 0.05, 0, 1), 0, side);
+      drawTinyArrow(ctx, proj.X(z0[0]), proj.Y(z0[1]), proj.X(z1[0]) - proj.X(z0[0]), proj.Y(z1[1]) - proj.Y(z0[1]), "rgba(123,50,148,.65)", 1.1);
+    }
+  }
+  gfDrawPoints(ctx, box, range, source, RED, 2.4, 0.55);
+  gfDrawPoints(ctx, box, range, target, BLUE, 2.4, 0.55);
+  const current = source.map((p, i) => {
+    const side = i % 2 === 0 ? 1 : -1;
+    return curveMode ? gmPathPoint(p, paired[i], time, curvature, side) : gmPathPoint(p, paired[i], time, 0, side);
+  });
+  gfDrawPoints(ctx, box, range, current, VIOLET, 2.9, 0.9);
+}
+
+function drawGenerativeFlow() {
+  const n = Math.round(val("gmfParticles"));
+  const time = val("gmfTime");
+  const curvature = val("gmfCurvature");
+  const seed = Math.round(val("gmfSeed"));
+  const { source, target } = gmSourceTarget(n, seed, 1.0);
+  const product = source.map((_, i) => (7 * i + 3) % n);
+  const assignment = hungarian(costMatrix(source, target, 2));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 680 ? 650 : 390);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  drawGenerativeFlowPanel(ctx, boxes[0], source, target, product, time, 0, "product pairing", false);
+  drawGenerativeFlowPanel(ctx, boxes[1], source, target, assignment, time, 0, "OT pairing", false);
+  drawGenerativeFlowPanel(ctx, boxes[2], source, target, assignment, time, curvature, "curved bridge", true);
+  setStatus(`${n} paired particles; time ${time.toFixed(2)}; curved-bridge bend ${curvature.toFixed(2)}`);
+}
+
+function gen1dPdf(xs, time, separation, noise) {
+  const weights = [0.42, 0.34, 0.24];
+  const means = [-separation, 0.05, 0.82 * separation];
+  const stds = [0.18, 0.26, 0.2];
+  return xs.map((x) => {
+    let y = 0;
+    for (let k = 0; k < weights.length; k += 1) {
+      const mean = (1 - time) * means[k];
+      const std = Math.sqrt(((1 - time) * stds[k]) ** 2 + (time * noise) ** 2 + 0.004);
+      y += weights[k] * normalPdf(x, mean, std);
+    }
+    return y;
+  });
+}
+
+function drawGenerativeDiffusion1D() {
+  const time = val("gmd1Time");
+  const separation = val("gmd1Separation");
+  const noise = val("gmd1Noise");
+  const samples = Math.round(val("gmd1Samples"));
+  const xs = Array.from({ length: 620 }, (_, i) => lerp(-3.2, 3.2, i / 619));
+  const snapshots = [0, 0.33 * time, 0.66 * time, time, 1];
+  const pdfs = snapshots.map((t) => gen1dPdf(xs, t, separation, noise));
+  const yMax = 1.08 * Math.max(...pdfs.flat());
+  const { ctx, w, h } = resizeCanvas(410);
+  const gap = 34;
+  const left = { x: 18, y: 38, w: (w - 52 - gap) * 0.52, h: h - 66 };
+  const right = { x: left.x + left.w + gap, y: 38, w: (w - 52 - gap) * 0.48, h: h - 66 };
+  drawFrame(ctx, left, "forward noising densities");
+  drawFrame(ctx, right, "reverse probability-flow paths");
+  for (let k = 0; k < pdfs.length; k += 1) {
+    const color = mixColor(snapshots[k], RED, BLUE, k === pdfs.length - 1 ? 0.85 : 0.55);
+    drawCurve(ctx, xs, pdfs[k], left, -3.2, 3.2, 0, yMax, color, k === 0 || k === pdfs.length - 1 ? 2 : 1.25);
+  }
+  const modes = [-separation, 0.05, 0.82 * separation];
+  const X = (x) => right.x + ((x + 3.2) / 6.4) * right.w;
+  const Y = (t) => right.y + right.h - t * right.h;
+  for (let i = 0; i < samples; i += 1) {
+    const u = (i + 0.5) / samples;
+    const z0 = normalInv(u, 0, noise);
+    const target = modes[Math.min(2, Math.floor(3 * u))];
+    const bend = 0.26 * Math.sin(2 * Math.PI * u);
+    ctx.beginPath();
+    for (let k = 0; k <= 34; k += 1) {
+      const s = k / 34;
+      const x = lerp(z0, target, s) + bend * Math.sin(Math.PI * s) * (1 - 0.3 * time);
+      if (k === 0) ctx.moveTo(X(x), Y(0));
+      else ctx.lineTo(X(x), Y(s));
+    }
+    ctx.strokeStyle = mixColor(u, BLUE, RED, 0.32);
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+  }
+  for (const m of modes) {
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.arc(X(m), Y(1), 3, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.fillStyle = BLUE;
+  ctx.fillText("noise", right.x + 10, right.y + right.h - 10);
+  ctx.fillStyle = RED;
+  ctx.fillText("data", right.x + 10, right.y + 16);
+  setStatus(`time ${time.toFixed(2)}; mode separation ${separation.toFixed(2)}; endpoint noise ${noise.toFixed(2)}; ${samples} reverse paths`);
+}
+
+function gmSchedule(mode, t) {
+  if (mode === "vp") return { a: Math.cos(0.5 * Math.PI * t), b: Math.sin(0.5 * Math.PI * t), bend: 0.26 };
+  if (mode === "overshoot") return { a: (1 - t) * (1 - 2 * t), b: t, bend: 0.5 };
+  return { a: 1 - t, b: t, bend: 0.08 };
+}
+
+function drawNoisingSnapshot(ctx, box, atoms, sigma, mode, title, highlight) {
+  drawFrame(ctx, box, title);
+  const lim = 2.2;
+  const proj = gfMap(box, lim);
+  const times = [0, 0.28, 0.56, 0.82, 1];
+  for (const t of times) {
+    const { a, b } = gmSchedule(mode, t);
+    const alpha = t === 0 || t === 1 ? 0.32 : 0.18;
+    for (const c of atoms) {
+      const x = a * c[0];
+      const y = a * c[1];
+      const radius = Math.max(0.035, Math.abs(b) * sigma);
+      ctx.strokeStyle = mixColor(t, RED, BLUE, alpha + 0.28 * (Math.abs(t - highlight) < 0.04));
+      ctx.lineWidth = Math.abs(t - highlight) < 0.04 ? 2.1 : 1.1;
+      ctx.beginPath();
+      ctx.ellipse(proj.X(x), proj.Y(y), (radius / (2 * lim)) * box.w, (radius / (2 * lim)) * box.h, 0, 0, 2 * Math.PI);
+      ctx.stroke();
+      ctx.fillStyle = mixColor(t, RED, BLUE, 0.16);
+      ctx.beginPath();
+      ctx.arc(proj.X(x), proj.Y(y), 2.6, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  ctx.fillStyle = "#5f6670";
+  ctx.fillText("t=0", box.x + 10, box.y + box.h - 10);
+  ctx.fillText("t=1", box.x + box.w - 28, box.y + 16);
+}
+
+function drawGenerativeDiffusion2D() {
+  const progress = val("gmd2Time");
+  const gap = val("gmd2Gap");
+  const sigma = val("gmd2Sigma");
+  const samples = Math.round(val("gmd2Samples"));
+  const seed = Math.round(val("gmd2Seed"));
+  const atoms = gmAtoms(gap);
+  const random = rng(seed);
+  const starts = Array.from({ length: samples }, () => [sigma * randn(random), sigma * randn(random)]);
+  const targetCopies = replicatedAtoms(atoms, samples);
+  const assignment = hungarian(costMatrix(starts, targetCopies, 2));
+  const otTargets = assignment.map((j) => targetCopies[j]);
+  const diffusionPaths = vpReverseDiffusionPaths(starts, atoms, sigma);
+  const otPaths = straightSamplingPaths(starts, otTargets, diffusionPaths[0].length);
+  const allPoints = starts.concat(atoms).concat(diffusionPaths.flatMap((path) => [path[path.length - 1]]));
+  const limBox = limits(allPoints);
+  const lim = Math.max(Math.abs(limBox.xmin), Math.abs(limBox.xmax), Math.abs(limBox.ymin), Math.abs(limBox.ymax), 1.35) + 0.24;
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const index = Math.round(progress * (diffusionPaths[0].length - 1));
+  drawSamplingTrajectoryPanel(ctx, boxes[0], diffusionPaths, starts, atoms, lim, index, "reverse OU score flow", false);
+  drawSamplingTrajectoryPanel(ctx, boxes[1], otPaths, starts, atoms, lim, index, "quadratic OT rays", true);
+  setStatus(`same ${samples} Gaussian samples; progress ${progress.toFixed(2)}; OU reverse field uses the exact Gaussian-mixture score; right panel uses the quadratic OT matching`);
+}
+
+function replicatedAtoms(atoms, n) {
+  const out = [];
+  for (let i = 0; i < n; i += 1) out.push(atoms[i % atoms.length].slice());
+  return out;
+}
+
+function vpMixtureScore(z, tau, atoms, sigma) {
+  const a = Math.exp(-tau);
+  const b = Math.sqrt(Math.max(1 - a * a, 1e-12));
+  const variance = Math.max((b * sigma) ** 2, 1e-8);
+  const logs = atoms.map((c) => -0.5 * ((z[0] - a * c[0]) ** 2 + (z[1] - a * c[1]) ** 2) / variance);
+  const maxLog = Math.max(...logs);
+  const weights = logs.map((ell) => Math.exp(ell - maxLog));
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  let sx = 0;
+  let sy = 0;
+  for (let k = 0; k < atoms.length; k += 1) {
+    const r = weights[k] / Math.max(total, 1e-300);
+    sx += r * (a * atoms[k][0] - z[0]) / variance;
+    sy += r * (a * atoms[k][1] - z[1]) / variance;
+  }
+  return [sx, sy];
+}
+
+function vpForwardVelocity(z, tau, atoms, sigma) {
+  const score = vpMixtureScore(z, tau, atoms, sigma);
+  return [-z[0] - sigma * sigma * score[0], -z[1] - sigma * sigma * score[1]];
+}
+
+function vpRk4Step(z, tau, dt, atoms, sigma) {
+  const k1 = vpForwardVelocity(z, tau, atoms, sigma);
+  const k2 = vpForwardVelocity([z[0] + 0.5 * dt * k1[0], z[1] + 0.5 * dt * k1[1]], tau + 0.5 * dt, atoms, sigma);
+  const k3 = vpForwardVelocity([z[0] + 0.5 * dt * k2[0], z[1] + 0.5 * dt * k2[1]], tau + 0.5 * dt, atoms, sigma);
+  const k4 = vpForwardVelocity([z[0] + dt * k3[0], z[1] + dt * k3[1]], tau + dt, atoms, sigma);
+  return [
+    z[0] + (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+    z[1] + (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+  ];
+}
+
+function vpReverseDiffusionPaths(starts, atoms, sigma) {
+  const tauStart = 4.2;
+  const tauEnd = 0.012;
+  const steps = 132;
+  return starts.map((start) => {
+    let z = start.slice();
+    const path = [z.slice()];
+    for (let k = 0; k < steps; k += 1) {
+      const tau = lerp(tauStart, tauEnd, k / steps);
+      const nextTau = lerp(tauStart, tauEnd, (k + 1) / steps);
+      z = vpRk4Step(z, tau, nextTau - tau, atoms, sigma);
+      path.push(z.slice());
+    }
+    return path;
+  });
+}
+
+function straightSamplingPaths(starts, targets, steps) {
+  return starts.map((p, i) => {
+    const q = targets[i];
+    return Array.from({ length: steps }, (_, k) => {
+      const t = k / Math.max(steps - 1, 1);
+      return [lerp(p[0], q[0], t), lerp(p[1], q[1], t)];
+    });
+  });
+}
+
+function drawSamplingTrajectoryPanel(ctx, box, paths, starts, atoms, lim, index, title, otStyle) {
+  drawFrame(ctx, box, title);
+  const proj = gfMap(box, lim);
+  const stride = Math.max(1, Math.floor(paths.length / 72));
+  const safeIndex = clamp(index, 0, paths[0].length - 1);
+  for (let i = 0; i < paths.length; i += stride) {
+    const path = paths[i];
+    ctx.beginPath();
+    for (let k = 0; k <= safeIndex; k += 1) {
+      const p = path[k];
+      if (k === 0) ctx.moveTo(proj.X(p[0]), proj.Y(p[1]));
+      else ctx.lineTo(proj.X(p[0]), proj.Y(p[1]));
+    }
+    ctx.strokeStyle = otStyle ? "rgba(123,50,148,.30)" : mixColor(i / Math.max(paths.length - 1, 1), RED, BLUE, 0.35);
+    ctx.lineWidth = otStyle ? 0.85 : 1.05;
+    ctx.stroke();
+  }
+  if (safeIndex > 3 && safeIndex < paths[0].length - 4) {
+    for (let i = 0; i < paths.length; i += Math.max(stride * 6, 6)) {
+      const p = paths[i][safeIndex - 2];
+      const q = paths[i][safeIndex + 2];
+      drawTinyArrow(ctx, proj.X(p[0]), proj.Y(p[1]), proj.X(q[0]) - proj.X(p[0]), proj.Y(q[1]) - proj.Y(p[1]), "rgba(40,45,55,.42)", 0.9);
+    }
+  }
+  gfDrawPoints(ctx, box, lim, starts, RED, 1.9, 0.50);
+  gfDrawPoints(ctx, box, lim, atoms, BLUE, 4.4, 0.95);
+  if (safeIndex > 0 && safeIndex < paths[0].length - 1) {
+    const current = paths.map((path) => path[safeIndex]);
+    gfDrawPoints(ctx, box, lim, current, VIOLET, 1.8, 0.50);
+  }
+}
+
+function drawTrajectoryFamily(ctx, box, starts, atoms, mode, title, bendScale, straight = false) {
+  drawFrame(ctx, box, title);
+  const lim = 2.35;
+  const proj = gfMap(box, lim);
+  const assignment = starts.map((p, i) => {
+    const angle = Math.atan2(p[1] + 0.05 * i, p[0] - 0.03 * i);
+    const sector = Math.floor(((angle + Math.PI) / (2 * Math.PI)) * atoms.length) % atoms.length;
+    return atoms[(sector + atoms.length) % atoms.length];
+  });
+  for (let i = 0; i < starts.length; i += 1) {
+    const p = starts[i];
+    const q = assignment[i];
+    const side = i % 2 === 0 ? 1 : -1;
+    const localBend = straight ? 0 : bendScale * (0.45 + 0.55 * Math.sin((i + 1) * 1.7) ** 2);
+    ctx.beginPath();
+    for (let k = 0; k <= 36; k += 1) {
+      const s = k / 36;
+      const schedule = gmSchedule(mode, s);
+      const z = gmPathPoint(p, q, s, localBend * schedule.bend, side);
+      if (k === 0) ctx.moveTo(proj.X(z[0]), proj.Y(z[1]));
+      else ctx.lineTo(proj.X(z[0]), proj.Y(z[1]));
+    }
+    ctx.strokeStyle = straight ? "rgba(80,91,105,.22)" : mixColor(i / Math.max(starts.length - 1, 1), RED, BLUE, 0.34);
+    ctx.lineWidth = straight ? 0.8 : 1.05;
+    ctx.stroke();
+  }
+  gfDrawPoints(ctx, box, lim, starts, RED, 2.1, 0.55);
+  gfDrawPoints(ctx, box, lim, atoms, BLUE, 4.2, 0.86);
+}
+
+function drawGenerativeTrajectories() {
+  const mode = val("gmtSchedule");
+  const n = Math.round(val("gmtParticles"));
+  const gap = val("gmtGap");
+  const seed = Math.round(val("gmtSeed"));
+  const random = rng(seed);
+  const atoms = gmAtoms(gap);
+  const starts = [];
+  for (let i = 0; i < n; i += 1) starts.push([0.56 * randn(random), 0.56 * randn(random)]);
+  const { ctx, w, h } = resizeCanvas(405);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const bend = mode === "linear" ? 0.15 : mode === "vp" ? 0.55 : 0.85;
+  drawTrajectoryFamily(ctx, boxes[0], starts, atoms, mode, `${pretty(mode)} reverse flow`, bend, false);
+  drawTrajectoryFamily(ctx, boxes[1], starts, atoms, mode, "quadratic OT rays", 0, true);
+  setStatus(`${pretty(mode)} schedule; ${n} noise samples; atom gap ${gap.toFixed(2)}; compare curved reverse flow with straight OT rays`);
+}
+
+function drawGenerativeSchedule() {
+  const n = Math.round(val("gmsParticles"));
+  const gap = val("gmsGap");
+  const seed = Math.round(val("gmsSeed"));
+  const random = rng(seed);
+  const atoms = gmAtoms(gap);
+  const starts = [];
+  for (let i = 0; i < n; i += 1) starts.push([0.56 * randn(random), 0.56 * randn(random)]);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 680 ? 650 : 430);
+  const boxes = beyondBoxes(w, h, 3, 880);
+  drawTrajectoryFamily(ctx, boxes[0], starts, atoms, "linear", "linear bridge", 0.15, false);
+  drawTrajectoryFamily(ctx, boxes[1], starts, atoms, "vp", "OU / VP bridge", 0.55, false);
+  drawTrajectoryFamily(ctx, boxes[2], starts, atoms, "overshoot", "overshooting bridge", 0.85, false);
+  setStatus(`${n} reverse paths; atom gap ${gap.toFixed(2)}; the three scalar schedules share endpoints but bend the flow differently`);
+}
+
+function gdSimulate(n, seed, centers, kernel, correction, steps) {
+  let pts = gfInitialCloud(n, seed, -0.9, -0.15, 0.36);
+  const trajectories = pts.map((p) => [p.slice()]);
+  for (let s = 0; s < steps; s += 1) {
+    pts = pts.map((p, i) => {
+      const attract = gfTeacherForce(p, centers, kernel);
+      const repel = gfRepulsion(i, pts, 0.19 * correction, 0.42 + 0.3 * kernel);
+      const vx = 1.08 * attract[0] + repel[0] - 0.02 * p[0];
+      const vy = 1.08 * attract[1] + repel[1] - 0.02 * p[1];
+      return [p[0] + 0.05 * vx, p[1] + 0.05 * vy];
+    });
+    if (s % 6 === 0 || s === steps - 1) {
+      for (let i = 0; i < n; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { pts, trajectories };
+}
+
+function drawGenerativeDrifting() {
+  const correction = val("gmdriftCorrection");
+  const kernel = val("gmdriftKernel");
+  const steps = Math.round(val("gmdriftSteps"));
+  const n = Math.round(val("gmdriftParticles"));
+  const seed = Math.round(val("gmdriftSeed"));
+  const centers = gfTargetCenters(2.1);
+  const raw = gdSimulate(n, seed, centers, kernel, 0, steps);
+  const fixed = gdSimulate(n, seed, centers, kernel, correction, steps);
+  const { ctx, w, h } = resizeCanvas(400);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const sims = [raw, fixed];
+  for (let idx = 0; idx < sims.length; idx += 1) {
+    const sim = sims[idx];
+    const box = boxes[idx];
+    drawFrame(ctx, box, idx === 0 ? "raw kernel drift" : "self-corrected drift");
+    gfDrawTarget(ctx, box, 2.25, centers);
+    gfDrawTrajectories(ctx, box, 2.25, sim.trajectories, Math.max(1, Math.floor(n / 46)));
+    gfDrawPoints(ctx, box, 2.25, sim.trajectories.map((p) => p[0]), RED, 2.2, 0.48);
+    gfDrawPoints(ctx, box, 2.25, sim.pts, idx === 0 ? BLUE : VIOLET, 2.5, 0.85);
+  }
+  let coverage = 0;
+  for (const p of fixed.pts) coverage += Math.min(...centers.map((c) => Math.hypot(p[0] - c[0], p[1] - c[1])));
+  coverage /= Math.max(fixed.pts.length, 1);
+  setStatus(`${n} particles; kernel width ${kernel.toFixed(2)}; self-correction ${correction.toFixed(2)}; final nearest-mode distance ${coverage.toFixed(2)}`);
+}
+
+function meanShiftCenters() {
+  return [
+    { weight: 0.38, center: [-0.88, 0.16], spread: [0.34, 0.23] },
+    { weight: 0.34, center: [0.02, 0.48], spread: [0.28, 0.28] },
+    { weight: 0.28, center: [0.84, -0.3], spread: [0.36, 0.25] },
+  ];
+}
+
+function meanShiftInitialCloud(n, seed) {
+  const random = rng(seed);
+  const mixture = meanShiftCenters();
+  const cumulativeWeights = [];
+  let total = 0;
+  for (const component of mixture) {
+    total += component.weight;
+    cumulativeWeights.push(total);
+  }
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const u = random() * total;
+    let component = mixture[mixture.length - 1];
+    for (let k = 0; k < mixture.length; k += 1) {
+      if (u <= cumulativeWeights[k]) {
+        component = mixture[k];
+        break;
+      }
+    }
+    pts.push([
+      component.center[0] + component.spread[0] * randn(random),
+      component.center[1] + component.spread[1] * randn(random),
+    ]);
+  }
+  return pts;
+}
+
+function meanShiftVector(p, pts, bandwidth) {
+  const h2 = Math.max(bandwidth * bandwidth, 1e-5);
+  let sx = 0;
+  let sy = 0;
+  let sw = 0;
+  for (const q of pts) {
+    const dx = q[0] - p[0];
+    const dy = q[1] - p[1];
+    const wgt = Math.exp(-(dx * dx + dy * dy) / (2 * h2));
+    sx += wgt * q[0];
+    sy += wgt * q[1];
+    sw += wgt;
+  }
+  return [sx / Math.max(sw, 1e-9) - p[0], sy / Math.max(sw, 1e-9) - p[1]];
+}
+
+function simulateMeanShift(n, seed, bandwidth, time) {
+  let pts = meanShiftInitialCloud(n, seed);
+  const initial = pts.map((p) => p.slice());
+  const steps = Math.max(8, Math.round(24 + 86 * time));
+  const dt = 0.038;
+  const trajectories = pts.map((p) => [p.slice()]);
+  const snapshotSteps = [0.25, 0.5, 0.75, 1].map((s) => Math.max(1, Math.round(s * steps)));
+  const snapshots = [];
+  let nextSnapshot = 0;
+  for (let s = 1; s <= steps; s += 1) {
+    const old = pts;
+    pts = old.map((p) => {
+      const v = meanShiftVector(p, old, bandwidth);
+      return [
+        clamp(p[0] + dt * v[0], -2.4, 2.4),
+        clamp(p[1] + dt * v[1], -2.4, 2.4),
+      ];
+    });
+    if (s % 4 === 0 || s === steps) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+    if (s >= snapshotSteps[nextSnapshot]) {
+      snapshots.push(pts.map((p) => p.slice()));
+      nextSnapshot += 1;
+    }
+  }
+  while (snapshots.length < 4) snapshots.push(pts.map((p) => p.slice()));
+  return { initial, snapshots, trajectories, physicalTime: steps * dt };
+}
+
+function meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize = 112) {
+  const nx = gridSize;
+  const ny = Math.max(18, Math.round(gridSize * box.h / Math.max(box.w, 1)));
+  const values = new Float64Array(nx * ny);
+  const h = Math.max(0.18, 0.62 * bandwidth);
+  const h2 = h * h;
+  for (let j = 0; j < ny; j += 1) {
+    const y = lerp(lim, -lim, (j + 0.5) / ny);
+    for (let i = 0; i < nx; i += 1) {
+      const x = lerp(-lim, lim, (i + 0.5) / nx);
+      let value = 0;
+      for (const p of pts) {
+        const dx = x - p[0];
+        const dy = y - p[1];
+        value += Math.exp(-(dx * dx + dy * dy) / (2 * h2));
+      }
+      values[j * nx + i] = value / Math.max(pts.length, 1);
+    }
+  }
+  return { values, nx, ny };
+}
+
+function drawMeanShiftDensity(ctx, box, lim, pts, bandwidth, color, opacity = 0.9, contours = true) {
+  const gridSize = Math.max(92, Math.min(156, Math.round(box.w / 3.0)));
+  const { values, nx, ny } = meanShiftDensityGrid(box, lim, pts, bandwidth, gridSize);
+  const sorted = Array.from(values).sort((a, b) => a - b);
+  const cap = sorted[Math.max(0, Math.floor(0.96 * (sorted.length - 1)))] || 1;
+  const [r, g, b] = rgb(color);
+
+  const offscreen = document.createElement("canvas");
+  offscreen.width = nx;
+  offscreen.height = ny;
+  const offCtx = offscreen.getContext("2d");
+  const image = offCtx.createImageData(nx, ny);
+  for (let j = 0; j < ny; j += 1) {
+    for (let i = 0; i < nx; i += 1) {
+      const value = clamp(values[j * nx + i] / Math.max(cap, 1e-12), 0, 1);
+      const idx = 4 * (j * nx + i);
+      image.data[idx] = r;
+      image.data[idx + 1] = g;
+      image.data[idx + 2] = b;
+      image.data[idx + 3] = value <= 0.01 ? 0 : Math.round(255 * opacity * Math.pow(value, 0.62));
+    }
+  }
+  offCtx.putImageData(image, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(offscreen, box.x, box.y, box.w, box.h);
+  ctx.restore();
+
+  const cw = box.w / nx;
+  const ch = box.h / ny;
+  if (!contours) return;
+  for (const level of [0.22, 0.42, 0.64]) {
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.18 + 0.22 * level})`;
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    for (let j = 1; j < ny - 1; j += 1) {
+      for (let i = 1; i < nx - 1; i += 1) {
+        const here = values[j * nx + i] / Math.max(cap, 1e-12);
+        const right = values[j * nx + i + 1] / Math.max(cap, 1e-12);
+        const down = values[(j + 1) * nx + i] / Math.max(cap, 1e-12);
+        if ((here - level) * (right - level) < 0) {
+          const x = box.x + (i + 0.5) * cw;
+          const y = box.y + (j + 0.5) * ch;
+          ctx.moveTo(x, y - 0.32 * ch);
+          ctx.lineTo(x, y + 0.32 * ch);
+        }
+        if ((here - level) * (down - level) < 0) {
+          const x = box.x + (i + 0.5) * cw;
+          const y = box.y + (j + 0.5) * ch;
+          ctx.moveTo(x - 0.32 * cw, y);
+          ctx.lineTo(x + 0.32 * cw, y);
+        }
+      }
+    }
+    ctx.stroke();
+  }
+}
+
+function drawTimeColoredTrajectories(ctx, box, lim, trajectories, stride) {
+  const { X, Y } = gfMap(box, lim);
+  for (let i = 0; i < trajectories.length; i += stride) {
+    const path = trajectories[i];
+    for (let k = 1; k < path.length; k += 1) {
+      const t = k / Math.max(path.length - 1, 1);
+      ctx.strokeStyle = mixColor(t, RED, BLUE, 0.54);
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      ctx.moveTo(X(path[k - 1][0]), Y(path[k - 1][1]));
+      ctx.lineTo(X(path[k][0]), Y(path[k][1]));
+      ctx.stroke();
+    }
+  }
+}
+
+function drawGenerativeMeanShift() {
+  const time = val("gmshTime");
+  const bandwidth = val("gmshBandwidth");
+  const n = Math.round(val("gmshParticles"));
+  const seed = Math.round(val("gmshSeed"));
+  const sim = simulateMeanShift(n, seed, bandwidth, time);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 700 ? 640 : 430);
+  const lim = 1.8;
+  const gap = 14;
+  const finalSnapshot = sim.snapshots[sim.snapshots.length - 1];
+  const leftW = frameWidth < 700 ? w - 36 : Math.max(250, 0.42 * (w - 42));
+  const left = { x: 18, y: 40, w: leftW, h: frameWidth < 700 ? 250 : h - 82 };
+  drawFrame(ctx, left, "trajectories on initial density");
+  drawMeanShiftDensity(ctx, left, lim, sim.initial, bandwidth, RED, 0.48, true);
+  drawTimeColoredTrajectories(ctx, left, lim, sim.trajectories, Math.max(1, Math.floor(n / 34)));
+  gfDrawPoints(ctx, left, lim, sim.initial, RED, 1.65, 0.62);
+  gfDrawPoints(ctx, left, lim, finalSnapshot, BLUE, 1.7, 0.72);
+
+  let densityBox;
+  if (frameWidth < 700) {
+    densityBox = { x: 18, y: left.y + left.h + 52, w: w - 36, h: 250 };
+  } else {
+    const rightX = left.x + left.w + gap;
+    densityBox = { x: rightX, y: 40, w: w - rightX - 18, h: h - 82 };
+  }
+  drawFrame(ctx, densityBox, "density at selected time");
+  drawMeanShiftDensity(ctx, densityBox, lim, finalSnapshot, bandwidth, BLUE, 0.86, true);
+  drawSmallLabel(ctx, `t=${sim.physicalTime.toFixed(2)}`, densityBox.x + densityBox.w / 2, densityBox.y + densityBox.h + 18, "#56616f", "center");
+  setStatus(`mean-shift PDE; ${n} particles; bandwidth ${bandwidth.toFixed(2)}; displayed time ${sim.physicalTime.toFixed(2)}`);
+}
+
+function gaussianClosureCovarianceFromAxes(a, b, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const aa = a * a;
+  const bb = b * b;
+  return {
+    xx: aa * c * c + bb * s * s,
+    xy: (aa - bb) * c * s,
+    yy: aa * s * s + bb * c * c,
+  };
+}
+
+function drawGaussianClosureCovEllipse(ctx, box, lim, mean, cov, color, alpha, width = 1.25) {
+  const proj = gfMap(box, lim);
+  const tr = cov.xx + cov.yy;
+  const det = cov.xx * cov.yy - cov.xy * cov.xy;
+  const disc = Math.sqrt(Math.max(0, tr * tr - 4 * det));
+  const l1 = Math.max(1e-5, 0.5 * (tr + disc));
+  const l2 = Math.max(1e-5, 0.5 * (tr - disc));
+  const angle = 0.5 * Math.atan2(2 * cov.xy, cov.xx - cov.yy);
+  const sx = (2 * Math.sqrt(l1) / (2 * lim)) * box.w;
+  const sy = (2 * Math.sqrt(l2) / (2 * lim)) * box.h;
+  const [r, g, b] = rgb(color);
+  ctx.save();
+  ctx.translate(proj.X(mean[0]), proj.Y(mean[1]));
+  ctx.rotate(-angle);
+  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, sx, sy, 0, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function interpolateCov(c0, c1, t, inflate = 0) {
+  return {
+    xx: lerp(c0.xx, c1.xx, t) + inflate,
+    xy: lerp(c0.xy, c1.xy, t),
+    yy: lerp(c0.yy, c1.yy, t) + inflate,
+  };
+}
+
+function drawClosurePanel(ctx, box, title, c0, c1, time, epsilon, bend) {
+  drawFrame(ctx, box, title);
+  const lim = 1.85;
+  const m0 = [-0.86, -0.26];
+  const m1 = [0.84, 0.3];
+  for (let k = 0; k <= 8; k += 1) {
+    const t = k / 8;
+    let mean = [lerp(m0[0], m1[0], t), lerp(m0[1], m1[1], t)];
+    let inflate = 0;
+    if (title.includes("Sinkhorn")) inflate = epsilon * Math.sin(Math.PI * t);
+    if (title.includes("drifting")) {
+      mean = gmPathPoint(m0, m1, t, bend, 1);
+      inflate = 0.04 * Math.sin(Math.PI * t);
+    }
+    const cov = interpolateCov(c0, c1, t, inflate);
+    drawGaussianClosureCovEllipse(ctx, box, lim, mean, cov, mixColor(t, RED, BLUE), 0.34 + 0.38 * (Math.abs(t - time) < 0.07), Math.abs(t - time) < 0.07 ? 2.2 : 1.2);
+  }
+  gfDrawPoints(ctx, box, lim, [m0], RED, 3.1, 0.8);
+  gfDrawPoints(ctx, box, lim, [m1], BLUE, 3.1, 0.8);
+}
+
+function drawGenerativeGaussianClosure() {
+  const time = val("gmgcTime");
+  const aniso = val("gmgcAniso");
+  const angle = (Math.PI / 180) * val("gmgcAngle");
+  const epsilon = val("gmgcEpsilon");
+  const bend = val("gmgcBend");
+  const c0 = gaussianClosureCovarianceFromAxes(0.42 * aniso, 0.32, angle);
+  const c1 = gaussianClosureCovarianceFromAxes(0.36, 0.46 * aniso, -0.75 * angle);
+  const { ctx, w, h } = resizeCanvas(400);
+  const boxes = beyondBoxes(w, h, 3, 880);
+  drawClosurePanel(ctx, boxes[0], "W2 geodesic closure", c0, c1, time, 0, 0);
+  drawClosurePanel(ctx, boxes[1], "Sinkhorn closure", c0, c1, time, epsilon, 0);
+  drawClosurePanel(ctx, boxes[2], "drifting closure", c0, c1, time, epsilon, bend);
+  setStatus(`highlight time ${time.toFixed(2)}; anisotropy ${aniso.toFixed(2)}; Sinkhorn inflation ${epsilon.toFixed(2)}; drifting bend ${bend.toFixed(2)}`);
+}
+
+function drawSmallLabel(ctx, text, x, y, color = "#26333f", align = "center") {
+  ctx.fillStyle = color;
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = "left";
+}
+
+function drawMongeJacobian() {
+  const compression = val("mjacCompression");
+  const width = val("mjacWidth");
+  const angle = (Math.PI / 180) * val("mjacAngle");
+  const { ctx, w, h } = resizeCanvas(430);
+  const gap = 22;
+  const boxW = (w - 36 - gap) / 2;
+  const boxH = h - 58;
+  const left = { x: 12, y: 36, w: boxW, h: boxH };
+  const right = { x: 12 + boxW + gap, y: 36, w: boxW, h: boxH };
+  const co = Math.cos(angle);
+  const si = Math.sin(angle);
+  const density = (u) => 1 / Math.max(0.12, 1 - compression * Math.exp(-(u * u) / (2 * width * width)));
+  const map = (u, v) => {
+    const scale = 1 - compression * Math.exp(-(u * u) / (2 * width * width));
+    const x = u;
+    const y = scale * v;
+    return [co * x - si * y, si * x + co * y];
+  };
+  const srcX = (u) => left.x + ((u + 1) / 2) * left.w;
+  const srcY = (v) => left.y + (1 - (v + 1) / 2) * left.h;
+  const tgt = [];
+  for (let i = 0; i <= 28; i += 1) for (let j = 0; j <= 28; j += 1) tgt.push(map(-1 + (2 * i) / 28, -1 + (2 * j) / 28));
+  const lim = limits(tgt);
+  const trgX = (p) => right.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * right.w;
+  const trgY = (p) => right.y + right.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * right.h;
+  for (const box of [left, right]) {
+    ctx.fillStyle = "#fbfcfd";
+    ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.strokeStyle = "#d8dee8";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
+  }
+  for (let k = 0; k <= 14; k += 1) {
+    const u = -1 + (2 * k) / 14;
+    ctx.strokeStyle = k === 7 ? "rgba(215,48,39,.75)" : "rgba(90,105,120,.35)";
+    ctx.lineWidth = k === 7 ? 1.4 : 0.8;
+    ctx.beginPath();
+    ctx.moveTo(srcX(u), srcY(-1));
+    ctx.lineTo(srcX(u), srcY(1));
+    ctx.moveTo(srcX(-1), srcY(u));
+    ctx.lineTo(srcX(1), srcY(u));
+    ctx.stroke();
+  }
+  const maxD = density(0);
+  for (let i = 0; i < 34; i += 1) {
+    const u0 = -1 + (2 * i) / 34;
+    const u1 = -1 + (2 * (i + 1)) / 34;
+    const dval = (density((u0 + u1) / 2) - 1) / Math.max(maxD - 1, 1e-6);
+    ctx.fillStyle = mixColor(dval, "#ffffff", RED, 0.42);
+    for (let j = 0; j < 34; j += 1) {
+      const v0 = -1 + (2 * j) / 34;
+      const v1 = -1 + (2 * (j + 1)) / 34;
+      const poly = [map(u0, v0), map(u1, v0), map(u1, v1), map(u0, v1)];
+      ctx.beginPath();
+      poly.forEach((p, idx) => (idx ? ctx.lineTo(trgX(p), trgY(p)) : ctx.moveTo(trgX(p), trgY(p))));
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  for (let k = 0; k <= 14; k += 1) {
+    const u = -1 + (2 * k) / 14;
+    const curves = [[], []];
+    for (let j = 0; j <= 90; j += 1) {
+      const t = -1 + (2 * j) / 90;
+      curves[0].push(map(u, t));
+      curves[1].push(map(t, u));
+    }
+    ctx.strokeStyle = k === 7 ? "rgba(215,48,39,.85)" : "rgba(40,50,60,.38)";
+    ctx.lineWidth = k === 7 ? 1.45 : 0.75;
+    for (const curve of curves) {
+      ctx.beginPath();
+      curve.forEach((p, idx) => (idx ? ctx.lineTo(trgX(p), trgY(p)) : ctx.moveTo(trgX(p), trgY(p))));
+      ctx.stroke();
+    }
+  }
+  drawSmallLabel(ctx, "source grid", left.x + left.w / 2, 22);
+  drawSmallLabel(ctx, "deformed grid + density", right.x + right.w / 2, 22);
+  setStatus(`Jacobian determinant ranges from ${(1 - compression).toFixed(2)} to 1; density is amplified by its inverse.`);
+}
+
+function drawMongePolar() {
+  const swirl = val("mpSwirl");
+  const stretch = val("mpStretch");
+  const angle = (Math.PI / 180) * val("mpAngle");
+  const { ctx, w, h } = resizeCanvas(390);
+  const gap = 15;
+  const boxW = (w - 34 - 2 * gap) / 3;
+  const boxH = h - 58;
+  const boxes = [0, 1, 2].map((i) => ({ x: 12 + i * (boxW + gap), y: 36, w: boxW, h: boxH }));
+  const co = Math.cos(angle);
+  const si = Math.sin(angle);
+  const relabel = (p) => {
+    const r2 = p[0] * p[0] + p[1] * p[1];
+    const th = swirl * (1 - 0.42 * r2);
+    return [Math.cos(th) * p[0] - Math.sin(th) * p[1], Math.sin(th) * p[0] + Math.cos(th) * p[1]];
+  };
+  const stretchMap = (p) => {
+    const q = [co * p[0] + si * p[1], -si * p[0] + co * p[1]];
+    const r = [stretch * q[0], q[1] / Math.sqrt(stretch)];
+    return [co * r[0] - si * r[1], si * r[0] + co * r[1]];
+  };
+  const stages = [(p) => p, (p) => relabel(p), (p) => stretchMap(relabel(p))];
+  const all = [];
+  for (const f of stages) for (let i = 0; i <= 12; i += 1) for (let j = 0; j <= 12; j += 1) all.push(f([-1 + (2 * i) / 12, -1 + (2 * j) / 12]));
+  const lim = limits(all);
+  const xy = (box, p) => [box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w, box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h];
+  function drawGrid(box, f, title, arrows = false) {
+    ctx.fillStyle = "#fbfcfd";
+    ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.strokeStyle = "#d8dee8";
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
+    for (let k = 0; k <= 12; k += 1) {
+      for (const vertical of [true, false]) {
+        ctx.beginPath();
+        for (let j = 0; j <= 88; j += 1) {
+          const a = -1 + (2 * j) / 88;
+          const b = -1 + (2 * k) / 12;
+          const p = vertical ? f([b, a]) : f([a, b]);
+          const [x, y] = xy(box, p);
+          if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = k === 6 ? "rgba(215,48,39,.75)" : "rgba(30,40,50,.42)";
+        ctx.lineWidth = k === 6 ? 1.2 : 0.75;
+        ctx.stroke();
+      }
+    }
+    if (arrows) {
+      for (const p of [[-0.55, -0.45], [0.45, -0.35], [-0.35, 0.48], [0.55, 0.45]]) {
+        const q0 = xy(box, p);
+        const q1 = xy(box, f(p));
+        ctx.strokeStyle = "#111827";
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        ctx.moveTo(q0[0], q0[1]);
+        ctx.lineTo(q1[0], q1[1]);
+        ctx.stroke();
+        const th = Math.atan2(q1[1] - q0[1], q1[0] - q0[0]);
+        ctx.beginPath();
+        ctx.moveTo(q1[0], q1[1]);
+        ctx.lineTo(q1[0] - 7 * Math.cos(th - 0.45), q1[1] - 7 * Math.sin(th - 0.45));
+        ctx.lineTo(q1[0] - 7 * Math.cos(th + 0.45), q1[1] - 7 * Math.sin(th + 0.45));
+        ctx.closePath();
+        ctx.fillStyle = "#111827";
+        ctx.fill();
+      }
+    }
+    drawSmallLabel(ctx, title, box.x + box.w / 2, 22);
+  }
+  drawGrid(boxes[0], stages[0], "identity");
+  drawGrid(boxes[1], stages[1], "relabeling");
+  drawGrid(boxes[2], stages[2], "Brenier stretch", true);
+  setStatus(`swirl ${swirl.toFixed(2)} followed by SPD stretch ${stretch.toFixed(2)}; arrows are black displacement hints.`);
+}
+
+function drawKantoBirkhoff() {
+  const theta = val("kbvMass");
+  const n = Math.round(val("kbvSize"));
+  const { ctx, w, h } = resizeCanvas(405);
+  const leftW = Math.min(310, w * 0.42);
+  const matrixBox = { x: 18, y: 48, w: leftW - 38, h: leftW - 38 };
+  const graphBox = { x: leftW + 28, y: 48, w: w - leftW - 48, h: h - 76 };
+  const cycleLen = Math.max(3, n - 2);
+  const cycleRows = Array.from({ length: cycleLen }, (_, i) => i);
+  const cycleCols = Array.from({ length: cycleLen }, (_, i) => i);
+  const unusedRows = Array.from({ length: n - cycleLen }, (_, i) => cycleLen + i);
+  const unusedCols = Array.from({ length: n - cycleLen }, (_, i) => cycleLen + i);
+  const cycleCells = new Set();
+  const cycleEdges = [];
+  const isolated = [];
+  const P = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let k = 0; k < cycleLen; k += 1) {
+    const r = cycleRows[k];
+    const c0 = cycleCols[k];
+    const c1 = cycleCols[(k + 1) % cycleLen];
+    P[r][c0] = theta;
+    P[r][c1] = 1 - theta;
+    cycleCells.add(`${r},${c0}`);
+    cycleCells.add(`${r},${c1}`);
+    cycleEdges.push([r, c0, theta]);
+    cycleEdges.push([r, c1, 1 - theta]);
+  }
+  for (let k = 0; k < unusedRows.length; k += 1) {
+    const edge = [unusedRows[k], unusedCols[k]];
+    isolated.push(edge);
+    P[edge[0]][edge[1]] = 1;
+  }
+  const cycleColor = "#f59e0b";
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(matrixBox.x - 8, matrixBox.y - 8, matrixBox.w + 16, matrixBox.h + 16);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(matrixBox.x - 8, matrixBox.y - 8, matrixBox.w + 16, matrixBox.h + 16);
+  const cell = matrixBox.w / n;
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) {
+    const z = P[i][j];
+    const inCycle = cycleCells.has(`${i},${j}`);
+    const g = Math.round(255 - 215 * z);
+    ctx.fillStyle = inCycle ? `rgba(245,158,11,${0.16 + 0.44 * z})` : `rgb(${g},${g},${g})`;
+    ctx.fillRect(matrixBox.x + j * cell, matrixBox.y + i * cell, cell, cell);
+    ctx.strokeStyle = inCycle ? cycleColor : "#1f2933";
+    ctx.lineWidth = inCycle ? 1.8 : 0.55;
+    ctx.strokeRect(matrixBox.x + j * cell, matrixBox.y + i * cell, cell, cell);
+    if (z > 0) {
+      ctx.fillStyle = inCycle ? "#7c2d12" : z === 1 ? "#111827" : VIOLET;
+      ctx.font = `${n > 8 ? 8 : 10}px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(z === 1 ? "1" : z.toFixed(2), matrixBox.x + (j + 0.5) * cell, matrixBox.y + (i + 0.58) * cell);
+    }
+  }
+  drawSmallLabel(ctx, "bistochastic plan", matrixBox.x + matrixBox.w / 2, 24);
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(graphBox.x, graphBox.y, graphBox.w, graphBox.h);
+  ctx.strokeStyle = "#d8dee8";
+  ctx.strokeRect(graphBox.x, graphBox.y, graphBox.w, graphBox.h);
+  const redX = graphBox.x + 42;
+  const blueX = graphBox.x + graphBox.w - 42;
+  const Y = (i) => graphBox.y + 28 + (i / (n - 1)) * (graphBox.h - 56);
+  function drawBirkhoffEdge(i, j, color, width, dash = [], alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(redX, Y(i));
+    ctx.lineTo(blueX, Y(j));
+    ctx.stroke();
+    ctx.restore();
+  }
+  for (const [i, j] of isolated) drawBirkhoffEdge(i, j, "rgba(0,0,0,.48)", 2.0);
+  for (const [i, j] of cycleEdges) drawBirkhoffEdge(i, j, "rgba(255,255,255,.92)", 6.0);
+  for (const [i, j, mass] of cycleEdges) drawBirkhoffEdge(i, j, cycleColor, mass > 0.5 ? 3.3 : 2.7, [7, 3], 0.95);
+  ctx.setLineDash([]);
+  for (let i = 0; i < n; i += 1) {
+    ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(redX, Y(i), 5, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = BLUE; ctx.beginPath(); ctx.arc(blueX, Y(i), 5, 0, 2 * Math.PI); ctx.fill();
+  }
+  ctx.fillStyle = cycleColor;
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("orange dashed edges: minimal alternating cycle", graphBox.x + 14, graphBox.y + graphBox.h - 14);
+  drawSmallLabel(ctx, "minimal alternating cycle", graphBox.x + graphBox.w / 2, 24);
+  setStatus(`${n}x${n} bistochastic plan; orange cycle has ${2 * cycleLen} alternating edges with masses ${theta.toFixed(2)} and ${(1 - theta).toFixed(2)}.`);
+}
+
+function drawKantoDRO() {
+  const rho = val("kdroRho");
+  const seed = val("kdroSeed");
+  const random = rng(seed);
+  const { ctx, w, h } = resizeCanvas(410);
+  const box = { x: 18, y: 28, w: w - 36, h: h - 58 };
+  const pts = [];
+  for (let i = 0; i < 52; i += 1) {
+    const label = i < 26 ? -1 : 1;
+    const cx = label < 0 ? -0.55 : 0.55;
+    const cy = label < 0 ? -0.25 : 0.25;
+    pts.push([cx + 0.42 * randn(random), cy + 0.34 * randn(random), label]);
+  }
+  const lim = { xmin: -1.85, xmax: 1.85, ymin: -1.45, ymax: 1.45 };
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd"; ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = "#d8dee8"; ctx.strokeRect(box.x, box.y, box.w, box.h);
+  function boundary(offset, color, width, dash = []) {
+    ctx.save(); ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+    const x0 = lim.xmin, x1 = lim.xmax;
+    ctx.moveTo(X([x0, 0.72 * x0 + offset]), Y([x0, 0.72 * x0 + offset]));
+    ctx.lineTo(X([x1, 0.72 * x1 + offset]), Y([x1, 0.72 * x1 + offset]));
+    ctx.stroke(); ctx.restore();
+  }
+  boundary(0, "#111827", 1.6);
+  boundary(0.32 * rho, "rgba(123,50,148,.8)", 1.25, [5, 4]);
+  boundary(0.62 * rho, "rgba(33,102,172,.85)", 1.25, [2, 4]);
+  const nrm = Math.hypot(0.72, -1);
+  const normal = [0.72 / nrm, -1 / nrm];
+  for (const p of pts) {
+    const toward = p[2] > 0 ? -1 : 1;
+    const moved = [p[0] + toward * rho * 0.28 * normal[0], p[1] + toward * rho * 0.28 * normal[1]];
+    ctx.strokeStyle = "rgba(35,45,55,.22)"; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(X(p), Y(p)); ctx.lineTo(X(moved), Y(moved)); ctx.stroke();
+    ctx.fillStyle = p[2] < 0 ? RED : BLUE; ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.arc(X(p), Y(p), 5 + 9 * rho, 0, 2 * Math.PI); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(X(p), Y(p), 3.2, 0, 2 * Math.PI); ctx.fill();
+  }
+  drawSmallLabel(ctx, "plain / medium / large robust boundary", box.x + box.w / 2, h - 14);
+  setStatus(`rho ${rho.toFixed(2)}; disks suggest the ambiguity set and arrows show worst-case loss motion.`);
+}
+
+function bridgeCoupling(source, target, eps) {
+  const n = source.length;
+  if (eps <= 1e-6) {
+    const cost = source.map((x) => target.map((y) => (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2));
+    return hungarian(cost).map((j, i) => [i, j, 1 / n]);
+  }
+  const m = target.length;
+  const K = Array.from({ length: n }, () => Array(m).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    let rowMax = 0;
+    const rowCost = [];
+    for (let j = 0; j < m; j += 1) {
+      const c = (source[i][0] - target[j][0]) ** 2 + (source[i][1] - target[j][1]) ** 2;
+      const z = Math.exp(-c / Math.max(eps, 1e-4));
+      rowCost.push(z);
+      rowMax = Math.max(rowMax, z);
+    }
+    for (let j = 0; j < m; j += 1) K[i][j] = Math.max(rowCost[j] / Math.max(rowMax, 1e-300), 1e-300);
+  }
+  const a = 1 / n;
+  const b = 1 / m;
+  let u = Array(n).fill(1);
+  let v = Array(m).fill(1);
+  for (let it = 0; it < 140; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+      u[i] = a / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b / Math.max(s, 1e-300);
+    }
+  }
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const mass = u[i] * K[i][j] * v[j];
+      if (mass > 1e-5) out.push([i, j, mass]);
+    }
+  }
+  out.sort((a, b) => b[2] - a[2]);
+  return out;
+}
+
+function drawSinkhornBridges() {
+  const eps = val("sbrEps");
+  const paths = Math.round(val("sbrPaths"));
+  const steps = Math.round(val("sbrSteps"));
+  const seed = val("sbrSeed");
+  const random = rng(seed);
+  const n = 6;
+  const source = [], target = [];
+  for (let i = 0; i < n; i += 1) source.push([-0.8 + 0.34 * randn(random), 0.08 + 0.34 * randn(random)]);
+  for (let i = 0; i < n; i += 1) {
+    const th = (2 * Math.PI * i) / n + 0.25;
+    target.push([0.45 + 0.82 * Math.cos(th) + 0.08 * randn(random), 0.02 + 0.62 * Math.sin(th) + 0.08 * randn(random)]);
+  }
+  const lim = limits(source.concat(target));
+  const { ctx, w, h } = resizeCanvas(405);
+  const box = { x: 18, y: 26, w: w - 36, h: h - 52 };
+  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  ctx.fillStyle = "#fbfcfd"; ctx.fillRect(box.x, box.y, box.w, box.h); ctx.strokeStyle = "#d8dee8"; ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const coupling = bridgeCoupling(source, target, eps);
+  let total = 0; const cum = coupling.map((e) => (total += e[2]));
+  for (let r = 0; r < paths; r += 1) {
+    const u = random() * total;
+    let k = cum.findIndex((z) => z >= u); if (k < 0) k = cum.length - 1;
+    const [i, j] = coupling[k]; const a = source[i]; const b = target[j];
+    const wx = [0];
+    const wy = [0];
+    for (let q = 1; q <= steps; q += 1) {
+      const dt = 1 / steps;
+      wx.push(wx[q - 1] + Math.sqrt(dt) * randn(random));
+      wy.push(wy[q - 1] + Math.sqrt(dt) * randn(random));
+    }
+    ctx.strokeStyle = mixColor(r / Math.max(paths - 1, 1), RED, BLUE, 0.24); ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let q = 0; q <= steps; q += 1) {
+      const t = q / steps;
+      const scale = 0.18 * Math.sqrt(Math.max(eps, 0));
+      const bx = wx[q] - t * wx[steps];
+      const by = wy[q] - t * wy[steps];
+      const p = [lerp(a[0], b[0], t) + scale * bx, lerp(a[1], b[1], t) + scale * by];
+      if (q === 0) ctx.moveTo(X(p), Y(p)); else ctx.lineTo(X(p), Y(p));
+    }
+    ctx.stroke();
+  }
+  for (const p of source) { ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(X(p), Y(p), 4, 0, 2 * Math.PI); ctx.fill(); }
+  for (const p of target) { ctx.fillStyle = BLUE; ctx.beginPath(); ctx.arc(X(p), Y(p), 3.4, 0, 2 * Math.PI); ctx.fill(); }
+  setStatus(eps < 1e-5 ? `epsilon = 0: OT rays with ${steps} polyline points` : `epsilon ${eps.toFixed(2)}: Brownian bridges use ${steps} discretization points`);
+}
+
+function nearestGridIndex(xs, x) {
+  const t = (x - xs[0]) / Math.max(xs[xs.length - 1] - xs[0], 1e-12);
+  return clamp(Math.round(t * (xs.length - 1)), 0, xs.length - 1);
+}
+
+function partialQuantilePairs(sourceQ, targetQ, requestedMass) {
+  const k = sourceQ.length;
+  const lMax = Math.max(1, Math.min(k, Math.round(requestedMass * k)));
+  const layers = lMax + 1;
+  const width = k + 1;
+  const size = width * width * layers;
+  const inf = 1e100;
+  const dp = new Float64Array(size);
+  const action = new Uint8Array(size);
+  dp.fill(inf);
+  const id = (i, j, l) => ((i * width + j) * layers + l);
+  dp[id(0, 0, 0)] = 0;
+  for (let i = 0; i <= k; i += 1) {
+    for (let j = 0; j <= k; j += 1) {
+      const maxL = Math.min(lMax, i, j);
+      for (let l = 0; l <= maxL; l += 1) {
+        const idx = id(i, j, l);
+        if (i === 0 && j === 0 && l === 0) continue;
+        let best = dp[idx];
+        let bestAction = action[idx];
+        if (i > 0) {
+          const candidate = dp[id(i - 1, j, l)];
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 1;
+          }
+        }
+        if (j > 0) {
+          const candidate = dp[id(i, j - 1, l)];
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 2;
+          }
+        }
+        if (i > 0 && j > 0 && l > 0) {
+          const d = sourceQ[i - 1] - targetQ[j - 1];
+          const candidate = dp[id(i - 1, j - 1, l - 1)] + d * d;
+          if (candidate < best) {
+            best = candidate;
+            bestAction = 3;
+          }
+        }
+        dp[idx] = best;
+        action[idx] = bestAction;
+      }
+    }
+  }
+  const pairs = [];
+  let i = k;
+  let j = k;
+  let l = lMax;
+  while (i > 0 || j > 0) {
+    const a = action[id(i, j, l)];
+    if (a === 3 && i > 0 && j > 0 && l > 0) {
+      pairs.push([i - 1, j - 1]);
+      i -= 1;
+      j -= 1;
+      l -= 1;
+    } else if (a === 1 && i > 0) {
+      i -= 1;
+    } else if (a === 2 && j > 0) {
+      j -= 1;
+    } else if (i > 0) {
+      i -= 1;
+    } else {
+      j -= 1;
+    }
+    if (l === 0 && i === 0 && j === 0) break;
+  }
+  pairs.reverse();
+  return { pairs, selectedMass: lMax / k, value: dp[id(k, k, lMax)] / Math.max(lMax, 1) };
+}
+
+function smoothDensityFromSamples(xs, samples, sampleMass, bandwidth) {
+  const h = Math.max(bandwidth, 1e-4);
+  const norm = 1 / (Math.sqrt(2 * Math.PI) * h);
+  return xs.map((x) => {
+    let value = 0;
+    for (const p of samples) {
+      const z = (x - p) / h;
+      value += sampleMass * norm * Math.exp(-0.5 * z * z);
+    }
+    return value;
+  });
+}
+
+function partialPlanFromQuantiles(data, requestedMass, samples) {
+  const sourceQ = inverseCdfSamples(data.xs, data.a, samples);
+  const targetQ = inverseCdfSamples(data.xs, data.b, samples);
+  const selected = partialQuantilePairs(sourceQ, targetQ, requestedMass);
+  const n = data.xs.length;
+  const plan = Array.from({ length: n }, () => Array(n).fill(0));
+  const mass = 1 / samples;
+  const sourceActive = [];
+  const targetActive = [];
+  for (const [i, j] of selected.pairs) {
+    sourceActive.push(sourceQ[i]);
+    targetActive.push(targetQ[j]);
+    const ii = nearestGridIndex(data.xs, sourceQ[i]);
+    const jj = nearestGridIndex(data.xs, targetQ[j]);
+    plan[ii][jj] += mass;
+  }
+  const bandwidth = Math.max(0.075, 1.7 * data.dx);
+  return {
+    plan,
+    rowDensity: smoothDensityFromSamples(data.xs, sourceActive, mass, bandwidth),
+    colDensity: smoothDensityFromSamples(data.xs, targetActive, mass, bandwidth),
+    selectedMass: selected.selectedMass,
+    pairs: selected.pairs.length,
+    meanCost: selected.value,
+  };
+}
+
+function drawPartialOT1D() {
+  const mass = val("potMass");
+  const samples = Math.round(val("potSamples"));
+  const bins = Math.round(val("potBins"));
+  const data = bookPartialGrid(bins);
+  const active = partialPlanFromQuantiles(data, mass, samples);
+  const sideScale = 1.10 * Math.max(
+    ...data.sourceDensity,
+    ...data.targetDensity,
+    ...active.rowDensity,
+    ...active.colDensity,
+  );
+  const planScale = Math.max(...active.plan.flat(), 1e-15);
+  const { ctx, w, h } = resizeCanvas(445);
+  const box = { x: 26, y: 28, w: w - 52, h: h - 78 };
+  drawSidePlanPanel(ctx, box, data.xs, active.plan, data.sourceDensity, data.targetDensity, active.rowDensity, active.colDensity, `m=${active.selectedMass.toFixed(2)}`, sideScale, planScale);
+  drawSmallLabel(ctx, "pale red/blue: full marginals; violet: active submarginals", box.x + box.w / 2, h - 18, "#56616f", "center");
+  setStatus(`exact monotone partial matching on ${samples} quantiles; selected mass ${active.selectedMass.toFixed(3)}; ${active.pairs} active pairs`);
+}
+
+
+function smallSinkhornPlan(source, target, epsilon, iterations = 90) {
+  const n = source.length;
+  const m = target.length;
+  const K = Array.from({ length: n }, () => Array(m).fill(0));
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < m; j += 1) {
+      const d2 = (source[i][0] - target[j][0]) ** 2 + (source[i][1] - target[j][1]) ** 2;
+      K[i][j] = Math.exp(-d2 / Math.max(epsilon, 1e-4));
+    }
+  }
+  const a = 1 / n;
+  const b = 1 / m;
+  let u = Array(n).fill(1);
+  let v = Array(m).fill(1);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < m; j += 1) s += K[i][j] * v[j];
+      u[i] = a / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < m; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b / Math.max(s, 1e-300);
+    }
+  }
+  return K.map((row, i) => row.map((z, j) => u[i] * z * v[j]));
+}
+
+function drawCoupledCloudPanel(ctx, box, source, target, plan, activeMass, title) {
+  drawFrame(ctx, box, title);
+  const lim = limits(source.concat(target));
+  const X = (p) => box.x + ((p[0] - lim.xmin) / Math.max(lim.xmax - lim.xmin, 1e-9)) * box.w;
+  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / Math.max(lim.ymax - lim.ymin, 1e-9)) * box.h;
+  const edges = [];
+  for (let i = 0; i < source.length; i += 1) {
+    for (let j = 0; j < target.length; j += 1) edges.push([i, j, plan[i][j]]);
+  }
+  edges.sort((a, b) => b[2] - a[2]);
+  let selected = 0;
+  const kept = [];
+  for (const e of edges) {
+    if (selected >= activeMass) break;
+    const mass = Math.min(e[2], activeMass - selected);
+    if (mass > 1e-4) kept.push([e[0], e[1], mass]);
+    selected += mass;
+  }
+  const activeS = new Set(kept.map((e) => e[0]));
+  const activeT = new Set(kept.map((e) => e[1]));
+  const stride = Math.max(1, Math.floor(kept.length / 64));
+  for (let k = 0; k < kept.length; k += stride) {
+    const [i, j, mass] = kept[k];
+    ctx.strokeStyle = `rgba(25,25,25,${clamp(0.13 + 10 * mass, 0.13, 0.48)})`;
+    ctx.lineWidth = 0.75 + 17 * mass;
+    ctx.beginPath();
+    ctx.moveTo(X(source[i]), Y(source[i]));
+    ctx.lineTo(X(target[j]), Y(target[j]));
+    ctx.stroke();
+  }
+  for (let i = 0; i < source.length; i += 1) {
+    ctx.fillStyle = activeS.has(i) ? RED : 'rgba(215,48,39,.12)';
+    ctx.beginPath();
+    ctx.arc(X(source[i]), Y(source[i]), activeS.has(i) ? 2.9 : 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  for (let j = 0; j < target.length; j += 1) {
+    ctx.fillStyle = activeT.has(j) ? BLUE : 'rgba(33,102,172,.12)';
+    ctx.beginPath();
+    ctx.arc(X(target[j]), Y(target[j]), activeT.has(j) ? 2.9 : 2.2, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+}
+
+function drawPartialOT2D() {
+  const mass = val('pot2Mass');
+  const n = Math.round(val('pot2Points'));
+  const eps = val('pot2Epsilon');
+  const seed = Math.round(val('pot2Seed'));
+  const source = sampleCloud('crescent', n, rng(seed)).map((q) => [0.62 * q[0] - 0.45, 0.62 * q[1]]);
+  const target = sampleCloud('annulus', n, rng(seed + 13)).map((q) => [0.62 * q[0] + 0.55, 0.62 * q[1]]);
+  const plan = smallSinkhornPlan(source, target, eps, 110);
+  const { ctx, w, h } = resizeCanvas(440);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  for (let k = 0; k < 3; k += 1) {
+    const m = clamp(mass - 0.22 * k, 0.12, 0.98);
+    drawCoupledCloudPanel(ctx, boxes[k], source, target, plan, m, `active mass ${m.toFixed(2)}`);
+  }
+  setStatus(`2D partial OT surrogate: ${n} source/target samples; lower prescribed mass keeps only shorter links.`);
+}
+
+function drawCapacityOT2D() {
+  const n = Math.round(val('cap2Points'));
+  const degree = Math.round(val('cap2Degree'));
+  const spread = val('cap2Spread');
+  const random = rng(Math.round(val('cap2Seed')));
+  const pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = i % 2 === 0 ? [-0.58, -0.18] : [0.58, 0.22];
+    pts.push([c[0] + spread * randn(random), c[1] + 0.72 * spread * randn(random)]);
+  }
+  const { ctx, w, h } = resizeCanvas(410);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(pts);
+  for (let b = 0; b < 3; b += 1) {
+    const k = [1, degree, Math.max(degree + 2, 5)][b];
+    const box = boxes[b];
+    drawFrame(ctx, box, `${k} links per point`);
+    const X = (q) => box.x + ((q[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (q) => box.y + box.h - ((q[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    for (let i = 0; i < pts.length; i += 1) {
+      const neigh = pts.map((q, j) => [j, (pts[i][0] - q[0]) ** 2 + (pts[i][1] - q[1]) ** 2])
+        .filter(([j]) => j !== i)
+        .sort((a, b2) => a[1] - b2[1])
+        .slice(0, k);
+      for (const [j] of neigh) {
+        if (j < i) continue;
+        ctx.strokeStyle = 'rgba(35,45,55,.18)';
+        ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(X(pts[i]), Y(pts[i]));
+        ctx.lineTo(X(pts[j]), Y(pts[j]));
+        ctx.stroke();
+      }
+    }
+    for (const q of pts) {
+      ctx.fillStyle = VIOLET;
+      ctx.beginPath();
+      ctx.arc(X(q), Y(q), 2.35, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  setStatus(`capacity constraint as local degree: raising the cap densifies the admissible self-coupling graph.`);
+}
+
+function oneDimMixtureProfile(xs, shift, scale = 1) {
+  return xs.map((x) => 0.55 * normalPdf(x, -0.8 + shift, 0.23 * scale) + 0.45 * normalPdf(x, 0.95 + shift, 0.38 * scale));
+}
+
+function cumulativeQuantiles(xs, density) {
+  const cdf = [];
+  let total = 0;
+  for (const v of density) {
+    total += Math.max(v, 0);
+    cdf.push(total);
+  }
+  for (let i = 0; i < cdf.length; i += 1) cdf[i] /= Math.max(total, 1e-12);
+  return xs.map((_, k) => {
+    const u = (k + 0.5) / xs.length;
+    let j = 1;
+    while (j < cdf.length && cdf[j] < u) j += 1;
+    const t = (u - cdf[j - 1]) / Math.max(cdf[j] - cdf[j - 1], 1e-12);
+    return lerp(xs[j - 1], xs[j], clamp(t, 0, 1));
+  });
+}
+
+function drawProfileImage(ctx, box, data, rows, cols, title, colorA = RED, colorB = BLUE) {
+  drawFrame(ctx, box, title);
+  const maxv = Math.max(...data.flat(), 1e-12);
+  const cw = box.w / cols;
+  const ch = box.h / rows;
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const z = clamp(data[r][c] / maxv, 0, 1);
+      ctx.fillStyle = z < 0.015 ? '#fff' : mixColor(r / Math.max(rows - 1, 1), colorA, colorB, Math.pow(z, 0.62));
+      ctx.fillRect(box.x + c * cw, box.y + r * ch, cw + 0.4, ch + 0.4);
+    }
+  }
+}
+
+function drawSlicedRadon() {
+  const time = val('srTime');
+  const angle = (Math.PI / 180) * val('srAngle');
+  const contrast = val('srContrast');
+  const { ctx, w, h } = resizeCanvas(620);
+  const boxes = beyondBoxes(w, h, 3, 780);
+  const cols = 96;
+  const rows = 32;
+  const xs = Array.from({ length: cols }, (_, i) => lerp(-2.2, 2.2, i / (cols - 1)));
+  const radon = [], quantiles = [], pseudo = [];
+  for (let r = 0; r < rows; r += 1) {
+    const theta = angle + (Math.PI * r) / rows;
+    const p0 = oneDimMixtureProfile(xs, 0.45 * Math.cos(theta), 0.88 + 0.18 * Math.sin(theta));
+    const p1 = oneDimMixtureProfile(xs, -0.35 * Math.sin(1.5 * theta), 1.05 + 0.16 * Math.cos(2 * theta)).map((z, i) => Math.max(0, z * (1 + 0.18 * Math.sin(3 * xs[i]))));
+    const q0 = cumulativeQuantiles(xs, p0);
+    const q1 = cumulativeQuantiles(xs, p1);
+    const qt = q0.map((z, i) => lerp(z, q1[i], time));
+    radon.push(p0.map((z, i) => lerp(z, p1[i], time)));
+    quantiles.push(qt.map((z) => (z - xs[0]) / (xs[xs.length - 1] - xs[0])));
+    pseudo.push(xs.map((x, i) => Math.exp(-((x - qt[i]) ** 2) / (0.035 + 0.03 * contrast))));
+  }
+  drawProfileImage(ctx, boxes[0], radon, rows, cols, `Radon profiles, t=${time.toFixed(2)}`);
+  drawProfileImage(ctx, boxes[1], quantiles, rows, cols, 'interpolated quantiles');
+  drawProfileImage(ctx, boxes[2], pseudo, rows, cols, 'pseudo-inverse view');
+  setStatus(`angle offset ${(180 * angle / Math.PI).toFixed(0)}°; interpolation is linear in 1D quantiles for each slice.`);
+}
+
+function drawGeodesicHeat() {
+  const eps = val('gihEps');
+  const points = Math.round(val('gihPoints'));
+  const curve = [];
+  for (let i = 0; i < points; i += 1) {
+    const t = (2 * Math.PI * i) / points;
+    curve.push([0.9 * Math.cos(t) + 0.28 * Math.cos(2 * t), 0.56 * Math.sin(t) + 0.22 * Math.sin(3 * t)]);
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  const levels = [0.12, 0.22, 0.34, 0.48, 0.64, 0.84, 1.08, 1.36];
+  for (let b = 0; b < 3; b += 1) {
+    const e = [0, eps, 2.5 * eps][b];
+    const box = boxes[b];
+    drawFrame(ctx, box, e === 0 ? 'exact Euclidean min' : `heat smoothing ε=${e.toFixed(2)}`);
+    const grid = 76;
+    const values = [];
+    for (let j = 0; j < grid; j += 1) {
+      for (let i = 0; i < grid; i += 1) {
+        const x = lerp(-1.45, 1.45, i / (grid - 1));
+        const y = lerp(-1.05, 1.05, j / (grid - 1));
+        const ds = curve.map((q) => (x - q[0]) ** 2 + (y - q[1]) ** 2);
+        const d = e === 0 ? Math.sqrt(Math.min(...ds)) : Math.sqrt(Math.max(-e * Math.log(ds.reduce((s, d2) => s + Math.exp(-d2 / Math.max(e, 1e-4)), 0) / points), 0));
+        values.push(d);
+      }
+    }
+    const cw = box.w / grid;
+    const ch = box.h / grid;
+    for (let j = 1; j < grid - 1; j += 1) {
+      for (let i = 1; i < grid - 1; i += 1) {
+        const here = values[j * grid + i];
+        for (const lev of levels) {
+          const right = values[j * grid + i + 1];
+          const down = values[(j + 1) * grid + i];
+          if ((here - lev) * (right - lev) < 0 || (here - lev) * (down - lev) < 0) {
+            ctx.fillStyle = `rgba(123,50,148,${0.10 + 0.18 * lev})`;
+            ctx.fillRect(box.x + i * cw, box.y + j * ch, cw + 0.6, ch + 0.6);
+          }
+        }
+      }
+    }
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    curve.forEach((q, i) => {
+      const x = box.x + ((q[0] + 1.45) / 2.9) * box.w;
+      const y = box.y + box.h - ((q[1] + 1.05) / 2.1) * box.h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  }
+  setStatus('Geodesics-in-heat surrogate: larger epsilon rounds level sets and hides small nonconvex details.');
+}
+
+function sinkhorn1dKernelPlan(xs, a, b, K, iterations = 120) {
+  const n = xs.length;
+  let u = Array(n).fill(1);
+  let v = Array(n).fill(1);
+  for (let it = 0; it < iterations; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < n; j += 1) s += K[i][j] * v[j];
+      u[i] = a[i] / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < n; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) s += K[i][j] * u[i];
+      v[j] = b[j] / Math.max(s, 1e-300);
+    }
+  }
+  return K.map((row, i) => row.map((z, j) => u[i] * z * v[j]));
+}
+
+function drawMatrixImage(ctx, box, matrix, title, color = VIOLET) {
+  drawFrame(ctx, box, title);
+  const n = matrix.length;
+  const maxv = Math.max(...matrix.flat(), 1e-12);
+  const [r, g, b] = rgb(color);
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      const z = Math.sqrt(Math.max(matrix[i][j], 0) / maxv);
+      ctx.fillStyle = z < 0.015 ? '#fff' : `rgba(${r},${g},${b},${0.08 + 0.88 * z})`;
+      ctx.fillRect(box.x + (j / n) * box.w, box.y + ((n - 1 - i) / n) * box.h, box.w / n + 0.5, box.h / n + 0.5);
+    }
+  }
+}
+
+function drawSinkhornSketching() {
+  const eps = val('skEps');
+  const random = rng(Math.round(val('skSeed')));
+  const n = 52;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.7, 2.7, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const a = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [{ weight: .55, mean: -1.2, sigma: .35 }, { weight: .45, mean: .25, sigma: .5 }]), dx);
+  const b = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [{ weight: .42, mean: -.35, sigma: .28 }, { weight: .58, mean: 1.35, sigma: .42 }]), dx);
+  const exactK = xs.map((x) => xs.map((y) => Math.exp(-((x - y) ** 2) / Math.max(eps, 1e-4))));
+  const exact = sinkhorn1dKernelPlan(xs, a, b, exactK, 130);
+  const landmarks = Array.from({ length: 40 }, () => -3.2 + 6.4 * random());
+  const ranks = [40, 10, 3];
+  const kernels = ranks.map((r) => xs.map((x) => xs.map((y) => {
+    let s = 0;
+    for (let k = 0; k < r; k += 1) s += Math.exp(-((x - landmarks[k]) ** 2 + (y - landmarks[k]) ** 2) / Math.max(eps, 1e-4));
+    return Math.max(s / r, 1e-10);
+  })));
+  const plans = [exact].concat(kernels.map((K) => sinkhorn1dKernelPlan(xs, a, b, K, 130)));
+  const costs = [exactK].concat(kernels).map((K) => K.map((row) => row.map((v) => -eps * Math.log(Math.max(v, 1e-12)))));
+  const { ctx, w, h } = resizeCanvas(640);
+  const gap = 13;
+  const boxW = (w - 34 - gap * 3) / 4;
+  const boxH = (h - 66 - gap) / 2;
+  const labels = ['exact', 'r=40', 'r=10', 'r=3'];
+  for (let c = 0; c < 4; c += 1) {
+    drawMatrixImage(ctx, { x: 17 + c * (boxW + gap), y: 36, w: boxW, h: boxH }, plans[c], labels[c]);
+    drawMatrixImage(ctx, { x: 17 + c * (boxW + gap), y: 36 + boxH + gap, w: boxW, h: boxH }, costs[c], '-ε log K', '#26333f');
+  }
+  setStatus(`positive-feature sketching of the Sinkhorn kernel; epsilon ${eps.toFixed(3)}; low rank blurs both cost and plan.`);
+}
+
+function simulateTwoFlow(kind, n, seed, steps) {
+  const random = rng(seed);
+  const pts = [];
+  for (let i = 0; i < n; i += 1) pts.push([0.18 * randn(random), 0.18 * randn(random)]);
+  const centers = [[-0.75, 0.25], [0.78, -0.22], [0.1, 0.82]];
+  const traj = pts.map((q) => [q.slice()]);
+  for (let s = 0; s < steps; s += 1) {
+    for (let i = 0; i < n; i += 1) {
+      const q = pts[i];
+      let wx = 0, wy = 0, sw = 0;
+      for (const c of centers) {
+        const d2 = (q[0] - c[0]) ** 2 + (q[1] - c[1]) ** 2;
+        const wgt = Math.exp(-d2 / 0.38);
+        wx += wgt * (c[0] - q[0]);
+        wy += wgt * (c[1] - q[1]);
+        sw += wgt;
+      }
+      let vx = wx / Math.max(sw, 1e-9);
+      let vy = wy / Math.max(sw, 1e-9);
+      if (kind === 'svgd') {
+        for (let j = 0; j < n; j += 1) {
+          if (i === j) continue;
+          const dx = q[0] - pts[j][0];
+          const dy = q[1] - pts[j][1];
+          const kval = Math.exp(-(dx * dx + dy * dy) / 0.18);
+          vx += 0.028 * kval * dx / 0.18;
+          vy += 0.028 * kval * dy / 0.18;
+        }
+      }
+      pts[i][0] += 0.065 * vx;
+      pts[i][1] += 0.065 * vy;
+    }
+    if (s % 5 === 0 || s === steps - 1) for (let i = 0; i < n; i += 1) traj[i].push(pts[i].slice());
+  }
+  return { pts, traj, centers };
+}
+
+function drawGenerativeW2SVGD() {
+  const n = Math.round(val('gwsvgdParticles'));
+  const steps = Math.round(val('gwsvgdSteps'));
+  const seed = Math.round(val('gwsvgdSeed'));
+  const simW = simulateTwoFlow('w2', n, seed, steps);
+  const simS = simulateTwoFlow('svgd', n, seed, steps);
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const lim = 1.65;
+  [['W2 score flow', simW], ['SVGD kernelized flow', simS]].forEach(([title, sim], k) => {
+    const box = boxes[k];
+    drawFrame(ctx, box, title);
+    drawMeanShiftDensity(ctx, box, lim, sim.centers.flatMap((c) => Array.from({ length: 18 }, () => c)), 0.34, BLUE, 0.32, true);
+    drawTimeColoredTrajectories(ctx, box, lim, sim.traj, Math.max(1, Math.floor(n / 34)));
+    gfDrawPoints(ctx, box, lim, sim.pts, k === 0 ? VIOLET : BLUE, 2.2, 0.82);
+  });
+  setStatus('same target mixture and initialization; SVGD adds kernel repulsion to the Wasserstein score descent.');
+}
+
+function drawMomentumEntropy1D() {
+  const time = val('gmeTime');
+  const damping = val('gmeDamping');
+  const spread = val('gmeSpread');
+  const xs = Array.from({ length: 150 }, (_, i) => lerp(-3, 3, i / 149));
+  const rows = [0, .12, .24, .36, .50, .64].map((s) => s * time);
+  const gf = rows.map((t) => xs.map((x) => 0.45 * normalPdf(x, -0.9 * Math.exp(-t), Math.sqrt(spread ** 2 + .5 * t)) + 0.35 * normalPdf(x, 0.15 * Math.exp(-t), Math.sqrt((1.4 * spread) ** 2 + .5 * t)) + 0.2 * normalPdf(x, 1.0 * Math.exp(-t), Math.sqrt((.75 * spread) ** 2 + .5 * t))));
+  const nw = rows.map((t) => xs.map((x) => {
+    const osc = Math.cos(3.4 * t) * Math.exp(-damping * t);
+    return 0.45 * normalPdf(x, -0.9 * osc, Math.sqrt(spread ** 2 + .18 * t)) + 0.35 * normalPdf(x, 0.15 * osc, Math.sqrt((1.4 * spread) ** 2 + .18 * t)) + 0.2 * normalPdf(x, 1.0 * osc, Math.sqrt((.75 * spread) ** 2 + .18 * t));
+  }));
+  const { ctx, w, h } = resizeCanvas(610);
+  const boxes = [
+    { x: 58, y: 38, w: w - 78, h: 140 },
+    { x: 58, y: 224, w: w - 78, h: 140 },
+    { x: 58, y: 410, w: w - 78, h: 150 },
+  ];
+  drawProfileImage(ctx, boxes[0], gf, gf.length, xs.length, 'GF spatial density');
+  drawProfileImage(ctx, boxes[1], nw, nw.length, xs.length, 'Newton spatial density');
+  const phase = Array.from({ length: 48 }, (_, r) => xs.map((x) => Math.exp(-0.5 * ((x - 1.1 * Math.sin((r / 47) * 2 * Math.PI) * Math.exp(-damping * time)) / 0.45) ** 2) * Math.exp(-0.5 * ((r / 47 - .5) / .22) ** 2)));
+  drawProfileImage(ctx, boxes[2], phase, phase.length, xs.length, 'phase density');
+  ['GF', 'Newton', 'Phase'].forEach((txt, i) => {
+    ctx.save();
+    ctx.translate(28, boxes[i].y + boxes[i].h / 2);
+    ctx.rotate(-Math.PI / 2);
+    drawSmallLabel(ctx, txt, 0, 0, '#26333f', 'center');
+    ctx.restore();
+  });
+  setStatus(`finite-difference caricature: time ${time.toFixed(2)}, damping ${damping.toFixed(2)}; Newton retains phase-space inertia.`);
+}
+
+function drawMongeCaffarelli() {
+  const neck = val("mcfNeck");
+  const rings = Math.round(val("mcfRings"));
+  const curves = [];
+  for (let r = 1; r <= rings; r += 1) {
+    const rad = r / rings;
+    const curve = [];
+    for (let k = 0; k <= 160; k += 1) {
+      const th = (2 * Math.PI * k) / 160;
+      curve.push([rad * Math.cos(th), rad * Math.sin(th)]);
+    }
+    curves.push(curve);
+  }
+  const targetMap = (p, t = 1) => {
+    const x = p[0];
+    const y = p[1];
+    const lobes = 0.52 * Math.tanh(2.4 * x);
+    const throat = 1 - neck * Math.exp(-6.5 * x * x);
+    const tx = 1.08 * x + lobes;
+    const ty = (0.48 + 0.52 * x * x) * throat * y + 0.08 * Math.sin(2.1 * Math.PI * x) * (1 - y * y);
+    return [lerp(x, tx, t), lerp(y, ty, t)];
+  };
+  const { ctx, w, h } = resizeCanvas(410);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  const times = [0, 0.5, 1];
+  const lim = { xmin: -1.85, xmax: 1.85, ymin: -1.12, ymax: 1.12 };
+  for (let b = 0; b < 3; b += 1) {
+    const box = boxes[b];
+    const t = times[b];
+    drawFrame(ctx, box, t === 0 ? "source disk" : t === 1 ? "non-convex target" : "interpolated map");
+    const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    for (let i = 0; i < curves.length; i += 1) {
+      ctx.beginPath();
+      for (let k = 0; k < curves[i].length; k += 1) {
+        const q = targetMap(curves[i][k], t);
+        if (k === 0) ctx.moveTo(X(q), Y(q));
+        else ctx.lineTo(X(q), Y(q));
+      }
+      ctx.strokeStyle = mixColor(i / Math.max(curves.length - 1, 1), RED, BLUE, 0.72);
+      ctx.lineWidth = 1.15;
+      ctx.stroke();
+    }
+    for (let a = 0; a < 18; a += 1) {
+      ctx.beginPath();
+      for (let r = 0; r <= 1; r += 1 / 90) {
+        const q = targetMap([r * Math.cos((2 * Math.PI * a) / 18), r * Math.sin((2 * Math.PI * a) / 18)], t);
+        if (r === 0) ctx.moveTo(X(q), Y(q));
+        else ctx.lineTo(X(q), Y(q));
+      }
+      ctx.strokeStyle = "rgba(35,45,55,.22)";
+      ctx.lineWidth = 0.75;
+      ctx.stroke();
+    }
+  }
+  setStatus(`non-convexity ${neck.toFixed(2)}; concentric source curves reveal how regularity can deteriorate near a target neck.`);
+}
+
+function drawSinkhornEntropyGeometry() {
+  const epsilon = val("segEps");
+  const edges = Math.round(val("segEdges"));
+  const { ctx, w, h } = resizeCanvas(410);
+  const box = { x: 26, y: 32, w: w - 52, h: h - 58 };
+  drawFrame(ctx, box, `log-barrier central path on a ${edges}-gon`);
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2 + 3;
+  const radius = 0.53 * Math.min(box.w, box.h);
+  const angle0 = -Math.PI / 2 + (edges % 2 === 0 ? Math.PI / edges : 0);
+  const vertices = Array.from({ length: edges }, (_, k) => [
+    cx + radius * Math.cos(angle0 + (2 * Math.PI * k) / edges),
+    cy + radius * Math.sin(angle0 + (2 * Math.PI * k) / edges),
+  ]);
+  const edgeData = [];
+  for (let k = 0; k < edges; k += 1) {
+    const a = vertices[k];
+    const b = vertices[(k + 1) % edges];
+    const ex = b[0] - a[0];
+    const ey = b[1] - a[1];
+    const len = Math.max(Math.hypot(ex, ey), 1e-12);
+    const centerCross = ex * (cy - a[1]) - ey * (cx - a[0]);
+    const sign = centerCross >= 0 ? 1 : -1;
+    edgeData.push({ a, b, ex, ey, len, sign });
+  }
+  const signedDistance = (e, p) => e.sign * (e.ex * (p[1] - e.a[1]) - e.ey * (p[0] - e.a[0])) / e.len;
+  const inside = (p) => edgeData.every((e) => signedDistance(e, p) >= 0);
+  const objective = (p, eps) => {
+    const rx = (p[0] - cx) / radius;
+    const ry = (p[1] - cy) / radius;
+    let barrier = 0;
+    for (const e of edgeData) {
+      const d = signedDistance(e, p);
+      if (d <= 1e-5) return Infinity;
+      barrier -= Math.log(d / radius);
+    }
+    return 0.92 * rx - 0.38 * ry + eps * barrier;
+  };
+  const objectiveDerivatives = (p, eps) => {
+    const grad = [0.92 / radius, -0.38 / radius];
+    const hess = [0, 0, 0];
+    let value = 0.92 * ((p[0] - cx) / radius) - 0.38 * ((p[1] - cy) / radius);
+    for (const e of edgeData) {
+      const d = signedDistance(e, p);
+      if (d <= 1e-8) return null;
+      const gd = [-e.sign * e.ey / e.len, e.sign * e.ex / e.len];
+      value -= eps * Math.log(d / radius);
+      grad[0] -= eps * gd[0] / d;
+      grad[1] -= eps * gd[1] / d;
+      const scale = eps / (d * d);
+      hess[0] += scale * gd[0] * gd[0];
+      hess[1] += scale * gd[0] * gd[1];
+      hess[2] += scale * gd[1] * gd[1];
+    }
+    return { value, grad, hess };
+  };
+  const minimizeObjective = (eps) => {
+    let p = [cx, cy];
+    for (let it = 0; it < 50; it += 1) {
+      const state = objectiveDerivatives(p, eps);
+      if (!state) break;
+      const { value, grad, hess } = state;
+      const det = hess[0] * hess[2] - hess[1] * hess[1];
+      if (Math.abs(det) < 1e-16) break;
+      const step = [
+        (hess[2] * grad[0] - hess[1] * grad[1]) / det,
+        (-hess[1] * grad[0] + hess[0] * grad[1]) / det,
+      ];
+      const decrement = grad[0] * step[0] + grad[1] * step[1];
+      if (Math.sqrt(Math.max(decrement, 0)) < 1e-5) break;
+      let tau = 1;
+      let accepted = false;
+      for (let ls = 0; ls < 28; ls += 1) {
+        const q = [p[0] - tau * step[0], p[1] - tau * step[1]];
+        const qState = objectiveDerivatives(q, eps);
+        if (qState && qState.value <= value - 1e-4 * tau * decrement) {
+          p = q;
+          accepted = true;
+          break;
+        }
+        tau *= 0.5;
+      }
+      if (!accepted) break;
+    }
+    return p;
+  };
+  const shadeRgb = (s) => {
+    const t = clamp(s, 0, 1);
+    const left = rgb(BLUE);
+    const mid = rgb(VIOLET);
+    const right = rgb(RED);
+    let ca;
+    let cb;
+    let u;
+    if (t < 0.5) {
+      ca = left;
+      cb = mid;
+      u = t / 0.5;
+    } else {
+      ca = mid;
+      cb = right;
+      u = (t - 0.5) / 0.5;
+    }
+    const wash = 0.70;
+    return [0, 1, 2].map((i) => Math.round(255 * wash + (1 - wash) * lerp(ca[i], cb[i], u)));
+  };
+  const fieldW = Math.min(560, Math.max(340, Math.round(box.w * 1.35)));
+  const fieldH = Math.min(420, Math.max(260, Math.round(box.h * 1.35)));
+  const values = new Float64Array(fieldW * fieldH);
+  let vMin = Infinity;
+  let vMax = -Infinity;
+  const finite = [];
+  for (let iy = 0; iy < fieldH; iy += 1) {
+    for (let ix = 0; ix < fieldW; ix += 1) {
+      const id = iy * fieldW + ix;
+      const p = [box.x + ((ix + 0.5) / fieldW) * box.w, box.y + ((iy + 0.5) / fieldH) * box.h];
+      if (!inside(p)) {
+        values[id] = Infinity;
+        continue;
+      }
+      const v = objective(p, epsilon);
+      values[id] = v;
+      vMin = Math.min(vMin, v);
+      vMax = Math.max(vMax, v);
+      finite.push(v);
+    }
+  }
+  finite.sort((a, b) => a - b);
+  const lo = finite[Math.floor(0.04 * (finite.length - 1))] ?? vMin;
+  const hi = finite[Math.floor(0.94 * (finite.length - 1))] ?? vMax;
+  const imgCanvas = document.createElement("canvas");
+  imgCanvas.width = fieldW;
+  imgCanvas.height = fieldH;
+  const imgCtx = imgCanvas.getContext("2d");
+  const image = imgCtx.createImageData(fieldW, fieldH);
+  for (let iy = 0; iy < fieldH; iy += 1) {
+    for (let ix = 0; ix < fieldW; ix += 1) {
+      const id = iy * fieldW + ix;
+      const v = values[id];
+      const offset = 4 * id;
+      if (!Number.isFinite(v)) {
+        image.data[offset + 3] = 0;
+        continue;
+      }
+      const s = clamp((v - lo) / Math.max(hi - lo, 1e-12), 0, 1);
+      const col = shadeRgb(s);
+      image.data[offset] = col[0];
+      image.data[offset + 1] = col[1];
+      image.data[offset + 2] = col[2];
+      image.data[offset + 3] = 255;
+    }
+  }
+  imgCtx.putImageData(image, 0, 0);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0][0], vertices[0][1]);
+  for (let k = 1; k < vertices.length; k += 1) ctx.lineTo(vertices[k][0], vertices[k][1]);
+  ctx.closePath();
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(imgCanvas, box.x, box.y, box.w, box.h);
+  const levels = Array.from({ length: 10 }, (_, k) => lerp(lo, hi, (k + 1) / 12));
+  ctx.strokeStyle = "rgba(18,24,32,.58)";
+  ctx.lineWidth = 0.72;
+  const px = (ix) => box.x + ((ix + 0.5) / fieldW) * box.w;
+  const py = (iy) => box.y + ((iy + 0.5) / fieldH) * box.h;
+  for (const level of levels) {
+    for (let iy = 0; iy < fieldH - 1; iy += 1) {
+      for (let ix = 0; ix < fieldW - 1; ix += 1) {
+        const ids = [iy * fieldW + ix, iy * fieldW + ix + 1, (iy + 1) * fieldW + ix + 1, (iy + 1) * fieldW + ix];
+        const vs = ids.map((id) => values[id]);
+        if (!vs.every(Number.isFinite)) continue;
+        const pts = [
+          [px(ix), py(iy)],
+          [px(ix + 1), py(iy)],
+          [px(ix + 1), py(iy + 1)],
+          [px(ix), py(iy + 1)],
+        ];
+        const crossings = [];
+        for (let e = 0; e < 4; e += 1) {
+          const v0 = vs[e];
+          const v1 = vs[(e + 1) % 4];
+          if ((v0 - level) * (v1 - level) > 0 || Math.abs(v0 - v1) < 1e-12) continue;
+          const t = clamp((level - v0) / (v1 - v0), 0, 1);
+          crossings.push([lerp(pts[e][0], pts[(e + 1) % 4][0], t), lerp(pts[e][1], pts[(e + 1) % 4][1], t)]);
+        }
+        if (crossings.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(crossings[0][0], crossings[0][1]);
+          ctx.lineTo(crossings[1][0], crossings[1][1]);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0][0], vertices[0][1]);
+  for (let k = 1; k < vertices.length; k += 1) ctx.lineTo(vertices[k][0], vertices[k][1]);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,255,255,.05)";
+  ctx.fill();
+  ctx.strokeStyle = "#26333f";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  const epsList = Array.from({ length: 80 }, (_, i) => Math.exp(lerp(Math.log(0.025), Math.log(2.0), i / 79)));
+  ctx.beginPath();
+  for (let k = 0; k < epsList.length; k += 1) {
+    const arg = minimizeObjective(epsList[k]);
+    if (k === 0) ctx.moveTo(arg[0], arg[1]);
+    else ctx.lineTo(arg[0], arg[1]);
+  }
+  ctx.strokeStyle = VIOLET;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+  const q = minimizeObjective(epsilon);
+  ctx.strokeStyle = "rgba(255,255,255,.95)";
+  ctx.lineWidth = 4.8;
+  ctx.beginPath();
+  ctx.arc(q[0], q[1], 6.2, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.arc(q[0], q[1], 5, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = "rgba(17,24,39,.85)";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = q[0] < cx ? "left" : "right";
+  ctx.fillText("current ε", q[0] + (q[0] < cx ? 9 : -9), q[1] - 9);
+  setStatus(`${edges}-edge polytope; colored background and contours show linear objective plus epsilon log barrier, epsilon=${epsilon.toFixed(3)}`);
+}
+
+function detMatrix(A) {
+  const n = A.length;
+  const M = A.map((row) => row.slice());
+  let det = 1;
+  for (let k = 0; k < n; k += 1) {
+    let pivot = k;
+    for (let i = k + 1; i < n; i += 1) if (Math.abs(M[i][k]) > Math.abs(M[pivot][k])) pivot = i;
+    if (Math.abs(M[pivot][k]) < 1e-12) return 0;
+    if (pivot !== k) {
+      [M[pivot], M[k]] = [M[k], M[pivot]];
+      det *= -1;
+    }
+    det *= M[k][k];
+    const inv = 1 / M[k][k];
+    for (let i = k + 1; i < n; i += 1) {
+      const f = M[i][k] * inv;
+      for (let j = k; j < n; j += 1) M[i][j] -= f * M[k][j];
+    }
+  }
+  return det;
+}
+
+function drawDoublyPositiveCounterexample() {
+  const lambda = val("sdpLambda");
+  const H = [
+    [1, -1, 1, 1, -1],
+    [-1, 1, -1, 1, 1],
+    [1, -1, 1, -1, 1],
+    [1, 1, -1, 1, -1],
+    [-1, 1, 1, -1, 1],
+  ];
+  const xs = Array.from({ length: 5 }, (_, i) => (2 * Math.PI * i) / 5);
+  const K = xs.map((x) => xs.map((y) => lambda + Math.cos(0.5 * (x - y)) ** 2));
+  const HK = H.map((row, i) => row.map((h, j) => h * K[i][j]));
+  const witness = HK.flat().reduce((sum, z) => sum + z, 0);
+  const drawSigned = (ctx, box, matrix, title) => {
+    drawFrame(ctx, box, title);
+    const n = matrix.length;
+    const maxv = Math.max(...matrix.flat().map((z) => Math.abs(z)), 1e-12);
+    for (let i = 0; i < n; i += 1) {
+      for (let j = 0; j < n; j += 1) {
+        const z = matrix[i][j] / maxv;
+        const alpha = 0.12 + 0.82 * Math.abs(z);
+        ctx.fillStyle = z >= 0 ? `rgba(33,102,172,${alpha})` : `rgba(215,48,39,${alpha})`;
+        ctx.fillRect(box.x + (j / n) * box.w, box.y + (i / n) * box.h, box.w / n + 0.5, box.h / n + 0.5);
+      }
+    }
+  };
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 840);
+  drawMatrixImage(ctx, boxes[0], K, `positive PSD kernel K`, VIOLET);
+  drawSigned(ctx, boxes[1], H, "Horn copositive witness H");
+  drawSigned(ctx, boxes[2], HK, "entrywise product H ∘ K");
+  drawSmallLabel(ctx, `sum entries = ${witness.toFixed(3)}`, boxes[2].x + boxes[2].w / 2, boxes[2].y + boxes[2].h + 20, witness < 0 ? RED : BLUE, "center");
+  setStatus(`lambda ${lambda.toFixed(2)}; <H,K> = ${witness.toFixed(3)}. Negative Horn pairing certifies K is doubly nonnegative but not completely positive.`);
+}
+
+function drawMFunctionsScaling() {
+  const sigma = val("smfSigma");
+  const tau = val("smfTau");
+  const steps = Math.round(val("smfSteps"));
+  const xs = Array.from({ length: 150 }, (_, i) => lerp(-3, 3, i / 149));
+  const a = normalizeDensity(xs, xs.map((x) => 0.55 * normalPdf(x, -1.05, 0.42) + 0.45 * normalPdf(x, 0.75, 0.35)));
+  const b = normalizeDensity(xs, xs.map((x) => 0.5 * normalPdf(x, -0.3, 0.30) + 0.5 * normalPdf(x, 1.38, 0.48)));
+  let f = xs.map(() => 0);
+  let g = xs.map(() => 0);
+  const keep = [];
+  for (let it = 0; it <= steps; it += 1) {
+    if (it % Math.max(1, Math.floor(steps / 7)) === 0 || it === steps) keep.push({ it, f: f.slice(), g: g.slice() });
+    const ng = xs.map((y, j) => {
+      let s = 0;
+      for (let i = 0; i < xs.length; i += 1) s += a[i] * Math.exp((f[i] - (xs[i] - y) ** 2) / Math.max(sigma, 1e-4));
+      return -tau * Math.log(Math.max(s, 1e-300));
+    });
+    const nf = xs.map((x, i) => {
+      let s = 0;
+      for (let j = 0; j < xs.length; j += 1) s += b[j] * Math.exp((ng[j] - (x - xs[j]) ** 2) / Math.max(tau, 1e-4));
+      return -sigma * Math.log(Math.max(s, 1e-300));
+    });
+    f = nf;
+    g = ng;
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 740);
+  const all = keep.flatMap((z) => z.f.concat(z.g));
+  const ymin = Math.min(...all);
+  const ymax = Math.max(...all);
+  [["source scaling log u", "f"], ["target scaling log v", "g"]].forEach(([title, key], k) => {
+    drawFrame(ctx, boxes[k], title);
+    for (let r = 0; r < keep.length; r += 1) {
+      drawCurve(ctx, xs, keep[r][key], boxes[k], -3, 3, ymin, ymax, mixColor(r / Math.max(keep.length - 1, 1), RED, BLUE, 0.85), r === keep.length - 1 ? 2.4 : 1.1);
+    }
+  });
+  setStatus(`non-variational monotone scaling surrogate; sigma ${sigma.toFixed(2)}, tau ${tau.toFixed(2)}, ${steps} iterations.`);
+}
+
+function drawMultimarginalCoulomb() {
+  const eps = val("mmcEps");
+  const repulsion = val("mmcRepulsion");
+  const n = 28;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.4, 2.4, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const a = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [
+    { weight: 0.62, mean: -0.75, sigma: 0.33 },
+    { weight: 0.38, mean: 1.05, sigma: 0.50 },
+  ]), dx);
+  const K = [];
+  for (let i = 0; i < n; i += 1) {
+    K[i] = [];
+    for (let j = 0; j < n; j += 1) {
+      K[i][j] = [];
+      for (let k = 0; k < n; k += 1) {
+        const c = repulsion / Math.sqrt((xs[i] - xs[j]) ** 2 + 0.05)
+          + repulsion / Math.sqrt((xs[i] - xs[k]) ** 2 + 0.05)
+          + repulsion / Math.sqrt((xs[j] - xs[k]) ** 2 + 0.05);
+        K[i][j][k] = Math.exp(-c / Math.max(eps, 1e-4));
+      }
+    }
+  }
+  let u = Array(n).fill(1), v = Array(n).fill(1), wv = Array(n).fill(1);
+  for (let it = 0; it < 26; it += 1) {
+    for (let i = 0; i < n; i += 1) {
+      let s = 0;
+      for (let j = 0; j < n; j += 1) for (let k = 0; k < n; k += 1) s += K[i][j][k] * v[j] * wv[k];
+      u[i] = a[i] / Math.max(s, 1e-300);
+    }
+    for (let j = 0; j < n; j += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) for (let k = 0; k < n; k += 1) s += K[i][j][k] * u[i] * wv[k];
+      v[j] = a[j] / Math.max(s, 1e-300);
+    }
+    for (let k = 0; k < n; k += 1) {
+      let s = 0;
+      for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) s += K[i][j][k] * u[i] * v[j];
+      wv[k] = a[k] / Math.max(s, 1e-300);
+    }
+  }
+  const pair = (which) => Array.from({ length: n }, (_, i) => Array(n).fill(0));
+  const P12 = pair(), P13 = pair(), P23 = pair();
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < n; j += 1) for (let k = 0; k < n; k += 1) {
+    const p = u[i] * v[j] * wv[k] * K[i][j][k];
+    P12[i][j] += p;
+    P13[i][k] += p;
+    P23[j][k] += p;
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 860);
+  drawMatrixImage(ctx, boxes[0], P12, "pair marginal (1,2)", VIOLET);
+  drawMatrixImage(ctx, boxes[1], P13, "pair marginal (1,3)", BLUE);
+  drawMatrixImage(ctx, boxes[2], P23, "pair marginal (2,3)", RED);
+  setStatus(`three equal marginals; epsilon ${eps.toFixed(3)} and Coulomb strength ${repulsion.toFixed(2)} repel mass away from diagonals.`);
+}
+
+function drawMartingaleKernels() {
+  const spread = val("motSpread");
+  const massSkew = val("motSkew");
+  const n = 96;
+  const xs = Array.from({ length: n }, (_, i) => lerp(-2.8, 2.8, i / (n - 1)));
+  const dx = xs[1] - xs[0];
+  const alpha = weightsFromDensityAndDx(mixtureDensityOnGrid(xs, [
+    { weight: 0.55 + massSkew, mean: -1.0, sigma: 0.28 },
+    { weight: 0.45 - massSkew, mean: 0.85, sigma: 0.35 },
+  ]), dx);
+  const kernel = Array.from({ length: n }, () => Array(n).fill(0));
+  const beta = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    const sig = spread * (0.55 + 0.55 * Math.exp(-0.5 * (xs[i] / 0.9) ** 2));
+    let row = 0;
+    for (let j = 0; j < n; j += 1) {
+      kernel[i][j] = normalPdf(xs[j], xs[i], sig) * dx;
+      row += kernel[i][j];
+    }
+    for (let j = 0; j < n; j += 1) {
+      kernel[i][j] /= Math.max(row, 1e-12);
+      beta[j] += alpha[i] * kernel[i][j];
+    }
+  }
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  drawMatrixImage(ctx, boxes[0], kernel, "centered transition kernels", VIOLET);
+  drawFrame(ctx, boxes[1], "marginals and symmetric spreads");
+  const alphaDensity = alpha.map((z) => z / dx);
+  const betaDensity = beta.map((z) => z / dx);
+  const ymax = Math.max(...alphaDensity, ...betaDensity) * 1.15;
+  drawCurve(ctx, xs, alphaDensity, boxes[1], -2.8, 2.8, 0, ymax, RED, 2.1);
+  drawCurve(ctx, xs, betaDensity, boxes[1], -2.8, 2.8, 0, ymax, BLUE, 2.1);
+  const X = (x) => boxes[1].x + ((x + 2.8) / 5.6) * boxes[1].w;
+  const Y = (y) => boxes[1].y + boxes[1].h - (y / ymax) * boxes[1].h;
+  for (const x of [-1.35, -0.45, 0.55, 1.35]) {
+    const sig = spread * (0.55 + 0.55 * Math.exp(-0.5 * (x / 0.9) ** 2));
+    ctx.strokeStyle = "rgba(20,20,20,.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(X(x), Y(0.02 * ymax));
+    ctx.lineTo(X(x - sig), Y(0.12 * ymax));
+    ctx.moveTo(X(x), Y(0.02 * ymax));
+    ctx.lineTo(X(x + sig), Y(0.12 * ymax));
+    ctx.stroke();
+  }
+  setStatus(`conditional kernels are centered at x; beta is more spread while preserving the martingale barycentric constraint.`);
+}
+
+function drawGenerativeW2SlicedShapes() {
+  const n = Math.round(val("gwsParticles"));
+  const angle = val("gwsAngle");
+  const seed = Math.round(val("gwsSeed"));
+  const random = rng(seed);
+  const source = generalizedShape("crescent", n, random).map((p) => [0.92 * p[0] - 0.18, 0.92 * p[1]]);
+  const target = generalizedShape("heart", n, random).map((p) => [0.95 * p[0] + 0.2, 0.95 * p[1] - 0.02]);
+  const w2 = exactAssignment(source, target);
+  const sw = projectionAssignment(source, target, angle).assignment;
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 2, 760);
+  const lim = limits(source.concat(target));
+  [["W2 assignment flow", w2], ["single-slice SW flow", sw]].forEach(([title, assignment], k) => {
+    const box = boxes[k];
+    drawFrame(ctx, box, title);
+    const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+    const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+    const stride = Math.max(1, Math.floor(n / 48));
+    for (let i = 0; i < n; i += stride) {
+      const a = source[i], b = target[assignment[i]];
+      ctx.beginPath();
+      for (let q = 0; q <= 25; q += 1) {
+        const t = q / 25;
+        const bend = k === 0 ? 0 : 0.08 * Math.sin(Math.PI * t) * Math.sin(i);
+        const p = [lerp(a[0], b[0], t) + bend, lerp(a[1], b[1], t)];
+        if (q === 0) ctx.moveTo(X(p), Y(p));
+        else ctx.lineTo(X(p), Y(p));
+      }
+      ctx.strokeStyle = mixColor(i / Math.max(n - 1, 1), RED, BLUE, 0.30);
+      ctx.lineWidth = 0.85;
+      ctx.stroke();
+    }
+    for (let i = 0; i < n; i += 1) {
+      const q = lerp(0, 1, 0.58);
+      const p = [lerp(source[i][0], target[assignment[i]][0], q), lerp(source[i][1], target[assignment[i]][1], q)];
+      ctx.fillStyle = mixColor(q, RED, BLUE, 0.38);
+      ctx.beginPath();
+      ctx.arc(X(p), Y(p), 2.0, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  });
+  setStatus(`same source/target samples; W2 uses a global assignment, sliced flow sorts after projection at ${angle.toFixed(0)} degrees.`);
+}
+
+function inverseOTCloud(n, seed) {
+  const random = rng(seed);
+  const source = [];
+  const target = [];
+  for (let i = 0; i < n; i += 1) {
+    const c = random() < 0.52 ? [-0.85, -0.28] : [0.62, 0.38];
+    source.push([c[0] + 0.24 * randn(random), c[1] + 0.18 * randn(random)]);
+  }
+  for (let i = 0; i < n; i += 1) {
+    const c = random() < 0.46 ? [-0.48, 0.55] : [0.92, -0.28];
+    target.push([c[0] + 0.20 * randn(random), c[1] + 0.25 * randn(random)]);
+  }
+  return { source, target };
+}
+
+function bilinearCostMatrix(source, target, A) {
+  return source.map((x) => target.map((y) => {
+    const ax0 = A[0][0] * x[0] + A[0][1] * x[1];
+    const ax1 = A[1][0] * x[0] + A[1][1] * x[1];
+    return ax0 * y[0] + ax1 * y[1];
+  }));
+}
+
+function assignmentMeanCost(cost, assignment) {
+  let value = 0;
+  for (let i = 0; i < assignment.length; i += 1) value += cost[i][assignment[i]];
+  return value / Math.max(assignment.length, 1);
+}
+
+function rotateMatrix(angleDeg) {
+  const th = (Math.PI / 180) * angleDeg;
+  const c = Math.cos(th);
+  const s = Math.sin(th);
+  return [[c, -s], [s, c]];
+}
+
+function transpose2(A) {
+  return [[A[0][0], A[1][0]], [A[0][1], A[1][1]]];
+}
+
+function diagonalBilinear(t, angleDeg = 0) {
+  const D = [[-(1 + t), 0], [0, -(1 - t)]];
+  const R = rotateMatrix(angleDeg);
+  return matMul2(matMul2(R, D), transpose2(R));
+}
+
+function drawInverseOTForward() {
+  const t = val("iofT");
+  const angle = val("iofAngle");
+  const seed = Math.round(val("iofSeed"));
+  const n = Math.round(val("iofPoints"));
+  const { source, target } = inverseOTCloud(n, seed);
+  const Ah = [[-1, -1], [0.001, 0.001]];
+  const Ac = diagonalBilinear(t, angle);
+  const Aw = [[-1, 0], [0, -1]];
+  const configs = [
+    ["rank-one horizontal", Ah],
+    [`A(t), t=${t.toFixed(2)}`, Ac],
+    ["quadratic W2 gauge", Aw],
+  ];
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(source.concat(target));
+  for (let k = 0; k < configs.length; k += 1) {
+    const [title, A] = configs[k];
+    const C = bilinearCostMatrix(source, target, A);
+    const assign = hungarian(C);
+    drawPairedMapPanel(ctx, source, target, assign, boxes[k], lim, title, 0.22);
+  }
+  setStatus(`${n} equal-weight points; each panel solves a true Hungarian assignment for c_A(x,y)=<Ax,y>.`);
+}
+
+function inverseOTGapCurve(n, seed, angleDeg, tGrid) {
+  const { source, target } = inverseOTCloud(n, seed);
+  const observedCost = bilinearCostMatrix(source, target, diagonalBilinear(0, angleDeg));
+  const observed = hungarian(observedCost);
+  const gaps = [];
+  for (const t of tGrid) {
+    const C = bilinearCostMatrix(source, target, diagonalBilinear(t, angleDeg));
+    const best = hungarian(C);
+    gaps.push(Math.max(0, assignmentMeanCost(C, observed) - assignmentMeanCost(C, best)));
+  }
+  return { source, target, observed, gaps };
+}
+
+function drawInverseOTGap() {
+  const nLarge = Math.round(val("iogPoints"));
+  const angle = val("iogAngle");
+  const seed = Math.round(val("iogSeed"));
+  const tGrid = Array.from({ length: 67 }, (_, i) => lerp(-0.92, 0.92, i / 66));
+  const small = inverseOTGapCurve(10, seed, angle, tGrid);
+  const large = inverseOTGapCurve(nLarge, seed + 17, angle, tGrid);
+  const { ctx, w, h } = resizeCanvas(430);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  const lim = limits(large.source.concat(large.target));
+  drawPairedMapPanel(ctx, large.source, large.target, large.observed, boxes[0], lim, "observed coupling", 0.2);
+  const ymax = Math.max(...small.gaps, ...large.gaps, 1e-4) * 1.12;
+  drawFrame(ctx, boxes[1], "gap loss, n=10");
+  drawCurve(ctx, tGrid, small.gaps, boxes[1], -0.92, 0.92, 0, ymax, RED, 2.2);
+  drawFrame(ctx, boxes[2], `gap loss, n=${nLarge}`);
+  drawCurve(ctx, tGrid, large.gaps, boxes[2], -0.92, 0.92, 0, ymax, BLUE, 2.2);
+  for (const box of [boxes[1], boxes[2]]) {
+    const X0 = box.x + ((0 + 0.92) / 1.84) * box.w;
+    ctx.strokeStyle = "rgba(20,20,20,.35)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(X0, box.y);
+    ctx.lineTo(X0, box.y + box.h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    drawSmallLabel(ctx, "true t=0", X0 + 4, box.y + 15, "#26333f", "left");
+  }
+  setStatus(`Hungarian gap scan along A_t=-R diag(1+t,1-t) R^T; larger n usually sharpens the zero valley.`);
+}
+
+function det2(A) {
+  return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+}
+
+function drawBrunnMinkowskiOT() {
+  const stretch = val("bmStretch");
+  const angle = val("bmAngle");
+  const tFocus = val("bmTime");
+  const R = rotateMatrix(angle);
+  const A = matMul2(matMul2(R, [[stretch, 0], [0, 0.72 + 0.18 / stretch]]), transpose2(R));
+  const times = [0, 0.25, 0.5, 0.75, 1];
+  const { ctx, w, h } = resizeCanvas(450);
+  const gap = 12;
+  const bw = (w - 34 - 5 * gap) / 6;
+  const ellipseBoxes = times.map((_, i) => ({ x: 17 + i * (bw + gap), y: 46, w: bw, h: h * 0.48 }));
+  const curveBox = { x: 17 + 5 * (bw + gap), y: 46, w: bw, h: h * 0.48 };
+  const lim = { xmin: -2.2, xmax: 2.2, ymin: -2.2, ymax: 2.2 };
+  for (let i = 0; i < times.length; i += 1) {
+    const t = times[i];
+    const B = matAdd2(matScale2([[1, 0], [0, 1]], 1 - t), matScale2(A, t));
+    drawFrame(ctx, ellipseBoxes[i], `t=${t.toFixed(2)}`);
+    drawCovEllipse(ctx, [0, 0], matMul2(B, transpose2(B)), ellipseBoxes[i], lim, mixColor(t, RED, BLUE, 1), 1.5, 0.22);
+  }
+  drawFrame(ctx, curveBox, "sqrt area");
+  const ts = Array.from({ length: 160 }, (_, i) => i / 159);
+  const areas = ts.map((t) => Math.sqrt(Math.max(det2(matAdd2(matScale2([[1, 0], [0, 1]], 1 - t), matScale2(A, t))), 1e-12)));
+  const line = ts.map((t) => lerp(areas[0], areas[areas.length - 1], t));
+  const ymin = Math.min(...areas, ...line) * 0.96;
+  const ymax = Math.max(...areas, ...line) * 1.04;
+  drawCurve(ctx, ts, areas, curveBox, 0, 1, ymin, ymax, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, line, curveBox, 0, 1, ymin, ymax, "#5f6670", 1.4, [4, 4]);
+  const panel = { x: 30, y: h * 0.66, w: w - 60, h: h * 0.24 };
+  drawFrame(ctx, panel, `highlighted affine image, t=${tFocus.toFixed(2)}`);
+  const Bf = matAdd2(matScale2([[1, 0], [0, 1]], 1 - tFocus), matScale2(A, tFocus));
+  drawCovEllipse(ctx, [0, 0], matMul2(Bf, transpose2(Bf)), panel, lim, mixColor(tFocus, RED, BLUE, 1), 2, 0.2);
+  setStatus(`determinant concavity: sqrt(det((1-t)I+tA)) lies above the chord; stretch ${stretch.toFixed(2)}.`);
+}
+
+function ouMixtureComponents(t, skew) {
+  const e = Math.exp(-t);
+  const v = 1 - e * e;
+  return [
+    { weight: 0.48 + skew, mean: e * -1.35, sigma: Math.sqrt(v + e * e * 0.25 ** 2) },
+    { weight: 0.34 - 0.5 * skew, mean: e * 0.15, sigma: Math.sqrt(v + e * e * 0.42 ** 2) },
+    { weight: 0.18 - 0.5 * skew, mean: e * 1.28, sigma: Math.sqrt(v + e * e * 0.28 ** 2) },
+  ];
+}
+
+function hwiQuantities(t, skew) {
+  const xs = Array.from({ length: 720 }, (_, i) => lerp(-4.5, 4.5, i / 719));
+  const dx = xs[1] - xs[0];
+  const comps = ouMixtureComponents(t, skew);
+  const p = normalizeDensity(xs, xs.map((x) => gaussianMixtureDensity(comps.map((c) => ({ w: c.weight, m: c.mean, s: c.sigma })), x)));
+  const gamma = normalizeDensity(xs, xs.map((x) => normalPdf(x, 0, 1)));
+  let H = 0;
+  for (let i = 0; i < xs.length; i += 1) H += p[i] * Math.log(Math.max(p[i] / Math.max(gamma[i], 1e-300), 1e-300)) * dx;
+  const logRatio = p.map((z, i) => Math.log(Math.max(z / Math.max(gamma[i], 1e-300), 1e-300)));
+  let I = 0;
+  for (let i = 1; i < xs.length - 1; i += 1) {
+    const d = (logRatio[i + 1] - logRatio[i - 1]) / (2 * dx);
+    I += d * d * p[i] * dx;
+  }
+  const qn = 220;
+  const qp = inverseCdfSamples(xs, p, qn);
+  let W2 = 0;
+  for (let i = 0; i < qn; i += 1) {
+    const u = (i + 0.5) / qn;
+    const qg = normalInv(u, 0, 1);
+    W2 += (qp[i] - qg) ** 2 / qn;
+  }
+  return { xs, p, gamma, H, I, W: Math.sqrt(Math.max(W2, 0)) };
+}
+
+function drawHWIEntropyDecay() {
+  const finalTime = val("hwiTime");
+  const skew = val("hwiSkew");
+  const ts = Array.from({ length: 54 }, (_, i) => lerp(0, finalTime, i / 53));
+  const data = ts.map((t) => hwiQuantities(t, skew));
+  const { ctx, w, h } = resizeCanvas(470);
+  const boxes = beyondBoxes(w, h, 3, 850);
+  drawFrame(ctx, boxes[0], "OU density relaxation");
+  const xMin = -4.0, xMax = 4.0;
+  const ymaxD = Math.max(...data[0].p, ...data[data.length - 1].p, ...data[0].gamma) * 1.12;
+  [0, 0.25, 0.5, 0.75, 1].forEach((s) => {
+    const idx = Math.round(s * (data.length - 1));
+    drawCurve(ctx, data[idx].xs, data[idx].p, boxes[0], xMin, xMax, 0, ymaxD, mixColor(s, RED, BLUE, s === 0 || s === 1 ? 0.95 : 0.55), s === 0 || s === 1 ? 2 : 1.2);
+  });
+  drawDashedCurve(ctx, data[0].xs, data[0].gamma, boxes[0], xMin, xMax, 0, ymaxD, "#5f6670", 1.3, [5, 4]);
+  const H = data.map((z) => z.H);
+  const I = data.map((z) => z.I);
+  const W = data.map((z) => z.W);
+  const hwi = data.map((z) => Math.max(0, z.W * Math.sqrt(Math.max(z.I, 0)) - 0.5 * z.W * z.W));
+  const logsob = I.map((z) => 0.5 * z);
+  const tal = W.map((z) => 0.5 * z * z);
+  const ymax = Math.max(...H, ...hwi, ...logsob) * 1.08;
+  drawFrame(ctx, boxes[1], "static inequalities");
+  drawCurve(ctx, ts, H, boxes[1], 0, finalTime, 0, ymax, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, hwi, boxes[1], 0, finalTime, 0, ymax, RED, 1.5, [4, 4]);
+  drawDashedCurve(ctx, ts, logsob, boxes[1], 0, finalTime, 0, ymax, BLUE, 1.5, [6, 4]);
+  drawDashedCurve(ctx, ts, tal, boxes[1], 0, finalTime, 0, ymax, "#5f6670", 1.2, [2, 4]);
+  drawFrame(ctx, boxes[2], "entropy decay");
+  const guide = ts.map((t) => H[0] * Math.exp(-2 * t));
+  drawCurve(ctx, ts, H, boxes[2], 0, finalTime, 0, H[0] * 1.05, VIOLET, 2.2);
+  drawDashedCurve(ctx, ts, guide, boxes[2], 0, finalTime, 0, H[0] * 1.05, "#5f6670", 1.4, [5, 4]);
+  setStatus(`OU flow to N(0,1); H=${H[H.length - 1].toFixed(3)}, I=${I[I.length - 1].toFixed(3)}, W=${W[W.length - 1].toFixed(3)} at final time.`);
+}
+
+function mlpSurrogate(kind, n, seed, angleDeg, steps, teacherCount = 2) {
+  const random = rng(seed);
+  const teacherAngles = mlpTeacherAngles(teacherCount, (Math.PI / 180) * angleDeg);
+  const teachers = teacherAngles.map((a) => [Math.cos(a), Math.sin(a)]);
+  let pts = [];
+  for (let i = 0; i < n; i += 1) {
+    const th = 2 * Math.PI * random();
+    const r = 0.36 + 0.18 * randn(random);
+    pts.push([r * Math.cos(th), r * Math.sin(th)]);
+  }
+  const traj = pts.map((p) => [p.slice()]);
+  const risks = [];
+  const hist = [];
+  const snapshotSteps = [0, 0.16, 0.34, 0.58, 0.78, 1].map((t) => Math.round(t * steps));
+  const snapshotSet = new Set(snapshotSteps);
+  const snapshots = [];
+  for (let s = 0; s <= steps; s += 1) {
+    let risk = 0;
+    const angles = [];
+    for (const p of pts) {
+      const r = Math.max(Math.hypot(p[0], p[1]), 1e-8);
+      const u = [p[0] / r, p[1] / r];
+      const best = teachers.map((v) => u[0] * v[0] + u[1] * v[1]).reduce((a, b) => Math.max(a, b), -Infinity);
+      risk += (1 - best) ** 2 + 0.08 * (r - 1) ** 2;
+      angles.push(Math.atan2(p[1], p[0]));
+    }
+    risks.push(risk / n);
+    if (snapshotSet.has(s)) snapshots.push({ time: s / Math.max(steps, 1), pts: pts.map((p) => p.slice()) });
+    if (s === steps) hist.push(...angles);
+    if (s === steps) break;
+    pts = pts.map((p) => {
+      const r = Math.max(Math.hypot(p[0], p[1]), 1e-8);
+      const u = [p[0] / r, p[1] / r];
+      let target = teachers[0];
+      let bestDot = target[0] * u[0] + target[1] * u[1];
+      for (let k = 1; k < teachers.length; k += 1) {
+        const dot = teachers[k][0] * u[0] + teachers[k][1] * u[1];
+        if (dot > bestDot) {
+          bestDot = dot;
+          target = teachers[k];
+        }
+      }
+      let vx = target[0] - u[0] + 0.24 * (1 - r) * u[0];
+      let vy = target[1] - u[1] + 0.24 * (1 - r) * u[1];
+      if (kind === "muon") {
+        const norm = Math.max(Math.hypot(vx, vy), 1e-8);
+        vx = 0.62 * vx / norm + 0.20 * target[0];
+        vy = 0.62 * vy / norm + 0.20 * target[1];
+      }
+      const dt = kind === "muon" ? 0.032 : 0.024;
+      return [p[0] + dt * vx, p[1] + dt * vy];
+    });
+    if (s % 4 === 0 || s === steps - 1) for (let i = 0; i < n; i += 1) traj[i].push(pts[i].slice());
+  }
+  return { pts, traj, risks, hist, teachers, teacherAngles, snapshots };
+}
+
+function drawMLPW2Muon() {
+  const n = Math.round(val("mlpmNeurons"));
+  const angle = val("mlpmAngle");
+  const steps = Math.round(val("mlpmSteps"));
+  const teacherCount = parseInt(val("mlpmTeachers"), 10);
+  const seed = Math.round(val("mlpmSeed"));
+  const w2 = mlpSurrogate("w2", n, seed, angle, steps, teacherCount);
+  const muon = mlpSurrogate("muon", n, seed, angle, steps, teacherCount);
+  const { ctx, w, h } = resizeCanvas(610);
+  const topY = 38;
+  const topH = Math.min(214, Math.max(120, h * 0.38));
+  const bottomY = topY + topH + 48;
+  const bottomH = Math.max(70, h - bottomY - 24);
+  const boxesTop = [
+    { x: 34, y: topY, w: (w - 92) / 2, h: topH },
+    { x: 58 + (w - 92) / 2, y: topY, w: (w - 92) / 2, h: topH },
+  ];
+  const boxesBottom = [
+    { x: 34, y: bottomY, w: (w - 92) / 2, h: bottomH },
+    { x: 58 + (w - 92) / 2, y: bottomY, w: (w - 92) / 2, h: bottomH },
+  ];
+  [["W2 particle flow", w2], ["normalized Muon-like flow", muon]].forEach(([title, sim], k) => {
+    const box = boxesTop[k];
+    drawFrame(ctx, box, title);
+    const lim = 2.05;
+    drawMlpTeacherRays(ctx, box, lim, sim.teacherAngles, 0.48);
+    gfDrawTrajectories(ctx, box, lim, sim.traj, Math.max(1, Math.floor(n / 46)));
+    gfDrawPoints(ctx, box, lim, sim.pts, k === 0 ? VIOLET : BLUE, 2.1, 0.82);
+  });
+  drawMlpAngularStack(ctx, boxesBottom[0], w2.teacherAngles, w2.snapshots, "W2 angular concentration");
+  drawMlpAngularStack(ctx, boxesBottom[1], muon.teacherAngles, muon.snapshots, "Muon angular concentration");
+  setStatus(`${teacherCount} teacher ray${teacherCount > 1 ? "s" : ""}; final risk W2=${w2.risks[w2.risks.length - 1].toFixed(3)}, Muon=${muon.risks[muon.risks.length - 1].toFixed(3)} after ${steps} steps.`);
+}
+
+function normalizeDensity(xs, values) {
+  const dx = xs.length > 1 ? (xs[xs.length - 1] - xs[0]) / (xs.length - 1) : 1;
+  const mass = values.reduce((sum, z) => sum + Math.max(z, 0), 0) * dx;
+  return values.map((z) => Math.max(z, 0) / Math.max(mass, 1e-12));
+}
+
+function heatColeSnapshots(xs, epsilon, finalTime, amplitude) {
+  const n = xs.length;
+  const dx = (xs[xs.length - 1] - xs[0]) / (n - 1);
+  const v0 = xs.map((x) => amplitude * Math.exp(-0.5 * ((x + 0.72) / 0.42) ** 2));
+  const phi0 = Array(n).fill(0);
+  for (let i = 1; i < n; i += 1) phi0[i] = phi0[i - 1] + 0.5 * dx * (v0[i - 1] + v0[i]);
+  const offset = Math.min(...phi0);
+  const u = phi0.map((p) => Math.exp(-(p - offset) / Math.max(epsilon, 1e-4)));
+  const requested = [0, 0.18, 0.42, 0.68, 1].map((s) => s * finalTime);
+  const maxTime = requested[requested.length - 1];
+  const dtStable = 0.42 * dx * dx / Math.max(epsilon, 1e-4);
+  const steps = Math.max(1, Math.ceil(maxTime / Math.max(dtStable, 1e-5)));
+  const dt = maxTime / steps;
+  const snapshots = [];
+  let next = 0;
+  function capture(time, state) {
+    const phi = state.map((z) => -epsilon * Math.log(Math.max(z, 1e-300)) + offset);
+    const vel = Array(n).fill(0);
+    for (let i = 1; i < n - 1; i += 1) vel[i] = (phi[i + 1] - phi[i - 1]) / (2 * dx);
+    vel[0] = (phi[1] - phi[0]) / dx;
+    vel[n - 1] = (phi[n - 1] - phi[n - 2]) / dx;
+    snapshots.push({ time, phi, vel });
+  }
+  capture(0, u.slice());
+  let state = u.slice();
+  for (let step = 1; step <= steps; step += 1) {
+    const nextState = state.slice();
+    for (let i = 1; i < n - 1; i += 1) {
+      nextState[i] = Math.max(1e-300, state[i] + 0.5 * epsilon * dt * (state[i - 1] - 2 * state[i] + state[i + 1]) / (dx * dx));
+    }
+    nextState[0] = nextState[1];
+    nextState[n - 1] = nextState[n - 2];
+    state = nextState;
+    const time = step * dt;
+    while (next + 1 < requested.length && time >= requested[next + 1] - 1e-12) {
+      capture(requested[next + 1], state.slice());
+      next += 1;
+    }
+  }
+  while (snapshots.length < requested.length) capture(maxTime, state.slice());
+  return snapshots.slice(0, requested.length);
+}
+
+function drawSinkhornHopfCole() {
+  const epsilon = val("shcEps");
+  const finalTime = val("shcTime");
+  const amplitude = val("shcAmp");
+  const xs = Array.from({ length: 180 }, (_, i) => lerp(-3.2, 3.2, i / 179));
+  const snapshots = heatColeSnapshots(xs, epsilon, finalTime, amplitude);
+  const phiMin = Math.min(...snapshots.flatMap((s) => s.phi));
+  const phiMax = Math.max(...snapshots.flatMap((s) => s.phi));
+  const velMin = Math.min(...snapshots.flatMap((s) => s.vel));
+  const velMax = Math.max(...snapshots.flatMap((s) => s.vel));
+  const { ctx, w, h } = resizeCanvas(430);
+  const gap = 36;
+  const top = { x: 26, y: 42, w: w - 52, h: (h - 88 - gap) / 2 };
+  const bottom = { x: 26, y: top.y + top.h + gap, w: w - 52, h: (h - 88 - gap) / 2 };
+  drawFrame(ctx, top, "Hamilton--Jacobi potential via Hopf--Cole");
+  drawFrame(ctx, bottom, "viscous Burgers velocity");
+  for (let k = 0; k < snapshots.length; k += 1) {
+    const t = k / Math.max(snapshots.length - 1, 1);
+    const color = mixColor(t, RED, BLUE, k === snapshots.length - 1 ? 0.95 : 0.72);
+    drawCurve(ctx, xs, snapshots[k].phi, top, -3.2, 3.2, phiMin, phiMax, color, k === snapshots.length - 1 ? 2.2 : 1.35);
+    drawCurve(ctx, xs, snapshots[k].vel, bottom, -3.2, 3.2, velMin, velMax, color, k === snapshots.length - 1 ? 2.2 : 1.35);
+  }
+  setStatus(`epsilon ${epsilon.toFixed(3)}; final time ${finalTime.toFixed(2)}; heat equation is solved explicitly in the Hopf--Cole variable`);
+}
+
+function compactInitialBars(xs) {
+  return normalizeDensity(xs, xs.map((x) => (Math.abs(x + 1.15) < 0.28 || Math.abs(x - 0.72) < 0.22 ? 1 : 0)));
+}
+
+function stableKernelValue(r, alpha, time) {
+  const t = Math.max(time, 1e-4);
+  if (alpha >= 1.95) return Math.exp(-(r * r) / (4 * t)) / Math.sqrt(4 * Math.PI * t);
+  const scale = Math.pow(t, 1 / Math.max(alpha, 0.35));
+  return scale / Math.pow(scale * scale + r * r, (1 + alpha) / 2);
+}
+
+function diffuseStable(xs, density, alpha, time) {
+  if (time <= 1e-10) return density.slice();
+  const n = xs.length;
+  const dx = (xs[n - 1] - xs[0]) / (n - 1);
+  const out = Array(n).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    let value = 0;
+    for (let j = 0; j < n; j += 1) value += density[j] * stableKernelValue(Math.abs(xs[i] - xs[j]), alpha, time) * dx;
+    out[i] = value;
+  }
+  return normalizeDensity(xs, out);
+}
+
+function drawStackedDensityEvolution(ctx, box, xs, snapshots, title) {
+  drawFrame(ctx, box, title);
+  const maxDensity = 1.05 * Math.max(...snapshots.flat());
+  const rowGap = box.h / (snapshots.length + 0.25);
+  for (let k = 0; k < snapshots.length; k += 1) {
+    const y = box.y + rowGap * (k + 0.9);
+    ctx.strokeStyle = "rgba(95,102,112,.16)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(box.x + 4, y);
+    ctx.lineTo(box.x + box.w - 4, y);
+    ctx.stroke();
+    drawDensityRibbon(ctx, box, xs, snapshots[k], xs[0], xs[xs.length - 1], y, rowGap * 0.72, maxDensity, mixColor(k / Math.max(snapshots.length - 1, 1), RED, BLUE, 0.46));
+  }
+}
+
+function drawGradflowFractional() {
+  const finalTime = val("gffracTime");
+  const mediumAlpha = val("gffracMedium");
+  const strongAlpha = val("gffracStrong");
+  const xs = Array.from({ length: 170 }, (_, i) => lerp(-3.2, 3.2, i / 169));
+  const init = compactInitialBars(xs);
+  const times = [0, 0.08, 0.22, 0.48, 1].map((s) => s * finalTime);
+  const alphas = [2, mediumAlpha, strongAlpha];
+  const names = ["classical diffusion", `nonlocal alpha=${mediumAlpha.toFixed(2)}`, `strong nonlocal alpha=${strongAlpha.toFixed(2)}`];
+  const snapshots = alphas.map((alpha) => times.map((t) => diffuseStable(xs, init, alpha, t)));
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 740 : 420);
+  const boxes = beyondBoxes(w, h, 3, 720);
+  for (let k = 0; k < 3; k += 1) drawStackedDensityEvolution(ctx, boxes[k], xs, snapshots[k], names[k]);
+  setStatus(`fractional heat-kernel surrogate; smaller alpha gives heavier tails and faster nonlocal leakage between the two initial blocks`);
+}
+
+function sampleMmdTarget(n) {
+  const pts = [];
+  const centers = [[0.15, 0.5], [1.1, -0.35]];
+  for (let i = 0; i < n; i += 1) {
+    const c = centers[i % 2];
+    const a = (i * 1.61803398875) % 1;
+    const r = 0.13 + 0.24 * ((i * 0.754877666) % 1);
+    pts.push([c[0] + r * Math.cos(2 * Math.PI * a), c[1] + 0.75 * r * Math.sin(2 * Math.PI * a)]);
+  }
+  return pts;
+}
+
+function sampleMmdSource(n, seed, spread) {
+  const random = rng(seed);
+  return Array.from({ length: n }, () => [-1.25 + spread * randn(random), 0.05 + 0.72 * spread * randn(random)]);
+}
+
+function energyDistanceForce(i, pts, target) {
+  const p = pts[i];
+  let fx = 0;
+  let fy = 0;
+  for (const y of target) {
+    const dx = y[0] - p[0];
+    const dy = y[1] - p[1];
+    const r = Math.max(Math.hypot(dx, dy), 0.05);
+    fx += dx / r;
+    fy += dy / r;
+  }
+  fx /= target.length;
+  fy /= target.length;
+  for (let j = 0; j < pts.length; j += 1) {
+    if (i === j) continue;
+    const dx = pts[j][0] - p[0];
+    const dy = pts[j][1] - p[1];
+    const r = Math.max(Math.hypot(dx, dy), 0.05);
+    fx -= 0.62 * dx / (r * pts.length);
+    fy -= 0.62 * dy / (r * pts.length);
+  }
+  return [fx, fy];
+}
+
+function simulateEnergyDistanceFlow(mode, n, seed, steps, dt, spread) {
+  const target = sampleMmdTarget(96);
+  let pts = sampleMmdSource(n, seed, spread);
+  const vel = pts.map(() => [0, 0]);
+  const trajectories = pts.map((p) => [p.slice()]);
+  for (let s = 0; s < steps; s += 1) {
+    const forces = pts.map((_, i) => energyDistanceForce(i, pts, target));
+    for (let i = 0; i < pts.length; i += 1) {
+      if (mode === "newton") {
+        vel[i][0] += dt * forces[i][0];
+        vel[i][1] += dt * forces[i][1];
+        pts[i][0] += dt * vel[i][0];
+        pts[i][1] += dt * vel[i][1];
+      } else {
+        pts[i][0] += dt * forces[i][0];
+        pts[i][1] += dt * forces[i][1];
+      }
+    }
+    if (s % 8 === 0 || s === steps - 1) {
+      for (let i = 0; i < pts.length; i += 1) trajectories[i].push(pts[i].slice());
+    }
+  }
+  return { target, pts, trajectories };
+}
+
+function drawEnergyDistanceFlowPanel(ctx, box, sim, label) {
+  drawFrame(ctx, box, label);
+  const lim = 2.35;
+  gfDrawTarget(ctx, box, lim, [[0.15, 0.5], [1.1, -0.35]]);
+  gfDrawTrajectories(ctx, box, lim, sim.trajectories, Math.max(1, Math.floor(sim.trajectories.length / 44)));
+  gfDrawPoints(ctx, box, lim, sim.trajectories.map((p) => p[0]), RED, 1.7, 0.42);
+  gfDrawPoints(ctx, box, lim, sim.pts, BLUE, 2.1, 0.82);
+}
+
+function drawGradflowMomentumMMD() {
+  const n = Math.round(val("gfmomParticles"));
+  const steps = Math.round(val("gfmomSteps"));
+  const spread = val("gfmomSpread");
+  const seed = Math.round(val("gfmomSeed"));
+  const gf = simulateEnergyDistanceFlow("gf", n, seed, steps, 0.045, spread);
+  const newton = simulateEnergyDistanceFlow("newton", n, seed, steps, 0.014, spread);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 720 ? 640 : 400);
+  const boxes = beyondBoxes(w, h, 2, 720);
+  drawEnergyDistanceFlowPanel(ctx, boxes[0], gf, "GF");
+  drawEnergyDistanceFlowPanel(ctx, boxes[1], newton, "Newton");
+  setStatus(`${n} particles; energy-distance kernel -|x-y|; ${steps} explicit steps from the same narrow source Gaussian`);
+}
+
+function init() {
+  if (kind === "linecost") {
+    controls.innerHTML = [
+      slider("n1d", "points", 42, 8, 96, 2),
+      select("lineSource", "source", Object.keys(MIXTURES), "two"),
+      select("lineTarget", "target", Object.keys(MIXTURES), "three"),
+      slider("pConvex", "convex p", 2, 1.1, 4, 0.1),
+      slider("pConcave", "concave p", 0.5, 0.2, 0.95, 0.05),
+    ].join("");
+    bind(drawLineCost);
+  } else if (kind === "quantile") {
+    controls.innerHTML = [
+      slider("n", "levels", 120, 24, 280, 4),
+      select("source", "source", Object.keys(MIXTURES), "two"),
+      select("target", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawQuantile);
+  } else if (kind === "histogram") {
+    controls.innerHTML = [
+      slider("mean", "mean", 0.18, 0.05, 0.85, 0.01),
+      slider("sigma", "sigma", 0.105, 0.04, 0.28, 0.005),
+      slider("interp", "t", 0.67, 0, 1, 0.01),
+    ].join("");
+    bind(drawHistogram);
+  } else if (kind === "circle") {
+    controls.innerHTML = [
+      slider("circleN", "points", 18, 6, 30, 1),
+      slider("circleP", "p", 2, 1.1, 5, 0.1),
+      select("circleMode", "shift", ["optimal", "manual"], "optimal"),
+      slider("circleShift", "manual", 0, 0, 29, 1),
+      slider("circleSeed", "seed", 2026, 2000, 2100, 1),
+    ].join("");
+    bind(drawCircle);
+  } else if (kind === "cost") {
+    controls.innerHTML = [
+      slider("n2", "points", 36, 8, 72, 2),
+      select("source2", "source", SHAPES, "disk"),
+      select("target2", "target", SHAPES, "annulus"),
+      slider("seed2", "seed", 2074, 2000, 2100, 1),
+      slider("p1", "p1", 1, 0.5, 8, 0.5),
+      slider("p2", "p2", 2, 0.5, 8, 0.5),
+      slider("p3", "p3", 6, 0.5, 8, 0.5),
+    ].join("");
+    bind(drawCostSweep);
+  } else if (kind === "resolution" || kind === "regularization") {
+    controls.innerHTML = [
+      slider("ns", "source n", 36, 8, 72, 2),
+      slider("nt", "target n", 18, 4, 60, 2),
+      select("wmode", "weights", WEIGHTS, "angular"),
+      slider("seedr", "seed", 2031, 2000, 2100, 1),
+      slider("strength", "strength", 1.4, 0, 4, 0.2),
+      slider("eps1", "eps 1", 0.03, 0.005, 0.2, 0.005),
+      slider("eps2", "eps 2", 0.12, 0.005, 0.3, 0.005),
+    ].join("");
+    bind(drawRegularization);
+  } else if (kind === "duplication") {
+    controls.innerHTML = [
+      slider("dupN", "sites", 10, 5, 18, 1),
+      slider("dupMax", "max mult", 3, 1, 4, 1),
+      slider("dupSeed", "seed", 2037, 2000, 2100, 1),
+    ].join("");
+    bind(drawDuplication);
+  } else if (kind === "mongecolor") {
+    controls.innerHTML = [
+      slider("colorT", "t", 0.62, 0, 1, 0.01),
+      slider("colorSize", "resolution", 480, 160, 640, 8),
+      select("colorTarget", "target", ["flower", "orchid", "forest"], "flower"),
+      slider("colorContrast", "contrast", 1, 0.55, 1.35, 0.05),
+    ].join("");
+    bind(drawMongeColor);
+  } else if (kind === "mongeshape") {
+    controls.innerHTML = [
+      slider("shapeT", "t", 0.5, 0, 1, 0.01),
+      slider("shapeN", "particles", 58, 18, 86, 2),
+      select("shapeSource", "source", ["crescent", "disk", "two_blobs", "three_blobs"], "crescent"),
+      slider("shapeSeed", "seed", 2044, 2000, 2100, 1),
+    ].join("");
+    bind(drawMongeShape);
+  } else if (kind === "mongequantile") {
+    controls.innerHTML = [
+      slider("mqT", "t", 0.5, 0, 1, 0.01),
+      select("mqSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("mqTarget", "target", Object.keys(MIXTURES), "three"),
+      slider("mqSamples", "levels", 720, 120, 1440, 60),
+    ].join("");
+    bind(drawMongeQuantile);
+  } else if (kind === "mongetriangular") {
+    controls.innerHTML = [
+      slider("triProgress", "progress", 0.58, 0, 1, 0.01),
+      slider("triN", "particles", 120, 40, 220, 10),
+      select("triSource", "source", ["crescent", "disk", "two_blobs", "three_blobs"], "crescent"),
+      slider("triSeed", "seed", 2062, 2000, 2100, 1),
+    ].join("");
+    bind(drawMongeTriangular);
+  } else if (kind === "mongegaussian") {
+    controls.innerHTML = [
+      slider("gaussT", "t", 0.5, 0, 1, 0.01),
+      select("gaussMode", "mode", ["one_dimensional", "anisotropic_to_isotropic", "rotated_anisotropies"], "rotated_anisotropies"),
+      slider("gaussShape", "shape", 2.5, 1.1, 4.6, 0.1),
+      slider("gaussAngle", "angle", 52, 0, 82, 1),
+    ].join("");
+    bind(drawMongeGaussian);
+  } else if (kind === "mongegaussianmetrics") {
+    controls.innerHTML = [
+      slider("gmetT", "t", 0.5, 0, 1, 0.01),
+      slider("gmetMean", "target mean", 1.22, -0.1, 2.0, 0.01),
+      slider("gmetSigma0", "source sigma", 0.34, 0.12, 1.05, 0.01),
+      slider("gmetSigma1", "target sigma", 0.78, 0.12, 1.25, 0.01),
+    ].join("");
+    bind(drawMongeGaussianMetrics);
+  } else if (kind === "mongegaussiancone") {
+    controls.innerHTML = [
+      slider("gconeT", "t", 0.58, 0, 1, 0.01),
+      slider("gconeAngle", "rank-one angle", 54, 0, 90, 1),
+      slider("gconeAniso", "boundary scale", 0.86, 0.45, 1.25, 0.01),
+      slider("gconeFloor", "FR floor", 0.035, 0.008, 0.18, 0.001),
+    ].join("");
+    bind(drawGaussianConeMetrics);
+  } else if (kind === "kantocouplings") {
+    controls.innerHTML = [
+      slider("kcN", "points", 24, 8, 54, 2),
+      select("kcMode", "plan", ["graph", "product", "splitting", "entropic"], "splitting"),
+      select("kcSource", "source", SHAPES, "disk"),
+      select("kcTarget", "target", SHAPES, "annulus"),
+      slider("kcSeed", "seed", 2077, 2000, 2100, 1),
+    ].join("");
+    bind(drawKantoCouplings);
+  } else if (kind === "kantomatrix") {
+    controls.innerHTML = [
+      slider("kmBins", "bins", 40, 12, 120, 4),
+      select("kmMode", "plan", ["optimal", "product"], "optimal"),
+      select("kmSource", "source", Object.keys(MIXTURES), "two"),
+      select("kmTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawKantoMatrix);
+  } else if (kind === "kantosplitting") {
+    controls.innerHTML = [
+      slider("ksN", "sites", 14, 6, 26, 1),
+      slider("ksImbalance", "imbalance", 1.6, 0, 3.5, 0.1),
+      slider("ksSeed", "seed", 2059, 2000, 2100, 1),
+    ].join("");
+    bind(drawKantoSplitting);
+  } else if (kind === "kantobarrier") {
+    controls.innerHTML = [
+      slider("kbEps", "epsilon", 0.09, 0.01, 0.65, 0.01),
+      slider("kbAngle", "objective", 232, 180, 305, 1),
+    ].join("");
+    bind(drawKantoBarrier);
+  } else if (kind === "kantoplan") {
+    controls.innerHTML = [
+      slider("kpT", "t", 0.5, 0, 1, 0.01),
+      slider("kpSourceN", "source n", 16, 6, 34, 2),
+      slider("kpTargetN", "target n", 13, 5, 30, 1),
+      slider("kpEps", "epsilon", 0.04, 0, 0.2, 0.005),
+      slider("kpSeed", "seed", 2068, 2000, 2100, 1),
+    ].join("");
+    bind(drawKantoPlan);
+  } else if (kind === "kantogluing") {
+    controls.innerHTML = [
+      slider("kgBins", "outer bins", 34, 12, 72, 2),
+      slider("kgMid", "middle bins", 18, 6, 48, 2),
+    ].join("");
+    bind(drawKantoGluing);
+  } else if (kind === "kantowow") {
+    controls.innerHTML = [
+      slider("kwT", "t", 0.5, 0, 1, 0.01),
+      slider("kwSep", "separation", 1.55, 0.8, 2.4, 0.05),
+      select("kwMode", "matching", ["aligned", "crossed"], "aligned"),
+    ].join("");
+    bind(drawKantoWow);
+  } else if (kind === "kantoclt") {
+    controls.innerHTML = [
+      slider("kcltN", "n", 16, 1, 120, 1),
+      slider("kcltSkew", "skew", 0, -0.35, 0.35, 0.01),
+    ].join("");
+    bind(drawKantoClt);
+  } else if (kind === "dualdiscrete") {
+    controls.innerHTML = [
+      slider("ddBins", "bins", 42, 14, 100, 2),
+      select("ddSource", "source", Object.keys(MIXTURES), "two"),
+      select("ddTarget", "target", Object.keys(DUAL_TARGETS), "balanced"),
+    ].join("");
+    bind(drawDualDiscrete);
+  } else if (kind === "dualauction") {
+    controls.innerHTML = [
+      slider("daN", "size", 9, 5, 15, 1),
+      slider("daEps", "epsilon", 0.001, 0.0002, 0.006, 0.0002),
+      slider("daProgress", "progress", 0.58, 0, 1, 0.01),
+      slider("daSpread", "jitter", 0.8, 0, 2.4, 0.1),
+    ].join("");
+    bind(drawDualAuction);
+  } else if (kind === "dualcontinuous") {
+    controls.innerHTML = [
+      slider("dcGrid", "grid", 220, 80, 420, 20),
+      select("dcSource", "source", Object.keys(MIXTURES), "two"),
+      select("dcTarget", "target", Object.keys(DUAL_TARGETS), "three_mode"),
+    ].join("");
+    bind(drawDualContinuous);
+  } else if (kind === "dualenvelope") {
+    controls.innerHTML = [
+      slider("dePower", "p", 2, 1, 5, 0.1),
+      slider("deAtoms", "atoms", 5, 3, 9, 1),
+      slider("deAmp", "amplitude", 0.45, 0.05, 0.9, 0.05),
+    ].join("");
+    bind(drawDualEnvelope);
+  } else if (kind === "dualalternate") {
+    controls.innerHTML = [
+      select("dalSide", "side", ["source", "target"], "source"),
+      slider("dalRough", "roughness", 1, 0, 2.2, 0.1),
+      slider("dalGrid", "grid", 180, 80, 320, 20),
+    ].join("");
+    bind(drawDualAlternate);
+  } else if (kind === "semilaguerre") {
+    controls.innerHTML = [
+      slider("slSites", "sites", 21, 8, 36, 1),
+      slider("slSteps", "updates", 64, 0, 180, 4),
+      select("slMass", "target mass", ["uniform", "vertical", "right_heavy"], "uniform"),
+      select("slDensity", "density", ["three_mode", "right_blob", "ring"], "three_mode"),
+      slider("slSeed", "seed", 2113, 2060, 2160, 1),
+    ].join("");
+    bind(drawSemiLaguerre);
+  } else if (kind === "semilloyd") {
+    controls.innerHTML = [
+      slider("llSites", "sites", 21, 8, 36, 1),
+      slider("llIter", "iterations", 14, 0, 40, 1),
+      select("llDensity", "density", ["three_mode", "right_blob", "ring"], "three_mode"),
+      slider("llSeed", "seed", 2113, 2060, 2160, 1),
+    ].join("");
+    bind(drawSemiLloyd);
+  } else if (kind === "semiquantization") {
+    controls.innerHTML = [
+      select("sqDensity", "density", Object.keys(MIXTURES), "three"),
+      slider("sqAtoms", "atoms", 36, 8, 96, 2),
+      slider("sqTrials", "trials", 28, 8, 80, 4),
+      slider("sqSeed", "seed", 2147, 2100, 2200, 1),
+    ].join("");
+    bind(drawQuantizationRates);
+  } else if (kind === "w1graph") {
+    controls.innerHTML = [
+      slider("wgSide", "grid", 6, 5, 8, 1),
+      slider("wgCount", "sites", 5, 3, 8, 1),
+      select("wgMode", "measure", ["left_to_right", "corner_swap", "center_out"], "left_to_right"),
+      select("wgGraph", "edges", ["grid", "diagonal"], "diagonal"),
+      slider("wgSeed", "seed", 2141, 2100, 2180, 1),
+    ].join("");
+    bind(drawW1Graph);
+  } else if (kind === "dualnormipm") {
+    controls.innerHTML = [
+      slider("ipmSep", "separation", 1.15, 0, 2.5, 0.05),
+      slider("ipmSigma", "kernel sigma", 0.42, 0.14, 0.95, 0.01),
+      select("ipmMode", "densities", ["shifted", "scale", "three_mode"], "three_mode"),
+    ].join("");
+    bind(drawDualNormIpm);
+  } else if (kind === "dualnormphi") {
+    controls.innerHTML = [
+      select("phiFamily", "divergence", ["kl", "reverse_kl", "hellinger", "tv", "jensen_shannon", "power"], "kl"),
+      slider("phiGamma", "power gamma", 1.6, -1.5, 3, 0.1),
+      slider("phiMismatch", "mismatch", 0.8, 0, 2.2, 0.05),
+      slider("phiZeros", "near-zero beta bins", 1, 0, 4, 1),
+    ].join("");
+    bind(drawDualNormPhi);
+  } else if (kind === "sinkhornscaling") {
+    controls.innerHTML = [
+      slider("shBins", "bins", 34, 18, 60, 2),
+      slider("shEps", "epsilon", 0.075, 0.018, 0.36, 0.002),
+      slider("shSteps", "half-steps", 9, 0, 60, 1),
+      select("shSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("shTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawSinkhornScaling);
+  } else if (kind === "sinkhornepsilon") {
+    controls.innerHTML = [
+      slider("seBins", "bins", 42, 22, 70, 2),
+      slider("seEps", "epsilon", 0.06, 0.012, 0.42, 0.002),
+      select("seSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("seTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawSinkhornEpsilon);
+  } else if (kind === "sinkhornsoftc") {
+    controls.innerHTML = [
+      slider("sscEps", "epsilon", 0.16, 0.015, 0.85, 0.005),
+      slider("sscAtoms", "atoms", 6, 3, 10, 1),
+      slider("sscRough", "roughness", 1, 0, 2.4, 0.1),
+    ].join("");
+    bind(drawSinkhornSoftC);
+  } else if (kind === "sinkhornregularizers") {
+    controls.innerHTML = [
+      select("srKind", "regularizer", ["kl", "burg", "quadratic"], "kl"),
+      slider("srEps", "epsilon", 0.075, 0.006, 0.55, 0.001),
+      slider("srBins", "bins", 30, 18, 48, 2),
+      select("srSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("srTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawSinkhornRegularizers);
+  } else if (kind === "sinkhorndebias") {
+    controls.innerHTML = [
+      slider("sdEps", "smoothing", 0.55, 0.24, 0.95, 0.01),
+      slider("sdCorrection", "debias lambda", 0.5, 0, 1.05, 0.01),
+      slider("sdSteps", "steps", 54, 18, 120, 2),
+    ].join("");
+    bind(drawSinkhornDebias);
+  } else if (kind === "sinkhorncontinuous") {
+    controls.innerHTML = [
+      slider("sceEps", "epsilon", 0.18, 0.03, 0.55, 0.005),
+      slider("sceTime", "flow time", 1.2, 0, 4, 0.02),
+      slider("sceBins", "bins", 38, 18, 62, 2),
+      select("sceSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("sceTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawContinuousSinkhorn);
+  } else if (kind === "sinkhorncapacity1d") {
+    controls.innerHTML = [
+      slider("capKappa", "capacity", 2.2, 1.05, 9, 0.05),
+      slider("capEps", "epsilon", 0.035, 0.01, 0.16, 0.005),
+      slider("capIter", "iterations", 120, 30, 260, 10),
+      slider("capN", "bins", 32, 18, 54, 2),
+      select("capSource", "source", Object.keys(MIXTURES), "two"),
+      select("capTarget", "target", Object.keys(MIXTURES), "wide_two"),
+    ].join("");
+    bind(drawCapacityConstrained1D);
+  } else if (kind === "sinkhorncomplex") {
+    controls.innerHTML = [
+      slider("cxEps0", "real epsilon", 0.55, 0.22, 1.1, 0.01),
+      slider("cxEta", "imag radius", 0.18, 0.02, 0.48, 0.01),
+      slider("cxBins", "bins", 32, 18, 52, 2),
+      slider("cxIter", "iterations", 180, 60, 340, 10),
+    ].join("");
+    bind(drawComplexSinkhorn);
+  } else if (kind === "sinkhornhopfcole") {
+    controls.innerHTML = [
+      slider("shcEps", "epsilon", 0.08, 0.025, 0.35, 0.005),
+      slider("shcTime", "final time", 1.35, 0.25, 2.8, 0.01),
+      slider("shcAmp", "velocity bump", 1.0, 0.35, 1.8, 0.05),
+    ].join("");
+    bind(drawSinkhornHopfCole);
+  } else if (kind === "sinkhornadvancedconvergence") {
+    controls.innerHTML = [
+      slider("sacEps", "epsilon", 0.24, 0.03, 0.55, 0.005),
+      slider("sacBins", "bins", 34, 18, 54, 2),
+      slider("sacSteps", "half-steps", 60, 12, 120, 2),
+      select("sacSource", "source", Object.keys(MIXTURES), "wide_two"),
+      select("sacTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawAdvancedConvergence);
+  } else if (kind === "sinkhornadvancedgaussian") {
+    controls.innerHTML = [
+      slider("sagEps", "epsilon", 0.35, 0.02, 2.2, 0.01),
+      slider("sagAniso", "anisotropy", 2.2, 1, 5, 0.05),
+      slider("sagAngle", "angle", 42, 0, 90, 1),
+    ].join("");
+    bind(drawAdvancedGaussian);
+  } else if (kind === "sinkhornadvancedsamples") {
+    controls.innerHTML = [
+      slider("sasDim", "dimension", 6, 2, 12, 1),
+      slider("sasEps", "epsilon", 0.18, 0.04, 0.55, 0.005),
+      slider("sasNmax", "max n", 8192, 512, 32768, 512),
+    ].join("");
+    bind(drawAdvancedSamples);
+  } else if (kind === "generalizedunbalanced") {
+    controls.innerHTML = [
+      slider("guTau", "middle tau", 0.25, 0.04, 1.2, 0.005),
+      slider("guEps", "epsilon", 0.02, 0.01, 0.08, 0.002),
+      slider("guBins", "bins", 58, 32, 92, 2),
+    ].join("");
+    bind(drawGeneralizedUnbalanced);
+  } else if (kind === "generalizedsliced") {
+    controls.innerHTML = [
+      slider("gsPoints", "points", 46, 14, 78, 2),
+      slider("gsAngle", "angle", 34, 0, 180, 1),
+      select("gsMode", "direction", ["manual", "min_lifted", "max_projected"], "manual"),
+      select("gsSource", "source", SHAPES.concat(["heart"]), "two_blobs"),
+      select("gsTarget", "target", SHAPES.concat(["heart"]), "heart"),
+      slider("gsSeed", "seed", 2320, 2300, 2380, 1),
+    ].join("");
+    bind(drawGeneralizedSliced);
+  } else if (kind === "generalizedlinearot") {
+    controls.innerHTML = [
+      slider("glotT", "weight", 0.5, 0, 1, 0.01),
+      slider("glotLevels", "quantiles", 1440, 240, 2400, 120),
+      select("glotRef", "reference", Object.keys(MIXTURES), "one"),
+      select("glotAlpha", "alpha", Object.keys(MIXTURES), "two"),
+      select("glotBeta", "beta", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawGeneralizedLinearOT);
+  } else if (kind === "generalizedprocrustes") {
+    controls.innerHTML = [
+      slider("gprocIter", "iteration", 4, 0, 12, 1),
+      slider("gprocAngle", "true rotation", 34, -70, 70, 1),
+      slider("gprocTx", "true x shift", 0.85, -1.2, 1.2, 0.02),
+      slider("gprocTy", "true y shift", -0.34, -0.9, 0.9, 0.02),
+      slider("gprocDamp", "damping", 0.45, 0.1, 1, 0.05),
+      slider("gprocNoise", "noise", 0.025, 0, 0.09, 0.005),
+      slider("gprocN", "points", 54, 24, 82, 2),
+      slider("gprocSeed", "seed", 2365, 2300, 2420, 1),
+    ].join("");
+    bind(drawProcrustesAlignment);
+  } else if (kind === "generalizedspectral") {
+    controls.innerHTML = [
+      select("gwGauge", "gauge", ["trace", "lambda_max", "weighted"], "lambda_max"),
+      select("gwPlan", "plan", ["optimized", "manual_slice"], "optimized"),
+      slider("gwWeight", "second eig", 0.35, 0, 1, 0.05),
+      slider("gwAngle", "angle", 42, 0, 180, 1),
+      slider("gwT", "t", 0.5, 0, 1, 0.01),
+      slider("gwPoints", "points", 42, 16, 72, 2),
+      slider("gwSeed", "seed", 2420, 2400, 2480, 1),
+    ].join("");
+    bind(drawGeneralizedSpectral);
+  } else if (kind === "otproblemsbarycenter") {
+    controls.innerHTML = [
+      slider("opbU", "u weight", 0.42, 0, 1, 0.01),
+      slider("opbV", "v weight", 0.58, 0, 1, 0.01),
+      slider("opbLevels", "quantiles", 900, 180, 1800, 60),
+    ].join("");
+    bind(drawOtProblemsBarycenter);
+  } else if (kind === "otproblemsgaussianbarycenter") {
+    controls.innerHTML = [
+      slider("opgU", "u weight", 0.55, 0, 1, 0.01),
+      slider("opgV", "v weight", 0.45, 0, 1, 0.01),
+      slider("opgAniso", "anisotropy", 2.6, 1, 5, 0.05),
+      slider("opgAngle", "angle", 38, 0, 88, 1),
+    ].join("");
+    bind(drawOtProblemsGaussianBarycenter);
+  } else if (kind === "lowrankot") {
+    controls.innerHTML = [
+      slider("lrRank", "rank", 4, 1, 14, 1),
+      slider("lrEps", "epsilon", 0.08, 0.02, 0.22, 0.005),
+      slider("lrBins", "bins", 34, 18, 54, 2),
+      select("lrSource", "source", Object.keys(MIXTURES), "two"),
+      select("lrTarget", "target", Object.keys(MIXTURES), "three"),
+    ].join("");
+    bind(drawLowRankOT);
+  } else if (kind === "otproblemsmetric") {
+    controls.innerHTML = [
+      slider("opmAniso", "anisotropy", 2.5, 1, 6, 0.05),
+      slider("opmAngle", "angle", 35, 0, 180, 1),
+      slider("opmPoints", "points", 36, 14, 64, 2),
+      slider("opmSeed", "seed", 2508, 2500, 2580, 1),
+    ].join("");
+    bind(drawOtProblemsMetric);
+  } else if (kind === "otproblemsweak") {
+    controls.innerHTML = [
+      slider("opwSources", "sources", 18, 8, 34, 1),
+      slider("opwSplit", "split", 4, 1, 8, 1),
+      slider("opwSpread", "spread", 0.58, 0.16, 1.3, 0.02),
+      slider("opwSeed", "seed", 2604, 2600, 2680, 1),
+    ].join("");
+    bind(drawOtProblemsWeak);
+  } else if (kind === "dynamicbb") {
+    controls.innerHTML = [
+      slider("dbbT", "time", 0.5, 0, 1, 0.01),
+      slider("dbbParticles", "particles", 42, 14, 72, 2),
+      slider("dbbVelocity", "velocity scale", 0.9, 0.25, 1.8, 0.05),
+      select("dbbTarget", "target", ["two_blobs", "annulus", "three_blobs", "disk"], "two_blobs"),
+      slider("dbbSeed", "seed", 2710, 2700, 2780, 1),
+    ].join("");
+    bind(drawDynamicBB);
+  } else if (kind === "dynamicunbalanced") {
+    controls.innerHTML = [
+      slider("dubT", "time", 0.5, 0, 1, 0.01),
+      slider("dubMismatch", "mass mismatch", 0.55, 0.05, 0.88, 0.01),
+      slider("dubReaction", "reaction share", 0.68, 0, 1, 0.01),
+    ].join("");
+    bind(drawDynamicUnbalanced);
+  } else if (kind === "dynamicmarkovsimplex") {
+    controls.innerHTML = [
+      slider("dmP0", "two-state anchor", 0.22, 0.04, 0.96, 0.01),
+      slider("dmGrid", "triangle grid", 34, 18, 52, 2),
+    ].join("");
+    bind(drawDynamicMarkovSimplex);
+  } else if (kind === "gradflowjko") {
+    controls.innerHTML = [
+      slider("gfjTau", "step size", 0.16, 0.03, 0.35, 0.01),
+      slider("gfjSteps", "steps", 7, 3, 12, 1),
+      slider("gfjWidth", "initial width", 0.22, 0.12, 0.52, 0.01),
+    ].join("");
+    bind(drawGradflowJKO);
+  } else if (kind === "gradflowdiffusion") {
+    controls.innerHTML = [
+      slider("gfdTime", "time", 0.72, 0.05, 1.8, 0.01),
+      slider("gfdPower", "power m", 2.5, 1.2, 7, 0.1),
+      slider("gfdWidth", "initial width", 0.62, 0.3, 1.1, 0.01),
+    ].join("");
+    bind(drawGradflowDiffusion);
+  } else if (kind === "gradflowconstraint") {
+    controls.innerHTML = [
+      slider("gfcCap", "density cap", 0.62, 0.28, 1.6, 0.01),
+      slider("gfcAttraction", "attraction", 1.25, 0.35, 2.4, 0.05),
+      slider("gfcTime", "final time", 1.35, 0.25, 2.8, 0.01),
+    ].join("");
+    bind(drawGradflowConstraint);
+  } else if (kind === "gradflowmultispecies") {
+    controls.innerHTML = [
+      slider("gmsSpecies", "species", 3, 2, 5, 1),
+      slider("gmsDiffusion", "diffusion", 0.11, 0.04, 0.22, 0.005),
+      slider("gmsTime", "final time", 1.4, 0.25, 3.2, 0.01),
+    ].join("");
+    bind(drawGradflowMultispecies);
+  } else if (kind === "gradflowmmd") {
+    controls.innerHTML = [
+      slider("gfmParticles", "particles", 60, 10, 120, 2),
+      slider("gfmSeparation", "mode gap", 2.1, 1.0, 3.2, 0.05),
+      slider("gfmBandwidth", "kernel bandwidth", 0.62, 0.22, 1.45, 0.01),
+      slider("gfmTime", "time", 1.0, 0.35, 1.9, 0.05),
+      slider("gfmSeed", "seed", 3104, 3100, 3180, 1),
+    ].join("");
+    bind(drawGradflowMMD);
+  } else if (kind === "gradflowinteraction") {
+    controls.innerHTML = [
+      select("gfiMode", "kernel", ["repulsive", "attractive", "balanced"], "balanced"),
+      slider("gfiStrength", "strength", 0.9, 0.25, 1.8, 0.05),
+      slider("gfiParticles", "particles", 28, 12, 52, 2),
+      slider("gfiSeed", "seed", 3206, 3200, 3280, 1),
+    ].join("");
+    bind(drawGradflowInteraction);
+  } else if (kind === "gradflowobjective") {
+    controls.innerHTML = [
+      select("gfoGeometry", "geometry", ["ot_rays", "mmd", "sinkhorn", "drifting"], "sinkhorn"),
+      slider("gfoSmooth", "epsilon / smoothing", 0.55, 0.18, 1.1, 0.01),
+      slider("gfoTime", "time", 1.35, 0.55, 2.25, 0.05),
+      slider("gfoParticles", "particles", 28, 10, 48, 2),
+      slider("gfoSeed", "seed", 3302, 3300, 3380, 1),
+    ].join("");
+    bind(drawGradflowObjective);
+  } else if (kind === "gradflowfokker") {
+    controls.innerHTML = [
+      slider("gffTime", "time", 0.64, 0, 1, 0.01),
+      slider("gffSigma", "diffusion", 0.34, 0.02, 0.9, 0.01),
+      slider("gffShift", "target shift", 0.62, 0.0, 1.4, 0.01),
+      slider("gffSeed", "seed", 3408, 3400, 3480, 1),
+    ].join("");
+    bind(drawGradflowFokker);
+  } else if (kind === "gradflowmlp") {
+    controls.innerHTML = [
+      slider("gflNeurons", "neurons", 90, 28, 160, 2),
+      select("gflTeachers", "teacher neurons", ["1", "2", "3", "6"], "2"),
+      slider("gflAngle", "ray angle", 34, 12, 70, 1),
+      slider("gflTime", "final time", 1.0, 0.2, 1.8, 0.01),
+      slider("gflSeed", "seed", 3506, 3500, 3580, 1),
+    ].join("");
+    bind(drawGradflowMLP);
+  } else if (kind === "gradflowfractional") {
+    controls.innerHTML = [
+      slider("gffracTime", "final time", 0.75, 0.18, 1.6, 0.01),
+      slider("gffracMedium", "medium alpha", 1.15, 0.65, 1.75, 0.05),
+      slider("gffracStrong", "strong alpha", 0.55, 0.25, 1.1, 0.05),
+    ].join("");
+    bind(drawGradflowFractional);
+  } else if (kind === "gradflowmomentummmd") {
+    controls.innerHTML = [
+      slider("gfmomParticles", "particles", 120, 42, 220, 2),
+      slider("gfmomSteps", "steps", 118, 40, 220, 2),
+      slider("gfmomSpread", "initial width", 0.14, 0.08, 0.32, 0.01),
+      slider("gfmomSeed", "seed", 3912, 3900, 3980, 1),
+    ].join("");
+    bind(drawGradflowMomentumMMD);
+  } else if (kind === "generativeflow") {
+    controls.innerHTML = [
+      slider("gmfParticles", "particles", 24, 9, 45, 3),
+      slider("gmfTime", "time", 0.5, 0, 1, 0.01),
+      slider("gmfCurvature", "curvature", 0.32, 0, 0.85, 0.01),
+      slider("gmfSeed", "seed", 3606, 3600, 3680, 1),
+    ].join("");
+    bind(drawGenerativeFlow);
+  } else if (kind === "generativediffusion1d") {
+    controls.innerHTML = [
+      slider("gmd1Time", "time", 0.62, 0.02, 0.98, 0.01),
+      slider("gmd1Separation", "mode gap", 1.35, 0.65, 2.2, 0.01),
+      slider("gmd1Noise", "noise", 1.05, 0.55, 1.65, 0.01),
+      slider("gmd1Samples", "paths", 46, 16, 88, 2),
+    ].join("");
+    bind(drawGenerativeDiffusion1D);
+  } else if (kind === "generativediffusion2d") {
+    controls.innerHTML = [
+      slider("gmd2Time", "progress", 1.0, 0, 1, 0.01),
+      slider("gmd2Gap", "atom gap", 1.18, 0.65, 1.75, 0.01),
+      slider("gmd2Sigma", "init sigma", 0.58, 0.30, 0.92, 0.01),
+      slider("gmd2Samples", "samples", 66, 24, 120, 3),
+      slider("gmd2Seed", "seed", 3704, 3700, 3780, 1),
+    ].join("");
+    bind(drawGenerativeDiffusion2D);
+  } else if (kind === "generativetrajectories") {
+    controls.innerHTML = [
+      select("gmtSchedule", "schedule", ["vp", "linear", "overshoot"], "vp"),
+      slider("gmtParticles", "particles", 60, 18, 110, 2),
+      slider("gmtGap", "atom gap", 1.18, 0.7, 1.8, 0.01),
+      slider("gmtSeed", "seed", 3704, 3700, 3780, 1),
+    ].join("");
+    bind(drawGenerativeTrajectories);
+  } else if (kind === "generativeschedule") {
+    controls.innerHTML = [
+      slider("gmsParticles", "particles", 54, 18, 96, 2),
+      slider("gmsGap", "atom gap", 1.18, 0.7, 1.8, 0.01),
+      slider("gmsSeed", "seed", 3742, 3700, 3780, 1),
+    ].join("");
+    bind(drawGenerativeSchedule);
+  } else if (kind === "generativedrifting") {
+    controls.innerHTML = [
+      slider("gmdriftCorrection", "self correction", 0.78, 0, 1.2, 0.01),
+      slider("gmdriftKernel", "kernel width", 0.64, 0.28, 1.15, 0.01),
+      slider("gmdriftSteps", "steps", 96, 24, 160, 2),
+      slider("gmdriftParticles", "particles", 54, 18, 96, 2),
+      slider("gmdriftSeed", "seed", 3808, 3800, 3880, 1),
+    ].join("");
+    bind(drawGenerativeDrifting);
+  } else if (kind === "generativemeanshift") {
+    controls.innerHTML = [
+      slider("gmshTime", "time", 0.82, 0.05, 1.25, 0.01),
+      slider("gmshBandwidth", "bandwidth", 0.42, 0.24, 0.78, 0.01),
+      slider("gmshParticles", "particles", 88, 40, 140, 4),
+      slider("gmshSeed", "seed", 3862, 3820, 3920, 1),
+    ].join("");
+    bind(drawGenerativeMeanShift);
+  } else if (kind === "generativemomentmeasure") {
+    controls.innerHTML = [
+      slider("mmQuad", "quadratic", 1, 0.35, 2.4, 0.05),
+      slider("mmQuartic", "quartic", 0.25, 0, 0.75, 0.01),
+      slider("mmTilt", "tilt", 0.75, -1.4, 1.4, 0.02),
+      slider("mmSamples", "samples", 620, 260, 1000, 20),
+    ].join("");
+    bind(drawMomentMeasureForward);
+  } else if (kind === "generativegaussianclosure") {
+    controls.innerHTML = [
+      slider("gmgcTime", "time", 0.5, 0, 1, 0.01),
+      slider("gmgcAniso", "anisotropy", 1.9, 1, 3.4, 0.05),
+      slider("gmgcAngle", "angle", 34, 0, 82, 1),
+      slider("gmgcEpsilon", "regularization", 0.08, 0, 0.22, 0.01),
+      slider("gmgcBend", "drift bend", 0.34, 0, 0.8, 0.01),
+    ].join("");
+    bind(drawGenerativeGaussianClosure);
+  } else if (kind === "beyondvector") {
+    controls.innerHTML = [
+      slider("bvCoupling", "coupling", 0.72, 0, 1, 0.01),
+      slider("bvSeparation", "separation", 0.55, 0, 1, 0.01),
+    ].join("");
+    bind(drawBeyondVector);
+  } else if (kind === "beyondmatrix") {
+    controls.innerHTML = [
+      slider("bmCoupling", "coupling", 0.68, 0, 1, 0.01),
+      slider("bmRotation", "rotation", 58, 0, 90, 1),
+    ].join("");
+    bind(drawBeyondMatrix);
+  } else if (kind === "beyondgromov") {
+    controls.innerHTML = [
+      slider("bgDeform", "deformation", 0.42, 0, 1, 0.01),
+      slider("bgTwist", "twist", 18, -40, 60, 1),
+      slider("bgPoints", "points", 22, 12, 34, 2),
+    ].join("");
+    bind(drawBeyondGromov);
+  } else if (kind === "beyondgromovdistortion") {
+    controls.innerHTML = [
+      slider("bgdDeform", "deformation", 0.52, 0, 1, 0.01),
+      slider("bgdShift", "shift", 2, 0, 10, 1),
+      slider("bgdPoints", "points", 18, 10, 26, 2),
+    ].join("");
+    bind(drawBeyondGromovDistortion);
+  } else if (kind === "beyondfusedgromov") {
+    controls.innerHTML = [
+      slider("bfgLambda", "geometry weight", 0.5, 0, 1, 0.01),
+      slider("bfgConflict", "feature conflict", 0.45, 0, 1, 0.01),
+      slider("bfgPoints", "points", 20, 12, 32, 2),
+    ].join("");
+    bind(drawBeyondFusedGromov);
+  } else if (kind === "mongejacobian") {
+    controls.innerHTML = [
+      slider("mjacCompression", "compression", 0.58, 0, 0.82, 0.01),
+      slider("mjacWidth", "width", 0.34, 0.18, 0.7, 0.01),
+      slider("mjacAngle", "rotation", 10, -30, 30, 1),
+    ].join("");
+    bind(drawMongeJacobian);
+  } else if (kind === "mongepolar") {
+    controls.innerHTML = [
+      slider("mpSwirl", "relabel swirl", 0.92, 0, 1.8, 0.01),
+      slider("mpStretch", "Brenier stretch", 1.75, 1, 3.2, 0.05),
+      slider("mpAngle", "stretch angle", 28, 0, 90, 1),
+    ].join("");
+    bind(drawMongePolar);
+  } else if (kind === "kantobirkhoff") {
+    controls.innerHTML = [
+      slider("kbvSize", "matrix size", 7, 4, 10, 1),
+      slider("kbvMass", "cycle mass", 0.36, 0.05, 0.95, 0.01),
+    ].join("");
+    bind(drawKantoBirkhoff);
+  } else if (kind === "kantodro") {
+    controls.innerHTML = [
+      slider("kdroRho", "radius", 0.55, 0, 1.1, 0.01),
+      slider("kdroSeed", "seed", 4090, 4050, 4140, 1),
+    ].join("");
+    bind(drawKantoDRO);
+  } else if (kind === "sinkhornbridges") {
+    controls.innerHTML = [
+      slider("sbrEps", "epsilon", 0.22, 0, 0.7, 0.01),
+      slider("sbrPaths", "paths", 82, 24, 180, 2),
+      slider("sbrSteps", "bridge points", 120, 48, 260, 4),
+      slider("sbrSeed", "seed", 4210, 4200, 4280, 1),
+    ].join("");
+    bind(drawSinkhornBridges);
+  } else if (kind === "partialot1d") {
+    controls.innerHTML = [
+      slider("potMass", "transported mass", 0.65, 0.18, 0.95, 0.01),
+      slider("potSamples", "quantile samples", 88, 44, 128, 4),
+      slider("potBins", "display bins", 94, 58, 130, 4),
+    ].join("");
+    bind(drawPartialOT1D);
+  } else if (kind === "partialot2d") {
+    controls.innerHTML = [
+      slider("pot2Mass", "initial active mass", 0.78, 0.36, 0.96, 0.01),
+      slider("pot2Points", "points", 74, 36, 120, 2),
+      slider("pot2Epsilon", "softness", 0.08, 0.025, 0.22, 0.005),
+      slider("pot2Seed", "seed", 4320, 4300, 4380, 1),
+    ].join("");
+    bind(drawPartialOT2D);
+  } else if (kind === "capacityot2d") {
+    controls.innerHTML = [
+      slider("cap2Points", "points", 82, 40, 140, 2),
+      slider("cap2Degree", "middle cap", 3, 2, 6, 1),
+      slider("cap2Spread", "spread", 0.36, 0.22, 0.58, 0.01),
+      slider("cap2Seed", "seed", 4390, 4360, 4440, 1),
+    ].join("");
+    bind(drawCapacityOT2D);
+  } else if (kind === "slicedradon") {
+    controls.innerHTML = [
+      slider("srTime", "interpolation time", 0.5, 0, 1, 0.01),
+      slider("srAngle", "angle offset", 18, 0, 90, 1),
+      slider("srContrast", "quantile width", 0.55, 0.2, 1.1, 0.01),
+    ].join("");
+    bind(drawSlicedRadon);
+  } else if (kind === "sinkhorngeodesicheat") {
+    controls.innerHTML = [
+      slider("gihEps", "heat scale", 0.16, 0.035, 0.42, 0.005),
+      slider("gihPoints", "curve points", 72, 28, 140, 2),
+    ].join("");
+    bind(drawGeodesicHeat);
+  } else if (kind === "sinkhornsketching") {
+    controls.innerHTML = [
+      slider("skEps", "epsilon", 0.055, 0.018, 0.14, 0.001),
+      slider("skSeed", "feature seed", 4460, 4440, 4520, 1),
+    ].join("");
+    bind(drawSinkhornSketching);
+  } else if (kind === "generativew2svgd") {
+    controls.innerHTML = [
+      slider("gwsvgdParticles", "particles", 88, 32, 150, 2),
+      slider("gwsvgdSteps", "steps", 115, 40, 190, 5),
+      slider("gwsvgdSeed", "seed", 4520, 4500, 4580, 1),
+    ].join("");
+    bind(drawGenerativeW2SVGD);
+  } else if (kind === "gradflowmomentumentropy") {
+    controls.innerHTML = [
+      slider("gmeTime", "final time", 0.6, 0.18, 1.1, 0.01),
+      slider("gmeDamping", "damping", 0.38, 0.05, 1.1, 0.01),
+      slider("gmeSpread", "initial width", 0.22, 0.12, 0.42, 0.01),
+    ].join("");
+    bind(drawMomentumEntropy1D);
+  } else if (kind === "mongecaffarelli") {
+    controls.innerHTML = [
+      slider("mcfNeck", "neck strength", 0.62, 0.05, 0.9, 0.01),
+      slider("mcfRings", "rings", 10, 5, 18, 1),
+    ].join("");
+    bind(drawMongeCaffarelli);
+  } else if (kind === "sinkhornentropygeometry") {
+    controls.innerHTML = [
+      slider("segEps", "epsilon", 0.18, 0.025, 1.2, 0.005),
+      slider("segEdges", "polytope edges", 3, 3, 6, 1),
+    ].join("");
+    bind(drawSinkhornEntropyGeometry);
+  } else if (kind === "sinkhornbiasvariance") {
+    controls.innerHTML = [
+      slider("sasDim", "dimension", 6, 1, 18, 1),
+      slider("sasEps", "epsilon", 0.11, 0.025, 0.45, 0.005),
+      slider("sasNmax", "max samples", 8000, 500, 20000, 500),
+    ].join("");
+    bind(drawAdvancedSamples);
+  } else if (kind === "sinkhorndoublypositive") {
+    controls.innerHTML = [
+      slider("sdpLambda", "lambda", 0.08, 0, 0.5, 0.01),
+    ].join("");
+    bind(drawDoublyPositiveCounterexample);
+  } else if (kind === "sinkhornmfunctions") {
+    controls.innerHTML = [
+      slider("smfSigma", "sigma", 0.28, 0.08, 0.8, 0.01),
+      slider("smfTau", "tau", 0.46, 0.08, 0.9, 0.01),
+      slider("smfSteps", "iterations", 28, 6, 70, 1),
+    ].join("");
+    bind(drawMFunctionsScaling);
+  } else if (kind === "multimarginalcoulomb") {
+    controls.innerHTML = [
+      slider("mmcEps", "epsilon", 0.34, 0.12, 0.95, 0.01),
+      slider("mmcRepulsion", "repulsion", 0.55, 0.15, 1.1, 0.01),
+    ].join("");
+    bind(drawMultimarginalCoulomb);
+  } else if (kind === "martingalekernels") {
+    controls.innerHTML = [
+      slider("motSpread", "kernel width", 0.52, 0.16, 1.1, 0.01),
+      slider("motSkew", "mass skew", 0.04, -0.18, 0.18, 0.01),
+    ].join("");
+    bind(drawMartingaleKernels);
+  } else if (kind === "generativew2sliced") {
+    controls.innerHTML = [
+      slider("gwsParticles", "particles", 72, 32, 110, 2),
+      slider("gwsAngle", "slice angle", 36, 0, 180, 1),
+      slider("gwsSeed", "seed", 4610, 4590, 4670, 1),
+    ].join("");
+    bind(drawGenerativeW2SlicedShapes);
+  } else if (kind === "inverseotforward") {
+    controls.innerHTML = [
+      slider("iofPoints", "points", 28, 14, 52, 2),
+      slider("iofT", "anisotropy t", 0.45, -0.85, 0.85, 0.01),
+      slider("iofAngle", "rotation", 18, -60, 60, 1),
+      slider("iofSeed", "seed", 4700, 4680, 4760, 1),
+    ].join("");
+    bind(drawInverseOTForward);
+  } else if (kind === "inverseotgap") {
+    controls.innerHTML = [
+      slider("iogPoints", "large n", 46, 20, 82, 2),
+      slider("iogAngle", "rotation", 12, -45, 45, 1),
+      slider("iogSeed", "seed", 4770, 4760, 4820, 1),
+    ].join("");
+    bind(drawInverseOTGap);
+  } else if (kind === "gradflowbrunnminkowski") {
+    controls.innerHTML = [
+      slider("bmStretch", "affine stretch", 2.1, 1.05, 3.6, 0.05),
+      slider("bmAngle", "angle", 28, 0, 90, 1),
+      slider("bmTime", "highlight t", 0.48, 0, 1, 0.01),
+    ].join("");
+    bind(drawBrunnMinkowskiOT);
+  } else if (kind === "gradflowhwi") {
+    controls.innerHTML = [
+      slider("hwiTime", "final time", 2.2, 0.5, 4.0, 0.05),
+      slider("hwiSkew", "mixture skew", 0.08, -0.14, 0.14, 0.01),
+    ].join("");
+    bind(drawHWIEntropyDecay);
+  } else if (kind === "gradflowmlpmuon") {
+    controls.innerHTML = [
+      slider("mlpmNeurons", "neurons", 92, 36, 180, 2),
+      select("mlpmTeachers", "teacher neurons", ["1", "2", "3", "6"], "2"),
+      slider("mlpmAngle", "ray spread", 38, 15, 75, 1),
+      slider("mlpmSteps", "steps", 86, 24, 160, 2),
+      slider("mlpmSeed", "seed", 4830, 4820, 4890, 1),
+    ].join("");
+    bind(drawMLPW2Muon);
+  } else {
+    controls.innerHTML = [
+      slider("hungarianN", "size", 8, 5, 14, 1),
+      slider("hungarianSpread", "jitter", 0.8, 0, 2.5, 0.1),
+      slider("hungarianSeed", "seed", 2055, 2000, 2100, 1),
+    ].join("");
+    bind(drawHungarian);
+  }
+
+  if ("ResizeObserver" in window) {
+    const observer = new ResizeObserver(() => scheduleRender());
+    observer.observe(document.body);
+  }
+  window.addEventListener("resize", scheduleRender);
+  window.setTimeout(scheduleRender, 50);
+  window.setTimeout(scheduleRender, 300);
+}
+
+init();
