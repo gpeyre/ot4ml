@@ -165,6 +165,42 @@
       display: none;
     }
 
+    html.is-snippet main {
+      width: 100%;
+      padding: 0;
+    }
+
+    html.is-snippet .logo-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    html.is-snippet .letter {
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    html.is-snippet .control {
+      display: none;
+    }
+
+    html[data-focus] .letter {
+      display: none;
+    }
+
+    html[data-focus="O"] .letter[data-letter="O"],
+    html[data-focus="T"] .letter[data-letter="T"],
+    html[data-focus="4"] .letter[data-letter="4"],
+    html[data-focus="M"] .letter[data-letter="M"],
+    html[data-focus="L"] .letter[data-letter="L"] {
+      display: grid;
+    }
+
     html.is-strip .logo-row {
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: clamp(3px, 0.55vw, 7px);
@@ -221,7 +257,7 @@
       <article class="letter" data-letter="4">
         <div class="canvas-shell"><canvas id="canvas-4" aria-label="4"></canvas></div>
         <div class="control">
-          <input id="rhs" aria-label="4 Poisson right hand side" title="4 Poisson right hand side" type="range" min="0" max="2" value="1" step="0.05">
+          <input id="rhs" aria-label="4 heat equation time" title="4 heat equation time" type="range" min="0" max="1" value="0.58" step="0.01">
         </div>
       </article>
       <article class="letter" data-letter="M">
@@ -253,6 +289,9 @@
     if (pageParams.has("strip")) {
       document.documentElement.classList.add("is-strip");
     }
+    if (pageParams.has("snippet")) {
+      document.documentElement.classList.add("is-snippet");
+    }
 
     const LOGICAL = 512;
     const MASK_URLS = {
@@ -262,6 +301,12 @@
       M: "domains/M_domain.png",
       L: "domains/L_domain.png"
     };
+    const focusRequest = pageParams.get("focus");
+    const focusLetter = Object.prototype.hasOwnProperty.call(MASK_URLS, focusRequest) ? focusRequest : null;
+    const activeLetters = focusLetter ? [focusLetter] : ["O", "T", "4", "M", "L"];
+    if (focusLetter) {
+      document.documentElement.dataset.focus = focusLetter;
+    }
 
     const canvases = {
       O: document.getElementById("canvas-o"),
@@ -482,6 +527,65 @@
         if (best < 0) break;
         chosen.push(points[best]);
         used[best] = 1;
+      }
+      return chosen;
+    }
+
+    function randomSample(points, count, seed = 1) {
+      if (points.length <= count) return points.slice();
+      const rng = mulberry32(seed);
+      const ids = Array.from({ length: points.length }, (_, i) => i);
+      const chosen = [];
+      for (let k = 0; k < count; k += 1) {
+        const j = k + Math.floor(rng() * (points.length - k));
+        const tmp = ids[k];
+        ids[k] = ids[j];
+        ids[j] = tmp;
+        chosen.push(points[ids[k]]);
+      }
+      return chosen;
+    }
+
+    function farthestSampleWithInitial(points, count, seed = 1, initial = []) {
+      if (points.length <= count) return points.slice();
+      const rng = mulberry32(seed);
+      const chosen = [];
+      const used = new Uint8Array(points.length);
+      const dist2 = new Float64Array(points.length);
+      for (let i = 0; i < points.length; i += 1) dist2[i] = Infinity;
+      for (const c of initial) {
+        for (let i = 0; i < points.length; i += 1) {
+          const p = points[i];
+          const dx = p.x - c.x;
+          const dy = p.y - c.y;
+          const d = dx * dx + dy * dy;
+          if (d < dist2[i]) dist2[i] = d;
+        }
+      }
+      for (let k = 0; k < count; k += 1) {
+        let best = -1;
+        let bestVal = -1;
+        for (let i = 0; i < points.length; i += 1) {
+          if (used[i]) continue;
+          const jitter = 0.92 + 0.16 * rng();
+          const val = dist2[i] * jitter;
+          if (val > bestVal) {
+            bestVal = val;
+            best = i;
+          }
+        }
+        if (best < 0) break;
+        const c = points[best];
+        chosen.push(c);
+        used[best] = 1;
+        for (let i = 0; i < points.length; i += 1) {
+          if (used[i]) continue;
+          const p = points[i];
+          const dx = p.x - c.x;
+          const dy = p.y - c.y;
+          const d = dx * dx + dy * dy;
+          if (d < dist2[i]) dist2[i] = d;
+        }
       }
       return chosen;
     }
@@ -764,14 +868,16 @@
           }
           path.push({ x: px, y: py, s: total });
         }
-        ctx.lineWidth = 2.8;
+        ctx.lineWidth = 4.2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         const stride = 6;
         for (let k = stride; k < path.length; k += stride) {
           const p0 = path[k - stride];
           const p1 = path[k];
           const mid = ((p0.s + p1.s) * 0.5) / Math.max(1, total);
           const colorT = Math.sin(Math.PI * mid);
-          ctx.strokeStyle = mixColor(colorT, 0.072);
+          ctx.strokeStyle = mixColor(colorT, 0.14);
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
           ctx.lineTo(p1.x, p1.y);
@@ -928,8 +1034,10 @@
     }
 
     function prepareFour(data) {
-      const n = 180;
+      const n = 210;
       const mask = new Uint8Array(n * n);
+      const active = new Uint8Array(n * n);
+      const candidates = [];
       for (let y = 0; y < n; y += 1) {
         for (let x = 0; x < n; x += 1) {
           const px = (x + 0.5) * LOGICAL / n;
@@ -937,85 +1045,146 @@
           mask[y * n + x] = insideAt(data, px, py) ? 1 : 0;
         }
       }
-      const u = new Float32Array(n * n);
-      let v = new Float32Array(n * n);
-      for (let iter = 0; iter < 680; iter += 1) {
-        for (let y = 1; y < n - 1; y += 1) {
-          for (let x = 1; x < n - 1; x += 1) {
-            const i = y * n + x;
-            if (!mask[i]) {
-              v[i] = 0;
-            } else {
-              v[i] = 0.25 * (u[i - 1] + u[i + 1] + u[i - n] + u[i + n] + 1);
-            }
+      for (let y = 1; y < n - 1; y += 1) {
+        for (let x = 1; x < n - 1; x += 1) {
+          const i = y * n + x;
+          if (!mask[i]) continue;
+          const isActive = mask[i - 1] && mask[i + 1] && mask[i - n] && mask[i + n];
+          if (isActive) {
+            active[i] = 1;
+            candidates.push({ x, y });
           }
         }
-        u.set(v);
       }
-      let maxU = 0;
-      for (let i = 0; i < u.length; i += 1) maxU = Math.max(maxU, u[i]);
-      return { n, mask, u, maxU };
+      const sources = randomSample(candidates, 22, 422);
+      const source = new Float32Array(n * n);
+      for (const p of sources) source[p.y * n + p.x] = 1;
+
+      const frameCount = 101;
+      const frames = [new Float32Array(n * n)];
+      const maxValues = [0];
+      const levels = Array.from({ length: 18 }, (_, i) => Math.pow((i + 1) / 19, 1.72));
+      return { n, mask, active, source, frames, maxValues, frameCount, stepsPerFrame: 6, tau: 0.18, sources, levels };
+    }
+
+    function heatFrame(prep, frameIndex) {
+      const n = prep.n;
+      const target = Math.max(0, Math.min(prep.frameCount - 1, frameIndex));
+      while (prep.frames.length <= target) {
+        let u = new Float32Array(prep.frames[prep.frames.length - 1]);
+        let v = new Float32Array(n * n);
+        for (let step = 0; step < prep.stepsPerFrame; step += 1) {
+          for (let y = 1; y < n - 1; y += 1) {
+            for (let x = 1; x < n - 1; x += 1) {
+              const i = y * n + x;
+              if (!prep.active[i]) {
+                v[i] = 0;
+                continue;
+              }
+              const lap = u[i - 1] + u[i + 1] + u[i - n] + u[i + n] - 4 * u[i];
+              v[i] = Math.max(0, u[i] + prep.tau * (lap + prep.source[i]));
+            }
+          }
+          const tmp = u;
+          u = v;
+          v = tmp;
+        }
+        let maxU = 0;
+        for (let i = 0; i < u.length; i += 1) maxU = Math.max(maxU, u[i]);
+        prep.frames.push(new Float32Array(u));
+        prep.maxValues.push(maxU);
+      }
+      return { field: prep.frames[target], maxU: prep.maxValues[target] };
     }
 
     function renderFour() {
       const ctx = setupCanvas(canvases["4"]);
       fillBackground(ctx);
-      const t = parseFloat(controls.rhs.value);
+      const heatTime = parseFloat(controls.rhs.value);
       const prep = state.prepared["4"];
-      const n = 320;
+      const n = prep.n;
+      const frameIndex = Math.round(clamp(heatTime, 0, 1) * (prep.frameCount - 1));
+      const { field, maxU } = heatFrame(prep, frameIndex);
       ctx.save();
       applyLetterFrame(ctx, state.masks["4"], 17, 0, 2);
-      const off = document.createElement("canvas");
-      off.width = n;
-      off.height = n;
-      const octx = off.getContext("2d");
-      const img = octx.createImageData(n, n);
-      const labels = new Int8Array(n * n);
-      labels.fill(-1);
-      const levels = 9;
+      const levels = prep.levels;
+      const values = new Float32Array(n * n);
       for (let y = 0; y < n; y += 1) {
         for (let x = 0; x < n; x += 1) {
-          const px = Math.floor((x + 0.5) * prep.n / n);
-          const py = Math.floor((y + 0.5) * prep.n / n);
-          const src = py * prep.n + px;
-          const id = 4 * (y * n + x);
-          if (!prep.mask[src]) {
-            img.data[id + 3] = 0;
-            continue;
-          }
-          const value = t * prep.u[src] / Math.max(1, prep.maxU);
-          const q = Math.min(levels - 1, Math.floor(clamp(value / 1.35, 0, 0.999) * levels));
-          labels[y * n + x] = q;
-          const color = purpleRamp(q / (levels - 1), 0.23);
-          img.data[id] = color[0];
-          img.data[id + 1] = color[1];
-          img.data[id + 2] = color[2];
-          img.data[id + 3] = 216;
+          const src = y * n + x;
+          if (prep.mask[src]) values[src] = maxU > 1e-10 ? Math.pow(field[src] / maxU, 0.58) : 0;
         }
       }
-      octx.putImageData(img, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(off, 0, 0, LOGICAL, LOGICAL);
-      ctx.imageSmoothingEnabled = true;
       const scale = LOGICAL / n;
-      ctx.strokeStyle = "rgba(0,0,0,0.45)";
-      ctx.lineWidth = 0.42;
+      const boundaryColor = purpleRamp(1, 0);
+      ctx.strokeStyle = `rgba(${boundaryColor[0]},${boundaryColor[1]},${boundaryColor[2]},0.78)`;
+      ctx.lineWidth = 1.02;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
       ctx.beginPath();
-      for (let y = 1; y < n - 1; y += 1) {
-        for (let x = 1; x < n - 1; x += 1) {
-          const label = labels[y * n + x];
-          if (label < 0) continue;
-          if (labels[y * n + x + 1] !== label) {
-            ctx.moveTo((x + 1) * scale, y * scale);
-            ctx.lineTo((x + 1) * scale, (y + 1) * scale);
+      for (let y = 0; y < n; y += 1) {
+        for (let x = 0; x <= n; x += 1) {
+          const left = x > 0 ? prep.mask[y * n + x - 1] : 0;
+          const right = x < n ? prep.mask[y * n + x] : 0;
+          if (left !== right) {
+            ctx.moveTo(x * scale, y * scale);
+            ctx.lineTo(x * scale, (y + 1) * scale);
           }
-          if (labels[(y + 1) * n + x] !== label) {
-            ctx.moveTo(x * scale, (y + 1) * scale);
-            ctx.lineTo((x + 1) * scale, (y + 1) * scale);
+        }
+      }
+      for (let y = 0; y <= n; y += 1) {
+        for (let x = 0; x < n; x += 1) {
+          const top = y > 0 ? prep.mask[(y - 1) * n + x] : 0;
+          const bottom = y < n ? prep.mask[y * n + x] : 0;
+          if (top !== bottom) {
+            ctx.moveTo(x * scale, y * scale);
+            ctx.lineTo((x + 1) * scale, y * scale);
           }
         }
       }
       ctx.stroke();
+
+      function addCrossing(points, level, ax, ay, av, bx, by, bv) {
+        if ((av < level && bv >= level) || (av >= level && bv < level)) {
+          const t = (level - av) / (bv - av);
+          points.push({ x: lerp(ax, bx, t), y: lerp(ay, by, t) });
+        }
+      }
+
+      for (const level of levels) {
+        const color = purpleRamp(1 - level, 0);
+        ctx.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},0.82)`;
+        ctx.lineWidth = 1.18;
+        ctx.beginPath();
+        for (let y = 0; y < n - 1; y += 1) {
+          for (let x = 0; x < n - 1; x += 1) {
+            const i00 = y * n + x;
+            const i10 = i00 + 1;
+            const i01 = i00 + n;
+            const i11 = i01 + 1;
+            if (!prep.mask[i00] || !prep.mask[i10] || !prep.mask[i01] || !prep.mask[i11]) continue;
+            const v00 = values[i00];
+            const v10 = values[i10];
+            const v11 = values[i11];
+            const v01 = values[i01];
+            const points = [];
+            addCrossing(points, level, x, y, v00, x + 1, y, v10);
+            addCrossing(points, level, x + 1, y, v10, x + 1, y + 1, v11);
+            addCrossing(points, level, x + 1, y + 1, v11, x, y + 1, v01);
+            addCrossing(points, level, x, y + 1, v01, x, y, v00);
+            if (points.length === 2) {
+              ctx.moveTo(points[0].x * scale, points[0].y * scale);
+              ctx.lineTo(points[1].x * scale, points[1].y * scale);
+            } else if (points.length === 4) {
+              ctx.moveTo(points[0].x * scale, points[0].y * scale);
+              ctx.lineTo(points[1].x * scale, points[1].y * scale);
+              ctx.moveTo(points[2].x * scale, points[2].y * scale);
+              ctx.lineTo(points[3].x * scale, points[3].y * scale);
+            }
+          }
+        }
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
@@ -1026,8 +1195,9 @@
         .filter((p) => p.d > 4);
       const maxD = candidates.reduce((m, p) => Math.max(m, p.d), 1);
       const maxBlue = parseInt(controls.inside.max, 10) || 120;
-      const red = farthestSample(candidates, 420, 551, (p) => 0.75 + 0.25 * p.d / maxD);
-      const blue = farthestSample(candidates, maxBlue, 552, (p) => 0.82 + 0.18 * p.d / maxD);
+      const red = farthestSample(candidates, 840, 551, (p) => 0.75 + 0.25 * p.d / maxD);
+      const dummyBoundary = farthestSample(data.boundary, Math.min(520, data.boundary.length), 552);
+      const blue = farthestSampleWithInitial(candidates, maxBlue, 553, dummyBoundary);
       return { red, blue };
     }
 
@@ -1238,12 +1408,12 @@
     }
 
     function renderAll() {
-      if (!state.prepared.O) return;
-      renderO();
-      renderT();
-      renderFour();
-      renderM();
-      renderL();
+      if (!activeLetters.every((letter) => state.prepared[letter])) return;
+      if (activeLetters.includes("O")) renderO();
+      if (activeLetters.includes("T")) renderT();
+      if (activeLetters.includes("4")) renderFour();
+      if (activeLetters.includes("M")) renderM();
+      if (activeLetters.includes("L")) renderL();
     }
 
     function scheduleRender(fn) {
@@ -1266,19 +1436,16 @@
     async function init() {
       bindControls();
       statusEl.removeAttribute("aria-hidden");
-      const letters = ["O", "T", "4", "M", "L"];
-      const loaded = await Promise.all(letters.map((letter) => loadMask(letter)));
+      const loaded = await Promise.all(activeLetters.map((letter) => loadMask(letter)));
       for (const data of loaded) state.masks[data.letter] = data;
-      statusEl.textContent = "preparing O";
-      state.prepared.O = prepareO(state.masks.O);
-      statusEl.textContent = "preparing T";
-      state.prepared.T = prepareT(state.masks.T);
-      statusEl.textContent = "preparing 4";
-      state.prepared["4"] = prepareFour(state.masks["4"]);
-      statusEl.textContent = "preparing M";
-      state.prepared.M = prepareM(state.masks.M);
-      statusEl.textContent = "preparing L";
-      state.prepared.L = prepareL(state.masks.L);
+      for (const letter of activeLetters) {
+        statusEl.textContent = `preparing ${letter}`;
+        if (letter === "O") state.prepared.O = prepareO(state.masks.O);
+        if (letter === "T") state.prepared.T = prepareT(state.masks.T);
+        if (letter === "4") state.prepared["4"] = prepareFour(state.masks["4"]);
+        if (letter === "M") state.prepared.M = prepareM(state.masks.M);
+        if (letter === "L") state.prepared.L = prepareL(state.masks.L);
+      }
       statusEl.textContent = "ready";
       statusEl.setAttribute("aria-hidden", "true");
       renderAll();
