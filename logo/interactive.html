@@ -1265,23 +1265,37 @@
       return capacities;
     }
 
+    function segmentInsideMask(data, a, b, sampleCount = 10) {
+      for (let k = 1; k < sampleCount; k += 1) {
+        const t = k / sampleCount;
+        if (!insideAt(data, lerp(a.x, b.x, t), lerp(a.y, b.y, t))) return false;
+      }
+      return true;
+    }
+
     function mW2Map(prep, count) {
       const key = String(count);
       if (state.cache.M.has(key)) return state.cache.M.get(key);
       const red = prep.red;
       const blue = prep.blue.slice(0, count);
+      const maskData = state.masks.M;
+      const forbiddenCost = 1e12;
       const capacities = mBalancedCapacities(red.length, blue.length);
       const slots = [];
       for (let j = 0; j < blue.length; j += 1) {
         for (let c = 0; c < capacities[j]; c += 1) slots.push(j);
       }
       const cost = red.map((a) => {
-        const row = new Float64Array(slots.length);
-        for (let s = 0; s < slots.length; s += 1) {
-          const b = blue[slots[s]];
+        const blueCosts = new Float64Array(blue.length);
+        for (let j = 0; j < blue.length; j += 1) {
+          const b = blue[j];
           const dx = a.x - b.x;
           const dy = a.y - b.y;
-          row[s] = dx * dx + dy * dy;
+          blueCosts[j] = segmentInsideMask(maskData, a, b) ? dx * dx + dy * dy : forbiddenCost;
+        }
+        const row = new Float64Array(slots.length);
+        for (let s = 0; s < slots.length; s += 1) {
+          row[s] = blueCosts[slots[s]];
         }
         return row;
       });
