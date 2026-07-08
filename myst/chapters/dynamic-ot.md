@@ -776,10 +776,10 @@ A_2(a,w)=a\norm{w}^2,
 ### Homogeneous Momentum Actions
 
 The same action can be written in momentum variables, and this is the form in
-which convexity and metric properties are easiest to read. Set $\mu=\alpha w$,
-so that $\mu$ is a vector-valued measure. When the local description is written
+which convexity and metric properties are easiest to read. Set $\omega=\alpha w$,
+so that $\omega$ is a vector-valued measure. When the local description is written
 with the same reference $\lambda$, so that $\alpha=a\lambda$ and
-$\mu=m\lambda$, the pointwise momentum perspective is
+$\omega=m\lambda$, the pointwise momentum perspective is
 
 ```{math}
 :label: eq-general-momentum-perspective
@@ -796,16 +796,16 @@ and the measure action relative to $\lambda$ is
 
 ```{math}
 :label: eq-general-measure-momentum-action
-\mathbb J_{A,\lambda}(\alpha,\mu)
+\mathbb J_{A,\lambda}(\alpha,\omega)
 \eqdef
 \int
 J_A\!\left(
 \frac{\d\alpha}{\d\lambda},
-\frac{\d\mu}{\d\lambda}
+\frac{\d\omega}{\d\lambda}
 \right)\d\lambda,
 ```
 
-with value $+\infty$ if $\alpha$ or the total variation $|\mu|$ is not absolutely continuous with
+with value $+\infty$ if $\alpha$ or the total variation $|\omega|$ is not absolutely continuous with
 respect to $\lambda$. This zero-density convention is the lower-semicontinuous
 one for the superlinear actions used below; other growths use the corresponding
 recession extension. If $A$ is positively $1$-homogeneous in $a$, then $J_A$ is
@@ -917,10 +917,10 @@ Define, on every fixed-mass class,
 ```{math}
 \mathsf D_{A,\lambda}(\alpha_0,\alpha_1)
 \eqdef
-\inf_{\substack{\partial_t\alpha_t+\diverg\mu_t=0\\
+\inf_{\substack{\partial_t\alpha_t+\diverg\omega_t=0\\
 \alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
 \left(
-\int_0^1\mathbb J_{A,\lambda}(\alpha_t,\mu_t)\,\d t
+\int_0^1\mathbb J_{A,\lambda}(\alpha_t,\omega_t)\,\d t
 \right)^{1/r}.
 ```
 
@@ -933,8 +933,8 @@ In the intrinsic case, we write $\mathsf D_A$.
 
 :::{dropdown} Proof
 Zero self-distance is obtained by the constant curve. Conversely, zero relaxed
-action forces $\mathbb J_{A,\lambda}(\alpha_t,\mu_t)=0$ a.e., hence
-$\mu_t=0$ a.e.; the continuity equation then gives $\alpha_0=\alpha_1$.
+action forces $\mathbb J_{A,\lambda}(\alpha_t,\omega_t)=0$ a.e., hence
+$\omega_t=0$ a.e.; the continuity equation then gives $\alpha_0=\alpha_1$.
 Symmetry follows by time reversal and evenness in $m$. For the triangle
 inequality, concatenate two almost optimal curves with
 actions $E_1,E_2$, allocating time fractions $\tau$ and $1-\tau$. By
@@ -1135,15 +1135,15 @@ distance is
 In density--momentum variables, this corresponds to the measure action
 
 ```{math}
-\mathbb J_\gamma(\alpha,\mu)
+\mathbb J_\gamma(\alpha,\omega)
 =
 \gamma\!\left(\int
-\left(\frac{\d\mu}{\d\alpha}\right)
-\left(\frac{\d\mu}{\d\alpha}\right)^\top
+\left(\frac{\d\omega}{\d\alpha}\right)
+\left(\frac{\d\omega}{\d\alpha}\right)^\top
 \d\alpha\right),
 ```
 
-or, when $\alpha=\rho\,\d x$ and $\mu=m\,\d x$,
+or, when $\alpha=\rho\,\d x$ and $\omega=m\,\d x$,
 
 ```{math}
 \mathbb J_\gamma(\rho,m)
@@ -1793,18 +1793,18 @@ J_\kappa(a,m,r)
 \end{cases}
 ```
 
-For measure-valued triples, $\alpha$ denotes the transported measure, $\mu$ the
+For measure-valued triples, $\alpha$ denotes the transported measure, $\omega$ the
 vector-valued flux measure, and $\sigma$ the signed source measure. If
-$\lambda$ dominates $\alpha$, $|\mu|$ and $|\sigma|$, define
+$\lambda$ dominates $\alpha$, $|\omega|$ and $|\sigma|$, define
 
 ```{math}
 :label: eq-wfr-measure-action
-\mathbb J_\kappa(\alpha,\mu,\sigma)
+\mathbb J_\kappa(\alpha,\omega,\sigma)
 \eqdef
 \int
 J_\kappa\!\left(
 \frac{\d\alpha}{\d\lambda},
-\frac{\d \mu}{\d\lambda},
+\frac{\d \omega}{\d\lambda},
 \frac{\d \sigma}{\d\lambda}
 \right)\d\lambda .
 ```
@@ -1823,10 +1823,10 @@ nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic value
 :label: eq-dynamic-unbalanced-ot
 \WFR_\kappa^2(\alpha_0,\alpha_1)
 \eqdef
-\inf_{\substack{\partial_t\alpha_t+\nabla\cdot \mu_t=\sigma_t\\
+\inf_{\substack{\partial_t\alpha_t+\nabla\cdot \omega_t=\sigma_t\\
 \alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
 \int_0^1
-\mathbb J_\kappa(\alpha_t,\mu_t,\sigma_t)\,\d t
+\mathbb J_\kappa(\alpha_t,\omega_t,\sigma_t)\,\d t
 ```
 
 equals the static cone formulation $\mathcal C\mathcal W_\kappa(\alpha_0,\alpha_1)$. Hence the static unbalanced problem and the balance-equation least-action problem define the same geodesic distance.
