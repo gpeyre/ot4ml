@@ -2040,6 +2040,23 @@ and constrained variants of transport used in weak transport and conditional
 simulation
 {cite:p}`Villani09,SantambrogioBook,backhoff2019weak,oliver2014minimization,BarboniPeyreVialard2024ConditionalResNets`.
 
+The recent literature uses this same fiberwise constraint in several
+complementary directions. Peszek and Poyato study heterogeneous gradient flows in
+the topology of fibered optimal transport, emphasizing fixed-fiber transport and
+PDEs with heterogeneities {cite:p}`PeszekPoyato2023FiberedOptimalTransport`.
+Hosseini, Hsu and Taghvaei develop conditional optimal transport on function
+spaces through triangular maps and Kantorovich relaxations, motivated by
+amortized Bayesian inference {cite:p}`HosseiniHsuTaghvaei2023ConditionalFunctionSpaces`.
+Chemseddine, Hagemann, Steidl and Wald introduce conditional Wasserstein
+distances for Bayesian inverse problems and OT flow matching, with restricted
+couplings that compare posterior laws condition by condition
+{cite:p}`ChemseddineHagemannSteidlWald2024ConditionalWasserstein`. Kerrigan,
+Migliorini and Smyth give a dynamic conditional OT formulation and use it to
+build simulation-free conditional flows
+{cite:p}`KerriganMiglioriniSmyth2024DynamicConditionalOT`. The definition below
+isolates the common geometric core: transport is ordinary within each fiber and
+forbidden across distinct conditions.
+
 (def-conditional-ot)=
 :::{admonition} Definition: Conditional Couplings and Conditional OT
 :class: important

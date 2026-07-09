@@ -1944,56 +1944,8 @@ Thus an energy-dissipating trajectory is $1/2$-Hölder continuous as a curve in
 Wasserstein space on every time interval where the energy remains bounded from
 below. Non-coercivity of the objective means that sublevel sets need not be
 compact, but an energy-dissipating curve still cannot travel an infinite
-$\Wass_2$-distance in finite time without an infinite energy drop. The PL and
-convexity estimates below add the missing quantitative information that forces
-convergence toward minimizers.
-
-### Convergence: The Wasserstein-PL Viewpoint
-
-In general, analyzing {eq}`eq-wassflow-pde` is delicate. Geodesic convexity
-gives the familiar convex-gradient-flow picture, but rates are driven more
-directly by a first-order coercivity inequality. The relevant quantity is the
-squared Wasserstein slope
-
-```{math}
-|\partial f|^2(\alpha)
-\eqdef
-\int\norm{\Wgrad f(\alpha)(x)}^2\,\d\alpha(x)
-```
-
-in the smooth formal setting. Along a smooth gradient flow, this is both the
-squared metric speed and the energy-dissipation term.
-
-The terminology mirrors the finite-dimensional Polyak-Łojasiewicz condition
-introduced by Polyak {cite:p}`Polyak1963GradientMethods` and now standard in
-nonconvex optimization {cite:p}`KarimiNutiniSchmidt2016PL`. It is also part of
-the broader family of Łojasiewicz and Kurdyka-Łojasiewicz gradient inequalities
-used to prove convergence of dissipative dynamics {cite:p}`attouch-2010`. The
-Wasserstein version simply replaces the Euclidean gradient norm by the metric
-slope associated with $\Wass_2$.
-
-(def-wasserstein-pl)=
-:::{admonition} Definition: Wasserstein-Polyak-Lojasiewicz Inequality
-:class: important
-Let $f_\star\eqdef\inf_{\alpha\in\Pp_2(\RR^d)} f(\alpha)>-\infty$. The
-functional $f$ satisfies the Wasserstein-PL inequality with constant
-$\kappa>0$ if
-
-```{math}
-:label: eq-wasserstein-pl
-|\partial f|^2(\alpha)
-\geq
-2\kappa\bigl(f(\alpha)-f_\star\bigr)
-```
-
-for every $\alpha$ in the domain of $f$. In the smooth Otto notation this reads
-
-```{math}
-\int\norm{\Wgrad f(\alpha)}^2\,\d\alpha
-\geq
-2\kappa\bigl(f(\alpha)-f_\star\bigr).
-```
-:::
+$\Wass_2$-distance in finite time without an infinite energy drop. The convex estimate below adds a first quantitative conclusion under geodesic
+convexity; the PL viewpoint then gives sharper coercive rates toward minimizers.
 
 (prop-convex-wass-flow-rate)=
 :::{admonition} Proposition: Energy Decay for Convex Wasserstein Flows
@@ -2080,6 +2032,54 @@ t\bigl(f(\alpha_t)-f(\alpha^\star)\bigr)
 \bigl(f(\alpha_s)-f(\alpha^\star)\bigr)\d s
 \leq
 \frac12\Wass_2^2(\alpha_0,\alpha^\star).
+```
+:::
+
+
+### Convergence: The Wasserstein-PL Viewpoint
+
+In general, analyzing {eq}`eq-wassflow-pde` is delicate. Geodesic convexity
+gives the familiar convex-gradient-flow picture, but rates are driven more
+directly by a first-order coercivity inequality. The relevant quantity is the
+squared Wasserstein slope
+
+```{math}
+|\partial f|^2(\alpha)
+\eqdef
+\int\norm{\Wgrad f(\alpha)(x)}^2\,\d\alpha(x)
+```
+
+in the smooth formal setting. Along a smooth gradient flow, this is both the
+squared metric speed and the energy-dissipation term.
+
+The terminology mirrors the finite-dimensional Polyak-Łojasiewicz condition
+introduced by Polyak {cite:p}`Polyak1963GradientMethods` and now standard in
+nonconvex optimization {cite:p}`KarimiNutiniSchmidt2016PL`. It is also part of
+the broader family of Łojasiewicz and Kurdyka-Łojasiewicz gradient inequalities
+used to prove convergence of dissipative dynamics {cite:p}`attouch-2010`. The
+Wasserstein version simply replaces the Euclidean gradient norm by the metric
+slope associated with $\Wass_2$.
+
+(def-wasserstein-pl)=
+:::{admonition} Definition: Wasserstein-Polyak-Lojasiewicz Inequality
+:class: important
+Let $f_\star\eqdef\inf_{\alpha\in\Pp_2(\RR^d)} f(\alpha)>-\infty$. The
+functional $f$ satisfies the Wasserstein-PL inequality with constant
+$\kappa>0$ if
+
+```{math}
+:label: eq-wasserstein-pl
+|\partial f|^2(\alpha)
+\geq
+2\kappa\bigl(f(\alpha)-f_\star\bigr)
+```
+
+for every $\alpha$ in the domain of $f$. In the smooth Otto notation this reads
+
+```{math}
+\int\norm{\Wgrad f(\alpha)}^2\,\d\alpha
+\geq
+2\kappa\bigl(f(\alpha)-f_\star\bigr).
 ```
 :::
 
@@ -4420,7 +4420,13 @@ mean-field optimal-control models of deep learning
 {cite:p}`HaberRuthotto2017StableArchitectures,LuZhongLiDong2018BeyondFiniteLayers,Chen2018NeuralODE,EHanLi2019MeanFieldDeepLearning`.
 The conditional-OT formulation of Barboni, Peyré and Vialard
 {cite:p}`BarboniPeyreVialard2024ConditionalResNets` adds the width mean-field
-limit to this continuous-depth picture. From the viewpoint of
+limit to this continuous-depth picture. This should be read alongside the broader
+conditional-transport literature reviewed in Section
+{ref}`sec-conditional-wasserstein-distances`, especially fibered gradient flows
+{cite:p}`PeszekPoyato2023FiberedOptimalTransport`, function-space conditional OT
+{cite:p}`HosseiniHsuTaghvaei2023ConditionalFunctionSpaces`, and conditional OT
+flow-matching constructions
+{cite:p}`ChemseddineHagemannSteidlWald2024ConditionalWasserstein,KerriganMiglioriniSmyth2024DynamicConditionalOT`. From the viewpoint of
 {ref}`sec-generalized-dynamic-wasserstein-flows`, it is a concrete instance of a
 generalized dynamic Wasserstein flow: the conditional Wasserstein distance has a
 geodesic dynamic structure obtained by integrating the usual Benamou-Brenier

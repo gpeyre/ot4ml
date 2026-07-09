@@ -1172,7 +1172,7 @@ Z_u^{-1}\int \nabla u(x)e^{-u(x)}\,\d x
 
 Thus moment measures are necessarily centered. The non-smooth theory uses essentially continuous convex functions, meaning convex functions whose restriction to the closure of their effective domain is continuous except possibly on a boundary set of zero $\mathcal H^{d-1}$ measure.
 
-Figure {ref}`fig:moment-measure-forward-map` shows the forward construction in one dimension. Even before solving the inverse problem, one sees the two coupled effects of the same convex potential: $e^{-u}$ chooses the source law, while $u'$ transports it to the moment measure.
+Figure {ref}`fig:moment-measure-forward-map` shows the forward construction in one dimension. The map $u'$ is implicit in the push-forward, but the display focuses on the two visible densities: the log-concave source $\rho_u=Z_u^{-1}e^{-u}$ and the resulting moment measure $\mathfrak M(u)$.
 
 (fig:moment-measure-forward-map)=
 :::{div}
@@ -1183,7 +1183,7 @@ Figure {ref}`fig:moment-measure-forward-map` shows the forward construction in o
 show_book_figure("moment-measure-forward-map", width=760)
 ```
 
-*Forward moment-measure construction in one dimension. The top row uses $u(x)=x^2/2$, so $\rho_u$ and $\mathfrak M(u)$ are both standard Gaussian and $u'(x)=x$. The bottom row uses $u(x)=x^2/2+0.18\,x^4/4+0.92\,x$, which tilts the log-concave source and produces a nonlinear monotone map. In both cases the blue push-forward has barycenter zero, illustrating the identity $\int y\,\d\mathfrak M(u)(y)=0$.*
+*Forward moment-measure construction in one dimension. Each column shows a convex potential $u$ chosen so that the moment measure has a prescribed shape: a skewed unimodal density, two bumps, and three bumps with different widths and heights. The top row overlays $u$ (gray, vertically rescaled) with the log-concave source density $\rho_u=Z_u^{-1}e^{-u}$ (red), while the bottom row shows $\mathfrak M(u)=(u')_{\#}\rho_u$ (blue); the dashed vertical line marks the zero barycenter.*
 :::
 
 :::{div}
@@ -1349,7 +1349,16 @@ u\mapsto
 \log\!\left(\int e^{-u(x)}\,\d x\right).
 ```
 
-This is not visibly convex as a function of $u$: the first term is convex, while the logarithmic partition term is concave in this parametrization. Cordero--Erausquin and Klartag reveal convexity after passing to the dual potential $u^*$ and using a Prekopa-type argument. Santambrogio's formulation reveals the same mechanism in transport language: the difficult convexity becomes the displacement convexity of an entropy-plus-maximal-correlation functional in the density variable $\rho$.
+This is not visibly convex as a function of $u$: the first term is convex, while the logarithmic partition term is concave in this parametrization. Cordero--Erausquin and Klartag make the hidden convexity visible by changing variables to the dual potential $\varphi=u^*$. Since $u=\varphi^*$ for closed convex potentials, the same functional becomes
+
+```{math}
+\varphi\mapsto
+\int \varphi(y)\,\d\al(y)
+-
+\log\!\left(\int e^{-\varphi^*(x)}\,\d x\right).
+```
+
+The first term is now affine in $\varphi$. The core Prekopa--Leindler input is that $\varphi\mapsto \log\int e^{-\varphi^*}$ is concave along convex combinations of convex functions; equivalently, the negative log-partition in the display is convex. Santambrogio's formulation reveals the same mechanism in transport language: the difficult convexity becomes the displacement convexity of an entropy-plus-maximal-correlation functional in the density variable $\rho$.
 :::
 
 
@@ -1729,11 +1738,23 @@ The debiased Sinkhorn row uses the notation of {ref}`cor-gaussian-sinkhorn-diver
 \norm{\delta_m}^2+\Bb_\epsilon(\Sigma,\bar\Sigma)^2,
 ```
 
-with
+with the closed-form covariance gradient
 
 ```{math}
-G_\epsilon=\nabla_\Sigma \Bb_\epsilon(\Sigma,\bar\Sigma)^2.
+G_\epsilon(\Sigma,\bar\Sigma)
+=
+\tau_\epsilon(\Sigma)
+-
+\bar\Sigma^{1/2}
+\tau_\epsilon\bigl(B_{\Sigma,\bar\Sigma}^{1/2}\bigr)
+B_{\Sigma,\bar\Sigma}^{-1/2}
+\bar\Sigma^{1/2},
+\qquad
+B_{\Sigma,\bar\Sigma}=\bar\Sigma^{1/2}\Sigma\bar\Sigma^{1/2}.
 ```
+
+Here $\tau_\epsilon$ is applied to positive matrices by spectral calculus; equivalently
+$G_\epsilon=\nabla_\Sigma \Bb_\epsilon(\Sigma,\bar\Sigma)^2$.
 
 In the sliced row, $\sigma$ is the normalized spherical measure on $\Sphere^{d-1}$, and
 
@@ -1756,22 +1777,6 @@ Here
 \qquad(\alpha=\rho\,\d x).
 ```
 
-Multiplying any energy by a constant rescales the corresponding right-hand side. In the centered isotropic case $\gamma=\Gaussian(0,\Id)$, the Sinkhorn row reduces to the explicit covariance ODE
-
-```{math}
-H(\Sigma)=
-4\left(\Sigma+\frac{\epsilon^2}{16}\Id\right)^{1/2}
--4\left(\Sigma^2+\frac{\epsilon^2}{16}\Id\right)^{1/2},
-```
-
-and the sliced row becomes $H(\Sigma)=V(\Sigma)\Sigma+\Sigma V(\Sigma)$, where
-
-```{math}
-V(\Sigma)=
-2\int_{\Sphere^{d-1}}
-\left(\frac{1}{\sqrt{\theta^\top\Sigma\theta}}-1\right)
-\theta\theta^\top\,\d\sigma(\theta).
-```
 :::
 
 :::{dropdown} Proof
@@ -1857,7 +1862,17 @@ For Sinkhorn, the first variation of the entropic value with respect to the firs
 (m,\Sigma)\mapsto \norm{m-\bar m}^2+\Bb_\epsilon(\Sigma,\bar\Sigma)^2,
 ```
 
-the quadratic coefficient is $G_\epsilon=\nabla_\Sigma\Bb_\epsilon(\Sigma,\bar\Sigma)^2$, and the moment-functional computation gives the displayed $h$ and $H$. In the centered isotropic case this uses $\psi_\epsilon'(r)=-2\tau_\epsilon(r)$.
+the quadratic coefficient is $G_\epsilon=\nabla_\Sigma\Bb_\epsilon(\Sigma,\bar\Sigma)^2$, and the moment-functional computation gives the displayed $h$ and $H$. To compute this gradient, set
+$B_{\Sigma,\bar\Sigma}=\bar\Sigma^{1/2}\Sigma\bar\Sigma^{1/2}$. Since $\psi_\epsilon'(r)=-2\tau_\epsilon(r)$, differentiating $\tr\psi_\epsilon(B_{\Sigma,\bar\Sigma}^{1/2})$ gives
+
+```{math}
+-\bar\Sigma^{1/2}
+\tau_\epsilon\bigl(B_{\Sigma,\bar\Sigma}^{1/2}\bigr)
+B_{\Sigma,\bar\Sigma}^{-1/2}
+\bar\Sigma^{1/2},
+```
+
+whereas differentiating the self term $-\frac12\tr\psi_\epsilon(\Sigma)$ gives $\tau_\epsilon(\Sigma)$. This proves the displayed closed form for $G_\epsilon$.
 
 For sliced Wasserstein, the exact ambient Wasserstein gradient is obtained by averaging the one-dimensional gradients. If $T_\theta$ is the monotone transport from $(P_\theta)_\sharp\alpha$ to $(P_\theta)_\sharp\gamma$, then the descent velocity for the unhalved sliced objective is
 
@@ -1871,7 +1886,7 @@ For Gaussian marginals, $T_\theta$ is affine. Thus this velocity is affine in $x
 
 Not every PDE preserves Gaussianity exactly. Wasserstein flows of generic higher-order regularizers usually create higher moments immediately and require a Gaussian projection to close on $(m,\Sigma)$. Such projected closures are still useful: they expose the finite-dimensional dynamics predicted by a variational model and make it easy to compare variational flows with non-variational affine dynamics such as drifting fields or the Gaussian transformer closure below.
 
-:::{admonition} Example: Linear mean-field networks as cross-moment flows
+:::{admonition} Example: Linear mean-field networks as cross-covariance flows
 :class: ot4ml-example
 
 Consider the two-layer mean-field model of Section {ref}`sec-wasserstein-flows-mlp`, and take the linear activation $\sigma(s)=s$, so that
@@ -1880,31 +1895,28 @@ Consider the two-layer mean-field model of Section {ref}`sec-wasserstein-flows-m
 \psi((u,v),z)=v\,\dotp{u}{z}.
 ```
 
-The predictor is the linear map
+We restrict this example to centered neuron laws,
 
 ```{math}
-G_{\alpha_t}(z)=Q_tz,
+\int (u,v)\d\alpha(u,v)=0,
 \qquad
-Q_t=\int v u^\top\d\alpha_t(u,v)\in\RR^{d'\times d}.
-```
-
-Thus the square-loss energy of {eq}`eq-mlp-square-loss-quadratic-linear` depends on the neuron law only through the raw cross moment $Q_\alpha=\int vu^\top\d\alpha(u,v)$. If
-
-```{math}
-m=
-\begin{pmatrix}m_u\\ m_v\end{pmatrix},
-\qquad
-\Sigma=
+\Sigma_\alpha=
 \begin{pmatrix}
-\Sigma_{uu} & \Sigma_{uv}\\
-\Sigma_{vu} & \Sigma_{vv}
+\Sigma_{uu}(\alpha) & \Sigma_{uv}(\alpha)\\
+\Sigma_{vu}(\alpha) & \Sigma_{vv}(\alpha)
 \end{pmatrix},
 ```
 
-then
+and use the lower-left cross-covariance block
 
 ```{math}
-Q_\alpha=Q(m,\Sigma)\eqdef \Sigma_{vu}+m_v m_u^\top.
+\Sigma_{vu}(\alpha)=\int v u^\top\d\alpha(u,v)\in\RR^{d'\times d}.
+```
+
+The predictor is therefore the linear map
+
+```{math}
+G_{\alpha_t}(z)=\Sigma_{vu}(\alpha_t)z.
 ```
 
 For squared Euclidean loss, set
@@ -1915,20 +1927,26 @@ S=\int zz^\top\d\rho(z,y),
 R=\int yz^\top\d\rho(z,y).
 ```
 
-The learning energy is the moment functional
+The learning energy of {eq}`eq-mlp-square-loss-quadratic-linear` is then the covariance functional
 
 ```{math}
-f(\alpha)=g(m_\alpha,\Sigma_\alpha),
+f(\alpha)=g(\Sigma_\alpha),
 \qquad
-g(m,\Sigma)
+g(\Sigma)
 =
-\frac12\tr\!\big(Q(m,\Sigma)S Q(m,\Sigma)^\top\big)
--\tr\!\big(R Q(m,\Sigma)^\top\big)
+\frac12\tr\!\big(\Sigma_{vu}S\Sigma_{uv}\big)
+-\tr\!\big(R\Sigma_{uv}\big)
 +
 \frac12\int\norm{y}^2\d\rho(z,y).
 ```
 
-Writing $E_\alpha\eqdef Q_\alpha S-R$ for the derivative of the outer square loss with respect to $Q$, the first variation is
+This puts the model exactly in the centered moment-functional row of Proposition {ref}`prop-centered-gaussian-covariance-catalogue`. Writing
+
+```{math}
+E_\alpha\eqdef \Sigma_{vu}(\alpha)S-R,
+```
+
+the first variation is
 
 ```{math}
 \delta f(\alpha)(u,v)=\dotp{E_\alpha}{v u^\top}=v^\top E_\alpha u,
@@ -1950,10 +1968,6 @@ E_\alpha & 0
 At the level of $g$,
 
 ```{math}
-\nabla_{m_u}g=E_\alpha^\top m_v,
-\qquad
-\nabla_{m_v}g=E_\alpha m_u,
-\qquad
 \nabla_\Sigma g=
 \frac12
 \begin{pmatrix}
@@ -1962,7 +1976,23 @@ E_\alpha & 0
 \end{pmatrix}.
 ```
 
-The factor $1/2$ comes from the symmetry of $\Sigma$: the upper-right block is the transpose of the lower-left block. Substituting these gradients in Proposition {ref}`prop-centered-gaussian-covariance-catalogue` gives a closed ODE for $(m_t,\Sigma_t)$. In particular, a Gaussian law of neurons remains Gaussian. When the neuron law is centered, $Q_\alpha=\Sigma_{vu}$, so the energy is a function of the cross-covariance block alone.
+The factor $1/2$ comes from the symmetry of $\Sigma$: the upper-right block is the transpose of the lower-left block. Substituting this gradient in Proposition {ref}`prop-centered-gaussian-covariance-catalogue` gives
+
+```{math}
+\dot m_t=0,
+\qquad
+\dot\Sigma_t=-(\Sigma_t L_t+L_t\Sigma_t),
+\qquad
+L_t=
+\begin{pmatrix}
+0 & E_t^\top\\
+E_t & 0
+\end{pmatrix},
+\qquad
+E_t=\Sigma_{vu}(\alpha_t)S-R.
+```
+
+Thus a centered Gaussian law of neurons remains centered Gaussian, and the dynamics is driven by the cross-covariance block alone. This exact closure is special to the linear activation; for nonlinear activations, Gaussian closures are usually projections rather than invariant families.
 :::
 
 ### Constrained evolution on the Gaussian manifold.
