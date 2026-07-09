@@ -1958,6 +1958,214 @@ on a gene-expression or latent cell-state space. Since sequencing is destructive
 :::
 
 
+(sec-measure-to-measure-maps)=
+## Measure-to-Measure Maps on Wasserstein Space
+
+Many constructions in modern machine learning act directly on probability laws. This section isolates this viewpoint and records two useful principles: some transformations move particles without splitting them, while others are intrinsically diffusive.
+
+### Maps on Wasserstein space.
+
+Once Wasserstein distances provide a topology on probability measures, it is natural to study transformations of probability measures as maps
+
+```{math}
+\Phi:\Pp_p(\Xx)\longrightarrow \Pp_p(\Xx)
+```
+
+on Wasserstein space. Later chapters use such maps repeatedly: flow matching and diffusion models evolve laws during sampling, one-step transportation methods learn maps between latent and data distributions, and transformers update the empirical law of their tokens; see Chapter {ref}`sec-generative-models-transportation` and Section {ref}`sec-transformer-depth-evolution`. Two questions are especially useful. The structural question asks whether $\Phi$ preserves a discrete particle representation. The metric question asks whether $\Phi$ is stable, for instance Lipschitz, for $\Wass_p$.
+
+### Particle-preserving transport representations.
+
+The deterministic case is obtained by pushing each input measure through a map that may itself depend on that input measure:
+
+```{math}
+:label: eq-measure-map-transport-representation
+\Phi(\al) = \Gamma[\al]_\sharp \al,
+\qquad
+\Gamma[\al] : \Xx \to \Xx .
+```
+
+Then, for every discrete measure,
+
+```{math}
+:label: eq-measure-map-preserve-atoms
+\al=\sum_{i=1}^n a_i\de_{x_i}
+\quad\Longrightarrow\quad
+\Phi(\al)=\sum_{i=1}^n a_i\de_{\Gamma[\al](x_i)} .
+```
+
+Thus the weights and the number of particles are preserved, up to possible collisions between images. This is the natural structure behind deterministic particle methods: particles move, but they do not split. Lavenant and Savaré {cite:p}`LavenantSavare2026ContinuousTransformations` study when transformations of measures admit transport representatives of the form {eq}`eq-measure-map-transport-representation`, the obstructions to choosing representatives continuously, and the additional regularity available when $\Phi$ is Wasserstein-Lipschitz.
+
+### Mass-splitting Markov maps.
+
+The opposite case is a stochastic transformation, where one input particle can generate a full output distribution. Let $K$ be a Markov kernel on $\Xx$, so that $K(y,\cdot)$ is a probability measure for each $y$. To obtain a map on $\Pp_p(\Xx)$, assume a finite-moment bound
+
+```{math}
+\int_{\Xx} d(x,x_0)^p\,K(y,\d x)
+\leq C\bigl(1+d(y,x_0)^p\bigr)
+```
+
+for some $x_0\in\Xx$. The associated linear map
+
+```{math}
+:label: eq-measure-map-markov-kernel
+\int_{\Xx} f(x)\,\d\Psi(\al)(x)
+=
+\int_{\Xx}\int_{\Xx} f(x)\,K(y,\d x)\,\d\al(y)
+```
+
+is a measure-to-measure map from $\Pp_p(\Xx)$ to itself. If $\Xx=\RR^d$ and $K(y,\d x)=\kappa(x-y)\d x$ for a probability density $\kappa$ with finite $p$-moment, then $\Psi(\al)=\al*\kappa$ is convolution. Unless $K(y,\cdot)$ is a Dirac mass, a single atom is sent to a diffuse probability distribution. Heat flows, noising steps in diffusion models, and other smoothing mechanisms therefore belong to this mass-splitting class. If in addition $\Xx$ is Polish and $\Wass_p(K(y,\cdot),K(y',\cdot))\leq Ld(y,y')$, then a measurable selection of kernel couplings and the same coupling argument used below show that $\Psi$ is $L$-Lipschitz for $\Wass_p$.
+
+### Wasserstein stability.
+
+Regularity of $\Phi$ is a stability requirement: small perturbations of the input law should not create large changes of the output law. For transport representations, the following elementary estimate separates the spatial Lipschitz constant of the map from its sensitivity to the input measure.
+
+(rem-w2-lipschitz-bounded-gradient)=
+:::{admonition} Remark: $\Wass_2$-Lipschitz functionals and bounded gradients
+The same word "Lipschitz" is also used for scalar functionals $f:\Pp_2(\RR^d)\to\RR$. In a geodesic metric space, an $L$-Lipschitz functional has descending metric slope at most $L$. Conversely, if the slope is a strong upper gradient and is uniformly bounded by $L$, then $f$ is $L$-Lipschitz along curves, hence for $\Wass_2$ on $\Pp_2(\RR^d)$. In the smooth Otto calculus this slope is the $L^2(\alpha)$-norm of the Wasserstein gradient introduced in Proposition {ref}`prop-formal-wass-gradient`:
+
+```{math}
+|\partial f|_{\Wass_2}(\alpha)
+=
+\norm{\Wgrad f(\alpha)}_{L^2(\alpha)} .
+```
+
+Thus, under the usual chain-rule assumptions, $\Wass_2$-Lipschitz regularity of $f$ is the metric analogue of imposing a uniform gradient bound,
+
+```{math}
+\sup_{\alpha}\norm{\Wgrad f(\alpha)}_{L^2(\alpha)}\leq L .
+```
+
+This first-order boundedness should not be confused with $L$-smoothness in optimization, which would instead control how the gradient itself varies.
+:::
+
+(prop-measure-map-wass-lipschitz)=
+:::{admonition} Proposition: Wasserstein stability of transport representations
+:class: important
+Let $p\geq1$, let $E\subset\Xx$, and assume that, for all $\al,\be\in\Pp_p(\Xx)$ supported in $E$, the maps $T[\al]:E\to\Xx$ satisfy
+
+```{math}
+d(T[\al](x),T[\al](y)) \leq L_x d(x,y)
+\quad\text{for all }x,y\in E,
+```
+
+and
+
+```{math}
+\sup_{y\in E} d(T[\al](y),T[\be](y))
+\leq L_\al \Wass_p(\al,\be).
+```
+
+Then $\Phi(\al)=T[\al]_\sharp\al$ is $(L_x+L_\al)$-Lipschitz on probability measures supported in $E$:
+
+```{math}
+\Wass_p(\Phi(\al),\Phi(\be))
+\leq
+(L_x+L_\al)\Wass_p(\al,\be).
+```
+:::
+
+:::{dropdown} Proof
+Let $\pi$ be an optimal coupling between $\al$ and $\be$. The measure $(T[\al],T[\be])_\sharp\pi$ is a coupling between $\Phi(\al)$ and $\Phi(\be)$, hence
+
+```{math}
+\Wass_p(\Phi(\al),\Phi(\be))
+\leq
+\left(
+\int d(T[\al](x),T[\be](y))^p\,\d\pi(x,y)
+\right)^{1/p}.
+```
+
+By the triangle inequality,
+
+```{math}
+d(T[\al](x),T[\be](y))
+\leq
+L_x d(x,y)+L_\al\Wass_p(\al,\be).
+```
+
+Minkowski's inequality gives the claim.
+:::
+
+The fixed-map case is the basic corollary, obtained with $E=\Xx$ and $L_\al=0$. If $T:\Xx\to\Xx$ is $L$-Lipschitz, then
+
+```{math}
+\Wass_p(T_\sharp\al,T_\sharp\be)\leq L\Wass_p(\al,\be).
+```
+
+This is the metric counterpart of the elementary push-forward operation introduced in Definition {ref}`defn-pushfwd`.
+
+### Mean-field attention.
+
+Self-attention is a central example because the number of tokens can be large and variable. A token cloud is represented by the empirical law $\al=n^{-1}\sum_i\de_{x_i}$, and a single-head mean-field attention layer is naturally a transport representation. With the notation of Section {ref}`sec-transformer-depth-evolution`, define
+
+```{math}
+:label: eq-kantorovich-mean-field-attention
+\Gamma_\theta[\al](x)
+=
+\frac{\int e^{\dotp{Qx}{Kz}}Vz\,\d\al(z)}
+{\int e^{\dotp{Qx}{Kz}}\,\d\al(z)} ,
+\qquad \theta=(Q,K,V),
+```
+
+where, for simplicity, the value map $V$ takes values in the same Euclidean feature space.
+
+The corresponding measure map is
+
+```{math}
+\operatorname{Att}_\theta(\al)=(\Gamma_\theta[\al])_\sharp\al ,
+```
+
+and a residual transformer layer uses the closely related map $(\Id+\tau\Gamma_\theta[\al])_\sharp\al$. Lipschitz estimates for $\operatorname{Att}_\theta$ are therefore stability estimates for attention in the many-token regime.
+
+(prop-attention-wass-lipschitz)=
+:::{admonition} Proposition: Compact-support attention stability
+:class: important
+Assume $\Xx=\RR^d$. Fix $R>0$ and let $\mathcal P_R$ be the set of probability measures supported in the Euclidean ball $B(0,R)$. For every $p\geq1$, there is a constant $C_{\theta,p}(R)$ such that
+
+```{math}
+\Wass_p(\operatorname{Att}_\theta(\al),\operatorname{Att}_\theta(\be))
+\leq C_{\theta,p}(R)\Wass_p(\al,\be),
+\qquad \al,\be\in\mathcal P_R.
+```
+
+Writing $A_R=\norm{Q}_{\rm op}\norm{K}_{\rm op}R^2$, one can take a constant bounded, up to polynomial factors in $R$ and the operator norms of $Q,K,V$, by
+
+```{math}
+C_{\theta,p}(R)\lesssim
+e^{2A_R}.
+```
+
+This is the exponential-in-score-radius behavior, equivalently $e^{O(R^2)}$ for dot-product scores on $B(0,R)$, refined in {cite:p}`CastinAblinPeyre2024HowSmoothAttention`.
+:::
+
+:::{dropdown} Proof
+Write $A_R=\norm{Q}_{\rm op}\norm{K}_{\rm op}R^2$. For $x,z\in B(0,R)$, the attention weight
+
+```{math}
+a_x(z)=e^{\dotp{Qx}{Kz}}
+```
+
+satisfies $e^{-A_R}\leq a_x(z)\leq e^{A_R}$. Moreover the functions $a_x$ and $a_xVz$ have Lipschitz constants bounded by $e^{A_R}$ times polynomial factors in $R$ and $\norm{Q}_{\rm op},\norm{K}_{\rm op},\norm{V}_{\rm op}$. By Kantorovich--Rubinstein duality,
+
+```{math}
+\left|\int a_x\,\d(\al-\be)\right|
++
+\norm{\int a_xVz\,\d(\al-\be)}
+\leq C_{\theta}(R)e^{A_R}\Wass_1(\al,\be).
+```
+
+Since the denominator in {eq}`eq-kantorovich-mean-field-attention` is at least $e^{-A_R}$, the quotient rule gives
+
+```{math}
+\sup_{x\in B(0,R)}
+\norm{\Gamma_\theta[\al](x)-\Gamma_\theta[\be](x)}
+\leq C_{\theta}(R)e^{2A_R}\Wass_1(\al,\be).
+```
+
+The same differentiation of the quotient with respect to $x$ gives a spatial Lipschitz bound for $x\mapsto\Gamma_\theta[\al](x)$ on $B(0,R)$, uniformly in $\al\in\mathcal P_R$. Since $\Wass_1\leq\Wass_p$ on probability measures and the output remains in the ball $B(0,\norm{V}_{\rm op}R)$, Proposition {ref}`prop-measure-map-wass-lipschitz`, applied with $E=B(0,R)$, proves the estimate.
+:::
+
+
 ## Distributional Robustness And Wasserstein Infinity
 
 Wasserstein distances define ambiguity sets around empirical laws. Given

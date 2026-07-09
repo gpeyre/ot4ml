@@ -2056,9 +2056,10 @@ The terminology mirrors the finite-dimensional Polyak-Łojasiewicz condition
 introduced by Polyak {cite:p}`Polyak1963GradientMethods` and now standard in
 nonconvex optimization {cite:p}`KarimiNutiniSchmidt2016PL`. It is also part of
 the broader family of Łojasiewicz and Kurdyka-Łojasiewicz gradient inequalities
-used to prove convergence of dissipative dynamics {cite:p}`attouch-2010`. The
-Wasserstein version simply replaces the Euclidean gradient norm by the metric
-slope associated with $\Wass_2$.
+used to prove convergence of dissipative dynamics
+{cite:p}`attouch-2010,HauerMazon2019KLSMetric,DelloSchiavoMaasPedrotti2023LocalConditions`.
+The Wasserstein version simply replaces the Euclidean gradient norm by the
+metric slope associated with $\Wass_2$.
 
 (def-wasserstein-pl)=
 :::{admonition} Definition: Wasserstein-Polyak-Lojasiewicz Inequality
@@ -2216,19 +2217,15 @@ rate. The distance-to-the-set bound follows because $\alpha_\infty$ is one
 minimizer.
 :::
 
-(rem-wasserstein-pl-literature-attribution)=
-:::{admonition} Remark: Literature and Attribution
-:class: ot4ml-remark
-
 The exponential decay of the energy gap is the direct metric-gradient-flow
-analogue of the classical PL argument. Similar slope-based statements are
-standard in the theory of curves of maximal slope {cite:p}`ambrosio2006gradient`
-and in Wasserstein gradient flows under functional inequalities such as
-logarithmic Sobolev and HWI inequalities, discussed below. We are not aware of a
-reference that states the final $\Wass_2$-distance-to-$\operatorname{Argmin}f$
-estimate in exactly the form of the theorem above; the tail-length refinement
-used here was communicated to us by Raphaël Barboni.
-:::
+analogue of the classical PL argument. The tail-length estimate used in the
+theorem above is a convenient way to turn this energy decay into a
+$\Wass_2$-distance-to-$\operatorname{Argmin}f$ bound; this exact formulation was
+communicated to us by Raphaël Barboni. More refined accounts of KL/PL-type
+inequalities, global convergence and rates for gradient flows and proximal point
+sequences in general metric spaces are given by Hauer and Mazón
+{cite:p}`HauerMazon2019KLSMetric` and by Dello Schiavo, Maas and Pedrotti
+{cite:p}`DelloSchiavoMaasPedrotti2023LocalConditions`.
 
 ### Geodesic Strong Convexity
 
@@ -2586,25 +2583,26 @@ Gaussian integration by parts converts the trace term into a Fisher information.
 (prop-gaussian-log-sobolev-ot)=
 :::{admonition} Proposition: Gaussian Logarithmic Sobolev Inequality
 :class: important
-Let $\gamma_d$ be the standard Gaussian measure on $\RR^d$. If $f$ is smooth,
-positive, has sufficient decay, and $\int f\d\gamma_d=1$, then
+Let $\gamma_d$ be the standard Gaussian measure on $\RR^d$. If $\rho$ is a
+smooth positive probability density with respect to $\gamma_d$, has sufficient
+decay, and $\int \rho\,\d\gamma_d=1$, then
 
 ```{math}
-\operatorname{Ent}_{\gamma_d}(f)
+\operatorname{Ent}_{\gamma_d}(\rho)
 \eqdef
-\int f\log f\,\d\gamma_d
+\int \rho\log \rho\,\d\gamma_d
 \leq
-\frac12\int \frac{\norm{\nabla f}^2}{f}\,\d\gamma_d.
+\frac12\int \frac{\norm{\nabla \rho}^2}{\rho}\,\d\gamma_d.
 ```
 :::
 
 :::{dropdown} Proof
-Let $\al=f\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with
+Let $\al=\rho\gamma_d$, and let $T=\nabla\phi$ be the Brenier map with
 $T_\sharp\al=\gamma_d$. Write $T(x)=x+\theta(x)$. The Monge-Ampère equation
 reads
 
 ```{math}
-f(x)e^{-\norm{x}^2/2}
+\rho(x)e^{-\norm{x}^2/2}
 =
 e^{-\norm{T(x)}^2/2}\det(DT(x)).
 ```
@@ -2612,7 +2610,7 @@ e^{-\norm{T(x)}^2/2}\det(DT(x)).
 Thus
 
 ```{math}
-\log f(x)
+\log \rho(x)
 =
 -\dotp{x}{\theta(x)}
 -\frac12\norm{\theta(x)}^2
@@ -2622,30 +2620,30 @@ Thus
 
 Since $DT$ is positive semidefinite,
 $\log\det(\operatorname{Id}+D\theta)\leq\operatorname{tr}(D\theta)
-=\operatorname{div}\theta$. Multiplying by $f$ and integrating with respect to
+=\operatorname{div}\theta$. Multiplying by $\rho$ and integrating with respect to
 $\gamma_d$ gives
 
 ```{math}
-\operatorname{Ent}_{\gamma_d}(f)
+\operatorname{Ent}_{\gamma_d}(\rho)
 \leq
-\int f(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
--\frac12\int f\norm{\theta}^2\,\d\gamma_d.
+\int \rho(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
+-\frac12\int \rho\norm{\theta}^2\,\d\gamma_d.
 ```
 
 Gaussian integration by parts gives
 
 ```{math}
-\int f(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
+\int \rho(\operatorname{div}\theta-\dotp{x}{\theta})\,\d\gamma_d
 =
--\int\dotp{\nabla f}{\theta}\,\d\gamma_d.
+-\int\dotp{\nabla \rho}{\theta}\,\d\gamma_d.
 ```
 
 Completing the square pointwise,
 
 ```{math}
--\dotp{\nabla f}{\theta}-\frac12 f\norm{\theta}^2
+-\dotp{\nabla \rho}{\theta}-\frac12 \rho\norm{\theta}^2
 \leq
-\frac12\frac{\norm{\nabla f}^2}{f}.
+\frac12\frac{\norm{\nabla \rho}^2}{\rho}.
 ```
 
 This proves the inequality. The general Sobolev-class statement follows by
@@ -2667,124 +2665,138 @@ the static estimate into exponential convergence of the Ornstein-Uhlenbeck flow.
 
 ### Poincaré as a Linearized Wasserstein-PL Inequality
 
-The Poincaré inequality is the linearized form of the logarithmic Sobolev
-inequality at equilibrium. Let $\beta=Z^{-1}e^{-V}\d x$, write
-$\alpha=h\beta$, and let
-$L\varphi=\Delta\varphi-\dotp{\nabla V}{\nabla\varphi}=\beta^{-1}\nabla\cdot(\beta\nabla\varphi)$
-be the reversible generator acting on test functions. If a logarithmic Sobolev
-inequality holds with constant $\lambda$, then its expansion around $h=1$ gives
-Poincaré with the same constant. Indeed, for $h_\epsilon=1+\epsilon g$ with
-$\int g\d\beta=0$,
+Functional inequalities often appear by zooming in on a nonlinear convergence
+inequality near an equilibrium. If an energy $\Ff$ satisfies a Wasserstein-PL
+inequality and $\beta$ is a minimizer, then perturbing $\beta$ by a small density
+modulation turns the nonlinear PL bound into a quadratic inequality for the
+perturbation.
 
-```{math}
-\KL(h_\epsilon\beta|\beta)
-=
-\frac{\epsilon^2}{2}\int g^2\d\beta+O(\epsilon^3),
-\qquad
-\int \norm{\nabla\log h_\epsilon}^2 h_\epsilon\d\beta
-=
-\epsilon^2\int\norm{\nabla g}^2\d\beta+O(\epsilon^3).
-```
-
-The second-order terms give the Poincaré, or spectral-gap, inequality
-
-```{math}
-\lambda\int g^2\d\beta
-\leq
-\int\norm{\nabla g}^2\d\beta,
-\qquad
-\int g\d\beta=0.
-```
-
-This linearization is important. Poincaré is not, in general, the usual
-$\Wass_2$-PL inequality for the chi-square energy
-$E_2(h)=\frac12\int(h-1)^2\d\beta$, because the $\Wass_2$ slope contains the
-moving mobility $h$,
-
-```{math}
-|\partial E_2|_{\Wass_2}^2(h\beta)
-=
-\int h\norm{\nabla h}^2\d\beta .
-```
-
-The exact PL interpretation is obtained by freezing the mobility at equilibrium.
-This gives the $H^{-1}(\beta)$ metric, which is precisely the linearization of
-$\Wass_2$ at $\beta$.
-
-(prop-poincare-linearized-wasserstein-pl)=
-:::{admonition} Proposition: Poincaré as Linearized Wasserstein-PL
+(prop-linearized-pl-functional-inequality)=
+:::{admonition} Proposition: Linearizing a Wasserstein-PL Inequality
 :class: important
-For a mean-zero perturbation $u$, define the frozen-mobility norm
+Let $\beta$ be a minimizer of an energy $\Ff$, and assume that $\Ff$ satisfies the
+Wasserstein-PL inequality with constant $\kappa>0$, namely {eq}`eq-wasserstein-pl`
+with $f$ replaced by $\Ff$. Let $\varphi$ be a smooth bounded
+perturbation with $\int\varphi\,\d\beta=0$, and set
+$\alpha_\epsilon=(1+\epsilon\varphi)\beta$ for $|\epsilon|$ small enough. Assume
+that, as $\epsilon\to0$,
 
 ```{math}
-\norm{u}_{-1,\beta}^2
-\eqdef
-\inf_{\substack{v\\ u=-\nabla_\beta\!\cdot v}}
-\int\norm{v}^2\d\beta,
-\qquad
-\nabla_\beta\!\cdot v\eqdef\frac{1}{\beta}\nabla\cdot(\beta v).
-```
-
-Equivalently, the associated dynamic metric on curves with fixed mass is
-obtained from
-
-```{math}
-\partial_t h_t+\nabla_\beta\!\cdot v_t=0,
-\qquad
-\int_0^1\!\int\norm{v_t}^2\d\beta\,\d t .
-```
-
-For a smooth density ratio $h$ with $\int h\d\beta=1$, set
-$E_2(h)=\frac12\int(h-1)^2\d\beta$. Its squared slope in this linearized
-Wasserstein metric is
-
-```{math}
-|\partial E_2|_{-1,\beta}^2(h)
+\Ff(\alpha_\epsilon)-\Ff(\beta)
 =
-\int\norm{\nabla h}^2\d\beta .
+\frac{\epsilon^2}{2}\,\mathsf H_\beta(\varphi)+o(\epsilon^2),
+\qquad
+|\partial\Ff|^2(\alpha_\epsilon)
+=
+\epsilon^2\,\mathsf D_\beta(\varphi)+o(\epsilon^2).
 ```
 
-Consequently, the Poincaré inequality with constant $\lambda>0$ is exactly the
-PL inequality
+Then the perturbation satisfies the linearized functional inequality
 
 ```{math}
-2\lambda E_2(h)
+\kappa\,\mathsf H_\beta(\varphi)
 \leq
-|\partial E_2|_{-1,\beta}^2(h).
-```
-
-The corresponding gradient flow is the linear Fokker-Planck equation
-$\partial_t h_t=Lh_t$, and it satisfies
-
-```{math}
-\chi^2(h_t\beta|\beta)
-\leq
-e^{-2\lambda t}\chi^2(h_0\beta|\beta).
+\mathsf D_\beta(\varphi).
 ```
 :::
 
 :::{dropdown} Proof
-A tangent vector for the frozen-mobility metric has the form
-$\dot h=-\nabla_\beta\!\cdot v$. Differentiating $E_2$ in this direction and
-integrating by parts with respect to $\beta$ gives
+Applying the PL inequality to $\alpha_\epsilon$ gives
 
 ```{math}
-\d E_2(h)[\dot h]
-=
-\int (h-1)\dot h\,\d\beta
-=
-\int\dotp{\nabla h}{v}\,\d\beta .
+|\partial\Ff|^2(\alpha_\epsilon)
+\geq
+2\kappa\bigl(\Ff(\alpha_\epsilon)-\Ff(\beta)\bigr),
 ```
 
-The squared dual norm of this differential is at most $\int\norm{\nabla h}^2\d\beta$ by Cauchy-Schwarz,
-and equality is attained, after normalization, by the tangent vector represented by $v=\nabla h$.
-This proves the slope identity. The Poincaré inequality is precisely
-$2\lambda E_2\leq|\partial E_2|_{-1,\beta}^2$. The Riemannian gradient is
-$-Lh$, hence the gradient flow is $\partial_t h_t=Lh_t$.
-Along this flow,
-$\frac{\d}{\d t}E_2(h_t)=-\int\norm{\nabla h_t}^2\d\beta$, and Gronwall's
-lemma gives the decay estimate.
+because $\Ff(\beta)$ is the minimum value. Substituting the two second-order
+expansions, dividing by $\epsilon^2$, and letting $\epsilon\to0$ gives the claim.
 :::
+
+The most striking instance is the entropy energy $\Ff(\alpha)=\KL(\alpha|\beta)$.
+In this case the squared Wasserstein slope is the relative Fisher information, so the PL
+inequality is precisely the logarithmic Sobolev inequality. Its linearization is
+the Poincaré inequality.
+
+(prop-poincare-linearized-wasserstein-pl)=
+:::{admonition} Proposition: Poincaré from Logarithmic Sobolev
+:class: important
+Let $\beta$ be a smooth probability measure on $\RR^d$. Assume that $\beta$
+satisfies the logarithmic Sobolev inequality with constant $\kappa>0$,
+
+```{math}
+\KL(\alpha|\beta)
+\leq
+\frac{1}{2\kappa}\,\mathcal I_\beta(\alpha),
+\qquad
+\mathcal I_\beta(\alpha)
+\eqdef
+\int\norm{\nabla\log\frac{\d\alpha}{\d\beta}}^2\,\d\alpha .
+```
+
+Then, for every smooth $\varphi$ with $\int\varphi\,\d\beta=0$,
+
+```{math}
+\kappa\int\varphi^2\,\d\beta
+\leq
+\int\norm{\nabla\varphi}^2\,\d\beta .
+```
+
+In particular, if $\d\beta=\rho_\beta\d x=Z^{-1}e^{-V}\d x$ and
+$\nabla^2V\succeq\kappa\Id$, so that $\beta$ is $\kappa$-strongly
+log-concave, then the conclusion holds by the Bakry-Emery criterion.
+:::
+
+:::{dropdown} Proof
+For $h_\epsilon=1+\epsilon\varphi$, with $|\epsilon|$ small enough, one has
+$\alpha_\epsilon=h_\epsilon\beta$ and
+
+```{math}
+\KL(\alpha_\epsilon|\beta)
+=
+\int h_\epsilon\log h_\epsilon\,\d\beta
+=
+\frac{\epsilon^2}{2}\int\varphi^2\,\d\beta+o(\epsilon^2),
+```
+
+because $\int\varphi\,\d\beta=0$. The Fisher information expands as
+
+```{math}
+\mathcal I_\beta(\alpha_\epsilon)
+=
+\int\norm{\nabla\log h_\epsilon}^2 h_\epsilon\,\d\beta
+=
+\epsilon^2\int\norm{\nabla\varphi}^2\,\d\beta+o(\epsilon^2).
+```
+
+Inserting these expansions in the logarithmic Sobolev inequality and letting
+$\epsilon\to0$ gives the Poincaré inequality. The last assertion is the usual
+Bakry-Emery implication from $\kappa$-convexity of $V$ to the logarithmic Sobolev
+inequality.
+:::
+
+If $\d\beta=\rho_\beta\d x=Z^{-1}e^{-V}\d x$, the Poincaré inequality is equivalently a spectral
+gap for the $\beta$-weighted Laplacian
+
+```{math}
+L_\beta\varphi
+\eqdef
+\Delta\varphi-\dotp{\nabla V}{\nabla\varphi}
+=
+\rho_\beta^{-1}\nabla\cdot(\rho_\beta\nabla\varphi).
+```
+
+Indeed $L_\beta$ is symmetric in $L^2(\beta)$ and
+
+```{math}
+\int\norm{\nabla\varphi}^2\,\d\beta
+=
+\langle \varphi,-L_\beta\varphi\rangle_{L^2(\beta)}.
+```
+
+Thus Poincaré says that the first nonzero eigenvalue of $-L_\beta$ is at least
+$\kappa$. This is the linear, or infinitesimal, shadow of the nonlinear
+Wasserstein-PL/log-Sobolev inequality.
 
 ### Talagrand's Transport-Entropy Inequality
 
@@ -2797,24 +2809,24 @@ Otto-Villani theory {cite:p}`OttoVillani2000Generalization,Villani09`.
 (prop-gaussian-talagrand-t2)=
 :::{admonition} Proposition: Gaussian $T_2$ Inequality
 :class: important
-Let $\al=f\gamma_d$ be a probability measure with finite second moment. Then
+Let $\al=\rho\gamma_d$ be a probability measure with finite second moment. Then
 
 ```{math}
 \frac12\Wass_2^2(\al,\gamma_d)
 \leq
 \KL(\al|\gamma_d)
 =
-\int f\log f\,\d\gamma_d .
+\int \rho\log \rho\,\d\gamma_d .
 ```
 :::
 
 :::{dropdown} Proof
-Assume first that $f$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier
+Assume first that $\rho$ is smooth and positive. Let $T=\nabla\phi$ be the Brenier
 map with $T_\sharp\gamma_d=\al$, and write $T(x)=x+\theta(x)$. The change of
 variables gives
 
 ```{math}
-f(T(x))e^{-\norm{T(x)}^2/2}\det(DT(x))
+\rho(T(x))e^{-\norm{T(x)}^2/2}\det(DT(x))
 =
 e^{-\norm{x}^2/2}.
 ```
@@ -2822,7 +2834,7 @@ e^{-\norm{x}^2/2}.
 Hence
 
 ```{math}
-\log f(T(x))
+\log \rho(T(x))
 =
 \dotp{x}{\theta(x)}
 +

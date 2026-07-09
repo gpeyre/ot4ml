@@ -1668,63 +1668,21 @@ M_{\Sigma,\bar\Sigma}
 \Sigma^{-1/2}(\Sigma^{1/2}\bar\Sigma\Sigma^{1/2})^{1/2}\Sigma^{-1/2}.
 ```
 
-With the normalizations displayed in the first column, the mean vector field $h$ and covariance vector field $H$ are as follows. Gradients with respect to $\Sigma$ are symmetric Frobenius gradients on the cone of covariance matrices.
+With the normalizations displayed in the first column, the mean vector field $h$ and covariance vector field $H$ are listed in the following table. Gradients with respect to $\Sigma$ are symmetric Frobenius gradients on the cone of covariance matrices.
 
-```{math}
-\begin{array}{lll}
-\text{functional} & h(m,\Sigma) & H(m,\Sigma) \\[.35em]
- f(\alpha)=g(m_\alpha,\Sigma_\alpha)
- &
- -\nabla_m g
- &
- -2(\Sigma\nabla_\Sigma g+\nabla_\Sigma g\,\Sigma), \\[.55em]
- \displaystyle
- \int\Bigl(\frac12x^\top Bx+\dotp{\ell}{x}\Bigr)\d\alpha(x),\ B=B^\top
- &
- -(B m+\ell)
- &
- -(\Sigma B+B\Sigma), \\[.85em]
- \displaystyle
- \frac14\iint (x-y)^\top G(x-y)\d\alpha(x)\d\alpha(y),\ G=G^\top
- &
- 0
- &
- -(\Sigma G+G\Sigma), \\[.85em]
- \KL(\alpha|\gamma)
- &
- -A\delta_m
- &
- 2\Id-\Sigma A-A\Sigma, \\[.55em]
- \mathcal I(\alpha|\gamma)
- &
- -2A^2\delta_m
- &
- 4\Sigma^{-1}-2\Sigma A^2-2A^2\Sigma, \\[.55em]
- \Wass_2^2(\alpha,\gamma)
- &
- -2\delta_m
- &
- 2(M_{\Sigma,\bar\Sigma}\Sigma+\Sigma M_{\Sigma,\bar\Sigma}-2\Sigma), \\[.65em]
- \MMD_k^2(\alpha,\gamma),\quad k(x,y)=\dotp{x}{y}^2
- &
- -4R m
- &
- -4(\Sigma R+R\Sigma), \\[.65em]
- \displaystyle
- \bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\alpha,\gamma)
- &
- -2\delta_m
- &
- -2(\Sigma G_\epsilon+G_\epsilon\Sigma), \\[.65em]
- \SW_2^2(\alpha,\gamma)
- &
- -\frac{2}{d}\delta_m
- &
- -2(\Sigma G_{\mathrm{sw}}+G_{\mathrm{sw}}\Sigma).
-\end{array}
-```
+| Functional $f(\alpha)$ | $h(m,\Sigma)$ | $H(m,\Sigma)$ |
+| --- | --- | --- |
+| $g(m_\alpha,\Sigma_\alpha)$ | $-\nabla_m g$ | $-2(\Sigma\nabla_\Sigma g+\nabla_\Sigma g\,\Sigma)$ |
+| $\displaystyle \int\bigl(\frac12x^\top Bx+\dotp{\ell}{x}\bigr)\d\alpha(x)$, $B=B^\top$ | $-(B m+\ell)$ | $-(\Sigma B+B\Sigma)$ |
+| $\displaystyle \frac14\iint (x-y)^\top G(x-y)\d\alpha(x)\d\alpha(y)$, $G=G^\top$ | $0$ | $-(\Sigma G+G\Sigma)$ |
+| $\KL(\alpha|\gamma)$ | $-A\delta_m$ | $2\Id-\Sigma A-A\Sigma$ |
+| $\mathcal I(\alpha|\gamma)$ | $-2A^2\delta_m$ | $4\Sigma^{-1}-2\Sigma A^2-2A^2\Sigma$ |
+| $\Wass_2^2(\alpha,\gamma)$ | $-2\delta_m$ | $2(M_{\Sigma,\bar\Sigma}\Sigma+\Sigma M_{\Sigma,\bar\Sigma}-2\Sigma)$ |
+| $\MMD_k^2(\alpha,\gamma)$, $k(x,y)=\dotp{x}{y}^2$ | $-4R m$ | $-4(\Sigma R+R\Sigma)$ |
+| $\displaystyle \bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\alpha,\gamma)$ | $-2\delta_m$ | $-2(\Sigma G_\epsilon+G_\epsilon\Sigma)$ |
+| $\SW_2^2(\alpha,\gamma)$ | $\displaystyle -\frac{2}{d}\delta_m$ | $-2(\Sigma G_{\mathrm{sw}}+G_{\mathrm{sw}}\Sigma)$ |
 
-where, in the MMD row,
+Here, in the MMD row,
 
 ```{math}
 R=\Sigma+m\,m^\top-\bar\Sigma-\bar m\,\bar m^\top .
@@ -1753,8 +1711,24 @@ B_{\Sigma,\bar\Sigma}^{-1/2}
 B_{\Sigma,\bar\Sigma}=\bar\Sigma^{1/2}\Sigma\bar\Sigma^{1/2}.
 ```
 
-Here $\tau_\epsilon$ is applied to positive matrices by spectral calculus; equivalently
-$G_\epsilon=\nabla_\Sigma \Bb_\epsilon(\Sigma,\bar\Sigma)^2$.
+Here $\tau_\epsilon$ is the scalar function
+
+```{math}
+\tau_\epsilon(r)
+\eqdef
+\frac{\sqrt{\epsilon^2+16r^2}-\epsilon}{4r},
+\qquad r>0,
+```
+
+applied to positive matrices by spectral calculus. Equivalently, for $M\succ0$,
+
+```{math}
+\tau_\epsilon(M)
+=
+\bigl(\sqrt{\epsilon^2 I+16M^2}-\epsilon I\bigr)(4M)^{-1}.
+```
+
+With this convention, $G_\epsilon=\nabla_\Sigma \Bb_\epsilon(\Sigma,\bar\Sigma)^2$.
 
 In the sliced row, $\sigma$ is the normalized spherical measure on $\Sphere^{d-1}$, and
 

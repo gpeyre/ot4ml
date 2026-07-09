@@ -676,7 +676,7 @@ support-distance quantization error.
 There is nevertheless a precise
 high-resolution continuum theory when the number $M$ of codepoints tends to
 infinity. If $\alpha=\rho\,\d x$, the limiting Eulerian variable is the density
-$f$ of sites, meaning heuristically that $M f(x)\,\d x$ codepoints lie in
+$\sigma$ of sites, meaning heuristically that $M\sigma(x)\,\d x$ codepoints lie in
 $\d x$. Thus the limit is $M\to+\infty$, not a limit in the exponent of the
 PDE. In one dimension, Caglioti, Golse and Iacobelli embed the ordered particle
 configuration in $L^2(0,1)$ and prove quantitative convergence of the discrete
@@ -688,21 +688,21 @@ section. The rescaled local energy $M^r\mathcal Q_M(\alpha)^p$ is described,
 up to the universal cell-shape constant, by
 
 ```{math}
-\mathcal G_\rho(f)
+\mathcal G_\rho(\sigma)
 \eqdef
-\int_\Omega \rho(x) f(x)^{-r}\,\d x,
+\int_\Omega \rho(x) \sigma(x)^{-r}\,\d x,
 \qquad
-\int_\Omega f\,\d x=1,
+\int_\Omega \sigma\,\d x=1,
 ```
 
 and its formal $\mathcal W_2$-gradient flow is the weighted ultrafast diffusion
 equation
 
 ```{math}
-\partial_t f
+\partial_t \sigma
 =
 -r\,\operatorname{div}\!\left(
-f\nabla\!\left(\frac{\rho}{f^{r+1}}\right)
+\sigma\nabla\!\left(\frac{\rho}{\sigma^{r+1}}\right)
 \right),
 ```
 
@@ -712,7 +712,7 @@ one-dimensional very-fast-diffusion equation and its convergence to equilibrium
 use the JKO scheme and Wasserstein-gradient-flow tools to prove well-posedness,
 regularity estimates and convergence for a multidimensional weighted version
 {cite:p}`iacobelli2019weighted`. With $\omega=\rho^{1/(r+1)}$ and
-$u=f/\omega$, the same equation becomes
+$u=\sigma/\omega$, the same equation becomes
 
 ```{math}
 \partial_t u
