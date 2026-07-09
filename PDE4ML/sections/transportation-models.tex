@@ -879,7 +879,7 @@ where $\SW_2$ denotes the sliced Wasserstein distance, obtained by averaging one
 	\big(T_\theta(P_\theta x)-P_\theta x\big)\,\theta\,\d\sigma(\theta).
 \end{equation}
 The sign follows from the one-dimensional identity: the first variation of $\frac12\Wass_2^2(\rho,\nu)$ has spatial derivative $s-T(s)$, so the descent velocity is $T(s)-s$, and composing with $P_\theta$ lifts it in the direction $\theta$.
-Thus empirical implementations only require one-dimensional sorting along sampled directions, followed by averaging the lifted projected displacements. This is the sliced-Wasserstein flow studied by Cozzi and Santambrogio~\cite{CozziSantambrogio2024SlicedFlow}, who prove long-time convergence under their hypotheses when the target is Gaussian and also show that the limiting characteristic map is not, in general, the optimal transport map. When both the evolving law and the target are Gaussian, the averaged velocity is affine and the flow closes on means and covariances; this finite-dimensional closure is revisited in Section~\ref{sec-gaussian-closure-transport-dynamics}, where the sliced objective appears in the Gaussian covariance catalogue of Proposition~\ref{prop-centered-gaussian-covariance-catalogue}.
+Thus empirical implementations only require one-dimensional sorting along sampled directions, followed by averaging the lifted projected displacements. This is the sliced-Wasserstein flow studied by Cozzi and Santambrogio~\cite{CozziSantambrogio2024SlicedFlow}, who prove long-time convergence under their hypotheses when the target is Gaussian and also show that the limiting characteristic map is not, in general, the optimal transport map. When both the evolving law and the target are Gaussian, the averaged velocity is affine and the flow closes on means and covariances; this finite-dimensional closure is revisited in Section~\ref{sec-gaussian-closure-transport-dynamics}, where the sliced objective appears in the Gaussian closure catalogue of Proposition~\ref{prop-centered-gaussian-covariance-catalogue}.
 \index{Gaussian!closure}% strictindex
 \index{monotone transport map}% strictindex
 
@@ -1544,7 +1544,7 @@ Gaussian measures provide a useful testing ground for the preceding dynamics. Th
 \index{Gaussian!manifold}% strictindex
 \index{Gaussian measure}% strictindex
 
-For constrained gradient flows on this family, the covariance equation is the finite-dimensional Bures--Wasserstein gradient flow on positive definite matrices. Thus Gaussian closure is not just a computational shortcut: it is the restriction of Wasserstein geometry to the Gaussian submanifold, where affine gradient fields encode tangent vectors.
+For constrained gradient flows on this family, the covariance equation is the finite-dimensional Bures--Wasserstein gradient flow on positive definite matrices. Thus Gaussian closure is not just a computational shortcut: it is the restriction of Wasserstein geometry to the Gaussian submanifold, where affine gradient fields encode tangent vectors. The following figure first compares three bridge-type Gaussian closures from a source \(\alpha_0\) to a target \(\gamma\); the exact gradient-flow closures for specified energies \(f(\alpha)\) are catalogued afterwards in Proposition~\ref{prop-centered-gaussian-covariance-catalogue}.
 \index{Gaussian!submanifold}% strictindex
 \index{affine!gradient}% strictindex
 \index{Bures-Wasserstein geometry}% strictindex
@@ -1560,7 +1560,7 @@ For constrained gradient flows on this family, the covariance equation is the fi
 \includegraphics[width=.30\linewidth]{figures/gradflow-gaussian-closure/sinkhorn-ellipses.pdf} &
 \includegraphics[width=.30\linewidth]{figures/gradflow-gaussian-closure/drifting-ellipses.pdf}
 \end{tabular}
-\caption{\emph{Gaussian closures of transport dynamics between two overlapping anisotropic Gaussians.} The left panel is the exact $W_2$ Gaussian geodesic. The middle panel shows a regularized Sinkhorn-style closure, where the same mean path is accompanied by inflated intermediate covariances. The right panel shows a drifting-style closure with a curved mean path and moment-matched covariance ellipses. These finite-dimensional pictures keep only means and covariances, and therefore discard higher-order shape information that would be created by a genuinely nonlinear velocity field.}
+\caption{\emph{Gaussian closures from a red source $\alpha_0$ to a blue target $\gamma=\mathcal N(\bar m,\bar\Sigma)$.} The left panel is the constant-speed $W_2$ geodesic, equivalently the displacement interpolation minimizing the Benamou--Brenier action between $\alpha_0$ and $\gamma$. The middle panel is an entropic Sinkhorn/Schr\"odinger bridge-style closure for the quadratic cost $|x-y|^2$ and regularization strength $\epsilon>0$; it is a bridge toward $\gamma$, not the gradient flow of a fixed energy $f(\alpha)$, and the entropic noise inflates intermediate covariances. The right panel is a prescribed non-variational drifting flow, governed by a continuity equation with an affine Gaussian-preserving velocity, chosen so that the mean follows a curved path while the covariance is moment-matched to the same endpoint $\gamma$.}
 \index{moment matching}% strictindex
 \index{Gaussian!closure}% strictindex
 \index{velocity field}% strictindex
@@ -1573,46 +1573,479 @@ For constrained gradient flows on this family, the covariance equation is the fi
 The first question is invariance: one wants a simple criterion ensuring that the continuity equation does not leave the finite-dimensional Gaussian family.
 \index{continuity equation}% strictindex
 
+
 \begin{prop}[Affine velocities preserve Gaussianity]\label{prop-gaussian-affine-closure}
 \index{affine!closure}% strictindex
-	Let $\alpha_t=\Gaussian(\mean_t,\cov_t)$, with $\cov_t$ positive definite, solve the continuity equation with an affine velocity
+	Let $\alpha_0=\Gaussian(m_0,\Sigma_0)$, with $\Sigma_0\succ0$. Let $b_t\in\RR^d$ and $A_t\in\RR^{d\times d}$ be locally integrable on a time interval, and let $(m_t,\Sigma_t)$ solve
 	\[
-		v_t(x)=b_t+A_t(x-\mean_t).
-	\]
-	Then $\alpha_t$ remains Gaussian and its moments solve
-	\[
-		\dot \mean_t=b_t,
+		\dot m_t=b_t,
 		\qquad
-		\dot\cov_t=A_t\cov_t+\cov_t A_t^\top .
+		\dot\Sigma_t=A_t\Sigma_t+\Sigma_tA_t^\top,
+		\qquad
+		(m_{t=0},\Sigma_{t=0})=(m_0,\Sigma_0).
 	\]
-	Conversely, any smooth Gaussian curve with positive definite covariance can be generated by such an affine velocity. If one wants the velocity to be a Wasserstein tangent gradient, one chooses the unique symmetric solution of the Lyapunov equation
+	Then, as long as this matrix ODE is defined, $\Sigma_t\succ0$ and
+	\[
+		\alpha_t=\Gaussian(m_t,\Sigma_t)
+	\]
+	is the solution of the continuity equation
+	\[
+		\partial_t\alpha_t+\diverg(\alpha_t v_t)=0,
+		\qquad
+		v_t(x)=b_t+A_t(x-m_t).
+	\]
+	In particular, if a smooth functional $f$ has a Wasserstein gradient on Gaussian measures of the affine form
+	\[
+		\Wgrad f(\Gaussian(m,\Sigma))(x)
+		=
+		b_f(m,\Sigma)+A_f(m,\Sigma)(x-m),
+	\]
+	with $A_f(m,\Sigma)$ symmetric, then the Wasserstein gradient flow of $f$, initialized from any non-degenerate Gaussian, stays Gaussian and satisfies
+	\[
+		\dot m_t=h_f(m_t,\Sigma_t),
+		\qquad
+		\dot\Sigma_t=H_f(m_t,\Sigma_t),
+	\]
+	where
+	\[
+		h_f(m,\Sigma)=-b_f(m,\Sigma),
+		\qquad
+		H_f(m,\Sigma)
+		=
+		-\bigl(A_f(m,\Sigma)\Sigma+\Sigma A_f(m,\Sigma)\bigr).
+	\]
+	Conversely, fix a non-degenerate Gaussian \(\Gaussian(m,\Sigma)\). Suppose that a finite-energy Wasserstein tangent field \(V_{m,\Sigma}\) is represented by a gradient in \(L^2(\Gaussian(m,\Sigma))\) and is tangent to the Gaussian manifold at this Gaussian. Then there exist \(b(m,\Sigma)\) and a symmetric matrix \(A(m,\Sigma)\) such that
+	\[
+		V_{m,\Sigma}(x)=b(m,\Sigma)+A(m,\Sigma)(x-m)
+		\qquad
+		\Gaussian(m,\Sigma)\text{-a.e.}
+	\]
+	Consequently, under the same smoothness assumptions, if the Wasserstein gradient flow of a functional preserves the Gaussian family for all non-degenerate Gaussian initial data, then \(\Wgrad f(\Gaussian(m,\Sigma))\) is affine on each Gaussian. Without the Wasserstein gradient representative, this converse is false because one may add velocity fields with zero \(\Gaussian(m,\Sigma)\)-weighted divergence.
+\index{affine!closure}% strictindex
+\index{Wasserstein gradient}% strictindex
+\index{Gaussian!manifold}% strictindex
+\index{divergence-free field}% strictindex
+
+	Finally, any smooth Gaussian curve with positive definite covariance can be generated by an affine velocity. If one wants the velocity to be a Wasserstein tangent gradient, one chooses the unique symmetric solution of the Lyapunov equation
 \index{affine!closure}% strictindex
 \index{Lyapunov equation}% strictindex
 	\[
-		A_t\cov_t+\cov_t A_t=\dot\cov_t.
+		A_t\Sigma_t+\Sigma_t A_t=\dot\Sigma_t.
 	\]
 \end{prop}
 
 \begin{proof}
-	Let $X_t$ follow the characteristic ODE $\dot X_t=b_t+A_t(X_t-\mean_t)$. This linear ODE maps Gaussian random variables to Gaussian random variables. Taking expectation gives $\dot\mean_t=b_t$. Writing $\tilde X_t=X_t-\mean_t$, one has $\dot{\tilde X}_t=A_t\tilde X_t$, hence
+	Let \(X_t\) follow the characteristic ODE \(\dot X_t=b_t+A_t(X_t-m_t)\) with \(X_0\sim\Gaussian(m_0,\Sigma_0)\). Since \(\dot m_t=b_t\), the centered variable \(\tilde X_t=X_t-m_t\) solves the homogeneous linear ODE \(\dot{\tilde X}_t=A_t\tilde X_t\). If \(\Phi_t\) is the fundamental matrix \(\dot\Phi_t=A_t\Phi_t\), \(\Phi_{t=0}=\Id\), then
+	\[
+		X_t=m_t+\Phi_t(X_0-m_0),
+		\qquad
+		\Sigma_t=\Phi_t\Sigma_0\Phi_t^\top .
+	\]
+	Hence \(X_t\) is Gaussian and \(\Sigma_t\succ0\), and
 \index{random variable}% strictindex
 	\[
-		\dot\cov_t
+		\dot\Sigma_t
 		=
-		\frac{\d}{\d t}\EE(\tilde X_t\tilde X_t^\top)
+		\frac{\d}{\d t}\EE\bigl(\tilde X_t\tilde X_t^\top\bigr)
 		=
-		A_t\cov_t+\cov_t A_t^\top .
+		A_t\Sigma_t+\Sigma_t A_t^\top .
 	\]
-	For the converse, set $b_t=\dot\mean_t$ and choose any matrix $A_t$ satisfying the covariance equation. Since $\cov_t$ is positive definite, the Lyapunov map $A\mapsto A\cov_t+\cov_t A$ is invertible on symmetric matrices, which gives the unique symmetric choice when a gradient velocity is required. In that case $v_t$ is the gradient of the quadratic potential $x\mapsto \dotp{b_t}{x}+\dotp{A_t(x-\mean_t)}{x-\mean_t}/2$.
+	This proves Gaussian preservation and the moment ODE. The Wasserstein gradient-flow statement follows by inserting the descent velocity $v_t=-\Wgrad f(\alpha_t)$.
+\index{Wasserstein gradient}% strictindex
+
+	For the converse, fix \(\alpha=\Gaussian(m,\Sigma)\) and denote by \(\rho\) its density. If the velocity is tangent to the Gaussian manifold, then the infinitesimal density variation has the form
+	\[
+		-\diverg(\rho V)=q\rho,
+	\]
+	where \(q\) is a polynomial of degree at most two with zero \(\alpha\)-mean. Since \(V\) is the Wasserstein representative, \(V=\nabla\phi\) in \(L^2(\alpha)\). After the affine whitening \(y=\Sigma^{-1/2}(x-m)\), this equation becomes, for the standard Gaussian density,
+	\[
+		y\cdot\nabla\psi(y)-\Delta\psi(y)=\tilde q(y),
+	\]
+	with \(\tilde q\) again of degree at most two. The Hermite polynomials diagonalize the Ornstein--Uhlenbeck operator \(y\cdot\nabla-\Delta\): constants are the only kernel, and degree-\(k\) Hermite modes have eigenvalue \(k\). Therefore the unique finite-energy solution modulo constants has \(\psi\) of degree at most two. Thus \(\nabla\psi\) is affine, and transforming back gives \(V(x)=b+A(x-m)\) with \(A=A^\top\) because \(V\) is a gradient field.
+\index{Hermite polynomial}% strictindex
+\index{Ornstein-Uhlenbeck operator}% strictindex
+
+	For a prescribed smooth Gaussian curve, set $b_t=\dot m_t$ and choose any matrix $A_t$ satisfying $A_t\Sigma_t+\Sigma_tA_t^\top=\dot\Sigma_t$. Since $\Sigma_t$ is positive definite, the Lyapunov map $A\mapsto A\Sigma_t+\Sigma_t A$ is invertible on symmetric matrices, which gives the unique symmetric choice when a gradient velocity is required. In that case $v_t$ is the gradient of the quadratic potential $x\mapsto \dotp{b_t}{x}+\dotp{A_t(x-m_t)}{x-m_t}/2$.
 \index{quadratic!potential}% strictindex
 \index{gradient!velocity}% strictindex
 \end{proof}
 
+\paragraph{Gaussian-preserving gradient flows.}
+\index{Gaussian!preservation}% strictindex
+\index{gradient!flow}% strictindex
+
+We now instantiate the affine-gradient viewpoint by tracking functionals whose full Wasserstein gradient is affine on Gaussian inputs. The catalogue below contains exact Gaussian-preserving Wasserstein flows, not projected or constrained flows; the separate constrained construction is discussed only afterwards.
+\index{Wasserstein gradient}% strictindex
+\index{moment functional}% strictindex
+
+\begin{prop}[Gaussian closure catalogue]\label{prop-centered-gaussian-covariance-catalogue}
+\index{Gaussian!covariance}% strictindex
+\index{Gaussian!mean}% strictindex
+\index{Gaussian!manifold}% strictindex
+	Let \(\gamma=\Gaussian(\bar m,\bar\Sigma)\) on \(\RR^d\), with \(\bar\Sigma\succ0\), and let the initial condition be \(\alpha_0=\Gaussian(m_0,\Sigma_0)\), with \(\Sigma_0\succ0\). For each functional displayed below, let \(\alpha_t\) be the usual Wasserstein gradient flow on \(\Pp_2(\RR^d)\), initialized at \(\alpha_0\). Then the Gaussian family is invariant for these dynamics: as long as the solution exists and \(\Sigma_t\succ0\),
+	\[
+		\alpha_t=\Gaussian(m_t,\Sigma_t),
+	\]
+	and the mean and covariance satisfy
+	\[
+		\dot{m}_t=h(m_t,\Sigma_t),
+		\qquad
+		\dot{\Sigma}_t=H(m_t,\Sigma_t).
+	\]
+	Write \(\delta_m=m-\bar m\), \(A=\bar\Sigma^{-1}\), and
+	\[
+		M_{\Sigma,\bar\Sigma}
+		\eqdef
+		\Sigma^{-1/2}\bigl(\Sigma^{1/2}\bar\Sigma\Sigma^{1/2}\bigr)^{1/2}\Sigma^{-1/2}.
+	\]
+	With the normalizations displayed in the first column, the mean vector field \(h\) and covariance vector field \(H\) are as follows. Gradients with respect to \(\Sigma\) are symmetric Frobenius gradients on the cone of covariance matrices.
+	\[
+	\begin{array}{r@{\quad:\quad}l@{\qquad}l}
+		\text{functional} & h(m,\Sigma) & H(m,\Sigma) \\[.35em]
+		f(\alpha)=g(m_\alpha,\Sigma_\alpha)
+		&
+		-\nabla_m g
+		&
+		-2(\Sigma\nabla_\Sigma g+\nabla_\Sigma g\,\Sigma), \\[.55em]
+		\displaystyle
+		\int\Bigl(\frac12x^\top Bx+\dotp{\ell}{x}\Bigr)\d\alpha(x),\ B=B^\top
+		&
+		-(B m+\ell)
+		&
+		-(\Sigma B+B\Sigma), \\[.85em]
+		\displaystyle
+		\frac14\iint (x-y)^\top G(x-y)\d\alpha(x)\d\alpha(y),\ G=G^\top
+		&
+		0
+		&
+		-(\Sigma G+G\Sigma), \\[.85em]
+		\KL(\alpha|\gamma)
+		&
+		-A\delta_m
+		&
+		2\Id-\Sigma A-A\Sigma, \\[.55em]
+		\mathcal I(\alpha|\gamma)
+		&
+		-2A^2\delta_m
+		&
+		4\Sigma^{-1}-2\Sigma A^2-2A^2\Sigma, \\[.55em]
+		\Wass_2^2(\alpha,\gamma)
+		&
+		-2\delta_m
+		&
+		2(M_{\Sigma,\bar\Sigma}\Sigma+\Sigma M_{\Sigma,\bar\Sigma}-2\Sigma), \\[.65em]
+		\MMD_k^2(\alpha,\gamma),\quad k(x,y)=\dotp{x}{y}^2
+\index{maximum mean discrepancy}% strictindex
+		&
+		-4R m
+		&
+		-4(\Sigma R+R\Sigma), \\[.65em]
+		\displaystyle
+		\bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\alpha,\gamma)
+		&
+		-2\delta_m
+		&
+		-2(\Sigma G_\epsilon+G_\epsilon\Sigma), \\[.65em]
+		\SW_2^2(\alpha,\gamma)
+		&
+		-\frac{2}{d}\delta_m
+		&
+		-2(\Sigma G_{\mathrm{sw}}+G_{\mathrm{sw}}\Sigma).
+	\end{array}
+	\]
+	where, in the MMD row,
+	\[
+		R=\Sigma+m\,m^\top-\bar\Sigma-\bar m\,\bar m^\top .
+	\]
+	The debiased Sinkhorn row uses the notation displayed here: for Gaussian inputs,
+	\[
+		\bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\alpha,\gamma)
+		=
+		\norm{\delta_m}^2+\Bb_\epsilon(\Sigma,\bar\Sigma)^2,
+	\]
+	with
+	\[
+		G_\epsilon=\nabla_\Sigma \Bb_\epsilon(\Sigma,\bar\Sigma)^2.
+	\]
+	Here \(\Bb_\epsilon\) is the debiased smoothed Bures term: if \(\sigma_i(\Sigma,\Lambda)\) are the singular values of \(\Sigma^{1/2}\Lambda^{1/2}\) and \(\lambda_i(\Sigma)\) are the eigenvalues of \(\Sigma\), then
+	\[
+		\Bb_\epsilon(\Sigma,\Lambda)^2
+		=
+		\sum_i\psi_\epsilon(\sigma_i(\Sigma,\Lambda))
+		-\frac12\sum_i\psi_\epsilon(\lambda_i(\Sigma))
+		-\frac12\sum_i\psi_\epsilon(\lambda_i(\Lambda)),
+	\]
+	where
+	\[
+		\tau_\epsilon(r)
+		=
+		\frac{\sqrt{\epsilon^2+16r^2}-\epsilon}{4r},
+		\qquad
+		\psi_\epsilon(r)
+		=
+		-2r\,\tau_\epsilon(r)
+		-\frac{\epsilon}{2}\log\bigl(1-\tau_\epsilon(r)^2\bigr).
+	\]
+	In the sliced row, \(\sigma\) is the normalized spherical measure on \(\Sphere^{d-1}\), and
+	\[
+		G_{\mathrm{sw}}(\Sigma,\bar\Sigma)
+		=
+		\int_{\Sphere^{d-1}}
+		\left(
+			1-\sqrt{\frac{\theta^\top\bar\Sigma\theta}{\theta^\top\Sigma\theta}}
+		\right)
+		\theta\theta^\top\,\d\sigma(\theta).
+	\]
+	Here
+	\[
+		\mathcal I(\alpha|\gamma)
+		=
+		\int
+		\left|\nabla\log\rho(x)+A(x-\bar m)\right|^2\rho(x)\,\d x
+		\qquad(\alpha=\rho\,\d x).
+	\]
+	Multiplying any energy by a constant rescales the corresponding right-hand side. In the centered isotropic case \(\gamma=\Gaussian(0,\Id)\), the Sinkhorn row reduces to the explicit covariance ODE
+	\[
+	H(\Sigma)=
+	4\left(\Sigma+\frac{\epsilon^2}{16}\Id\right)^{1/2}
+	-4\left(\Sigma^2+\frac{\epsilon^2}{16}\Id\right)^{1/2},
+	\]
+	and the sliced row becomes \(H(\Sigma)=V(\Sigma)\Sigma+\Sigma V(\Sigma)\), where
+	\[
+		V(\Sigma)=
+		2\int_{\Sphere^{d-1}}
+		\left(\frac{1}{\sqrt{\theta^\top\Sigma\theta}}-1\right)
+		\theta\theta^\top\,\d\sigma(\theta).
+	\]
+\end{prop}
+
+\begin{proof}
+	For the moment-functional row, the formula is exact on the full Wasserstein space. Indeed, write
+	\[
+		m_\alpha=\int x\,\d\alpha(x),
+		\qquad
+		\Sigma_\alpha=\int (x-m_\alpha)(x-m_\alpha)^\top\d\alpha(x).
+	\]
+	If \(\eta\) is a signed perturbation with zero total mass, then
+	\[
+		\d m_\alpha[\eta]=\int x\,\d\eta(x),
+		\qquad
+		\d\Sigma_\alpha[\eta]=\int (x-m_\alpha)(x-m_\alpha)^\top\d\eta(x).
+	\]
+	Thus, up to an irrelevant additive constant, the first variation is
+	\[
+		\delta f(\alpha)(x)
+		=
+		\dotp{\nabla_m g}{x}
+		+
+		\dotp{\nabla_\Sigma g}{(x-m_\alpha)(x-m_\alpha)^\top},
+	\]
+	and its spatial gradient is the affine field
+	\[
+		\nabla_x\delta f(\alpha)(x)
+		=
+		\nabla_m g+2\nabla_\Sigma g\,(x-m_\alpha).
+	\]
+	Consequently the full Wasserstein descent velocity is affine, and Proposition~\ref{prop-gaussian-affine-closure} gives the displayed moment equations.
+\index{moment functional}% strictindex
+\index{first variation}% strictindex
+
+	For the quadratic potential row, the ambient first variation is
+	\[
+		\delta f(\alpha)(x)=\frac12x^\top Bx+\dotp{\ell}{x},
+		\qquad
+		\nabla_x\delta f(\alpha)(x)=B m+\ell+B(x-m),
+	\]
+	which gives the displayed affine velocity. For the quadratic interaction row, the ambient first variation is
+	\[
+		\delta f(\alpha)(x)
+		=
+		\frac12\int (x-y)^\top G(x-y)\d\alpha(y),
+		\qquad
+		\nabla_x\delta f(\alpha)(x)=G(x-m_\alpha).
+	\]
+	These first variations are quadratic in \(x\), hence the affine Gaussian flow coincides with the full Wasserstein gradient flow.
+\index{quadratic!potential}% strictindex
+\index{energy!interaction}% strictindex
+\index{first variation}% strictindex
+
+	For the KL row, the ambient first variation is \(\log(\rho/\gamma)\) up to an additive constant. If \(\alpha=\Gaussian(m,\Sigma)\), then
+	\[
+		\nabla\log(\rho/\gamma)(x)
+		=
+		-\Sigma^{-1}(x-m)+A(x-\bar m),
+	\]
+	so the descent velocity is
+	\[
+		v(x)=-A\delta_m+(\Sigma^{-1}-A)(x-m).
+	\]
+	Proposition~\ref{prop-gaussian-affine-closure} gives \(h(m,\Sigma)=-A\delta_m\) and \(H(m,\Sigma)=2\Id-\Sigma A-A\Sigma\). For the Fisher row, writing \(u=\log(\rho/\gamma)\), the ambient first variation of \(\frac12\mathcal I\) is, up to constants,
+	\[
+		-\Delta u-\frac12|\nabla u|^2-\dotp{\nabla u}{\nabla\log\gamma}.
+	\]
+	For Gaussian \(\rho\) and Gaussian \(\gamma\), this is quadratic in \(x\). Multiplying by two for \(\mathcal I\) gives the descent velocity
+	\[
+		v(x)=-2A^2\delta_m+2(\Sigma^{-2}-A^2)(x-m).
+	\]
+	Hence the Wasserstein velocity is affine and the Gaussian family is closed, with the displayed \(h\) and \(H\). Although the ambient Fisher flow is a fourth-order PDE for a generic density, it is therefore an exact finite-dimensional closure in this quadratic-reference case.
+\index{relative entropy}% strictindex
+\index{Fisher information}% strictindex
+
+	For \(\Wass_2^2(\alpha,\gamma)\), the Brenier map from \(\Gaussian(m,\Sigma)\) to \(\gamma\) is
+	\[
+		T(x)=\bar m+M_{\Sigma,\bar\Sigma}(x-m).
+	\]
+	The descent velocity for the unhalved squared distance is \(2(T-\Id)\), which gives the mean and covariance equations through Proposition~\ref{prop-gaussian-affine-closure}. For the MMD row, \(k(x,y)=\dotp{x}{y}^2\) identifies the kernel mean embedding with the raw second moment. Thus
+	\[
+		\MMD_k^2(\alpha,\gamma)
+		=
+		\norm{\Sigma+m\,m^\top-\bar\Sigma-\bar m\,\bar m^\top}_{\mathrm F}^2
+		=
+		\norm{R}_{\mathrm F}^2,
+	\]
+	and the ambient first variation is \(2x^\top R x\), whose descent velocity is \(-4Rx\). This gives \(h(m,\Sigma)=-4R m\) and \(H(m,\Sigma)=-4(\Sigma R+R\Sigma)\).
+\index{Brenier map}% strictindex
+\index{Bures-Wasserstein geometry}% strictindex
+\index{maximum mean discrepancy}% strictindex
+\index{second moment}% strictindex
+
+	For the Sinkhorn row, the closed Gaussian formula is a squared mean displacement plus the smoothed Bures term \(\Bb_\epsilon^2\). This is not only a formula on the Gaussian submanifold. The first variation of the entropic value with respect to the first marginal is a Sinkhorn dual potential, and for Gaussian marginals these cross and self dual potentials are quadratic. Their debiased combination is therefore quadratic, so its spatial gradient is affine. Since the restriction of the functional to Gaussians is
+	\[
+		(m,\Sigma)\mapsto \norm{m-\bar m}^2+\Bb_\epsilon(\Sigma,\bar\Sigma)^2,
+	\]
+	the quadratic coefficient is \(G_\epsilon=\nabla_\Sigma\Bb_\epsilon(\Sigma,\bar\Sigma)^2\), and the moment-functional computation gives the displayed \(h\) and \(H\). When \(\bar\Sigma=\Id\), this covariance contribution is a spectral function of \(\Sigma\). Since \(\psi_\epsilon'(r)=-2\tau_\epsilon(r)\), if \(\lambda\) is an eigenvalue of \(\Sigma\), the corresponding scalar velocity is
+	\[
+		4\sqrt{\lambda+\epsilon^2/16}-4\sqrt{\lambda^2+\epsilon^2/16},
+	\]
+	which gives the displayed matrix formula by functional calculus.
+
+	For sliced Wasserstein, the exact ambient Wasserstein gradient is obtained by averaging the one-dimensional gradients. Each projection is Gaussian:
+	\[
+		(P_\theta)_\sharp\alpha=\Gaussian(\dotp{\theta}{m},\theta^\top\Sigma\theta),
+		\qquad
+		(P_\theta)_\sharp\gamma=\Gaussian(\dotp{\theta}{\bar m},\theta^\top\bar\Sigma\theta).
+	\]
+	Hence
+	\[
+		\SW_2^2(\alpha,\gamma)
+		=
+		\int_{\Sphere^{d-1}}
+		\left[
+			\dotp{\theta}{\delta_m}^2
+			+
+			\left(\sqrt{\theta^\top\Sigma\theta}
+			-\sqrt{\theta^\top\bar\Sigma\theta}\right)^2
+		\right]\d\sigma(\theta).
+	\]
+	If \(T_\theta\) is the monotone transport from \((P_\theta)_\sharp\alpha\) to \((P_\theta)_\sharp\gamma\), then the descent velocity for the unhalved sliced objective is
+	\[
+		2\int_{\Sphere^{d-1}}\bigl(T_\theta(P_\theta x)-P_\theta x\bigr)\theta\,\d\sigma(\theta).
+	\]
+	For Gaussian marginals, \(T_\theta\) is affine. Thus this velocity is affine in \(x\), and Proposition~\ref{prop-gaussian-affine-closure} applies. The spherical identity \(\int\theta\theta^\top\d\sigma(\theta)=\Id/d\) gives the mean equation, and differentiating the covariance term gives \(G_{\mathrm{sw}}\).
+\index{Sinkhorn divergence}% strictindex
+\index{Gaussian!Sinkhorn}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
+\index{one-dimensional!projection}% strictindex
+\end{proof}
+
+Not every PDE preserves Gaussianity exactly. Wasserstein flows of generic higher-order regularizers usually create higher moments immediately and require a Gaussian projection to close on \((m,\Sigma)\). Such projected closures are still useful: they expose the finite-dimensional dynamics predicted by a variational model and make it easy to compare variational flows with non-variational affine dynamics such as drifting fields or the Gaussian transformer closure below.
+\index{drifting!field}% strictindex
+\index{transformer}% strictindex
+\index{Gaussian!projection}% strictindex
+\index{Fisher information}% strictindex
+
+\begin{example}[Linear mean-field networks as cross-moment flows]
+\index{flow!cross-moment}% strictindex
+	Consider the two-layer mean-field model of Section~\ref{sec-wasserstein-flows-mlp}, and take the linear activation $\sigma(s)=s$, so that
+\index{two-layer neural network}% strictindex
+	\[
+		\psi((u,v),z)=v\,\dotp{u}{z}.
+	\]
+	The predictor is the linear map
+	\[
+		G_{\alpha_t}(z)=Q_t z,
+		\qquad
+		Q_t=\int v u^\top\d\alpha_t(u,v)\in\RR^{d'\times d}.
+	\]
+	Thus the square-loss energy of~\eqref{eq-mlp-square-loss-quadratic-linear} depends on the neuron law only through the raw cross moment \(Q_\alpha=\int v u^\top\d\alpha(u,v)\). If the neuron law has mean and covariance
+	\[
+		m=
+		\begin{pmatrix}m_u\\ m_v\end{pmatrix},
+		\qquad
+		\Sigma=
+		\begin{pmatrix}
+			\Sigma_{uu} & \Sigma_{uv}\\
+			\Sigma_{vu} & \Sigma_{vv}
+		\end{pmatrix},
+	\]
+	then
+	\[
+		Q_\alpha=Q(m,\Sigma)\eqdef \Sigma_{vu}+m_v m_u^\top.
+	\]
+	For the squared Euclidean loss, set
+\index{second moment}% strictindex
+\index{neuron law}% strictindex
+	\[
+		S=\int zz^\top\d\rho(z,y),
+		\qquad
+		R=\int y z^\top\d\rho(z,y).
+	\]
+	The learning energy is the moment functional
+	\[
+		f(\alpha)=g(m_\alpha,\Sigma_\alpha),
+		\qquad
+		g(m,\Sigma)
+		=
+		\frac12\tr\!\big(Q(m,\Sigma)S Q(m,\Sigma)^\top\big)
+		-\tr\!\big(R Q(m,\Sigma)^\top\big)
+		+\frac12\int\norm{y}^2\d\rho(z,y).
+	\]
+	This puts the model exactly in the moment-functional row of Proposition~\ref{prop-centered-gaussian-covariance-catalogue}. To see that it recovers the usual particle equation, write the derivative of the outer square loss with respect to the matrix \(Q\) as
+	\[
+		E_\alpha\eqdef Q_\alpha S-R.
+	\]
+	The first variation is
+\index{first variation}% strictindex
+	\[
+		\delta f(\alpha)(u,v)=\dotp{E_\alpha}{v u^\top}=v^\top E_\alpha u.
+	\]
+	Hence the particle velocity in parameter space is linear:
+	\[
+		-\nabla_{(u,v)}\delta f(\alpha)(u,v)
+		=
+		-\begin{pmatrix}
+			0 & E_\alpha^\top \\
+			E_\alpha & 0
+		\end{pmatrix}
+		\begin{pmatrix} u \\ v \end{pmatrix}.
+	\]
+	Equivalently, at the level of \(g\),
+	\[
+		\nabla_{m_u}g=E_\alpha^\top m_v,
+		\qquad
+		\nabla_{m_v}g=E_\alpha m_u,
+		\qquad
+		\nabla_\Sigma g=
+		\frac12
+		\begin{pmatrix}
+			0 & E_\alpha^\top\\
+			E_\alpha & 0
+		\end{pmatrix}.
+	\]
+	The factor \(1/2\) in the covariance gradient comes from the symmetry of \(\Sigma\): the upper-right block is the transpose of the lower-left block. Substituting these gradients in Proposition~\ref{prop-centered-gaussian-covariance-catalogue} gives the closed ODE for \((m_t,\Sigma_t)\). In particular, a Gaussian law of neurons remains Gaussian. When the neuron law is centered, \(Q_\alpha=\Sigma_{vu}\), so the energy is a function of the cross-covariance block alone. This exact closure is special to the linear activation; for nonlinear activations, Gaussian closures are usually projections rather than invariant families.
+\index{covariance!subblock}% strictindex
+\index{neuron law}% strictindex
+\index{neuron}% strictindex
+\index{Gaussian!closure}% strictindex
+\index{affine!closure}% strictindex
+\end{example}
+
 \paragraph{Constrained evolution on the Gaussian manifold.}
 \index{Gaussian!manifold}% strictindex
 
-For non-affine velocities, the finite-dimensional substitute is to project the Wasserstein dynamics onto the Gaussian manifold.
+The preceding affine-gradient examples have a limited scope: most Wasserstein gradient flows of a functional \(f(\alpha)\) are not closed on the Gaussian manifold. A nonlinear ambient velocity creates higher-order moments immediately, so the exact Gaussian closure usually fails. The constrained viewpoint deliberately replaces the full evolution by its projection onto \(\mathcal G\), forcing the curve to remain Gaussian while keeping the Wasserstein tangent geometry.
 \index{affine!closure}% strictindex
+\index{Gaussian!projection}% strictindex
 
 Let
 \[
@@ -1689,214 +2122,10 @@ For $\mathcal M=\mathcal G$, tangent velocities are affine gradient fields $v(x)
 \index{affine!closure}% strictindex
 \end{proof}
 
-This proposition should be read as the organizing rule for Gaussian closures: once the scalar energy has been reduced to a function of $(\mean,\cov)$, its constrained Wasserstein gradient is automatically affine and the covariance follows the Bures-type ODE~\eqref{eq-gaussian-wgf-closure}. When the first variation of $f$ is quadratic, this constrained gradient coincides with the full Wasserstein gradient.
+This proposition is the organizing rule for constrained Gaussian closures: once the scalar energy has been reduced to a function of $(\mean,\cov)$, its constrained Wasserstein gradient is automatically affine and the covariance follows the Bures-type ODE~\eqref{eq-gaussian-wgf-closure}. When the first variation of $f$ is quadratic, this constrained gradient coincides with the full Wasserstein gradient.
 \index{first variation}% strictindex
 \index{Gaussian!closure}% strictindex
 
-\paragraph{Gaussian-preserving gradient flows.}
-\index{Gaussian!preservation}% strictindex
-\index{gradient!flow}% strictindex
-
-The next examples show that many familiar energies already have affine Wasserstein gradients on Gaussian inputs, so their full flow remains inside the Gaussian family.
-\index{Wasserstein gradient}% strictindex
-
-\begin{example}[Gaussian energies and affine gradients]\label{ex-gaussian-affine-gradients}
-\index{Gaussian!energy}% strictindex
-\index{affine!gradient}% strictindex
-	Proposition~\ref{prop-gaussian-gradient-bullet-list} turns many standard energies into explicit affine fields:
-	\begin{itemize}
-		\item \emph{Quadratic potential energy.} If
-\index{quadratic!potential}% strictindex
-		\[
-			f(\alpha)=\int \Bigl(\frac12 x^\top Hx+\dotp{\ell}{x}\Bigr)\d\alpha(x),
-			\qquad H=H^\top,
-		\]
-		then
-		\[
-			\Wgrad f(\alpha)(x)=Hx+\ell=(H\mean+\ell)+H(x-\mean).
-		\]
-		This is the Gaussian form of transport under a quadratic confinement.
-
-		\item \emph{Quadratic interaction energy.} If
-\index{energy!interaction}% strictindex
-		\[
-			f(\alpha)=\frac14\iint (x-y)^\top G(x-y)\d\alpha(x)\d\alpha(y),
-			\qquad G=G^\top,
-		\]
-		then $F(\mean,\cov)=\frac12\mathrm{tr}(G\cov)$ and
-		\[
-			\Wgrad f(\alpha)(x)=G(x-\mean).
-		\]
-		The mean is unchanged and the covariance contracts or expands according to the signs of $G$.
-
-		\item \emph{Relative entropy to a Gaussian.} For $\bar\alpha=\Gaussian(\bar\mean,\bar\cov)$,
-\index{relative entropy}% strictindex
-		\[
-			f(\alpha)=\KL(\alpha|\bar\alpha)
-		\]
-		has
-		\[
-			\Wgrad f(\alpha)(x)
-			=
-			\bar\cov^{-1}(\mean-\bar\mean)
-			+
-			(\bar\cov^{-1}-\cov^{-1})(x-\mean).
-		\]
-		The descent equations are the Ornstein--Uhlenbeck moment equations
-\index{Ornstein-Uhlenbeck process}% strictindex
-		\[
-			\dot\mean_t=-\bar\cov^{-1}(\mean_t-\bar\mean),
-			\qquad
-			\dot\cov_t=2\Id-\bar\cov^{-1}\cov_t-\cov_t\bar\cov^{-1}.
-		\]
-
-		\item \emph{Squared Wasserstein distance to a Gaussian.} For
-\index{Wasserstein!distance}% strictindex
-		\[
-			f(\alpha)=\frac12\Wass_2^2(\alpha,\bar\alpha),
-			\qquad
-			\bar\alpha=\Gaussian(\bar\mean,\bar\cov),
-		\]
-		the Gaussian Brenier map $T_{\alpha\to\bar\alpha}$ is affine,
-\index{Brenier map}% strictindex
-		\[
-			T_{\alpha\to\bar\alpha}(x)=\bar\mean+M(x-\mean),
-			\qquad
-			M=\cov^{-1/2}(\cov^{1/2}\bar\cov\cov^{1/2})^{1/2}\cov^{-1/2}.
-		\]
-		Hence
-		\[
-			\Wgrad f(\alpha)(x)=x-T_{\alpha\to\bar\alpha}(x)
-			=
-			(\mean-\bar\mean)+(\Id-M)(x-\mean),
-		\]
-		and descent moves each Gaussian infinitesimally along the Bures--Wasserstein geodesic toward $\bar\alpha$.
-\index{Wasserstein!geodesic}% strictindex
-\index{Bures-Wasserstein geometry}% strictindex
-
-		\item \emph{Gaussian-only losses.} Sliced $\SW_2^2$ losses to a Gaussian, Gaussian Sinkhorn divergences, and any smooth closed formula depending only on $(\mean,\cov)$ fit the same constrained-gradient template:
-\index{Gaussian!Sinkhorn}% strictindex
-\index{Gaussian Sinkhorn divergence}% strictindex
-\index{Sinkhorn divergence}% strictindex
-			\[
-				v_F(x)=\nabla_\mean F+2\nabla_\cov F(x-\mean).
-			\]
-		For Gaussian Sinkhorn divergences this finite-dimensional flow is studied in~\cite{HardionLacombe2026GaussianSinkhornFlow}.
-	\end{itemize}
-
-	Not every PDE preserves Gaussianity exactly. For instance, Wasserstein flows of relative Fisher information, related to quantum-drift or higher-order diffusion equations, typically require a Gaussian projection to close on $(\mean,\cov)$. Such projected closures are still useful: they expose the finite-dimensional dynamics predicted by a variational model and make it easy to compare variational flows with non-variational affine dynamics such as drifting fields or the Gaussian transformer closure below.
-\index{drifting!field}% strictindex
-\index{transformer}% strictindex
-\index{Gaussian!projection}% strictindex
-\index{Fisher information}% strictindex
-\end{example}
-
-\begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
-\index{Gaussian!covariance}% strictindex
-	Let $\gamma=\Gaussian(0,\Id)$ and let $\al_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
-\index{Gaussian!manifold}% strictindex
-	\[
-	\begin{array}{rcl}
-		\KL(\al|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
-		\frac12\,\mathcal I(\al|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
-		\Wass_2^2(\al,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
-		\MMD_k^2(\al,\gamma),\quad k(x,y)=\dotp{x}{y}^2
-\index{maximum mean discrepancy}% strictindex
-			&:& h(C)=8(C-C^2), \\[.35em]
-		S_\epsilon(\al,\gamma)
-			&:& h(C)=
-			4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
-			-2\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}
-			-2C-\frac{\epsilon}{2}\Id, \\[.75em]
-		\SW_2^2(\al,\gamma)
-			&:& h(C)=V(C)C+CV(C),
-	\end{array}
-	\]
-	where $S_\epsilon$ is the debiased Sinkhorn divergence for the quadratic cost $\norm{x-y}^2$ and KL regularization strength $\epsilon$, and
-\index{Sinkhorn divergence}% strictindex
-\index{quadratic cost}% strictindex
-	\[
-		V(C)=
-		2\int_{\Sphere^{d-1}}
-		\left(\frac{1}{\sqrt{\theta^\top C\theta}}-1\right)
-		\theta\theta^\top \,\d\sigma(\theta)
-	\]
-	for the normalized spherical measure $\sigma$. Here
-	\[
-		\mathcal I(\al|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
-		\qquad(\al=\rho\,\d x).
-	\]
-	Thus the unhalved Fisher divergence has right-hand side $4(C^{-1}-C)$. Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
-\end{prop}
-
-\begin{proof}
-	Each row is obtained by identifying the affine descent velocity $v(x)=M_Cx$ generated by the corresponding Gaussian-constrained calculation and then applying Proposition~\ref{prop-gaussian-affine-closure}, which gives $\dot C=M_CC+CM_C^\top$. For $\KL(\cdot|\gamma)$, the Fokker--Planck velocity is $(C^{-1}-\Id)x$, hence $\dot C=2(\Id-C)$. For the Fisher row, the restriction of $\frac12\mathcal I$ to centered Gaussians is
-\index{Fokker-Planck equation}% strictindex
-\index{affine!closure}% strictindex
-	\[
-		\frac12\left(\tr(C)+\tr(C^{-1})-2d\right).
-	\]
-	Using Proposition~\ref{prop-gaussian-gradient-bullet-list} gives the descent velocity $(C^{-2}-\Id)x$, hence $\dot C=2(C^{-1}-C)$. This row should be read as a Gaussian projected closure of the fourth-order Fisher flow.
-
-	For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\al,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
-\index{first variation}% strictindex
-\index{maximum mean discrepancy}% strictindex
-\index{Brenier map}% strictindex
-
-	Gaussian Sinkhorn dual potentials are quadratic, so the velocity is again linear; differentiating the closed Gaussian formula yields the displayed spectral expression. The square roots are spectral functions of $C$, hence commute with $C$, which is why the covariance ODE closes as a matrix function of $C$ alone. For sliced Wasserstein, each one-dimensional projection is a Gaussian transport with velocity $2((\theta^\top C\theta)^{-1/2}-1)\dotp{\theta}{x}\theta$; averaging these velocities over $\Sphere^{d-1}$ gives $v(x)=V(C)x$ and thus $\dot C=V(C)C+CV(C)$.
-\index{covariance!ODE}% strictindex
-\index{Sinkhorn!dual}% strictindex
-\index{sliced Wasserstein distance}% strictindex
-\index{Gaussian!Sinkhorn}% strictindex
-\index{one-dimensional!projection}% strictindex
-\index{dual!potential}% strictindex
-\end{proof}
-
-\begin{example}[Linear mean-field networks as cross-moment flows]
-\index{flow!cross-moment}% strictindex
-	In the two-layer model above, take the linear activation $\sigma(s)=s$, so that
-\index{two-layer neural network}% strictindex
-	\[
-		\psi((u,v),z)=v\,\dotp{u}{z}.
-	\]
-	The predictor is the linear map
-	\[
-		G_{\alpha_t}(z)=Q_t z,
-		\qquad
-		Q_t=\int v u^\top\d\alpha_t(u,v)\in\RR^{d'\times d}.
-	\]
-	Thus the energy depends on the neuron law only through the cross moment $Q_t$, a subblock of the raw second moment of $x=(u,v)$. For square loss, set
-\index{second moment}% strictindex
-\index{neuron law}% strictindex
-	\[
-		S=\int zz^\top\d\rho(z,y),
-		\qquad
-		R=\int y z^\top\d\rho(z,y),
-		\qquad
-		H_t=Q_tS-R.
-	\]
-	The first variation is
-\index{first variation}% strictindex
-	\[
-		\delta f(\alpha_t)(u,v)=\dotp{H_t}{v u^\top}=v^\top H_t u.
-	\]
-	Hence the particle velocity in parameter space is linear:
-	\[
-		-\nabla_{(u,v)}\delta f(\alpha_t)(u,v)
-		=
-		-\begin{pmatrix}
-			0 & H_t^\top \\
-			H_t & 0
-		\end{pmatrix}
-		\begin{pmatrix} u \\ v \end{pmatrix}.
-	\]
-	Therefore a Gaussian law of neurons remains Gaussian. Its mean and covariance follow Proposition~\ref{prop-gaussian-affine-closure}, with a matrix depending only on the current cross moment $Q_t$, a raw second-moment subblock that becomes a covariance subblock when the neuron law is centered. This exact closure is special to the linear activation; for nonlinear activations, Gaussian closures are usually projections rather than invariant families.
-\index{covariance!subblock}% strictindex
-\index{neuron law}% strictindex
-\index{neuron}% strictindex
-\index{Gaussian!closure}% strictindex
-\index{affine!closure}% strictindex
-\end{example}
 
 \paragraph{Non-variational Gaussian-preserving flows.}
 \index{Gaussian!preservation}% strictindex

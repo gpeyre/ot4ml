@@ -516,9 +516,76 @@ Let $X_t$ follow the characteristic ODE $\dot X_t=b_t+A_t(X_t-\mean_t)$. This li
 \(\dot\cov_t = \frac{\d}{\d t}\EE(\tilde X_t\tilde X_t^\top) = A_t\cov_t+\cov_t A_t^\top.\)
 For the converse, set $b_t=\dot\mean_t$ and choose any matrix $A_t$ satisfying the covariance equation. Since $\cov_t$ is positive definite, the Lyapunov map $A\mapsto A\cov_t+\cov_t A$ is invertible on symmetric matrices, which gives the unique symmetric choice when a gradient velocity is required. In that case $v_t$ is the gradient of the quadratic potential $x\mapsto \dotp{b_t}{x}+\dotp{A_t(x-\mean_t)}{x-\mean_t}/2$.
 \end{proof}
+\paragraph{Gaussian-preserving gradient flows.}
+The following centered catalogue tracks representative cases where the Wasserstein gradient is linear on Gaussian inputs. Thus Gaussianity is a conclusion of the flow, not an ansatz imposed in advance.
+\begin{prop}[Centered Gaussian closure catalogue]\label{prop-centered-gaussian-covariance-catalogue}
+Let $\gamma=\Gaussian(0,\Id)$ and let $\al_0=\Gaussian(0,C_0)$ with $C_0\succ0$. For each row below, let $\al_t$ be the corresponding Wasserstein gradient flow initialized at $\al_0$. Then the centered Gaussian family is invariant: as long as $C_t\succ0$,
+\[
+\al_t=\Gaussian(0,C_t),
+\qquad
+\dot C_t=H(C_t),
+\]
+with
+\[
+\begin{array}{rcl}
+\KL(\al|\gamma) &:& H(C)=2(\Id-C), \\[.35em]
+\mathcal I(\al|\gamma) &:& H(C)=4(C^{-1}-C), \\[.35em]
+\Wass_2^2(\al,\gamma) &:& H(C)=4(C^{1/2}-C), \\[.35em]
+\MMD_k^2(\al,\gamma),\quad k(x,y)=\dotp{x}{y}^2
+&:& H(C)=8(C-C^2), \\[.35em]
+\bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\al,\gamma)
+&:& H(C)=
+4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
+-4\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}, \\[.75em]
+\SW_2^2(\al,\gamma)
+&:& H(C)=V(C)C+CV(C),
+\end{array}
+\]
+where $\bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}$ is the debiased Sinkhorn divergence for the quadratic cost $\norm{x-y}^2$ and KL regularization strength $\epsilon$, and
+\[
+V(C)=
+2\int_{\Sphere^{d-1}}
+\left(\frac{1}{\sqrt{\theta^\top C\theta}}-1\right)
+\theta\theta^\top \,\d\sigma(\theta)
+\]
+for the normalized spherical measure $\sigma$. Here
+\[
+\mathcal I(\al|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
+\qquad(\al=\rho\,\d x).
+\]
+Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
+\end{prop}
+\begin{proof}
+Each row is obtained by computing the ambient Wasserstein first variation on centered Gaussian inputs and identifying the affine descent velocity $v(x)=M_Cx$. Proposition~\ref{prop-gaussian-affine-closure} then gives $\dot C=M_CC+CM_C^\top$. For $\KL(\cdot|\gamma)$, the Fokker--Planck velocity is $(C^{-1}-\Id)x$, hence $\dot C=2(\Id-C)$. For the Fisher row, the ambient first variation is quadratic on centered Gaussian inputs; equivalently, the restriction of $\frac12\mathcal I$ to centered Gaussians is
+\[
+\frac12\left(\tr(C)+\tr(C^{-1})-2d\right).
+\]
+Multiplying by two for $\mathcal I$ gives the descent velocity $2(C^{-2}-\Id)x$, hence $\dot C=4(C^{-1}-C)$. Although the ambient Fisher flow is a fourth-order PDE for a generic density, its velocity is linear on centered Gaussian inputs, so the centered Gaussian family is closed.
+
+For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\al,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
+
+Gaussian Sinkhorn dual potentials are quadratic, so the velocity is again linear; differentiating the closed Gaussian formula yields the displayed spectral expression. The square roots are spectral functions of $C$, hence commute with $C$, which is why the covariance ODE closes as a matrix function of $C$ alone. For sliced Wasserstein, each one-dimensional projection is a Gaussian transport with velocity $2((\theta^\top C\theta)^{-1/2}-1)\dotp{\theta}{x}\theta$; averaging these velocities over $\Sphere^{d-1}$ gives $v(x)=V(C)x$ and thus $\dot C=V(C)C+CV(C)$.
+\end{proof}
+As a simple exact family, if a functional depends on a measure only through its first two moments,
+\(f(\alpha)=g(\mean_\alpha,\cov_\alpha)\), then
+\[
+\delta f(\alpha)(x)
+=
+\dotp{\nabla_\mean g}{x}
++\dotp{\nabla_\cov g}{(x-\mean_\alpha)(x-\mean_\alpha)^\top},
+\qquad
+\nabla_x\delta f(\alpha)(x)=\nabla_\mean g+2\nabla_\cov g(x-\mean_\alpha),
+\]
+where \(\nabla_\cov g\) is the symmetric Frobenius gradient. Thus Gaussian laws are invariant under the full Wasserstein gradient flow and
+\[
+\dot\mean_t=-\nabla_\mean g,
+\qquad
+\dot\cov_t=-2(\cov_t\nabla_\cov g+\nabla_\cov g\,\cov_t).
+\]
 \paragraph{Constrained evolution on the Gaussian manifold.}
-\(\mathcal G=\{\Gaussian(\mean,\cov):\mean\in\RR^d,\ \cov\succ0\}\)
-be the Gaussian submanifold of $\Pp_2(\RR^d)$. The Wasserstein gradient of a functional constrained to a smooth submanifold $\mathcal M\subset\Pp_2$ is defined as the Riesz representative of the differential restricted to tangent velocities of $\mathcal M$.
+The affine-gradient cases above are exceptional: a generic Wasserstein gradient flow does not remain Gaussian. The constrained substitute projects the evolution onto
+\(\mathcal G=\{\Gaussian(\mean,\cov):\mean\in\RR^d,\ \cov\succ0\}\),
+the Gaussian submanifold of $\Pp_2(\RR^d)$. The Wasserstein gradient of a functional constrained to a smooth submanifold $\mathcal M\subset\Pp_2$ is defined as the Riesz representative of the differential restricted to tangent velocities of $\mathcal M$.
 
 \(\alpha^{k+1}\in \uargmin{\alpha\in\mathcal M} \frac{1}{2\tau}\Wass_2^2(\alpha,\alpha^k)+f(\alpha).\)
 For $\mathcal M=\mathcal G$, tangent velocities are affine gradient fields $v(x)=b+A(x-\mean)$ with $A=A^\top$. The constrained gradient is therefore the $L^2(\Gaussian(\mean,\cov))$ projection of the ambient Wasserstein gradient onto this finite-dimensional affine space, whenever the ambient gradient exists.
@@ -551,50 +618,7 @@ Since $A$, $\cov$ and $\nabla_\cov F$ are symmetric, the second term equals
 Together with the mean term, this gives \(\d F(\mean,\cov)[\dot\mean,\dot\cov] = \int \dotp{v_F(x)}{v(x)}\d\Gaussian(\mean,\cov)(x)\)
 for all affine gradient fields $v$. This identifies the constrained Wasserstein gradient in the induced $L^2(\alpha)$ metric, or equivalently the projection of the ambient gradient when it exists. Substituting the descent velocity $-v_F$ in Proposition~\ref{prop-gaussian-affine-closure} gives~\eqref{eq-gaussian-wgf-closure}.
 \end{proof}
-\paragraph{Gaussian-preserving gradient flows.}
-\begin{prop}[Centered Gaussian covariance catalogue]\label{prop-centered-gaussian-covariance-catalogue}
-Let $\gamma=\Gaussian(0,\Id)$ and let $\al_t=\Gaussian(0,C_t)$ with $C_t\succ0$. For the normalizations displayed below, the Wasserstein descent constrained to the centered Gaussian manifold satisfies $\dot C_t=h(C_t)$, with
-\[
-\begin{array}{rcl}
-\KL(\al|\gamma) &:& h(C)=2(\Id-C), \\[.35em]
-\frac12\,\mathcal I(\al|\gamma) &:& h(C)=2(C^{-1}-C), \\[.35em]
-\Wass_2^2(\al,\gamma) &:& h(C)=4(C^{1/2}-C), \\[.35em]
-\MMD_k^2(\al,\gamma),\quad k(x,y)=\dotp{x}{y}^2
-&:& h(C)=8(C-C^2), \\[.35em]
-S_\epsilon(\al,\gamma)
-&:& h(C)=
-4\left(C+\frac{\epsilon^2}{16}\Id\right)^{1/2}
--2\left(C^2+\frac{\epsilon^2}{16}\Id\right)^{1/2}
--2C-\frac{\epsilon}{2}\Id, \\[.75em]
-\SW_2^2(\al,\gamma)
-&:& h(C)=V(C)C+CV(C),
-\end{array}
-\]
-where $S_\epsilon$ is the debiased Sinkhorn divergence for the quadratic cost $\norm{x-y}^2$ and KL regularization strength $\epsilon$, and
-\[
-V(C)=
-2\int_{\Sphere^{d-1}}
-\left(\frac{1}{\sqrt{\theta^\top C\theta}}-1\right)
-\theta\theta^\top \,\d\sigma(\theta)
-\]
-for the normalized spherical measure $\sigma$. Here
-\[
-\mathcal I(\al|\gamma)=\int \left|\nabla\log\rho(x)+x\right|^2\rho(x)\,\d x
-\qquad(\al=\rho\,\d x).
-\]
-Thus the unhalved Fisher divergence has right-hand side $4(C^{-1}-C)$. Multiplying any of these energies by a constant simply rescales the corresponding right-hand side.
-\end{prop}
-\begin{proof}
-Each row is obtained by identifying the affine descent velocity $v(x)=M_Cx$ generated by the corresponding Gaussian-constrained calculation and then applying Proposition~\ref{prop-gaussian-affine-closure}, which gives $\dot C=M_CC+CM_C^\top$. For $\KL(\cdot|\gamma)$, the Fokker--Planck velocity is $(C^{-1}-\Id)x$, hence $\dot C=2(\Id-C)$. For the Fisher row, the restriction of $\frac12\mathcal I$ to centered Gaussians is
-\[
-\frac12\left(\tr(C)+\tr(C^{-1})-2d\right).
-\]
-Using Proposition~\ref{prop-gaussian-gradient-bullet-list} gives the descent velocity $(C^{-2}-\Id)x$, hence $\dot C=2(C^{-1}-C)$. This row should be read as a Gaussian projected closure of the fourth-order Fisher flow.
 
-For $\Wass_2^2(\cdot,\gamma)$, the Brenier map from $\Gaussian(0,C)$ to $\gamma$ is $C^{-1/2}x$, so the descent velocity for the unhalved squared distance is $2(C^{-1/2}-\Id)x$, giving $4(C^{1/2}-C)$. For the polynomial MMD row, centered Gaussians satisfy $\MMD_k^2(\al,\gamma)=\norm{C-\Id}_{\mathrm F}^2$; the first variation is quadratic and its descent velocity is $4(\Id-C)x$, giving $8(C-C^2)$.
-
-Gaussian Sinkhorn dual potentials are quadratic, so the velocity is again linear; differentiating the closed Gaussian formula yields the displayed spectral expression. The square roots are spectral functions of $C$, hence commute with $C$, which is why the covariance ODE closes as a matrix function of $C$ alone. For sliced Wasserstein, each one-dimensional projection is a Gaussian transport with velocity $2((\theta^\top C\theta)^{-1/2}-1)\dotp{\theta}{x}\theta$; averaging these velocities over $\Sphere^{d-1}$ gives $v(x)=V(C)x$ and thus $\dot C=V(C)C+CV(C)$.
-\end{proof}
 \paragraph{Non-variational Gaussian-preserving flows.}
 \paragraph{Contractive Gaussian projection.}
 \begin{thm}[Gelbrich theorem]\label{thm-gelbrich-projection}
