@@ -7,11 +7,11 @@ kernelspec:
 ---
 (sec-beyond-comparing-measures)=
 
-The last group leaves the setting of scalar measures on a common ambient
+This chapter leaves the setting of scalar measures on a common ambient
 space. Vector- and matrix-valued OT transports mass with internal degrees of
 freedom, Gromov--Wasserstein compares metric-measure spaces without a
 prescribed correspondence, and quantum OT replaces scalar couplings by
-positive operators. In each case, the transport plan also has to encode
+positive operators. In each case, the transport plan must also encode
 structure carried by the support, the fibers, or the non-commutative state
 space.
 
@@ -57,8 +57,8 @@ Scalar OT transports a nonnegative density. In imaging, color processing,
 spectral analysis, diffusion tensor imaging and quantum-inspired models, the
 object attached to a point can instead have several nonnegative components or
 a positive semidefinite matrix. The first step beyond scalar OT is the
-positive vector-valued case, where the fiber remains linear and commutative
-but the channels may interact.
+positive vector-valued case: the fiber remains linear and commutative, but
+the transport cost may couple its channels.
 
 ### Positive Vector-Valued Measures
 
@@ -84,8 +84,10 @@ the mass of each channel is preserved, so one assumes
 $\al_0^k(\X)=\al_1^k(\X)$ for every $k$. The natural vector-valued extension
 therefore starts from the positive cone $\RR_+^m$.
 
-To keep the notation readable, first assume that the endpoints and the curve
-have densities. The direct analogue of Benamou--Brenier fixes a vector
+For the dynamic formulas below, assume that $\X$ is either $\RR^d$, the flat
+torus, or a bounded convex domain in $\RR^d$ equipped with no-flux boundary
+conditions. First suppose that the endpoints and the curve have densities.
+The direct analogue of Benamou--Brenier fixes a vector
 density $u_t(x)\in\RR_+^m$ and a spatial flux
 $V_t(x)=(V_{t,1},\ldots,V_{t,d})\in(\RR^m)^d$, where $V_{t,\ell}^k$ is the
 momentum of channel $k$ in spatial direction $\ell$. The conservative vector
@@ -128,9 +130,12 @@ V_\ell^\top \mathsf M(u)^\dagger V_\ell,
 ```
 
 with the usual convention that the value is finite only when each $V_\ell$
-belongs to the range of $\mathsf M(u)$. One chooses $\mathsf M$ so that this
-matrix perspective is convex and one-homogeneous in $(u,V)$; this holds for
-the linear positive mobilities below. For $m=1$ and $\mathsf M(u)=u$, one
+belongs to the range of $\mathsf M(u)$. If $u\mapsto\mathsf M(u)$ is linear
+and takes values in $\mathbb S_+^m$, this action is jointly convex and
+positively one-homogeneous in $(u,V)$. Indeed, the matrix fractional map
+$(M,z)\mapsto z^\top M^\dagger z$ is jointly convex on its effective domain,
+and $\mathsf M(su)=s\mathsf M(u)$ for $s>0$. For $m=1$ and
+$\mathsf M(u)=u$, one
 recovers exactly the scalar Benamou--Brenier action. For
 
 ```{math}
@@ -157,8 +162,9 @@ other components, even though each component mass remains conserved.
 (prop-diagonal-positive-vector-bb)=
 :::{admonition} Proposition: Diagonal Positive Vector Benamou--Brenier
 :class: important
-Assume that $\al_0^k,\al_1^k\in\mathcal M_+(\X)$ have the same mass $m_k$ for
-every $k$. For the diagonal mobility $\mathsf M_{\mathrm{diag}}$,
+Assume that $\al_0^k,\al_1^k\in\mathcal M_+(\X)$ have finite second moments
+and the same mass $m_k$ for every $k$. For the diagonal mobility
+$\mathsf M_{\mathrm{diag}}$,
 
 ```{math}
 \mathcal W_{\mathrm{diag}}^2(\al_0,\al_1)
@@ -250,15 +256,18 @@ channels, while the eigenvectors encode local orientations.
 :::{admonition} Definition: Positive Matrix-Valued Measure
 :class: important
 Write $\mathbb S^m$ for real symmetric matrices and $\mathbb S_+^m$ for the
-positive semidefinite cone. A positive $\mathbb S_+^m$-valued measure is an
-element
+positive semidefinite cone. A positive $\mathbb S_+^m$-valued measure is a
+countably additive map from Borel sets of $\X$ to $\mathbb S_+^m$; the cone of
+such measures is denoted by
 
 ```{math}
 \mathcal A\in\mathcal M_+(\X;\mathbb S_+^m).
 ```
 :::
 
-If $\mathcal A$ has density $A(x)\succeq0$, then $\operatorname{tr}A(x)$ is
+Equivalently, $\mathcal A$ is a symmetric matrix of finite signed measures
+such that $\mathcal A(E)\succeq0$ for every Borel set $E$. If $\mathcal A$
+has density $A(x)\succeq0$, then $\operatorname{tr}A(x)$ is
 the scalar amount of mass at $x$, while, wherever $\operatorname{tr}A(x)>0$,
 the normalized matrix $A(x)/\operatorname{tr}A(x)$ records an internal
 covariance or orientation. This is the matrix analogue of the positive vector
@@ -296,10 +305,11 @@ matrix-valued continuity equation
 ```
 
 Here $A^\dagger$ denotes the Moore--Penrose inverse, with the usual
-perspective convention: the action is finite only when the columns of each
-$P_{t,\ell}$ belong to the range of $A_t$. The map
-$(A,P)\mapsto\operatorname{tr}(P^\top A^\dagger P)$ is the matrix fractional
-function and is jointly convex on $A\succeq0$. This gives the simplest
+lower-semicontinuous perspective convention: the action is finite only when
+the columns of each $P_{t,\ell}$ belong to the range of $A_t$. The matrix
+fractional map $(A,P)\mapsto\operatorname{tr}(P^\top A^\dagger P)$ is jointly
+convex on this effective domain and positively one-homogeneous in $(A,P)$.
+This gives the simplest
 non-trivial matrix-valued transport model: spatial motion is conservative,
 but the fiber carries orientation through the eigenvectors of $A_t(x)$.
 
@@ -433,59 +443,92 @@ therefore serve as a new ground space. This is useful whenever the objects to
 compare are themselves random probability measures, or mixtures whose
 components are meaningful objects rather than only a collapsed density.
 
+The standard setting is that of Polish spaces, introduced in
+{ref}`def-polish-metric-space`. These assumptions provide separability,
+completeness, tightness criteria and regular conditional probabilities. The
+next proposition shows that Wasserstein spaces preserve this well-behaved
+structure.
+
 (prop-wasserstein-space-polish)=
 :::{admonition} Proposition: Wasserstein Spaces As Ground Spaces
 :class: important
-If $(\X,d)$ is a Polish metric space, then $\Pp_p(\X)$ endowed with $\Wass_p$
-is Polish. If $\X$ is compact, then $\Pp(\X)$ is compact for the Wasserstein
-topology, and the construction can be iterated to form
-$\Pp(\Pp(\X))$, $\Pp(\Pp(\Pp(\X)))$, and so on.
+Let $1\leq p<\infty$. If $(\X,d)$ is Polish, then
+$(\Pp_p(\X),\Wass_p)$ is Polish. If $\X$ is compact, then
+$\Pp_p(\X)=\Pp(\X)$ and this space is compact for $\Wass_p$. Consequently,
+the construction may be iterated, with the corresponding finite-moment
+condition at every level.
 :::
 
-:::{dropdown} Proof Sketch
-Completeness follows by representing a $\Wass_p$-Cauchy sequence through
-almost optimally glued couplings, which gives a Cauchy random sequence whose
-law is the desired limit. Separability follows by approximating measures with
-finitely supported measures on a countable dense subset and rational weights.
-If $\X$ is compact, Prokhorov compactness and Wasserstein metrization of weak
+:::{dropdown} Proof
+From a $\Wass_p$-Cauchy sequence, extract a subsequence $(\alpha_k)_k$ such
+that $\sum_k\Wass_p(\alpha_k,\alpha_{k+1})<\infty$. Gluing optimal couplings
+of consecutive terms produces random variables $(X_k)_k$ with laws
+$\alpha_k$ and
+$\sum_k\|d(X_k,X_{k+1})\|_{L^p}<\infty$. Hence $(X_k)_k$ converges almost
+surely and in $L^p$ to an $\X$-valued random variable, whose law is the
+$\Wass_p$ limit. Separability follows by approximating measures with finitely
+supported measures on a countable dense subset and rational weights. If
+$\X$ is compact, Prokhorov compactness and Wasserstein metrization of weak
 convergence give compactness.
 :::
 
-Elements of $\Pp_2(\Pp_2(\X))$ are probability laws over probability measures,
-or random probability measures. A parametric example is
+Fix $1\leq p<\infty$. Elements of $\Pp_p(\Pp_p(\X))$ are probability laws
+over probability measures, or random probability measures. A measurable
+parametric family gives
 
 ```{math}
 :label: eq-wow-parametric-law
 \mathfrak A=(\zeta\mapsto\alpha_\zeta)_\sharp\gamma.
 ```
 
+This law belongs to $\Pp_p(\Pp_p(\X))$ precisely when, for one and hence every
+$x_0\in\X$,
+
+```{math}
+\int \Wass_p(\alpha_\zeta,\delta_{x_0})^p\,\d\gamma(\zeta)<\infty.
+```
+
 (def-collapsed-barycentric-mixture)=
 :::{admonition} Definition: Collapsed, Or Barycentric, Mixture
 :class: important
-The collapsed mixture associated with $\mathfrak A$ is
+For $\mathfrak A\in\Pp(\Pp(\X))$, the collapsed mixture is defined by
 
 ```{math}
 :label: eq-wow-barycentric-mixture
 \int_\X f(x)\d\bar\alpha_{\mathfrak A}(x)
 =
-\int_{\Pp_2(\X)}
+\int_{\Pp(\X)}
 \left(\int_\X f(x)\d\alpha(x)\right)
-\d\mathfrak A(\alpha).
+\d\mathfrak A(\alpha)
 ```
+
+for every bounded continuous $f$.
 :::
+
+If $\mathfrak A\in\Pp_p(\Pp_p(\X))$, then
+$\bar\alpha_{\mathfrak A}\in\Pp_p(\X)$ because
+
+```{math}
+\int_\X d(x,x_0)^p\,\d\bar\alpha_{\mathfrak A}(x)
+=
+\int_{\Pp_p(\X)}\Wass_p(\alpha,\delta_{x_0})^p\,\d\mathfrak A(\alpha).
+```
 
 The Wasserstein distance on the Wasserstein space is
 
 ```{math}
 :label: eq-wow-distance
-\mathbb W_2^2(\mathfrak A,\mathfrak B)
+\mathbb W_p^p(\mathfrak A,\mathfrak B)
 \eqdef
 \inf_{\Pi\in\Couplings(\mathfrak A,\mathfrak B)}
-\int_{\Pp_2(\X)\times\Pp_2(\X)}
-\Wass_2^2(\alpha,\beta)\d\Pi(\alpha,\beta).
+\int_{\Pp_p(\X)\times\Pp_p(\X)}
+\Wass_p^p(\alpha,\beta)\d\Pi(\alpha,\beta),
+\qquad
+\mathfrak A,\mathfrak B\in\Pp_p(\Pp_p(\X)).
 ```
 
-For Gaussian mixtures, this separates two geometries. A mixture can be viewed
+For $p=2$, Gaussian mixtures provide an explicit example with two geometries.
+A mixture can be viewed
 as a collapsed density on $\X$, or as a component law over Gaussian atoms in
 the Bures--Wasserstein space. For two component laws
 
@@ -511,7 +554,7 @@ m_{ij,t}=(1-t)m_i+t n_j,
 \Sigma_{ij,t}
 =
 \big((1-t)\Id+tA_{ij}\big)\Sigma_i
-\big((1-t)\Id+tA_{ij}\big).
+\big((1-t)\Id+tA_{ij}\big)^\top.
 ```
 
 Collapsing these component geodesics gives
@@ -557,24 +600,25 @@ density.
 (prop-wow-collapsed-bound)=
 :::{admonition} Proposition: Collapsing Is Non-Expansive
 :class: important
-Let $\mathfrak A,\mathfrak B\in\Pp_2(\Pp_2(\X))$, and let
-$\bar\alpha_{\mathfrak A}$ and $\bar\beta_{\mathfrak B}$ be the collapsed
-mixtures. Then
+Let $(\X,d)$ be Polish, let $1\leq p<\infty$, and let
+$\mathfrak A,\mathfrak B\in\Pp_p(\Pp_p(\X))$. Then
 
 ```{math}
-\Wass_2(\bar\alpha_{\mathfrak A},\bar\beta_{\mathfrak B})
+\Wass_p(\bar\alpha_{\mathfrak A},\bar\beta_{\mathfrak B})
 \leq
-\mathbb W_2(\mathfrak A,\mathfrak B).
+\mathbb W_p(\mathfrak A,\mathfrak B).
 ```
 :::
 
 :::{dropdown} Proof
-Fix a coupling $\Pi$ between $\mathfrak A$ and $\mathfrak B$. For each
-$(\alpha,\beta)$ choose an almost optimal coupling
-$\pi_{\alpha,\beta}\in\Couplings(\alpha,\beta)$. Integrating this Markov
-kernel against $\Pi$ gives a coupling between the collapsed mixtures whose cost
-is bounded by the $\Pi$-average of $\Wass_2^2(\alpha,\beta)$. Taking infima
-proves the claim.
+Fix a coupling $\Pi$ between $\mathfrak A$ and $\mathfrak B$ and $\eta>0$.
+A measurable-selection theorem gives a measurable kernel
+$\pi_{\alpha,\beta}\in\Couplings(\alpha,\beta)$ whose cost is at most
+$\Wass_p(\alpha,\beta)^p+\eta$. Integrating this kernel against $\Pi$ gives a
+coupling between the collapsed mixtures. Its cost is at most the
+$\Pi$-average of $\Wass_p^p(\alpha,\beta)$ plus $\eta$. Letting
+$\eta\downarrow0$, taking the infimum over $\Pi$, and then taking the
+$p$-th root proves the claim.
 :::
 
 This viewpoint also clarifies lower bounds for Gromov--Wasserstein distances:
@@ -589,12 +633,14 @@ Given a metric-measure space $\XX=(\X,\dist_\X,\al_\X)$, each point defines a lo
 ```{math}
 \alpha_x=(\dist_\X(x,\cdot))_\sharp\al_\X\in\Pp(\RR_+),
 \qquad
-\mathfrak D_\X=(x\mapsto\alpha_x)_\sharp\al_\X\in\Pp(\Pp(\RR_+)).
+\mathfrak D_\XX=(x\mapsto\alpha_x)_\sharp\al_\X\in\Pp(\Pp(\RR_+)).
 ```
 
-The Memoli profile lower bound in Proposition {ref}`prop-memoli-gw-profile-lower-bound` is precisely a Wasserstein-over-Wasserstein comparison of these laws of local profiles. It replaces the full pairwise distortion by an ordinary OT problem whose ground cost is itself a one-dimensional Wasserstein distance.
-
-Note that there exist alternative distances which also metricize weak convergence. The simplest ones are Hilbertian kernel norms, which are detailed in Section {ref}`sec-dual-norms`.
+The Memoli profile lower bound in Proposition
+{ref}`prop-memoli-gw-profile-lower-bound` is precisely a
+Wasserstein-over-Wasserstein comparison of these laws of local profiles. It
+replaces the full pairwise distortion by an ordinary OT problem whose ground
+cost is itself a one-dimensional Wasserstein distance.
 :::
 
 
@@ -614,16 +660,20 @@ underlying space, or if one cannot pre-register these spaces to define a
 ground cost. Instead, assume that two matrices
 $D\in\RR^{n\times n}$ and $D'\in\RR^{m\times m}$ represent relationships
 between points. A typical scenario is when these matrices are powers of
-distance matrices. The discrete Gromov--Wasserstein problem reads
+distance matrices. Define the quadratic distortion and its minimum by
 
 ```{math}
 :label: eq-gw-def
-\operatorname{GW}((a,D),(b,D'))^p
-\eqdef
-\min_{P\in\mathbf U(a,b)}
+\begin{aligned}
+\mathcal E_{D,D'}(P)
+&\eqdef
 \sum_{i,j,i',j'}
-\Delta(D_{i,i'},D'_{j,j'})^p
-P_{i,j}P_{i',j'},
+\Delta(D_{i,i'},D'_{j,j'})^pP_{i,j}P_{i',j'},
+\\
+\operatorname{GW}((a,D),(b,D'))^p
+&\eqdef
+\min_{P\in\mathbf U(a,b)}\mathcal E_{D,D'}(P).
+\end{aligned}
 ```
 
 where $p\geq1$ and $\Delta$ is usually $\Delta(u,v)=|u-v|$. This is a
@@ -685,13 +735,16 @@ A metric-measure space is a triple
 \mathbb X=(\X,d_\X,\alpha),
 ```
 
-where $(\X,d_\X)$ is a metric space and $\alpha$ is a probability measure on
-$\X$.
+where $(\X,d_\X)$ is Polish and $\alpha$ is a Borel probability measure on
+$\X$. For a finite $p$-Gromov--Wasserstein distance one assumes
+
+```{math}
+\int_{\X\times\X}d_\X(x,x')^p\,\d\alpha(x)\d\alpha(x')<\infty.
+```
 :::
 
-The natural setting is that of Polish metric spaces; compactness is often
-assumed when one wants existence and a clean metric statement without adding
-tightness hypotheses.
+Compactness is often assumed below to avoid additional tightness and
+integrability arguments.
 
 For metric-measure spaces $\mathbb X=(\X,d_\X,\alpha)$ and
 $\mathbb Y=(\Y,d_\Y,\beta)$, define
@@ -707,16 +760,20 @@ $\mathbb Y=(\Y,d_\Y,\beta)$, define
 ```
 
 (prop-gw-controlled-by-wasserstein)=
-:::{admonition} Proposition: Euclidean GW Is Controlled by Wasserstein
+:::{admonition} Proposition: Fixed-Space GW Is Controlled by Wasserstein
 :class: important
-Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the
-Euclidean distance, and take $\Delta(u,v)=|u-v|$ in {eq}`eq-gw-generic`. Then
+Let $\alpha,\beta\in\Pp_p(\X)$ be probability measures on the same metric
+space $(\X,d_\X)$, and take $\Delta(u,v)=|u-v|$ in
+{eq}`eq-gw-generic`. Then
 
 ```{math}
-\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
+\operatorname{GW}((\X,d_\X,\alpha),(\X,d_\X,\beta))
 \leq
 2\Wass_p(\alpha,\beta).
 ```
+
+The Wasserstein distance uses the same ground metric $d_\X$. The factor two
+comes from the normalization in {eq}`eq-gw-generic`.
 :::
 
 :::{dropdown} Proof
@@ -724,23 +781,22 @@ Let $\pi$ be any coupling between $\alpha$ and $\beta$. For two independent
 pairs $(X,Y),(X',Y')\sim\pi$, the reverse triangle inequality gives
 
 ```{math}
-\left|\norm{X-X'}-\norm{Y-Y'}\right|
+\left|d_\X(X,X')-d_\X(Y,Y')\right|
 \leq
-\norm{X-Y}+\norm{X'-Y'}.
+d_\X(X,Y)+d_\X(X',Y').
 ```
 
 Taking the $L^p$ norm and using Minkowski gives a bound by
-$2(\int\norm{x-y}^p\d\pi)^{1/p}$. Optimizing over $\pi$ proves the claim.
+$2(\int d_\X(x,y)^p\d\pi)^{1/p}$. Optimizing over $\pi$ proves the claim.
 :::
 
 (def-isometric-mm-spaces)=
 :::{admonition} Definition: Isometric Metric-Measure Spaces
 :class: important
 Two metric-measure spaces $\mathbb X=(\X,d_\X,\alpha)$ and
-$\mathbb Y=(\Y,d_\Y,\beta)$ are isometric if there exists a measurable map
+$\mathbb Y=(\Y,d_\Y,\beta)$ are isometric if there exists a bijection
 $\phi:\operatorname{supp}(\alpha)\to\operatorname{supp}(\beta)$ such that
-$\phi_\sharp\alpha=\beta$, $\phi(\operatorname{supp}(\alpha))=\operatorname{supp}(\beta)$,
-and
+$\phi_\sharp\alpha=\beta$ and
 
 ```{math}
 d_\Y(\phi(x),\phi(x'))=d_\X(x,x')
@@ -757,6 +813,10 @@ $\operatorname{GW}$ defines a distance up to measure-preserving isometries.
 :::
 
 :::{dropdown} Proof
+Compactness makes the coupling set compact and the distortion continuous, so
+an optimal coupling exists. A measure-preserving isometry induces a graph
+coupling with zero distortion; symmetry and non-negativity are immediate.
+
 If $\operatorname{GW}(\mathbb X,\mathbb Y)=0$ and $\pi$ is optimal, then
 $d_\X(x,x')=d_\Y(y,y')$ holds $\pi\otimes\pi$-almost everywhere. By
 continuity, this equality holds on $\operatorname{supp}(\pi)^2$. Both
@@ -787,7 +847,51 @@ together with Minkowski gives
 \operatorname{GW}(\mathbb Y,\mathbb Z).
 ```
 
-Symmetry and non-negativity are immediate.
+This proves the triangle inequality and completes the metric proof.
+:::
+
+(prop-gw-empirical-stability)=
+:::{admonition} Proposition: Marginal Stability and Empirical GW Rates
+:class: important
+Let $\mathbb X=(\X,d_\X,\alpha)$ and
+$\mathbb Y=(\Y,d_\Y,\beta)$ be compact metric-measure spaces. Replacing the
+marginals by $\widetilde\alpha$ and $\widetilde\beta$ gives
+
+```{math}
+\left|
+\operatorname{GW}((\X,d_\X,\widetilde\alpha),(\Y,d_\Y,\widetilde\beta))
+-
+\operatorname{GW}(\mathbb X,\mathbb Y)
+\right|
+\leq
+2\Wass_p^\X(\widetilde\alpha,\alpha)
++
+2\Wass_p^\Y(\widetilde\beta,\beta).
+```
+
+Consequently, for empirical measures $\widehat\alpha_n$ and
+$\widehat\beta_m$,
+
+```{math}
+\mathbb E\left|
+\operatorname{GW}((\X,d_\X,\widehat\alpha_n),(\Y,d_\Y,\widehat\beta_m))
+-
+\operatorname{GW}(\mathbb X,\mathbb Y)
+\right|
+\leq
+2\mathbb E\Wass_p^\X(\widehat\alpha_n,\alpha)
++
+2\mathbb E\Wass_p^\Y(\widehat\beta_m,\beta).
+```
+:::
+
+:::{dropdown} Proof
+Apply the GW triangle inequality in both directions. Each error term compares
+the same underlying metric space equipped with two different measures, so
+{ref}`prop-gw-controlled-by-wasserstein` bounds it by twice the corresponding
+ordinary Wasserstein distance. Taking expectations yields the empirical
+bound; the rates are therefore those developed in
+{ref}`sec-sample-complexity`.
 :::
 
 The metric structure also gives geodesics. Sturm's construction allows one to
@@ -812,7 +916,8 @@ t d_{\X_1}(x_1,x'_1),
 \mathbb X_t=(\mathcal Z,d_t,\pi^\star).
 ```
 
-After quotienting zero-distance points when needed,
+For $0<t<1$, $d_t$ is a metric. At the endpoints one quotients the product
+space by the corresponding zero-distance relation. Then
 $t\mapsto\mathbb X_t$ is a constant-speed geodesic:
 
 ```{math}
@@ -876,17 +981,18 @@ distance-profile measures on $\RR_+$ by
 \beta_y\eqdef(d_\Y(y,\cdot))_\sharp\beta.
 ```
 
-Let $\mathsf E_\mathbb X=(x\mapsto\alpha_x)_\sharp\alpha$ and
-$\mathsf E_\mathbb Y=(y\mapsto\beta_y)_\sharp\beta$. Then
+Let $\mathfrak D_\mathbb X=(x\mapsto\alpha_x)_\sharp\alpha$ and
+$\mathfrak D_\mathbb Y=(y\mapsto\beta_y)_\sharp\beta$. Then
 
 ```{math}
-\Wass_p(\mathsf E_\mathbb X,\mathsf E_\mathbb Y)
+\mathbb W_p(\mathfrak D_\mathbb X,\mathfrak D_\mathbb Y)
 \leq
 \operatorname{GW}(\mathbb X,\mathbb Y),
 ```
 
-where the left-hand distance uses the one-dimensional Wasserstein distance
-between profile measures as its ground cost.
+where $\mathbb W_p$ is the Wasserstein-over-Wasserstein distance
+{eq}`eq-wow-distance`, whose ground metric is the one-dimensional
+$\Wass_p$ distance between profile measures.
 :::
 
 :::{dropdown} Proof
@@ -894,7 +1000,7 @@ Fix any $\pi\in\Couplings(\alpha,\beta)$. It induces a coupling
 $(x,y)\mapsto(\alpha_x,\beta_y)$ between the profile laws, hence
 
 ```{math}
-\Wass_p(\mathsf E_\mathbb X,\mathsf E_\mathbb Y)^p
+\mathbb W_p(\mathfrak D_\mathbb X,\mathfrak D_\mathbb Y)^p
 \leq
 \int_{\X\times\Y}
 \Wass_p(\alpha_x,\beta_y)^p\,\d\pi(x,y).
@@ -962,7 +1068,7 @@ certificate gives the sandwich
 
 ```{math}
 :label: eq-gw-profile-procrustes-sandwich
-\Wass_p(\mathsf E_\mathbb X,\mathsf E_\mathbb Y)
+\mathbb W_p(\mathfrak D_\mathbb X,\mathfrak D_\mathbb Y)
 \leq
 \operatorname{GW}(\mathbb X,\mathbb Y)
 \leq
@@ -976,7 +1082,7 @@ inexpensive; the right term is an ambient rigid-registration certificate.
 
 ### Entropic Regularization and Fused GW
 
-For the common squared distortion $\Delta(u,v)^2=(u-v)^2$, one often computes
+For the common squared distortion $\Delta(u,v)^2=(u-v)^2$, one often seeks
 a stationary point of the entropic relaxation
 
 ```{math}
@@ -985,34 +1091,39 @@ a stationary point of the entropic relaxation
 \mathcal E_{D,D'}(P)-\epsilon H(P).
 ```
 
-Although the objective is non-convex, successive linearizations lead to a
-practical mirror-descent scheme {cite:p}`peyre2016gromov`. Up to an
-irrelevant global factor in the gradient, one alternates
+For symmetric distance matrices, define the half-gradient
 
 ```{math}
 :label: eq-gw-sinkh
-P^{(\ell+1)}
-\eqdef
-\min_{P\in\mathbf U(a,b)}
-\langle P,C^{(\ell)}\rangle-\epsilon H(P),
-```
-
-with
-
-```{math}
-C^{(\ell)}
+\C(P)
 \eqdef
 D^{\odot2}a\,\mathbf 1_m^\top
 +
 \mathbf 1_n(D'^{\odot2}b)^\top
 -
-2D\,P^{(\ell)}\,D'^\top.
+2D\,P\,D'^\top,
+\qquad
+\nabla\mathcal E_{D,D'}(P)=2\C(P).
 ```
 
-Each update is an ordinary entropic OT problem and can therefore be solved
-with Sinkhorn iterations. This improves scalability and smooths the
-landscape, but it does not remove the non-convexity of the GW objective. This
-is the standard entropic GW solver used to compute soft maps between domains.
+A standard fixed-point linearization {cite:p}`peyre2016gromov` computes
+
+```{math}
+P^{(\ell+1)}
+=
+\operatorname*{argmin}_{P\in\mathbf U(a,b)}
+\langle P,\C(P^{(\ell)})\rangle
+-\frac{\epsilon}{2}H(P).
+```
+
+The factor $\epsilon/2$ is essential because $\C(P)$ is one half of
+the quadratic gradient. Each update is an ordinary entropic OT problem and
+can therefore be solved with Sinkhorn iterations. If the iterates converge to
+a positive fixed point, it satisfies the stationarity conditions of the
+regularized GW objective. The basic fixed-point iteration is not a descent
+method in general and has no global guarantee for this non-convex problem;
+line searches or proximal variants are needed when monotone decrease is
+required.
 
 Fused Gromov--Wasserstein augments the structural term with a feature
 transport cost {cite:p}`vayer2019optimaltransportstructured`. In the discrete
@@ -1096,22 +1207,24 @@ mass that would dominate the Hausdorff distance.
 :::{admonition} Algorithm: Entropic Gromov--Wasserstein linearization
 :class: ot4ml-algorithm
 
-**Input:** Metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Symmetric metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, maximum iterations $L$.
 
 **Output:** Approximate entropic GW coupling $\P\in\CouplingsD(\a,\b)$.
 
 **Initialize:** Set $\P^{(0)}=\a\otimes\b$.
 
-**For** $k=0,1,\ldots$ **do**:
+**For** $k=0,\ldots,L-1$ **do**:
 
 > $\C^{(k)} = \distD^{\odot2}\a\,\ones_m^\top + \ones_n(\distD'^{\odot2}\b)^\top - 2\distD\,\P^{(k)}\,\transp{\distD'}.$
 >
 > **Solve** entropic OT subproblem:
-> $\P^{(k+1)} = \uargmin{\P\in\CouplingsD(\a,\b)} \dotp{\P}{\C^{(k)}}-\epsilon\HD(\P).$
+> $\P^{(k+1)} = \uargmin{\P\in\CouplingsD(\a,\b)} \dotp{\P}{\C^{(k)}}-(\epsilon/2)\HD(\P).$
 >
-> **If** $\norm{\P^{(k+1)}-\P^{(k)}}\leq\mathrm{tol}$ **then**:
+> **If** $\norm{\P^{(k+1)}-\P^{(k)}}_{\mathrm F}\leq\mathrm{tol}$ **then**:
 
 >> **Return** $\P^{(k+1)}$.
+
+**Return** $\P^{(L)}$.
 :::
 
 (ex-structured-objects-gw)=
@@ -1129,7 +1242,8 @@ Multi-omics experiments can produce unmatched point clouds in different feature 
 :::
 
 
-(sec-quantum-ot)=## Quantum Optimal Transport
+(sec-quantum-ot)=
+## Quantum Optimal Transport
 
 Quantum optimal transport replaces probability vectors by density matrices
 and scalar couplings by positive operators on a tensor product space. This is
@@ -1205,7 +1319,16 @@ $B$.
 :::{admonition} Example: Classical diagonal case
 :class: ot4ml-example
 
-If $A$, $B$, $C$ and $T$ are all diagonal in fixed bases, then $A$ and $B$ are probability vectors, $T$ is a nonnegative matrix and the partial-trace constraints reduce to the usual row and column sum constraints. Hence classical Kantorovich OT is the diagonal, commutative subcase of {eq}`eq-qot-primal`. The genuinely quantum feature is that $T$ may contain off-diagonal coherences and entanglement.
+Suppose that $A$, $B$ and $C$ are diagonal in fixed product bases. Let
+$\Delta_A$ and $\Delta_B$ be the corresponding dephasing maps. For every
+feasible $T$, the matrix
+$\widetilde T=(\Delta_A\otimes\Delta_B)(T)$ is positive, has the same partial
+traces, and satisfies
+$\operatorname{tr}(C\widetilde T)=\operatorname{tr}(CT)$. Hence an optimizer
+may be chosen diagonal. Its diagonal entries form a nonnegative matrix with
+the prescribed row and column sums, so {eq}`eq-qot-primal` reduces exactly to
+classical Kantorovich OT. Non-commuting data may instead require off-diagonal
+coherences or entanglement.
 :::
 
 
@@ -1219,7 +1342,7 @@ For $A\in\mathbb H_n^{+,1}$ and $B\in\mathbb H_m^{+,1}$, the dual of
 :label: eq-qot-dual
 \operatorname{QOT}_C(A,B)
 =
-\max_{F\in\mathbb H_n,\ G\in\mathbb H_m}
+\sup_{F\in\mathbb H_n,\ G\in\mathbb H_m}
 \left\{
 \operatorname{tr}(FA)+\operatorname{tr}(GB)
 :
@@ -1227,8 +1350,10 @@ F\otimes I_m+I_n\otimes G\preceq C
 \right\}.
 ```
 
-If $A,B$ are positive definite, strong duality follows from Slater's theorem;
-the semidefinite case follows by restricting to supports or by approximation.
+There is no duality gap. If $A,B$ are positive definite, the supremum is
+attained. For singular marginals, the primal reduces to the tensor product of
+their supports; on this reduced space the corresponding dual maximum is
+attained, while the full-space formula is always valid as a supremum.
 :::
 
 :::{dropdown} Proof
@@ -1244,8 +1369,23 @@ constraints. Using {eq}`eq-qot-partial-traces`, the Lagrangian is
 Minimizing over $T\succeq0$ gives a finite lower bound if and only if
 $C-F\otimes I_m-I_n\otimes G\succeq0$, in which case the infimum in $T$ is
 $0$. When $A,B\succ0$, the coupling $A\otimes B$ is strictly feasible, so
-Slater's theorem gives equality of primal and dual values. The semidefinite
-case follows by restricting to supports or by approximation.
+Slater's theorem gives equality of primal and dual values and dual attainment.
+
+For singular marginals, let $P_A,P_B$ be their support projections. Positivity
+and
+
+```{math}
+\operatorname{tr}\!\left(((I_n-P_A)\otimes I_m)T\right)
+=
+\operatorname{tr}((I_n-P_A)A)=0
+```
+
+imply
+$T=(P_A\otimes P_B)T(P_A\otimes P_B)$. Thus the primal is exactly the
+problem compressed to $\operatorname{supp}(A)\otimes\operatorname{supp}(B)$,
+where both reduced marginals are positive definite and Slater applies. The
+unreduced dual values approach this reduced maximum by choosing sufficiently
+negative potentials on the orthogonal complements.
 :::
 
 The dual potentials have the usual scalar gauge freedom: replacing
@@ -1331,6 +1471,9 @@ with $\operatorname{Tr}_B(T_e)=A$ and $\operatorname{Tr}_A(T_e)=B$.
 The feasible set is compact and nonempty, and it contains the positive
 definite point $A\otimes B$. The trace entropy is strictly convex on positive
 semidefinite matrices, hence the regularized primal has a unique minimizer.
+The minimizer is positive definite: otherwise, moving toward the positive
+feasible point $A\otimes B$ would have entropy directional derivative
+$-\infty$ at the boundary while changing the linear cost at finite rate.
 Slater's condition justifies the Lagrange dual computation. The Fenchel
 identity
 
@@ -1481,11 +1624,13 @@ S_U^{-1/2}.
 ```
 
 These inverse square roots are well-defined when $K\succ0$ and
-$U,V,A,B\succ0$. This is Gurvits/operator scaling with prescribed targets;
-when all matrices are diagonal it reduces to classical Sinkhorn scaling, and
-when the targets are proportional to identities it matches the usual
-bistochastic operator-scaling normalization, up to the conventional trace
-normalization.
+$U,V,A,B\succ0$. Under the standard strict-positivity and scalability
+hypotheses, the alternating normalizations converge to the prescribed
+marginals {cite:p}`georgiou2015positive,garg2018recent`. At finite tolerance
+they return an approximate coupling. When all matrices are diagonal, the
+updates reduce to classical Sinkhorn scaling; when the targets are
+proportional to identities, they match the usual bistochastic
+operator-scaling normalization up to trace convention.
 
 :::{admonition} Remark: Gurvits scaling is not the exact Bregman scheme
 :class: ot4ml-remark
@@ -1513,13 +1658,13 @@ The same definitions extend formally from matrices to separable Hilbert spaces b
 :::{admonition} Algorithm: Exact quantum Bregman projections
 :class: ot4ml-algorithm
 
-**Input:** Density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Positive definite density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, maximum iterations $L$.
 
-**Output:** Quantum entropic coupling $T$ with partial traces $A$ and $B$.
+**Output:** Approximate quantum entropic coupling $T$ and its partial-trace residual.
 
 **Initialize:** Set Hermitian potentials $F^{(0)}=0$ and $G^{(0)}=0$.
 
-**For** $k=0,1,\ldots$ **do**:
+**For** $k=0,\ldots,L-1$ **do**:
 
 > $T^{(k)}= T_e(F^{(k)},G^{(k)}) = \exp\!\left( \frac{F^{(k)}\otimes\Id_m+\Id_n\otimes G^{(k)}-C}{\epsilon} \right).$
 >
@@ -1536,27 +1681,37 @@ The same definitions extend formally from matrices to separable Hilbert spaces b
 > **If** both partial-trace residuals are at most $\mathrm{tol}$ **then**:
 
 >> **Return** $T_e(F^{(k+1)},G^{(k+1)})$.
+
+**Return** $T_e(F^{(L)},G^{(L)})$ and its residual.
 :::
 
 (alg-quantum-gurvits-scaling)=
 :::{admonition} Algorithm: Gurvits/operator scaling for quantum Sinkhorn
 :class: ot4ml-algorithm
 
-**Input:** Positive marginals $A,B$, positive kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$.
+**Input:** Positive definite marginals $A,B$, positive definite kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$, maximum iterations $L$.
 
-**Output:** Symmetrically scaled coupling $T_s$.
+**Output:** Symmetrically scaled coupling $T_s$ with approximate prescribed marginals.
 
 **Initialize:** Set $U=\Id_n$ and $V=\Id_m$.
 
-**Set** residual $r=+\infty$.
+**Set** residual $r=+\infty$ and counter $k=0$.
 
-**While** $r>\mathrm{tol}$ **do**:
+**While** $r>\mathrm{tol}$ and $k<L$ **do**:
 
 > $R_V=\mathcal K(V^2), \qquad U\leftarrow R_V^{-1/2}\bigl(R_V^{1/2} A R_V^{1/2}\bigr)^{1/2}R_V^{-1/2}.$
 >
 > $S_U=\mathcal K^\star(U^2), \qquad V\leftarrow S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.$
 >
 > **Set** $T_s=(U\otimes V)K(U\otimes V)$ and $r$ to the maximum of its two operator-marginal residuals against $A$ and $B$.
+>
+> **Set** $k\leftarrow k+1$.
 
 **Return** $T_s$.
 :::
+
+Vector, metric-measure and quantum transport extend the same coupling
+principle in three different directions: richer fibers, unknown cross-space
+correspondences and non-commutative joint states. Their feasible sets and
+algorithms differ, but marginal constraints, convex duality and entropy
+regularization remain the common organizing mechanisms.

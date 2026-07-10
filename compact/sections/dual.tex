@@ -7,55 +7,86 @@ The Kantorovich problem~\eqref{eq-kanto-discr} is a linear program so that one c
 \begin{defn}[Admissible potentials]\label{def-admissible-potentials}
 For a discrete problem with marginal sizes $n,m$ and cost matrix $\C\in\RR^{n\times m}$, a pair $(\fD,\gD)\in\RR^n\times\RR^m$ is admissible if it lies below the cost:
 \eql{\label{eq-feasible-potential}
-\PotentialsD(\a,\b) \eqdef \enscond{
+\PotentialsD(\C) \eqdef \enscond{
 (\fD,\gD) \in \RR^n \times \RR^m
 }{ \foralls (i,j) \in \range{n} \times \range{m}, \fD_i+\gD_j \leq \C_{i,j} }.
 }
-Equivalently, $\fD\oplus\gD\leq\C$ entrywise. The notation suppresses the dependence on $\C$, which is fixed in the surrounding problem.
+Equivalently, $\fD\oplus\gD\leq\C$ entrywise. In particular, the feasible set depends on the cost matrix, not on the marginal weights.
 \end{defn}
 \begin{prop}[Discrete Kantorovich duality]\label{prop-duality-discr}
 One has
 \eql{\label{eq-dual}
 \MKD_\C(\a,\b) =
-\umax{(\fD,\gD) \in \PotentialsD(\a,\b)} \dotp{\fD}{\a} + \dotp{\gD}{\b}
+\umax{(\fD,\gD) \in \PotentialsD(\C)} \dotp{\fD}{\a} + \dotp{\gD}{\b}.
 }
 \end{prop}
 \begin{proof}
-
-For the sake of completeness, let us derive this dual problem using Lagrangian duality. The Lagrangian associated to~\eqref{eq-kanto-discr} reads
+For completeness, introduce multipliers $(\fD,\gD)$ for the two marginal constraints. The Lagrangian is
 \eql{\label{eq-mk-lagr}
-\umin{\P \geq 0} \umax{ (\fD,\gD) \in \RR^n \times \RR^m }
-\dotp{\C}{\P} + \dotp{\a - \P\ones_m}{\fD} + \dotp{\b - \P^\top \ones_n}{\gD}.
+\mathcal L(\P,\fD,\gD)
+=\dotp{\C}{\P}+\dotp{\a-\P\ones_m}{\fD}
++\dotp{\b-\P^\top\ones_n}{\gD}.
 }
-For a linear program, if the primal constraint set is non-empty, one can always exchange the min and the max and get the same value. We thus consider
-\(\umax{ (\fD,\gD) \in \RR^n \times \RR^m } \dotp{\a}{\fD} + \dotp{\b}{\gD} + \umin{\P \geq 0} \dotp{\C - \fD\ones_m^\top - \ones_n \gD^\top}{\P}.\)
-We conclude by remarking that
-\eq{
-\umin{\P \geq 0} \dotp{\Q}{\P} =
-\choice{
-0 \qifq \Q \geq 0\\
--\infty \quad \text{otherwise}
-}
-}
-so that the constraint reads $\C - \fD\ones_m^\top - \ones_n \gD^\top = \C-\fD\oplus \gD \geq 0$.
+For fixed potentials, the dual function is \(\inf_{\P\geq0}\mathcal L(\P,\fD,\gD) =\dotp{\a}{\fD}+\dotp{\b}{\gD} +\inf_{\P\geq0}\dotp{\C-(\fD\oplus\gD)}{\P}.\)
+The last infimum is
+\[
+\inf_{\P\geq0}\dotp{\Q}{\P}
+=
+\begin{cases}
+0 & \text{if }\Q\geq0,\\
+-\infty & \text{otherwise},
+\end{cases}
+\]
+and is therefore finite exactly when $(\fD,\gD)\in\PotentialsD(\C)$. The primal polytope is nonempty because it contains the product coupling $\a\otimes\b$, and it is compact; hence the primal value is finite and attained. Finite-dimensional linear-programming strong duality then identifies this value with the maximum of the dual function and also gives dual attainment.
 \end{proof}
+\begin{prop}[Discrete complementary slackness]\label{prop-discrete-complementary-slackness}
+For every $\P\in\CouplingsD(\a,\b)$ and $(\fD,\gD)\in\PotentialsD(\C)$, \(\dotp{\C}{\P}-\dotp{\fD}{\a}-\dotp{\gD}{\b} = \sum_{i,j}\P_{i,j}\bigl(\C_{i,j}-\fD_i-\gD_j\bigr) \geq0.\)
+The plan and potentials are respectively primal and dual optimal if and only if
 \eql{\label{eq-mk-pd-rel}
-\Supp(\P) \subset \enscond{(i,j) \in \range{n} \times \range{m}}{ \fD_i+\gD_j=\C_{i,j} }.
+\Supp(\P)
+\subset
+\enscond{(i,j)\in\range{n}\times\range{m}}{\fD_i+\gD_j=\C_{i,j}}.
 }
+\end{prop}
+\begin{proof}
+The marginal constraints give
+$\dotp{\fD}{\a}+\dotp{\gD}{\b}
+=\sum_{i,j}\P_{i,j}(\fD_i+\gD_j)$, which proves the identity and nonnegativity. If both feasible objects are optimal, their values agree by Proposition~\ref{prop-duality-discr}; every nonnegative summand with $\P_{i,j}>0$ must therefore vanish. Conversely, the support condition makes the gap zero, so weak duality forces both objects to be optimal.
+\end{proof}
 \subsection{Auction Algorithm and Dual Prices}
 \label{sec-auction-dual-ascent}
-Consider the square assignment problem with costs $C_{i,j}$ and rewrite it as the profit maximization problem with $a_{i,j}=-C_{i,j}$. The auction algorithm keeps prices $p_j$ on the target points and a partial assignment.
+\paragraph{Bidding dynamics.}
+Consider a square assignment problem of size $n\geq2$ with costs $C_{i,j}$ and rewrite it as the profit maximization problem with $a_{i,j}=-C_{i,j}$. The case $n=1$ is immediate.
 
 \(v_i=\max_j (a_{i,j}-p_j),\qquad j_i\in\operatorname*{argmax}_j(a_{i,j}-p_j),\qquad w_i=\max_{j\neq j_i}(a_{i,j}-p_j).\)
 \[
 p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
 \]
+\paragraph{Approximate optimality.}
 For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual minimization gives the convex objective
 
 \(D(p)=\sum_j p_j+\sum_i \max_j(a_{i,j}-p_j),\)
-\begin{defn}[$\epsilon$-complementary slackness]
+\begin{defn}[$\epsilon$-complementary slackness]\label{def-auction-eps-cs}
 An assignment $\sigma$ and prices $p$ satisfy $\epsilon$-complementary slackness if, for every source $i$, \(a_{i,\sigma(i)}-p_{\sigma(i)} \geq \max_j(a_{i,j}-p_j)-\epsilon.\)
+For a partial assignment, the same condition is required only for currently assigned sources.
 \end{defn}
+\begin{prop}[Auction invariant and finite termination]\label{prop-auction-termination}
+At every iteration of Algorithm~\ref{alg:auction-bidding}, each currently owned pair satisfies $\epsilon$-complementary slackness. Moreover, if
+\(\Delta_A\eqdef\max_{i,j}a_{i,j}-\min_{i,j}a_{i,j},\)
+then the algorithm terminates after at most
+\[
+1+\left\lfloor\frac{n(\Delta_A+\epsilon)}{\epsilon}\right\rfloor
+\]
+bids.
+\end{prop}
+\begin{proof}
+Immediately after source $i$ bids for $j_i$, its reduced profit there is \(a_{i,j_i}-p_{j_i}^{\mathrm{new}}=w_i-\epsilon,\)
+whereas every alternative has reduced profit at most $w_i$. Later bids only increase competing prices. The price of $j_i$ itself cannot change while $i$ remains its owner, because such a change would reassign $j_i$ and make $i$ unassigned. Thus every owned pair satisfies the claimed invariant.
+
+Each bid raises one price by at least $\epsilon$. After any nonterminal bid, at least one target different from the selected target remains unassigned; it has never been owned and still has price zero. Denote such a target by $k$. Since it was also available before the bid, the second-best value satisfies $w_i\geq a_{i,k}$, and hence
+\(p_{j_i}^{\mathrm{new}}=a_{i,j_i}-w_i+\epsilon \leq \Delta_A+\epsilon.\)
+Since this sum grows by at least $\epsilon$ per bid, there can be at most $n(\Delta_A+\epsilon)/\epsilon$ nonterminal bids, followed by at most one terminal bid.
+\end{proof}
 \begin{prop}[Auction optimality certificate]\label{prop-auction-eps-cs}
 If a complete assignment $\sigma$ satisfies $\epsilon$-complementary slackness, then it is $n\epsilon$-optimal for the profit maximization problem, or equivalently $n\epsilon$-optimal for the original cost minimization problem. If all costs are integers and $\epsilon<1/n$, then $\sigma$ is optimal.
 \end{prop}
@@ -66,6 +97,7 @@ Thus no assignment has profit more than $n\epsilon$ above that of $\sigma$. Sinc
 \end{proof}
 \subsection{General formulation}
 \label{sec-dual-general}
+\paragraph{Continuous duality.}
 \begin{prop}[Kantorovich duality]\label{prop-kantorovich-duality-general}
 Assume that $\Xx$ and $\Yy$ are compact metric spaces and that $c\in\Cc(\Xx\times\Yy)$. Then
 \eql{\label{eq-dual-generic}
@@ -85,40 +117,73 @@ Here, $(\f,\g)$ is a pair of continuous functions, often called ``Kantorovich po
 The same formula extends under the usual lower-semicontinuity and integrability assumptions, replacing maxima by suprema when dual optimizers need not exist.
 \end{prop}
 \begin{proof}
-Weak duality is immediate: if $f(x)+g(y)\leq c(x,y)$ and $\pi\in\Couplings(\alpha,\beta)$, then
-\(\int f\d\alpha+\int g\d\beta = \int (f(x)+g(y))\d\pi(x,y) \leq \int c\d\pi.\)
-Taking the supremum over admissible potentials and the infimum over couplings gives ``$\leq$''.
+Weak duality is immediate: if $f(x)+g(y)\leq c(x,y)$ and $\pi\in\Couplings(\al,\be)$, then
+\(\int f\d\al+\int g\d\be = \int (f(x)+g(y))\d\pi(x,y) \leq \int c\d\pi.\)
+Taking the supremum over admissible potentials and the infimum over couplings gives the first inequality.
 
-For the reverse inequality, view the primal problem as a linear program over the locally convex space of Radon measures, paired with $\Cc(\X\times\Y)$. The affine map $\pi\mapsto(\pi_1,\pi_2)$ is continuous for the weak topology, the feasible set is non-empty because it contains $\alpha\otimes\beta$, and the cost is continuous and bounded on compact sets. Since the set of probability measures on the compact product is weakly compact, the set of attainable cost-marginal triples is closed after adding the epigraph variable below. The separating-hyperplane theorem applied to the convex set of attainable triples
-\(\Big\{\big(\pi_1,\pi_2,\int c\d\pi+r\big): \pi\geq0,\ r\geq0\Big\}\)
-gives a continuous affine separator, hence functions $(f,g)$ and a scalar multiplier which can be normalized so that $f\oplus g\leq c$. The separating inequality then states that the supremum over such potentials is at least the primal value. This proves equality. The same argument is the infinite-dimensional analogue of the finite linear-programming proof in Proposition~\ref{prop-duality-discr}.
+For the reverse inequality, write $V=\MK_\c(\al,\be)$ and consider the convex cone
+\[
+\mathcal K
+\eqdef
+\left\{\left(\pi_1,\pi_2,\int c\d\pi+r\right):
+\pi\in\Mm_+(\X\times\Y),\ r\geq0\right\}
+\]
+in $\Mm(\X)\times\Mm(\Y)\times\RR$, equipped with the weak topologies on the measure factors. This cone is closed. Indeed, convergence of the first marginal implies a uniform bound on the masses of the underlying nonnegative measures. Compactness of $\X\times\Y$ then gives a convergent subnet $\pi_k\rightharpoonup\pi$; continuity of marginalization and of $\pi\mapsto\int c\d\pi$ identifies the limit with an element of $\mathcal K$, while the limiting epigraph remainder remains nonnegative.
+
+For every $t<V$, the point $z_t=(\al,\be,t)$ does not belong to $\mathcal K$. Strong separation of this point from the closed convex cone gives a continuous linear functional. Because $\mathcal K$ is a cone containing the origin, the functional can be oriented so that, for some $F\in\Cc(\X)$, $G\in\Cc(\Y)$ and $\lambda\in\RR$,
+\(\int F\d\al+\int G\d\be+\lambda t<0 \leq \int F\d\eta+\int G\d\zeta+\lambda s \qquad \text{for all }(\eta,\zeta,s)\in\mathcal K.\)
+Testing $(0,0,r)\in\mathcal K$ gives $\lambda\geq0$, while testing the element generated by $\pi=\de_{(x,y)}$ and $r=0$ gives
+$F(x)+G(y)+\lambda c(x,y)\geq0$. The multiplier cannot vanish: if $\lambda=0$, integrating this last inequality against $\al\otimes\be$ would contradict the strict inequality at $z_t$. Thus $\lambda>0$, and
+\(f\eqdef-F/\lambda,\qquad g\eqdef-G/\lambda\)
+satisfy $f\oplus g\leq c$ and
+$\int f\d\al+\int g\d\be>t$. Letting $t\uparrow V$ proves the reverse inequality.
+
+Take a maximizing sequence $(f_k,g_k)$. Successively replace it by \(\widetilde g_k(y)=\min_x\{c(x,y)-f_k(x)\}, \qquad \widetilde f_k(x)=\min_y\{c(x,y)-\widetilde g_k(y)\}.\)
+Each replacement preserves feasibility and cannot decrease the objective. Fixing $x_0\in\X$, use the gauge freedom
+$(\widetilde f_k,\widetilde g_k)\mapsto
+(\widetilde f_k-a_k,\widetilde g_k+a_k)$
+to impose $\widetilde f_k(x_0)=0$. Uniform continuity of $c$ shows that $\widetilde g_k$ inherits a common modulus in the second variable and $\widetilde f_k$ a common modulus in the first. The gauge gives a uniform bound on $\widetilde f_k$, and the first envelope then gives one on $\widetilde g_k$. Arzel\`a--Ascoli yields uniformly convergent subsequences. Their limit remains admissible and attains the dual supremum.
 \end{proof}
+\paragraph{Complementary slackness.}
+\begin{prop}[Continuous complementary slackness]\label{prop-continuous-complementary-slackness}
+For $\pi\in\Couplings(\al,\be)$ and $(f,g)\in\Potentials(\c)$, \(\int c\d\pi-\int f\d\al-\int g\d\be = \int\bigl(c(x,y)-f(x)-g(y)\bigr)\d\pi(x,y) \geq0.\)
+The coupling and potentials are respectively primal and dual optimal if and only if this gap vanishes. In that case,
 \eql{\label{eq-mk-pd-rel-cont}
-\Supp(\pi) \subset \enscond{(x,y) \in \X \times \Y}{ \f(x)+\g(y)=\c(x,y) }.
+\Supp(\pi)
+\subset
+\enscond{(x,y)\in\X\times\Y}{f(x)+g(y)=c(x,y)}.
 }
-For the one-dimensional quadratic cost, the continuous potentials can be read from the monotone map $T=F_\be^{-1}\circ F_\al$: on the active graph, $f'(x)=2(x-T(x))$ and $g=f^c$.
-
+\end{prop}
+\begin{proof}
+The marginal identities give the equality, and admissibility gives nonnegativity. A zero gap is equivalent to equality of the feasible primal and dual values, hence to joint optimality by Proposition~\ref{prop-kantorovich-duality-general}. Finally, the slack is continuous and nonnegative. If it were positive at a point of $\Supp(\pi)$, it would be bounded below by a positive constant on a neighborhood of positive $\pi$-mass, contradicting its zero integral.
+\end{proof}
 \(s(x,y) \eqdef c(x,y)-f(x)-g(y).\)
 Dual feasibility is the statement $s\geq0$, while complementary slackness says that an optimal coupling can only live where this slack vanishes.
 
 \subsection{\texorpdfstring{$c$-transforms}{c-transforms}}
 \label{sec-c-transfo}
-This compact subsection collects the transform formulas behind continuous duality.
-
 \paragraph{\texorpdfstring{Best-response potentials and the $c$-transform.}{Best-response potentials and the c-transform.}}
 \(\usup{\g \in \Cc(\Yy)} \enscond{ \int g \d \be }{ \foralls (x,y), \g(y) \leq c(x,y) - \f(x) }.\)
 \(\foralls y \in \Yy, \quad \g(y) \leq \f^\c(y)\)
 \begin{defn}[$c$-transform]\label{def-c-transform}
-For a function $f:\Xx\to\RR\cup\{-\infty\}$, its $c$-transform is
+For a real-valued function $f:\Xx\to\RR$, its $c$-transform is the extended-real-valued function
 \eql{\label{eq-c-transform}
 \foralls y \in \Y, \quad
 \f^\c(y) \eqdef \uinf{x \in \X} \c(x,y) - \f(x).
 }
-For a function $g:\Yy\to\RR\cup\{-\infty\}$, the $\bar c$-transform associated with $\bar c(y,x)=c(x,y)$ is \(\foralls x \in \X, \quad \g^{\bar\c}(x) \eqdef \uinf{y \in \Y} \c(x,y) - \g(y).\)
+For a real-valued function $g:\Yy\to\RR$, the $\bar c$-transform associated with $\bar c(y,x)=c(x,y)$ is \(\foralls x \in \X, \quad \g^{\bar\c}(x) \eqdef \uinf{y \in \Y} \c(x,y) - \g(y).\)
+When $\Xx,\Yy$ are compact, $c$ is continuous and the input potential is continuous, these infima are finite minima and the transformed potential is continuous.
 \end{defn}
+Since $\be$ is nonnegative, maximizing $\int \g \d \be$ saturates the bound $\g\leq\f^\c$ on $\Supp(\be)$, equivalently $\be$-almost everywhere.
+
 \begin{prop}[$c$-transforms solve the semi-relaxed problems]\label{prop-c-transform-semi-relaxed}
-For fixed $f$, the maximizers of the dual objective over all $g$ such that $f\oplus g\leq c$ are exactly the functions satisfying $g=f^c$ $\be$-almost everywhere. Equivalently, $f^c$ gives the value of the one-marginal primal problem
-\(\inf_{\pi:\,\pi_2=\be} \int c(x,y)\d\pi(x,y)-\int f(x)\d\pi_1(x) = \int f^c(y)\d\be(y).\)
+Assume the compactness and continuity hypotheses of Proposition~\ref{prop-kantorovich-duality-general}. For fixed $f\in\Cc(\X)$, the maximizers of the dual objective over all $g\in\Cc(\Y)$ such that $f\oplus g\leq c$ are exactly the functions satisfying $g=f^c$ $\be$-almost everywhere. Equivalently, $f^c$ gives the value of the one-marginal primal problem
+\[
+\inf_{\substack{\pi\in\Mm_+^1(\X\times\Y)\\ \pi_2=\be}}
+\int c(x,y)\d\pi(x,y)-\int f(x)\d\pi_1(x)
+=
+\int f^c(y)\d\be(y).
+\]
 Symmetrically, for fixed $g$, the maximizers over $f$ are the functions satisfying $f=g^{\bar c}$ $\al$-almost everywhere.
 \end{prop}
 \begin{proof}
@@ -134,15 +199,19 @@ For the primal formula, disintegrate any feasible $\pi$ as $\pi(\d x,\d y)=\pi_y
 \geq
 \int f^c(y)\d\be(y).
 \]
-If minimizers admit a measurable selection, equality is obtained by choosing $\pi_y$ supported on minimizers of $x\mapsto c(x,y)-f(x)$. Otherwise one uses approximate measurable selections and lets the approximation error vanish.
+The argmin of $x\mapsto c(x,y)-f(x)$ is nonempty and compact. The measurable maximum theorem provides a Borel selector $x_\star(y)$ from these argmins. The coupling
+$\pi(\d x,\d y)=\de_{x_\star(y)}(\d x)\be(\d y)$
+then attains equality.
 \end{proof}
-The map $(f,g)\mapsto(g^{\bar c},f^c)$ replaces dual potentials by better ones, in the sense that it preserves feasibility and improves the dual objective. Functions of the form $f^c$ and $g^{\bar c}$ are called $c$-concave and $\bar c$-concave functions.
-
-\begin{prop}[Lipschitz stability of $c$-transforms]\label{prop-c-transform-lipschitz}
-If $c$ is $L$-Lipschitz with respect to its second variable, uniformly in the first one and for the metric $d_\Y$ on $\Y$, then $f^c$ is $L$-Lipschitz.
+\((f,g)\longmapsto(f,f^c),\)
+\((f,f^c)\longmapsto(f^{c\bar c},f^c).\)
+\begin{prop}[Modulus stability of $c$-transforms]\label{prop-c-transform-lipschitz}
+Suppose that $\omega_\Y$ is a modulus such that
+\(|c(x,y)-c(x,y')| \leq\omega_\Y\bigl(d_\Y(y,y')\bigr) \qquad\text{for all }x,y,y'.\)
+Then every finite $f^c$ has the same modulus. Symmetrically, a uniform modulus $\omega_\X$ of $c$ in its first variable is inherited by $g^{\bar c}$. In particular, a uniform $L$-Lipschitz bound on the cost yields an $L$-Lipschitz bound on the corresponding transform.
 \end{prop}
 \begin{proof}
-For each $x$, set $F_x(y)=c(x,y)-f(x)$ and $F(y)=f^c(y)=\inf_x F_x(y)$. Since all the functions $F_x$ are $L$-Lipschitz,
+For each $x$, set $F_x(y)=c(x,y)-f(x)$ and $F(y)=f^c(y)=\inf_x F_x(y)$. Since all the functions $F_x$ share the modulus $\omega_\Y$,
 \[
 |F(y)-F(y')|
 =
@@ -150,20 +219,20 @@ For each $x$, set $F_x(y)=c(x,y)-f(x)$ and $F(y)=f^c(y)=\inf_x F_x(y)$. Since al
 \leq
 \sup_x |F_x(y)-F_x(y')|
 \leq
-L d_\Y(y,y').
+\omega_\Y\bigl(d_\Y(y,y')\bigr).
 \]
+The proof in the first variable is identical.
 \end{proof}
 \paragraph{Euclidean case.}
 The Euclidean quadratic cost is the model case where $c$-transforms become ordinary convex conjugates after removing the quadratic terms. This is the algebraic bridge between Kantorovich duality and Brenier maps.
 
-\(\int \norm{x-y}^2\d\pi(x,y) = \int\norm{x}^2\d\al(x)+\int\norm{y}^2\d\be(y) -2\int \dotp{x}{y}\d\pi(x,y).\)
-For $c(x,y)=-\dotp{x}{y}$, one has
-
+\(\int q(x,y)\d\pi(x,y) = \frac12\int\norm{x}^2\d\al(x) +\frac12\int\norm{y}^2\d\be(y) -\int \dotp{x}{y}\d\pi(x,y).\)
 \(f^c(y) = \inf_x -\dotp{x}{y}-f(x) = -(-f)^*(y), \qquad h^*(y)\eqdef\sup_x \dotp{x}{y}-h(x).\)
-Thus $c$-concave functions are negatives of convex functions. In the one-dimensional bilinear model case, the hard double $c$-transform is therefore an operation of taking concave envelopes.
+On the full Euclidean space, $f^{c\bar c}=-(-f)^{**}$; hence $c$-closed functions are negatives of lower semicontinuous convex functions, and the closure is the smallest upper semicontinuous concave majorant of $f$. On restricted compact domains, the same statement holds with the additional restriction that the supporting slopes belong to the opposite domain.
 
-\paragraph{The failure of alternate optimization.}
-\begin{prop}[Algebra of $c$-transforms]
+\paragraph{Why hard alternating optimization stops.}
+\begin{prop}[Algebra of $c$-transforms]\label{prop-c-transform-algebra}
+Writing $\f^{c\bar c}\eqdef(\f^c)^{\bar c}$, the following pointwise identities hold whenever the transforms are well defined:
 \[
 \textnormal{(i) } f \leq f' \Rightarrow f^{c}\geq f'^{c},
 \qquad
@@ -174,19 +243,13 @@ Thus $c$-concave functions are negatives of convex functions. In the one-dimensi
 \textnormal{(iv) } \f^{\c\bar{\c}\c}=\f^{\c}.
 \]
 \end{prop}
-\begin{proof} The first inequality (i) follows from the definition of $\c$-transforms (because of the $-$ sign). To prove (ii), expanding the definition of $\f^{\c\bar{\c}}$ we have
-\eq{
-\left(\f^{\c\bar{\c}}\right)(x)= \min_{y} \c(x,y)-\f^{\c}(y)
-= \min_{y} \c(x,y) - \min_{x'}( \c(x',y) - \f(x') ).}
-Now, since $-\min_{x'}\big(\c(x',y)-\f(x')\big) \geq -(\c(x,y)-\f(x))$, we recover
-\((\f^{\c\bar{\c}})(x) \geq \min_{y} \c(x,y) - \c(x,y)+\f(x) = \f(x).\)
-The relation $\g^{\bar{\c}\c} \geq \g$ is obtained in the same way.
-
-Now, to prove (iv), we first apply (ii) and then (i) with $f'=f^{c\bar c}$ to have $f^c \geq f^{c \bar c c}$.
-Then we apply (iii) to $g=f^c$ to obtain $f^c \leq f^{c\bar c c}$.
-
+\begin{proof}
+The order reversal in (i) follows directly from the minus sign in the definition. For every $x$ and $y$, \(f^c(y)=\inf_{x'}\{c(x',y)-f(x')\} \leq c(x,y)-f(x),\)
+so $c(x,y)-f^c(y)\geq f(x)$. Taking the infimum over $y$ proves (ii), and exchanging the two spaces proves (iii). Finally, (ii) and the order reversal imply
+$f^c\geq f^{c\bar c c}$, whereas (iii) applied to $g=f^c$ gives
+$f^{c\bar c c}\geq f^c$. This proves (iv).
 \end{proof}
 \eql{\label{eq-iter-c-trans}
 (f,g) \mapsto (f,f^c) \mapsto (f^{c\bar c},f^c) \mapsto (f^{c\bar c},f^{c\bar c c}) = (f^{c\bar c},f^c) \ldots
 }
-For the bilinear cost $c(x,y)=-xy$ on a compact interval, the $c$-concave functions are ordinary concave functions and $f^{c\bar c}$ is the smallest concave majorant of $f$. In that model case, a hard transform removes non-concave oscillations in one closure step rather than producing a gradual ascent.
+For the bilinear cost $c(x,y)=-xy$ on a compact interval, $f^{c\bar c}$ is the smallest concave majorant representable with slopes in the opposite interval. A hard transform removes non-concave oscillations in one step rather than producing a gradual ascent.

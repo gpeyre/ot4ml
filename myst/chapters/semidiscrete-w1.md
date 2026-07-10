@@ -43,8 +43,8 @@ def show_book_figure(name, width=760):
 
 ## Semi-dual
 
-The semi-dual eliminates one potential by an exact $c$-transform. It keeps
-concavity while removing explicit inequality constraints.
+The semi-dual eliminates one potential by an exact $c$-transform. It preserves
+concavity while removing the explicit pointwise inequality constraint.
 
 Write the dual problem as
 
@@ -52,9 +52,10 @@ Write the dual problem as
 \sup_{f,g\in\Cc(\X)\times\Cc(\Y)} \mathcal{E}(f,g),
 ```
 
-where $\mathcal{E}(f,g)$ is the dual objective, with value $-\infty$ when the
-feasibility constraint fails. Optimizing out $g$ exactly gives the semi-dual
-problem
+where $\mathcal{E}(f,g)$ is the dual objective, extended by $-\infty$ outside
+the feasible set. For fixed $f$, feasibility is equivalent to $g\leq f^c$.
+Since $\beta$ is nonnegative, the largest admissible choice $g=f^c$ maximizes
+the objective and gives
 
 ```{math}
 :label: eq-semi-dual-web
@@ -69,10 +70,11 @@ problem
 \int_\Y f^c\,\d\beta .
 ```
 
-Partial maximization of a concave problem preserves concavity, so
-$\widetilde{\mathcal{E}}$ is still concave. The advantage is that the explicit
-inequality constraint has disappeared, which allows simpler optimization
-algorithms.
+Partial maximization preserves concavity. Moreover,
+$\widetilde{\mathcal{E}}(f+s)=\widetilde{\mathcal{E}}(f)$ because
+$(f+s)^c=f^c-s$ and both measures have unit mass. Potentials are therefore
+defined only up to an additive constant, while the optimization is
+unconstrained.
 
 ## Semi-discrete
 
@@ -88,7 +90,8 @@ Consider the case where
 \beta=\sum_{j=1}^m b_j\delta_{y_j}
 ```
 
-is discrete. The same construction applies if $\alpha$ is discrete, after
+has distinct atoms and positive weights; zero-weight atoms can be removed. The
+same construction applies if $\alpha$ is discrete, after
 exchanging the roles of $\alpha$ and $\beta$. Restricting the minimization in
 Definition {ref}`def-c-transform` to the support of $\beta$, equivalently
 applying that definition with the discrete target space
@@ -102,8 +105,8 @@ g^{\bar c}(x)
 \min_{1\le j\le m} c(x,y_j)-g_j.
 ```
 
-This maps a vector $g$ to a continuous function under the same regularity
-assumptions on $c$ as in the continuous setting. Using this transform when
+This maps a vector $g$ to a continuous function because it is the minimum of
+finitely many continuous functions. Using this transform when
 $\beta$ is discrete yields the finite-dimensional semi-dual
 
 ```{math}
@@ -117,6 +120,9 @@ $\beta$ is discrete yields the finite-dimensional semi-dual
 +
 \sum_{j=1}^m g_j b_j .
 ```
+
+The objective is invariant under $g\mapsto g+s\mathbf 1$, so one may impose
+the gauge $\sum_j g_j=0$.
 
 The geometric object encoded by the dual weights is a weighted
 nearest-neighbor diagram: each source point is assigned to the target atom that
@@ -198,8 +204,8 @@ The semi-dual energy can be rewritten as
 
 :::{admonition} Proposition: Gradient of the Semi-discrete Dual
 :class: important
-If $\alpha$ gives zero mass to the Laguerre cell boundaries, then
-$\mathcal{E}$ is differentiable at $g$ and
+If the minimizing index in the discrete $\bar c$-transform is unique for
+$\alpha$-almost every $x$, then $\mathcal{E}$ is differentiable at $g$ and
 
 ```{math}
 \frac{\partial \mathcal{E}}{\partial g_j}(g)
@@ -220,7 +226,8 @@ derivative in direction $h\in\RR^m$ is
 -h_{j(x)}.
 ```
 
-Dominated convergence gives
+The difference quotients are bounded by $\norm{h}_\infty$, so dominated
+convergence gives
 
 ```{math}
 \d\mathcal{E}(g)[h]
@@ -241,9 +248,12 @@ amounts to choosing weights $g$ so that
 \qquad\text{for every }j.
 ```
 
-At optimality, the transport map is piecewise constant: it sends
-$x\in\mathcal{L}_j(g)$ to $y_j$. For the quadratic cost, uniqueness follows
-from Brenier's theorem when $\alpha$ has a density.
+The gradient components sum to zero, consistently with the gauge invariance.
+Conversely, balanced cells define the piecewise-constant map
+$T(x)=y_j$ on $\mathcal{L}_j(g)$. Its graph lies in the contact set
+$g^{\bar c}(x)+g_j=c(x,y_j)$, so continuous complementary slackness proves
+that both the map and the weights are optimal. For the quadratic cost,
+uniqueness follows from Brenier's theorem when $\alpha$ has a density.
 
 
 The sign of the gradient has a direct geometric interpretation. Increasing
@@ -279,12 +289,16 @@ watch Laguerre cells rebalance their masses.
 <iframe class="ot4ml-live-frame" title="Semi-discrete Laguerre controls" src="../live/semidiscrete-laguerre.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
 Quadratic power diagrams have polyhedral cells and can be computed efficiently
-using computational-geometry algorithms {cite:p}`aurenhammer1987power,AurenhammerHA98,Merigot11`.
-One classical construction lifts sites to
-$(y_j,\norm{y_j}^2-g_j)\in\RR^{d+1}$ and obtains the power diagram by
-projecting the lower envelope of their convex hull. In dimensions two and
-three, Chan's output-sensitive convex-hull algorithm has complexity
-$O(m\log Q)$ for $m$ sites and $Q$ hull vertices {cite:p}`chan1996optimal`.
+using computational-geometry algorithms
+{cite:p}`aurenhammer1987power,AurenhammerHA98,Merigot11`. Expanding the cost
+shows that a cell minimizes
+$x\mapsto-2\langle x,y_j\rangle+\norm{y_j}^2-g_j$. The lower envelope of these
+affine functions gives the power diagram, while the lower hull of the lifted
+sites $(y_j,\norm{y_j}^2-g_j)$ gives its dual regular triangulation. For a
+planar source, this is a three-dimensional hull and Chan's output-sensitive
+algorithm costs $O(m\log Q)$ for $Q$ hull vertices
+{cite:p}`chan1996optimal`. A three-dimensional source lifts to four dimensions
+and is not covered by that particular bound.
 
 ### Stochastic Optimization
 
@@ -328,38 +342,72 @@ g^{(\ell)}
 \tau_\ell\nabla_g E(g^{(\ell)},x_\ell).
 ```
 
-The step size must decay so that sampling noise averages out. A typical
-schedule is
+The stochastic supergradient has zero coordinate sum and preserves the gauge.
+For almost-sure stochastic-approximation convergence, one typically imposes
 
 ```{math}
-\tau_\ell\eqdef\frac{\tau_0}{1+\ell/\ell_0}.
+\sum_{\ell=0}^{\infty}\tau_\ell=\infty,
+\qquad
+\sum_{\ell=0}^{\infty}\tau_\ell^2<\infty.
 ```
 
-Under standard stochastic-approximation assumptions,
+For example, one may use
+$\tau_\ell=\tau_0(1+\ell/\ell_0)^{-q}$ with $1/2<q\leq1$. The standard
+finite-horizon rate instead concerns averaged iterates.
+
+(prop-semidiscrete-sgd-rate)=
+:::{admonition} Proposition: Averaged Stochastic Semi-dual Rate
+:class: important
+Let $g^\star$ maximize $\mathcal E$, set
+$R=\norm{g^{(0)}-g^\star}_2$, and suppose the stochastic supergradients are
+conditionally unbiased and bounded by $G$. For a horizon $L$, use the constant
+step $\tau=R/(G\sqrt L)$ and
+$\bar g_L=L^{-1}\sum_{\ell=0}^{L-1}g^{(\ell)}$. Then
 
 ```{math}
 \mathcal{E}(g^\star)
 -
-\EE\left(\mathcal{E}(g^{(\ell)})\right)
-=
-O(\ell^{-1/2}),
+\EE\left[\mathcal{E}(\bar g_L)\right]
+\leq
+\frac{RG}{\sqrt L}.
+```
+:::
+
+:::{dropdown} Proof
+Concavity and the squared-distance recursion yield
+
+```{math}
+2\tau\,\EE\!\left[\mathcal E(g^\star)-\mathcal E(g^{(\ell)})\right]
+\leq
+\EE\norm{g^{(\ell)}-g^\star}_2^2
+-
+\EE\norm{g^{(\ell+1)}-g^\star}_2^2
++
+\tau^2G^2.
 ```
 
-where $g^\star$ is a maximizer and the expectation is over the i.i.d. samples.
+Summing, discarding the final squared distance, and using concavity at
+$\bar g_L$ gives
+$\mathcal E(g^\star)-\EE\mathcal E(\bar g_L)
+\le R^2/(2\tau L)+\tau G^2/2$. Substitution of
+$\tau=R/(G\sqrt L)$ proves the claim.
+:::
+
 This stochastic viewpoint is one of the main algorithmic advantages of the
 semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 
-(alg-semidiscrete-laguerre-descent)=
-:::{admonition} Algorithm: Semi-discrete Laguerre descent
+(alg-semidiscrete-laguerre-ascent)=
+:::{admonition} Algorithm: Semi-discrete Laguerre Ascent
 :class: ot4ml-algorithm
 
-**Input:** Source measure $\alpha$, target atoms $(y_j,\b_j)$, cost $c$, steps $\tau_k$.
+**Input:** Source measure $\alpha$, target atoms $(y_j,\b_j)$, cost $c$, steps
+$(\tau_k)_{k=0}^{K-1}$, tolerance $\mathrm{tol}$, maximum iteration count $K$.
 
 **Output:** Semi-discrete dual weights $\gD$ and Laguerre cells.
 
 **Initialize:** Set $\gD^{(0)}=0$.
 
-**For** $k=0,1,\ldots$ **do**:
+**For** $k=0,\ldots,K-1$ **do**:
 
 >
 > **Compute cells:**
@@ -368,25 +416,30 @@ semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 > **Compute masses:**
 > $m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .$
 >
-> **Update**
-> $\gD^{(k+1)} = \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).$
->
 > **If** $\max_j\abs{m_j^{(k)}-\b_j}\leq\mathrm{tol}$ **then**:
 
->> **Return** $\gD^{(k+1)}$ and the cells.
+>> **Return** $\gD^{(k)}$ and the current cells.
+>
+> **Update**
+> $\gD^{(k+1)} = \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).$
+
+**Compute** the cells of $\gD^{(K)}$.
+
+**Return** $\gD^{(K)}$ and these cells.
 :::
 
 (alg-semidiscrete-stochastic-ascent)=
 :::{admonition} Algorithm: Stochastic semi-discrete ascent
 :class: ot4ml-algorithm
 
-**Input:** Source sampler $x\sim\alpha$, target atoms $(y_j,\b_j)$, steps $\tau_\ell$.
+**Input:** Source sampler $x\sim\alpha$, target atoms $(y_j,\b_j)$, steps
+$(\tau_\ell)_{\ell=0}^{L-1}$, iteration count $L$.
 
 **Output:** Stochastic semi-discrete dual weights $\gD$.
 
 **Initialize:** Set $\gD^{(0)}=0$.
 
-**For** $\ell=0,1,\ldots$ **do**:
+**For** $\ell=0,\ldots,L-1$ **do**:
 
 >
 > **Draw** $x_\ell\sim\alpha$.
@@ -397,7 +450,7 @@ semi-discrete formulation {cite:p}`Merigot11,genevay2016stochastic`.
 
 >> $\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).$
 
-**Return** $\gD^{(\ell)}$ or its running average.
+**Return** $\bar\gD_L=L^{-1}\sum_{\ell=0}^{L-1}\gD^{(\ell)}$.
 :::
 
 
@@ -408,7 +461,10 @@ Optimal quantization asks for the best discrete approximation of a measure by
 $m$ codepoints. It is the geometric core of vector quantization, compression
 and $k$-means clustering.
 
-For a measure $\alpha$, define
+### Free Masses and Prescribed Weights
+
+The classical problem optimizes both codepoint positions and their
+probabilities. For a measure $\alpha$, define
 
 ```{math}
 :label: eq-optimal-quantization-web
@@ -421,20 +477,14 @@ For a measure $\alpha$, define
 This problem is classical in approximation theory and information theory
 {cite:p}`graf2000foundationsquantization,Lloyd82`.
 
-### Free Masses and Prescribed Weights
-
-The formulation {eq}`eq-optimal-quantization-web` is the free-mass version of quantization: one
-optimizes both the codepoint positions $Y=(y_j)_j$ and the weights
-$b\in\simplex_m$. Prescribing the weights gives a different family of problems.
-The equal-weight case, $b_j=1/m$, is especially important for particle
-approximations and is isolated at the end of this section.
+The equal-weight case, $b_j=1/m$, prescribes the weights and is treated at the
+end of this section.
 
 (prop-quantization-rate)=
 :::{admonition} Proposition: Quantization Rate and Curse of Dimensionality
 :class: important
-Let $\Omega\subset\RR^d$ be a bounded Lipschitz domain and assume
-$\alpha=\rho\,\d x$ on $\Omega$, with
-$0<\rho_-\le\rho\le\rho_+<+\infty$. Then, for fixed $p\ge1$, there exist
+Let $\alpha$ be supported in a bounded $\Omega\subset\RR^d$ and assume
+$\alpha=\rho\,\d x$ with $\rho\le\rho_+<+\infty$. Then, for fixed $p\ge1$, there exist
 constants $0<c\le C<+\infty$ such that
 
 ```{math}
@@ -447,16 +497,16 @@ C\,m^{-1/d}.
 :::
 
 :::{dropdown} Proof
-For the upper bound, partition $\Omega$ into $m$ cells of diameter at most
-$C m^{-1/d}$, up to boundary effects, and place one codepoint in each nonempty
-cell. Sending each point to the codepoint in its cell gives a transport
-distance bounded by $C m^{-1/d}$.
+Enclose $\Omega$ in a cube and subdivide it into $k^d\le m$ congruent cubes,
+where $k=\lfloor m^{1/d}\rfloor$. Placing one codepoint in each nonempty cube
+gives the upper bound.
 
 For the lower bound, fix any set $Y$ of $m$ codepoints and write
 $d_Y(x)=\min_j\norm{x-y_j}$. Since the density is bounded above, the mass of
-the $t$-neighborhood of $Y$ is at most $Cmt^d$. Choosing
-$t_0\simeq m^{-1/d}$ small enough gives
-$\alpha(\{d_Y>t\})\ge c$ for $0<t<t_0$. Hence
+the $t$-neighborhood of $Y$ has mass at most
+$\rho_+m\omega_dt^d$. For
+$t_0=(2\rho_+m\omega_d)^{-1/d}$, one has
+$\alpha(\{d_Y>t\})\ge1/2$ for $0<t<t_0$. Hence
 
 ```{math}
 \int d_Y(x)^p\,\d\alpha(x)
@@ -464,7 +514,7 @@ $\alpha(\{d_Y>t\})\ge c$ for $0<t<t_0$. Hence
 \int_0^{+\infty}
 p t^{p-1}\alpha(\{d_Y>t\})\,\d t
 \ge
-c t_0^p
+\frac{t_0^p}{2}
 \simeq
 c m^{-p/d}.
 ```
@@ -475,10 +525,14 @@ Taking the $p$-th root and minimizing over $Y$ proves the lower bound.
 This deterministic rate mirrors the empirical optimal-transport
 sample-complexity rate: both are governed by the spacing $m^{-1/d}$ of points
 in dimension $d$. Quantization is best-case and deterministic, while empirical
-OT is random, but both display the same curse of dimensionality.
+OT is random, but both display the same curse of dimensionality. Zador's
+theorem further identifies the sharp asymptotic constant and limiting
+codepoint density {cite:p}`graf2000foundationsquantization`.
 
-For fixed codepoints $Y$, the problem is convex with respect to the weights
-$b$. The dependence on $Y$ is nonconvex and is generally computationally hard.
+For fixed codepoints $Y$, the powered cost
+$b\mapsto\Wass_p^p(\alpha,\sum_jb_j\delta_{y_j})$ is convex. Its $p$-th root
+$\Wass_p$ need not be convex. The dependence on $Y$ is nonconvex and is
+generally computationally hard.
 The rest of this section distinguishes the free-mass Lloyd reduction from the
 fixed-weight geometry underlying finite-particle $\mathcal W_2$ gradient flows.
 
@@ -545,8 +599,8 @@ Consequently, the quantization energy can be written in nearest-centroid form:
 \int_\X \min_{1\le j\le m} c(x,y_j)\,\d\alpha(x).
 ```
 
-At a differentiability point of this energy, each local minimizer satisfies the
-centroid condition
+At a differentiability point of this energy, any local minimizer with nonempty
+cells satisfies the centroid condition
 
 ```{math}
 y_j
@@ -566,11 +620,11 @@ y_j
 
 Lloyd's algorithm, also known as the $k$-means algorithm, iterates this fixed
 point: assign points to nearest sites, then replace each site by the centroid
-of its cell {cite:p}`Lloyd82`. With standard tie-breaking, the objective
-decreases at each step. Since the problem is nonconvex in $Y$, the iterates
-generally converge only to a local minimum. Good seeding matters; for squared
-Euclidean costs, $k$-means++ gives a logarithmic approximation guarantee in
-expectation {cite:p}`ArthurVassilvitskii2007`.
+of its cell {cite:p}`Lloyd82`. The assignment and centroid steps each minimize
+the appropriate block, so the objective cannot increase. Nonconvexity means
+this does not guarantee a global minimizer. For a finite data set with squared
+Euclidean loss, $k$-means++ gives an expected logarithmic approximation
+guarantee {cite:p}`ArthurVassilvitskii2007`.
 
 ### Continuous Lloyd Flow
 
@@ -597,8 +651,8 @@ y_j^{(k)}+\tau\big(b_j(Y^{(k)})-y_j^{(k)}\big),
 \qquad 0<\tau\le 1,
 ```
 
-formally converges, as $\tau\to0$, to the cell-mass preconditioned gradient
-flow of the quantization energy $\mathcal F$,
+is an explicit-Euler step for the cell-mass preconditioned gradient flow of the
+quantization energy $\mathcal F$,
 
 ```{math}
 \dot y_j(t)=b_j(Y_t)-y_j(t).
@@ -634,14 +688,14 @@ Along smooth portions of the flow,
 \le 0.
 ```
 
-If $\alpha_t=\sum_j w_j\delta_{y_j(t)}$ carries fixed positive weights,
+If $\eta_t=\sum_j w_j\delta_{y_j(t)}$ carries fixed positive weights,
 independent of the Voronoi masses $a_j(Y_t)$, this labelled particle ODE is
 equivalently a weak continuity equation,
 
 ```{math}
-\partial_t\alpha_t+\operatorname{div}(v_{\alpha_t}\alpha_t)=0,
+\partial_t\eta_t+\operatorname{div}(v_t\eta_t)=0,
 \qquad
-v_{\alpha_t}(y_j(t))=b_j(Y_t)-y_j(t),
+v_t(y_j(t))=b_j(Y_t)-y_j(t),
 ```
 
 in the sense of the measure evolutions introduced in
@@ -674,18 +728,20 @@ support-distance quantization error.
 ### Mean-Field Limit and Ultrafast Diffusion
 
 There is nevertheless a precise
-high-resolution continuum theory when the number $M$ of codepoints tends to
+high-resolution continuum theory when the number $m$ of codepoints tends to
 infinity. If $\alpha=\rho\,\d x$, the limiting Eulerian variable is the density
-$\sigma$ of sites, meaning heuristically that $M\sigma(x)\,\d x$ codepoints lie in
-$\d x$. Thus the limit is $M\to+\infty$, not a limit in the exponent of the
+$\sigma$ of sites, meaning heuristically that $m\sigma(x)\,\d x$ codepoints lie in
+$\d x$. Thus the limit is $m\to+\infty$, not a limit in the exponent of the
 PDE. In one dimension, Caglioti, Golse and Iacobelli embed the ordered particle
 configuration in $L^2(0,1)$ and prove quantitative convergence of the discrete
 gradient flow toward a limiting flow {cite:p}`caglioti2015gradient`. A
 perturbative two-dimensional analysis around the optimal hexagonal lattice is
 developed in {cite:p}`caglioti2018quantization2d`. For $p$-quantization in
 dimension $d$, set $r=p/d$, so $r=2/d$ for the quadratic cost used in this
-section. The rescaled local energy $M^r\mathcal Q_M(\alpha)^p$ is described,
-up to the universal cell-shape constant, by
+section, and write
+$\mathcal F_p(Y)=\int\min_j\norm{x-y_j}^p\,\d\alpha(x)$. For well-prepared
+configurations whose empirical site distributions converge to $\sigma\,\d x$,
+the rescaled energy is described, up to a universal cell-shape constant, by
 
 ```{math}
 \mathcal G_\rho(\sigma)
@@ -695,7 +751,18 @@ up to the universal cell-shape constant, by
 \int_\Omega \sigma\,\d x=1,
 ```
 
-and its formal $\mathcal W_2$-gradient flow is the weighted ultrafast diffusion
+Formally,
+
+```{math}
+m^r\mathcal F_p(Y^{(m)})\simeq C_{p,d}\mathcal G_\rho(\sigma),
+\qquad
+m^r\mathcal Q_m(\alpha)^p
+\longrightarrow
+C_{p,d}\min_\sigma\mathcal G_\rho(\sigma).
+```
+
+Since the first variation is $-r\rho\sigma^{-r-1}$, the formal
+$\mathcal W_2$-gradient flow is the weighted ultrafast diffusion
 equation
 
 ```{math}
@@ -711,8 +778,8 @@ one-dimensional very-fast-diffusion equation and its convergence to equilibrium
 {cite:p}`iacobelli2019asymptotic`; Iacobelli, Patacchini and Santambrogio then
 use the JKO scheme and Wasserstein-gradient-flow tools to prove well-posedness,
 regularity estimates and convergence for a multidimensional weighted version
-{cite:p}`iacobelli2019weighted`. With $\omega=\rho^{1/(r+1)}$ and
-$u=\sigma/\omega$, the same equation becomes
+{cite:p}`iacobelli2019weighted`. When $\rho>0$, set
+$\omega=\rho^{1/(r+1)}$ and $u=\sigma/\omega$. The same equation becomes
 
 ```{math}
 \partial_t u
@@ -721,7 +788,8 @@ $u=\sigma/\omega$, the same equation becomes
 ```
 
 which makes the negative exponent, hence the ultrafast-diffusion character,
-explicit.
+explicit. Its stationary site density is proportional to
+$\rho^{d/(d+p)}$.
 
 (fig:semidiscrete-lloyd-flow-mixtures)=
 :::{div}
@@ -773,13 +841,15 @@ before settling into a local centroidal configuration.
 :::{admonition} Algorithm: Lloyd quantization
 :class: ot4ml-algorithm
 
-**Input:** Source measure $\alpha$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost, tolerance $\mathrm{tol}$.
+**Input:** Source measure $\alpha$, initial codepoints
+$Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost, tolerance
+$\mathrm{tol}$, maximum iteration count $K$.
 
 **Output:** Codepoints $Y=(y_j)_{j=1}^m$.
 
 **Initialize:** Set $d_0=+\infty$ and $k=0$.
 
-**While** $d_k>\mathrm{tol}$ **do**:
+**While** $d_k>\mathrm{tol}$ and $k<K$ **do**:
 
 >
 > **Set** $k\leftarrow k+1$.
@@ -818,8 +888,9 @@ equal-weight case, set
 \frac12\mathcal W_2^2(\alpha,\nu_Y),
 ```
 
-and minimize only over the positions $Y=(y_j)_j$. Assume that $\alpha$ has a
-density and that the semi-discrete optimal cells are well defined. Let
+and minimize only over the positions $Y=(y_j)_j$. Assume that the sites are
+distinct, that $\alpha$ has a density, and that cell boundaries have zero
+$\alpha$-mass. Let
 $C_j(Y)$ be the Laguerre cell transported to $y_j$, so that
 $\alpha(C_j(Y))=1/m$, and define its centroid
 
@@ -837,8 +908,9 @@ At differentiability points, the envelope theorem gives
 \frac1m\bigl(y_j-\bar x_j(Y)\bigr).
 ```
 
-The $\mathcal W_2$ metric on equal-weight empirical measures induces the
-particle metric $g_Y(U,V)=m^{-1}\sum_j\langle u_j,v_j\rangle$. Hence the
+Locally, while labels remain optimally matched, the $\mathcal W_2$ metric on
+equal-weight empirical measures induces the particle metric
+$g_Y(U,V)=m^{-1}\sum_j\langle u_j,v_j\rangle$. Hence the
 associated $\mathcal W_2$ gradient flow is the coupled system
 
 ```{math}
@@ -854,7 +926,7 @@ $\mathcal W_2$ gradient-flow viewpoint developed more systematically in
 Chapter {ref}`sec-wasserstein-gradient-flows`; the fixed-weight cells are
 Laguerre cells rather than the free-mass Voronoi cells used by Lloyd's method.
 
-### Equal-weight quantization on the line
+### Equal-Weight Quantization on the Line
 
 The following classical scalar quantization result gives the precise form of
 the inverse-CDF rule for equal-weight quadratic quantization
@@ -917,9 +989,10 @@ After sorting the atoms, the quantile formula for $\mathcal W_2$ gives
 \int_{I_i}|Q(u)-y_i|^2\,\d u.
 ```
 
-The minimization therefore decouples over the intervals $I_i$, and the best
-constant approximation of $Q$ on $I_i$ in $L^2$ is its average on $I_i$. This
-proves the formula for $y_i^\star$ and the energy.
+The minimization decouples over the intervals $I_i$, and the best constant
+approximation of $Q$ on $I_i$ is its average. These averages are nondecreasing
+because $Q$ is nondecreasing, so they satisfy the sorting constraint. Strict
+convexity gives uniqueness.
 
 Denote by $\bar Q_{I_i}=m\int_{I_i}Q(u)\,\d u$ the interval average. If $Q$ is
 $C^1$, set $h=1/m$ and write $I_i=(a_i,a_i+h]$. Uniform Taylor expansion gives,
@@ -947,8 +1020,9 @@ $\frac1{12}\int_0^1 |Q'(u)|^2\,\d u$.
 
 Thus the common deterministic rule
 $m^{-1}\sum_i\delta_{Q((i-1/2)/m)}$ should be read as a midpoint approximation
-of the optimal bin-average formula. It has the same leading squared error under
-the same smoothness assumptions; for the uniform law on $[0,1]$, both rules
+of the optimal bin-average formula. Orthogonal projection onto constants shows
+that it has the same leading squared error under the same smoothness
+assumptions; for the uniform law on $[0,1]$, both rules
 coincide and give the regular grid $y_i=(i-1/2)/m$. Random sampling has a
 different asymptotic regime.
 
@@ -957,7 +1031,7 @@ different asymptotic regime.
 :class: important
 Let $\alpha\in\mathcal M_+^1(\mathbb R)$ have quantile
 $Q\in C^1([0,1])$, and let
-$\widehat\alpha_m=m^{-1}\sum_{i=1}^m\delta_{X_i}$ with $X_i$ iid with law
+$\widehat\alpha_m=m^{-1}\sum_{i=1}^m\delta_{X_i}$ with $X_i$ i.i.d. with law
 $\alpha$. If $B$ denotes the standard Brownian bridge on $[0,1]$, then
 
 ```{math}
@@ -987,10 +1061,10 @@ formula gives
 \int_0^1|\widehat Q_m(u)-Q(u)|^2\,\d u.
 ```
 
-Write $X_i=Q(U_i)$ with $U_i$ iid uniform on $[0,1]$, and let
+Write $X_i=Q(U_i)$ with $U_i$ i.i.d. uniform on $[0,1]$, and let
 $\widehat U_m^{-1}$ be the empirical quantile function of the $U_i$. Then
 $\widehat Q_m=Q\circ \widehat U_m^{-1}$. The classical uniform quantile-process
-theorem {cite:p}`vanDerVaartWellner1996` gives
+theorem {cite:p}`vanDerVaartWellner1996,BobkovLedoux2019EmpiricalKantorovich` gives
 
 ```{math}
 \sqrt m\,(\widehat U_m^{-1}-\operatorname{Id})
@@ -999,8 +1073,7 @@ theorem {cite:p}`vanDerVaartWellner1996` gives
 \quad\text{in }L^2(0,1).
 ```
 
-Since $Q\in C^1([0,1])$, the map $u\mapsto Q(u)$ is Hadamard differentiable
-along these perturbations, and therefore
+Uniform continuity of $Q'$ and the functional delta method give
 
 ```{math}
 \sqrt m\,(\widehat Q_m-Q)
@@ -1011,16 +1084,16 @@ along these perturbations, and therefore
 
 Since $B$ and $-B$ have the same law, the sign disappears in the squared $L^2$
 norm. The continuous mapping theorem gives the distributional convergence.
-Standard second-moment bounds for the uniform quantile process, together with
-the boundedness of $Q'$, give uniform integrability, hence convergence of
-expectations. Since $\mathbb E[B(u)^2]=u(1-u)$, Fubini's theorem gives the
+Standard fourth-moment bounds for the uniform quantile process give uniform
+integrability, hence convergence of expectations. Since
+$\mathbb E[B(u)^2]=u(1-u)$, Fubini's theorem gives the
 displayed expectation limit.
 :::
 
 Combining these propositions gives a sharp contrast between optimal placement
 and random placement on the line. Deterministic equal-weight quantization has
 squared error of order $m^{-2}$, hence $\mathcal W_2$ error of order $m^{-1}$,
-while iid empirical sampling has average squared error of order $m^{-1}$, hence
+while i.i.d. empirical sampling has expected squared error of order $m^{-1}$, hence
 root-mean-square $\mathcal W_2$ error of order $m^{-1/2}$. This is consistent
 with broader empirical OT sample-complexity theory
 {cite:p}`dereich2013constructive,fournier2015rate,weed2017sharp`.
@@ -1036,11 +1109,11 @@ show_book_figure("semidiscrete-quantile-quantization-rates")
 
 *One-dimensional equal-weight quantization in quantile coordinates. Left: for a
 smooth positive density on $[0,1]$, the colored atoms are bin averages of the
-inverse CDF over equal quantile intervals, while the gray atoms show one iid
-empirical draw with the same number of particles. Right: average squared
+inverse CDF over equal quantile intervals, while the gray atoms show one i.i.d.
+empirical draw with the same number of particles. Right: expected squared
 $\mathcal W_2$ errors. The deterministic bin averages and midpoint quantiles
-follow the $m^{-2}$ squared-error law, whereas iid empirical measures follow the
-slower $m^{-1}$ average squared-error law.*
+follow the $m^{-2}$ squared-error law, whereas i.i.d. empirical measures follow
+the slower $m^{-1}$ expected squared-error law.*
 :::
 
 :::{div}
@@ -1052,24 +1125,6 @@ curves from the quantile formula.
 :::
 
 <iframe class="ot4ml-live-frame" title="One-dimensional quantization-rate controls" src="../live/semidiscrete-quantization-rates.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
-
-(rem-graph-w1-network-simplex)=
-:::{admonition} Remark: Sparse LP and network simplex
-:class: ot4ml-remark
-
-Let $N=|V|$ and $M=|E|$. The graph Beckmann problem is a linear program, but it is much smaller than the dense Kantorovich LP on the same vertex set. Indeed, writing $m=m^+-m^-$ gives
-
-```{math}
-\min_{m^+,m^-\geq0}\sum_{e\in E}\ell_e(m^+_e+m^-_e)
-\quad\text{subject to}\quad
-\operatorname{div}_G(m^+-m^-)=r .
-```
-
-This formulation has $2M$ nonnegative variables and $N-1$ independent balance constraints, whereas the standard transport LP between two measures on $V$ has $N^2$ coupling variables and $2N-1$ independent marginal constraints. For sparse geometric graphs, such as planar Delaunay graphs where typically $M=O(N)$, the graph formulation is therefore linear-size rather than quadratic-size.
-
-The same LP is a minimum-cost transshipment problem. Replace each undirected edge $\{i,j\}$ by the two directed arcs $i\to j$ and $j\to i$, both with cost $\ell_e$, and impose the node balances $\sum_{j}u_{ij}-\sum_j u_{ji}=r_i$. This is exactly the setting of the network simplex method: a basis is a spanning tree, a pivot adds one non-tree arc, creates a unique cycle, sends flow along this cycle, and updates the node potentials and reduced costs {cite:p}`bertsekas1988dual,Orlin1997`. A basic implementation needs $O(M)$ work to price all arcs and $O(N)$ work to update the tree at each pivot, hence $O(PM)$ arithmetic operations for $P$ pivots on a sparse graph. The pivot count $P$ depends on the rule and can be large in worst-case simplex analyses, but network-simplex variants and general minimum-cost-flow algorithms give polynomial guarantees in $N$ and $M$; in practice, this edge-based formulation is often far cheaper than solving the dense $N^2$-variable transport LP.
-:::
-
 
 (sec-W1)=
 ## Wasserstein-1 Norm
@@ -1135,9 +1190,9 @@ gives $f^c(y)\le -f(y)$. Therefore $f^c=-f$. Applying the same property to
 $-f$ gives $(-f)^c=f$, so every $1$-Lipschitz function is $c$-concave.
 :::
 
-Using the alternating $c$-transform scheme from the dual chapter, one can
-replace the dual pair by $(f,-f)$ with $\Lip(f)\le1$. The Kantorovich dual
-therefore becomes the Kantorovich--Rubinstein formula
+By the preceding proposition, a closed dual pair has the form $(f,-f)$ with
+$\Lip(f)\le1$. The Kantorovich dual therefore becomes the
+Kantorovich--Rubinstein formula
 
 ```{math}
 :label: eq-w1-metric-web
@@ -1153,10 +1208,13 @@ therefore becomes the Kantorovich--Rubinstein formula
 \norm{\alpha-\beta}_{W_1}.
 ```
 
-This expression depends only on the signed measure $\xi=\alpha-\beta$. It
-therefore extends to every finite signed measure $\xi$ with $\xi(\X)=0$ by the
-same supremum, and defines the Kantorovich--Rubinstein norm
-$\norm{\cdot}_{W_1}$ on that space {cite:p}`kantorovich1958space`.
+This expression depends only on the signed measure $\xi=\alpha-\beta$. On
+compact $\X$, the same supremum defines the Kantorovich--Rubinstein norm on
+finite signed measures with zero mass {cite:p}`kantorovich1958space`.
+Homogeneity and the triangle inequality are immediate, while definiteness
+follows because Lipschitz functions separate finite Radon measures. On a
+noncompact pointed space, one uses normalized Lipschitz functions and measures
+with finite first moment.
 
 For a discrete signed measure
 $\alpha-\beta=\sum_k r_k\delta_{z_k}$ with $\sum_k r_k=0$,
@@ -1200,51 +1258,77 @@ $z_1\le z_2\le\cdots$ reduces the constraints to neighboring pairs:
 \right\}.
 ```
 
-In one dimension this is equivalent to the closed-form cumulative formula
-introduced earlier.
+In one dimension this is equivalent to the cumulative formula given in the
+one-dimensional transport section.
 
 ### Wasserstein-1 on Euclidean Spaces
 
-For $\X=\Y=\RR^d$ with $c(x,y)=\norm{x-y}$, the global Lipschitz constraint in
-the Kantorovich--Rubinstein formula can be made local as a uniform bound on
-the gradient:
+In Euclidean space, the Lipschitz constraint has a local differential form and
+its dual variable is a flux. Let $\alpha,\beta$ have finite first moments and
+set $\xi=\alpha-\beta$. Rademacher's theorem gives
 
 ```{math}
 :label: eq-w1-cont-web
 \Wass_1(\alpha,\beta)
 =
-\sup_f
+\sup_{f\in W_{\mathrm{loc}}^{1,\infty}(\RR^d)}
 \left\{
-\int_{\RR^d} f\,(\d\alpha-\d\beta)
+\int_{\RR^d} f\,\d\xi
 :
-\norm{\nabla f}_\infty\le1
+\norm{\nabla f}_{L^\infty}\le1
 \right\}.
 ```
 
-Dualizing this expression with respect to vector fields $m:\RR^d\to\RR^d$
-gives the fixed-divergence problem
+The flux need not have a Lebesgue density: Dirac-to-Dirac transport already
+produces a measure concentrated on a segment. Let
+$m\in\mathcal M(\RR^d;\RR^d)$ be a vector-valued Radon measure, let $|m|$
+denote its total variation, and define
+$\langle\operatorname{div}m,\varphi\rangle=-\int\langle\nabla\varphi,\d m\rangle$.
+
+(prop-euclidean-beckmann)=
+:::{admonition} Proposition: Euclidean Beckmann Formula
+:class: important
 
 ```{math}
 :label: eq-w1-cont-div-web
 \Wass_1(\alpha,\beta)
 =
-\inf_m
+\min_{m\in\mathcal M(\RR^d;\RR^d)}
 \left\{
-\int_{\RR^d}\norm{m(x)}\,\d x
+|m|(\RR^d)
 :
 \operatorname{div}(m)=\alpha-\beta
 \right\},
 ```
+:::
 
-often called the Beckmann formulation {cite:p}`Beckmann52`. The vector field
-$m(x)$ describes local movement of mass. Outside the support of the two input
-measures, $\operatorname{div}(m)=0$, which is conservation of mass.
+:::{dropdown} Proof
+For every feasible $m$ and smooth $1$-Lipschitz $f$,
+$\int f\,\d(\alpha-\beta)=-\int\langle\nabla f,\d m\rangle\le|m|(\RR^d)$.
+The Lipschitz dual gives one inequality. Conversely, if $\pi$ is an optimal
+plan, define
+
+```{math}
+\int\langle\zeta,\d m\rangle
+=
+\int\!\int_0^1
+\left\langle\zeta((1-t)x+ty),y-x\right\rangle
+\d t\,\d\pi(x,y).
+```
+
+The fundamental theorem of calculus gives
+$\operatorname{div}m=\alpha-\beta$, and
+$|m|(\RR^d)\le\int\norm{x-y}\,\d\pi=\Wass_1(\alpha,\beta)$.
+:::
+
+This is the Beckmann formulation {cite:p}`Beckmann52,SantambrogioBook`. If
+$m=w\,\d x$, its cost is $\int\norm{w(x)}\,\d x$. Outside the source and
+target mass, $\operatorname{div}m=0$, expressing local conservation.
 
 Once discretized with finite elements, the dual Lipschitz problem and the
 Beckmann problem become nonsmooth convex optimization problems. The same
-formulation extends to Riemannian manifolds by replacing the Euclidean
-distance by geodesic distance and interpreting gradient and divergence as
-differential operators on the manifold.
+formulation extends to complete Riemannian manifolds by replacing straight
+segments with minimizing geodesics and using tangent-valued Radon measures.
 
 ### Graph Distances and Beckmann Flows
 
@@ -1309,10 +1393,9 @@ $\operatorname{div}_G m=r$ is conservation of mass at each vertex.
 :::
 
 :::{dropdown} Proof
-The edge constraint $|f_i-f_j|\le\ell_e$ implies, by summing along paths, that
-$|f_i-f_j|\le d_G(i,j)$ for all vertices. Conversely, any $1$-Lipschitz
-function for $d_G$ satisfies the edge constraints because each edge is a path
-of length $\ell_e$. The first equality is therefore the
+The edge constraints imply the all-pairs bound by summing along paths and
+minimizing over paths. Conversely, a $1$-Lipschitz function for $d_G$ satisfies
+$|f_i-f_j|\le d_G(i,j)\le\ell_e$ on every edge. The first equality is therefore the
 Kantorovich--Rubinstein formula on the metric space $(V,d_G)$.
 
 For the second equality, write the graph Beckmann problem and dualize its
@@ -1362,6 +1445,33 @@ straight source-to-target segments.
 :::
 
 <iframe class="ot4ml-live-frame" title="Graph W1 flow controls" src="../live/w1-graph.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
+
+(rem-graph-w1-network-simplex)=
+:::{admonition} Remark: Sparse LP and Network Simplex
+:class: ot4ml-remark
+
+Let $N=|V|$ and $M=|E|$. Writing $m=m^+-m^-$ turns graph Beckmann transport
+into
+
+```{math}
+\min_{m^+,m^-\geq0}\sum_{e\in E}\ell_e(m^+_e+m^-_e)
+\quad\text{subject to}\quad
+\operatorname{div}_G(m^+-m^-)=r .
+```
+
+This LP has $2M$ nonnegative variables and $N-1$ independent balance
+constraints, versus $N^2$ variables and $2N-1$ independent constraints for the
+dense transport LP. On a sparse graph, $M=O(N)$.
+
+Equivalently, replace each undirected edge by two directed arcs. The result is
+a minimum-cost transshipment problem to which the network simplex applies: a
+basis is a spanning tree, and a pivot inserts a non-tree arc and routes flow
+around the resulting cycle {cite:p}`bertsekas1988dual,Orlin1997`. A basic
+implementation costs $O(PM)$ for $P$ pivots on a sparse graph. Although $P$
+depends on the pivot rule, polynomial minimum-cost-flow algorithms are
+available, and the edge formulation is usually far smaller than the dense
+transport LP.
+:::
 
 This graph formulation is the transshipment version of $\Wass_1$. It is the
 natural discrete analogue of the Beckmann formulation: gradients are edge

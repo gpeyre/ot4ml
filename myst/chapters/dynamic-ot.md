@@ -88,8 +88,8 @@ evolving measure:
 This PDE is often called the advection equation, the continuity equation, or
 Liouville's equation when it acts on phase space. It is a classical PDE only
 when $\alpha_t$ has a smooth density. For general measures, and in particular
-for empirical measures, it is understood weakly: for any smooth test function
-$(t,x)\mapsto\varphi(t,x)$ compactly supported in time,
+for empirical measures, it is understood in the distributional sense: for
+every $\varphi\in C_c^1((0,1)\times\RR^d)$,
 
 ```{math}
 :label: eq-eulerian-advection-weak
@@ -109,8 +109,9 @@ are equivalent; for particle clouds, the weak form remains meaningful.
 (prop-lagrangian-flow-continuity)=
 :::{admonition} Proposition: Lagrangian Flows Solve the Continuity Equation
 :class: important
-Consider a smooth flow $T_t:\RR^d\to\RR^d$ and define
-$\alpha_t=(T_t)_\sharp\alpha_0$. Define the Eulerian velocity field by
+Let $(T_t)_{t\in[0,1]}$ be a $C^1$ family of diffeomorphisms of $\RR^d$ and
+define $\alpha_t=(T_t)_\sharp\alpha_0$. Assume that the derivatives below are
+integrable with respect to $\alpha_0$, and define the Eulerian velocity field by
 
 ```{math}
 v_t(T_t(y))=\partial_t T_t(y).
@@ -124,7 +125,7 @@ velocities $\dot x_i(t)=v_t(x_i(t))$.
 :::
 
 :::{dropdown} Proof
-Let $\varphi(t,x)$ be a smooth test function vanishing at $t=0$ and $t=1$.
+Let $\varphi\in C_c^1((0,1)\times\RR^d)$.
 Since $\alpha_t=(T_t)_\sharp\alpha_0$,
 
 ```{math}
@@ -176,7 +177,8 @@ linear space of vector fields that leave a measure $\alpha$ invariant is
 ```{math}
 \mathcal H_\alpha
 =
-\{v:\operatorname{div}(\alpha v)=0\}.
+\{v\in L^2(\alpha;\RR^d):\operatorname{div}(\alpha v)=0
+\text{ in distributions}\}.
 ```
 
 It is usually non-trivial: if $\alpha$ is an isotropic Gaussian,
@@ -186,20 +188,21 @@ anti-symmetric matrices.
 ### Dacorogna--Moser Inversion
 
 Reconstructing particles from an observed density evolution is therefore
-ill-posed. A simple choice, introduced by Dacorogna and Moser
-{cite:p}`DacorognaMoser1990`, imposes that the flux $\alpha_t v_t$ is a
-gradient field. Formally,
+ill-posed. For a smooth positive density $\alpha_t=\rho_t\,\d x$, a simple
+choice, introduced by Dacorogna and Moser {cite:p}`DacorognaMoser1990`, imposes
+that the flux $\rho_t v_t$ is a gradient field. With a fixed convention for
+the inverse Laplacian,
 
 ```{math}
 :label: eq-dacorogna-moser
 v_t
 =
--\frac{1}{\alpha_t}
-\nabla\Delta^{-1}(\partial_t\alpha_t),
+-\frac{1}{\rho_t}
+\nabla\Delta^{-1}(\partial_t\rho_t),
 ```
 
 with suitable boundary conditions, for instance vanishing at infinity. This
-formula is useful conceptually but delicate when $\alpha_t$ vanishes, and it
+formula is useful conceptually but delicate when $\rho_t$ vanishes, and it
 does not generally produce a gradient velocity field.
 
 The classical Dacorogna--Moser construction uses the linear density path. If
@@ -252,16 +255,16 @@ one with smallest kinetic energy:
 (prop-least-square-gradient-velocity)=
 :::{admonition} Proposition: Least-Square Velocities Are Gradients
 :class: important
-Assume that $\alpha_t=\rho_t\,\d x$ is a smooth positive density curve and
-that boundary terms vanish. The minimizer of {eq}`eq-least-square-field`, if
-it exists, is a gradient field
+Assume that $\alpha_t=\rho_t\,\d x$ is a smooth positive density curve, that
+$\partial_t\rho_t$ has zero integral, and that boundary terms vanish. The
+minimizer of {eq}`eq-least-square-field`, if it exists, is a gradient field
 
 ```{math}
 v_t=\nabla\phi_t,
 ```
 
-where $\phi_t$, unique up to an additive constant, solves the weighted
-Poisson equation
+where $\phi_t$, unique up to an additive constant on each connected component,
+solves the weighted Poisson equation
 
 ```{math}
 :label: eq-least-square-field-explicit
@@ -344,14 +347,15 @@ For probability measures $\alpha_0,\alpha_1\in\mathcal P_2(\RR^d)$,
 where the infimum is over $(\alpha_t,v_t)$ solving
 $\partial_t\alpha_t+\nabla\!\cdot(\alpha_t v_t)=0$ with
 $\alpha_{t=0}=\alpha_0$ and $\alpha_{t=1}=\alpha_1$. If $\alpha_0$ has a
-density and $T$ is the optimal Monge map $T_\sharp\alpha_0=\alpha_1$, the
-minimizer is
+density and $T$ is the optimal Monge map $T_\sharp\alpha_0=\alpha_1$, a
+minimizing curve is
 
 ```{math}
 :label: eq-static-to-dynamic
 \alpha_t=((1-t)\Id+tT)_\sharp\alpha_0,
 \qquad
-v_t((1-t)x+tT(x))=T(x)-x.
+v_t((1-t)x+tT(x))=T(x)-x
+\quad\text{for $\alpha_0$-a.e. $x$ and a.e. $t\in(0,1)$}.
 ```
 :::
 
@@ -396,28 +400,89 @@ action. Thus the Kantorovich value is bounded above by the dynamic value.
 #### Convex Moment-Based Reformulation
 
 Although {eq}`eq-benamou-brenier` is not jointly convex in $(\alpha_t,v_t)$,
-it becomes convex after replacing velocities by the momentum measure
-$m_t=v_t\alpha_t$ and using the perspective action. In the absolutely
-continuous case $\alpha_t=\rho_t\,\d x$ and
-$m_t(x)=\rho_t(x)v_t(x)$,
+it becomes convex after replacing velocities by momenta. Given
+$v\in L^2(\alpha;\RR^d)$, define the momentum
+
+```{math}
+\omega\eqdef \alpha v,
+\qquad
+\omega(B)=\int_B v(x)\,\d\alpha(x),
+```
+
+which is a finite $\RR^d$-valued measure. The nonlinear relation
+$\omega=\alpha v$ is eliminated by the quadratic perspective
+
+```{math}
+:label: eq-quadratic-perspective
+J(a,m)
+\eqdef
+\begin{cases}
+\norm{m}^2/a, & a>0,\\
+0, & a=0\ \text{and}\ m=0,\\
++\infty, & a=0\ \text{and}\ m\neq0,
+\end{cases}
+\qquad
+(a,m)\in[0,+\infty)\times\RR^d.
+```
+
+This lower-semicontinuous convex function is positively $1$-homogeneous:
+$J(\eta a,\eta m)=\eta J(a,m)$ for $\eta\geq0$. If $\lambda$ is any positive
+measure dominating both $\alpha$ and the total variation $|\omega|$, set
+
+```{math}
+:label: eq-measure-perspective-action
+\mathbb J(\alpha,\omega)
+\eqdef
+\int
+J\left(
+\frac{\d\alpha}{\d\lambda}(x),
+\frac{\d\omega}{\d\lambda}(x)
+\right)\d\lambda(x).
+```
+
+The value is independent of the dominating measure: both Radon--Nikodym
+densities change by the same factor, and the $1$-homogeneity of $J$ cancels
+the change of reference measure. This is the integral functional associated
+with a convex normal integrand in the measure-valued relaxation of dynamic OT
+{cite:p}`ambrosio2006gradient`; see also the perspective construction in
+{cite:p}`rockafellar2015convex`. Moreover,
+
+```{math}
+\mathbb J(\alpha,\omega)<+\infty
+\quad\Longleftrightarrow\quad
+\omega=v\alpha\ \text{with}\ v\in L^2(\alpha;\RR^d),
+\qquad
+\mathbb J(\alpha,\omega)=\int\norm{v}^2\,\d\alpha.
+```
+
+The Benamou--Brenier problem therefore has the convex measure formulation
 
 ```{math}
 :label: eq-benamou-brenier-convex
 \Wass_2^2(\alpha_0,\alpha_1)
 =
-\inf_{\substack{\partial_t\rho_t+\operatorname{div}m_t=0\\
-\rho_{t=0}\d x=\alpha_0,\ \rho_{t=1}\d x=\alpha_1}}
-\int_0^1\!\int_{\RR^d}
-\frac{\norm{m_t(x)}^2}{\rho_t(x)}
-\d x\,\d t,
+\inf_{\substack{\partial_t\alpha_t+\operatorname{div}\omega_t=0\\
+\alpha_{t=0}=\alpha_0,\ \alpha_{t=1}=\alpha_1}}
+\int_0^1\mathbb J(\alpha_t,\omega_t)\,\d t.
 ```
 
-with the usual convention that the integrand is $0$ when
-$(\rho_t,m_t)=(0,0)$ and $+\infty$ when $\rho_t=0$ but $m_t\neq0$. For
-singular endpoints or curves, the same statement is interpreted with
-vector-valued momentum measures and the corresponding recession convention.
-This convex reformulation enables geodesic interpolation by convex
-optimization once the domain is discretized.
+In the absolutely continuous case $\alpha_t=\rho_t\,\d x$ and
+$\omega_t=m_t\,\d x$, this reduces to the familiar integral of
+$J(\rho_t,m_t)=\norm{m_t}^2/\rho_t$, with the zero-density conventions already
+encoded in {eq}`eq-quadratic-perspective`. This convex reformulation enables
+geodesic interpolation by convex optimization after discretization.
+
+:::{admonition} Remark: Perspective Transform Gives Convexity
+:class: note
+The same perspective mechanism already proves the joint convexity of
+$\phi$-divergences in {ref}`sec-phi-div`: there one uses the density-ratio
+perspective in {eq}`eq-phi-div-web`, whereas here one uses
+$J(a,m)=\norm m^2/a$. The generalized momentum perspective
+{eq}`eq-general-momentum-perspective`, concave-mobility action
+{eq}`eq-concave-mobility-perspective`, and unbalanced three-variable action
+{eq}`eq-wfr-momentum-perspective` are later instances of the same
+convexification principle.
+:::
 
 #### Dual Hamilton--Jacobi Formulation
 
@@ -518,9 +583,13 @@ After integration and minimization over curves,
 \phi_1(y)-\phi_0(x)\leq \norm{x-y}^2.
 ```
 
-Thus $(\phi_0,\phi_1)$ is a feasible static Kantorovich dual pair for the
+Thus $(-\phi_0,\phi_1)$ is a feasible static Kantorovich dual pair for the
 quadratic cost. At optimality the inequality is saturated on the endpoint pairs
 connected by the primal characteristics.
+
+Figure {ref}`fig:dynamic-benamou-brenier-duality` displays these primal--dual
+relations for a one-dimensional mixture transport, including the
+Hamilton--Jacobi contact identity along the active mass.
 
 (fig:dynamic-benamou-brenier-duality)=
 :::{div}
@@ -538,14 +607,6 @@ $m_t=\rho_t v_t$, and the dual Hamilton--Jacobi potential. Along the active
 transported mass, the notebook checks $m_t=\rho_t\partial_x\phi_t/2$ and
 $\partial_t\phi_t+|\partial_x\phi_t|^2/4=0$.*
 :::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Move the geodesic time and velocity scale to inspect the
-primal density and characteristic field underlying the dual certificate.
-:::
-
-<iframe class="ot4ml-live-frame" title="Benamou-Brenier geodesic controls" src="../live/dynamic-bb.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 #### Proximal Splitting
 
@@ -568,11 +629,13 @@ these two simple operations.
 :::{admonition} Algorithm: Douglas--Rachford for dynamic Benamou--Brenier
 :class: ot4ml-algorithm
 
-**Input:** Functionals $\mathcal F,\mathcal G=\iota_{\mathcal C}$, proximal parameter $\tau>0$, initial field $Z^0$.
+**Input:** Functionals $\mathcal F,\mathcal G=\iota_{\mathcal C}$, proximal
+parameter $\tau>0$, initial field $Z^0$, tolerance $\mathrm{tol}>0$, and
+maximum iteration count $K\geq1$.
 
 **Output:** Discrete density-momentum field $U^\star$.
 
-**For** $k=0,1,\ldots$ **do**:
+**For** $k=0,\ldots,K-1$ **do**:
 
 > $U^{k+1}=\prox_{\tau\mathcal F}(Z^k).$
 >
@@ -585,7 +648,13 @@ these two simple operations.
 > **If** $\norm{U^{k+1}-\widetilde U^{k+1}}\leq\mathrm{tol}$ **then**:
 
 >> **Return** $U^{k+1}$.
+
+**Return** $U^K$.
 :::
+
+Figure {ref}`fig:dynamic-benamou-brenier-geodesic` complements the Eulerian
+optimization viewpoint with the Lagrangian picture: matched particles travel
+along the straight characteristics of the minimizing curve.
 
 
 (fig:dynamic-benamou-brenier-geodesic)=
@@ -627,9 +696,9 @@ separate the path $\alpha_t$ from the underlying displacement field.
 Let $\Ss=C([0,1];\RR^d)$ be the space of continuous paths endowed with the uniform topology. For $t\in[0,1]$ define the evaluation map
 
 ```{math}
-P_t:\Ss\to\RR^d,
+e_t:\Ss\to\RR^d,
 \qquad
-P_t(\gamma)=\gamma(t).
+e_t(\gamma)=\gamma(t).
 ```
 
 The Benamou--Brenier cost admits the equivalent formulation
@@ -641,14 +710,18 @@ The Benamou--Brenier cost admits the equivalent formulation
 \enscond{
 \int_{\Ss}\!\int_0^1\norm{\dot\gamma(t)}^2\d t\,\d M(\gamma)
 }{
-(P_0)_\sharp M=\alpha_0,\ (P_1)_\sharp M=\alpha_1
+(e_0)_\sharp M=\alpha_0,\ (e_1)_\sharp M=\alpha_1
 }.
 ```
 
-If $\alpha_0$ has a density, the minimizer $M^*$ is unique. Its time marginals reproduce the optimal curve: $\alpha_t=(P_t)_\sharp M^*$ for all $t$. Furthermore, for a.e. $t$, denoting $Q_t(\gamma)=\dot\gamma(t)$ on absolutely continuous paths, the conditional law of the velocity is deterministic:
+The inner energy is understood as $+\infty$ outside the absolutely continuous
+paths. If $\alpha_0$ has a density, the minimizer $M^*$ is unique. Its time
+marginals reproduce the optimal curve: $\alpha_t=(e_t)_\sharp M^*$ for all
+$t$. Furthermore, for a.e. $t$, the conditional law of the path velocity is
+deterministic:
 
 ```{math}
-(P_t,Q_t)_\sharp M^*(\d x,\d q)
+(e_t,\dot e_t)_\sharp M^*(\d x,\d q)
 =
 \alpha_t(\d x)\delta_{v_t^*(x)}(\d q),
 ```
@@ -668,6 +741,12 @@ introduced here are metric: they specify admissible curves, tangent variables
 and path energies. All descent constructions are postponed to
 {ref}`sec-generalized-dynamic-wasserstein-flows`, where these distances are used
 to generate gradient-flow PDE models.
+
+### Path Actions
+
+The common construction replaces the quadratic kinetic energy in the
+Benamou--Brenier formula by an instantaneous action while retaining the
+continuity equation and endpoint constraints.
 
 In the mass-preserving Euclidean setting, the basic input is an instantaneous
 action $\mathbb A(\alpha,w)$, where $\alpha$ is the current measure and $w$ is
@@ -703,7 +782,7 @@ when dynamics are introduced.
 A particularly transparent case occurs when $w\mapsto\mathbb A(\alpha,w)$ is
 quadratic. For simplicity, take admissible velocities in
 $L^2(\alpha;\RR^d)$; in some applications this Hilbert space is replaced by a
-closed subspace encoding additional constraints. If the polarization of
+closed subspace encoding additional constraints. Suppose the polarization of
 $\mathbb A$ is represented by a positive self-adjoint operator
 $Q_\alpha:L^2(\alpha;\RR^d)\to L^2(\alpha;\RR^d)$,
 
@@ -715,7 +794,10 @@ $Q_\alpha:L^2(\alpha;\RR^d)\to L^2(\alpha;\RR^d)$,
 \mathbb A(\alpha,w)=\left\langle Q_\alpha w,w\right\rangle_{L^2(\alpha)},
 ```
 
-then the least-action distance generated by this tensor is
+To obtain a genuine tangent norm, this quadratic form must be nondegenerate
+after quotienting velocity fields that induce the same measure variation.
+
+The least-action distance generated by this tensor is
 
 ```{math}
 :label: eq-general-quadratic-tangent-action
@@ -924,16 +1006,18 @@ Define, on every fixed-mass class,
 \right)^{1/r}.
 ```
 
-After the usual lower-semicontinuous relaxation assuming that zero-action values
-are attained, $\mathsf D_{A,\lambda}$ is an extended distance on each finite-action
-component: it is symmetric, satisfies the triangle inequality, and
+Assume finally that the relaxed dynamic problem is sequentially closed and
+attains its infimum whenever the value is finite. Then
+$\mathsf D_{A,\lambda}$ is an extended distance on each finite-action component:
+it is symmetric, satisfies the triangle inequality, and
 $\mathsf D_{A,\lambda}(\alpha_0,\alpha_1)=0$ only when $\alpha_0=\alpha_1$.
 In the intrinsic case, we write $\mathsf D_A$.
 :::
 
 :::{dropdown} Proof
-Zero self-distance is obtained by the constant curve. Conversely, zero relaxed
-action forces $\mathbb J_{A,\lambda}(\alpha_t,\omega_t)=0$ a.e., hence
+Zero self-distance is obtained by the constant curve. Conversely, if the
+distance is zero, attainment supplies a relaxed zero-action minimizer. Thus
+$\mathbb J_{A,\lambda}(\alpha_t,\omega_t)=0$ a.e., hence
 $\omega_t=0$ a.e.; the continuity equation then gives $\alpha_0=\alpha_1$.
 Symmetry follows by time reversal and evenness in $m$. For the triangle
 inequality, concatenate two almost optimal curves with
@@ -1063,16 +1147,17 @@ The associated value is therefore written
 ```
 
 where the subscript $\lambda$ recalls that the action is measured through the
-density $a=\d\alpha/\d\lambda$.
-Here $\mathsf D_{A_\theta,\lambda}$ denotes the general path value
-{eq}`eq-generalized-action-length-distance` with the action
+density $a=\d\alpha/\d\lambda$. Equivalently, because this action is quadratic
+in the momentum, $\mathsf W_{\theta,\lambda}^2$ is the path value
+{eq}`eq-generalized-action-length-distance` with
 $\mathbb A=\mathbb A_{\theta,\lambda}$.
 
 (prop-concave-mobility-distance)=
 :::{admonition} Proposition: Concave-Mobility Dynamic Distances
 :class: important
-For a fixed reference measure $\lambda$, and with the lower-semicontinuous
-extension of $J_\theta$ above,
+For a fixed reference measure $\lambda$, and under the standard compactness
+and lower-semicontinuity hypotheses ensuring existence of relaxed minimizers
+{cite:p}`dolbeault2009new`,
 $\mathsf W_{\theta,\lambda}=\mathsf D_{A_\theta,\lambda}$ is an extended
 distance on each finite-action component contained in
 $\{\alpha:\alpha\ll\lambda\}$. In particular, whenever the relevant component
@@ -1092,12 +1177,17 @@ J_\theta(a,\xi m)=|\xi|^2J_\theta(a,m).
 Moreover $J_\theta(a,m)=0$ if and only if $m=0$, with the boundary convention
 used in its definition. For the fixed reference $\lambda$, the hypotheses of
 Proposition {ref}`prop-homogeneous-dynamic-action-distance` therefore hold with
-$r=2$. That proposition gives symmetry, separation and the triangle inequality for
+$r=2$; the compactness hypothesis supplies its existence assumption. That
+proposition gives symmetry, separation and the triangle inequality for
 $\mathsf D_{A_\theta,\lambda}$, hence for $\mathsf W_{\theta,\lambda}$.
 :::
 
-The choice $\theta(a)=a$ recovers $\Wass_2$; choices such as
-$\theta(a)=a(1-a/M)$ encode volume-filling effects.
+The choice $\theta(a)=a$ recovers $\Wass_2$. Other choices encode different
+geometry: $\theta(a)=a^\gamma$ with $0<\gamma\leq1$ changes the cost of moving
+dilute mass, while $\theta(a)=a(1-a/M)$ on $[0,M]$ models a volume-filling or
+exclusion effect. The distance is comparable with $\Wass_2$ on classes where
+$\theta(a)$ is bounded above and below by positive multiples of $a$; otherwise
+zero-mobility barriers can make some pairs infinitely far apart.
 
 ### Dynamic Spectral Wasserstein Distances
 
@@ -1293,24 +1383,46 @@ class, not the whole Wasserstein tangent space.
 (prop-kernelized-bb-distance)=
 :::{admonition} Proposition: Kernelized Dynamic Distance
 :class: important
-The quantity $\mathcal W_k$ defined by {eq}`eq-kernelized-bb-distance` is an
-extended distance on each finite-action component of probability measures. More
-precisely, it is symmetric, satisfies the triangle inequality, and
+Assume that the kernel has uniformly bounded diagonal,
+
+```{math}
+\kappa_k^2\eqdef\sup_{x\in\RR^d}k(x,x)<+\infty.
+```
+
+Then the quantity $\mathcal W_k$ defined by
+{eq}`eq-kernelized-bb-distance` is an extended distance on probability
+measures. More precisely, it is symmetric, satisfies the triangle inequality,
+and
 $\mathcal W_k(\alpha_0,\alpha_1)=0$ implies $\alpha_0=\alpha_1$. It can take the
 value $+\infty$ between different components.
 :::
 
 :::{dropdown} Proof
-This is the standard length-space argument for a quadratic action. The constant
-curve gives zero self-distance. If $\mathcal W_k(\alpha_0,\alpha_1)=0$, a
-zero-action relaxed curve has $v_t=0$ for a.e. $t$, hence the continuity equation
-gives $\partial_t\alpha_t=0$ and $\alpha_0=\alpha_1$. Symmetry follows by time
-reversal and by replacing $v_t$ with $-v_{1-t}$. For the triangle inequality,
-concatenate two almost optimal curves of actions $E_1$ and $E_2$. Compressing the
-first into a time interval of length $\tau$ multiplies its action by $1/\tau$,
-and compressing the second into length $1-\tau$ multiplies its action by
-$1/(1-\tau)$. Optimizing over $\tau\in(0,1)$ gives
-$(\sqrt{E_1}+\sqrt{E_2})^2$, and taking infima yields the triangle inequality.
+The constant curve gives zero self-distance. The RKHS evaluation bound gives
+$\norm{v(x)}\leq\kappa_k\norm{v}_{\RKHS_k^d}$. Therefore, for every
+$\varphi\in C_c^1(\RR^d)$ and every admissible curve of action $E$, the weak
+continuity equation and Cauchy--Schwarz imply
+
+```{math}
+\begin{aligned}
+\left|\int\varphi\,\d(\alpha_1-\alpha_0)\right|
+&\leq
+\int_0^1\!\int\norm{\nabla\varphi(x)}\,\norm{v_t(x)}
+\,\d\alpha_t(x)\d t\\
+&\leq
+\kappa_k\norm{\nabla\varphi}_\infty
+\left(\int_0^1\norm{v_t}_{\RKHS_k^d}^2\d t\right)^{1/2}
+=\kappa_k\norm{\nabla\varphi}_\infty\sqrt E.
+\end{aligned}
+```
+
+Taking the infimum over curves proves separation without assuming that a
+zero-action minimizer exists. Symmetry follows by time reversal and by
+replacing $v_t$ with $-v_{1-t}$. For the triangle inequality, concatenate two
+almost optimal curves of actions $E_1$ and $E_2$. Compressing them into time
+intervals of lengths $\tau$ and $1-\tau$ changes the total action to
+$E_1/\tau+E_2/(1-\tau)$. Optimizing gives
+$(\sqrt{E_1}+\sqrt{E_2})^2$, and taking infima yields the claim.
 :::
 
 One should read $\mathcal W_k$ as an extended distance on finite-action
@@ -1529,6 +1641,15 @@ The consequences for entropy dynamics and fractional PDE examples are developed
 in the nonlocal Wasserstein-flow section below.
 :::
 
+For a fixed jump kernel this geometry is genuinely nonlocal and does not
+coincide with ordinary $\Wass_2$. The local metric is nevertheless recovered
+as a small-jump limit: for symmetric kernels concentrated at scale
+$\varepsilon$, with an appropriate second-moment normalization, the nonlocal
+actions and distances converge as $\varepsilon\to0$ to the classical
+Benamou--Brenier action and $\Wass_2$
+{cite:p}`SlepcevWarren2022NonlocalWasserstein`. Thus sharply concentrated
+isotropic jumps connect the nonlocal construction back to the local theory.
+
 (sec-discrete-wasserstein-markov)=
 ### Discrete Wasserstein Distances on Markov Chains
 
@@ -1737,21 +1858,25 @@ ordinary simplex distance induced by the $0/1$ ground metric.
 <iframe class="ot4ml-live-frame" title="Discrete Markov-chain simplex distance controls" src="../live/dynamic-markov-simplex.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
 
 (sec-unbalanced-ot)=
-### Dynamic Unbalanced OT
+## Dynamic Unbalanced Wasserstein Distances
 
-Balanced dynamic distances keep total mass fixed: their tangent variables are
+Balanced dynamic distances keep the total mass fixed: their tangent vectors are
 transport velocities or fluxes satisfying a continuity equation. Unbalanced
-distances use a different tangent model. A tangent variable now has both a
-spatial component and a reaction component, so mass can move, disappear and
-reappear. This reaction--transport geometry is introduced here before its use
-for gradient flows in {ref}`sec-dynamic-unbalanced-wfr-flows`.
+distances use a different tangent model. A tangent vector now has both a
+spatial component and a reaction component, so mass can move, disappear, and
+reappear. This section isolates this reaction--transport geometry before its
+use for gradient flows in {ref}`sec-dynamic-unbalanced-wfr-flows`.
+
+### Balance Equation and Tangent Variables
 
 Unbalanced dynamic transport is obtained by allowing mass to be created and
-destroyed along the path. The continuity equation is replaced by a balance
-equation, and the action penalizes both spatial motion and growth. This dynamic
-formulation underlies the Hellinger--Kantorovich and Wasserstein--Fisher--Rao
-metrics {cite:p}`LieroMielkeSavareShort,2017-chizat-focm`; its equivalence with
-static entropy-transport and cone formulations is developed in
+destroyed along the path. At the density level, the continuity equation becomes
+a balance equation and an admissible tangent direction is a pair $(m,s)$: the
+flux density $m$ transports mass, while the source density $s$ changes its
+amount locally. This formulation underlies the Hellinger--Kantorovich and
+Wasserstein--Fisher--Rao metrics
+{cite:p}`LieroMielkeSavareShort,2017-chizat-focm`; its equivalence with static
+entropy-transport and cone formulations is developed in
 {cite:p}`LieroMielkeSavareLong,2015-chizat-unbalanced`.
 
 A representative quadratic action is
@@ -1765,13 +1890,16 @@ A representative quadratic action is
 
 with the usual perspective convention: zero flux and zero source through zero
 density cost nothing, whereas nonzero flux or source through zero density has
-infinite cost. Equivalently, writing $m_t=\rho_t v_t$ and
-$s_t=\rho_t g_t$, one minimizes
-$\int_0^1\int(\norm{v_t}^2+\kappa^2 g_t^2)\rho_t\,\d x\,\d t$ under
-$\partial_t\rho_t+\nabla\!\cdot(\rho_t v_t)=g_t\rho_t$. The parameter
-$\kappa$ fixes the relative cost of reaction and transport.
+infinite cost. At the measure level these densities become the vector-valued
+flux measure $\omega_t=m_t\,\d x$ and the signed source measure
+$\sigma_t=s_t\,\d x$.
 
-On the velocity side the pointwise action is
+### Reaction--Transport Action
+
+The action attaches one price to displacement and another to local growth.
+For a density $a\geq0$, a velocity $w\in\RR^d$, and a relative growth rate
+$g\in\RR$, define
+
 
 ```{math}
 :label: eq-wfr-velocity-action
@@ -1780,7 +1908,13 @@ A_\kappa(a,w,g)
 a\bigl(\norm{w}^2+\kappa^2 g^2\bigr).
 ```
 
-On the momentum side, with $m=aw$ and $r=ag$, the three-variable perspective is
+Thus, writing $m_t=\rho_t v_t$ and $s_t=\rho_t g_t$, the smooth action is
+$\int_0^1\int A_\kappa(\rho_t,v_t,g_t)\,\d x\,\d t$ under
+$\partial_t\rho_t+\nabla\!\cdot(\rho_t v_t)=g_t\rho_t$. The parameter
+$\kappa$ fixes the relative cost of reaction and transport.
+
+For the convex measure formulation, set $m=aw$ and $r=ag$. The corresponding
+three-variable perspective is
 
 ```{math}
 :label: eq-wfr-momentum-perspective
@@ -1810,14 +1944,50 @@ J_\kappa\!\left(
 ```
 
 The one-homogeneity of $J_\kappa$ makes this definition independent of the
-chosen dominating measure.
+chosen dominating measure. Finite action forces both the flux and source to be
+absolutely continuous with respect to the transported mass.
+
+### Static and Dynamic Viewpoints
+
+The balance-equation formula is the least-action representation of the same
+cone distance used in static unbalanced OT. To make the normalization explicit,
+define on the cone $\mathfrak C[\RR^d]$ the squared cost
+
+```{math}
+:label: eq-wfr-scaled-cone-metric
+\Delta_\kappa\big((x,r),(y,s)\big)^2
+\eqdef
+4\kappa^2
+\left[
+r^2+s^2-2rs
+\cos\!\left(
+\frac{\norm{x-y}}{2\kappa}\wedge\frac{\pi}{2}
+\right)
+\right].
+```
+
+The radii encode masses through the weighted projection $\mathsf P_2$ defined
+in {ref}`sec-unbalanced`. Accordingly, set
+
+```{math}
+:label: eq-wfr-scaled-cone-value
+\CW_\kappa(\alpha_0,\alpha_1)
+\eqdef
+\inf_{\substack{\gamma\in\Mm_+(\mathfrak C[\RR^d]^2)\\
+\mathsf P_2\gamma_1=\alpha_0,\ \mathsf P_2\gamma_2=\alpha_1}}
+\int
+\Delta_\kappa\big((x,r),(y,s)\big)^2
+\,\d\gamma(x,r,y,s).
+```
+
+For $\kappa=1/2$, this is exactly the normalization of the
+Hellinger--Kantorovich cone cost used in {ref}`sec-unbalanced`.
 
 (prop-static-dynamic-unbalanced)=
 :::{admonition} Proposition: Static/Dynamic Equivalence for Unbalanced OT
 :class: important
-Fix the action above and let $\mathcal C\mathcal W_\kappa$ be the cone value
-with the cone metric normalized to the same growth scale $\kappa$. For
-nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic value
+For nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic
+value
 
 ```{math}
 :label: eq-dynamic-unbalanced-ot
@@ -1829,20 +1999,42 @@ nonnegative finite measures $\alpha_0,\alpha_1$ on $\RR^d$, the dynamic value
 \mathbb J_\kappa(\alpha_t,\omega_t,\sigma_t)\,\d t
 ```
 
-equals the static cone formulation $\mathcal C\mathcal W_\kappa(\alpha_0,\alpha_1)$. Hence the static unbalanced problem and the balance-equation least-action problem define the same geodesic distance.
+equals the static cone value {eq}`eq-wfr-scaled-cone-value`. Hence
+$\WFR_\kappa=\CW_\kappa^{1/2}$ is the geodesic distance generated by the
+balance-equation least-action problem.
 :::
 
 :::{dropdown} Proof
 The cone construction turns variation of mass into radial motion and spatial
-transport into angular motion on $\mathfrak C[\RR^d]$. Applying the
-Benamou--Brenier theorem on the cone to the lifted endpoint measures gives a
-dynamic least-action problem on $\mathfrak C[\RR^d]$ whose static value is the
-cone value. Projecting a cone curve back to the base space with weight $r^2$
-produces a measure curve, a spatial flux and a source term satisfying the
-balance equation. Conversely, any finite-action triple can be lifted to a cone
-curve with the same relaxed action. This gives the static/dynamic identity; see
-{cite:p}`LieroMielkeSavareShort,LieroMielkeSavareLong,2017-chizat-focm,2015-chizat-unbalanced`.
+transport into angular motion. The normalization can be checked on a smooth
+cone path: if its base position is $x_t$, its radius is $r_t$, and the projected
+mass is $a_t=r_t^2$, then $g_t=\dot a_t/a_t=2\dot r_t/r_t$. The infinitesimal
+energy induced by {eq}`eq-wfr-scaled-cone-metric` is therefore
+
+```{math}
+4\kappa^2\dot r_t^2+r_t^2\norm{\dot x_t}^2
+=
+a_t\bigl(\norm{\dot x_t}^2+\kappa^2g_t^2\bigr),
+```
+
+which is precisely {eq}`eq-wfr-velocity-action`. Applying the
+Benamou--Brenier theorem on the cone to lifted endpoints gives a least-action
+problem with static value $\CW_\kappa$. Projecting with the squared radius as
+weight produces $(\alpha_t,\omega_t,\sigma_t)$ satisfying the balance equation,
+and the cone kinetic energy becomes $\mathbb J_\kappa$. Conversely, every
+finite-action triple admits, after relaxation, a cone lift with the same
+action. Lower semicontinuity extends the smooth argument to finite measures;
+see {cite:p}`LieroMielkeSavareShort,LieroMielkeSavareLong,2017-chizat-focm,2015-chizat-unbalanced`.
 :::
+
+### Balanced Versus Unbalanced Interpolations
+
+The distinction is visible for mixtures with mismatched modal masses. Balanced
+transport must physically move excess mass, whereas unbalanced transport can
+trade transport against reaction. The next figure uses entropic balanced and
+KL-relaxed barycenters as a qualitative numerical surrogate: the unbalanced
+row illustrates the mechanism but is not asserted to be an exact
+$\WFR_\kappa$ geodesic.
 
 (fig:dynamic-unbalanced-geodesic)=
 :::{div}
@@ -1863,9 +2055,7 @@ underrepresented modes, giving a reaction--transport interpolation closer to
 the Wasserstein--Fisher--Rao intuition.*
 :::
 
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Use the growth and time controls to compare motion with source terms in dynamic unbalanced transport.
-:::
-
-<iframe class="ot4ml-live-frame" title="Dynamic unbalanced transport controls" src="../live/dynamic-unbalanced.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
+Together, the local, spectral, kernelized, jump, graph, and unbalanced examples
+show that modifying the Benamou--Brenier action changes both the admissible
+motion and the topology of the measure space. The next chapter turns these
+geometries into gradient-flow equations.

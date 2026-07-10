@@ -9,15 +9,15 @@
 \label{sec-extensions}
 \label{sec-generalized-wasserstein-distances}
 
-The first family of extensions keeps the idea of a distance between measures, but changes the geometry used to compare them. The variants below relax mass conservation, reduce high-dimensional transport to one-dimensional projections, or replace the trace quadratic cost by spectral gauges and robust projected viewpoints. They are useful when standard $\Wass_p$ is too rigid or too expensive, while still preserving a metric interpretation.
+This chapter keeps the idea of comparing measures while changing the geometry of the comparison. The constructions below relax mass conservation, average lower-dimensional projections, quotient nuisance symmetries, linearize transport around a reference measure, replace the trace cost by spectral gauges, or constrain motion to conditional fibers. They are useful when standard $\Wass_p$ is too rigid or too expensive, but each modification also changes which metric, geodesic, or stability properties survive.
 \index{mass!conservation}% strictindex
 \index{one-dimensional!projection}% strictindex
-\index{quadratic cost}% strictindex
-\index{spectral gauge}% strictindex
+\index{quadratic!cost}% strictindex
+\index{spectral!gauge}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Unbalanced OT}
-\index{unbalanced OT}% strictindex
+\index{unbalanced!OT}% strictindex
 \label{sec-unbalanced}
 
 Unbalanced OT allows mass creation and destruction by penalizing marginal mismatch. It is essential when histograms are not normalized, when observations contain outliers, or when only part of the source should match the target~\cite{LieroMielkeSavareLong,2015-chizat-unbalanced,2017-chizat-focm}.
@@ -35,7 +35,7 @@ For nonnegative measures $(\al,\be) \in \Mm_+(\Xx) \times \Mm_+(\Yy)$, a generic
 		+ \Dd_{\psi_1}(\pi_1|\al) + \Dd_{\psi_2}(\pi_2|\be),
 }
 where $\psi_1,\psi_2$ are convex entropy functions. Exact conservation $(\pi_1,\pi_2)=(\al,\be)$ is replaced by a cost for changing the marginals. Writing $\psi_s=\tau\bar\psi_s$ exposes the relaxation scale:
-\index{entropy function}% strictindex
+\index{entropy!function}% strictindex
 \[
 	\UW_{c,\tau}(\alpha,\beta)
 	=
@@ -46,15 +46,16 @@ where $\psi_1,\psi_2$ are convex entropy functions. Exact conservation $(\pi_1,\
 	+
 	\tau\Dd_{\bar\psi_2}(\pi_2|\beta).
 \]
-Large $\tau$ makes marginal mismatch expensive and approaches balanced OT when the total masses are compatible. Small $\tau$ makes creation and destruction cheap; after rescaling by $\tau$, the zero-transport part reveals the pure divergence geometry.
+As $\tau$ increases, marginal mismatch becomes expensive and the relaxed value approaches balanced OT whenever the hard marginal constraints are feasible. Small $\tau$ makes creation and destruction cheap; after division by $\tau$, the diagonal zero-transport part reveals the pure divergence geometry.
 
 The two immediate numerical displays make the penalty roles explicit. Figure~\ref{fig:unbalanced-mass-relaxation} fixes a KL marginal penalty and varies $\tau$: the transported marginals, shown in violet, are allowed to differ from the prescribed red and blue marginals, and the gaps are precisely the created or destroyed mass. Figure~\ref{fig:unbalanced-divergence-choice} then keeps the geometry, entropic plan regularization and relaxation strength fixed, and changes only the marginal divergence. This isolates the effect of the penalty: KL gives smooth rescaling, Burg discourages complete deletion of prescribed modes, while total variation produces sharper active-mass selection.
+\index{active mass}% strictindex
 \index{created mass}% strictindex
 \index{destroyed mass}% strictindex
 \index{marginal!divergence}% strictindex
 \index{marginal!relaxation}% strictindex
 \index{total variation}% strictindex
-\index{active mass}% strictindex
+
 
 \begin{figure}[H]
 \centering
@@ -65,11 +66,11 @@ The two immediate numerical displays make the penalty roles explicit. Figure~\re
 \includegraphics[width=.30\linewidth]{figures/unbalanced-mass-relaxation--tau-medium.pdf} &
 \includegraphics[width=.30\linewidth]{figures/unbalanced-mass-relaxation--tau-large.pdf}
 \end{tabular}
-\caption{KL unbalanced OT on one-dimensional Gaussian-mixture densities. The central matrix is the transported coupling. On the left, the red curve is the prescribed source marginal and the violet curve is the transported source marginal; the red gap is destroyed mass. On the top, the blue curve is the prescribed target marginal and the violet curve is the transported target marginal; the blue gap is created mass. Increasing $\tau$ makes marginal mismatch more expensive, so more mass is transported, including toward the far right target mode.}
+\caption{\emph{KL unbalanced OT on one-dimensional Gaussian-mixture densities.} The central matrix is the transported coupling. On the left, the red curve is the prescribed source marginal and the violet curve is the transported source marginal; the red gap is destroyed mass. On the top, the blue curve is the prescribed target marginal and the violet curve is the transported target marginal; the blue gap is created mass. Increasing $\tau$ makes marginal mismatch more expensive, so more mass is transported, including toward the far right target mode.}
 \index{created mass}% strictindex
 \index{destroyed mass}% strictindex
-\index{Gaussian mixture}% strictindex
-\index{unbalanced OT}% strictindex
+\index{Gaussian!mixture}% strictindex
+\index{unbalanced!OT}% strictindex
 \label{fig:unbalanced-mass-relaxation}
 \end{figure}
 
@@ -77,6 +78,18 @@ The entropy used in the marginal relaxation also changes the qualitative behavio
 \index{partial transport}% strictindex
 \index{marginal!relaxation}% strictindex
 \index{total variation}% strictindex
+
+\begin{example}[Application to proliferating and dying cell populations]\label{ex-unbalanced-single-cell}
+\index{single-cell genomics}% strictindex
+\index{unbalanced!OT}% strictindex
+	In single-cell time courses, the observed populations can grow, die or change composition between two sampling times. A balanced coupling would force every unit of mass at time \(t\) to reappear at time \(t+\Delta t\), which is too rigid biologically. The relaxed value
+	\[
+		\inf_{\pi\geq0}\int c\d\pi
+		+\tau_1\Dd(\pi_1|\al_t)
+		+\tau_2\Dd(\pi_2|\al_{t+\Delta t})
+	\]
+	where \(\pi_1,\pi_2\) are the marginals of \(\pi\), interprets missing marginal mass as death or undersampling, and excess target marginal mass as growth or birth. Neural semi-coupling and entropic dynamic variants use this idea to model proliferating or dying cell populations from unpaired measurements~\cite{LuebeckBunneGutCastilloPelkmansAlvarezMelis2022NubOT,KleinUsciddaTheisCuturi2023GENOT}. The dynamic counterpart, where creation and transport are both part of the tangent dynamics, is discussed in Section~\ref{sec-dynamic-unbalanced-wfr-flows}.
+\end{example}
 
 \begin{figure}[H]
 \centering
@@ -87,10 +100,10 @@ The entropy used in the marginal relaxation also changes the qualitative behavio
 \includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice--burg.pdf} &
 \includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice--tv.pdf}
 \end{tabular}
-\caption{Effect of the marginal divergence in unbalanced entropic OT. The geometric cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$ are fixed; only the marginal penalty changes. KL allows smooth mass variation, Burg keeps transported marginals from vanishing on prescribed modes, and total variation gives a sharper active-mass selection. The side plots use the same convention as Figure~\ref{fig:unbalanced-mass-relaxation}.}
+\caption{\emph{Effect of the marginal divergence in unbalanced entropic OT.} The geometric cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$ are fixed; only the marginal penalty changes. KL allows smooth mass variation, Burg keeps transported marginals from vanishing on prescribed modes, and total variation gives a sharper active-mass selection. The side plots use the same convention as Figure~\ref{fig:unbalanced-mass-relaxation}.}
 \index{mass!variation}% strictindex
 \index{marginal!divergence}% strictindex
-\index{marginal penalty}% strictindex
+\index{marginal!penalty}% strictindex
 \index{total variation}% strictindex
 \label{fig:unbalanced-divergence-choice}
 \end{figure}
@@ -156,7 +169,7 @@ These figures should be read as pictures of a single relaxed plan $\pi$: the sam
 
 \begin{prop}[Dual of unbalanced optimal transport]\label{prop-dual-unbalanced-ot}
 \index{unbalanced!OT dual}% strictindex
-\index{unbalanced OT}% strictindex
+\index{unbalanced!OT}% strictindex
 	Under the usual Fenchel--Rockafellar qualification assumptions, one has equality between~\eqref{eq-unbalanced-primal} and
 \index{duality!Fenchel-Rockafellar}% strictindex
 \index{Fenchel duality}% strictindex
@@ -199,7 +212,7 @@ These figures should be read as pictures of a single relaxed plan $\pi$: the sam
 
 The Liero--Mielke--Savar\'e formulation rewrites marginal penalties as a local transport cost and then homogenizes it. Assuming first that the reference measures and transported marginals have mutually absolutely continuous parts, one can factor the objective as
 \index{reference!measure}% strictindex
-\index{marginal penalty}% strictindex
+\index{marginal!penalty}% strictindex
 \begin{align*}
 &\int c(x,y)\d\pi(x,y)
 +\Dd_{\psi_1}(\pi_1|\al)+\Dd_{\psi_2}(\pi_2|\be) \\
@@ -233,7 +246,7 @@ with the usual recession convention at $r=0$ or $s=0$. If $\al=F\pi_1+\al^\perp$
 	\psi_2(0)\be^\perp(\Yy).
 \]
 
-The homogeneous formulation is obtained by taking the perspective transform of $L_c$,
+The homogeneous formulation is obtained by taking the marginal perspective of $L_c$,
 \index{homogeneous formulation}% strictindex
 \index{perspective transform}% strictindex
 \eql{\label{eq-unbalanced-homogeneous-local-cost}
@@ -251,24 +264,57 @@ which is positively $1$-homogeneous. It defines
 	\psi_2(0)\be^\perp(\Yy).
 }
 
+For the cone construction, and also for the proof of equivalence, it is useful to make explicit the semi-coupling form of the homogeneous value~\cite{LieroMielkeSavareLong}. Here one uses a base measure $\lambda$ on $\Xx\times\Yy$ and two nonnegative weights $u,v$ attached to each transported pair:
+\index{semi-coupling}% strictindex
+\eql{\label{eq-homogeneous-semicoupling}
+\begin{aligned}
+	\HW_c(\al,\be)
+	=
+	\inf_{\substack{\lambda\in\Mm_+(\Xx\times\Yy)\\ u,v\geq0}}
+	\Big\{
+	&\int_{\Xx\times\Yy}
+	H_{c(x,y)}\big(u(x,y),v(x,y)\big)\d\lambda(x,y)
+	\\[-.15em]
+	&\text{subject to}\quad (\mathrm{p}_1)_\#(u\lambda)=\al,\qquad
+	(\mathrm{p}_2)_\#(v\lambda)=\be
+	\Big\}.
+\end{aligned}
+}
+The constraints mean, for instance, that
+$\int \varphi(x)u(x,y)\d\lambda(x,y)=\int\varphi\d\al$ for every bounded Borel
+test function $\varphi$ on $\Xx$, and similarly for $\be$. The cases $u=0$ or
+$v=0$ encode the recession terms $\psi_1(0)$ and $\psi_2(0)$: they correspond
+to mass that is created or destroyed rather than transported.
+
 \begin{prop}[Homogenization does not change the unbalanced cost]\label{prop-homogeneous-unbalanced}
 \index{homogenization}% strictindex
 \index{cost!unbalanced}% strictindex
-	One has $\HW_c(\al,\be)=\UW_c(\al,\be)$.
+	Assume that the entropy functions are proper, lower semicontinuous and convex, with the usual recession extensions at zero. Then
+	\[
+		\HW_c(\al,\be)=\UW_c(\al,\be).
+	\]
 \end{prop}
 
 \begin{proof}
-	The inequality $\HW\leq\UW$ follows from $H_c\leq L_c$ by taking $\theta=1$. Conversely, take a feasible measure $\pi$ in the homogeneous formulation. By definition of the perspective transform, for every $(x,y)$ and every $\eta>0$ there exists a scale $\theta(x,y)>0$ such that
-\index{homogeneous formulation}% strictindex
-\index{perspective transform}% strictindex
+	Since $H_c(r,s)\leq L_c(r,s)$ by choosing the scale equal to one, every competitor in the reverse formulation gives a homogeneous competitor of no larger cost. Hence $\HW_c\leq\UW_c$.
+
+	For the converse, use the semi-coupling representation~\eqref{eq-homogeneous-semicoupling} and fix a feasible triple $(\lambda,u,v)$. For a positive measurable scale $\theta(x,y)$, set $\tilde\pi=\theta\lambda$. Disintegrate $\lambda$ with respect to its first spatial marginal. If $\bar u(x)$ and $\bar\theta(x)$ denote the corresponding conditional averages of $u$ and $\theta$, then $\alpha=\bar u\,(\mathrm p_1)_\sharp\lambda$ and $\tilde\pi_1=\bar\theta\,(\mathrm p_1)_\sharp\lambda$. Convexity of the perspective $(a,m)\mapsto a\psi_1(m/a)$ and conditional Jensen give
 	\[
-		H_{c(x,y)}(F(x),G(y))+\eta
-		\geq
-		\theta(x,y)L_{c(x,y)}\big(F(x)/\theta(x,y),G(y)/\theta(x,y)\big).
+		\Dd_{\psi_1}(\tilde\pi_1|\alpha)
+		\leq
+		\int u\,\psi_1(\theta/u)\d\lambda.
 	\]
-	Replacing $\pi$ by the rescaled measure $\tilde\pi=\theta\pi$ and the densities by $F/\theta$ and $G/\theta$ gives an admissible competitor for the reverse formulation with cost no larger than the homogeneous cost plus $\eta\pi(\Xx\times\Yy)$. Letting $\eta\to0$ yields $\UW\leq\HW$. The singular terms are unchanged because the same rescaling is performed before taking the Lebesgue decomposition of the marginals.
-\index{Lebesgue decomposition}% strictindex
-\index{reverse formulation}% strictindex
+	The same argument on the second marginal yields the analogous bound with $(v,\psi_2)$. Therefore
+	\[
+		\int c\d\tilde\pi
+		+\Dd_{\psi_1}(\tilde\pi_1|\alpha)
+		+\Dd_{\psi_2}(\tilde\pi_2|\beta)
+		\leq
+		\int\big[c\theta+u\psi_1(\theta/u)+v\psi_2(\theta/v)\big]\d\lambda.
+	\]
+	The pointwise infimum of the integrand over $\theta>0$ is precisely $H_c(u,v)$. A measurable $\eta$-minimizing choice of $\theta$ exists because this is a lower-semicontinuous normal integrand; the recession conventions cover $u=0$ or $v=0$. Letting $\eta\downarrow0$ and then minimizing over $(\lambda,u,v)$ gives $\UW_c\leq\HW_c$.
+\index{perspective transform}% strictindex
+\index{conditional!Jensen inequality}% strictindex
 \end{proof}
 
 %%%
@@ -287,17 +333,26 @@ Several classical unbalanced geometries are obtained by choosing $\psi$, $c$ and
 	\[
 		\De((x,r),(y,s))^2=r^2+s^2-2rs\cos(d(x,y)\wedge\pi/2).
 	\]
-	\item $\Dd_\psi=\KL$, $p=2$, and $c(x,y)=d(x,y)^2$ give the Gaussian Hellinger cone metric
+	\item $\Dd_\psi=\KL$, $p=2$, and $c(x,y)=d(x,y)^2$ give the Gaussian Hellinger formula
 	\[
 		\De((x,r),(y,s))^2=r^2+s^2-2rs e^{-d(x,y)^2/2}.
 	\]
+	It is a cone metric whenever the Gaussian kernel $k(x,y)=e^{-d(x,y)^2/2}$ is positive definite. This holds, for example, when $(\Xx,d)$ is a subset of a Hilbert space: if $k(x,y)=\langle\Phi(x),\Phi(y)\rangle$ with $\|\Phi(x)\|=1$, then the displayed quantity is $\|r\Phi(x)-s\Phi(y)\|^2$. For a general metric space, positive definiteness of this kernel is an additional hypothesis.
 	\item $\Dd_\psi=\TV$, $p=1$, and $c(x,y)=d(x,y)$ give the partial-transport cone cost
 \index{partial transport}% strictindex
 	\[
 		\De((x,r),(y,s))=r+s-(r\wedge s)(2-d(x,y))_+.
 	\]
 \end{itemize}
-The corresponding cone value is
+For a finite measure $\eta$ on the cone, define its weighted base projection
+$\mathsf P_p\eta\in\Mm_+(\Xx)$ by
+\[
+	\int_{\Xx}\varphi(x)\d(\mathsf P_p\eta)(x)
+	=
+	\int_{\mathfrak C[\Xx]}\varphi(x)r^p\d\eta(x,r)
+\]
+for every bounded Borel $\varphi$. This is well defined at the apex because
+the weight $r^p$ vanishes there. The corresponding cone value is
 \[
 	\CW(\al,\be)
 	=
@@ -305,25 +360,97 @@ The corresponding cone value is
 	\left\{
 	\int \De((x,r),(y,s))^p\d\gamma
 	\; ; \;
-	\int r^p\d\gamma_1(\cdot,r)=\al,
-	\int s^p\d\gamma_2(\cdot,s)=\be
+	\mathsf P_p\gamma_1=\al,\quad
+	\mathsf P_p\gamma_2=\be
 	\right\}.
 \]
 
 
+In the following theorem, \(\CW\) denotes the \(p\)-action value on the cone. Thus, when the cone cost comes from a distance \(\De\), the actual metric is \(\CW^{1/p}\).
+
 \begin{thm}[Cone formulation of unbalanced OT]\label{thm-cone-unbalanced-ot}
 \index{cone!formulation}% strictindex
-\index{unbalanced OT}% strictindex
-	One has $\UW=\HW=\CW$. If $\De$ is a distance, then $\CW^{1/p}$ is a distance between nonnegative measures.
+\index{unbalanced!OT}% strictindex
+	Assume that $\Xx$ is a compact metric space, that $(r,s)\mapsto H_{c(x,y)}(r,s)$ is convex for every $(x,y)$, and that $(x,y,r,s)\mapsto H_{c(x,y)}(r,s)$ is lower semicontinuous. Then
+	\[
+		\UW_c(\alpha,\beta)=\HW_c(\alpha,\beta)=\CW(\alpha,\beta).
+	\]
+	If, in addition, $\De$ is a continuous distance on $\mathfrak C[\Xx]$, then $\CW^{1/p}$ is a distance between nonnegative finite measures.
 \index{nonnegative measure}% strictindex
 \end{thm}
 
 \begin{proof}
-	The equality $\UW=\HW$ is Proposition~\ref{prop-homogeneous-unbalanced}. To prove $\HW=\CW$, disintegrate an admissible cone coupling $\gamma$ with respect to its spatial variables $(x,y)$ and radii $(r,s)$. The cone marginal constraints say precisely that the spatial marginals are recovered after weighting by $r^p$ and $s^p$. Since $\De((x,r),(y,s))^p=H_{c(x,y)}(r^p,s^p)$, integrating the cone cost gives the homogeneous objective. Conversely, any homogeneous competitor can be lifted to the cone by placing, over each $(x,y)$, radii whose $p$th powers are the two density factors appearing in $H_c$.
+	The equality $\UW=\HW$ is Proposition~\ref{prop-homogeneous-unbalanced}. It remains to compare the semi-coupling representation~\eqref{eq-homogeneous-semicoupling} with the cone value.
 \index{disintegration}% strictindex
 \index{marginal!constraint}% strictindex
 
-	If $\De$ is a distance on the cone, then $\CW^{1/p}$ is the usual $p$-Wasserstein distance between lifted measures under the linear cone-marginal constraints. Symmetry and the triangle inequality follow from the corresponding Wasserstein properties and the gluing lemma on the cone. If the distance is zero, an optimal cone coupling is concentrated on the diagonal of the cone, so the weighted projections agree and therefore $\alpha=\beta$.
+	Let $(\lambda,u,v)$ be feasible in~\eqref{eq-homogeneous-semicoupling}. Define the cone coupling
+	\[
+		\gamma
+		=
+		\big((x,y)\mapsto ((x,u(x,y)^{1/p}),(y,v(x,y)^{1/p}))\big)_\#\lambda .
+	\]
+	Then $\mathsf P_p\gamma_1=\al$ and $\mathsf P_p\gamma_2=\be$ by the
+	weighted marginal constraints. Moreover
+	\[
+		\int \De((x,r),(y,s))^p\d\gamma
+		=
+		\int H_{c(x,y)}(u(x,y),v(x,y))\d\lambda(x,y).
+	\]
+	Taking the infimum gives $\CW\leq\HW$.
+
+	Conversely, let $\gamma$ be feasible for $\CW$. Choose arbitrary
+	representatives of cone points at the apex. This does not affect the
+	weighted constraints, and it does not change the cost because, by the
+	recession convention, $H_{c(x,y)}(0,s)$ and $H_{c(x,y)}(r,0)$ do not depend
+	on the arbitrary spatial representative attached to the zero radius. Let
+	$\lambda$ be the projection of $\gamma$ onto the spatial variables
+	$(x,y)$, and disintegrate
+	$\gamma=\gamma_{x,y}\d\lambda(x,y)$ with respect to this projection. Set
+	\[
+		u(x,y)=\int r^p\d\gamma_{x,y}(r,s),
+		\qquad
+		v(x,y)=\int s^p\d\gamma_{x,y}(r,s).
+	\]
+	The cone marginal constraints imply
+	$(\mathrm{p}_1)_\#(u\lambda)=\al$ and
+	$(\mathrm{p}_2)_\#(v\lambda)=\be$. Since $H_c$ is convex in its two
+	arguments, as a perspective of the convex reverse cost $L_c$, Jensen's
+	inequality gives, for $\lambda$-a.e. $(x,y)$,
+	\[
+		H_{c(x,y)}(u(x,y),v(x,y))
+		\leq
+		\int H_{c(x,y)}(r^p,s^p)\d\gamma_{x,y}(r,s).
+	\]
+	After integration and using
+	$\De((x,r),(y,s))^p=H_{c(x,y)}(r^p,s^p)$, this yields
+	$\HW\leq\CW$. Hence $\UW=\HW=\CW$.
+
+	Assume now that $\De$ is a distance. The nontrivial point in the triangle inequality is that two cone plans sharing the same weighted base projection need not have the same ordinary cone marginal. The radial homogeneity removes this obstruction. Indeed, common radial rescaling
+	\[
+		((x,r),(y,s))\mapsto((x,r/\vartheta),(y,s/\vartheta)),
+		\qquad
+		\gamma\mapsto\vartheta^p\gamma,
+	\]
+	preserves both weighted projections and the $p$-action. After adding mass at the cone apex, the normalization lemma for homogeneous lifts therefore lets one rescale two almost optimal plans for $(\alpha,\beta)$ and $(\beta,\zeta)$ so that their ordinary middle cone marginal is the same lift
+	\[
+		\eta_\beta
+		=
+		M\delta_{\mathfrak o}
+		+
+		(x\mapsto(x,1))_\sharp\beta.
+	\]
+	Here $M<+\infty$ is chosen large enough for both plans; additional mass at $(\mathfrak o,\mathfrak o)$ changes neither the weighted projections nor the action. The ordinary gluing lemma now produces a joint cone plan $(Z_0,Z_1,Z_2)$. Since $\De$ is a metric, Minkowski's inequality gives
+	\[
+		\left(\int\De(Z_0,Z_2)^p\right)^{1/p}
+		\leq
+		\left(\int\De(Z_0,Z_1)^p\right)^{1/p}
+		+
+		\left(\int\De(Z_1,Z_2)^p\right)^{1/p}.
+	\]
+	Taking infima proves the triangle inequality. This normalization-and-gluing argument is the metric engine of the homogeneous cone construction~\cite{LieroMielkeSavareLong}.
+
+	For completeness, normalize each non-apex pair by taking $\vartheta=(r^p+s^p)^{1/p}$. The transformed radii then satisfy $r^p+s^p=1$, while the transformed plan has total mass $\alpha(\Xx)+\beta(\Xx)$; apex mass can again be fixed without changing the problem. Thus minimizing plans may be restricted to a weakly compact family with bounded radii. Compactness of $\Xx$ and lower semicontinuity of the cone cost give an optimal plan. If $\CW(\alpha,\beta)=0$, such a plan is concentrated on the diagonal of the cone. There $x=y$ whenever the common radius is positive and $r=s$, so its two weighted base projections coincide and $\alpha=\beta$. Nonnegativity and symmetry are immediate, completing the metric proof.
 \index{triangle inequality}% strictindex
 \index{Wasserstein!distance}% strictindex
 \index{gluing lemma}% strictindex
@@ -334,8 +461,8 @@ The corresponding cone value is
 \index{KL!relaxation}% strictindex
 
 A generic entropic regularization of unbalanced OT reads
-\index{entropic regularization}% strictindex
-\index{unbalanced OT}% strictindex
+\index{entropic!regularization}% strictindex
+\index{unbalanced!OT}% strictindex
 \[
 	\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
 	\int c\d\pi
@@ -365,8 +492,17 @@ For $\Dd_\phi=\KL$, the primal-dual relation is $\d\pi=e^{(f\oplus g-c)/\epsilon
 	\left(e^{(f\oplus g-c)/\epsilon}-1\right)
 	\d\al\d\be,
 \]
-and coordinate maximization gives the damped soft transforms
+and coordinate maximization gives the damped soft-transform updates
 \index{soft!transform}% strictindex
+\index{soft!c-transform}% strictindex
+\[
+	f \leftarrow \omega\, g^{\bar c,\epsilon},
+	\qquad
+	g \leftarrow \omega\, f^{c,\epsilon},
+	\qquad
+	\omega\eqdef\frac{\tau}{\tau+\epsilon},
+\]
+where the soft $c$-transforms are those of Definition~\ref{def-continuous-soft-c-transform}. Equivalently,
 \begin{align*}
 	f(x)
 	&=
@@ -378,19 +514,121 @@ and coordinate maximization gives the damped soft transforms
 	&=
 	-
 	\frac{\tau\epsilon}{\tau+\epsilon}
-	\log\int_{\Xx}
-	\exp\left(\frac{f(x)-c(x,y)}{\epsilon}\right)\d\al(x).
+		\log\int_{\Xx}
+		\exp\left(\frac{f(x)-c(x,y)}{\epsilon}\right)\d\al(x).
 \end{align*}
-In the discrete case, with $K_{i,j}=e^{-\C_{i,j}/\epsilon}\a_i\b_j$ and $\rho=\tau/(\tau+\epsilon)$, this gives the generalized Sinkhorn scaling
+The second assignment uses the freshly updated value of $f$, as in a
+Gauss--Seidel block-coordinate ascent.
+In the discrete case, with $K_{i,j}=e^{-\C_{i,j}/\epsilon}\a_i\b_j$, this gives the generalized Sinkhorn scaling
 \index{Sinkhorn!scaling}% strictindex
 \[
-	u_i\leftarrow \left(\frac{\a_i}{(K v)_i}\right)^\rho,
+	u_i\leftarrow \left(\frac{\a_i}{(K v)_i}\right)^\omega,
 	\qquad
-	v_j\leftarrow \left(\frac{\b_j}{(\transp{K}u)_j}\right)^\rho,
+	v_j\leftarrow \left(\frac{\b_j}{(\transp{K}u)_j}\right)^\omega,
 	\qquad
 	\P=\diag(u)K\diag(v).
 \]
-The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal corrections are damped because violating the marginals is allowed.
+The exponent $\omega<1$ is the visible difference with balanced Sinkhorn: marginal corrections are damped because violating the marginals is allowed.
+
+\paragraph{Metric contraction of the damped updates.}
+\index{Thompson metric}% strictindex
+\index{unbalanced!Sinkhorn convergence}% strictindex
+For balanced entropic OT, potentials are only defined up to the gauge
+$(f,g)\sim(f+\lambda,g-\lambda)$, so Hilbert's projective metric is natural.
+The KL marginal penalties break this invariance: under the usual finite-dual
+assumptions, the dual potentials are unique up to $\al$- and $\be$-null sets,
+and the natural distance is the ordinary $L^\infty$ distance on potentials. In
+scaling variables $u=e^{f/\epsilon}$ and $v=e^{g/\epsilon}$, this is the
+Thompson metric on the product positive cone,
+\[
+	d_T\big((u,v),(u',v')\big)
+	\eqdef
+	\max\{\norm{\log u-\log u'}_\infty,\norm{\log v-\log v'}_\infty\},
+\]
+up to the factor $\epsilon$ on potentials~\cite{lemmens2012nonlinear}.
+
+\begin{prop}[Linear contraction of unbalanced Sinkhorn]\label{prop-unbalanced-sinkhorn-contraction}
+\index{linear!convergence}% strictindex
+\index{soft!c-transform}% strictindex
+	Assume that the damped soft-transform map sends bounded potentials to bounded potentials; for instance, this holds when \(c\) is bounded. Let
+	$\omega=\tau/(\tau+\epsilon)<1$, and define
+	\[
+		d_\infty((f,g),(f',g'))
+		\eqdef
+		\max\{\norm{f-f'}_\infty,\norm{g-g'}_\infty\}.
+	\]
+	The damped soft-transform map
+	\[
+		\mathcal T_{\rm GS}(f,g)
+		\eqdef
+		\big(\tilde f,\tilde g\big),
+		\qquad
+		\tilde f=\omega\,g^{\bar c,\epsilon},
+		\qquad
+		\tilde g=\omega\,\tilde f^{c,\epsilon},
+	\]
+	is a contraction:
+	\[
+		d_\infty\big(\mathcal T_{\rm GS}(f,g),\mathcal T_{\rm GS}(f',g')\big)
+		\leq
+		\omega\, d_\infty((f,g),(f',g')).
+	\]
+	Consequently, on the bounded-potential space under consideration, the unbalanced Sinkhorn potentials have a unique fixed point
+	$(f^\star,g^\star)$ and the iterates satisfy
+	\[
+		d_\infty((f^{(k)},g^{(k)}),(f^\star,g^\star))
+		\leq
+		\omega^k d_\infty((f^{(0)},g^{(0)}),(f^\star,g^\star)).
+	\]
+	Equivalently, for $u^{(k)}=e^{f^{(k)}/\epsilon}$ and
+	$v^{(k)}=e^{g^{(k)}/\epsilon}$,
+	\[
+		d_T((u^{(k)},v^{(k)}),(u^\star,v^\star))
+		\leq
+		\omega^k d_T((u^{(0)},v^{(0)}),(u^\star,v^\star)).
+	\]
+\end{prop}
+\begin{proof}
+	The soft $c$-transform is $1$-Lipschitz in $L^\infty$. Indeed, if
+	$\norm{g-g'}_\infty\leq \delta$, then $g-\delta\leq g'\leq g+\delta$.
+	Since $g\mapsto g^{\bar c,\epsilon}$ is order reversing and satisfies
+	$(g+\lambda)^{\bar c,\epsilon}=g^{\bar c,\epsilon}-\lambda$, this implies
+	\[
+		g^{\bar c,\epsilon}-\delta
+		\leq
+		(g')^{\bar c,\epsilon}
+		\leq
+		g^{\bar c,\epsilon}+\delta .
+	\]
+	Hence
+	$\norm{g^{\bar c,\epsilon}-(g')^{\bar c,\epsilon}}_\infty\leq
+	\norm{g-g'}_\infty$, and the same argument applies to
+	$f\mapsto f^{c,\epsilon}$.
+
+	Let $(\tilde f,\tilde g)=\mathcal T_{\rm GS}(f,g)$ and
+	$(\tilde f',\tilde g')=\mathcal T_{\rm GS}(f',g')$. With
+	$D=d_\infty((f,g),(f',g'))$, the previous Lipschitz estimate gives
+	\[
+		\norm{\tilde f-\tilde f'}_\infty
+		\leq
+		\omega\norm{g-g'}_\infty
+		\leq
+		\omega D,
+	\]
+	and then
+	\[
+		\norm{\tilde g-\tilde g'}_\infty
+		\leq
+		\omega\norm{\tilde f-\tilde f'}_\infty
+		\leq
+		\omega^2D
+		\leq
+		\omega D .
+	\]
+	This proves the contraction. The Banach fixed-point theorem gives
+	existence, uniqueness and the displayed linear rate.
+\index{Banach fixed-point theorem}% strictindex
+\end{proof}
 
 \begin{alg}[Unbalanced Sinkhorn scaling]\label{alg:unbalanced-sinkhorn}
 \textbf{Input:} Weights $\a,\b$, cost matrix $\C$, entropic scale $\epsilon>0$, KL strength $\tau>0$, tolerance $\mathrm{tol}$.
@@ -398,16 +636,16 @@ The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal
 \textbf{Output:} Unbalanced entropic coupling $\P$.
 
 \textbf{Initialize:} Set
-\(K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \rho=\frac{\tau}{\tau+\epsilon}, \quad u^{(0)}=\ones_n, \quad v^{(0)}=\ones_m, \quad \eta_0=+\infty, \quad k=0.\)
+\(K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \omega=\frac{\tau}{\tau+\epsilon}, \quad u^{(0)}=\ones_n, \quad v^{(0)}=\ones_m, \quad \eta_0=+\infty, \quad k=0.\)
 
 \textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
 \begin{algblock}
 
 \textbf{Set} \(k\leftarrow k+1\).
 
-\(u^{(k)} = \left(\frac{\a}{K v^{(k-1)}}\right)^\rho, \qquad v^{(k)} = \left(\frac{\b}{\transp{K}u^{(k)}}\right)^\rho.\)
+\(u^{(k)} = \left(\frac{\a}{K v^{(k-1)}}\right)^\omega, \qquad v^{(k)} = \left(\frac{\b}{\transp{K}u^{(k)}}\right)^\omega.\)
 
-\textbf{Set} \(\eta_k=\max\{\norm{u^{(k)}-u^{(k-1)}}_\infty,\norm{v^{(k)}-v^{(k-1)}}_\infty\}\).
+\textbf{Set} \(\eta_k=\epsilon\max\{\norm{\log u^{(k)}-\log u^{(k-1)}}_\infty,\norm{\log v^{(k)}-\log v^{(k-1)}}_\infty\}\).
 \end{algblock}
 \algreturnskip
 \textbf{Return} \(\P^{(k)}=\diag(u^{(k)})K\diag(v^{(k)})\).
@@ -415,7 +653,7 @@ The exponent $\rho<1$ is the visible difference with balanced Sinkhorn: marginal
 
 %%%
 \paragraph{Partial optimal transport.}
-\index{partial optimal transport}% strictindex
+\index{partial transport}% strictindex
 \index{partial transport}% strictindex
 Total variation gives a sharp active-mass selection and connects unbalanced OT with the classical partial-transport problem. The latter fixes in advance the amount of transported mass. For
 \index{active mass}% strictindex
@@ -444,24 +682,78 @@ Assume $c\geq0$. Allowing transported marginals larger than the available margin
 \[
 	\lambda\big(\al(\Xx)-m\big)+\lambda\big(\be(\Yy)-m\big),
 \]
-and minimizing first over plans of fixed mass gives
-\[
-	\inf_{\pi\geq0}
-	\left\{\int c\,\d\pi
-	+
-	\lambda\norm{\al-\pi_1}_{\TV}
-	+
-	\lambda\norm{\be-\pi_2}_{\TV}\right\}
-	=
-	\inf_{0\leq m\leq \min\{\al(\Xx),\be(\Yy)\}}
-	\left\{
-	\operatorname{POT}_m(\al,\be)
-	+
-	\lambda\big(\al(\Xx)+\be(\Yy)-2m\big)
-	\right\}.
-\]
-	Thus the TV-penalized formulation is the Lagrangian envelope of constrained partial OT: increasing $\lambda$ rewards transporting more mass, while small $\lambda$ makes deletion and creation cheaper. Conversely, if $2\lambda$ is a supporting slope of the convex value function $m\mapsto\operatorname{POT}_m(\al,\be)$ at a prescribed mass $m$, then minimizers of the constrained problem solve the penalized one; on flat pieces, one value of $\lambda$ can select an interval of transported masses. The constrained theory, including active regions and free boundaries, was developed by Caffarelli--McCann and Figalli~\cite{CaffarelliMcCannPartial,FigalliPartial}. Modern computational and learning applications include partial Wasserstein and partial Gromov--Wasserstein variants, for instance in Chapel--Alaya--Gasso~\cite{ChapelAlayaGassoPartial}.
-	Figure~\ref{fig:partial-ot-active-mass} shows this active-region mechanism on a one-dimensional example: as the prescribed transported mass decreases, the plan keeps only the least costly portions of the two marginals.
+	so the precise relation is a one-dimensional Lagrange duality in the transported mass.
+
+\begin{prop}[TV penalization selects fixed-mass partial OT]\label{prop-tv-partial-ot-lagrange}
+	Assume that $\Xx,\Yy$ are compact metric spaces, that $c$ is continuous and nonnegative, and set $A=\al(\Xx)$, $B=\be(\Yy)$, $M=\min(A,B)$. For $\lambda\geq0$, define the TV-penalized partial value
+	\[
+		\operatorname{POT}^{\TV}_\lambda(\al,\be)
+		\eqdef
+		\inf_{\substack{\pi\in\Mm_+(\Xx\times\Yy)\\ \pi_1\leq\al,\ \pi_2\leq\be}}
+		\left\{
+		\int c\,\d\pi
+		+
+		\lambda\big(A+B-2\pi(\Xx\times\Yy)\big)
+		\right\}.
+	\]
+	Then
+	\[
+		\operatorname{POT}^{\TV}_\lambda(\al,\be)
+		=
+		\lambda(A+B)
+		+
+		\inf_{0\leq m\leq M}
+		\left\{
+		\operatorname{POT}_m(\al,\be)-2\lambda m
+		\right\}.
+	\]
+	If $\pi_\lambda$ minimizes $\operatorname{POT}^{\TV}_\lambda$ and $m_\lambda=\pi_\lambda(\Xx\times\Yy)$, then $m_\lambda$ minimizes $m\mapsto\operatorname{POT}_m(\al,\be)-2\lambda m$ and $\pi_\lambda$ minimizes $\operatorname{POT}_{m_\lambda}(\al,\be)$. Conversely, if $2\lambda$ is a subgradient at $m$ of the convex function $m\mapsto\operatorname{POT}_m(\al,\be)$ extended by $+\infty$ outside $[0,M]$, then every minimizer of $\operatorname{POT}_m(\al,\be)$ is a minimizer of $\operatorname{POT}^{\TV}_\lambda(\al,\be)$. In particular, every prescribed mass $m\in[0,M]$ is selected by at least one multiplier $\lambda\geq0$, possibly together with a whole interval of masses when the value function has a flat exposed face.
+\end{prop}
+
+\begin{proof}
+	Write $V(m)=\operatorname{POT}_m(\al,\be)$. Compactness and continuity give an optimizer for every $m\in[0,M]$: the admissible subcouplings form a weakly compact set and the cost is continuous. The function $V$ is convex on $[0,M]$: if $\pi_0,\pi_1$ are admissible competitors of masses $m_0,m_1$, then $(1-t)\pi_0+t\pi_1$ is admissible for mass $(1-t)m_0+tm_1$ and has the corresponding convex-combination cost. It is also nondecreasing because any competitor of mass $m_1>m_0$ can be rescaled by $m_0/m_1$ to give a competitor of mass $m_0$ with no larger cost. Finally, $V$ is Lipschitz. If $0\leq m_0<m_1\leq M$ and $\pi_0$ is optimal at mass $m_0$, both residual measures $\alpha-(\pi_0)_1$ and $\beta-(\pi_0)_2$ have mass at least $m_1-m_0$. Choose submeasures of each residual with this common mass and couple them. Adding the resulting plan to $\pi_0$ gives an admissible plan of mass $m_1$ at an additional cost bounded by $\|c\|_\infty(m_1-m_0)$.
+
+	For any admissible $\pi$ in the definition of $\operatorname{POT}^{\TV}_\lambda$, let $m=\pi(\Xx\times\Yy)$. The plan is admissible for $V(m)$, hence its objective is at least $V(m)+\lambda(A+B-2m)$. Taking the infimum over $\pi$ gives the lower bound by the displayed right-hand side. Conversely, for each $m$ and each minimizing sequence for $V(m)$, the same plans are admissible in $\operatorname{POT}^{\TV}_\lambda$ and have objective tending to $V(m)+\lambda(A+B-2m)$. Taking the infimum over $m$ gives the reverse inequality.
+
+	The optimizer statement follows from the same inequalities. If $\pi_\lambda$ minimizes the penalized problem with mass $m_\lambda$, then equality in the lower bound forces both $V(m_\lambda)-2\lambda m_\lambda$ to be minimal over $[0,M]$ and $\pi_\lambda$ to be optimal at fixed mass $m_\lambda$. Conversely, $2\lambda\in\partial V(m)$ means
+	\[
+		V(m')-2\lambda m'\geq V(m)-2\lambda m
+		\quad\text{for all }m'\in[0,M].
+	\]
+	Thus any minimizer of $V(m)$ attains the penalized infimum. Because the extended function is proper, convex, lower semicontinuous and Lipschitz on its effective interval, its subdifferential is nonempty at every $m\in[0,M]$ after adding the normal cone of the interval. Monotonicity of $V$ ensures that a subgradient can be chosen nonnegative, hence equal to $2\lambda$ for some $\lambda\geq0$.
+\end{proof}
+
+\begin{prop}[Fixed total mass reduces partial OT to balanced OT]\label{prop-partial-ot-metric-slice}
+	Let $(\Xx,d)$ be a metric space, let $p\geq1$, set $c=d^p$, and fix $m>0$. On the class of nonnegative measures with total mass exactly $m$ and finite $p$th moment,
+	\[
+		\mathcal M_m^p(\Xx)\eqdef
+		\enscond{\al\in\Mm_+(\Xx)}{\al(\Xx)=m,\ \int d(x_0,x)^p\d\al(x)<+\infty}
+	\]
+	for one, hence any, base point $x_0$, the quantity
+	\[
+		d_m(\al,\be)\eqdef \operatorname{POT}_m(\al,\be)^{1/p}
+	\]
+	is a distance. More precisely, if $\bar\al=\al/m$ and $\bar\be=\be/m$, then
+	\[
+		d_m(\al,\be)=m^{1/p}\Wass_p(\bar\al,\bar\be).
+	\]
+	If instead $\operatorname{POT}_m$ is considered on a larger class of measures with mass at least $m$, then it is not a distance in general for $m>0$: different measures can share a common submeasure of mass $m$, giving zero partial cost.
+\end{prop}
+
+\begin{proof}
+	If $\al(\Xx)=\be(\Xx)=m$ and $\pi$ is admissible in $\operatorname{POT}_m(\al,\be)$, then $\pi_1\leq\al$ and both measures have mass $m$, hence $\pi_1=\al$. Similarly $\pi_2=\be$. Thus the admissible plans are exactly the ordinary couplings between $\al$ and $\be$. Dividing such a coupling by $m$ gives a probability coupling between $\bar\al$ and $\bar\be$, and conversely multiplying any coupling of $\bar\al,\bar\be$ by $m$ gives a coupling of $\al,\be$. Therefore
+	\[
+		\operatorname{POT}_m(\al,\be)
+		=
+		m\Wass_p(\bar\al,\bar\be)^p.
+	\]
+	The metric properties of $d_m$ follow from those of $\Wass_p$ in Proposition~\ref{prop-metric-measure}.
+
+	For the last claim, take three distinct points $x,y,z$ in a metric space and a number $r>0$. The measures $\al=m\de_x+r\de_y$ and $\be=m\de_x+r\de_z$ are different but the partial plan $m\de_{(x,x)}$ is admissible and has zero cost. Hence $\operatorname{POT}_m(\al,\be)=0$ although $\al\neq\be$.
+\end{proof}
+
+	Thus the TV-penalized formulation is the Lagrangian envelope of constrained partial OT: increasing $\lambda$ penalizes unmatched mass more strongly and therefore selects larger transported masses, while small $\lambda$ makes deletion and creation cheaper. The constrained theory, including active regions and free boundaries, was developed by Caffarelli--McCann and Figalli~\cite{CaffarelliMcCannPartial,FigalliPartial}. Modern computational and learning applications include partial Wasserstein and partial Gromov--Wasserstein variants, for instance in Chapel--Alaya--Gasso~\cite{ChapelAlayaGassoPartial}.
+	Figure~\ref{fig:partial-ot-active-mass} shows this active-region mechanism for two one-dimensional two-Gaussian mixtures, with the source mixture shifted to the left and the target mixture shifted to the right. As the prescribed transported mass decreases, the plan keeps only the least costly facing portions of the two marginals.
 
 \begin{figure}[H]
 \centering
@@ -473,7 +765,7 @@ and minimizing first over plans of fixed mass gives
 \includegraphics[width=.24\linewidth]{figures/partial-ot-active-mass--mass-042.pdf} &
 \includegraphics[width=.24\linewidth]{figures/partial-ot-active-mass--mass-022.pdf}
 \end{tabular}
-\caption{Partial optimal transport with prescribed transported mass. The central image is the optimal subcoupling, with contrast normalized independently in each panel to keep the low-mass plans readable. The pale red and blue side curves are the original source and target densities, while the violet curves are the active truncated marginals $\pi_1$ and $\pi_2$. As $m$ decreases from left to right, only the lowest-cost overlapping parts remain matched and the remaining mass is left unmatched.}
+\caption{\emph{Partial optimal transport with prescribed transported mass between two shifted two-Gaussian mixtures.} The central image is the optimal subcoupling, with contrast normalized independently in each panel to keep the low-mass plans readable. The pale red and blue side curves are the original source and target densities, while the violet curves are the active truncated marginals $\pi_1$ and $\pi_2$. As $m$ decreases from left to right, only the closest facing portions remain matched and the remaining mass is left unmatched.}
 \index{truncated marginal}% strictindex
 \index{active mass}% strictindex
 \index{partial transport}% strictindex
@@ -495,15 +787,15 @@ while leaving distant regions unmatched.
 \includegraphics[width=.24\linewidth]{figures/partial-ot-shape-active-mass--mass-36.pdf} &
 \includegraphics[width=.24\linewidth]{figures/partial-ot-shape-active-mass--mass-18.pdf}
 \end{tabular}
-\caption{Two-dimensional partial optimal transport between a red cat-shaped
-indicator measure and a blue annulus indicator measure. Both supports are
+\caption{\emph{Two-dimensional partial optimal transport between a red cat-shaped
+indicator measure and a blue annulus indicator measure.} Both supports are
 sampled by farthest-point sampling. In each panel, saturated points are the
 active source and target marginals of the optimal partial plan, while pale
 points are available mass left unmatched. Thin black segments show a
 farthest-spaced subsample of transported source locations connected to the
 dominant target selected by the plan. As the prescribed mass decreases, the
 active regions contract to the nearest compatible pieces of the two shapes.}
-\index{partial transport active region}% strictindex
+\index{active region}% strictindex
 \label{fig:partial-ot-shape-active-mass}
 \end{figure}
 
@@ -511,14 +803,22 @@ active regions contract to the nearest compatible pieces of the two shapes.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sliced Wasserstein Distances}
 \index{Wasserstein!distance}% strictindex
-\index{sliced Wasserstein distance}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
 \label{sec-sliced-wasserstein}
 
-Sliced Wasserstein trades exact high-dimensional geometry for many one-dimensional projections. It is cheap, differentiable after sorting, and often effective in imaging and learning. For measures on $\RR^d$ and $\theta\in\Sphere^{d-1}$, let $P_\theta(x)=\dotp{\theta}{x}$ be the projection on direction $\theta$.
+Sliced Wasserstein distances replace one high-dimensional comparison by an average of explicit one-dimensional optimal transport problems.
+
+\paragraph{One-dimensional projections.}
+Sliced Wasserstein trades exact high-dimensional geometry for many one-dimensional projections. The idea was originally proposed by Marc Bernot, and the first published work using this construction for Wasserstein barycenters and texture mixing is due to Rabin, Peyr\'e, Delon and Bernot~\cite{rabin-ssvm-11}. It is cheap, differentiable after sorting, and often effective in imaging and learning. For measures on $\RR^d$ and $\theta\in\Sphere^{d-1}$, let $P_\theta(x)=\dotp{\theta}{x}$ be the projection on direction $\theta$.
 \index{one-dimensional!projection}% strictindex
 
+\paragraph{Spherical averaging.}
+The projected measures $(P_\theta)_\sharp\al$ and $(P_\theta)_\sharp\be$ live on the real line, where Wasserstein distances are computed by sorting or quantiles. Averaging these one-dimensional discrepancies over all directions gives the sliced distance.
+
 \begin{defn}[Sliced Wasserstein distance]\label{def-sliced-wasserstein}
-	Let $\sigma$ be the uniform probability measure on the sphere $\Sphere^{d-1}$. The sliced $p$-Wasserstein distance is
+\index{projection direction}% strictindex
+\index{spherical average}% strictindex
+	Let $p\geq1$, let $\alpha,\beta\in\Pp_p(\RR^d)$, and let $\sigma$ be the uniform probability measure on the sphere $\Sphere^{d-1}$. The sliced $p$-Wasserstein distance is
 	\eql{\label{eq-sliced-wasserstein}
 		\SW_p(\al,\be)^p
 		\eqdef
@@ -527,28 +827,38 @@ Sliced Wasserstein trades exact high-dimensional geometry for many one-dimension
 		\d\sigma(\theta).
 	}
 \end{defn}
-Since each projected problem can be solved by sorting or quantiles, $\SW_p$ is much cheaper to approximate numerically than high-dimensional OT~\cite{rabin-ssvm-11,kolouri2016sliced}. It metrizes the same weak-plus-moment topology as $\Wass_p$, but its geometry is not bi-Lipschitz equivalent to $\Wass_p$ in high dimension~\cite{nadjahi2019asymptotic}.
+Since each projected problem can be solved by sorting or quantiles, $\SW_p$ is much cheaper to approximate numerically than high-dimensional OT. It metrizes the same weak-plus-moment topology as $\Wass_p$, but its geometry is not bi-Lipschitz equivalent to $\Wass_p$ in high dimension~\cite{nadjahi2019asymptotic}.
+\index{quantile!function}% strictindex
 \index{probability measure}% strictindex
-\index{quantile function}% strictindex
 
 \begin{rem}[Radon viewpoint]\label{rem-sliced-radon-viewpoint}
+\index{measure-valued Radon transform}% strictindex
+\index{projected measure}% strictindex
 \index{Radon transform}% strictindex
-\index{sliced Wasserstein distance}% strictindex
-	Slicing can also be understood as applying a Radon transform before measuring discrepancy. For a probability measure $\al$ on $\RR^d$, define $\mathfrak R\al(\theta)\eqdef(P_\theta)_\sharp\al$. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density
+\index{sliced Wasserstein!distance}% strictindex
+	Slicing can also be understood as applying a Radon transform before measuring discrepancy. For a probability measure $\al$ on $\RR^d$, define its measure-valued Radon transform by
 	\[
-		R\rho(\theta,s)=\int_{\{x:\dotp{\theta}{x}=s\}}\rho(x)\,\d\mathcal H^{d-1}(x).
+		\mathfrak R\al(\theta)\eqdef (P_\theta)_\sharp\al,
+		\qquad
+		\theta\in\Sphere^{d-1}.
 	\]
-	With this notation, \eqref{eq-sliced-wasserstein} is the pull-back, through $\mathfrak R$, of the $L^p(\Sphere^{d-1};\Wass_p)$ distance on Radon data. The full all-direction transform is injective on probability measures by the Cram\'er--Wold theorem. The warning is numerical and variational: finitely sampled Radon data are not injective, and independently constructed one-dimensional Radon data need not satisfy the range conditions of an actual image. This is the issue behind sliced and Radon barycenter reconstructions~\cite{2013-Bonneel-barycenter}.
+	Thus $\mathfrak R\al$ is a collection of one-dimensional projected measures indexed by directions. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density given by the classical Radon transform
+	\[
+		R\rho(\theta,s)
+		=
+		\int_{\{x:\dotp{\theta}{x}=s\}}\rho(x)\,\d\mathcal H^{d-1}(x).
+	\]
+	With this notation, \eqref{eq-sliced-wasserstein} says that $\SW_p$ is the pull-back, through $\mathfrak R$, of the $L^p(\Sphere^{d-1};\Wass_p)$ distance on Radon data. The full all-direction transform is injective on probability measures by the Cram\'er--Wold theorem, which is why sliced Wasserstein separates measures. The warning is numerical and variational: finitely sampled Radon data are not injective, and independently constructed one-dimensional Radon data need not satisfy the range conditions of an actual image. This is precisely the issue behind sliced and Radon barycenter reconstructions discussed in Section~\ref{sec-barycenters}.
 \index{Cramer-Wold theorem}% strictindex
 \index{Radon Wasserstein distance}% strictindex
-\index{Radon transform!range condition}% strictindex
+\index{Radon range condition}% strictindex
 \end{rem}
 
 \begin{alg}[Monte Carlo sliced Wasserstein]\label{alg:monte-carlo-sliced-wasserstein}
-\index{sliced Wasserstein distance}% strictindex
-\textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p$, number of directions $L$.
+\index{sliced Wasserstein!distance}% strictindex
+\textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p\geq1$, number of directions $L$.
 
-\textbf{Output:} Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$.
+\textbf{Output:} Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$ for $\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$.
 
 \textbf{For} $\ell=1,\ldots,L$ \textbf{do}:
 \begin{algblock}
@@ -578,8 +888,8 @@ Since each projected problem can be solved by sorting or quantiles, $\SW_p$ is m
 \\[-.1em]
 \small source density & \small source slices & \small target slices & \small target density
 \end{tabular}
-\caption{Sliced Wasserstein projections between two planar densities. The source and target are rendered as smoothed black-and-white density images obtained from dense farthest-point samples of two silhouettes. Five fixed directions are drawn on both densities. For each direction, the middle panels show smoothed one-dimensional density estimates of the projected measures $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\beta$. Sliced OT averages one-dimensional Wasserstein discrepancies over many such directions, replacing a difficult planar comparison by a collection of sorted one-dimensional comparisons.}
-\index{sliced Wasserstein distance}% strictindex
+\caption{\emph{Sliced Wasserstein projections between two planar densities.} The source and target are rendered as smoothed black-and-white density images obtained from dense farthest-point samples of two silhouettes. Five fixed directions are drawn on both densities. For each direction, the middle panels show smoothed one-dimensional density estimates of the projected measures $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\beta$. Sliced OT averages one-dimensional Wasserstein discrepancies over many such directions, replacing a difficult planar comparison by a collection of sorted one-dimensional comparisons.}
+\index{sliced Wasserstein!distance}% strictindex
 \label{fig:sliced-wasserstein-projections}
 \end{figure}
 
@@ -629,21 +939,45 @@ Since each projected problem can be solved by sorting or quantiles, $\SW_p$ is m
 		\int_{\Sphere^{d-1}}\int |\dotp{x-y}{\theta}|^2\d\pi(x,y)\d\sigma(\theta)
 		=
 		\frac1d\int\norm{x-y}^2\d\pi(x,y).
+		\]
+		Optimizing over $\pi$ gives the sharper inequality.
+
+	To prove the topological statement, first suppose that $\Wass_p(\alpha_n,\alpha)\to0$. The inequality $\SW_p\leq\Wass_p$ immediately gives $\SW_p(\alpha_n,\alpha)\to0$. Conversely, suppose that $\SW_p(\alpha_n,\alpha)\to0$. The spherical identity
+	\[
+		\int_{\Sphere^{d-1}}\int_{\RR^d}|\langle\theta,x\rangle|^p\d\alpha_n(x)\d\sigma(\theta)
+		=
+		c_{d,p}\int_{\RR^d}\|x\|^p\d\alpha_n(x),
+		\qquad
+		c_{d,p}\eqdef\int_{\Sphere^{d-1}}|\theta_1|^p\d\sigma(\theta)>0,
 	\]
-		Optimizing over $\pi$ gives the sharper inequality. The weak-convergence statement follows from the same Cram\'er--Wold mechanism plus the moment condition: convergence in $\SW_p$ gives convergence of almost all one-dimensional projections and tightness of the $p$th moments; conversely, weak convergence with $p$th-moment convergence implies convergence of projected $\Wass_p$ distances and dominated convergence on the sphere.
+	and the triangle inequality in $L^p(\Sphere^{d-1}\times(0,1))$ show that the $p$th moments of $(\alpha_n)$ are uniformly bounded. Hence the sequence is tight. From every subsequence one can extract a further subsequence for which the projected $\Wass_p$ distances converge to zero for $\sigma$-a.e. $\theta$. Every weak limit therefore has the same one-dimensional projections as $\alpha$, so Cram\'er--Wold identifies it with $\alpha$. Thus $\alpha_n\rightharpoonup\alpha$. Finally, let $Q_{n,\theta}$ and $Q_\theta$ be the quantile functions of the projected measures. The one-dimensional quantile formula gives
+	\[
+		\SW_p(\alpha_n,\alpha)
+		=
+		\|Q_{n,\theta}-Q_\theta\|_{L^p(\Sphere^{d-1}\times(0,1))}.
+	\]
+	Hence the corresponding $L^p$ norms converge. By the spherical identity, their $p$th powers are respectively $c_{d,p}\int\|x\|^p\d\alpha_n(x)$ and $c_{d,p}\int\|x\|^p\d\alpha(x)$. Thus the $p$th moments converge. Weak convergence plus convergence of these moments is equivalent to convergence in $\Wass_p$.
 	\index{tightness}% strictindex
 	\index{one-dimensional!projection}% strictindex
 	\index{weak!convergence}% strictindex
 
-	The reverse estimates on compact sets are deeper and use the Radon structure of slices. Bonnotte's Lemma~5.1.4 gives the first bound by mollifying a Kantorovich--Rubinstein test function, representing the regularized test through one-dimensional projections, bounding the resulting action by $\SW_1$, and optimizing the smoothing scale~\cite{bonnotte2013unidimensional}. The scaling in $R$ follows by applying the unit-ball estimate to $(x\mapsto x/R)_\sharp\alpha$ and $(x\mapsto x/R)_\sharp\beta$. The sharper exponent $1/d$ is the main comparison theorem of Carlier, Figalli, M\'erigot and Wang~\cite{CarlierFigalliMerigotWang2025SlicedW1}; their examples also show that this exponent cannot be improved in general.
+	\index{sliced Wasserstein!compact comparison}% strictindex
+	\index{Radon structure}% strictindex
+	The reverse estimates on compact sets are deeper and use the Radon structure of slices. Bonnotte's Lemma~5.1.4 gives the historical exponent $1/(d+1)$ by mollifying a Kantorovich--Rubinstein test function, representing the regularized test through one-dimensional projections, bounding the resulting action by $\SW_1$, and optimizing the smoothing scale~\cite{bonnotte2013unidimensional}. The scaling in $R$ follows by applying the unit-ball estimate to $(x\mapsto x/R)_\sharp\alpha$ and $(x\mapsto x/R)_\sharp\beta$. The exponent $1/d$ is the sharp comparison theorem of Carlier, Figalli, M\'erigot and Wang~\cite{CarlierFigalliMerigotWang2025SlicedW1}; their examples show that it cannot be improved in general.
 \index{sliced Wasserstein!reverse bound}% strictindex
 \end{proof}
 
-The infinitesimal comparison is most transparent along smooth Brenier perturbations. A small gradient displacement is already optimal for the quadratic cost, and slicing simply tests its one-dimensional projections.
+The preceding estimates compare finite displacements. The infinitesimal
+comparison is clearest along smooth Brenier perturbations: if a measure is
+displaced by a small gradient field, then the usual Wasserstein distance sees
+the full $L^2(\alpha)$ norm of this field, whereas the sliced distance sees its
+one-dimensional projections.
 
 \begin{prop}[First-order comparison along Brenier perturbations]\label{prop-sliced-first-order-tangent}
+\index{Brenier!perturbation}% strictindex
+\index{sliced tangent norm}% strictindex
 \index{sliced Wasserstein!tangent norm}% strictindex
-\index{metric derivative}% strictindex
+\index{metric!derivative}% strictindex
 	Let $\alpha\in\Pp_2(\RR^d)$ be absolutely continuous, and let $\varphi\in C^2(\RR^d)$ be such that $\nabla\varphi\in L^2(\alpha;\RR^d)$ and $\nabla^2\varphi$ is bounded. For $\abs{t}$ small enough, set
 	\[
 		T_t(x)\eqdef x+t\nabla\varphi(x),
@@ -662,10 +996,15 @@ The infinitesimal comparison is most transparent along smooth Brenier perturbati
 		\leq
 		\frac{t^2}{d}\int_{\RR^d}\norm{\nabla\varphi(x)}^2\d\alpha(x).
 	\]
+	Thus the sliced infinitesimal speed is at most $d^{-1/2}$ times the Wasserstein infinitesimal speed along smooth Brenier perturbations.
 \end{prop}
 
 \begin{proof}
-	The map $T_t$ is the gradient of $\psi_t(x)=\frac12\norm{x}^2+t\varphi(x)$. Since $\nabla^2\varphi$ is bounded, $\nabla^2\psi_t=\Id+t\nabla^2\varphi$ is positive semidefinite for $\abs{t}$ small enough. Hence $\psi_t$ is convex and $T_t=\nabla\psi_t$ is a Brenier map. Its graph is cyclically monotone, so the Brenier optimality criterion gives
+	The map $T_t$ is the gradient of
+	\[
+		\psi_t(x)\eqdef \frac12\norm{x}^2+t\varphi(x).
+	\]
+	Since $\nabla^2\varphi$ is bounded, $\nabla^2\psi_t=\Id+t\nabla^2\varphi$ is positive semidefinite for $\abs{t}$ small enough. Hence $\psi_t$ is convex and $T_t=\nabla\psi_t$ is a Brenier map. Its graph is cyclically monotone, so the Brenier optimality criterion gives the optimality of $(\Id,T_t)_\sharp\alpha$, and
 	\[
 		\Wass_2(\alpha,\alpha_t)^2
 		=
@@ -673,60 +1012,110 @@ The infinitesimal comparison is most transparent along smooth Brenier perturbati
 		=
 		t^2\int\norm{\nabla\varphi(x)}^2\d\alpha(x).
 	\]
-	For each $\theta$, the coupling $(P_\theta,P_\theta\circ T_t)_\sharp\alpha$ is admissible between $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\alpha_t$, so
+	For a fixed direction $\theta$, the coupling
+	\[
+		\big(P_\theta,P_\theta\circ T_t\big)_\sharp\alpha
+	\]
+	is admissible between $(P_\theta)_\sharp\alpha$ and $(P_\theta)_\sharp\alpha_t$. Therefore
 	\[
 		\Wass_2\big((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\alpha_t\big)^2
 		\leq
 		t^2\int\abs{\dotp{\theta}{\nabla\varphi(x)}}^2\d\alpha(x).
 	\]
-	Integrating over $\theta$ and using $\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{w}}^2\d\sigma(\theta)=\norm{w}^2/d$ proves the result.
+	Integrating over the sphere and using
+	\[
+		\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{w}}^2\d\sigma(\theta)
+		=
+		\frac1d\norm{w}^2
+	\]
+	gives the sliced estimate.
 \end{proof}
 
 \begin{rem}[Sliced length and geodesic completion]\label{rem-sliced-length-not-wasserstein}
+\index{sliced length metric}% strictindex
+\index{intrinsic length metric}% strictindex
 \index{sliced Wasserstein!length}% strictindex
-	The chordal metric $\SW_2$ has an intrinsic length metric
+\index{length metric}% strictindex
+\index{geodesic!completion}% strictindex
+	There are two different geometries associated with $\SW_2$. The first is the chordal metric of Definition~\ref{def-sliced-wasserstein}, obtained by comparing all one-dimensional projections. The second is the intrinsic length metric generated by this chordal metric. If $(\alpha_t)_{t\in[0,1]}$ is a continuous curve in $(\Pp_2(\RR^d),\SW_2)$, define
+	\[
+		\mathsf L_{\SW_2}((\alpha_t)_{t\in[0,1]})
+		\eqdef
+		\sup_{0=t_0<\cdots<t_N=1}
+		\sum_{i=0}^{N-1}\SW_2(\alpha_{t_i},\alpha_{t_{i+1}}),
+	\]
+	and
 	\[
 		\SW_2^{\mathrm{len}}(\alpha,\beta)
 		\eqdef
-		\inf_{\alpha_0=\alpha,\ \alpha_1=\beta}
-		\sup_{0=t_0<\cdots<t_N=1}
-		\sum_i\SW_2(\alpha_{t_i},\alpha_{t_{i+1}}),
+		\inf_{\substack{\alpha_0=\alpha,\ \alpha_1=\beta\\
+		t\mapsto\alpha_t\ \text{continuous}}}
+		\mathsf L_{\SW_2}((\alpha_t)_{t\in[0,1]}).
 	\]
-	where the infimum is over continuous curves. This length distance is always larger than $\SW_2$, but it is not the usual $\Wass_2$ distance. Park and Slep\v{c}ev study this sliced length geometry and show that the sliced Wasserstein space is not generally a length space~\cite{ParkSlepcev2023SlicedGeometry}.
+	This length distance is always larger than the chordal distance $\SW_2$, but it should not be confused with the usual Wasserstein distance $\Wass_2$. Recent work of Park and Slep\v{c}ev gives a systematic study of this sliced length geometry and shows in particular that the sliced Wasserstein space is not generally a length space~\cite{ParkSlepcev2023SlicedGeometry}.
 
-	The preceding estimate is only an upper comparison of tangent speeds. In the smooth case, the actual sliced metric derivative involves the conditional projected velocity
+	Proposition~\ref{prop-sliced-first-order-tangent} is only an upper comparison of infinitesimal speeds. Along the same perturbation $\alpha_t=(\Id+t\nabla\varphi)_\sharp\alpha$, the $\Wass_2$ metric derivative is the full norm $\|\nabla\varphi\|_{L^2(\alpha)}$. By contrast, the sliced metric derivative is obtained by projecting and then minimizing on each one-dimensional slice. Under standard smoothness assumptions, writing $\alpha_\theta=(P_\theta)_\sharp\alpha$, the tangent formula of Park and Slep\v{c}ev~\cite{ParkSlepcev2023SlicedGeometry} gives
 	\[
-		\EE\left[\dotp{\theta}{\nabla\varphi(X)}\,\middle|\,\dotp{\theta}{X}=s\right],
-		\qquad X\sim\alpha,
+		\lim_{t\to0}\frac{\SW_2(\alpha,\alpha_t)^2}{t^2}
+		=
+		\int_{\Sphere^{d-1}}\int_\RR
+		\abs{
+		\EE\left[\dotp{\theta}{\nabla\varphi(X)}
+		\,\middle|\,\dotp{\theta}{X}=s\right]}^2
+		\d\alpha_\theta(s)\d\sigma(\theta),
+		\qquad X\sim\alpha .
 	\]
-	which is generally smaller in $L^2$ than the full projected velocity. For example, a translation by $h$ has $\SW_2$-speed $\norm{h}/\sqrt d$ with the normalization of Definition~\ref{def-sliced-wasserstein}, whereas its $\Wass_2$-speed is $\norm{h}$. Thus the length geometry induced by $\SW_2$ is projected and direction-averaged; it is not the usual $\Wass_2$ geodesic geometry.
+	Jensen's inequality gives the upper bound of Proposition~\ref{prop-sliced-first-order-tangent}, and the inequality is generally strict. Thus slicing preserves enough projected information to metrize the same topology as $\Wass_2$, but it does not preserve the same Riemannian norm.
 \end{rem}
 
 \begin{prop}[Translations separate sliced length from $\Wass_2$]\label{prop-sliced-length-translation}
 \index{sliced Wasserstein!translation}% strictindex
-	Let $\tau_h(x)=x+h$. For any $\alpha\in\Pp_2(\RR^d)$,
+\index{sliced Wasserstein!length}% strictindex
+	Let $\tau_h(x)=x+h$ for $h\in\RR^d$. For any $\alpha\in\Pp_2(\RR^d)$,
 	\[
 		\SW_2^{\mathrm{len}}\big(\alpha,(\tau_h)_\sharp\alpha\big)
 		=
 		\SW_2\big(\alpha,(\tau_h)_\sharp\alpha\big)
 		=
 		\frac{\norm{h}}{\sqrt d},
-		\qquad
+	\]
+	whereas
+	\[
 		\Wass_2\big(\alpha,(\tau_h)_\sharp\alpha\big)=\norm{h}.
 	\]
-	Hence the intrinsic length metric generated by $\SW_2$ is not $\Wass_2$ when $d>1$.
+	Consequently, even the intrinsic length metric generated by $\SW_2$ is not the usual $\Wass_2$ metric when $d>1$.
 \end{prop}
 
 \begin{proof}
-	For each $\theta$, the projection of $(\tau_h)_\sharp\alpha$ is the translate of $(P_\theta)_\sharp\alpha$ by $\dotp{\theta}{h}$. Thus the one-dimensional squared distance is $\abs{\dotp{\theta}{h}}^2$, and integration over $\theta$ gives $\SW_2^2=\norm{h}^2/d$. The path $\alpha_s=(\tau_{sh})_\sharp\alpha$ satisfies $\SW_2(\alpha_s,\alpha_t)=|s-t|\norm{h}/\sqrt d$, so its sliced length is $\norm{h}/\sqrt d$; the reverse inequality follows because every length dominates the endpoint distance. For $\Wass_2$, $\tau_h=\nabla(\frac12\norm{x}^2+\dotp{h}{x})$ is cyclically monotone, hence optimal for the quadratic cost.
+	For each direction $\theta$, the projected measure $(P_\theta)_\sharp(\tau_h)_\sharp\alpha$ is the translate of $(P_\theta)_\sharp\alpha$ by the scalar $\dotp{\theta}{h}$. Hence
+	\[
+		\Wass_2\big((P_\theta)_\sharp\alpha,(P_\theta)_\sharp(\tau_h)_\sharp\alpha\big)^2
+		=
+		\abs{\dotp{\theta}{h}}^2.
+	\]
+	After integration on the sphere,
+	\[
+		\SW_2\big(\alpha,(\tau_h)_\sharp\alpha\big)^2
+		=
+		\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{h}}^2\d\sigma(\theta)
+		=
+		\frac{\norm{h}^2}{d}.
+	\]
+	For the translation curve $\alpha_s=(\tau_{sh})_\sharp\alpha$, the same computation gives
+	\[
+		\SW_2(\alpha_s,\alpha_t)=\abs{s-t}\frac{\norm{h}}{\sqrt d}.
+	\]
+	Every partition therefore has $\SW_2$-length exactly $\norm{h}/\sqrt d$, which gives the upper bound on $\SW_2^{\mathrm{len}}$. The opposite inequality follows from the general fact that any metric distance is bounded by the length of every connecting curve.
+
+	Finally, the transport map $\tau_h=\nabla(\frac12\norm{x}^2+\dotp{h}{x})$ is the gradient of a convex function. By the Brenier cyclic-monotonicity criterion, the translation coupling is optimal for the quadratic cost, and hence the $\Wass_2$ distance is $\norm{h}$.
 \end{proof}
 
-Thus the geodesic completion suggested by slicing is a genuine sliced geometry. Straight chords in the projected-quantile Hilbert embedding below need not satisfy the consistency constraints required to come from measures on $\RR^d$, and the resulting length geometry should not be identified with the usual displacement geometry.
+The proposition gives a useful sanity check on the expression ``geodesic completion of sliced Wasserstein''. The Hilbert embedding below supplies straight chords in projected-quantile coordinates, but such chords need not satisfy the Radon consistency constraints required to come from an actual measure on $\RR^d$. The intrinsic completion is therefore a sliced, projected geometry; it is not obtained by replacing $\SW_2$ with $\Wass_2$. Bonnotte's discussion of sliced geodesics should be read with this distinction in mind: the displacement geodesics used there are the usual $\Wass_2$ geodesics along which the squared sliced distance admits convexity-type estimates, not a statement that the intrinsic length metric of $\SW_2$ is $\Wass_2$.
 
 \begin{rem}[Hilbert embedding for $\SW_2$]\label{rem-sliced-hilbert-embedding}
 \index{Hilbert!embedding}% strictindex
 	In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile functions. Hence
-\index{quantile function}% strictindex
+\index{quantile!function}% strictindex
 	\[
 		\SW_2(\alpha,\beta)^2
 		=
@@ -735,13 +1124,14 @@ Thus the geodesic completion suggested by slicing is a genuine sliced geometry. 
 		\d u\d\sigma(\theta),
 	\]
 	where $F_{\theta,\alpha}^{-1}$ is the quantile of $(P_\theta)_\sharp\alpha$. Thus $\SW_2$ is a Hilbertian distance after embedding each measure into its field of projected quantiles. Consequently, $\exp(-\gamma\SW_2^2)$ is a positive definite kernel on probability measures for every $\gamma>0$.
+\index{quantile!function}% strictindex
 \index{probability measure}% strictindex
 \index{kernel!positive definite}% strictindex
 	The compact reverse estimates in Proposition~\ref{prop-sliced-wasserstein-metric} explain why sliced distances metrize the same topology on bounded sets, while the dimension-dependent powers prevent a dimension-free bi-Lipschitz comparison with $\Wass_p$.
 \end{rem}
 
 \begin{defn}[Max-sliced Wasserstein]\label{def-sliced-variants}
-\index{sliced Wasserstein distance}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
 \index{sliced Wasserstein!max}% strictindex
 	The max-sliced distance replaces the average over directions by the most discriminating one:
 	\[
@@ -760,7 +1150,7 @@ Thus the geodesic completion suggested by slicing is a genuine sliced geometry. 
 One-dimensional slices are extremely cheap, but they may discard too much geometry in high dimension. A natural compromise is to project onto $k$-dimensional subspaces: the projected OT problems remain lower dimensional, while each projection retains correlations inside a small block of coordinates. Varying $k$ therefore interpolates between ordinary slicing and full OT.
 
 \begin{defn}[Subspace-sliced Wasserstein]\label{def-subspace-sliced-wasserstein}
-\index{sliced Wasserstein distance}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
 	Fix $1\leq k\leq d$. Subspace-sliced variants replace one-dimensional lines by $k$-dimensional orthogonal projections. If $U\in\RR^{d\times k}$ satisfies $\transp{U}U=\Id_k$, then
 	\[
 		\SW_{p,k}(\alpha,\beta)^p
@@ -782,7 +1172,7 @@ One-dimensional slices are extremely cheap, but they may discard too much geomet
 \end{defn}
 
 \begin{prop}[Basic bounds for sliced variants]\label{prop-sliced-variant-bounds}
-\index{sliced Wasserstein distance}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
 	Let $p\geq1$ and let $\alpha,\beta\in\Pp_p(\RR^d)$. With normalized spherical and Stiefel measures,
 	\[
 		\SW_p(\alpha,\beta)
@@ -800,16 +1190,28 @@ One-dimensional slices are extremely cheap, but they may discard too much geomet
 		\leq
 		\Wass_p(\alpha,\beta).
 	\]
+	For $p=2$, the averaged subspace distance satisfies the sharper estimate
+	\[
+		\SW_{2,k}(\alpha,\beta)^2
+		\leq
+		\frac{k}{d}\Wass_2(\alpha,\beta)^2.
+	\]
 \end{prop}
 
 \begin{proof}
-	The first inequality in each line follows because an $L^p$ average over a probability space is bounded by the corresponding supremum. The second inequality follows because orthogonal projections are $1$-Lipschitz: pushing any admissible coupling between $\alpha$ and $\beta$ through a projection gives an admissible coupling for the projected measures with no larger transport cost. Optimizing over couplings and then averaging or maximizing over the projection gives the result.
+	The first inequality in each line follows because an $L^p$ average over a probability space is bounded by the corresponding supremum. The second inequality follows because orthogonal projections are $1$-Lipschitz: pushing any admissible coupling between $\alpha$ and $\beta$ through a projection gives an admissible coupling for the projected measures with no larger transport cost. Optimizing over couplings and then averaging or maximizing over the projection gives the result. For $p=2$, rotational invariance of the Stiefel measure gives
+	\[
+		\int_{\mathrm{St}(d,k)}\|U^\top z\|^2\d U
+		=
+		\frac{k}{d}\|z\|^2.
+	\]
+	Apply this identity to $z=x-y$ under any coupling and then minimize over couplings.
 \end{proof}
 
 \paragraph{Min-sliced lifted transport plans.}
+\index{sliced Wasserstein!min}% strictindex
 \index{sliced Wasserstein!min transport}% strictindex
 \index{plan!transport}% strictindex
-\index{sliced Wasserstein!min}% strictindex
 
 The preceding constructions define distances between projected measures. A different use of slicing is to use a projection only as a device for building a feasible high-dimensional transport plan. For equal-weight empirical measures $\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$, sort the projected samples $\dotp{x_i}{\theta}$ and $\dotp{y_j}{\theta}$, and let $\sigma_\theta$ be the monotone matching induced by this sorting. The lifted plan
 \index{empirical!measure}% strictindex
@@ -821,14 +1223,14 @@ The preceding constructions define distances between projected measures. A diffe
 	\frac1n\sum_{i=1}^n\delta_{(x_i,y_{\sigma_\theta(i)})}
 \]
 is a genuine coupling between $\alpha$ and $\beta$ in the original space. Min-SWGG-type methods then choose the projection whose lifted plan has the smallest full-dimensional quadratic cost,
-\index{quadratic cost}% strictindex
+\index{quadratic!cost}% strictindex
 \[
 	\operatorname{MSWGG}_2(\alpha,\beta)^2
 	\eqdef
 	\min_{\theta\in\Sphere^{d-1}}
 	\int\norm{x-y}^2\d\pi_\theta(x,y).
 \]
-This quantity is not a projected distance; it is a cheap feasible-plan construction. Consequently it gives an upper bound on $\Wass_2^2(\alpha,\beta)$, and the interest is algorithmic: the plan is obtained by sorting rather than by solving a high-dimensional linear program.
+This is the min-SWGG construction of Mahey, Chapel, Gasso, Bonet and Courty~\cite{MaheyChapelGassoBonetCourty2023MinSWGG}. The quantity is not a projected distance; it is a cheap feasible-plan construction. Consequently it gives an upper bound on $\Wass_2^2(\alpha,\beta)$, and the interest is algorithmic: the plan is obtained by sorting rather than by solving a high-dimensional linear program.
 Indeed, each $\pi_\theta$ is an admissible coupling between the original measures, so
 \[
 	\Wass_2^2(\alpha,\beta)
@@ -841,8 +1243,8 @@ Indeed, each $\pi_\theta$ is an admissible coupling between the original measure
 \]
 
 \begin{alg}[Lifted min-sliced matching]\label{alg:lifted-min-sliced-matching}
-\index{sliced Wasserstein!min transport}% strictindex
 \index{sliced Wasserstein!min}% strictindex
+\index{sliced Wasserstein!min transport}% strictindex
 \textbf{Input:} Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, finite direction set $\Theta\subset\Sphere^{d-1}$.
 
 \textbf{Output:} Feasible coupling $\pi_{\theta^\star}$ induced by the selected projection direction.
@@ -874,16 +1276,20 @@ Indeed, each $\pi_\theta$ is an admissible coupling between the original measure
 \index{plan!lifted}% strictindex
 \includegraphics[width=.30\linewidth]{figures/min-sliced-transport-plan--w2-plan.pdf}
 \end{tabular}
-\caption{Lifted min-sliced plan. A one-dimensional direction is selected by a small deterministic sweep, then red and blue atoms are sorted after projection and matched in that order. The middle panel lifts this one-dimensional matching back to the plane; it is a feasible coupling but not the same object as the quadratic $W_2$ matching shown on the right. This illustrates why sliced constructions are computationally light and interpretable, while losing some of the geometry of the full transport problem.}
+\caption{\emph{Lifted min-sliced plan.} A one-dimensional direction is selected by a small deterministic sweep, then red and blue atoms are sorted after projection and matched in that order. The middle panel lifts this one-dimensional matching back to the plane; it is a feasible coupling but not the same object as the quadratic $W_2$ matching shown on the right. This illustrates why sliced constructions are computationally light and interpretable, while losing some of the geometry of the full transport problem.}
 \label{fig:min-sliced-transport-plan}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Quotient Wasserstein and Wasserstein--Procrustes}
 \index{quotient Wasserstein distance}% strictindex
-\index{Wasserstein-Procrustes}% strictindex
+\index{Wasserstein!Procrustes}% strictindex
 \label{sec-quotient-wasserstein-procrustes}
 
+This section explains how OT can factor out nuisance symmetries before comparing measures.
+
+\paragraph{Quotient distances.}
+\index{quotient Wasserstein distance}% strictindex
 Many comparison problems contain nuisance transformations: two shapes, images or point clouds should be considered close after translating, rotating or otherwise reparametrizing one of them. Quotient Wasserstein distances encode this idea by computing transport after optimizing over a group action. This construction is the metric analogue of passing from objects to shapes modulo symmetries, and connects OT with shape spaces, metamorphosis models and global-invariance variants of transport~\cite{Metamorphosis2005,zemel2017fr,alvarez2018towards}.
 \index{group action}% strictindex
 \index{shape space}% strictindex
@@ -891,6 +1297,7 @@ Many comparison problems contain nuisance transformations: two shapes, images or
 \begin{defn}[Quotient Wasserstein distance]\label{def-quotient-wasserstein}
 \index{quotient Wasserstein distance}% strictindex
 	Let a group $\mathcal G$ act on a metric space $(\Xx,d)$ by isometries, and assume that the action preserves finite $p$th moments. Write $g_\sharp\alpha$ for the push-forward of a measure $\alpha$ by $g\in\mathcal G$, and $[\alpha]\eqdef\{g_\sharp\alpha\;:\;g\in\mathcal G\}$ for its orbit. The quotient $p$-Wasserstein distance between the orbits of $\alpha,\beta\in\Pp_p(\Xx)$ is
+\index{orbit space}% strictindex
 	\[
 		\Wass_{p,\mathcal G}([\alpha],[\beta])
 		\eqdef
@@ -901,11 +1308,11 @@ Many comparison problems contain nuisance transformations: two shapes, images or
 \end{defn}
 
 \begin{prop}[Metric property on the quotient]\label{prop-quotient-wasserstein-metric}
-	If $\mathcal G$ acts by isometries and preserves $\Pp_p(\Xx)$, then $\Wass_{p,\mathcal G}$ is a pseudo-distance on $\Pp_p(\Xx)$. If, in addition, the infimum is attained between any two orbits and all orbits are closed, then it is a distance on the orbit space $\Pp_p(\Xx)/\mathcal G$. This applies in particular to continuous actions of compact groups.
+	If $\mathcal G$ acts by isometries and preserves $\Pp_p(\Xx)$, then $\Wass_{p,\mathcal G}$ is a pseudo-distance on $\Pp_p(\Xx)$. If the infimum is attained between every pair of orbits, then it is a distance on the orbit space $\Pp_p(\Xx)/\mathcal G$. This applies in particular to continuous actions of compact groups.
 \end{prop}
 
 \begin{proof}
-	Isometry of the action gives $\Wass_p(g_\sharp\al,g_\sharp\nu)=\Wass_p(\al,\nu)$, which proves the second formula in Definition~\ref{def-quotient-wasserstein}. Non-negativity and symmetry are inherited from $\Wass_p$. For the triangle inequality, choose $g_1,g_2\in\mathcal G$. Then
+	Isometry of the action gives $\Wass_p(g_\sharp\alpha,g_\sharp\beta)=\Wass_p(\alpha,\beta)$, which proves the second formula in Definition~\ref{def-quotient-wasserstein}. Non-negativity and symmetry are inherited from $\Wass_p$. For the triangle inequality, choose $g_1,g_2\in\mathcal G$. Then
 	\[
 		\Wass_p(\alpha,(g_1)_\sharp\beta)
 		+
@@ -915,13 +1322,15 @@ Many comparison problems contain nuisance transformations: two shapes, images or
 		+
 		\Wass_p((g_1)_\sharp\beta,(g_1g_2)_\sharp\gamma).
 	\]
-	Applying the triangle inequality for $\Wass_p$ and then taking infima over $g_1,g_2$ gives the result. If the infimum is attained and the quotient distance is zero, there exist $g,h\in\mathcal G$ such that $\Wass_p(g_\sharp\alpha,h_\sharp\beta)=0$, hence $g_\sharp\alpha=h_\sharp\beta$. Closed orbits then imply $[\alpha]=[\beta]$. For compact groups, continuity of the action and compactness give the required attainment.
+	Applying the triangle inequality for $\Wass_p$ and then taking infima over $g_1,g_2$ gives the result. If the infimum is attained and the quotient distance is zero, there exist $g,h\in\mathcal G$ such that $\Wass_p(g_\sharp\alpha,h_\sharp\beta)=0$, hence $g_\sharp\alpha=h_\sharp\beta$ and therefore $[\alpha]=[\beta]$. For a continuous action of a compact group, the objective is continuous on a compact parameter set, so attainment follows. Without attainment, the construction is naturally a metric only after identifying distinct orbits at zero orbit distance.
 \end{proof}
 
 \paragraph{Rigid motions and Wasserstein--Procrustes.}
+\index{quotient Wasserstein distance}% strictindex
+\index{Euclidean group}% strictindex
+\index{Wasserstein!Procrustes}% strictindex
 \index{rigid motion}% strictindex
-\index{Procrustes problem}% strictindex
-\index{Wasserstein-Procrustes}% strictindex
+\index{Procrustes!problem}% strictindex
 
 The most common example is the Euclidean group $\mathrm E(d)=\mathrm O(d)\ltimes\RR^d$. For measures on $\RR^d$, quotienting by rotations and translations gives the Wasserstein--Procrustes problem
 \[
@@ -929,9 +1338,12 @@ The most common example is the Euclidean group $\mathrm E(d)=\mathrm O(d)\ltimes
 	\int\norm{Rx+t-y}^2\d\pi(x,y).
 \]
 This is the case $p=2$ of the quotient distance; for a general exponent $p$, one replaces the quadratic cost by the $p$th power of the Euclidean distance. Replacing $\mathrm O(d)$ by $\mathrm{SO}(d)$ enforces orientation preservation. Although the translation group is noncompact, the quadratic problem is well behaved: for fixed $R$ and $\pi$, the optimal translation aligns $R\bar x$ with $\bar y$. The remaining rigid step is therefore an orthogonal Procrustes problem over the compact group $\mathrm O(d)$.
+\index{Wasserstein!Procrustes}% strictindex
+\index{Procrustes!orthogonal}% strictindex
 For empirical measures, this couples a transport problem with a rigid registration problem. Classical iterative closest point methods alternate nearest-neighbor assignment and rigid least squares~\cite{BeslMcKay1992ICP}. Wasserstein--Procrustes replaces these hard many-to-one nearest-neighbor correspondences by a mass-preserving OT plan. This makes the registration less tied to sampling density and better suited to ambiguous correspondences; closely related Wasserstein--Procrustes objectives are used for unsupervised alignment of embeddings~\cite{grave2018unsupervised}.
 \index{nearest neighbor}% strictindex
 \index{iterative closest point}% strictindex
+\index{rigid registration}% strictindex
 
 This is an extrinsic counterpart of the Gromov--Wasserstein viewpoint developed in Section~\ref{sec-gromov-wasserstein}. Procrustes alignment searches only over ambient rigid motions, whereas GW is invariant under all measure-preserving isometries of the metric-measure spaces. When both spaces are Euclidean metric-measure spaces, rigid motions preserve all within-space distances. Thus, for any two Euclidean rigid motions $g,h$,
 \index{rigid motion}% strictindex
@@ -953,9 +1365,9 @@ Combining the two displays and taking the infimum over $g,h\in\mathrm E(d)$ give
 2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]),
 \end{equation}
 for the same exponent $p$ and $\De(u,v)=|u-v|$. Thus a good Wasserstein--Procrustes registration forces small GW distortion. The converse need not hold: GW may be small because of an intrinsic correspondence that is not induced by an ambient rigid motion. The M\'emoli profile lower bound in Proposition~\ref{prop-memoli-gw-profile-lower-bound} gives the complementary intrinsic lower certificate.
-\index{Gromov-Wasserstein}% strictindex
+\index{Wasserstein!Procrustes}% strictindex
+\index{Gromov-Wasserstein@Gromov--Wasserstein}% strictindex
 \index{profile lower bound}% strictindex
-\index{Wasserstein-Procrustes}% strictindex
 
 The empirical problem naturally suggests an alternating minimization. Given a current rigid motion $(R^{(k)},t^{(k)})$, first compute the OT coupling between the registered source cloud and the target cloud,
 \index{rigid motion}% strictindex
@@ -1010,10 +1422,13 @@ or by the same formula with $R\in\mathrm{SO}(d)$ if orientation should be preser
 	Von Neumann's trace inequality gives $\tr(R^\top U\Sigma V^\top)\leq\tr(\Sigma)$ for $R\in\mathrm O(d)$, with equality for $R=UV^\top$. Under the constraint $R\in\mathrm{SO}(d)$, the same argument applies with the additional determinant constraint on $U^\top R V$, which gives the displayed diagonal correction.
 	\end{proof}
 
-Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserstein-procrustes-rigid-update} give a block-coordinate method. The objective is not jointly convex, so the scheme should be read as a registration heuristic for the quotient problem rather than as a global solver. The exact block update moves the rigid motion fully; for visualization or continuation, one may damp the displayed motion between two successive poses.
+\index{Procrustes!alternating minimization}% strictindex
+\index{rigid update}% strictindex
+	Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserstein-procrustes-rigid-update} give a block-coordinate method. The objective is not jointly convex, so the scheme should be read as a registration heuristic for the quotient problem rather than as a global solver. The exact block update moves the rigid motion fully; for visualization or continuation, one may damp the displayed motion between two successive poses.
+\index{block-coordinate method}% strictindex
 
 \begin{alg}[Alternating Wasserstein--Procrustes alignment]\label{alg:wasserstein-procrustes}
-\index{Wasserstein-Procrustes}% strictindex
+\index{Wasserstein!Procrustes}% strictindex
 \textbf{Input:} Weighted point clouds $(x_i,\a_i)_{i=1}^n$, $(y_j,\b_j)_{j=1}^m$, initial rigid motion $(R^{(0)},t^{(0)})$, tolerance $\mathrm{tol}$, choice $\mathrm O(d)$ or $\mathrm{SO}(d)$.
 
 \textbf{Output:} Last coupling $\P$ and rigid motion $(R,t)$.
@@ -1040,7 +1455,9 @@ Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserste
 \textbf{Set} \(k\leftarrow k+1\).
 \end{algblock}
 \algreturnskip
-\textbf{Return} \(\P^{(k-1)},R^{(k)},t^{(k)}\).
+\textbf{Solve} \(\P^{(k)}\in\argmin_{\P\in\CouplingsD(\a,\b)}\sum_{i,j}\P_{ij}\norm{R^{(k)}x_i+t^{(k)}-y_j}^2\).
+
+\textbf{Return} \(\P^{(k)},R^{(k)},t^{(k)}\).
 \end{alg}
 
 \begin{figure}[H]
@@ -1054,7 +1471,7 @@ Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserste
 \includegraphics[width=.19\linewidth]{figures/wasserstein-procrustes-rigid-motion--iter-05.pdf} &
 \includegraphics[width=.19\linewidth]{figures/wasserstein-procrustes-rigid-motion--iter-10.pdf}
 \end{tabular}
-\caption{Wasserstein--Procrustes alignment of two bunny silhouettes under a strong translation and a moderate rotation. The target silhouette is shown in black. The moving source silhouette is sampled by farthest-point sampling and colored from red to blue at iterations \(1,2,3,5,10\). Each step solves an equal-weight OT assignment, then updates the rigid motion by the closed-form Procrustes formula of Proposition~\ref{prop-wasserstein-procrustes-rigid-update}; faint segments show selected correspondences of the current OT assignment. The displayed motion is damped only to make the registration path visible, while the underlying update is the block-coordinate method of Algorithm~\ref{alg:wasserstein-procrustes}.}
+\caption{\emph{Wasserstein--Procrustes alignment of two bunny silhouettes under a strong translation and a moderate rotation.} The target silhouette is shown in black. The moving source silhouette is sampled by farthest-point sampling and colored from red to blue at iterations \(1,2,3,5,10\). Each step solves an equal-weight OT assignment, then updates the rigid motion by the closed-form Procrustes formula of Proposition~\ref{prop-wasserstein-procrustes-rigid-update}; faint segments show selected correspondences of the current OT assignment. The displayed motion is damped only to make the registration path visible, while the underlying update is the block-coordinate method of Algorithm~\ref{alg:wasserstein-procrustes}.}
 \label{fig:wasserstein-procrustes-rigid-motion}
 \end{figure}
 
@@ -1062,21 +1479,20 @@ Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserste
 \section{Vector Quantiles and Linear Optimal Transport}
 \index{vector quantile}% strictindex
 \index{linear!OT}% strictindex
-\index{linear optimal transport}% strictindex
 \label{sec-linear-ot}
 \label{sec-vector-quantiles-linearized-transport}
 
 Linear OT starts from the multivariate analogue of quantile coordinates. The one-dimensional quantile function represents a probability measure by the monotone map sending a fixed reference law to it; in dimension $d>1$, Brenier's theorem gives the corresponding construction after choosing an absolutely continuous reference probability $\rho$, typically the uniform law on a convex body or a standard Gaussian.
 \index{probability measure}% strictindex
-\index{Brenier theorem}% strictindex
-\index{quantile function}% strictindex
+\index{Brenier!theorem}% strictindex
+\index{quantile!function}% strictindex
 \index{linear!OT}% strictindex
 
 \paragraph{Vector quantiles.}
 \index{vector quantile}% strictindex
 
 Assume that $\rho$ is absolutely continuous. For a target law $\al$ with finite second moment, its vector quantile relative to $\rho$ is the Brenier map
-\index{Brenier map}% strictindex
+\index{Brenier!map}% strictindex
 \[
 	\T_\al=\nabla\phi_\al,
 	\qquad
@@ -1087,11 +1503,11 @@ or equivalently the solution of
 	\min_{\T_\sharp\rho=\al}
 	\int \norm{x-\T(x)}^2\d\rho(x).
 \]
-\index{quantile function}% strictindex
 This construction is canonical only after fixing $\rho$: changing the reference law changes the coordinates used to represent $\al$. Vector quantile regression uses the same idea conditionally, replacing scalar conditional quantiles by conditional Brenier maps and thereby encoding multivariate ranks and depths~\cite{carlier2016vector}.
+\index{quantile!function}% strictindex
 \index{conditional!quantile}% strictindex
 \index{vector quantile}% strictindex
-\index{Brenier map}% strictindex
+\index{Brenier!map}% strictindex
 
 \paragraph{Linearized Wasserstein coordinates.}
 \index{Wasserstein!coordinate}% strictindex
@@ -1099,13 +1515,12 @@ This construction is canonical only after fixing $\rho$: changing the reference 
 Linear OT replaces a nonlinear transport distance by a Hilbert norm between reference maps. It is useful when one reference measure is fixed and many nearby distributions must be compared cheaply. Let $T_\alpha$ be the Brenier map pushing $\rho$ to $\alpha$, understood as an element of $L^2(\rho;\RR^d)$ and hence defined only $\rho$-almost everywhere. The linear OT embedding is
 \index{reference!measure}% strictindex
 \index{linear!OT}% strictindex
-\index{linear optimal transport}% strictindex
 \begin{equation}\label{eq-lot-embedding}
 	\alpha \mapsto T_\alpha-\Id\in L^2(\rho;\RR^d),
 	\qquad
 	\LOT_\rho(\alpha,\beta)=\norm{T_\alpha-T_\beta}_{L^2(\rho)}.
 \end{equation}
-If one of the two targets equals the reference, the linearized distance is exact: for instance, $\LOT_\rho(\rho,\alpha)=\norm{T_\alpha-\Id}_{L^2(\rho)}=\Wass_2(\rho,\alpha)$. For two arbitrary targets, the coupling $(T_\alpha,T_\beta)_\sharp\rho$ is admissible but not generally optimal, so $\LOT_\rho$ is a tangent-space approximation of the Wasserstein geometry~\cite{wang2013linear}.
+If one of the two targets equals the reference, the linearized distance is exact: for instance, $\LOT_\rho(\rho,\alpha)=\norm{T_\alpha-\Id}_{L^2(\rho)}=\Wass_2(\rho,\alpha)$. For two arbitrary targets, the coupling $(T_\alpha,T_\beta)_\sharp\rho$ is admissible but not generally optimal, so $\LOT_\rho$ is a tangent-space approximation of the Wasserstein geometry~\cite{wang2013linear}. Uniqueness of the Brenier maps shows that $\LOT_\rho$ is itself a distance on the target measures for which these maps are defined.
 For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycenter is obtained by averaging maps,
 \[
 	\bar T=\sum_s\lambda_s T_{\alpha_s},
@@ -1113,7 +1528,7 @@ For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized barycen
 	\bar\alpha_{\LOT}=\bar T_\sharp\rho.
 \]
 This is exact in one dimension, where quantile functions linearize $\Wass_2$, and it is especially useful when many barycenters with changing weights must be evaluated quickly.
-\index{quantile function}% strictindex
+\index{quantile!function}% strictindex
 
 \paragraph{Principal components in linear OT coordinates.}
 \index{principal component analysis}% strictindex
@@ -1150,11 +1565,11 @@ A low-rank reconstruction, or a synthetic excursion with prescribed coefficients
 For small excursions around the mean displacement, this gives a practical tangent-space PCA for probability measures: it captures dominant modes of deformation while avoiding repeated pairwise OT computations. For large coefficients, \(T_a\) may fail to be the Brenier map from \(\rho\) to \(\alpha_a\), and may even leave the regular chart where \(T_a\) is a gradient of a convex function. Thus \(a\mapsto \alpha_a\) should be read as a chart-dependent linearized visualization rather than as an intrinsic Wasserstein geodesic. This LOT-PCA viewpoint was introduced for image variability analysis in~\cite{wang2013linear} and developed in transport-based signal analysis~\cite{thorpe2017transportation,kolouri2017optimal}; it complements intrinsic principal-geodesic or geodesic-PCA approaches, which optimize directly in the curved Wasserstein space~\cite{SeguyCuturi,bigot2017geodesic}.
 \index{covariance!operator}% strictindex
 \index{principal component analysis}% strictindex
-\index{Brenier map}% strictindex
+\index{Brenier!map}% strictindex
 \index{Wasserstein!geodesic}% strictindex
 
 Figure~\ref{fig:linear-ot-1d-pca} first shows the exact one-dimensional case. A large training set of well-separated two-Gaussian mixtures is generated with moderate component-wise location and scale variations, although only representative densities are displayed. Each density is embedded by its quantile function on a fine grid, ordinary PCA is performed in \(L^2(0,1)\), and the displayed modes are obtained by converting quantile excursions back into densities.
-\index{quantile function}% strictindex
+\index{quantile!function}% strictindex
 
 \begin{figure}[htbp]
 \centering
@@ -1170,16 +1585,16 @@ Figure~\ref{fig:linear-ot-1d-pca} first shows the exact one-dimensional case. A 
 \\[-.1em]
 \small second quantile-PCA mode & \small third quantile-PCA mode
 \end{tabular}
-\caption{One-dimensional linear OT PCA for synthetic two-Gaussian mixtures. The PCA is fit on a large training ensemble, while the dataset panel displays only representative densities and the quantile average in violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\), using slightly extrapolated coefficients \(a\) increasing from red to blue. Since the embedding is the exact quantile parametrization \(Q_\alpha\in L^2(0,1)\), this PCA is performed in exact Wasserstein coordinates rather than in an approximate tangent chart.}
+\caption{\emph{One-dimensional linear OT PCA for synthetic two-Gaussian mixtures.} The PCA is fit on a large training ensemble, while the dataset panel displays only representative densities and the quantile average in violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\), using slightly extrapolated coefficients \(a\) increasing from red to blue. Since the embedding is the exact quantile parametrization \(Q_\alpha\in L^2(0,1)\), this PCA is performed in exact Wasserstein coordinates rather than in an approximate tangent chart.}
 \index{linear!OT}% strictindex
-\index{quantile function}% strictindex
+\index{quantile!function}% strictindex
 \index{principal component analysis}% strictindex
 \label{fig:linear-ot-1d-pca}
 \end{figure}
 
-Figure~\ref{fig:linear-ot-mnist-pca} then illustrates the same construction on MNIST digit-zero images. Each image is normalized as a probability measure on the pixel grid. A Sinkhorn barycenter is used as the reference \(\rho\), entropic couplings from \(\rho\) to the training images are converted into barycentric-projection maps, and PCA is applied to the resulting displacement fields.
+Figure~\ref{fig:linear-ot-mnist-pca} then illustrates a regularized numerical approximation of the same construction on MNIST digit-zero images. Each image is normalized as a probability measure on the pixel grid. A Sinkhorn barycenter is used as the reference \(\rho\), entropic couplings from \(\rho\) to the training images are converted into barycentric-projection maps, and PCA is applied to the resulting approximate displacement fields.
 \index{Sinkhorn!barycenter}% strictindex
-\index{barycentric projection}% strictindex
+\index{barycentric!projection}% strictindex
 
 \begin{figure}[htbp]
 \centering
@@ -1203,7 +1618,7 @@ Figure~\ref{fig:linear-ot-mnist-pca} then illustrates the same construction on M
 \small third LOT-PCA mode & \small fourth LOT-PCA mode
 \end{tabular}
 \end{tabular}
-\caption{Principal components in linear OT coordinates for MNIST digit-zero histograms. The left panel shows the Sinkhorn barycenter reference \(\rho\). Each mode panel is a triptych obtained by pushing \(\rho\) through \(x\mapsto x+\bar z(x)+a e_k(x)\) with a negative, zero, and positive coefficient \(a\). The displayed densities use white for zero displayed mass and black for high displayed mass; the underlying transport computations still use the original densities, where high pixel values carry the mass. The modes capture rotations, aspect-ratio changes, and stroke-thickness deformations in the tangent chart around the barycenter.}
+\caption{\emph{Principal components in linear OT coordinates for MNIST digit-zero histograms.} The left panel shows the Sinkhorn barycenter reference \(\rho\). Each mode panel is a triptych obtained by pushing \(\rho\) through \(x\mapsto x+\bar z(x)+a e_k(x)\) with a negative, zero, and positive coefficient \(a\). The displayed densities use white for zero displayed mass and black for high displayed mass; the underlying transport computations still use the original densities, where high pixel values carry the mass. The modes capture rotations, aspect-ratio changes, and stroke-thickness deformations in the tangent chart around the barycenter.}
 \index{linear!OT}% strictindex
 \index{principal component analysis}% strictindex
 \label{fig:linear-ot-mnist-pca}
@@ -1211,9 +1626,8 @@ Figure~\ref{fig:linear-ot-mnist-pca} then illustrates the same construction on M
 
 \begin{rem}[Three Hilbertian embeddings of measures]\label{rem-three-hilbertian-measure-embeddings}
 \index{Hilbertian!embedding}% strictindex
-\index{quantile function}% strictindex
 	Several constructions in this text embed measures into Hilbert spaces, but they encode different geometries. Kernel mean embeddings send $\alpha$ to $\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances; see Section~\ref{sec-rkhs-mmd}. Quadratic sliced Wasserstein sends a measure to the collection of one-dimensional quantile functions of its projections, viewed in $L^2(\Sphere^{d-1}\times[0,1])$; see Section~\ref{sec-sliced-wasserstein}. Linear OT sends $\alpha$ to the displacement field $T_\alpha-\Id$ from a fixed reference $\rho$ in $L^2(\rho;\RR^d)$. The first construction is linear in the measure and depends on the kernel, the second is nonlinear but reduces OT to projected one-dimensional quantiles, and the third is a tangent approximation to the full Wasserstein geometry around a chosen reference.
-\index{sliced Wasserstein distance}% strictindex
+\index{sliced Wasserstein!distance}% strictindex
 \index{RKHS}% strictindex
 \index{maximum mean discrepancy}% strictindex
 \index{kernel!mean embedding}% strictindex
@@ -1239,55 +1653,55 @@ Figure~\ref{fig:linear-ot-mnist-pca} then illustrates the same construction on M
 \small linearized barycenter $\bar T_\sharp\rho$ &
 \small McCann midpoint
 \end{tabular}
-\caption{Linear OT coordinates. Fixing a reference measure $\rho$ turns each target into a map $T_\alpha$ from $\rho$ to $\alpha$, or equivalently into the displacement field $T_\alpha-\Id$. In one dimension this is exactly the quantile parametrization of $\Wass_2$, so averaging the maps toward a two-component $\alpha$ and a two-component $\beta$ gives the true Wasserstein barycenter. In two dimensions, the first panel shows the reference-to-target maps, computed on dense clouds and displayed on farthest-point subsets, with $\beta$ represented by two Gaussian components. The middle purple panel shows the linearized barycenter obtained by averaging the two maps from $\rho$. The right purple panel shows the genuine McCann midpoint between $\alpha$ and $\beta$, obtained by solving a direct OT problem between the two target clouds and interpolating at $t=1/2$.}
+\caption{\emph{Linear OT coordinates.} Fixing a reference measure $\rho$ turns each target into a map $T_\alpha$ from $\rho$ to $\alpha$, or equivalently into the displacement field $T_\alpha-\Id$. In one dimension this is exactly the quantile parametrization of $\Wass_2$, so averaging the maps toward a two-component $\alpha$ and a two-component $\beta$ gives the true Wasserstein barycenter. In two dimensions, the first panel shows the reference-to-target maps, computed on dense clouds and displayed on farthest-point subsets, with $\beta$ represented by two Gaussian components. The middle purple panel shows the linearized barycenter obtained by averaging the two maps from $\rho$. The right purple panel shows the genuine McCann midpoint between $\alpha$ and $\beta$, obtained by solving a direct OT problem between the two target clouds and interpolating at $t=1/2$.}
 \index{Wasserstein!barycenter}% strictindex
 \index{reference!measure}% strictindex
 \index{linear!OT}% strictindex
 \label{fig:dualnorms-linear-ot-embedding}
 \end{figure}
 
-\begin{prop}[Local stability of linear OT]\label{prop-linear-ot-stability}
-	Assume that the measures are supported on a fixed convex compact set, with densities bounded above and below, and that the Brenier maps from $\rho$ are regular. Then, for $\alpha,\beta$ in a sufficiently small regular neighborhood of $\rho$,
-\index{Brenier map}% strictindex
+\begin{prop}[Quantitative stability of linear OT]\label{prop-linear-ot-stability}
+	Let $X,Y\subset\RR^d$ be compact convex sets, assume that $X$ has positive Lebesgue measure, and let $\rho$ be normalized Lebesgue measure on $X$. Then there exists a constant $C=C(d,X,Y)$ such that, for all $\alpha,\beta\in\Pp(Y)$,
+\index{Brenier!map}% strictindex
 	\[
 		\Wass_2(\alpha,\beta)\leq \LOT_\rho(\alpha,\beta)
 		\quad\text{and}\quad
-		\LOT_\rho(\alpha,\beta)\leq C\Wass_2(\alpha,\beta)^\eta
+		\LOT_\rho(\alpha,\beta)
+		\leq
+		C\Wass_1(\alpha,\beta)^{2/15}.
 	\]
-	for constants $C>0$ and $\eta\in(0,1]$ depending on regularity.
 \end{prop}
 \begin{proof}
-	The first inequality is immediate: $(T_\alpha,T_\beta)_\sharp\rho$ is a feasible coupling between $\alpha$ and $\beta$. The reverse local estimate is a standard stability statement for the Monge--Amp\`ere equation under the stated regularity assumptions: changes in the target measure control changes in the Brenier potential in H\"older norms, hence control $T_\alpha-T_\beta$ in $L^2(\rho)$. In simple one-dimensional settings, quantile functions make this exact with $\eta=1$.
+	The first inequality is immediate: $(T_\alpha,T_\beta)_\sharp\rho$ is a feasible coupling between $\alpha$ and $\beta$. The second inequality is the quantitative stability theorem of M\'erigot, Delalande and Chazal~\cite{merigot2020stability}. Its proof first controls the difference of the two Kantorovich potentials in terms of $\Wass_1(\alpha,\beta)$, then combines convexity and interpolation estimates to control the gradients in $L^2(\rho)$; the resulting dimension-independent H\"older exponent is $2/15$.
 \index{feasible coupling}% strictindex
-\index{Monge-Ampere equation}% strictindex
-\index{quantile function}% strictindex
-	In several dimensions one should not read the statement as a global Lipschitz estimate in $\Wass_2$. Quantitative stability results for semi-discrete and Monge--Amp\`ere maps give H\"older exponents depending on the dimension, density bounds, support geometry and regularity; see for instance the estimates of M\'erigot, Delalande and Chazal~\cite{merigot2020stability}. Under stronger smooth perturbations of uniformly convex smooth densities, elliptic regularity can give Lipschitz dependence in stronger function norms, but converting those controls to Wasserstein perturbations generally loses powers.
-\index{semi-discrete!OT}% strictindex
-\index{elliptic regularity}% strictindex
+\index{Monge-Ampere@Monge--Amp\`ere!equation}% strictindex
+\index{quantile!function}% strictindex
+	In one dimension, quantile functions make the embedding isometric and the exponent improves to one. In several dimensions, the theorem is global but only H\"older; it should not be read as a global Lipschitz estimate in $\Wass_2$.
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Spectral and Robust Wasserstein Distances}
 \index{Wasserstein!distance}% strictindex
-\index{spectral Wasserstein distance}% strictindex
+\index{spectral Wasserstein!distance}% strictindex
 \index{robust!Wasserstein}% strictindex
-\index{robust Wasserstein distance}% strictindex
+\index{robust!Wasserstein distance}% strictindex
 \label{sec-spectral-subspace-wasserstein}
 
 Spectral OT changes the scalar quadratic cost by measuring the whole displacement covariance through a matrix gauge. The same object admits a robust projected formulation: instead of fixing one projection, one maximizes over the polar set of the gauge. Subspace robust OT is the important non-convex rank-constrained version of this idea~\cite{paty2019subspace}; spectral gauges provide its convex minimax counterpart and connect to recent spectral-gradient viewpoints such as Muon dynamics~\cite{peyre2026muon}.
+\index{spectral!gauge}% strictindex
 \index{rank constraint}% strictindex
 \index{minimax}% strictindex
 \index{polar set}% strictindex
 \index{projected formulation}% strictindex
 \index{Muon algorithm}% strictindex
 \index{displacement covariance}% strictindex
-\index{quadratic cost}% strictindex
-\index{spectral gauge}% strictindex
+\index{quadratic!cost}% strictindex
 
 \begin{defn}[Monotone spectral gauge]\label{def-monotone-spectral-gauge}
-\index{monotone spectral gauge}% strictindex
+\index{spectral!gauge}% strictindex
+\index{monotone!spectral gauge}% strictindex
 	A monotone spectral gauge on positive semidefinite matrices is a convex, positively $1$-homogeneous map $\gamma:\mathbb S_+^d\to\RR_+$ such that $\gamma(M)=0$ only for $M=0$, $\gamma(QM\transp{Q})=\gamma(M)$ for every orthogonal matrix $Q$, and
-\index{positive semidefinite matrix}% strictindex
+\index{positive!semidefinite matrix}% strictindex
 	\[
 		0\preceq M\preceq N
 		\quad\Longrightarrow\quad
@@ -1295,13 +1709,13 @@ Spectral OT changes the scalar quadratic cost by measuring the whole displacemen
 	\]
 \end{defn}
 The monotonicity condition means that increasing the displacement covariance in Loewner order cannot decrease the transport penalty.
+\index{displacement covariance}% strictindex
 
 \begin{defn}[Spectral Wasserstein distance]\label{def-spectral-wasserstein}
 \index{Wasserstein!distance}% strictindex
-\index{spectral Wasserstein distance}% strictindex
+\index{spectral Wasserstein!distance}% strictindex
 	Let $\gamma$ be a monotone spectral gauge. For a coupling $\pi\in\Couplings(\alpha,\beta)$, define its displacement covariance
-\index{displacement covariance}% strictindex
-\index{spectral gauge}% strictindex
+\index{spectral!gauge}% strictindex
 	\[
 		M_\pi\eqdef\int (x-y)(x-y)^\top\d\pi(x,y).
 	\]
@@ -1315,7 +1729,7 @@ The monotonicity condition means that increasing the displacement covariance in 
 
 The special case $\gamma(M)=\tr(M)$ gives the usual quadratic Wasserstein distance $\Wass_2$. The spectral gauge $\gamma(M)=\lambda_{\max}(M)$ instead measures the worst transported variance direction. For $A\succeq0$, define the quadratic projected transport cost
 \index{Wasserstein!distance}% strictindex
-\index{spectral gauge}% strictindex
+\index{spectral!gauge}% strictindex
 \eql{\label{eq-quadratic-projected-cost}
 	\Wass_{2,A}(\alpha,\beta)^2
 	\eqdef
@@ -1324,6 +1738,7 @@ The special case $\gamma(M)=\tr(M)$ gives the usual quadratic Wasserstein distan
 	=
 	\Wass_2((A^{1/2})_\sharp\alpha,(A^{1/2})_\sharp\beta)^2.
 }
+The last equality remains valid when $A$ is singular. One inequality follows by projecting any coupling of $(\alpha,\beta)$; for the converse, disintegrate $\alpha$ and $\beta$ over their $A^{1/2}$-images and lift a coupling of the projected measures by conditionally coupling the fibers.
 The polar set of the gauge is
 \index{polar set}% strictindex
 \eql{\label{eq-spectral-polar-set}
@@ -1369,7 +1784,7 @@ so that, for a closed gauge, $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
 	\]
 	The coupling set is convex and compact for weak convergence under compact support. Since $\gamma$ is a finite gauge on a finite-dimensional cone and vanishes only at the origin, it is equivalent to the trace norm on the slice $\tr(M)=1$, so $\mathcal B_\gamma$ is convex and compact. The map $(\pi,A)\mapsto\tr(AM_\pi)$ is affine in each variable and continuous. Sion's minimax theorem gives
 \index{minimax}% strictindex
-\index{trace norm}% strictindex
+\index{trace!norm}% strictindex
 \index{weak!convergence}% strictindex
 	\[
 		\inf_\pi\sup_{A\in\mathcal B_\gamma}\tr(AM_\pi)
@@ -1400,7 +1815,7 @@ so that, for a closed gauge, $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
 	which proves definiteness and equivalence with $\Wass_2$. The equivalence between these operator bounds and $a\tr(M)\leq\gamma(M)\leq b\tr(M)$ follows directly from the polar formula. In finite dimension, any norm restricted to the positive semidefinite cone is equivalent to the trace norm on that cone. The finite-second-moment case follows by truncation when these norm-equivalence bounds hold.
 \index{polar formula}% strictindex
 \index{operator bound}% strictindex
-\index{trace norm}% strictindex
+\index{trace!norm}% strictindex
 \end{proof}
 
 \begin{defn}[Subspace robust Wasserstein]\label{def-subspace-robust-wasserstein}
@@ -1408,7 +1823,7 @@ so that, for a closed gauge, $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$.
 \index{subspace!robust Wasserstein}% strictindex
 	For $1\leq k\leq d$, the Paty--Cuturi subspace robust Wasserstein distance is
 \index{Wasserstein!distance}% strictindex
-\index{robust Wasserstein distance}% strictindex
+\index{robust!Wasserstein distance}% strictindex
 	\[
 		\SRW_{2,k}(\alpha,\beta)
 		\eqdef
@@ -1432,11 +1847,32 @@ Thus $k=d$ gives $\gamma_d(M)=\tr(M)$ and recovers $\Wass_2$. The convex hull of
 \[
 	\enscond{A}{0\preceq A\preceq\Id,\ \tr(A)=k},
 \]
-and, since $M\succeq0$, the associated support function is the same Ky Fan gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of $\SRW_{2,k}$, while $\SRW_{2,k}$ keeps the original non-convex rank constraint. For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$ and $\mathcal B_{\gamma_1}=\enscond{A\succeq0}{\tr(A)\leq1}$.
+and, since $M\succeq0$, the associated support function is the same Ky Fan gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of $\SRW_{2,k}$, while $\SRW_{2,k}$ keeps the original non-convex rank constraint. More precisely,
+\[
+	\SRW_{2,k}(\alpha,\beta)
+	\leq
+	\Wass_{\gamma_k}(\alpha,\beta)
+	\leq
+	\Wass_2(\alpha,\beta),
+	\qquad
+	\sqrt{\frac{k}{d}}\,\Wass_2(\alpha,\beta)
+	\leq
+	\Wass_{\gamma_k}(\alpha,\beta),
+	\]
+	because
+	\[
+		\left\{\frac{k}{d}\Id\right\}
+		\cup
+		\enscond{P}{P^2=P=P^\top,\ \tr(P)=k}
+		\subset \mathcal B_{\gamma_k}
+		\subset
+		\enscond{A}{0\preceq A\preceq\Id}.
+	\]
+	For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$ and $\mathcal B_{\gamma_1}=\enscond{A\succeq0}{\tr(A)\leq1}$.
 This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-type spectral dynamics in~\cite{peyre2026muon}.
-\index{spectral dynamics}% strictindex
+\index{spectral!dynamics}% strictindex
 \index{Muon algorithm}% strictindex
-\index{spectral Wasserstein distance}% strictindex
+\index{spectral Wasserstein!distance}% strictindex
 
 \begin{figure}[H]
 \centering
@@ -1465,11 +1901,11 @@ This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-
 \multicolumn{5}{c}{\small $\lambda_{\max}$-gauge interpolation} \\[-.1em]
 \small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
 \end{tabular}
-\caption{Trace and spectral gauges for displacement covariances. The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan from a shifted two-disk source silhouette to a shifted heart-shaped target. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by approximating the robust formulation with finitely many directions. The last two rows render the corresponding displacement interpolations from very dense farthest-point silhouette samples and kernel-smoothed lifted plans, with the same convention as Figure~\ref{fig:monge-shape-mccann-interpolation}: white means zero density, and high density saturates in the red-to-blue interpolation color of the corresponding time. The spatial separation makes the different displacement geometries easier to read.}
+\caption{\emph{Trace and spectral gauges for displacement covariances.} The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan from a shifted two-disk source silhouette to a shifted heart-shaped target. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by approximating the robust formulation with finitely many directions. The last two rows render the corresponding displacement interpolations from very dense farthest-point silhouette samples and kernel-smoothed lifted plans, with the same convention as Figure~\ref{fig:monge-shape-mccann-interpolation}: white means zero density, and high density saturates in the red-to-blue interpolation color of the corresponding time. The spatial separation makes the different displacement geometries easier to read.}
 \index{displacement interpolation}% strictindex
 \index{displacement covariance}% strictindex
 \index{McCann interpolation}% strictindex
-\index{spectral gauge}% strictindex
+\index{spectral!gauge}% strictindex
 \index{plan!transport}% strictindex
 \index{plan!lifted}% strictindex
 \index{trace!gauge}% strictindex
@@ -1477,13 +1913,15 @@ This top-eigenvalue spectral Wasserstein geometry is the case connected to Muon-
 \end{figure}
 
 \section{Conditional Wasserstein Distances}
+\index{conditional!transport}% strictindex
+\index{fiberwise transport}% strictindex
 \label{sec-conditional-wasserstein-distances}
 
 Many applications compare probability laws while keeping an external condition fixed: a class label, a time variable, a spatial location, or, later in Section~\ref{sec-conditional-wasserstein-resnets}, the depth of a residual network. The resulting geometry is a fiberwise, or conditional, version of optimal transport. It is based on disintegration of measures and is closely related to conditional and constrained variants of transport used in weak transport and conditional simulation~\cite{Villani09,SantambrogioBook,backhoff2019weak,oliver2014minimization,BarboniPeyreVialard2024ConditionalResNets}.
 
 The recent literature uses this same fiberwise constraint in several complementary directions. Peszek and Poyato study heterogeneous gradient flows in the topology of fibered optimal transport, emphasizing fixed-fiber transport and PDEs with heterogeneities~\cite{PeszekPoyato2023FiberedOptimalTransport}. Hosseini, Hsu and Taghvaei develop conditional optimal transport on function spaces through triangular maps and Kantorovich relaxations, motivated by amortized Bayesian inference~\cite{HosseiniHsuTaghvaei2023ConditionalFunctionSpaces}. Chemseddine, Hagemann, Steidl and Wald introduce conditional Wasserstein distances for Bayesian inverse problems and OT flow matching, with restricted couplings that compare posterior laws condition by condition~\cite{ChemseddineHagemannSteidlWald2024ConditionalWasserstein}. Kerrigan, Migliorini and Smyth give a dynamic conditional OT formulation and use it to build simulation-free conditional flows~\cite{KerriganMiglioriniSmyth2024DynamicConditionalOT}. The definition below isolates the common geometric core: transport is ordinary within each fiber and forbidden across distinct conditions.
-\index{conditional Wasserstein distance}% strictindex
-\index{conditional optimal transport}% strictindex
+\index{conditional!Wasserstein distance}% strictindex
+\index{conditional!optimal transport}% strictindex
 \index{disintegration}% strictindex
 
 \begin{defn}[Conditional couplings and conditional OT]\label{def-conditional-ot}
@@ -1500,7 +1938,7 @@ The recent literature uses this same fiberwise constraint in several complementa
 		\pi_s(\d x,\d y)\lambda(\d s)
 	\]
 	such that $\pi_s\in\Couplings(\alpha_s,\beta_s)$ for $\lambda$-a.e. $s$. The set of such couplings is denoted $\Couplings_\lambda(\alpha,\beta)$.
-	For a Borel family of lower-semicontinuous costs $c_s:\Omega\times\Omega\to\RR\cup\{+\infty\}$ bounded from below, the conditional OT value is
+	Let $(s,x,y)\mapsto c_s(x,y)$ be jointly Borel, nonnegative, and lower semicontinuous in $(x,y)$ for every $s$. The conditional OT value is
 	\begin{equation}\label{eq-conditional-ot-general}
 		\begin{aligned}
 		\MK_c^\lambda(\alpha,\beta)
@@ -1516,8 +1954,10 @@ The recent literature uses this same fiberwise constraint in several complementa
 	\end{equation}
 \end{defn}
 
-The equality in~\eqref{eq-conditional-ot-general} follows from measurable selection of fiberwise optimal plans, or from measurable near-optimal selections when minimizers are not available. Equivalently, conditional transport is ordinary transport on $S\times\Omega$ with an infinite cost for moving mass between different values of $s$.
-\index{conditional coupling}% strictindex
+\index{measurable selection}% strictindex
+\index{fiberwise optimal plan}% strictindex
+The equality in~\eqref{eq-conditional-ot-general} is not merely a formal interchange of an infimum and an integral. The joint measurability and lower-semicontinuity assumptions make the fiberwise value measurable and permit a measurable selection of optimal plans; measurable near-minimizers give the same equality when an optimizer is unavailable. Equivalently, conditional transport is ordinary transport on $S\times\Omega$ with an infinite cost for moving mass between different values of $s$.
+\index{conditional!coupling}% strictindex
 \index{fiber}% strictindex
 
 \begin{defn}[Conditional Wasserstein distance]\label{def-conditional-wasserstein-distance}
@@ -1532,7 +1972,7 @@ The equality in~\eqref{eq-conditional-ot-general} follows from measurable select
 \end{defn}
 
 \begin{prop}[Metric property]\label{prop-conditional-wasserstein-distance}
-	For $p\geq1$, $\Wass_{p,\lambda}$ is a distance on $\Pp_{p,\lambda}(S\times\Omega)$.
+	For $p\geq1$, $\Wass_{p,\lambda}$ is a distance on $\Pp_{p,\lambda}(S\times\Omega)$. Moreover, this metric space is Polish.
 \end{prop}
 \begin{proof}
 	Non-negativity and symmetry follow from the corresponding properties of $\Wass_p$ on each fiber. If $\Wass_{p,\lambda}(\alpha,\beta)=0$, then $\Wass_p(\alpha_s,\beta_s)=0$ for $\lambda$-a.e. $s$, hence $\alpha_s=\beta_s$ for $\lambda$-a.e. $s$ and the disintegrated measures $\alpha$ and $\beta$ coincide. For the triangle inequality, let $\gamma\in\Pp_{p,\lambda}(S\times\Omega)$. Since $\Wass_p(\alpha_s,\gamma_s)\leq\Wass_p(\alpha_s,\beta_s)+\Wass_p(\beta_s,\gamma_s)$ for a.e. $s$, Minkowski's inequality in $L^p(S,\lambda)$ gives
@@ -1541,30 +1981,33 @@ The equality in~\eqref{eq-conditional-ot-general} follows from measurable select
 		\leq
 		\Wass_{p,\lambda}(\alpha,\beta)+\Wass_{p,\lambda}(\beta,\gamma).
 	\]
+	To see completeness and separability, identify a measure with the $\lambda$-a.e. equivalence class of its measurable disintegration map $s\mapsto\alpha_s\in\Pp_p(\Omega)$. Formula~\eqref{eq-conditional-wasserstein-distance} is the corresponding $L^p(S,\lambda;\Pp_p(\Omega))$ metric. Since $(\Pp_p(\Omega),\Wass_p)$ is Polish, the standard $L^p$ space of measurable metric-valued maps is Polish as well.
 \end{proof}
 
 \begin{prop}[Conditional geodesics]\label{prop-conditional-wasserstein-geodesics}
-	Assume that $(\Omega,\dist)$ is a geodesic Polish space and let $\alpha^0,\alpha^1\in\Pp_{p,\lambda}(S\times\Omega)$. For $\lambda$-a.e. $s$, choose a constant-speed $\Wass_p$ geodesic $t\mapsto\alpha^t_s$ between $\alpha^0_s$ and $\alpha^1_s$, measurably in $s$, and set
+\index{conditional!geodesic}% strictindex
+\index{dynamical plan}% strictindex
+	Assume that $(\Omega,\dist)$ is a geodesic Polish space and let $\alpha_0,\alpha_1\in\Pp_{p,\lambda}(S\times\Omega)$. For $\lambda$-a.e. $s$, choose a constant-speed $\Wass_p$ geodesic $t\mapsto\alpha_{t,s}$ between $\alpha_{0,s}$ and $\alpha_{1,s}$, measurably in $s$, and set
 	\[
-		\alpha^t(\d s,\d x)=\alpha^t_s(\d x)\lambda(\d s).
+		\alpha_t(\d s,\d x)=\alpha_{t,s}(\d x)\lambda(\d s).
 	\]
-	Then $t\mapsto\alpha^t$ is a constant-speed geodesic for $\Wass_{p,\lambda}$.
+	Then $t\mapsto\alpha_t$ is a constant-speed geodesic for $\Wass_{p,\lambda}$.
 \end{prop}
 \begin{proof}
 	For $0\leq r\leq t\leq1$, the fiberwise geodesic property gives
 	\[
-		\Wass_p(\alpha^r_s,\alpha^t_s)
+		\Wass_p(\alpha_{r,s},\alpha_{t,s})
 		=
-		(t-r)\Wass_p(\alpha^0_s,\alpha^1_s)
+		(t-r)\Wass_p(\alpha_{0,s},\alpha_{1,s})
 		\quad\text{for }\lambda\text{-a.e. }s.
 	\]
 	Integrating the $p$th power over $S$ gives
 	\[
-		\Wass_{p,\lambda}(\alpha^r,\alpha^t)
+		\Wass_{p,\lambda}(\alpha_r,\alpha_t)
 		=
-		(t-r)\Wass_{p,\lambda}(\alpha^0,\alpha^1).
+		(t-r)\Wass_{p,\lambda}(\alpha_0,\alpha_1).
 	\]
-	Hence the conditional curve has constant speed and realizes the distance between its endpoints. In Euclidean space one may take, for each $s$, an optimal plan $\pi_s\in\Couplings(\alpha^0_s,\alpha^1_s)$ and set $\alpha^t_s=((1-t)\mathrm p_1+t\mathrm p_2)_\sharp\pi_s$, where $\mathrm p_1,\mathrm p_2$ are the two coordinate projections. On a general geodesic space, the same construction uses a measurable family of optimal dynamical plans; when geodesics are non-unique, different measurable selections can produce different conditional geodesics.
+	Hence the conditional curve has constant speed and realizes the distance between its endpoints. In Euclidean space one may take, for each $s$, an optimal plan $\pi_s\in\Couplings(\alpha_{0,s},\alpha_{1,s})$ and set $\alpha_{t,s}=((1-t)\mathrm p_1+t\mathrm p_2)_\sharp\pi_s$, where $\mathrm p_1,\mathrm p_2$ are the two coordinate projections. On a general geodesic space, the same construction uses a measurable family of optimal dynamical plans. Such a family can be selected measurably in the Polish setting; when geodesics are non-unique, different selections can produce different conditional geodesics.
 \end{proof}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

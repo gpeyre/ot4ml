@@ -53,8 +53,9 @@ def show_book_figure(name, width=760):
 (sec-dual-norms)=
 ## Dual Norms and Integral Probability Metrics
 
-Dual norms generalize the $\Wass_1$ test-function principle. They are useful
-in statistics because they compare distributions by restricting the
+This section isolates the test-function viewpoint behind weak discrepancies.
+Dual norms generalize the $\Wass_1$ test-function principle and are useful in
+statistics because they compare distributions through a restricted
 discriminator class.
 
 ### Integral Probability Metrics
@@ -64,10 +65,11 @@ norm. This viewpoint designs weak discrepancies by testing signed differences
 of measures against a controlled class of functions.
 
 (def-dual-norm-ipm)=
-:::{admonition} Definition: Dual Norm and Integral Probability Metric
+:::{admonition} Definition: Dual Seminorm and Integral Probability Metric
 :class: important
-For a symmetric convex set $B$ of measurable functions, define on signed
-measures $\xi$
+Let $B$ be a nonempty symmetric convex class of measurable functions that are
+integrable against the measures under consideration. For a signed measure
+$\xi$, define the extended dual seminorm
 
 ```{math}
 :label: eq-dual-norm-cont-web
@@ -77,9 +79,13 @@ measures $\xi$
 \int_\X f(x)\,\d\xi(x).
 ```
 
-When this quantity is applied to $\alpha-\beta$ for probability measures, it
-is often called an integral probability metric.
+It is a norm when it is finite and $B$ separates signed measures. Applied to
+$\alpha-\beta$, it is an integral probability metric; it is a genuine metric
+precisely when $B$ separates probability measures.
 :::
+
+Symmetry makes the supremum equal to
+$\sup_{f\in B}|\int f\,\d\xi|$, while convexity makes $B$ a natural unit ball.
 
 The choice of the test-function class $B$ determines both the topology and the
 statistical behavior of the discrepancy {cite:p}`sriperumbudur2012empirical,sriperumbudur2009integral,sriperumbudur2008injective`.
@@ -100,7 +106,8 @@ Total variation is the canonical nontrivial example of a discrepancy that is bot
 :::{admonition} Example: $\Wass_1$ norm
 :class: ot4ml-example
 
-$\Wass_1$, as defined in {eq}`eq-w1-cont-web`, is the dual norm {eq}`eq-dual-norm-cont-web` associated with
+On zero-mass signed measures with finite first moment, the Kantorovich--Rubinstein norm underlying
+$\Wass_1$ is the extended dual seminorm {eq}`eq-dual-norm-cont-web` associated with
 
 ```{math}
 B = \enscond{f}{\Lip(f) \leq 1}
@@ -113,9 +120,11 @@ the set of 1-Lipschitz functions.
 :::{admonition} Example: Flat norm and Dudley metric
 :class: ot4ml-example
 
-If the set $B$ is bounded and separates measures, then $\norm{\cdot}_B$ is a norm on the whole space $\Mm(\Xx)$ of finite measures.
+If $B$ is uniformly bounded and separates measures, then $\norm{\cdot}_B$ is a finite norm on the whole space $\Mm(\Xx)$ of finite signed measures.
 
-This is not the case of $\Wass_1$, which is only finite on signed measures $\xi$ such that $\int_\X \d\xi=0$; otherwise $\norm{\xi}_B=+\infty$ because constants belong to the Lipschitz ball.
+This is not the case for $\Wass_1$: zero total mass is necessary, and on an
+unbounded space a finite first moment is also required. For nonzero total
+mass, $\norm{\xi}_B=+\infty$ because constants belong to the Lipschitz ball.
 
 This is remedied by imposing a bound on the value of the potential $\f$, which leads for instance to the flat norm,
 
@@ -125,19 +134,25 @@ This is remedied by imposing a bound on the value of the potential $\f$, which l
 B=\enscond{f}{\Lip(f) \leq 1 \qquad\text{and}\qquad \norm{\f}_\infty \leq 1}.
 ```
 
-On compact metric spaces, it metrizes weak convergence on the whole space $\Mm(\X)$ of finite measures.
+On compact metric spaces, it metrizes weak convergence of finite nonnegative
+measures, and weak-$\ast$ convergence on every total-variation-bounded family
+of signed measures.
 
 The finite-dimensional version is obtained from the usual $\Wass_1$ dual linear program by adding the box constraints $\abs{\fD_k}\leq1$.
 
 The flat norm is sometimes called the "Kantorovich--Rubinstein" norm {cite:p}`hanin1992kantorovich` and has been used as a fidelity term for inverse problems in imaging {cite:p}`lellmann2014imaging`.
 
-The flat norm is similar to the Dudley metric, which uses
+The flat norm is equivalent to the bounded-Lipschitz, or Dudley, metric, whose
+test class is
 
 ```{math}
 :label: eq-set-dudley
 
-B=\enscond{f}{\norm{\nabla \f}_\infty + \norm{\f}_\infty \leq 1}.
+B=\enscond{f}{\Lip(f) + \norm{f}_\infty \leq 1}.
 ```
+
+On a Euclidean domain, $\Lip(f)=\norm{\nabla f}_\infty$ for differentiable
+$f$.
 :::
 
 
@@ -200,7 +215,15 @@ $B$ imply
 \qquad (f\in B).
 ```
 
-By linearity, integrals converge for every $h\in\operatorname{span}(B)$. Let
+If $h=\sum_{j=1}^Jc_jf_j\in\operatorname{span}(B)$, then
+
+```{math}
+\left|\int h\,\d(\alpha_n-\alpha)\right|
+\le
+\left(\sum_{j=1}^J|c_j|\right)\norm{\alpha_n-\alpha}_B,
+```
+
+so integrals converge for every $h\in\operatorname{span}(B)$. Let
 $u\in\Cc(\X)$ and choose $h\in\operatorname{span}(B)$ with
 $\norm{u-h}_\infty\le\eta$. Since $\alpha_n$ and $\alpha$ are probabilities,
 
@@ -259,7 +282,7 @@ all $\Wass_p$ distances induce the same topology.
 ## Dual RKHS Norms and Maximum Mean Discrepancies
 
 Kernel methods turn probability measures into mean elements of a reproducing
-kernel Hilbert space. The resulting Hilbertian dual norms are quadratic
+kernel Hilbert space. The resulting Hilbertian dual seminorms are quadratic
 discrepancies, handled with Euclidean geometry while retaining a weak
 test-function interpretation.
 
@@ -277,6 +300,10 @@ It is conditionally positive definite if the same inequality is required only
 for zero-sum vectors, $\langle r,\mathbf{1}\rangle=0$.
 :::
 
+Here ``positive definite'' has its standard kernel-theory meaning of positive
+semidefinite. Strict positivity is an additional property, and its absence can
+make the induced discrepancy degenerate.
+
 The conditional version is the right notion for probability distances,
 because one applies the quadratic form to signed measures
 $\xi=\alpha-\beta$ of total mass zero. Adding $a(x)+a(y)$ to the kernel does
@@ -292,14 +319,17 @@ On $\RR^d$, translation-invariant kernels are most transparent in Fourier variab
 -\iint \norm{x-y}\d\xi(x)\d\xi(y)
 ```
 
-is the squared energy distance up to a dimensional constant {cite:p}`schoenberg38,szekely2004testing`.
+is exactly the customary squared energy distance
+$2\EE\norm{X-Y}-\EE\norm{X-X'}-\EE\norm{Y-Y'}$; only its Fourier
+representation carries a dimension-dependent constant
+{cite:p}`schoenberg38,szekely2004testing`.
 
 Shifted kernels replace $(-\Delta)^{-s}$ by $(-\Delta+\lambda I)^{-s}$ with $\lambda>0$. Their Fourier multiplier $(\norm{\om}^2+\lambda)^{-s}$ is bounded at the origin, hence the kernel is positive definite without imposing zero mass. These are Matern kernels; in closed form they are radial and involve a modified Bessel function {cite:p}`wendland2005scattered`. The Laplacian kernel $e^{-\norm{x-y}/\sigma}$ is a low-smoothness Matern example, while the Gaussian kernel $e^{-\norm{x-y}^2/(2\sigma^2)}$ is the infinite-smoothness limit after the usual rescaling of the Matern smoothness parameter.
 :::
 
 
 (def-kernel-mmd-norm)=
-:::{admonition} Definition: Kernel Norm and MMD
+:::{admonition} Definition: Kernel Seminorm and MMD
 :class: important
 Let $K$ be positive definite. More generally, let $K$ be conditionally
 positive definite and restrict attention to signed measures of total mass
@@ -320,16 +350,27 @@ $K$ is
 \eqdef
 \norm{\alpha-\beta}_K.
 ```
+
+It is a genuine distance when $K$ is characteristic, meaning that zero MMD
+implies $\alpha=\beta$.
 :::
 
-These norms are usually called maximum mean discrepancies in statistics and
+These seminorms are usually called maximum mean discrepancies in statistics and
 machine learning {cite:p}`gretton2012kernel,muandet2017kernel`, and kernel
-norms in shape analysis {cite:p}`Hofmann2008`. If $X,X'$ are independent with
+norms in shape analysis {cite:p}`Hofmann2008`. For a positive-definite kernel,
+if $X,X'$ are independent with
 law $\alpha$, then
 $\norm{\alpha}_K^2=\EE_{X,X'}(K(X,X'))$, whenever this expression is finite.
+For a conditionally positive kernel, fixing $x_0\in\X$ and replacing $K$ by
+
+```{math}
+\widetilde K(x,y)=K(x,y)-K(x,x_0)-K(x_0,y)+K(x_0,x_0)
+```
+
+produces a positive-definite kernel with the same energy on zero-mass measures.
 
 (prop-kernel-rkhs-dual)=
-:::{admonition} Proposition: Kernel Norm as an RKHS Dual Norm
+:::{admonition} Proposition: Kernel Seminorm as an RKHS Dual Norm
 :class: important
 Let $\mathcal{H}$ be the RKHS with reproducing kernel $K$, and assume that the
 kernel mean embedding
@@ -347,7 +388,7 @@ is well-defined. Then
 \int h(x)\,\d\xi(x),
 ```
 
-so $\norm{\cdot}_K$ is the dual norm associated with the RKHS unit ball.
+so $\norm{\cdot}_K$ is the dual seminorm associated with the RKHS unit ball.
 :::
 
 :::{dropdown} Proof
@@ -396,8 +437,15 @@ for probability measures on $\X$.
 :::
 
 :::{dropdown} Proof
-If $\operatorname{MMD}_K(\alpha_n,\alpha)\to0$, then integrals of all RKHS
-functions converge. For any $h\in\Cc(\X)$ and any $\eta>0$, choose
+If $\operatorname{MMD}_K(\alpha_n,\alpha)\to0$, then for every
+$g\in\mathcal H$,
+
+```{math}
+\left|\int g\,\d(\alpha_n-\alpha)\right|
+\le \norm{g}_{\mathcal H}\operatorname{MMD}_K(\alpha_n,\alpha)\to0.
+```
+
+For any $h\in\Cc(\X)$ and any $\eta>0$, choose
 $g\in\mathcal{H}$ with $\norm{h-g}_\infty\le\eta$. Since $\alpha_n$ and
 $\alpha$ are probabilities,
 
@@ -432,7 +480,7 @@ Further background on RKHS spaces can be found in
 :::{admonition} Remark: Universal kernels
 :class: ot4ml-remark
 
-The hypothesis in Proposition {ref}`prop-mmd-metrization` is called universality of the kernel. Equivalently, finite sums of the form $\sum_{i=1}^n a_i \Krkhs(x_i,\cdot)$ are dense in $\Cc(\Xx)$ for the uniform norm. For translation-invariant kernels on $\Xx=\RR^d$, $\Krkhs(x,y)=\Krkhs_0(x-y)$, this is equivalent, in the usual sense on compact sets or with suitable decay assumptions, to the Fourier transform not vanishing on its support {cite:p}`sriperumbudur2008injective,sriperumbudur2012empirical`.
+The hypothesis in Proposition {ref}`prop-mmd-metrization` is called universality of the kernel. Equivalently, finite sums of the form $\sum_{i=1}^n a_i K(x_i,\cdot)$ are dense in $\Cc(\X)$ for the uniform norm. For a bounded continuous translation-invariant kernel on $\RR^d$, a standard sufficient condition is that its Bochner spectral measure have support equal to all of $\RR^d$; under the usual $C_0$ assumptions this characterizes $C_0$-universality {cite:p}`sriperumbudur2008injective,sriperumbudur2012empirical`.
 :::
 
 
@@ -451,8 +499,9 @@ a^\top K_X a,
 where $(K_X)_{i,i'}=K(x_i,x_{i'})$. In particular, if
 $\alpha=\sum_i a_i\delta_{x_i}$ and
 $\beta=\sum_i b_i\delta_{x_i}$ are supported on the same point cloud, then
-$\norm{\alpha-\beta}_K^2=(a-b)^\top K_X(a-b)$, a Euclidean quadratic form on
-the simplex. For two arbitrary discrete measures,
+$\norm{\alpha-\beta}_K^2=(a-b)^\top K_X(a-b)$, a Euclidean seminorm on
+the simplex. It is nondegenerate exactly when $r^\top K_Xr>0$ for every
+nonzero zero-sum vector $r$. For two arbitrary discrete measures,
 
 ```{math}
 :label: eq-mmd-two-clouds-web
@@ -469,22 +518,22 @@ the simplex. For two arbitrary discrete measures,
 ## Phi-Divergences
 
 This section develops divergences based on pointwise density ratios. They are
-computationally simple and statistically classical, but they do not see small
-spatial displacements between singular measures.
+computationally simple and statistically classical, but on nondiscrete spaces
+they generally induce a topology much stronger than weak convergence and do
+not see small spatial displacements between mutually singular measures.
 
 ### Definition by Density Ratios
 
-Phi-divergences are simpler to compute, typically $O(n)$ for discrete
-distributions, but they never metrize weak-$\ast$ convergence on singular
-measures. Another route is possible through Bregman divergences, which may
-metrize weak-$\ast$ convergence when the associated entropy functional is
-weakly regular.
+On a common discrete support, phi-divergences cost only $O(n)$ to evaluate,
+but on a continuous space they generally fail to metrize weak convergence.
+Bregman divergences provide a different convex construction and should not be
+conflated with density-ratio divergences.
 
 (def_entropy)=
 :::{admonition} Definition: Entropy Function
 :class: important
 A function $\phi:\RR\to\RR\cup\{+\infty\}$ is an entropy function if it is
-lower semicontinuous, convex, has domain contained in $[0,+\infty)$, and
+proper, lower semicontinuous, convex, has domain contained in $[0,+\infty)$, and
 $\operatorname{dom}\phi$ intersects $(0,+\infty)$. Its growth at infinity is
 described by
 
@@ -504,7 +553,8 @@ also known as a Ciszar divergence or $f$-divergence
 
 :::{admonition} Definition: $\phi$-Divergence
 :class: important
-Let $\phi$ be an entropy function. For $\alpha,\beta\in\mathcal{M}(\X)$, let
+Let $\phi$ be an entropy function and let
+$\alpha,\beta\in\mathcal{M}_+(\X)$. Write
 
 ```{math}
 \alpha
@@ -528,7 +578,8 @@ D_\phi(\alpha|\beta)
 \phi'_\infty\,\alpha^\perp(\X),
 ```
 
-if $\alpha,\beta$ are nonnegative, and $+\infty$ otherwise.
+with the convention $0\cdot(+\infty)=0$, and extend it by $+\infty$ whenever
+either argument is not a nonnegative measure.
 :::
 
 Here $\alpha^\perp$ is the part of $\alpha$ singular with respect to $\beta$.
@@ -624,18 +675,19 @@ D_\phi(\alpha|\beta)
 \int \psi(a,b)\,\d m.
 ```
 
-For probability measures, $\int a\,\d m=\int b\,\d m=1$. Jensen's inequality
-and $\psi(1,1)=\phi(1)=0$ give
+For probability measures, $m/2$ is a probability and $a+b=1$. Jensen's
+inequality and the $1$-homogeneity of $\psi$ give
 
 ```{math}
-D_\phi(\alpha|\beta)
+\frac12D_\phi(\alpha|\beta)
 \ge
-\psi\left(\int a\,\d m,\int b\,\d m\right)
-=0.
+\psi\left(\frac12\int a\,\d m,\frac12\int b\,\d m\right)
+=\psi(1/2,1/2)=0.
 ```
 
-If $\phi$ is strictly convex, equality in Jensen forces $a=b$ almost
-everywhere, hence $\alpha=\beta$.
+If $\phi$ is strictly convex, its perspective is strictly convex on the line
+$u+v=1$. Equality therefore forces $a=b=1/2$ almost everywhere and hence
+$\alpha=\beta$.
 :::
 
 ### Classical Examples and Topology
@@ -665,7 +717,9 @@ s\log(s)-s+1 & \textnormal{for } s>0 , \\
 :::{admonition} Example: Total variation
 :class: ot4ml-example
 
-The total variation distance $\TV \eqdef \Divergm_{\phi_{\TV}}$ is the divergence associated to
+With the convention of this book, total variation
+$\TV \eqdef \Divergm_{\phi_{\TV}}$ is the full variation norm, without the
+factor $1/2$ sometimes used for probabilities. It is associated with
 
 ```{math}
 :label: eq-tv-entropy
@@ -697,16 +751,20 @@ If $\al$ is discrete as in {eq}`eq-div-disc-meas`, then the TV norm is the $\ell
 
 The total variation norm {eq}`eq-defn-tv` defines the so-called "strong" topology on the space of measures.
 
-On a compact domain $\X$ of radius $R$, one has
+For probability measures on a compact metric space,
 
 ```{math}
-\Wass_1(\al,\be) \leq R \norm{\al-\be}_{\TV}
+\Wass_1(\al,\be)
+\leq \frac{\operatorname{diam}(\X)}{2}\norm{\al-\be}_{\TV}.
 ```
 
-so that this strong notion of convergence implies the weak convergence metrized by Wasserstein distances.
+Indeed, a $1$-Lipschitz test function can be shifted so that its sup norm is
+at most $\operatorname{diam}(\X)/2$. Thus total-variation convergence implies
+weak convergence.
 
-The converse is, however, not true, since $\de_x$ does not converge strongly to $\de_y$ if $x \rightarrow y$ (note that
-$\norm{\de_x-\de_y}_{\TV}=2$ if $x \neq y$).
+The converse is false: if $x_n\to x$ with $x_n\ne x$, then
+$\delta_{x_n}\rightharpoonup\delta_x$ but
+$\norm{\delta_{x_n}-\delta_x}_{\TV}=2$ for every $n$.
 
 A chief advantage is that $\Mm_+^1(\Xx)$ (once again on a compact ground space $\X$) is compact for the weak topology so that from any sequence of probability measures $(\al_k)_k$, one can always extract a converging subsequence, which makes it a suitable space for several optimization problems.
 :::
@@ -724,14 +782,17 @@ family
 \qquad(\gamma\ne0,1)
 ```
 
-interpolates between the Pearson $\chi^2$ divergence at $\gamma=2$, a
-Hellinger-type behavior at $\gamma=1/2$, and, by taking limits, the KL
+interpolates, up to conventional multiplicative normalizations, between
+Pearson's $\chi^2$ divergence at $\gamma=2$, Hellinger behavior at
+$\gamma=1/2$, and, by taking limits, the KL
 divergence as $\gamma\to1$ and the reverse KL or Burg entropy
 $\phi_0(s)=-\log s+s-1$ as $\gamma\to0$. The Hellinger divergence is often
-written with $\phi_H(s)=(\sqrt{s}-1)^2$; for measures with densities,
+written with $\phi_H(s)=(\sqrt{s}-1)^2$. If
+$\alpha=\rho_\alpha\lambda$ and $\beta=\rho_\beta\lambda$, then
 $\operatorname{Hellinger}(\alpha,\beta)
-=\norm{\sqrt{\rho_\alpha}-\sqrt{\rho_\beta}}_{L^2}$. The Jensen--Shannon
-divergence is the symmetrized and bounded KL-to-the-mixture divergence
+=\norm{\sqrt{\rho_\alpha}-\sqrt{\rho_\beta}}_{L^2(\lambda)}$. The
+Jensen--Shannon distance {cite:p}`endres2003new,osterreicher2003new` is the square root of the symmetrized, bounded
+KL-to-the-mixture divergence
 
 ```{math}
 \operatorname{JS}(\alpha,\beta)^2
@@ -741,8 +802,14 @@ divergence is the symmetrized and bounded KL-to-the-mixture divergence
 \frac12\operatorname{KL}\!\left(\beta\middle|\frac{\alpha+\beta}{2}\right),
 ```
 
-generated, up to an irrelevant affine term, by
-$\phi_{\operatorname{JS}}(s)=s\log s-(s+1)\log((s+1)/2)$. Total variation,
+and $0\le\operatorname{JS}(\alpha,\beta)^2\le\log2$. Its exact generator is
+
+```{math}
+\phi_{\operatorname{JS}}(s)
+=\frac12\left[s\log s-(s+1)\log\left(\frac{s+1}{2}\right)\right].
+```
+
+Total variation,
 generated by $|s-1|$, is exceptional because it is both a $\phi$-divergence
 and an integral probability metric.
 
@@ -779,7 +846,7 @@ spatial displacement.
 :::{admonition} Remark: $\phi$-divergences versus Bregman divergences
 :class: ot4ml-remark
 
-Except for KL-type entropies, $\phi$-divergences should not be confused with Bregman divergences. A $\phi$-divergence compares measures pointwise through the density ratio $\d\alpha/\d\beta$ and is invariant under measurable changes of variables. A Bregman divergence is generated by a convex functional on a linear space and compares two points through first-order Taylor error. KL is special because the integral entropy $\alpha\mapsto\int \rho\log\rho$ produces a Bregman divergence whose density-ratio form is also a $\phi$-divergence.
+Except for KL-type entropies, $\phi$-divergences should not be confused with Bregman divergences. A $\phi$-divergence compares measures pointwise through the density ratio $\d\alpha/\d\beta$. It is invariant under measurable bijections and cannot increase under measurable coarse-graining or a Markov kernel {cite:p}`ciszar1967information`. A Bregman divergence is generated by a convex functional on a linear space and measures first-order Taylor error. KL is special because the integral entropy $\alpha\mapsto\int \rho\log\rho$ produces a Bregman divergence whose density-ratio form is also a $\phi$-divergence.
 :::
 
 
@@ -789,15 +856,15 @@ The following formula turns a pointwise density-ratio penalty into a dual
 optimization problem over test functions. It is the analogue, for
 $\phi$-divergences, of the Kantorovich dual formula for transport costs.
 
-:::{admonition} Proposition: Dual Expression for $\phi$-Divergences
+:::{admonition} Proposition: Variational Representation of a $\phi$-Divergence
 :class: important
-A $\phi$-divergence can be expressed using the positive-domain Legendre
-transform
+Assume that $\X$ is compact. Since $\phi$ is extended by $+\infty$ on
+negative arguments, define its Legendre transform by
 
 ```{math}
-\phi^{*,\ge0}(s)
+\phi^*(s)
 \eqdef
-\sup_{t\ge0}\, st-\phi(t)
+\sup_{r\ge0}\{sr-\phi(r)\}.
 ```
 
 as
@@ -806,20 +873,17 @@ as
 :label: eq-dual-div
 D_\phi(\alpha|\beta)
 =
-\sup_f
+\sup_{f\in\Cc(\X)}
 \left\{
 \int_\X f(x)\,\d\alpha(x)
--
-\int_\X \phi^{*,\ge0}(f(x))\,\d\beta(x)
+-\int_\X \phi^*(f(x))\,\d\beta(x)
 \right\}.
 ```
 
 Equivalently,
 
 ```{math}
-D_\phi^*(f|\beta)
-=
-\int_\X \phi^{*,\ge0}(f(x))\,\d\beta(x).
+D_\phi^*(f|\beta)=\int_\X \phi^*(f(x))\,\d\beta(x).
 ```
 :::
 
@@ -842,10 +906,10 @@ D_\phi^*(f|\beta)
 \d\beta(x).
 ```
 
-This is the displayed integral of $\phi^{*,\ge0}$. Fenchel--Moreau gives the
-dual expression. For a general entropy, the same argument is applied to the
-perspective with its recession term; the singular part is encoded by the
-effective domain of $\phi^{*,\ge0}$.
+This is the displayed integral of $\phi^*$. For finite $\phi'_\infty$, the
+upper endpoint of $\operatorname{dom}\phi^*$ encodes the singular recession
+term. Convexity, weak-$\ast$ lower semicontinuity, and Fenchel--Moreau then give
+the dual expression.
 :::
 
 (sec-gan-duality)=
@@ -861,10 +925,10 @@ The goal is to fit a generative parametric model
 $\alpha_\theta=(g_\theta)_\sharp\zeta$ to empirical data
 
 ```{math}
-\beta=\frac1m\sum_j\delta_{y_j},
+\beta=\frac1m\sum_{j=1}^m\delta_{y_j},
 ```
 
-where $\zeta$ is a fixed density over the latent space and
+where $\zeta$ is a fixed probability measure on the latent space and
 $g_\theta:\mathcal{Z}\to\X$ is the generator, often a neural network.
 
 ### Divergence-Based Adversarial Losses
@@ -886,7 +950,7 @@ D_\phi^*(f|\beta)
 \left\{
 \int_\mathcal{Z} f(g_\theta(z))\,\d\zeta(z)
 -
-\frac1m\sum_j\phi^*(f(y_j))
+\frac1m\sum_{j=1}^m\phi^*(f(y_j))
 \right\}.
 ```
 
@@ -897,33 +961,36 @@ saddle problem
 \min_\theta\max_\xi
 \int_\mathcal{Z} f_\xi(g_\theta(z))\,\d\zeta(z)
 -
-\frac1m\sum_j\phi^*(f_\xi(y_j)).
+\frac1m\sum_{j=1}^m\phi^*(f_\xi(y_j)).
 ```
 
-The original vanilla GAN {cite:p}`GAN` is this construction for the
-Jensen--Shannon generator
+For fixed $\theta$, restricting the discriminator gives a lower bound on the
+exact divergence. This distinction is essential for empirical data: if
+$\beta$ is discrete and $\alpha_\theta$ is non-atomic, a superlinear
+divergence is $+\infty$, while the restricted objective can remain finite.
+
+The original vanilla GAN {cite:p}`GAN` corresponds, up to an additive
+constant and discriminator reparametrization, to the unscaled
+Jensen--Shannon generator $\widehat\phi_{\operatorname{JS}}=2\phi_{\operatorname{JS}}$,
 
 ```{math}
-\phi_{\operatorname{JS}}(s)
+\widehat\phi_{\operatorname{JS}}(s)
 =
 s\log s-(s+1)\log\frac{s+1}{2},
 \qquad
-\phi_{\operatorname{JS}}^*(u)
+\widehat\phi_{\operatorname{JS}}^*(u)
 =
 -\log(2-e^u),
 \quad u<\log2,
 ```
 
-up to affine normalizations and the usual reparametrization of the potential
-by a discriminator with values in $(0,1)$. In practice the min--max problem is
-solved by alternating stochastic gradient descent/ascent. Unlike the
-convex-concave variational formula, the neural parametrization is nonconvex in
-$\theta$ and nonconcave in $\xi$, which explains instability and mode-collapse
-pathologies. These losses estimate density ratios, which is meaningful when
-the measures overlap but can saturate when the model and data are mutually
-singular.
-For example, the Jensen--Shannon divergence is already maximal for disjoint
-supports.
+Thus $D_{\widehat\phi_{\operatorname{JS}}}=2\operatorname{JS}^2$. In practice
+the min--max problem is solved by alternating stochastic gradient
+descent/ascent. Although the unrestricted maximization is concave in $f$,
+neural parametrization generally destroys concavity in $\xi$; the generator
+problem is likewise nonconvex in $\theta$. Density-ratio losses can also
+saturate on singular measures: $\operatorname{JS}^2$ reaches its maximum
+$\log2$ on disjoint supports.
 
 ### Dual Norms and Integral Probability Metrics
 
@@ -938,30 +1005,32 @@ metric:
 \left\{
 \int_\mathcal{Z} f(g_\theta(z))\,\d\zeta(z)
 -
-\frac1m\sum_j f(y_j)
+\frac1m\sum_{j=1}^m f(y_j)
 \right\}.
 ```
 
 MMD-GANs take $B$ to be a unit ball in an RKHS {cite:p}`MMD-GAN`;
 Wasserstein GANs take $B$ to be a Lipschitz ball, following
 Kantorovich--Rubinstein duality {cite:p}`WassersteinGAN,FrognerNIPS`. The
-advantage is topological: for bounded continuous RKHS balls, or for bounded
-Lipschitz balls on compact spaces, the objective is weakly continuous. It can
+advantage is topological: for a continuous kernel on a compact space, the
+RKHS unit ball is uniformly bounded and equicontinuous, while the normalized
+Lipschitz ball is compact by Arzela--Ascoli. The objective is therefore weakly
+continuous. It can
 therefore compare singular empirical and generated measures through test
 functions instead of requiring pointwise density ratios. The price is that the
 discriminator class must be controlled geometrically, either by a kernel norm,
 a Lipschitz constraint, or a related regularization.
 
-Wasserstein GANs originally used weight clipping as a proxy for enforcing
-$f_\xi\in\{f:\operatorname{Lip}(f)\le1\}$. This parameter set is both smaller
-than the true Lipschitz ball and nonconvex, so clipping should be understood
-as a practical heuristic rather than a faithful implementation of the
-Kantorovich--Rubinstein dual constraint.
-
 :::{admonition} Remark: Weight clipping is only a proxy
 :class: ot4ml-remark
 
-Wasserstein GANs originally used weight clipping, constraining $\norm{\xi}_\infty \leq 1$ as a proxy for enforcing $\f_\xi \in B = \enscond{f}{\Lip(f) \leq 1}$. This parameter set is both smaller than the true Lipschitz ball and non-convex, so clipping should be understood as a practical heuristic rather than a faithful implementation of the Kantorovich--Rubinstein dual constraint.
+Wasserstein GANs originally used weight clipping, constraining
+$\norm{\xi}_\infty\leq1$ as a proxy for enforcing
+$f_\xi\in\{f:\operatorname{Lip}(f)\leq1\}$. The parameter box is convex, but
+its image through a neural network is neither the full Lipschitz ball nor
+generally a convex function class, and parameter optimization remains
+nonconcave. Clipping is therefore a heuristic rather than a faithful
+implementation of the Kantorovich--Rubinstein constraint.
 :::
 
 (ex-imitation-learning-ot)=

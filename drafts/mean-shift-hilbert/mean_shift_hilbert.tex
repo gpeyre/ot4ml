@@ -1,0 +1,569 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,
+  citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\conv}{\operatorname{conv}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\osc}{\operatorname{osc}}
+\newcommand{\diam}{\operatorname{diam}}
+\newcommand{\dH}{d_{\mathrm H}}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Pcal}{\mathcal{P}}
+\newcommand{\Wass}{\mathcal{W}}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+
+\title{Mean Shift through Hilbert's Projective Metric\\
+  \large A Sinkhorn-Style Convergence Argument}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Blurring mean shift repeatedly replaces every particle by a kernel-weighted
+average of the current cloud.  For a strictly positive kernel, each update is
+therefore multiplication by a positive row-stochastic matrix, although this
+matrix changes with the particle positions.  This note gives a short
+convergence proof based on the same projective contraction mechanism used for
+Sinkhorn scaling.  Birkhoff's theorem contracts Hilbert's metric on the
+positive cone; linearizing this metric at the constant ray gives Hopf's
+oscillation seminorm, whose exact Markov contraction factor is Dobrushin's
+coefficient.  A uniform projective bound consequently yields geometric
+consensus for discrete mean shift and exponential consensus for its
+continuous-time limit.  The argument also makes precise what the analogy with
+Sinkhorn does, and does not, imply.
+\end{abstract}
+
+\section{Blurring mean shift as state-dependent Markov averaging}
+
+Classical mean shift moves a query point toward a kernel-weighted barycenter of
+a \emph{fixed} data set~\cite{FukunagaHostetler1975,ComaniciuMeer2002MeanShift}.
+Here we study the blurring, or self-consistent, variant: every particle moves
+and the averaging measure is recomputed after each update
+\cite{Chen2015BlurringMeanShift}.  This distinction is essential because only
+the self-consistent dynamics is a consensus system.
+
+Let $a_i>0$, with $\sum_{i=1}^n a_i=1$, and let
+$X=(x_1,\ldots,x_n)^\top\in(\R^d)^n$.  Given a positive kernel
+$K:\R^d\times\R^d\to(0,+\infty)$, define
+\begin{equation}\label{eq:kernel-markov}
+  (K_X)_{ij}=K(x_i,x_j),
+  \qquad
+  A=\diag(a_1,\ldots,a_n),
+  \qquad
+  P_X=\diag(K_Xa)^{-1}K_XA .
+\end{equation}
+The entries of $P_X$ are
+\begin{equation}\label{eq:mean-shift-weights}
+  (P_X)_{ij}
+  =
+  \frac{a_jK(x_i,x_j)}{\sum_{\ell=1}^n a_\ell K(x_i,x_\ell)}.
+\end{equation}
+Thus $P_X>0$ and $P_X\one=\one$.  Its $i$th row is the probability law used to
+average the cloud from the viewpoint of $x_i$.
+
+For a damping parameter $0<\tau\leq1$, discrete blurring mean shift is
+\begin{equation}\label{eq:discrete-mean-shift}
+  X^{k+1}
+  =
+  (1-\tau)X^k+\tau P_{X^k}X^k.
+\end{equation}
+The choice $\tau=1$ is the full barycentric update.  Its continuous-time limit
+is the nonautonomous consensus system
+\begin{equation}\label{eq:continuous-mean-shift}
+  \dot X(t)
+  =
+  \bigl(P_{X(t)}-I\bigr)X(t).
+\end{equation}
+Every new position and every instantaneous target $P_X X$ belongs to the
+convex hull of the current positions.  Consequently the convex hull is nested
+along either dynamics.  In particular, if
+\begin{equation*}
+  C_0=\conv\{x_1^0,\ldots,x_n^0\},
+\end{equation*}
+then all subsequent configurations remain in the compact convex set $C_0$.
+
+\section{From Hilbert contraction to oscillation contraction}
+
+The projective argument is most transparent for a fixed positive matrix.  We
+first recall the metric used in the convergence analysis of Sinkhorn scaling.
+
+\begin{definition}[Hilbert metric and oscillation]
+For $u,v\in\R_{++}^n$, Hilbert's projective metric is
+\begin{equation}\label{eq:hilbert}
+  \dH(u,v)
+  =
+  \max_i\log\frac{u_i}{v_i}
+  -
+  \min_i\log\frac{u_i}{v_i}.
+\end{equation}
+For $z\in\R^n$, Hopf's oscillation seminorm is
+\begin{equation}\label{eq:oscillation}
+  \osc(z)=\max_i z_i-\min_i z_i.
+\end{equation}
+Both quantities ignore the constant direction: $\dH$ is invariant under
+positive rescaling, while $\osc(z+c\one)=\osc(z)$.
+\end{definition}
+
+The two geometries are related exactly by logarithmic coordinates,
+\begin{equation}\label{eq:hilbert-log}
+  \dH(e^z,e^{z'})=\osc(z-z'),
+\end{equation}
+and infinitesimally by
+\begin{equation}\label{eq:hilbert-linearization}
+  \dH(\one+s z,\one)
+  =
+  |s|\,\osc(z)+o(|s|)
+  \qquad (s\to0).
+\end{equation}
+
+For a positive matrix $L$, introduce its projective cross-ratio and Birkhoff
+factor
+\begin{equation}\label{eq:birkhoff-factor}
+  \eta(L)
+  =
+  \max_{i,\ell,j,r}
+  \frac{L_{ij}L_{\ell r}}{L_{ir}L_{\ell j}},
+  \qquad
+  q(L)
+  =
+  \frac{\sqrt{\eta(L)}-1}{\sqrt{\eta(L)}+1}
+  =
+  \tanh\!\left(\frac{\log\eta(L)}{4}\right).
+\end{equation}
+
+\begin{theorem}[Birkhoff contraction]\label{thm:birkhoff}
+For every positive matrix $L$ and all $u,v>0$,
+\begin{equation}\label{eq:birkhoff-contraction}
+  \dH(Lu,Lv)
+  \leq
+  q(L)\dH(u,v).
+\end{equation}
+\end{theorem}
+
+This is Birkhoff's cone-contraction theorem~\cite{Birkhoff1957}.  Franklin and
+Lorenz used precisely this result to obtain geometric convergence of positive
+matrix scaling~\cite{FranklinLorenz1989}.
+
+For mean shift, the state coordinates are not positive vectors and the matrix
+changes at every iteration.  The correct bridge is to linearize
+Theorem~\ref{thm:birkhoff} at the fixed projective ray generated by $\one$.
+
+\begin{proposition}[Hilbert contraction linearizes to consensus contraction]
+\label{prop:hilbert-to-oscillation}
+Let $P>0$ be row-stochastic.  Then, for every $z\in\R^n$,
+\begin{equation}\label{eq:oscillation-birkhoff}
+  \osc(Pz)
+  \leq
+  q(P)\osc(z).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Apply Theorem~\ref{thm:birkhoff} to $u_s=e^{sz}$ and $v=\one$.  Since
+$P\one=\one$,
+\begin{equation*}
+  \dH(Pe^{sz},\one)
+  \leq
+  q(P)\dH(e^{sz},\one)
+  =
+  q(P)|s|\osc(z).
+\end{equation*}
+Moreover,
+$Pe^{sz}=\one+sPz+O(s^2)$, so
+$\log(Pe^{sz})=sPz+O(s^2)$.  Divide by $|s|$ and let $s\to0$ to obtain
+\eqref{eq:oscillation-birkhoff}.
+\end{proof}
+
+The exact linear contraction factor has a classical probabilistic expression.
+
+\begin{proposition}[Dobrushin coefficient]\label{prop:dobrushin}
+For a row-stochastic matrix $P$, define
+\begin{equation}\label{eq:dobrushin}
+  \delta(P)
+  =
+  \frac12\max_{i,\ell}\sum_j|P_{ij}-P_{\ell j}|
+  =
+  1-min_{i,\ell}\sum_j\min(P_{ij},P_{\ell j}).
+\end{equation}
+Then
+\begin{equation}\label{eq:dobrushin-contraction}
+  \osc(Pz)\leq\delta(P)\osc(z)
+  \qquad\text{for every }z\in\R^n,
+\end{equation}
+and $\delta(P)$ is the smallest possible constant.  If $P>0$, then
+\begin{equation}\label{eq:dobrushin-birkhoff}
+  \delta(P)\leq q(P)<1.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+For two rows $p$ and $p'$, remove their common mass
+$r_j=\min(p_j,p'_j)$.  The two residual positive measures have the same total
+mass
+\begin{equation*}
+  1-\sum_jr_j=\frac12\sum_j|p_j-p'_j|.
+\end{equation*}
+Their integrals against $z$ can therefore differ by at most this mass times
+$\osc(z)$.  Taking the largest difference between two output coordinates gives
+\eqref{eq:dobrushin-contraction}; choosing $z$ as an indicator of the positive
+part of a maximizing row difference proves sharpness.  Inequality
+\eqref{eq:dobrushin-birkhoff} follows from
+Proposition~\ref{prop:hilbert-to-oscillation}.  This relation between
+Dobrushin contraction, Hopf oscillation and the infinitesimal Hilbert metric is
+developed systematically in~\cite{GaubertQu2015}.
+\end{proof}
+
+\section{Projective convergence of blurring mean shift}
+
+We now apply the preceding fixed-matrix result to the state-dependent matrices
+$P_X$.  The key observation is that row normalization and the particle weights
+do not alter projective cross-ratios.  Indeed,
+\begin{equation}\label{eq:cross-ratio-cancellation}
+  \frac{(P_X)_{ij}(P_X)_{\ell r}}
+       {(P_X)_{ir}(P_X)_{\ell j}}
+  =
+  \frac{K(x_i,x_j)K(x_\ell,x_r)}
+       {K(x_i,x_r)K(x_\ell,x_j)}.
+\end{equation}
+This is the projective counterpart of the fact that multiplication by positive
+diagonal matrices is an isometry of Hilbert's metric.
+
+For a configuration $X$, write
+\begin{equation}\label{eq:cloud-diameter}
+  D(X)=\max_{i,\ell}\norm{x_i-x_\ell}.
+\end{equation}
+For every unit vector $\theta\in\R^d$, let
+$z_\theta=X\theta\in\R^n$.  The elementary support-function identity
+\begin{equation}\label{eq:diameter-directional}
+  D(X)
+  =
+  \sup_{\norm{\theta}=1}\osc(z_\theta)
+\end{equation}
+reduces contraction in $\R^d$ to scalar oscillation contraction.
+
+\begin{theorem}[Sinkhorn-style consensus bound]\label{thm:mean-shift-consensus}
+Assume that $K$ is Lipschitz and strictly positive on $C_0\times C_0$, and
+set
+\begin{equation}\label{eq:kernel-bounds}
+  m=\min_{C_0\times C_0}K>0,
+  \qquad
+  M=\max_{C_0\times C_0}K<+\infty,
+  \qquad
+  q=\frac{M-m}{M+m}<1.
+\end{equation}
+Then the following statements hold.
+
+\begin{enumerate}
+\item For the damped discrete dynamics~\eqref{eq:discrete-mean-shift}, let
+\begin{equation}\label{eq:damped-factor}
+  q_\tau=1-\tau(1-q)<1.
+\end{equation}
+Then
+\begin{equation}\label{eq:discrete-diameter-rate}
+  D(X^k)\leq q_\tau^kD(X^0).
+\end{equation}
+There exists $x_\infty\in C_0$ such that every particle converges to
+$x_\infty$, with
+\begin{equation}\label{eq:discrete-point-rate}
+  \max_i\norm{x_i^k-x_\infty}
+  \leq
+  \frac{\tau D(X^0)}{1-q_\tau}q_\tau^k
+  =
+  \frac{D(X^0)}{1-q}q_\tau^k.
+\end{equation}
+
+\item For the continuous dynamics~\eqref{eq:continuous-mean-shift},
+\begin{equation}\label{eq:continuous-diameter-rate}
+  D(X(t))
+  \leq
+  e^{-(1-q)t}D(X(0)).
+\end{equation}
+There exists $x_\infty\in C_0$ such that
+\begin{equation}\label{eq:continuous-point-rate}
+  \max_i\norm{x_i(t)-x_\infty}
+  \leq
+  \frac{D(X(0))}{1-q}e^{-(1-q)t}.
+\end{equation}
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+The finite-dimensional vector field in~\eqref{eq:continuous-mean-shift} is
+Lipschitz on $C_0^n$, and convex-hull invariance keeps every configuration
+inside $C_0$; hence the continuous dynamics is globally well posed.  From
+\eqref{eq:cross-ratio-cancellation} and~\eqref{eq:kernel-bounds},
+\begin{equation*}
+  \eta(P_X)\leq\left(\frac{M}{m}\right)^2,
+  \qquad
+  q(P_X)\leq\frac{M-m}{M+m}=q
+\end{equation*}
+uniformly along the dynamics.
+
+For the discrete update and each direction $\theta$,
+Proposition~\ref{prop:hilbert-to-oscillation} gives
+\begin{align*}
+  \osc(z_\theta^{k+1})
+  &\leq
+  (1-\tau)\osc(z_\theta^k)
+  +\tau\osc(P_{X^k}z_\theta^k) \\
+  &\leq
+  \bigl(1-\tau+\tau q\bigr)\osc(z_\theta^k)
+  =q_\tau\osc(z_\theta^k).
+\end{align*}
+Take the supremum over $\theta$ and iterate to prove
+\eqref{eq:discrete-diameter-rate}.  Since
+\begin{equation*}
+  \norm{x_i^{k+1}-x_i^k}\leq\tau D(X^k),
+\end{equation*}
+every trajectory is Cauchy.  The vanishing diameter forces all limits to
+coincide, and summing the geometric tail gives
+\eqref{eq:discrete-point-rate}.
+
+For continuous time, fix $\theta$ and write
+$z(t)=X(t)\theta$.  Then
+\begin{equation*}
+  \dot z(t)=\bigl(P_{X(t)}-I\bigr)z(t).
+\end{equation*}
+The upper Dini derivative of the oscillation satisfies
+\begin{equation*}
+  D^+\osc(z(t))
+  \leq
+  \osc(P_{X(t)}z(t))-\osc(z(t))
+  \leq
+  -(1-q)\osc(z(t)).
+\end{equation*}
+Gronwall's lemma and~\eqref{eq:diameter-directional} give
+\eqref{eq:continuous-diameter-rate}.  Finally,
+$\norm{\dot x_i(t)}\leq D(X(t))$; integrating this bound proves convergence and
+\eqref{eq:continuous-point-rate}.
+\end{proof}
+
+The theorem uses the easily read bound $m\leq K\leq M$.  The sharper intrinsic
+constant is
+\begin{equation}\label{eq:sharp-projective-factor}
+  q_*
+  =
+  \sup_{X\in C_0^n}q(P_X),
+\end{equation}
+which can replace $q$ throughout whenever $q_*<1$.  The exact oscillation
+constant is smaller still: one may replace $q(P_X)$ by $\delta(P_X)$ at each
+step.  The Hilbert bound is useful because its cross-ratio formula is explicit
+and invariant under all row and column scalings.
+
+\section{Gaussian mean shift and an adaptive rate}
+
+For the Gaussian kernel
+\begin{equation}\label{eq:gaussian-kernel}
+  K_\eps(x,y)=\exp\!\left(-\frac{\norm{x-y}^2}{2\eps}\right),
+\end{equation}
+the current convex hull has diameter $D$, so $M=1$ and
+$m=e^{-D^2/(2\eps)}$.  The corresponding projective factor is
+\begin{equation}\label{eq:gaussian-projective-factor}
+  q(D)
+  =
+  \frac{1-e^{-D^2/(2\eps)}}{1+e^{-D^2/(2\eps)}}
+  =
+  \tanh\!\left(\frac{D^2}{4\eps}\right).
+\end{equation}
+
+\begin{corollary}[Adaptive Gaussian contraction]\label{cor:gaussian}
+For the full discrete update $\tau=1$,
+\begin{equation}\label{eq:gaussian-discrete-adaptive}
+  D(X^{k+1})
+  \leq
+  \tanh\!\left(\frac{D(X^k)^2}{4\eps}\right)D(X^k)
+  \leq
+  \frac{D(X^k)^3}{4\eps}.
+\end{equation}
+For the continuous-time dynamics,
+\begin{equation}\label{eq:gaussian-continuous-adaptive}
+  D^+D(X(t))
+  \leq
+  -\left[1-\tanh\!\left(\frac{D(X(t))^2}{4\eps}\right)\right]D(X(t)).
+\end{equation}
+\end{corollary}
+
+Thus strict positivity gives a global geometric rate, while contraction becomes
+much stronger once the cloud is narrow relative to the bandwidth.  In
+particular, the projective estimate predicts a cubic local bound for the full
+discrete Gaussian update.  For a narrow kernel and a widely separated initial
+cloud, however, $q(D_0)$ is extremely close to one; a long-lived multimodal
+transient is therefore compatible with eventual one-point consensus.
+
+\section{Measure-valued formulation}
+
+The same mechanism does not depend on a finite particle representation.  For
+$\alpha\in\Pcal(C_0)$, define the Markov operator
+\begin{equation}\label{eq:measure-markov-operator}
+  (P_\alpha f)(x)
+  =
+  \frac{\int_{C_0}K(x,y)f(y)\dd\alpha(y)}
+       {\int_{C_0}K(x,y)\dd\alpha(y)}.
+\end{equation}
+It fixes constants, and the integral-operator version of Birkhoff's theorem
+gives
+\begin{equation}\label{eq:measure-oscillation-contraction}
+  \osc_{C_0}(P_\alpha f)
+  \leq
+  q\,\osc_{C_0}(f),
+  \qquad
+  q=\frac{M-m}{M+m}.
+\end{equation}
+The associated mean-shift field is
+\begin{equation}\label{eq:measure-mean-shift-field}
+  V[\alpha](x)=P_\alpha\operatorname{Id}(x)-x,
+\end{equation}
+and its characteristic evolution solves
+\begin{equation}\label{eq:measure-mean-shift-pde}
+  \partial_t\alpha_t
+  +\nabla\cdot\bigl(\alpha_tV[\alpha_t]\bigr)=0.
+\end{equation}
+If $K$ is Lipschitz and positive on $C_0^2$, the denominator in
+\eqref{eq:measure-markov-operator} is uniformly positive, so the characteristic
+flow is well posed and its convex hull remains in $C_0$.  Applying
+\eqref{eq:measure-oscillation-contraction} to
+$f_\theta(x)=\langle\theta,x\rangle$ gives exactly the directional-width
+argument in Theorem~\ref{thm:mean-shift-consensus}.  Consequently
+\begin{equation}\label{eq:measure-diameter-rate}
+  \diam(\supp\alpha_t)
+  \leq
+  e^{-(1-q)t}\diam(\supp\alpha_0),
+\end{equation}
+and the characteristic trajectories converge to a common point.  Hence
+$\alpha_t$ converges to a Dirac mass, with the same exponential estimate in
+$\Wass_\infty$.
+
+\section{What is shared with Sinkhorn, and what is not}
+
+For a fixed positive matrix $K$, one Sinkhorn cycle alternates
+\begin{equation}\label{eq:sinkhorn-half-steps}
+  u^+=\frac{a}{Kv},
+  \qquad
+  v^+=\frac{b}{K^\top u^+}.
+\end{equation}
+Multiplication by a positive diagonal vector and entrywise inversion are
+isometries of $\dH$.  Each kernel multiplication contracts by $q(K)$, so a
+full Sinkhorn cycle contracts projective scaling vectors by $q(K)^2$
+\cite{FranklinLorenz1989}.
+
+Mean shift uses the same ingredients in a different order.  It first forms the
+positive kernel matrix $K_X$, then row-normalizes it into the Markov matrix
+$P_X$.  Diagonal normalization preserves the projective cross-ratios, while
+$P_X\one=\one$ makes the constant ray a fixed point.  Linearizing Hilbert
+contraction at this ray yields contraction of spatial oscillations.  The common
+mechanism can therefore be summarized as follows:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Sinkhorn & Blurring mean shift \\
+\midrule
+positive object & fixed Gibbs kernel $K$ & state-dependent kernel $K_X$ \\
+normalization & two prescribed marginals & row sums equal to one \\
+contracted quantity & scaling rays in $\dH$ & coordinate widths in $\osc$ \\
+rate mechanism & Birkhoff, twice per cycle & infinitesimal Birkhoff/Dobrushin \\
+limit & balanced coupling & consensus Dirac mass \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Three qualifications prevent overinterpreting the analogy.
+
+\begin{enumerate}
+\item The estimate contracts the diameter \emph{within one evolving cloud}.
+Because $P_X$ depends on $X$, it does not by itself show that the nonlinear map
+$X\mapsto P_XX$ contracts the distance between two different configurations.
+
+\item Strict positivity is decisive.  If $K$ can vanish, then the projective
+diameter can be infinite and the Birkhoff factor can be one.  Bounded-confidence
+models can then converge to several disconnected clusters rather than one
+consensus point~\cite{HegselmannKrause2002}.
+
+\item The result concerns blurring mean shift.  In classical nonblurring mean
+shift the reference data distribution is frozen; different initial queries may
+converge to different modes even when the kernel is everywhere positive.
+\end{enumerate}
+
+The useful conceptual conclusion is therefore precise: positive-kernel mean
+shift and Sinkhorn are not the same fixed-point iteration, but their linear
+rates are governed by the same projective loss-of-memory mechanism.  Sinkhorn
+uses Hilbert contraction globally on scaling rays; mean shift uses its
+infinitesimal Hopf--Dobrushin form on spatial coordinates.
+
+\begin{thebibliography}{99}
+\small
+\setlength{\itemsep}{0pt}
+\setlength{\parsep}{0pt}
+
+\bibitem{Birkhoff1957}
+G.~Birkhoff.
+\newblock Extensions of Jentzsch's theorem.
+\newblock \emph{Transactions of the American Mathematical Society},
+85(1):219--227, 1957.
+
+\bibitem{Chen2015BlurringMeanShift}
+T.-L.~Chen.
+\newblock On the convergence and consistency of the blurring mean-shift
+process.
+\newblock \emph{Annals of the Institute of Statistical Mathematics},
+67(1):157--176, 2015.
+
+\bibitem{ComaniciuMeer2002MeanShift}
+D.~Comaniciu and P.~Meer.
+\newblock Mean shift: A robust approach toward feature space analysis.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+Intelligence}, 24(5):603--619, 2002.
+
+\bibitem{FranklinLorenz1989}
+J.~Franklin and J.~Lorenz.
+\newblock On the scaling of multidimensional matrices.
+\newblock \emph{Linear Algebra and its Applications}, 114--115:717--735,
+1989.
+
+\bibitem{FukunagaHostetler1975}
+K.~Fukunaga and L.~D.~Hostetler.
+\newblock The estimation of the gradient of a density function, with
+applications in pattern recognition.
+\newblock \emph{IEEE Transactions on Information Theory}, 21(1):32--40,
+1975.
+
+\bibitem{GaubertQu2015}
+S.~Gaubert and Z.~Qu.
+\newblock Dobrushin's ergodicity coefficient for Markov operators on cones.
+\newblock \emph{Integral Equations and Operator Theory}, 81(1):127--150,
+2015.
+
+\bibitem{HegselmannKrause2002}
+R.~Hegselmann and U.~Krause.
+\newblock Opinion dynamics and bounded confidence: Models, analysis and
+simulation.
+\newblock \emph{Journal of Artificial Societies and Social Simulation},
+5(3), 2002.
+
+\end{thebibliography}
+
+\end{document}

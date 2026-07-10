@@ -168,6 +168,13 @@ $P$, while the constraints are only row and column marginals. This separable
 structure turns Bregman projections into diagonal rescalings, giving the
 Sinkhorn iterations.
 
+(rem-entropy-versus-lp-barriers)=
+:::{admonition} Remark: Entropy barriers versus generic LP barriers
+:class: ot4ml-remark
+
+For a generic linear program $\min_z \ell^\top z$ subject to $Az\leq b$, one can introduce positive slacks $s=b-Az$ and use an entropy-on-slacks penalty $H(s)=\sum_i s_i(\log s_i-1)$ as a smooth interior regularization. This is a useful analogy for Figure {ref}`fig:sinkhorn-entropy-lp-geometry`, but it is not the standard interior-point barrier for linear programming. The canonical barrier on the positive orthant is the Burg, or reverse-KL, logarithmic barrier $-\sum_i\log s_i$; it is self-concordant and therefore fits the Newton theory of interior-point methods {cite:p}`nesterov1994interior`. The price is that a generic Newton step solves a dense linear system, leading to cubic per-iteration scaling in the relevant number of variables or constraints. Optimal transport is special: the entropy is placed on the entries of $\P$, while the constraints are only the row and column marginals. This separable structure turns the associated Bregman projections into diagonal rescalings, hence into the Sinkhorn matrix-vector iterations developed next.
+:::
+
 ## Sinkhorn's Algorithm
 
 Sinkhorn's algorithm is alternating normalization of rows and columns. The
@@ -361,7 +368,6 @@ scaling.*
 **Interactive panel.** Vary $\epsilon$ and the conditioning parameters to compare observed residual decay with Hilbert-metric convergence guides.
 :::
 
-
 (rem-sinkhorn-separable-gaussian)=
 :::{admonition} Remark: Separable Gaussian kernels on grids
 :class: ot4ml-remark
@@ -390,7 +396,7 @@ instead of $O(N^2)$. With FFT-based or truncated Gaussian convolutions, the same
 :::{admonition} Algorithm: Sinkhorn scaling
 :class: ot4ml-algorithm
 
-**Input:** Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 **Output:** Entropic coupling $\P$.
 
@@ -463,22 +469,24 @@ reference gives the normalized formulation
 ```
 
 (prop-kl-distance-like)=
-:::{admonition} Proposition: Relative Entropy is Distance-Like
-Let $P,Q\in\RR_+^{n\times m}$ have the same total mass and assume $Q_{i,j}>0$
-on the support of $P$. Then $\operatorname{KL}(P|Q)\ge0$, with equality if
-and only if $P=Q$.
+:::{admonition} Proposition: Non-Negativity and Definiteness of Relative Entropy
+For all $P,Q\in\RR_+^{n\times m}$, one has
+$\operatorname{KL}(P|Q)\ge0$, with equality if and only if $P=Q$.
 :::
 
 :::{dropdown} Proof
-Write $\phi(s)=s\log s-s+1$. Convexity gives
-$\phi(s)\ge\phi(1)+\phi'(1)(s-1)=0$, with equality only at $s=1$. Hence
+Write $\phi(s)=s\log s-s+1$. Then $\phi(s)\ge0$, with equality only at
+$s=1$. If $P$ is not absolutely continuous with respect to $Q$, the
+divergence is infinite. Otherwise,
 
 ```{math}
 \operatorname{KL}(P|Q)
 =
-\sum_{i,j}Q_{i,j}\phi(P_{i,j}/Q_{i,j})
+\sum_{i,j:\,Q_{i,j}>0}Q_{i,j}\phi(P_{i,j}/Q_{i,j})
 \ge0.
 ```
+
+Equality forces equality entrywise, including on the zero set of $Q$.
 :::
 
 (prop-kl-shift)=
@@ -647,7 +655,7 @@ For nonnegative measures $\pi$ and $\xi$ on $\X\times\Y$,
 \int_{\X\times\Y}
 \log\left(\frac{\d\pi}{\d\xi}(x,y)\right)\d\pi(x,y)
 +
-\int_{\X\times\Y}(\d\xi-\d\pi).
+\xi(\X\times\Y)-\pi(\X\times\Y).
 ```
 
 By convention, $\operatorname{KL}(\pi|\xi)=+\infty$ if $\pi$ is not
@@ -828,22 +836,21 @@ $\|x-y\|^2+\epsilon\operatorname{KL}(\cdot|\alpha\otimes\beta)$
 
 :::{admonition} Proposition: Small-temperature quadratic expansion
 :class: important
-Let $\Omega\subset\RR^d$ be a smooth compact domain and let
-$\alpha=\rho_0\,\d x$, $\beta=\rho_1\,\d x$ have smooth positive densities.
-Assume that the quadratic Brenier map $T$ is a smooth diffeomorphism and that
-the McCann interpolation
-$\alpha_t=\rho_t\,\d x=((1-t)\mathrm{Id}+tT)_\sharp\alpha$ satisfies
+Let $\alpha=\rho_0\,\d x$ and $\beta=\rho_1\,\d x$ be probability measures on
+$\RR^d$ with bounded compactly supported densities. Let
+$\alpha_t=\rho_t\,\d x$ be their quadratic displacement interpolation and
+assume
 
 ```{math}
-\mathcal I_0(\alpha,\beta)
+\mathcal I_{\mathrm{geo}}(\alpha,\beta)
 =
-\int_0^1\int_\Omega
+\int_0^1\int_{\RR^d}
 \|\nabla\log\rho_t(x)\|^2\rho_t(x)\,\d x\,\d t
 <+\infty.
 ```
 
 For $c(x,y)=\|x-y\|^2$ and
-$\mathrm H(\alpha)=\int_\Omega\rho_0\log\rho_0\,\d x$,
+$\mathrm H(\alpha)=\int_{\RR^d}\rho_0\log\rho_0\,\d x$,
 
 ```{math}
 \mathcal{L}_{\|\cdot\|^2}^{\epsilon}(\alpha,\beta)
@@ -855,26 +862,33 @@ $\mathrm H(\alpha)=\int_\Omega\rho_0\log\rho_0\,\d x$,
 \frac{\epsilon}{2}
 \left(\mathrm H(\alpha)+\mathrm H(\beta)\right)
 +
-\frac{\epsilon^2}{16}\mathcal I_0(\alpha,\beta)
+\frac{\epsilon^2}{16}\mathcal I_{\mathrm{geo}}(\alpha,\beta)
 +
 o(\epsilon^2).
 ```
 
-If $f_\epsilon,g_\epsilon$ are Sinkhorn potentials and $f_0,g_0$ are
-Kantorovich potentials, normalized by
-$\int g_\epsilon\,\d\beta=\int g_0\,\d\beta=0$, then under the same smooth
-non-degeneracy assumptions
+If, in addition, the endpoint densities are smooth and positive on their
+supports and the optimal map is a smooth non-degenerate diffeomorphism, then
+normalized Sinkhorn potentials converge locally uniformly to Kantorovich
+potentials on the interiors of the supports
+{cite:p}`NutzWiesel2022EntropicPotentials`. In the gauge
+$\int g_\epsilon\,\d\beta=0$, the scalar part satisfies
 
 ```{math}
-f_\epsilon+\frac{d\epsilon}{2}\log(\pi\epsilon)\to f_0,
-\qquad
-g_\epsilon\to g_0
+\int f_\epsilon\,\d\alpha
+=
+\mathcal L_{\|\cdot\|^2}^{\epsilon}(\alpha,\beta),
 ```
 
-locally uniformly. The order-$\epsilon$ correction to the potentials is given
-by the Laplace prefactor in the soft $c$-transform equations, and depends on
-the endpoint densities and on the Hessian of the quadratic contact phase.
+so it has the displayed expansion. Spatial order-$\epsilon$ corrections come
+from the Laplace prefactors in the soft $c$-transform equations.
 :::
+
+The Brownian entropy used in the proof is relative to the sigma-finite
+endpoint measure $p_T(x,y)\,\d x\d y$, and therefore uses
+$\mathscr H(\pi|\xi)=\int\log(\d\pi/\d\xi)\,\d\pi$ rather than the
+finite-measure generalized KL above. This distinction is what fixes the
+Gaussian normalization and the $\epsilon\log\epsilon$ coefficient.
 
 ## Dual of Sinkhorn
 
@@ -935,7 +949,8 @@ For $h\in\RR^m$ and weights $b\in\simplex_m$,
 -\epsilon\log\sum_j e^{-h_j/\epsilon}b_j.
 ```
 
-It converges to $\min_j h_j$ as $\epsilon\to0$. Given a cost matrix $C$, the
+It converges to $\min_{j:\,b_j>0}h_j$ as $\epsilon\to0$, and hence to
+$\min_j h_j$ when all weights are positive. Given a cost matrix $C$, the
 discrete soft $c$-transforms are
 
 ```{math}
@@ -1032,8 +1047,9 @@ e^{(g(y)-c(x,y))/\epsilon}
 (prop-entropic-dual-potentials)=
 :::{admonition} Proposition: Existence and Uniqueness of Entropic Dual Potentials
 :class: important
-Assume $\X$ and $\Y$ are compact and $c$ is continuous. The dual problem has
-solutions, and the set of solutions is
+Assume $\X=\operatorname{supp}(\alpha)$ and
+$\Y=\operatorname{supp}(\beta)$ are compact and $c$ is continuous. The dual
+problem has solutions, and the set of solutions on these supports is
 
 ```{math}
 (f^\star+\lambda,g^\star-\lambda),
@@ -1049,7 +1065,7 @@ objective. The transformed potentials have oscillations bounded by the
 oscillation of $c$, and their modulus of continuity is controlled by the
 modulus of continuity of $c$. Arzela--Ascoli gives existence.
 
-Uniqueness up to constants follows from strict convexity of
+Uniqueness on the supports, up to constants, follows from strict convexity of
 $H\mapsto\int e^{H/\epsilon}\d(\alpha\otimes\beta)$ on the image of
 $(f,g)\mapsto f\oplus g-c$, modulo constants.
 :::
@@ -1085,7 +1101,7 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 :::{admonition} Algorithm: Log-domain Sinkhorn by soft transforms
 :class: ot4ml-algorithm
 
-**Input:** Weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 **Output:** Entropic coupling $\P$ computed from stabilized potentials.
 
@@ -1096,15 +1112,29 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 >
 > **Set** $k\leftarrow k+1$.
 >
-> **Compute** stabilized soft transform:
-> $\fD_i^{(k)} = -\epsilon\log\sum_j \exp\!\left(\frac{\gD_j^{(k-1)}-\C_{ij}}{\epsilon}\right)\b_j.$
->
-> **Compute** stabilized reverse soft transform:
-> $\gD_j^{(k)} = -\epsilon\log\sum_i \exp\!\left(\frac{\fD_i^{(k)}-\C_{ij}}{\epsilon}\right)\a_i.$
->
-> **Set** $\eta_k=\max\{\norm{\fD^{(k)}-\fD^{(k-1)}}_\infty,\norm{\gD^{(k)}-\gD^{(k-1)}}_\infty\}$, with the first term ignored for $k=1$.
+> **For** $i=1,\ldots,n$ **do**:
 
-**Return** $\P_{ij} = \a_i\b_j \exp\!\left(\frac{\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij}}{\epsilon}\right).$
+>> **Set** $M_i=\max_j\{\gD_j^{(k-1)}-\C_{ij}\}$.
+>>
+>> **Set** $\fD_i^{(k)}=-M_i-\epsilon\log\sum_j\b_j
+>> \exp((\gD_j^{(k-1)}-\C_{ij}-M_i)/\epsilon)$.
+
+>
+> **For** $j=1,\ldots,m$ **do**:
+
+>> **Set** $N_j=\max_i\{\fD_i^{(k)}-\C_{ij}\}$.
+>>
+>> **Set** $\gD_j^{(k)}=-N_j-\epsilon\log\sum_i\a_i
+>> \exp((\fD_i^{(k)}-\C_{ij}-N_j)/\epsilon)$.
+
+>
+> **Set** $\P_{ij}^{(k)}=\a_i\b_j
+> \exp((\fD_i^{(k)}+\gD_j^{(k)}-\C_{ij})/\epsilon)$.
+>
+> **Set** $\eta_k=\max\{\norm{\P^{(k)}\ones_m-\a}_1,
+> \norm{(\P^{(k)})^\top\ones_n-\b}_1\}$.
+
+**Return** $\P^{(k)}$.
 :::
 
 
@@ -1286,8 +1316,10 @@ whereas the static Sinkhorn coupling records only its two endpoints.
 
 ### Viscous Benamou--Brenier Formulations
 
-The dynamic problem also has viscous Benamou--Brenier formulations. In one
-common convention,
+The dynamic problem also has viscous Benamou--Brenier formulations. Here
+$v_t$ denotes the forward drift called $u_t$ in the control formulation,
+whereas $u_t$ denotes the associated current velocity. If the uncontrolled
+noise is $\sqrt{\sigma}\,\d B_t$, its generator is $(\sigma/2)\Delta$ and
 
 ```{math}
 \partial_t\rho_t+\operatorname{div}(\rho_t v_t)
@@ -1354,8 +1386,9 @@ law is the reference bridge for $\pi$-almost every endpoint pair.
 
 ### Brownian Bridges and Sinkhorn Couplings
 
-For Brownian reference dynamics on $\RR^d$, the endpoint prior has heat-kernel
-density proportional to
+For the convention $\d X_t=\sqrt{\epsilon}\,\d B_t$, the endpoint kernel is
+$\exp(-\norm{x-y}^2/(2\epsilon))$ and the corresponding static cost is
+$\norm{x-y}^2/2$. Renaming the static temperature gives the equivalent kernel
 
 ```{math}
 \exp\left(-\frac{\norm{x-y}^2}{\epsilon}\right).
@@ -1392,7 +1425,7 @@ rays to noisy Brownian-bridge lifts with a more diffuse endpoint coupling.
 :::{admonition} Algorithm: Endpoint-to-path Schrodinger lift
 :class: ot4ml-algorithm
 
-**Input:** Endpoint laws $\alpha,\beta$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
+**Input:** Endpoint laws $\al,\be$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
 
 **Output:** Schrodinger path law $M_\epsilon^\star$.
 
@@ -1974,7 +2007,7 @@ Under standard Fenchel--Rockafellar qualification assumptions,
 -
 \epsilon
 \int
-\phi^{*,\ge0}
+\phi^*
 \left(
 \frac{f(x)+g(y)-c(x,y)}{\epsilon}
 \right)
@@ -1996,7 +2029,7 @@ r^\star(x,y)
 :::
 
 For KL, $\phi(r)=r\log r-r+1$ and
-$\phi^{*,\ge0}(s)=e^s-1$, recovering the Sinkhorn dual. Other choices replace
+$\phi^*(s)=e^s-1$, recovering the Sinkhorn dual. Other choices replace
 the exponential law by another scalar transfer function:
 
 ```{math}
@@ -2023,7 +2056,7 @@ g^{\bar c,\epsilon,\phi}(x)
 \left\{
 \epsilon
 \int
-\phi^{*,\ge0}
+\phi^*
 \left(
 \frac{u+g(y)-c(x,y)}{\epsilon}
 \right)
@@ -2032,12 +2065,12 @@ g^{\bar c,\epsilon,\phi}(x)
 \right\}.
 ```
 
-Equivalently, when $\phi^{*,\ge0}$ is differentiable,
+Equivalently, when $\phi^*$ is differentiable,
 $u=g^{\bar c,\epsilon,\phi}(x)$ is characterized by
 
 ```{math}
 \int
-(\phi^{*,\ge0})'
+(\phi^*)'
 \left(
 \frac{u+g(y)-c(x,y)}{\epsilon}
 \right)
@@ -2163,10 +2196,10 @@ $B_\Phi(\alpha|\beta)$ equals a $\phi$-divergence
 $D_\phi(\alpha|\beta)$ for all positive probability densities, then
 
 ```{math}
-\phi(t)=c\,t\log t+a(t-1)
+\phi(t)=\kappa\,t\log t+a(t-1)
 ```
 
-for some $c\ge0$ and $a\in\RR$. Hence the common divergence is a multiple of
+for some $\kappa\ge0$ and $a\in\RR$. Hence the common divergence is a multiple of
 KL, up to an irrelevant affine term.
 :::
 
@@ -2213,7 +2246,8 @@ the positive-definite kernel associated with $e^{-c/\epsilon}$.
 (def-sinkhorn-divergence)=
 :::{admonition} Definition: Sinkhorn Divergence
 :class: important
-For $\epsilon>0$, the debiased Sinkhorn divergence is
+Let $c$ be a symmetric cost on a common state space. For $\epsilon>0$, the
+debiased Sinkhorn divergence is
 
 ```{math}
 :label: eq-sinkhorn-divergence-web
@@ -2285,8 +2319,9 @@ potential terms.
 (prop-sinkhorn-divergence-asymptotics)=
 :::{admonition} Proposition: Asymptotics of Sinkhorn Divergences
 :class: important
-Assume the two measures are supported on the same space and that $c$ is
-bounded, continuous, nonnegative, and satisfies $c(x,x)=0$. Then
+Assume the two measures are supported on a common compact metric space and
+that $c$ is symmetric, continuous, nonnegative, and satisfies $c(x,x)=0$.
+Then
 
 ```{math}
 \overline{\mathcal L}_c^\epsilon(\alpha,\beta)
@@ -2312,13 +2347,14 @@ and
 :::{admonition} Remark: Large-temperature Hilbertian limit
 :class: ot4ml-remark
 
-If $-c$ defines a conditionally positive definite kernel, the large-temperature limit in Proposition {ref}`prop-sinkhorn-divergence-asymptotics` is the square of a Hilbertian kernel norm. A typical example is $c(x,y)=\norm{x-y}^p$ for $0 < p < 2$, which corresponds to the energy-distance kernel. This kernel norm is the dual of a homogeneous Sobolev norm.
+If $c$ is conditionally negative definite, equivalently if $-c$ is conditionally positive definite, the large-temperature limit in Proposition {ref}`prop-sinkhorn-divergence-asymptotics` is a squared Hilbertian seminorm on zero-mass signed measures. A typical example is $c(x,y)=\norm{x-y}^p$ for $0<p<2$, which yields the energy distance. This kernel norm is the dual of a homogeneous Sobolev norm.
 :::
 
 
 (prop-sinkhorn-positive)=
 :::{admonition} Proposition: Non-Negativity of Sinkhorn Divergences
-If $k(x,y)=e^{-c(x,y)/\epsilon}$ is positive definite, then
+Assume dual optimizers exist and the symmetric kernel
+$k_\epsilon(x,y)=e^{-c(x,y)/\epsilon}$ is positive semidefinite. Then
 $\overline{\mathcal L}_c^\epsilon(\alpha,\beta)\ge0$.
 :::
 
@@ -2333,46 +2369,46 @@ $\tilde\beta=e^{f_{\beta,\beta}/\epsilon}\beta$, one obtains
 \frac{1}{\epsilon}
 \overline{\mathcal L}_c^\epsilon(\alpha,\beta)
 \ge
-1-\langle \tilde\alpha,\tilde\beta\rangle_k.
+1-\langle \tilde\alpha,\tilde\beta\rangle_{k_\epsilon}.
 ```
 
 The self Sinkhorn fixed-point equations imply
-$\norm{\tilde\alpha}_k=\norm{\tilde\beta}_k=1$, so Cauchy--Schwarz gives the
-result.
+$\norm{\tilde\alpha}_{k_\epsilon}=\norm{\tilde\beta}_{k_\epsilon}=1$, so
+Cauchy--Schwarz for the kernel pairing gives the result.
 :::
 
 :::{admonition} Remark: Strict positivity
 :class: ot4ml-remark
 
-Under additional assumptions on the kernel, one can furthermore show that $\bar\MK_\c^\epsilon(\al,\be)=0$ implies $\al=\be$, and that this debiased divergence metrizes convergence in law.
+If, in addition, $k_\epsilon$ is universal on a compact space, then $\bar\MK_\c^\epsilon(\al,\be)=0$ implies $\al=\be$, and the Sinkhorn divergence metrizes weak convergence {cite:p}`feydy2018interpolating`. Positive semidefiniteness alone proves only non-negativity and may leave a nontrivial null space.
 :::
 
 
 :::{admonition} Example: Large-temperature collapse for quadratic costs
 :class: ot4ml-example
 
-The limiting functional minimized by $\al_\epsilon$ is linear in the second argument:
+Suppose that minimizers $\be_\epsilon$ are tight and that the large-temperature convergence is uniform enough to pass to their cluster points. The limiting functional is linear in the second argument:
 
 ```{math}
-\be\mapsto \int V_\alpha(y)\d\beta(y),
+\be\mapsto \int V_\al(y)\d\be(y),
 \qquad
-V_\alpha(y)\eqdef\int c(x,y)\d\alpha(x).
+V_\al(y)\eqdef\int c(x,y)\d\al(x).
 ```
 
-Thus any limiting minimizer is supported on $\argmin V_\alpha$. When this minimizer is unique,
+Thus every cluster point is supported on $\argmin V_\al$. When this set is the singleton $\{y^\star(\al)\}$,
 
 ```{math}
-\al_\epsilon \rightharpoonup \delta_{y^\star(\alpha)},
+\be_\epsilon \rightharpoonup \delta_{y^\star(\al)},
 \qquad
-y^\star(\alpha)=\uargmin{y} V_\alpha(y).
+y^\star(\al)=\uargmin{y} V_\al(y).
 ```
 
-For the quadratic cost $c(x,y)=\norm{x-y}^2$ on $\RR^d$, assuming $\alpha$ has finite second moment, one has $V_\alpha(y)=\norm{y-\int x\d\alpha(x)}^2+\mathrm{const}$, so the collapse is toward the Dirac mass at the mean of $\alpha$.
+For the quadratic cost $c(x,y)=\norm{x-y}^2$ on $\RR^d$, assuming $\al$ has finite second moment, one has $V_\al(y)=\norm{y-\int x\d\al(x)}^2+\mathrm{const}$, so the collapse is toward the Dirac mass at the mean of $\al$.
 :::
 
 
 (sec-complex-epsilon)=
-## Complex Epsilon
+## Complex $\epsilon$
 
 The Sinkhorn temperature is usually a positive real number: positivity makes
 the Gibbs kernel positive, gives the entropy a convex meaning, and underlies
@@ -2494,12 +2530,25 @@ b\oslash\bigl(K_\epsilon(C)^\top \tilde u^{(k+1)}\bigr).
 For complex $\epsilon$, this iteration should be read as a local analytic
 parametrization of the fixed point, not as a globally convergent algorithm.
 
+If $(\widehat f,\widehat g)$ are the KL-normalized dual potentials in
+{eq}`eq-dual-formulation`, define the absorbed log-scalings
+
+```{math}
+f=\widehat f+\epsilon\log a,
+\qquad
+g=\widehat g+\epsilon\log b.
+```
+
+The factors $a_i b_j$ are then incorporated into the exponential coupling
+formula used in the theorem below.
+
 (thm-carlier-complex-sinkhorn)=
 :::{admonition} Theorem: Carlier's Holomorphic Continuation of Sinkhorn
 :class: important
 Fix positive histograms $a^0\in\Delta_n$, $b^0\in\Delta_m$, a finite real cost
 matrix $C^0$, and a real temperature $\epsilon_0>0$. Let $(f^0,g^0)$ be the
-Sinkhorn potentials at this point, normalized by $\sum_i a_i^0 f_i^0=0$. Then
+absorbed log-scalings at this point, normalized by $\sum_i a_i^0 f_i^0=0$.
+Then
 there are complex neighborhoods of $(\epsilon_0,a^0,b^0,C^0)$, inside the
 affine constraint $\sum_i a_i=\sum_j b_j$, and a unique holomorphic map
 
@@ -2521,7 +2570,7 @@ P_\epsilon^\top\mathbf 1_n=b.
 
 Consequently the gauge-fixed scalings $u_\epsilon=e^{f_\epsilon/\epsilon}$,
 $v_\epsilon=e^{g_\epsilon/\epsilon}$ and the coupling $P_\epsilon$ are
-holomorphic in $(\epsilon,a,b,C)$ near the positive real axis.
+holomorphic in $(\epsilon,a,b,C)$ near the base point.
 :::
 
 :::{dropdown} Proof
@@ -2571,7 +2620,7 @@ holomorphic implicit-function theorem gives the local branch.
 :::{admonition} Remark: Local, not global, complex scaling
 :class: ot4ml-remark
 
-The theorem is local around a positive real point. It does not rule out complex singularities, branch changes, or zeros of the denominators in {eq}`eq-complex-sinkhorn-iteration-web` farther away. On compact intervals $\epsilon\in[\epsilon_{\min},\epsilon_{\max}]\subset(0,+\infty)$, the local neighborhoods can be patched into a tube around the interval, but one should not expect a global single-valued continuation on $\CC\setminus\{0\}$ without additional assumptions.
+The theorem is local around a positive real point. It does not rule out complex singularities, branch changes, or zeros of the denominators in {eq}`eq-complex-sinkhorn-iteration-web` farther away. Along a compact interval $[\epsilon_{\min},\epsilon_{\max}]\subset(0,+\infty)$, uniqueness lets the local branches agree on overlaps and therefore cover some neighborhood of that interval. This still gives no global single-valued continuation on $\CC\setminus\{0\}$.
 :::
 
 
@@ -2592,7 +2641,7 @@ defined by the exponential formula.
 show_book_figure("sinkhorn-complex-epsilon-continuation")
 ```
 
-*Complex Sinkhorn continuation of a one-dimensional source potential. Two
+*Complex Sinkhorn continuation of a one-dimensional absorbed source log-scaling. Two
 Gaussian-mixture histograms are fixed, $\epsilon_0=0.55$, and
 $\epsilon=\epsilon_0+i\eta$ is varied for $\eta$ near zero. The left panel
 shows the centered real perturbation
@@ -2706,5 +2755,5 @@ Writing $D_\epsilon=st-k_\epsilon^2$, the density ratio of this Gaussian couplin
 +\frac{k_\epsilon}{D_\epsilon}xy .
 ```
 
-Comparing this with $p_\epsilon x^2+q_\epsilon y^2-(x-y)^2/\epsilon$ gives $k_\epsilon/D_\epsilon=2/\epsilon$, hence $D_\epsilon=k_\epsilon\epsilon/2$, and then precisely the displayed formulas for $p_\epsilon$ and $q_\epsilon$. This comparison also explains why the scaling exponents need not be negative: the decaying factor $e^{-(x-y)^2/\epsilon}$ is part of the full coupling density. Nonzero Gaussian means add affine terms to the scaling exponents; the quadratic recurrence and the cross-covariance formula are unchanged.
+Comparing exponents gives $k_\epsilon/D_\epsilon=2/\epsilon$, hence $D_\epsilon=k_\epsilon\epsilon/2$ and the displayed formulas for $p_\epsilon,q_\epsilon$. The scalings need not decay because $e^{-(x-y)^2/\epsilon}$ already belongs to the coupling density. Nonzero means add affine terms but leave the quadratic recurrence and cross-covariance unchanged.
 :::

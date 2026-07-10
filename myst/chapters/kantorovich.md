@@ -382,25 +382,25 @@ left to right.
 :::
 
 :::{dropdown} Proof
-The north-west plan is monotone: it cannot put positive mass on both
-$(i,j)$ and $(i',j')$ when $i<i'$ and $j>j'$. Conversely, any feasible plan
-with such a crossing pair can be improved by moving a small mass from
-$(i,j)$ and $(i',j')$ to $(i,j')$ and $(i',j)$. The two marginals are
-unchanged, and convexity of $h$ gives
+The Monge inequality for a convex displacement cost states that, whenever
+$i<i'$ and $j<j'$,
 
 ```{math}
 h(x_i-y_j)+h(x_{i'}-y_{j'})
-\geq
-h(x_i-y_{j'})+h(x_{i'}-y_j)
+\leq
+h(x_i-y_{j'})+h(x_{i'}-y_j).
 ```
 
-for $i<i'$ and $j'<j$, with strict inequality for strictly convex $h$ and
-distinct points. Repeating this uncrossing procedure until no crossing remains
-yields a monotone optimal plan. There is only one monotone feasible plan with
-the prescribed sorted marginals, namely the sweep plan: it pairs the leftmost
-remaining source mass with the leftmost remaining target mass at every step.
-Sorting costs $O(n\log n+m\log m)$ and the sweep uses at most $n+m-1$
-assignments.
+We prove optimality by induction on $n+m$. Let $P$ be an optimal plan that
+maximizes $P_{11}$. If $P_{11}<\min(a_1,b_1)$, then row $1$ sends positive
+mass to some $j'>1$ and column $1$ receives positive mass from some $i'>1$.
+Moving the same small amount from $(1,j')$ and $(i',1)$ to $(1,1)$ and
+$(i',j')$ preserves both marginals and, by the displayed inequality, does not
+increase the cost. It strictly increases $P_{11}$, a contradiction. Hence
+$P_{11}=\min(a_1,b_1)$, exactly as in the north-west rule. Row $1$ or column
+$1$ is exhausted; deleting it leaves the same problem on a smaller ordered
+grid. Induction proves that the complete sweep is optimal. Sorting has cost
+$O(n\log n+m\log m)$, and the sweep creates at most $n+m-1$ nonzero entries.
 :::
 
 (alg-weighted-one-dimensional-sweep)=
@@ -483,7 +483,7 @@ P^\top\mathbf{1}_n=\mathbf{1}_n
 (def-extreme-points)=
 :::{admonition} Definition: Extreme Points
 :class: important
-For a compact convex set $\mathcal C$ in a finite-dimensional vector space,
+For a convex set $\mathcal C$ in a finite-dimensional vector space,
 
 ```{math}
 \Extr(\mathcal C)
@@ -509,17 +509,17 @@ exposed subface, contradicting minimality. Hence the minimal face is a
 singleton, and its point is extreme.
 :::
 
-:::{admonition} Example: Unbounded convex sets may have no extreme point
+:::{admonition} Example: An unbounded convex set without extreme points
 :class: ot4ml-example
 
-Compactness cannot be dropped from Proposition {ref}`prop-extreme-point-existence`. For instance, the closed convex set $\enscond{(x,y)\in\RR_+^2}{xy\geq1}$ is unbounded and has no extreme point.
+Compactness cannot be dropped from Proposition {ref}`prop-extreme-point-existence`. For instance, the affine line $\RR\times\{0\}$ is closed, convex, and unbounded, but it has no extreme point.
 :::
 
 
 (prop-linear-program-extreme-minimizer)=
 :::{admonition} Proposition: Linear Programs Have Extreme Minimizers
 :class: important
-Let $\mathcal C$ be nonempty and compact. For every linear form $\ell$,
+Let $\mathcal C$ be nonempty, compact, and convex. For every linear form $\ell$,
 
 ```{math}
 \Extr(\mathcal C)\cap\argmin_{x\in\mathcal C}\ell(x)\neq\emptyset.
@@ -660,9 +660,9 @@ express a bistochastic matrix as a convex combination of permutations.
 
 **Output:** Decomposition $P=\sum_r\lambda_rP_{\sigma_r}$.
 
-**Initialize:** Set $R=P$ and $\mathcal L=\emptyset$.
+**Initialize:** Set $R=P$, $s=1$, and $\mathcal L=\emptyset$.
 
-**While** $R\neq0$ **do**:
+**While** $s>0$ **do**:
 
 >
 > **Build** bipartite graph $G_R=\{(i,j):R_{ij}>0\}$.
@@ -675,10 +675,29 @@ express a bistochastic matrix as a convex combination of permutations.
 > **Append** $(\lambda,\sigma)$ to $\mathcal L$.
 >
 > **Update**
-> $R\leftarrow R-\lambda P_\sigma .$
+> $R\leftarrow R-\lambda P_\sigma$ and $s\leftarrow s-\lambda$.
 
 **Return** $P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r}, \qquad \sum_r\lambda_r=1.$
 :::
+
+The perfect matching required at each iteration exists by Hall's theorem.
+Indeed, while the common row and column sum of the residual matrix is $s>0$,
+any set $I$ of row vertices and its neighborhood $N(I)$ satisfy
+
+```{math}
+s|I|
+=
+\sum_{i\in I}\sum_{j\in N(I)}R_{ij}
+\leq
+\sum_{j\in N(I)}\sum_iR_{ij}
+=s|N(I)|.
+```
+
+Thus $|N(I)|\geq|I|$, which is Hall's condition. Subtracting
+$\lambda P_\sigma$ preserves a common row and column sum $s-\lambda$ and
+removes at least one positive entry. The algorithm therefore terminates after
+finitely many steps with $R=0$; summing the updates yields the announced
+convex decomposition and $\sum_r\lambda_r=1$.
 
 
 (cor-kantorovich-matching)=
@@ -737,7 +756,9 @@ minimum-cost-flow algorithms such as Orlin's algorithm {cite:p}`Orlin1997`.
 ### Interior-Point Methods
 
 Generic interior-point methods approach the LP through a smooth central path.
-For the transport polytope, the logarithmic-barrier version is
+Assume here that all entries of $a$ and $b$ are positive; zero-mass rows and
+columns must first be removed. The logarithmic-barrier problem on the resulting
+transport polytope is
 
 ```{math}
 :label: eq-transport-log-barrier-web
@@ -879,7 +900,8 @@ optimal. This is also equivalent to the additive decomposition
 c(x,y)=u(x)+v(y)
 ```
 
-on the product support.
+on $\supp(\al)\times\supp(\be)$, for continuous functions $u$ and $v$ on the
+respective supports.
 :::
 
 :::{dropdown} Proof Sketch
@@ -894,6 +916,11 @@ $c(x,y)=c(x,y_\star)+c(x_\star,y)-c(x_\star,y_\star)$ on the support, so the
 cost of any coupling depends only on its marginals.
 :::
 
+The tensor product is therefore a trivial feasible coupling, not a typical
+optimizer. The continuity assumption matters: changing a cost on an
+$\al\otimes\be$-negligible set can change the cost of singular couplings while
+leaving the product cost unchanged.
+
 If there exists a map $T:\Xx\to\Yy$ with $T_\sharp\al=\be$, then the Monge map
 induces the graph coupling $\pi=(\Id,T)_\sharp\al\in\Couplings(\al,\be)$,
 characterized by
@@ -907,9 +934,16 @@ characterized by
 Graph couplings are precisely the Kantorovich representation of deterministic
 Monge maps.
 
+A last important class consists of semi-discrete problems, where $\al$ has a
+density and $\be$ is discrete. Every coupling is supported on the union of the
+slices $\Xx\times\{y_j\}$. When an optimal coupling is induced by a map, these
+slices are selected by a partition of $\Xx$ into transport cells, as developed
+in Chapter {ref}`sec-semidiscr-w1`.
+
 ### Continuous Kantorovich Problem
 
-The discrete Kantorovich problem becomes, for arbitrary measures,
+For a nonnegative Borel cost $c:\Xx\times\Yy\to[0,+\infty]$, the discrete
+Kantorovich problem becomes, for arbitrary measures,
 
 ```{math}
 :label: eq-mk-generic
@@ -921,43 +955,30 @@ The discrete Kantorovich problem becomes, for arbitrary measures,
 
 This is an infinite-dimensional linear program over a space of measures.
 
-:::{admonition} Remark: Probabilistic Interpretation
-:class: note
-The same problem can be written as
-
-```{math}
-\mathcal{L}_c(\al,\be)
-=
-\inf_{X\sim\al,\;Y\sim\be}
-\mathbb{E}\,c(X,Y).
-```
-
-The minimization is over all possible dependences between the two random
-variables, not over the fixed marginal laws.
-:::
-
 (prop-kantorovich-existence-compact)=
-:::{admonition} Proposition: Existence On Compact Spaces
+:::{admonition} Proposition: Existence For Lower-Semicontinuous Costs
 :class: important
-Assume that $\Xx$ and $\Yy$ are compact metric spaces and
-$c\in\Cc(\Xx\times\Yy)$. Then the Kantorovich problem admits at least one
-minimizer.
+Assume that $\Xx$ and $\Yy$ are Polish spaces and that
+$c:\Xx\times\Yy\to[0,+\infty]$ is lower semicontinuous. Then the Kantorovich
+problem admits at least one minimizer. In particular, this applies to every
+continuous nonnegative cost on compact metric spaces.
 :::
 
 :::{dropdown} Proof
 The constraint set is nonempty because it contains $\al\otimes\be$. It is
-closed for weak convergence because the marginal constraints are preserved. Let
-$\Omega\eqdef\Xx\times\Yy$. Since $\Omega$ is compact, Proposition
-{ref}`prop-wasserstein-space-polish` gives compactness of $\Pp(\Omega)$ for the
-Wasserstein topology. On compact spaces this topology is the weak topology by
-Proposition {ref}`prop-wass-metrizes-weak-compact`; hence
-$\Couplings(\al,\be)$ is compact. Finally, $\pi\mapsto\int c\d\pi$ is weakly
-continuous because $c$ is continuous and bounded.
+uniformly tight: for $\varepsilon>0$, choose compact sets
+$K_\Xx\subset\Xx$ and $K_\Yy\subset\Yy$ with
+$\al(K_\Xx),\be(K_\Yy)\geq1-\varepsilon/2$. Every feasible $\pi$ then
+satisfies $\pi(K_\Xx\times K_\Yy)\geq1-\varepsilon$. Prokhorov's theorem
+gives relative weak compactness. The marginal constraints are weakly closed
+because the coordinate projections are continuous, so the feasible set is
+weakly compact. Finally, Portmanteau's theorem makes
+$\pi\mapsto\int c\d\pi$ weakly lower semicontinuous. The direct method gives a
+minimizer.
 :::
 
-On non-compact domains, one needs coercivity and moment conditions. For the
-Wasserstein cost $c(x,y)=d(x,y)^p$ on a Polish metric space, the natural domain
-is
+For the Wasserstein cost $c(x,y)=d(x,y)^p$ on a Polish metric space, the
+natural finite-valued domain is
 
 ```{math}
 \mathcal P_p(\Xx)
@@ -968,7 +989,9 @@ is
 \right\},
 ```
 
-for one, and hence every, reference point $x_0$.
+for one, and hence every, reference point $x_0$. If
+$\al,\be\in\mathcal P_p(\Xx)$, the product coupling has finite $p$-cost by the
+triangle inequality, and the proposition supplies an optimal coupling.
 
 ### Monge--Kantorovich Equivalence
 
@@ -979,8 +1002,9 @@ the Monge problem and the optimal coupling is induced by a map.
 (cor-monge-kantorovich-brenier)=
 :::{admonition} Corollary: Monge--Kantorovich Equivalence Under Brenier
 :class: important
-Assume that $\al$ is absolutely continuous with respect to Lebesgue measure and
-that $c(x,y)=\|x-y\|^2$. If $T$ is the Brenier map solving Monge's problem,
+Let $\al,\be\in\Pp_2(\RR^d)$, assume that $\al$ is absolutely continuous with
+respect to Lebesgue measure, and let $c(x,y)=\|x-y\|^2$. If $T$ is the Brenier
+map solving Monge's problem,
 then $\pi=(\Id,T)_\sharp\al$ is the unique optimal coupling solving
 Kantorovich's problem. In particular, the Monge and Kantorovich costs are the
 same.
@@ -1060,7 +1084,7 @@ probability measures.
 (prop-1d-kantorovich-quantile-coupling)=
 :::{admonition} Theorem: One-dimensional Kantorovich solution
 :class: important
-Let $\al,\be\in\Mm_+^1(\RR)$ and let $h:\RR\to\RR$ be convex. Consider the cost
+Let $\al,\be\in\Mm_+^1(\RR)$ and let $h:\RR\to[0,+\infty)$ be convex. Consider the cost
 $c(x,y)=h(x-y)$. Write $q_\al=\cumul{\al}^{-1}$ and
 $q_\be=\cumul{\be}^{-1}$, and assume that $h(q_\al-q_\be)\in L^1(0,1)$. Then
 the quantile coupling
@@ -1103,15 +1127,36 @@ elementary step yields an ordered plan; on an ordered uniform quantile grid,
 this is the diagonal plan.
 
 For general measures, lift any coupling to quantile coordinates. Let
-$\pi\in\Couplings(\al,\be)$. Let $U_\al$ and $U_\be$ be uniform random variables
-on $(0,1)$, and denote by $K_\al(x,\d r)$ and $K_\be(y,\d s)$ regular
-conditional laws of $U_\al$ given $q_\al(U_\al)=x$ and of $U_\be$ given
-$q_\be(U_\be)=y$. Given $(X,Y)\sim\pi$, draw conditionally
-$R\sim K_\al(X,\cdot)$ and $S\sim K_\be(Y,\cdot)$. The law $\gamma$ of $(R,S)$
-has uniform marginals and satisfies $\pi=(q_\al,q_\be)_\sharp\gamma$.
-Approximate $\gamma$ by transport matrices on uniform partitions of $(0,1)$,
-apply finite uncrossing, and pass to the limit, using truncation if the convex
-cost is unbounded. This gives
+$\pi\in\Couplings(\al,\be)$. Using regular conditional laws of a uniform
+quantile variable given its image under $q_\al$ and $q_\be$, construct a
+coupling $\gamma$ of two uniform variables such that
+$\pi=(q_\al,q_\be)_\sharp\gamma$.
+
+To justify the approximation, let
+$\kappa_M(r)=\max(-M,\min(r,M))$ and set
+$q_{\al,M}=\kappa_M\circ q_\al$ and $q_{\be,M}=\kappa_M\circ q_\be$.
+Approximate these bounded nondecreasing functions almost everywhere by
+nondecreasing step functions, constant on the uniform intervals
+$I_k=((k-1)/N,k/N]$. The matrix
+$G^N_{k\ell}=\gamma(I_k\times I_\ell)$ couples two uniform histograms.
+Proposition {ref}`prop-1d-weighted-sweep` applied to the ordered step values
+therefore yields the desired comparison for the step functions. For fixed
+$M$, continuity of $h$ on $[-2M,2M]$ allows passage to the limit as
+$N\to\infty$.
+
+Finally, $\kappa_M$ is nondecreasing and $1$-Lipschitz, so for every $x,y$
+there is $t_M(x,y)\in[0,1]$ such that
+$\kappa_M(x)-\kappa_M(y)=t_M(x,y)(x-y)$. Convexity and nonnegativity give
+
+```{math}
+h(t_M(x,y)(x-y))
+\leq (1-t_M(x,y))h(0)+t_M(x,y)h(x-y)
+\leq h(0)+h(x-y).
+```
+
+The assumed integrability controls the diagonal term; for a competitor of
+finite cost the same bound controls the other term, while an infinite-cost
+competitor is irrelevant. Dominated convergence as $M\to\infty$ gives
 
 ```{math}
 \int_0^1 h(q_\al(r)-q_\be(r))\d r
@@ -1166,20 +1211,10 @@ inequalities and is the bridge from Kantorovich plans to convex potentials.
 
 ### Support and $c$-Cyclical Monotonicity
 
-To formalize the finite-exchange condition, one needs a precise notion of support, namely the closed set that carries the mass of the coupling.
-
-(def-support)=
-:::{admonition} Definition: Support
-:class: important
-For a Radon measure $\pi$ on $\Xx\times\Yy$,
-
-```{math}
-\supp(\pi)
-\eqdef
-\{(x,y):\pi(U\times V)>0
-\text{ for every open }U\ni x,\ V\ni y\}.
-```
-:::
+The support of a coupling is the topological support introduced in Definition
+{ref}`def:support`, now applied to a Radon measure on $\Xx\times\Yy$. Thus
+$(x,y)\in\supp(\pi)$ exactly when every open neighborhood of $(x,y)$ has
+positive $\pi$-mass.
 
 (def:ccm)=
 :::{admonition} Definition: $c$-Cyclical Monotonicity
@@ -1211,22 +1246,30 @@ For uniform marginals on the same number of atoms, Corollary {ref}`cor-kantorovi
 (thm:opt_ccm)=
 :::{admonition} Theorem: Optimal Plans Are $c$-Cyclically Monotone
 :class: important
-Assume $c$ is continuous. For any optimal plan $\pi$ solving the Kantorovich
-problem, $\supp(\pi)$ is $c$-cyclically monotone.
+Assume that $c:\Xx\times\Yy\to[0,+\infty)$ is continuous and that the
+Kantorovich value is finite. For any optimal plan $\pi$ solving the
+Kantorovich problem, $\supp(\pi)$ is $c$-cyclically monotone.
 :::
 
 :::{dropdown} Proof Sketch
 Suppose a finite family in $\supp(\pi)$ violates the exchange inequality. By
 continuity, the same strict inequality holds in small neighborhoods
-$U_i\times V_i$ around the chosen pairs. Remove a small equal amount of mass
-from each rectangle, keep its first and second marginal pieces, and reinsert
-the mass after permuting the second marginal pieces. The new measure has the
-same marginals but strictly smaller cost, contradicting optimality.
+$U_i\times V_i$ around the chosen pairs. Write
+$m_i=\pi(U_i\times V_i)>0$ and choose
+$0<\lambda\leq(\sum_i m_i^{-1})^{-1}$. The scaled restrictions
+$\pi_i=\lambda\pi|_{U_i\times V_i}/m_i$ have common mass $\lambda$ and satisfy
+$\sum_i\pi_i\leq\pi$, even when the rectangles overlap. If $\al_i$ and
+$\be_i$ are their marginals, replace $\sum_i\pi_i$ by
+$\sum_i\al_i\otimes\be_{\sigma(i)}/\lambda$. The new measure has the same
+marginals, while the uniform strict inequality makes its cost strictly
+smaller, contradicting optimality.
 :::
 
 ### Monotonicity
 
-If the optimal plan is induced by a map $T$, cyclical monotonicity reads
+If the optimal plan is induced by a map $T$, there is a set $G$ of full
+$\al$-measure such that $(x,T(x))\in\supp(\pi)$ for every $x\in G$. For
+$x_1,\ldots,x_k\in G$, cyclical monotonicity reads
 
 ```{math}
 \sum_{i=1}^k c(x_i,T(x_i))
@@ -1234,17 +1277,22 @@ If the optimal plan is induced by a map $T$, cyclical monotonicity reads
 \sum_{i=1}^k c(x_i,T(x_{i+1})).
 ```
 
-For $c(x,y)=\frac12\|x-y\|^2$, the two-point case gives
+For $c(x,y)=\frac12\|x-y\|^2$, the two-point case gives, for $x,y\in G$,
 
 ```{math}
 \langle T(x)-T(y),x-y\rangle\geq0,
 ```
 
-so $T$ is a monotone vector field.
+so the optimal representative of $T$ is monotone on $G$.
 
 ### One Dimension
 
-In one dimension, for $c(x,y)=|x-y|^p$, cyclical monotonicity reduces to the classical monotone rearrangement: if $x<y$, then an optimal map satisfies $T(x)\leq T(y)$.
+In one dimension, for $c(x,y)=|x-y|^p$, the two-point inequality has a strict
+uncrossing consequence when $p>1$: if $x<y$, every optimal map satisfies
+$T(x)\leq T(y)$ on its full-measure transport set. For $p=1$, uncrossing is
+not strict. The monotone rearrangement remains optimal, but nonmonotone maps
+and nondeterministic plans can also be optimal, as in Remark
+{ref}`rem-kantorovich-book-shifting`.
 
 ## Metric Properties: Wasserstein Distances
 
@@ -1393,7 +1441,7 @@ This is the measure-theoretic version of the discrete formula above.
 (def-wasserstein-distance)=
 :::{admonition} Definition: Wasserstein Distance
 :class: important
-Let $(\X,d)$ be a metric space and $p\geq1$. For
+Let $(\X,d)$ be a Polish metric space and $p\geq1$. For
 $\al,\be\in\Pp_p(\X)$, the $p$-Wasserstein distance is
 
 ```{math}
@@ -1475,9 +1523,9 @@ optimal plans may also induce different $\Wass_2$ geodesics.
 :::{admonition} Algorithm: Displacement interpolation from a transport plan
 :class: ot4ml-algorithm
 
-**Input:** Measures $\alpha,\beta$ on $\RR^d$, time $t\in[0,1]$.
+**Input:** Measures $\al,\be$ on $\RR^d$, time $t\in[0,1]$.
 
-**Output:** Displacement interpolant $\alpha_t$.
+**Output:** Displacement interpolant $\al_t$.
 
 **Let** $\pi^\star$ be any minimizer of the quadratic Kantorovich problem.
 
@@ -1493,7 +1541,7 @@ $\al_t=(e_t)_\sharp\pi^\star.$
 > **Compute**
 > $\al_t= \sum_{i,j}P^\star_{ij} \delta_{(1-t)x_i+t y_j}.$
 
-**Return** $\alpha_t$.
+**Return** $\al_t$.
 :::
 
 
@@ -1604,7 +1652,7 @@ $p$-cost may still be infinite without moment assumptions on non-compact
 spaces. By contrast, Monge's constraint set
 $\{T:T_\sharp\al=\be\}$ can be empty. When an optimal Monge map exists,
 Kantorovich gives the same value by choosing the graph coupling
-$(\Id,T)_\sharp\alpha$.
+$(\Id,T)_\sharp\al$.
 
 The next proposition makes precise one important sense in which Kantorovich is
 the relaxation of Monge. The cleanest statement is first made in the lifted
@@ -1680,7 +1728,7 @@ source measures can be regularized into atomless ones.
 (cor-wasserstein-lsc-envelope-monge-distance)=
 :::{admonition} Corollary: Lower-Semicontinuous Envelope Of The Monge p-Cost
 :class: tip
-Assume, in addition, that atomless probability measures are dense in
+Assume that $\Xx$ is compact and that atomless probability measures are dense in
 $\Pp(\Xx)$ for the $\Wass_p$ topology. Then
 $(\al,\be)\mapsto\Wass_p(\al,\be)^p$ is the lower-semicontinuous envelope, on
 $\Pp(\Xx)\times\Pp(\Xx)$ for the product $\Wass_p$ topology, of the extended
@@ -1753,9 +1801,9 @@ between weak and strong topologies, and provide quantitative estimates in
 probability and robust optimization.
 
 (prop-comp-wass-p)=
-:::{admonition} Proposition: Equivalence Of Wasserstein Distances On Compact Spaces
+:::{admonition} Proposition: Comparison Of Wasserstein Distances On Bounded Spaces
 :class: important
-On a compact metric space, for $p\leq q$,
+On a bounded metric space, for $1\leq p\leq q<\infty$,
 
 ```{math}
 \Wass_p(\al,\be)
@@ -1773,15 +1821,21 @@ $d(x,y)^q\leq\diam(\Xx)^{q-p}d(x,y)^p$.
 :::
 
 (dfn-weak-conv)=
-:::{admonition} Definition: Weak$^*$ Topology
+:::{admonition} Definition: Weak Or Narrow Topology
 :class: important
-A sequence $(\al_k)_k$ converges weakly$^*$ to $\al$ in $\Mm_+^1(\Xx)$ if, for
+A sequence $(\al_k)_k$ converges weakly, or narrowly, to $\al$ in
+$\Mm_+^1(\Xx)$ if, for
 every bounded continuous function $f$,
 
 ```{math}
 \int f\d\al_k\longrightarrow\int f\d\al.
 ```
 :::
+
+On compact spaces this is also the weak-* topology inherited from the duality
+between continuous functions and finite measures. On noncompact spaces,
+“narrow convergence” avoids conflating this probability topology with other
+weak-* topologies.
 
 (rem-riemann-weak-limit)=
 :::{admonition} Remark: A Riemann-sum weak limit
@@ -1821,7 +1875,7 @@ Convergence of laws should be distinguished from stronger notions of convergence
 \PP(\norm{X_n-X}>\epsilon)\to0.
 ```
 
-Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak$^*$ convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
+Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak, or narrow, convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
 :::
 
 (rem-clt)=
@@ -1834,19 +1888,19 @@ The central limit theorem states that if $(X_i)_{i\geq1}$ are i.i.d. random vect
 Z_n \eqdef \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i
 ```
 
-converges in law toward the standard Gaussian $\Gaussian(0,\Id)$. In the terminology recalled above, this means that the measure $\al_n$ representing the law of $Z_n$ converges weakly, or weak$^*$ in the measure/test-function duality, toward the centered Gaussian measure $\al=\Gaussian(0,\Id)$.
+converges in law toward the standard Gaussian $\Gaussian(0,\Id)$. In the terminology recalled above, this means that the measure $\al_n$ representing the law of $Z_n$ converges weakly toward the centered Gaussian measure $\al=\Gaussian(0,\Id)$.
 
-Equivalently, this is a statement about rescaled convolutions of measures. If $\al$ and $\nu$ are probability measures on $\RR^d$, their convolution is
+Equivalently, this is a statement about rescaled convolutions of measures. If $\al$ and $\be$ are probability measures on $\RR^d$, their convolution is
 
 ```{math}
-\al*\nu \eqdef \operatorname{add}_\sharp(\al\otimes\nu),
+\al*\be \eqdef \operatorname{add}_\sharp(\al\otimes\be),
 \qquad
-\int \varphi\,\d(\al*\nu)
+\int \varphi\,\d(\al*\be)
 =
-\iint \varphi(x+y)\,\d\al(x)\d\nu(y)
+\iint \varphi(x+y)\,\d\al(x)\d\be(y)
 ```
 
-for every bounded continuous $\varphi$, where $\operatorname{add}(x,y)=x+y$. Thus $\al*\nu$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\nu$. When $\al$ and $\nu$ have densities $f$ and $g$, the convolution has density
+for every bounded continuous $\varphi$, where $\operatorname{add}(x,y)=x+y$. Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When $\al$ and $\be$ have densities $f$ and $g$, the convolution has density
 
 ```{math}
 (f*g)(z)=\int_{\RR^d} f(x)g(z-x)\d x.
@@ -1858,7 +1912,7 @@ If $\al$ is the common law of the variables $X_i$, writing $\al^{*n}$ for the $n
 \al_n=(D_{1/\sqrt n})_\sharp\al^{*n}.
 ```
 
-The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})_\sharp\al^{*n}$ converges weak$^*$ to the Gaussian $\Gaussian(0,\Id)$.
+The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})_\sharp\al^{*n}$ converges weakly to the Gaussian $\Gaussian(0,\Id)$.
 :::
 
 (rem-wasserstein-berry-esseen-pointer)=
@@ -1872,30 +1926,48 @@ The metric viewpoint on weak convergence is not only topological. It also turns 
 (prop-rel-wass-tv)=
 :::{admonition} Proposition: Total Variation As Wasserstein For The Discrete Metric
 :class: important
-Let $d$ be the $0/1$ metric, with $d(x,x)=0$ and $d(x,y)=1$ for $x\neq y$.
+Let $\Xx$ be a standard Borel space, let $\al$ and $\be$ be probability
+measures on $\Xx$, and let $d_0$ be the $0/1$ cost, with $d_0(x,x)=0$ and
+$d_0(x,y)=1$ for $x\neq y$.
 Then
 
 ```{math}
-\Wass_p(\al,\be)^p
+\inf_{\pi\in\Couplings(\al,\be)}
+\int d_0(x,y)^p\d\pi(x,y)
 =
 \frac12\|\al-\be\|_{\TV}.
 ```
+
+Whenever the $0/1$ metric is an admissible ground metric, the left-hand side
+is $\Wass_p(\al,\be)^p$.
 :::
 
-:::{dropdown} Proof Sketch
-For discrete measures on a common support, set
-$c_i=\min(a_i,b_i)$. Any coupling has diagonal mass at most $\sum_i c_i$, so
-its off-diagonal cost is at least $1-\sum_i c_i$. This bound is achieved by
-putting $c_i$ on the diagonal and coupling the leftover positive and negative
-parts by a product plan. Since
+:::{dropdown} Proof
+Let $\lambda=\al+\be$, write $a=\d\al/\d\lambda$ and
+$b=\d\be/\d\lambda$, and define the common part $\eta$ by
+$\d\eta/\d\lambda=\min(a,b)$. The residual measures
+$\al'=\al-\eta$ and $\be'=\be-\eta$ are mutually singular and have common
+mass
 
 ```{math}
-1-\sum_i c_i
-=
-\frac12\sum_i |a_i-b_i|,
+r=1-\eta(\Xx)
+=\frac12\int|a-b|\d\lambda
+=\frac12\|\al-\be\|_{\TV}.
 ```
 
-the formula follows.
+The diagonal submeasure of any coupling is bounded by both marginals, hence by
+$\eta$. Every coupling therefore has off-diagonal mass, and thus $0/1$ cost,
+at least $r$. If $r=0$, the diagonal coupling is optimal. If $r>0$, the
+coupling
+
+```{math}
+\pi^\star
+=\Delta_\sharp\eta+\frac1r\al'\otimes\be',
+\qquad \Delta(x)=(x,x),
+```
+
+has the prescribed marginals. Since $\al'\perp\be'$, its product term is
+concentrated off the diagonal and has cost $r$. This attains the lower bound.
 :::
 
 For Dirac masses,
@@ -1925,16 +1997,18 @@ for all $p\geq1$.
 :::
 
 On non-compact spaces, one must also impose convergence of $p$-th moments:
-$\Wass_p(\alpha_k,\alpha)\to0$ if and only if
-$\alpha_k\rightharpoonup\alpha$ and
+$\Wass_p(\al_k,\al)\to0$ if and only if
+$\al_k\rightharpoonup\al$ and
 
 ```{math}
-\int d(x,x_0)^p\d\alpha_k(x)
+\int d(x,x_0)^p\d\al_k(x)
 \to
-\int d(x,x_0)^p\d\alpha(x).
+\int d(x,x_0)^p\d\al(x).
 ```
 
-On a discrete space, weak and strong topologies coincide, and
+On a finite metric space, weak and strong topologies coincide. If
+$d_{\min}=\min_{x\neq y}d(x,y)$ and
+$d_{\max}=\max_{x,y}d(x,y)$, then
 
 ```{math}
 \frac{d_{\min}}{2}\|\al-\be\|_{\TV}
@@ -2013,7 +2087,20 @@ for some $x_0\in\Xx$. The associated linear map
 \int_{\Xx}\int_{\Xx} f(x)\,K(y,\d x)\,\d\al(y)
 ```
 
-is a measure-to-measure map from $\Pp_p(\Xx)$ to itself. If $\Xx=\RR^d$ and $K(y,\d x)=\kappa(x-y)\d x$ for a probability density $\kappa$ with finite $p$-moment, then $\Psi(\al)=\al*\kappa$ is convolution. Unless $K(y,\cdot)$ is a Dirac mass, a single atom is sent to a diffuse probability distribution. Heat flows, noising steps in diffusion models, and other smoothing mechanisms therefore belong to this mass-splitting class. If in addition $\Xx$ is Polish and $\Wass_p(K(y,\cdot),K(y',\cdot))\leq Ld(y,y')$, then a measurable selection of kernel couplings and the same coupling argument used below show that $\Psi$ is $L$-Lipschitz for $\Wass_p$.
+is a measure-to-measure map from $\Pp_p(\Xx)$ to itself: integrating the
+moment bound against $\al$ proves that $\Psi(\al)$ has finite $p$th moment. If
+$\Xx=\RR^d$ and $K(y,\d x)=\kappa(x-y)\d x$ for a probability density
+$\kappa$ with finite $p$th moment, then $\Psi(\al)=\al*\kappa$ is convolution.
+Unless $K(y,\cdot)$ is a Dirac mass, a single atom is sent to a diffuse
+probability distribution. Heat flows, noising steps in diffusion models, and
+other smoothing mechanisms therefore belong to this mass-splitting class.
+
+If in addition $\Xx$ is Polish and
+$\Wass_p(K(y,\cdot),K(y',\cdot))\leq Ld(y,y')$, then $\Psi$ is $L$-Lipschitz
+for $\Wass_p$. Glue an input coupling of $(y,y')$ with measurable optimal
+couplings between $K(y,\cdot)$ and $K(y',\cdot)$, then integrate the resulting
+kernel coupling. Its expected $p$th-power cost is at most $L^p$ times the input
+coupling cost.
 
 ### Wasserstein stability.
 
@@ -2021,18 +2108,18 @@ Regularity of $\Phi$ is a stability requirement: small perturbations of the inpu
 
 (rem-w2-lipschitz-bounded-gradient)=
 :::{admonition} Remark: $\Wass_2$-Lipschitz functionals and bounded gradients
-The same word "Lipschitz" is also used for scalar functionals $f:\Pp_2(\RR^d)\to\RR$. In a geodesic metric space, an $L$-Lipschitz functional has descending metric slope at most $L$. Conversely, if the slope is a strong upper gradient and is uniformly bounded by $L$, then $f$ is $L$-Lipschitz along curves, hence for $\Wass_2$ on $\Pp_2(\RR^d)$. In the smooth Otto calculus this slope is the $L^2(\alpha)$-norm of the Wasserstein gradient introduced in Proposition {ref}`prop-formal-wass-gradient`:
+The same word "Lipschitz" is also used for scalar functionals $f:\Pp_2(\RR^d)\to\RR$. In a geodesic metric space, an $L$-Lipschitz functional has descending metric slope at most $L$. Conversely, if the slope is a strong upper gradient and is uniformly bounded by $L$, then $f$ is $L$-Lipschitz along curves, hence for $\Wass_2$ on $\Pp_2(\RR^d)$. In the smooth Otto calculus this slope is the $L^2(\al)$-norm of the Wasserstein gradient introduced in Proposition {ref}`prop-formal-wass-gradient`:
 
 ```{math}
-|\partial f|_{\Wass_2}(\alpha)
+|\partial f|_{\Wass_2}(\al)
 =
-\norm{\Wgrad f(\alpha)}_{L^2(\alpha)} .
+\norm{\Wgrad f(\al)}_{L^2(\al)} .
 ```
 
 Thus, under the usual chain-rule assumptions, $\Wass_2$-Lipschitz regularity of $f$ is the metric analogue of imposing a uniform gradient bound,
 
 ```{math}
-\sup_{\alpha}\norm{\Wgrad f(\alpha)}_{L^2(\alpha)}\leq L .
+\sup_{\al}\norm{\Wgrad f(\al)}_{L^2(\al)}\leq L .
 ```
 
 This first-order boundedness should not be confused with $L$-smoothness in optimization, which would instead control how the gradient itself varies.
@@ -2041,7 +2128,7 @@ This first-order boundedness should not be confused with $L$-smoothness in optim
 (prop-measure-map-wass-lipschitz)=
 :::{admonition} Proposition: Wasserstein stability of transport representations
 :class: important
-Let $p\geq1$, let $E\subset\Xx$, and assume that, for all $\al,\be\in\Pp_p(\Xx)$ supported in $E$, the maps $T[\al]:E\to\Xx$ satisfy
+Let $(\Xx,d)$ be Polish, let $p\geq1$, let $E\subset\Xx$, and assume that, for all $\al,\be\in\Pp_p(\Xx)$ supported in $E$, the maps $T[\al]:E\to\Xx$ satisfy
 
 ```{math}
 d(T[\al](x),T[\al](y)) \leq L_x d(x,y)
@@ -2052,15 +2139,15 @@ and
 
 ```{math}
 \sup_{y\in E} d(T[\al](y),T[\be](y))
-\leq L_\al \Wass_p(\al,\be).
+\leq L_{\rm law} \Wass_p(\al,\be).
 ```
 
-Then $\Phi(\al)=T[\al]_\sharp\al$ is $(L_x+L_\al)$-Lipschitz on probability measures supported in $E$:
+Then $\Phi(\al)=T[\al]_\sharp\al$ is $(L_x+L_{\rm law})$-Lipschitz on probability measures supported in $E$:
 
 ```{math}
 \Wass_p(\Phi(\al),\Phi(\be))
 \leq
-(L_x+L_\al)\Wass_p(\al,\be).
+(L_x+L_{\rm law})\Wass_p(\al,\be).
 ```
 :::
 
@@ -2080,13 +2167,13 @@ By the triangle inequality,
 ```{math}
 d(T[\al](x),T[\be](y))
 \leq
-L_x d(x,y)+L_\al\Wass_p(\al,\be).
+L_x d(x,y)+L_{\rm law}\Wass_p(\al,\be).
 ```
 
 Minkowski's inequality gives the claim.
 :::
 
-The fixed-map case is the basic corollary, obtained with $E=\Xx$ and $L_\al=0$. If $T:\Xx\to\Xx$ is $L$-Lipschitz, then
+The fixed-map case is the basic corollary, obtained with $E=\Xx$ and $L_{\rm law}=0$. If $T:\Xx\to\Xx$ is $L$-Lipschitz, then
 
 ```{math}
 \Wass_p(T_\sharp\al,T_\sharp\be)\leq L\Wass_p(\al,\be).
@@ -2169,20 +2256,20 @@ The same differentiation of the quotient with respect to $x$ gives a spatial Lip
 ## Distributional Robustness And Wasserstein Infinity
 
 Wasserstein distances define ambiguity sets around empirical laws. Given
-samples $z_i$ and $\hat\alpha_n=\frac1n\sum_i\delta_{z_i}$, a
+samples $z_i$ and $\widehat{\al}_n=\frac1n\sum_i\delta_{z_i}$, a
 distributionally robust optimization problem replaces empirical risk by
 
 ```{math}
-\sup_{\beta:\Wass_p(\beta,\hat\alpha_n)\leq\rho}
-\int \ell_\theta(z)\d\beta(z).
+\sup_{\be:\Wass_p(\be,\widehat{\al}_n)\leq\rho}
+\int \ell_\theta(z)\d\be(z).
 ```
 
 Under standard upper-semicontinuity and growth assumptions on the loss, one has
 the dual reformulation
 
 ```{math}
-\sup_{\beta:\Wass_p(\beta,\hat\alpha_n)^p\leq\rho^p}
-\int \ell_\theta\d\beta
+\sup_{\be:\Wass_p(\be,\widehat{\al}_n)^p\leq\rho^p}
+\int \ell_\theta\d\be
 =
 \inf_{\lambda\geq0}
 \lambda\rho^p
@@ -2195,8 +2282,8 @@ The robust risk is therefore an empirical risk in which each sample is replaced
 by its worst penalized perturbation. For $p=1$ and an $L_\theta$-Lipschitz loss,
 
 ```{math}
-\sup_{\beta:\Wass_1(\beta,\hat\alpha_n)\leq\rho}
-\int \ell_\theta\d\beta
+\sup_{\be:\Wass_1(\be,\widehat{\al}_n)\leq\rho}
+\int \ell_\theta\d\be
 \leq
 \frac1n\sum_i\ell_\theta(z_i)+\rho L_\theta.
 ```
@@ -2236,20 +2323,21 @@ classifier protects against spatial adversarial shifts of the empirical atoms.
 For any nonnegative lower-semicontinuous cost $c$, the value
 
 ```{math}
-(\alpha,\beta)\mapsto\mathcal{L}_c(\alpha,\beta)
+(\al,\be)\mapsto\mathcal{L}_c(\al,\be)
 ```
 
-is jointly convex. In particular, $(\alpha,\beta)\mapsto\Wass_p(\alpha,\beta)^p$
+is jointly convex. In particular, $(\al,\be)\mapsto\Wass_p(\al,\be)^p$
 is jointly convex. The distance $\Wass_1$ is jointly convex, but
 $\Wass_p$ itself need not be convex for $p>1$.
 :::
 
 :::{dropdown} Proof
-Let $\pi_0$ and $\pi_1$ be nearly optimal couplings for
-$(\alpha_0,\beta_0)$ and $(\alpha_1,\beta_1)$. Then
+If either endpoint value is infinite, the convexity inequality is immediate.
+Otherwise, let $\pi_0$ and $\pi_1$ be $\eta$-optimal couplings for
+$(\al_0,\be_0)$ and $(\al_1,\be_1)$. Then
 $(1-t)\pi_0+t\pi_1$ is a coupling between the convex combinations of the
-marginals, and its cost is the corresponding convex combination. Taking
-infima proves joint convexity. For $p>1$, the root can destroy convexity; on
+marginals, and its cost is the corresponding convex combination. Letting
+$\eta\downarrow0$ proves joint convexity. For $p>1$, the root can destroy convexity; on
 the line,
 $\Wass_p((1-t)\delta_0+t\delta_1,\delta_0)=t^{1/p}$ is concave.
 :::
@@ -2258,26 +2346,39 @@ The limiting distance
 
 ```{math}
 :label: eq-wass-infty
-\Wass_\infty(\alpha,\beta)
+\Wass_\infty(\al,\be)
 \eqdef
-\inf_{\pi\in\Couplings(\alpha,\beta)}
+\inf_{\pi\in\Couplings(\al,\be)}
 \esssup_{(x,y)\sim\pi} d(x,y)
 ```
 
 minimizes the worst displacement rather than an average displacement.
+It is the limit of $\Wass_p$ as $p\to\infty$ on bounded spaces, but not the
+limit of the linear objectives defining $\Wass_p^p$. Although the
+essential-supremum objective is not linear, each sublevel is a convex
+support-constrained feasibility problem:
+
+```{math}
+\Wass_\infty(\al,\be)\leq r
+\quad\Longleftrightarrow\quad
+\exists\pi\in\Couplings(\al,\be)
+\text{ supported on }\{d\leq r\}.
+```
+
+Thus one can compute it by threshold search over feasible coupling problems.
 
 (prop-wasserstein-infty-dro)=
 :::{admonition} Proposition: $\Wass_\infty$ Robust Envelope Around An Empirical Law
 :class: important
 Let $(\Zz,d)$ be a Polish metric space. Let
-$\hat\alpha=\sum_{i=1}^n a_i\delta_{z_i}$ with $a_i>0$ and
+$\widehat{\al}=\sum_{i=1}^n a_i\delta_{z_i}$ with distinct $z_i$, $a_i>0$, and
 $\sum_i a_i=1$, and assume the closed balls
 $\overline B(z_i,\rho)$ are compact. For any real-valued upper-semicontinuous
-loss $\ell$,
+loss $\ell$, the following identity holds. Repeated atoms may first be merged.
 
 ```{math}
-\sup_{\beta:\Wass_\infty(\beta,\hat\alpha)\leq\rho}
-\int \ell(z)\d\beta(z)
+\sup_{\be:\Wass_\infty(\be,\widehat{\al})\leq\rho}
+\int \ell(z)\d\be(z)
 =
 \sum_{i=1}^n a_i
 \sup_{z\in\overline B(z_i,\rho)}\ell(z).
@@ -2285,10 +2386,23 @@ loss $\ell$,
 :::
 
 :::{dropdown} Proof
-Any feasible coupling between $\hat\alpha$ and $\beta$ disintegrates as
-$\sum_i a_i\delta_{z_i}\otimes\nu_i$, with each $\nu_i$ supported in
-$\overline B(z_i,\rho)$. Hence the robust expectation is bounded above by the
-displayed sum. The reverse inequality follows by choosing, for each $i$, a
-maximizer $z_i^\star\in\overline B(z_i,\rho)$ and taking
-$\beta=\sum_i a_i\delta_{z_i^\star}$.
+If $\Wass_\infty(\be,\widehat{\al})\leq\rho$, choose couplings $\pi_m$ whose
+essential displacements are at most $\rho+1/m$. Their fixed marginals make the
+family tight; Prokhorov's theorem and closedness of the marginal constraints
+give a weak limit $\pi$. Portmanteau's theorem, applied to the closed sets
+$\{d\leq\rho+\eta\}$ and then letting $\eta\downarrow0$, shows that $\pi$ is
+supported on $\{d\leq\rho\}$.
+
+Disintegrate this coupling as
+$\sum_i a_i\delta_{z_i}\otimes\nu_i$. Each $\nu_i$ is supported in
+$\overline B(z_i,\rho)$, so the robust expectation is bounded above by the
+displayed sum. Compactness and upper semicontinuity provide a maximizer
+$z_i^\star$ in every ball. The measure
+$\be=\sum_i a_i\delta_{z_i^\star}$ and the coupling
+$\sum_i a_i\delta_{(z_i,z_i^\star)}$ attain the reverse inequality.
 :::
+
+The coupling viewpoint developed in this chapter provides feasibility,
+existence, geometry, and stability. The next chapter adds the complementary
+dual description, in which marginal constraints are represented by
+Kantorovich potentials.

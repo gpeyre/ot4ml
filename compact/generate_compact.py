@@ -147,6 +147,14 @@ def strip_citations(text: str) -> str:
         "using the convexity properties of soft transforms",
     )
     text = text.replace(
+        r"every division in Algorithm~\ref{alg-capacity-constrained-sinkhorn} is well defined",
+        "every division in the KL--Dykstra iteration is well defined",
+    )
+    text = text.replace(
+        r"\((\Id,\bar T_\pi)_\sharp\alpha\)",
+        "",
+    )
+    text = text.replace(
         r"\begin{prop}[Geodesic convexity of linear and quadratic energies]\label{prop-basic-geodesic-convexity}",
         r"\begin{prop}[Geodesic convexity of linear and quadratic energies]\phantomsection\label{prop-basic-geodesic-convexity}",
     )
@@ -476,6 +484,9 @@ def inline_short_displays(text: str) -> str:
 
 def polish_compact_text(text: str) -> str:
     """Repair small artifacts caused by compacting away narrative context."""
+    # This display is detached from its surrounding remark only after short
+    # displays have been inlined, so remove it at the final polishing stage.
+    text = text.replace(r"\((\Id,\bar T_\pi)_\sharp\alpha\)", "")
     replacements = {
         (
             r"\(\norm{\al-\be}_{\TV} = \int_\Xx |\rho_\al(x)-\rho_\be(x)|\,\d\lambda(x).\)"

@@ -90,36 +90,52 @@ $a\in\simplex_n$, $b\in\simplex_m$,
 :::
 
 :::{dropdown} Proof
-The Lagrangian for the primal problem
+Start from the primal problem
 
 ```{math}
 \min_{P\ge0,\;P\mathbf{1}_m=a,\;P^\top\mathbf{1}_n=b}
 \langle C,P\rangle
 ```
 
-is
+Introduce multipliers $(f,g)$ for its two marginal constraints. The
+Lagrangian is
 
 ```{math}
-\min_{P\ge0}\max_{f\in\RR^n,\;g\in\RR^m}
+\mathcal L(P,f,g)
+=
 \langle C,P\rangle
 +\langle a-P\mathbf{1}_m,f\rangle
 +\langle b-P^\top\mathbf{1}_n,g\rangle .
 ```
 
-For a feasible linear program, strong duality allows one to exchange the
-minimum and maximum. The inner minimization becomes
+For fixed potentials, the dual function is
 
 ```{math}
-\min_{P\ge0}\langle C-f\mathbf{1}_m^\top-\mathbf{1}_n g^\top,P\rangle.
+\inf_{P\ge0}\mathcal L(P,f,g)
+=
+\langle a,f\rangle+\langle b,g\rangle
++\inf_{P\ge0}\langle C-(f\oplus g),P\rangle.
 ```
 
-This value is $0$ when $C_{ij}-f_i-g_j\ge0$ for all $i,j$, and is
-$-\infty$ otherwise. The remaining maximization is exactly
+The last infimum is zero when $C_{ij}-f_i-g_j\ge0$ for all $i,j$, and
+$-\infty$ otherwise. The primal coupling polytope is nonempty because it
+contains $a\otimes b$, and it is compact. Finite-dimensional
+linear-programming strong duality and attainment therefore give
 {eq}`eq-dual`.
 :::
 
-The primal-dual optimality relation locates the support of an optimal plan.
-If $P$ is optimal and $(f,g)$ is optimal, then
+(prop-discrete-complementary-slackness)=
+:::{admonition} Proposition: Discrete Complementary Slackness
+:class: important
+For every feasible plan $P$ and admissible pair $(f,g)$,
+
+```{math}
+\langle C,P\rangle-\langle f,a\rangle-\langle g,b\rangle
+=
+\sum_{i,j}P_{ij}(C_{ij}-f_i-g_j)\ge0.
+```
+
+They are primal and dual optimal if and only if
 
 ```{math}
 :label: eq-mk-pd-rel-web
@@ -127,6 +143,16 @@ If $P$ is optimal and $(f,g)$ is optimal, then
 \subset
 \left\{(i,j): f_i+g_j=C_{ij}\right\}.
 ```
+:::
+
+:::{dropdown} Proof
+The marginal constraints give
+$\langle f,a\rangle+\langle g,b\rangle
+=\sum_{i,j}P_{ij}(f_i+g_j)$, proving the gap identity. All summands are
+nonnegative. If the two feasible objects are optimal, strong duality makes
+their gap zero, so every summand with $P_{ij}>0$ vanishes. Conversely, the
+contact condition makes the gap zero and weak duality forces optimality.
+:::
 
 Thus potentials are not transport maps themselves. They are certificates, and
 their equality set with the cost matrix is where an optimal coupling is
@@ -174,7 +200,12 @@ maintains an approximate complementary-slackness certificate. The tolerance
 $\varepsilon$ removes ties, stabilizes price updates, and gives a quantitative
 optimality certificate {cite:p}`bertsekas1981new,bertsekas1992auction,merigot2020optimaltransportalgorithms`.
 
-Consider the square assignment problem with costs $C_{ij}$ and rewrite it as a
+### Bidding Dynamics
+
+The price update is chosen so that every currently owned pair satisfies an
+approximate dual certificate.
+
+Consider a square assignment problem of size $n\ge2$ with costs $C_{ij}$ and rewrite it as a
 profit maximization problem with $a_{ij}=-C_{ij}$. The auction algorithm keeps
 prices $p_j$ on the target points and a partial assignment. For an unassigned
 source $i$, define the best and second-best reduced profits
@@ -225,6 +256,11 @@ it makes the price landscape closer to exact complementary slackness.
 
 <iframe class="ot4ml-live-frame" title="Auction dual price controls" src="../live/dual-auction.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+### Approximate Optimality
+
+The bidding invariant gives both finite termination and a quantitative
+suboptimality bound.
+
 For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual
 minimization gives the convex objective
 
@@ -236,6 +272,7 @@ which comes from the dual constraints $u_i+p_j\ge a_{ij}$. The auction update
 should therefore be viewed as a price-adjustment method on this nonsmooth dual
 landscape, rather than as a generic gradient step.
 
+(def-auction-eps-cs)=
 :::{admonition} Definition: $\varepsilon$-Complementary Slackness
 :class: important
 An assignment $\sigma$ and prices $p$ satisfy
@@ -246,6 +283,48 @@ a_{i,\sigma(i)}-p_{\sigma(i)}
 \ge
 \max_j(a_{ij}-p_j)-\varepsilon .
 ```
+
+For a partial assignment, require the same condition only for currently
+assigned sources.
+:::
+
+(prop-auction-termination)=
+:::{admonition} Proposition: Auction Invariant And Finite Termination
+:class: important
+At every iteration of Algorithm {ref}`alg-auction-bidding`, each currently
+owned pair satisfies $\varepsilon$-complementary slackness. If
+
+```{math}
+\Delta_A=\max_{i,j}a_{ij}-\min_{i,j}a_{ij},
+```
+
+then the algorithm terminates after at most
+
+```{math}
+1+\left\lfloor\frac{n(\Delta_A+\varepsilon)}{\varepsilon}\right\rfloor
+```
+
+bids.
+:::
+
+:::{dropdown} Proof
+Immediately after source $i$ bids for $j_i$, its reduced profit there is
+$w_i-\varepsilon$, whereas every alternative is at most $w_i$. Later bids
+only increase competing prices. The price of $j_i$ cannot change while $i$
+remains its owner, because such a change displaces $i$. Hence the invariant
+persists.
+
+Each bid raises one price by at least $\varepsilon$. After a nonterminal bid,
+some other target remains unassigned and therefore has price zero. Calling it
+$k$ gives $w_i\ge a_{ik}$ and
+
+```{math}
+p_{j_i}^{\mathrm{new}}=a_{i,j_i}-w_i+\varepsilon
+\le\Delta_A+\varepsilon.
+```
+
+Thus the sum of prices bounds the number of nonterminal bids; at most one
+terminal bid remains.
 :::
 
 (prop-auction-eps-cs)=
@@ -284,14 +363,10 @@ cost. If the costs are integers, all assignment costs are integers; a gap
 strictly smaller than one forces the gap to be zero.
 :::
 
-During the bidding process, the last bid made by a source makes its chosen
-target better, up to the margin $\varepsilon$, than all alternatives.
-Subsequent price increases can only make targets less attractive, and one
-checks by induction that currently assigned pairs satisfy
-$\varepsilon$-complementary slackness. A standard finite-termination proof
-normalizes prices by subtracting their minimum, observes that each bid
-increases one target price by at least $\varepsilon$, and bounds the normalized
-price spread in terms of the range of the profits.
+Propositions {ref}`prop-auction-termination` and
+{ref}`prop-auction-eps-cs` give a complete correctness argument:
+the algorithm terminates with a complete assignment, and that assignment is
+$n\varepsilon$-optimal.
 
 :::{admonition} Remark: $\epsilon$-scaling and relation with Sinkhorn
 :class: ot4ml-remark
@@ -340,7 +415,12 @@ Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum 
 
 The continuous dual is the analytic counterpart of the discrete linear
 program. It uses continuous potentials because measures are naturally probed
-through integration. The pairing is
+through integration.
+
+### Continuous Duality
+
+The finite-dimensional price vectors become continuous test functions. The
+pairing is
 $\langle f,\alpha\rangle\eqdef\int f\,\d\alpha$.
 
 (prop-kantorovich-duality-general)=
@@ -391,52 +471,105 @@ $\pi\in\Couplings(\alpha,\beta)$, then
 ```
 
 Taking the supremum over admissible potentials and the infimum over couplings
-gives the inequality ``$\le$''.
+gives the first inequality.
 
-For the reverse inequality, view the primal problem as a linear program over
-Radon measures, paired with $\Cc(\X\times\Y)$. The affine marginal map is
-continuous for the weak topology, the feasible set is nonempty because it
-contains $\alpha\otimes\beta$, and the cost is continuous and bounded on
-compact sets. Since probability measures on a compact product are weakly
-compact, the set of attainable cost-marginal triples is closed after adding an
-epigraph variable. A separating-hyperplane argument applied to the convex set
+For the reverse inequality, let $V=\mathcal L_c(\alpha,\beta)$ and consider
+the cone
 
 ```{math}
+\mathcal K=
 \left\{
 \left(\pi_1,\pi_2,\int c\,\d\pi+r\right)
 :
-\pi\ge0,\ r\ge0
-\right\}
+\pi\in\mathcal M_+(\X\times\Y),\ r\ge0
+\right\}.
 ```
 
-gives continuous functions $(f,g)$ and a scalar multiplier, normalized so that
-$f\oplus g\le c$. The separating inequality states that the supremum over
-such potentials is at least the primal value. This is the infinite-dimensional
-analogue of the finite linear-programming proof.
+The cone is closed in the product weak topology: convergence of one marginal
+bounds the masses, compactness provides a weakly convergent subnet, and
+continuity of marginalization and of $\pi\mapsto\int c\,\d\pi$ identifies its
+limit. For $t<V$, the point $z_t=(\alpha,\beta,t)$ is not in $\mathcal K$.
+Strong separation gives $F\in\Cc(\X)$, $G\in\Cc(\Y)$ and $\lambda\in\RR$
+such that
+
+```{math}
+\int F\,\d\alpha+\int G\,\d\beta+\lambda t<0
+\le
+\int F\,\d\eta+\int G\,\d\zeta+\lambda s
+\quad
+\text{for all }(\eta,\zeta,s)\in\mathcal K.
+```
+
+Testing $(0,0,r)$ gives $\lambda\ge0$, and testing Dirac generators gives
+$F(x)+G(y)+\lambda c(x,y)\ge0$. If $\lambda=0$, integration against
+$\alpha\otimes\beta$ contradicts strict separation, so $\lambda>0$. Therefore
+$f=-F/\lambda$ and $g=-G/\lambda$ are admissible and have dual value greater
+than $t$. Letting $t\uparrow V$ proves equality.
+
+For attainment, take a maximizing sequence and successively set
+
+```{math}
+\widetilde g_k(y)=\min_x\{c(x,y)-f_k(x)\},
+\qquad
+\widetilde f_k(x)=\min_y\{c(x,y)-\widetilde g_k(y)\}.
+```
+
+These replacements preserve feasibility and improve the objective. Normalize
+$\widetilde f_k(x_0)=0$. The envelopes inherit the uniform moduli of $c$ in
+the two variables and are uniformly bounded. Arzela--Ascoli gives a uniformly
+convergent maximizing subsequence, whose limit remains admissible.
 :::
 
 (rem-kantorovich-dual-attainment)=
 :::{admonition} Remark: Dual attainment from $c$-transforms
 :class: ot4ml-remark
 
-Under the compactness and continuity assumptions of Proposition {ref}`prop-kantorovich-duality-general`, the maximum in {eq}`eq-dual-generic` is attained. If $c$ is Lipschitz, Proposition {ref}`prop-c-transform-lipschitz` shows that one may replace an admissible pair by its $c$-transforms without decreasing the dual objective; after fixing one additive gauge, the transformed potentials are uniformly bounded and equi-Lipschitz. Arzel\`a--Ascoli then gives a converging maximizing subsequence, and the closed constraint $f\oplus g\leq c$ passes to the limit.
+The final part of the proof uses the $c$-transforms introduced below. A
+continuous cost on a compact product has uniform moduli in both variables, and
+transformed potentials inherit them by Proposition
+{ref}`prop-c-transform-lipschitz`. Lipschitz costs give
+equi-Lipschitz potentials as a special case, but Lipschitz continuity is not
+required for attainment.
 :::
 
 
-The discrete case corresponds to dual vectors that are samples of continuous
-potentials, $(f_i,g_j)=(f(x_i),g(y_j))$. The primal-dual support condition
-becomes
+### Complementary Slackness
+
+As in the finite problem, equality of primal and dual values localizes the
+support of every optimal coupling.
+
+(prop-continuous-complementary-slackness)=
+:::{admonition} Proposition: Continuous Complementary Slackness
+:class: important
+For $\pi\in\Couplings(\alpha,\beta)$ and admissible $(f,g)$,
+
+```{math}
+\int c\,\d\pi-\int f\,\d\alpha-\int g\,\d\beta
+=
+\int\bigl(c(x,y)-f(x)-g(y)\bigr)\,\d\pi(x,y)\ge0.
+```
+
+The coupling and potentials are optimal if and only if the gap vanishes. In
+that case,
 
 ```{math}
 :label: eq-mk-pd-rel-cont-web
 \operatorname{supp}(\pi)
 \subset
-\left\{
-(x,y)\in\X\times\Y
-:
-f(x)+g(y)=c(x,y)
-\right\}.
+\left\{(x,y):f(x)+g(y)=c(x,y)\right\}.
 ```
+:::
+
+:::{dropdown} Proof
+The marginal identities give the equality, and admissibility gives
+nonnegativity. A zero gap is equivalent to equality of feasible primal and
+dual values. The slack is continuous and nonnegative; if it were positive at
+a point of $\operatorname{supp}(\pi)$, it would have positive integral on a
+neighborhood of that point.
+:::
+
+The discrete case corresponds to dual vectors that sample the continuous
+potentials, $(f_i,g_j)=(f(x_i),g(y_j))$.
 
 For the one-dimensional quadratic cost, the continuous potentials can be read
 from the monotone map $T=F_\beta^{-1}\circ F_\alpha$: on the active graph,
@@ -502,30 +635,10 @@ transport graph.
 
 <iframe class="ot4ml-live-frame" title="Continuous dual potential controls" src="../live/dual-continuous.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
-In contrast to the primal problem, showing existence of solutions to the
-continuous dual is nontrivial: the constraint set is not compact and the
-objective is not coercive. The machinery of $c$-transforms repairs this by
-replacing arbitrary potentials with regular best responses.
-
-(alg-hard-c-transform-closure)=
-:::{admonition} Algorithm: Hard alternating $c$-transform closure
-:class: ot4ml-algorithm
-
-**Input:** Source potential $f$ on $\X$, cost $c$.
-
-**Output:** Closed $c$-concave pair $(\tilde f,\tilde g)$.
-
-**Set** target best response:
-$g=f^c, \qquad g(y)=\inf_{x\in\X}\ c(x,y)-f(x).$
-
-**Set** source closure:
-$\tilde f=g^{\bar c}=f^{c\bar c}.$
-
-**Set** closed target potential:
-$\tilde g=\tilde f^c=f^{c\bar c c}=f^c.$
-**Return** $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
-:::
-
+In contrast to the primal problem, dual attainment is not immediate: the
+constraint set is not compact and the objective is not coercive. The
+$c$-transform selects canonical representatives that inherit the modulus of
+continuity of the cost; a gauge condition then makes the family compact.
 
 (sec-c-transfo)=
 ## c-Transforms
@@ -554,23 +667,27 @@ The constraint is equivalent to $g(y)\le f^c(y)$.
 (def-c-transform)=
 :::{admonition} Definition: $c$-Transform
 :class: important
-For a function $f:\X\to\RR\cup\{-\infty\}$, its $c$-transform is
+For a real-valued function $f:\X\to\RR$, its $c$-transform is the
+extended-real-valued function
 
 ```{math}
 :label: eq-c-transform-web
 f^c(y)
 \eqdef
-\inf_{x\in\X} c(x,y)-f(x).
+\inf_{x\in\X}\{c(x,y)-f(x)\}.
 ```
 
-For a function $g:\Y\to\RR\cup\{-\infty\}$, the $\bar c$-transform associated
+For a real-valued function $g:\Y\to\RR$, the $\bar c$-transform associated
 with $\bar c(y,x)=c(x,y)$ is
 
 ```{math}
 g^{\bar c}(x)
 \eqdef
-\inf_{y\in\Y} c(x,y)-g(y).
+\inf_{y\in\Y}\{c(x,y)-g(y)\}.
 ```
+
+On compact spaces, if $c$ and the input potential are continuous, these
+infima are finite minima and the transformed potential is continuous.
 :::
 
 (rem-discrete-c-transform)=
@@ -606,7 +723,7 @@ Thus the continuous best-response operation reduces exactly to taking column min
 :::
 
 
-Since $\beta$ is positive, maximizing $\int g\,\d\beta$ is achieved by taking
+Since $\beta$ is nonnegative, maximizing $\int g\,\d\beta$ is achieved by taking
 $g=f^c$ on the support of $\beta$, equivalently $\beta$-almost everywhere.
 
 (fig:dual-c-transform-envelope)=
@@ -640,12 +757,14 @@ regularity from the cost.
 (prop-c-transform-semi-relaxed)=
 :::{admonition} Proposition: $c$-Transforms Solve The Semi-Relaxed Problems
 :class: important
-For fixed $f$, the maximizers of the dual objective over all $g$ such that
+Under the compactness and continuity hypotheses above, for fixed
+$f\in\Cc(\X)$ the maximizers of the dual objective over all
+$g\in\Cc(\Y)$ such that
 $f\oplus g\le c$ are exactly the functions satisfying $g=f^c$
 $\beta$-almost everywhere. Equivalently,
 
 ```{math}
-\inf_{\pi:\,\pi_2=\beta}
+\inf_{\substack{\pi\in\mathcal M_+^1(\X\times\Y)\\\pi_2=\beta}}
 \int c(x,y)\,\d\pi(x,y)-\int f(x)\,\d\pi_1(x)
 =
 \int f^c(y)\,\d\beta(y).
@@ -682,29 +801,46 @@ $\pi(\d x,\d y)=\pi_y(\d x)\beta(\d y)$. Then
 \int f^c(y)\,\d\beta(y).
 ```
 
-Equality is obtained by choosing conditional laws supported on minimizers of
-$x\mapsto c(x,y)-f(x)$, or by approximate measurable selections when exact
-selections are unavailable.
+The argmin sets are nonempty and compact, and the measurable maximum theorem
+provides a Borel selector $x_\star(y)$. The coupling
+$\pi(\d x,\d y)=\delta_{x_\star(y)}(\d x)\beta(\d y)$ attains equality.
 :::
 
-The map $(f,g)\mapsto(g^{\bar c},f^c)$ replaces dual potentials by better
-ones: it preserves feasibility and improves the dual objective. Functions of
-the form $f^c$ and $g^{\bar c}$ are called $c$-concave and
-$\bar c$-concave functions. These partial minimizations define maximizers on
-the supports of $\alpha$ and $\beta$, while the transform itself defines
-functions on the whole ambient spaces. This gives a canonical extension of
-dual solutions beyond their active supports.
+The updates must be sequential:
+
+```{math}
+(f,g)\longmapsto(f,f^c)
+\longmapsto(f^{c\bar c},f^c).
+```
+
+Each step preserves feasibility and improves the objective. Simultaneously
+replacing an arbitrary old pair by $(g^{\bar c},f^c)$ need not preserve
+feasibility, because the two best responses were computed against different
+old coordinates. For example, if $c\equiv0$ and $f=g\equiv-1$, both transforms
+equal $1$ and their simultaneous update violates the dual constraint.
+Functions of the form $f^c$ and $g^{\bar c}$ are called
+$c$-concave and $\bar c$-concave, respectively.
 
 (prop-c-transform-lipschitz)=
-:::{admonition} Proposition: Lipschitz Stability Of $c$-Transforms
+:::{admonition} Proposition: Modulus Stability Of $c$-Transforms
 :class: important
-If $c$ is $L$-Lipschitz with respect to its second variable, uniformly in the
-first one and for the metric $d_\Y$ on $\Y$, then $f^c$ is $L$-Lipschitz.
+If
+
+```{math}
+|c(x,y)-c(x,y')|
+\le\omega_\Y(d_\Y(y,y'))
+```
+
+uniformly in $x$, then every finite $f^c$ has modulus $\omega_\Y$. The
+symmetric statement holds for $g^{\bar c}$ in the first variable. In
+particular, a uniform $L$-Lipschitz bound on the cost gives an
+$L$-Lipschitz transform.
 :::
 
 :::{dropdown} Proof
 For each $x$, set $F_x(y)=c(x,y)-f(x)$ and
-$F(y)=f^c(y)=\inf_x F_x(y)$. Since all functions $F_x$ are $L$-Lipschitz,
+$F(y)=f^c(y)=\inf_x F_x(y)$. Since all functions $F_x$ share the same
+modulus,
 
 ```{math}
 |F(y)-F(y')|
@@ -713,14 +849,15 @@ $F(y)=f^c(y)=\inf_x F_x(y)$. Since all functions $F_x$ are $L$-Lipschitz,
 \le
 \sup_x |F_x(y)-F_x(y')|
 \le
-L d_\Y(y,y').
+\omega_\Y(d_\Y(y,y')).
 ```
+
+The proof in the first variable is identical.
 :::
 
-This stability is crucial for dual attainment. When $c$ is Lipschitz on
-compact spaces, one can replace arbitrary admissible potentials by
-$c$-transformed ones with a uniform Lipschitz bound; after fixing the harmless
-additive gauge, compactness follows from Arzela--Ascoli.
+This stability is crucial for dual attainment. On compact spaces, continuity
+of $c$ already supplies uniform moduli; sequential closure and a harmless
+additive gauge then give compactness by Arzela--Ascoli.
 
 ### Euclidean Case
 
@@ -728,20 +865,20 @@ The Euclidean quadratic cost is the model case where $c$-transforms become
 ordinary convex conjugates after removing quadratic terms. This is the
 algebraic bridge between Kantorovich duality and Brenier maps.
 
-The cost $c(x,y)=-\langle x,y\rangle$ on $\X=\Y=\RR^d$ is central because it
-reduces the quadratic Wasserstein problem to convex duality. Indeed, for any
+Normalize the quadratic cost as $q(x,y)=\frac12\norm{x-y}^2$. For any
 $\pi\in\Couplings(\alpha,\beta)$,
 
 ```{math}
-\int \norm{x-y}^2\,\d\pi(x,y)
+\int q(x,y)\,\d\pi(x,y)
 =
-\int\norm{x}^2\,\d\alpha(x)
+\frac12\int\norm{x}^2\,\d\alpha(x)
 +
-\int\norm{y}^2\,\d\beta(y)
--2\int \langle x,y\rangle\,\d\pi(x,y).
+\frac12\int\norm{y}^2\,\d\beta(y)
+-\int \langle x,y\rangle\,\d\pi(x,y).
 ```
 
-For $c(x,y)=-\langle x,y\rangle$,
+The first two terms depend only on the marginals, so quadratic OT reduces to
+$c(x,y)=-\langle x,y\rangle$. For this bilinear cost,
 
 ```{math}
 f^c(y)
@@ -753,32 +890,54 @@ f^c(y)
 h^*(y)\eqdef\sup_x \langle x,y\rangle-h(x).
 ```
 
-Thus $c$-concave functions are negatives of convex functions. In the
-one-dimensional bilinear model case, the hard double $c$-transform is an
-operation of taking concave envelopes.
+On full Euclidean space,
+$f^{c\bar c}=-(-f)^{**}$. Hence $c$-closed functions are negatives of lower
+semicontinuous convex functions, and closure gives the smallest upper
+semicontinuous concave majorant. On restricted compact domains, the supporting
+slopes must additionally belong to the opposite domain.
 
 (rem-proof-brenier)=
 :::{admonition} Remark: Proof of Brenier's theorem
 :class: ot4ml-remark
 
-For $c(x,y)=\norm{x-y}^2$, subtracting the harmless quadratic terms reduces the geometry to the bilinear cost $-\dotp{x}{y}$. The primal-dual relationship, together with the fact that one can replace $(f,g)$ by $(f^{c\bar c},f^c)$, shows that an optimal plan satisfies
+Let $\alpha,\beta\in\mathcal P_2(\RR^d)$ and assume that $\alpha$ has a
+density. For $q(x,y)=\frac12\norm{x-y}^2$, let $(u,v)$ be a closed optimal
+dual pair and set
 
 ```{math}
-\supp(\pi)
-\subset
-\enscond{(x,y)}{\phi(x)+\phi^*(y)=\dotp{x}{y}},
+\phi(x)=\frac12\norm{x}^2-u(x),
+\qquad
+\psi(y)=\frac12\norm{y}^2-v(y).
 ```
 
-where $\phi=-f^{c\bar c}$ is convex and $-g=\phi^*$. By the Fenchel inequality, equality holds exactly when $y\in\partial\phi(x)$. If $\al$ has a density, convex functions are differentiable Lebesgue-almost everywhere, hence $\al$-almost everywhere, so $\partial\phi(x)$ is a singleton for $\al$-almost every $x$. This yields the Brenier map $T=\nabla\phi$ and explains why the optimal coupling is concentrated on a graph.
+The dual constraint becomes
+$\phi(x)+\psi(y)\ge\langle x,y\rangle$. The two closure relations give
+$\psi=\phi^*$ and $\phi=\psi^*$, so $\phi$ is convex. Complementary slackness
+shows that an optimal plan satisfies
+
+```{math}
+\operatorname{supp}(\pi)
+\subset
+\left\{(x,y):\phi(x)+\phi^*(y)=\langle x,y\rangle\right\}.
+```
+
+Fenchel equality is equivalent to $y\in\partial\phi(x)$. Convex functions are
+differentiable Lebesgue-almost everywhere, hence $\alpha$-almost everywhere,
+so the subdifferential is almost surely a singleton. This yields the Brenier
+map $T=\nabla\phi$. Multiplying the cost by two rescales the potentials but
+does not change the map.
 :::
 
 
-### Failure of Alternating Optimization
+### Why Hard Alternating Optimization Stops
 
-A crucial property of the Legendre transform is that $f^{***}=f^*$, and that
-$f^{**}$ is the convex envelope of $f$. These properties carry over to
+A crucial property of the Legendre transform is that $f^{***}=f^*$, while
+$f^{**}$ is the lower semicontinuous convex envelope of a proper $f$. Analogous
+identities explain why exact alternating best responses stop after one cycle
+for
 $c$-transforms {cite:p}`rockafellar2015convex`.
 
+(prop-c-transform-algebra)=
 :::{admonition} Proposition: Algebra Of $c$-Transforms
 :class: important
 The following identities hold, with inequalities understood pointwise:
@@ -797,36 +956,22 @@ The following identities hold, with inequalities understood pointwise:
 :::
 
 :::{dropdown} Proof
-The first inequality follows directly from the definition because of the
-minus sign. For (ii),
+The first inequality follows directly from the minus sign. For every $x,y$,
 
 ```{math}
-f^{c\bar c}(x)
-=
-\min_y c(x,y)-f^c(y)
-=
-\min_y c(x,y)-\min_{x'}\left(c(x',y)-f(x')\right).
+f^c(y)=\inf_{x'}\{c(x',y)-f(x')\}
+\le c(x,y)-f(x).
 ```
 
-Since
-$-\min_{x'}(c(x',y)-f(x'))\ge -(c(x,y)-f(x))$, one obtains
-
-```{math}
-f^{c\bar c}(x)
-\ge
-\min_y c(x,y)-c(x,y)+f(x)
-=
-f(x).
-```
-
-The relation $g^{\bar c c}\ge g$ is symmetric. To prove (iv), apply (ii) and
-then (i) with $f'=f^{c\bar c}$ to get
+Thus $c(x,y)-f^c(y)\ge f(x)$, and taking the infimum over $y$ proves (ii).
+The relation $g^{\bar c c}\ge g$ is symmetric. To prove (iv), use order
+reversal with $f\le f^{c\bar c}$ to get
 $f^c\ge f^{c\bar c c}$. Applying (iii) to $g=f^c$ gives the reverse
 inequality.
 :::
 
-This invariance property shows that one can improve only once by exact
-alternating maximization:
+This invariance shows that exact block maximization reaches a coordinatewise
+fixed point after one full cycle:
 
 ```{math}
 :label: eq-iter-c-trans-web
@@ -836,16 +981,35 @@ alternating maximization:
 =(f^{c\bar c},f^c).
 ```
 
-Thus the method reaches a stationary point immediately. This is the classical
-failure mode of alternating maximization on a nonsmooth problem, where the
-nonsmooth constraint mixes the two variables. The workaround is to introduce
-smoothing, which the next chapters develop through entropic regularization and
-Sinkhorn scaling.
+(alg-hard-c-transform-closure)=
+:::{admonition} Algorithm: Hard alternating $c$-transform closure
+:class: ot4ml-algorithm
 
-For the bilinear cost $c(x,y)=-xy$ on a compact interval, $c$-concave
-functions are ordinary concave functions and $f^{c\bar c}$ is the smallest
-concave majorant of $f$. A hard transform removes non-concave oscillations in
-one closure step instead of producing a gradual ascent.
+**Input:** Source potential $f$ on $\X$, cost $c$.
+
+**Output:** A $c$-closed admissible pair $(\tilde f,\tilde g)$.
+
+**Set** target best response:
+$g=f^c$, with $g(y)=\inf_{x\in\X}\{c(x,y)-f(x)\}$.
+
+**Set** source closure:
+$\tilde f=g^{\bar c}=f^{c\bar c}$.
+
+**Set** closed target potential:
+$\tilde g=\tilde f^c=f^{c\bar c c}=f^c$.
+
+**Return** $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
+:::
+
+The resulting pair is dual feasible but need not maximize the joint objective,
+because its value still depends on the arbitrary initial $f$. Entropic
+regularization replaces hard minima by soft log-sum-exp responses and leads to
+the nontrivial Sinkhorn scaling iteration.
+
+For $c(x,y)=-xy$ on compact intervals, $f^{c\bar c}$ is the smallest concave
+majorant representable with slopes in the opposite interval. In the displayed
+example that interval contains every relevant supporting slope, so the
+restricted closure is the ordinary concave envelope.
 
 (fig:dual-alternating-c-transform-failure)=
 :::{div}
@@ -857,11 +1021,12 @@ show_book_figure("dual-alternating-c-transform-failure")
 ```
 
 *Hard $c$-transforms for the bilinear cost $c(x,y)=-xy$. Dark curves are the
-double-transform closures $f^{c\bar c}$ and $g^{\bar c c}$, which are concave
-majorants, while dashed lighter curves are the one-sided best responses
-$g^{\bar c}$ and $f^c$ after a harmless vertical gauge shift. Exact alternating
-best responses are useful for certificates but do not give the smooth
-iterative dynamics later provided by entropic regularization.*
+double-transform closures $f^{c\bar c}$ and $g^{\bar c c}$, while dashed
+lighter curves are the one-sided best responses after a harmless gauge shift.
+The domains contain the relevant supporting slopes, so these restricted
+closures coincide with ordinary concave majorants. Exact best responses are
+useful for certificates but do not give the smooth iterative dynamics of
+entropic regularization.*
 :::
 
 The final interactive demo turns this algebra into a visible operation: change the

@@ -32,6 +32,14 @@ const files = {
   'transportation-models.tex': 'transportation-models.md',
 };
 
+const selectedFiles = process.env.SYNC_LATEX_FILE
+  ? Object.fromEntries(Object.entries(files).filter(([texFile]) => texFile === process.env.SYNC_LATEX_FILE))
+  : files;
+
+if (!Object.keys(selectedFiles).length) {
+  throw new Error(`Unknown SYNC_LATEX_FILE: ${process.env.SYNC_LATEX_FILE}`);
+}
+
 const sectionMap = {
   'dual-norms.tex': {
     'dual norms integral probability metrics': 'Dual Norms and Integral Probability Metrics',
@@ -283,7 +291,7 @@ function kindForEnv(env) {
   if (env === 'alg') return 'Algorithm';
   if (env === 'rem') return 'Remark';
   if (env === 'example') return 'Example';
-  throw new Error(`Unsupported environment: ${env}`);
+  return kindForTheoremEnv(env);
 }
 
 function kindForTheoremEnv(env) {
@@ -313,12 +321,15 @@ function makeBlock(block) {
   const body = latexToMyst(block.body);
   const blockLabel = mystLabelForBlock(block);
   const label = blockLabel ? `(${blockLabel})=\n` : '';
-  return `${label}:::{admonition} ${kind}: ${cleanBlockTitle(block.title)}\n:class: ${classForKind(kind)}\n\n${body}\n:::\n\n`;
+  const proof = block.proof
+    ? `:::{dropdown} Proof\n${latexToMyst(block.proof)}\n:::\n\n`
+    : '';
+  return `${label}:::{admonition} ${kind}: ${cleanBlockTitle(block.title)}\n:class: ${classForKind(kind)}\n\n${body}\n:::\n\n${proof}`;
 }
 
 function extractBlocks(text) {
   const clean = stripLatexComments(text);
-  const re = /\\begin\{(alg|rem|example)\}(?:\[([^\]]*)\])?/g;
+  const re = /\\begin\{(alg|rem|example|defn|prop|proposition|thm|cor|lem)\}(?:\[([^\]]*)\])?/g;
   const blocks = [];
   let match;
   while ((match = re.exec(clean))) {
@@ -329,10 +340,13 @@ function extractBlocks(text) {
     const bodyEnd = clean.indexOf(endNeedle, bodyStart);
     if (bodyEnd < 0) throw new Error(`Missing end for ${env} ${title}`);
     const body = clean.slice(bodyStart, bodyEnd).trim();
+    const blockEnd = bodyEnd + endNeedle.length;
+    const proofMatch = clean.slice(blockEnd).match(/^\s*\\begin\{proof\}([\s\S]*?)\\end\{proof\}/);
     blocks.push({
       env,
       title,
       body,
+      proof: proofMatch ? proofMatch[1].trim() : null,
       label: body.match(/^\s*\\label\{([^}]+)\}/)?.[1] || null,
       index: match.index,
       heading: headingBefore(clean, match.index),
@@ -431,7 +445,7 @@ function targetSection(texFile, latexHeading) {
 }
 
 function existingAdmonitions(markdown) {
-  const re = /^:{3,4}\{admonition\}\s*(?:(Remark|Example|Algorithm):\s*)?(.+)$/gm;
+  const re = /^:{3,4}\{admonition\}\s*(?:(Definition|Proposition|Theorem|Corollary|Lemma|Remark|Example|Algorithm):\s*)?(.+)$/gm;
   const found = new Set();
   let match;
   while ((match = re.exec(markdown))) {
@@ -463,7 +477,7 @@ function latexBlockQueues(blocks) {
 
 function replaceExistingLatexBlocks(markdown, blocks) {
   const queues = latexBlockQueues(blocks);
-  const header = /^(:{3,4})\{admonition\}\s*(?:(Remark|Example|Algorithm):\s*)?(.+?)\s*$/gm;
+  const header = /^(:{3,4})\{admonition\}\s*(?:(Definition|Proposition|Theorem|Corollary|Lemma|Remark|Example|Algorithm):\s*)?(.+?)\s*$/gm;
   let out = '';
   let cursor = 0;
   let updated = 0;
@@ -483,14 +497,22 @@ function replaceExistingLatexBlocks(markdown, blocks) {
 
     const labelPrefix = markdown.slice(0, start).match(/\n?\([^)]+\)=\s*\n$/);
     const replaceStart = labelPrefix ? start - labelPrefix[0].length : start;
-    const replaceEnd = end.index + end[0].length;
-    const replacement = makeBlock(candidates.shift());
+    const block = candidates.shift();
+    let replaceEnd = end.index + end[0].length;
+    if (block.proof) {
+      while (true) {
+        const oldProof = markdown.slice(replaceEnd).match(/^[ \t\r\n]*:::\{dropdown\} Proof[^\n]*\n[\s\S]*?\n:::[ \t]*(?=\r?\n|$)/);
+        if (!oldProof) break;
+        replaceEnd += oldProof[0].length;
+      }
+    }
+    const replacement = makeBlock(block);
     const current = markdown.slice(replaceStart, replaceEnd);
     out += markdown.slice(cursor, replaceStart);
     if (out && !out.endsWith('\n')) out += '\n\n';
     out += replacement;
-    cursor = end.index + end[0].length;
-    header.lastIndex = cursor;
+    cursor = replaceEnd;
+    header.lastIndex = replaceEnd;
     if (current.trim() !== replacement.trim()) updated += 1;
   }
 
@@ -738,7 +760,7 @@ function collectKnownLabels() {
 }
 
 let anchored = 0;
-for (const [texFile, mdFile] of Object.entries(files)) {
+for (const [texFile, mdFile] of Object.entries(selectedFiles)) {
   anchored += prepareFileLabels(texFile, mdFile);
 }
 
@@ -746,7 +768,7 @@ knownLabels = collectKnownLabels();
 
 let inserted = 0;
 let updated = 0;
-for (const [texFile, mdFile] of Object.entries(files)) {
+for (const [texFile, mdFile] of Object.entries(selectedFiles)) {
   const count = syncFile(texFile, mdFile);
   if (count.updated || count.inserted) {
     console.log(`${mdFile}: updated ${count.updated}, inserted ${count.inserted} LaTeX boxes`);

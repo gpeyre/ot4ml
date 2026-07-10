@@ -7,20 +7,22 @@ kernelspec:
 ---
 (sec-generalized-ot-problems)=
 
-The second family changes the optimization problem rather than only the ground
+This chapter changes the optimization problem rather than only the ground
 distance. Barycenters average several measures, multi-marginal OT couples many
-measures at once, inverse OT learns the cost from observed transport, and weak
-OT allows randomized conditional responses.
-
-These formulations remain close to Kantorovich linear programming, but the
-object being optimized is richer than a single two-marginal coupling.
+measures at once, low-rank and capacity constraints restrict the admissible
+plans, inverse OT learns the cost from observed transport, and weak or
+martingale OT acts on conditional laws. These models remain close to
+Kantorovich optimization, but the unknown can now be a family of couplings, a
+factored plan, a learned cost, or a coupling subject to nonlinear conditional
+constraints.
 
 :::{admonition} Guiding Comparison
 :class: tip
 Barycenters optimize over the unknown measure being averaged. Multi-marginal
-OT optimizes over a whole joint law with several marginals. Inverse OT makes
-the ground cost the unknown. Weak OT keeps the marginal constraints but lets
-the cost depend on conditional laws rather than only on pointwise pairs.
+OT optimizes over a whole joint law with several marginals. Low-rank and
+capacity constraints restrict the coupling geometry. Inverse OT makes the
+ground cost the unknown. Weak and martingale OT constrain or penalize
+conditional laws rather than only pointwise pairs.
 :::
 
 ```{code-cell} ipython3
@@ -60,23 +62,25 @@ dimension and for Gaussians, and the entropic algorithms used in practice.
 
 The natural formulation is a Frechet-mean problem on the space of probability
 measures: the unknown is the barycenter measure itself, and its support is not
-prescribed. Given input measures $(\beta_s)_{s=1}^S$ on a space $\X$ and
-weights $\lambda\in\simplex_S$, one minimizes
+prescribed. Given input measures $(\beta_s)_{s=1}^S$ on a space $\Xx$ and
+weights $\lambda\in\simplex_S$, discard any zero-weight inputs and consider
 
 ```{math}
-\min_{\alpha\in\mathcal M_+^1(\X)}
+:label: eq-barycenter-generic
+\min_{\alpha\in\mathcal M_+^1(\Xx)}
 \sum_{s=1}^S
 \lambda_s\,\mathcal L_c(\alpha,\beta_s).
 ```
 
-The minimizer $\alpha$ is the barycenter. Unlike a coupling, it is a new
-probability measure on $\X$. This barycenter problem was introduced by Carlier
-and coauthors, following earlier matching ideas, and is the measure-valued
-analogue of a Frechet mean
-{cite:p}`Carlier_wasserstein_barycenter,carlierekelandmatching`. For
-$\X=\RR^d$ and $c(x,y)=\norm{x-y}^2$, if one input measure has a density,
-then the barycenter is unique {cite:p}`Carlier_wasserstein_barycenter`.
-Discrete existence, consistency, and fixed-point constructions are studied in
+Any minimizer is a barycenter. Unlike a coupling, it is a new probability
+measure on $\Xx$. Agueh and Carlier introduced this problem, following earlier
+ideas of Carlier and Ekeland
+{cite:p}`Carlier_wasserstein_barycenter,carlierekelandmatching`. For the
+quadratic cost on $\Xx=\RR^d$, a barycenter exists under the finite-second-
+moment assumption. It is unique if at least one positive-weight input is
+absolutely continuous; more general criteria ensure uniqueness through an
+essentially unique multi-marginal barycentric map. Discrete existence,
+consistency, and fixed-point constructions are studied in
 {cite:p}`anderes2016discrete,alvarez2016fixed,leGouic2016existence`.
 
 #### Fixed-support discrete barycenters
@@ -131,14 +135,14 @@ barycenter problem.
 :::{admonition} Example: Two measures recover a Wasserstein geodesic
 :class: ot4ml-example
 
-For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on the Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation detailed in Section {ref}`sec-geodesic-convexity`. If no Monge map is available, the same construction uses an optimal coupling $\pi$ and the interpolation map $(x,y)\mapsto(1-t)x+ty$, giving $((1-t)x+ty)_\sharp\pi$.
+For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on a Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation of Definition {ref}`def-monge-mccann-interpolation`. If no Monge map is available, Definition {ref}`def-w2-geodesic-induced-by-plan` uses an optimal coupling $\pi$ and gives the barycenter as the push-forward of $\pi$ by $(x,y)\mapsto(1-t)x+ty$.
 :::
 
 
 :::{admonition} Example: Dirac inputs recover Fréchet means
 :class: ot4ml-example
 
-The general barycenter formulation above extends the computation of barycenters of points $(x_s)_{s=1}^S \in \X^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution is $\de_{x^\star}$ where $x^\star$ is a Frechet mean of the points $(x_s)_s$.
+The general barycenter formulation above extends the computation of barycenters of points $(x_s)_{s=1}^S\in\Xx^S$ to arbitrary measures. Indeed, if $\beta_s=\delta_{x_s}$ is a single Dirac mass, then a solution is $\delta_{x^\star}$, where $x^\star$ minimizes $x\mapsto\sum_s\lambda_s c(x,x_s)$.
 :::
 
 
@@ -185,19 +189,38 @@ For $c(x,y)=\norm{x-y}^2$, the mean of the barycenter $\al^\star$ is necessarily
 \int_\Xx x \d\al^\star(x) = \sum_s \la_s \int_\Xx x \d\be_s(x).
 ```
 
-Indeed, the squared Wasserstein distance decomposes into a squared distance between means plus a centered Wasserstein term. Minimizing the resulting quadratic function of the barycenter mean gives the displayed identity. If the input measures have compact support, the usual multi-marginal barycentric construction also gives a barycenter supported in the convex hull of the input supports.
+Write $m_\alpha=\int x\,\d\alpha(x)$ and let
+$\alpha^0=(x\mapsto x-m_\alpha)_\sharp\alpha$ be the centered translate. Then
+
+```{math}
+\Wass_2^2(\alpha,\beta)
+=
+\norm{m_\alpha-m_\beta}^2+\Wass_2^2(\alpha^0,\beta^0).
+```
+
+The cross term vanishes under every coupling of the centered measures. The
+barycenter objective therefore separates into a centered term and the strictly
+convex Euclidean function
+$m\mapsto\sum_s\lambda_s\norm{m-m_{\beta_s}}^2$, whose minimizer is
+$\sum_s\lambda_s m_{\beta_s}$. If the inputs have compact support,
+Proposition {ref}`prop-multimarginal-barycenter` also gives a barycenter
+supported in the convex hull of their supports.
 :::
 
 
 (prop-barycenter-ot-cost-convexity)=
 :::{admonition} Proposition: Convexity of the OT Cost
 :class: important
-The map $(\alpha,\beta)\mapsto\mathcal L_c(\alpha,\beta)$ is convex.
+The extended-valued map
+$(\alpha,\beta)\mapsto\mathcal L_c(\alpha,\beta)$ is jointly convex on
+pairs of probability measures.
 :::
 
 :::{dropdown} Proof
 Let $(\alpha_0,\beta_0)$ and $(\alpha_1,\beta_1)$ be two pairs of probability
-measures and let $t\in[0,1]$. For $\eta>0$, choose couplings
+measures and let $t\in[0,1]$. The endpoint cases $t\in\{0,1\}$ are identities,
+so assume $t\in(0,1)$. If either value on the right-hand side of the convexity
+inequality is infinite, the claim is immediate. Otherwise, for $\eta>0$, choose couplings
 $\pi_i\in\Couplings(\alpha_i,\beta_i)$ such that
 
 ```{math}
@@ -232,7 +255,7 @@ solution of a high-dimensional optimization problem.
 (prop-quantile-barycenters)=
 :::{admonition} Proposition: Quantile Barycenters on the Line
 :class: important
-For $\X=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein
+For $\Xx=\RR$ and $c(x,y)=|x-y|^2$, the quantile function of a Wasserstein
 barycenter is the weighted average of the input quantile functions:
 
 ```{math}
@@ -240,7 +263,7 @@ F_{\alpha^\star}^{-1}(r)
 =
 \sum_{s=1}^S
 \lambda_s F_{\beta_s}^{-1}(r),
-\qquad r\in[0,1].
+\qquad r\in(0,1).
 ```
 :::
 
@@ -270,10 +293,16 @@ Gaussian barycenters show that the same separation as in the Gaussian
 Wasserstein formula persists: means average linearly, while covariances
 average according to the Bures--Wasserstein geometry.
 
-:::{admonition} Example: Gaussian inputs remain Gaussian
+:::{admonition} Example: Nondegenerate Gaussian inputs remain Gaussian
 :class: ot4ml-example
 
-The barycenter of Gaussian measures is Gaussian. In one dimension, it is obtained by averaging the means and the standard deviations, so the barycenter variance is the square of this averaged standard deviation. In higher dimensions, the covariance $\cov$ minimizes the Bures objective
+Let the positive-weight inputs be $\Gaussian(\mean_s,\cov_s)$, with
+$\cov_s\succeq0$, and assume that at least one $\cov_s$ is positive definite.
+The quadratic Wasserstein barycenter is then unique and Gaussian. Its mean is
+$\mean=\sum_s\lambda_s\mean_s$. In one dimension, its standard deviation is
+$\sum_s\lambda_s\sqrt{\cov_s}$, so its variance is the square of this average.
+In higher dimensions, its positive-definite covariance $\cov$ uniquely
+minimizes the Bures objective
 
 ```{math}
 \cov \mapsto \sum_s \la_s \Bb(\cov,\cov_s)^2,
@@ -287,7 +316,12 @@ and equivalently solves the fixed-point equation
 \pa{\cov^{1/2}\cov_s\cov^{1/2}}^{1/2}.
 ```
 
-This is the covariance analogue of the usual Euclidean barycenter equation: the mean part averages linearly, while the covariance part averages through the Bures--Wasserstein geometry {cite:p}`alvarez2016fixed,bhatia2018bures`.
+This is the covariance analogue of the Euclidean barycenter equation: the mean
+part averages linearly, while the covariance part averages through the
+Bures--Wasserstein geometry
+{cite:p}`alvarez2016fixed,bhatia2018bures`. If all input covariances are
+singular, a Gaussian barycenter still exists, but uniqueness can fail and
+non-Gaussian barycenters may also occur.
 :::
 
 
@@ -392,7 +426,8 @@ support for the barycenter and solves the discrete problem
 {eq}`eq-wass-discr`; this introduces a discretization error but keeps the
 number of unknowns manageable.
 
-One can then use entropic smoothing and approximate {eq}`eq-wass-discr` by
+One can then use the entropy-only convention of {eq}`eq-regularized-discrete-web`
+and approximate {eq}`eq-wass-discr` by
 
 ```{math}
 :label: eq-entropic-bary
@@ -407,8 +442,9 @@ is to use a descent method, typically quasi-Newton, on the semi-dual
 {cite:p}`2016-Cuturi-siims`; this is useful when adding extra regularization
 on the barycenter, for instance to impose smoothness.
 
-A simple but effective approach rewrites {eq}`eq-entropic-bary` as a weighted
-KL projection problem {cite:p}`2015-benamou-cisc`:
+A simple but effective approach developed in {cite:p}`2015-benamou-cisc`
+observes that {eq}`eq-entropic-bary` has the same minimizers as the weighted KL
+projection problem
 
 ```{math}
 :label: eq-bary-entropy-couplings
@@ -437,7 +473,10 @@ in the common row marginal
 a=P_1\mathbf 1_{n_1}=\cdots=P_S\mathbf 1_{n_S}.
 ```
 
-The optimal couplings have scaling form
+The two objectives differ only by constants depending on $(C_s,\epsilon)_s$,
+not on the couplings or barycenter. Assume below that every $C_s$ is finite and
+every $b_s$ is positive; zero-weight target atoms can be deleted before the
+iteration. The optimal couplings then have scaling form
 
 ```{math}
 :label: eq-bary-opt
@@ -460,7 +499,8 @@ barycenter marginal.
 (prop-dual-entropic-barycenters)=
 :::{admonition} Proposition: Dual of Entropic Barycenters
 :class: important
-The optimal scalings in {eq}`eq-bary-opt` can be written as
+Under the preceding positivity assumptions, the optimal scalings in
+{eq}`eq-bary-opt` can be written as
 $(u_s,v_s)=(e^{f_s/\epsilon},e^{g_s/\epsilon})$, where
 $(f_s,g_s)_s$ solve
 
@@ -472,6 +512,8 @@ $(f_s,g_s)_s$ solve
 \dotp{g_s}{b_s}
 -
 \epsilon\dotp{K_s e^{g_s/\epsilon}}{e^{f_s/\epsilon}}
++
+\epsilon\sum_{i,j}(K_s)_{i,j}
 \right)
 \quad
 \text{subject to}
@@ -496,9 +538,13 @@ Introduce Lagrange multipliers in {eq}`eq-bary-entropy-couplings`:
 \right).
 ```
 
-Strong duality allows one to exchange the minimum and maximum. Minimizing with
-respect to $a$ gives the constraint $\sum_s\lambda_s f_s=0$, and minimizing
-with respect to $P_s$ gives the Legendre transform of
+The explicit constraint $a\in\Sigma_n$ may be dropped here: nonnegativity of
+the couplings, together with $P_s\mathbf 1_{n_s}=a$ and
+$P_s^\top\mathbf 1_n=b_s$, already forces $a\in\Sigma_n$. We may therefore
+minimize the Lagrangian over $a\in\mathbb R^n$. Strong duality allows one to
+exchange the minimum and maximum. Finiteness of the minimum with respect to
+$a$ gives the vector constraint $\sum_s\lambda_s f_s=0$, while minimizing with
+respect to $P_s$ gives the Legendre transform of
 $\operatorname{KL}(\cdot\mid K_s)$:
 
 ```{math}
@@ -532,9 +578,10 @@ ur-\big(r\log(r/k)-r+k\big)
 k(e^u-1).
 ```
 
-Dropping constants independent of the potentials gives the displayed dual.
-Coordinate maximization in $g_s$ gives the $v_s$ update; block maximization in
-all $(f_s)_s$ gives the common marginal update and then the $u_s$ update.
+Substituting this conjugate gives the displayed dual, including its additive
+constant. Coordinate maximization in $g_s$ gives the $v_s$ update; block
+maximization in all $(f_s)_s$ under $\sum_s\lambda_s f_s=0$ gives the
+weighted geometric mean and then the $u_s$ update.
 :::
 
 Classical applications include two-dimensional image interpolation,
@@ -545,14 +592,16 @@ ground cost is the square of the geodesic distance {cite:p}`2015-solomon-siggrap
 :::{admonition} Algorithm: Gaussian barycenter fixed point
 :class: ot4ml-algorithm
 
-**Input:** Gaussian measures $\Gaussian(\mean_s,\cov_s)$, weights $\lambda_s$, tolerance $\mathrm{tol}$.
+**Input:** Gaussian measures $\Gaussian(\mean_s,\cov_s)$ with
+$\cov_s\succeq0$ and at least one positive-definite active covariance,
+positive weights $\lambda_s$, tolerance $\mathrm{tol}$.
 
 **Output:** Gaussian barycenter $\Gaussian(\mean,\cov)$.
 
 **Set**
 $\mean=\sum_s\lambda_s\mean_s .$
 
-**Initialize:** Set $\cov^{(0)}=\sum_s\lambda_s\cov_s$.
+**Initialize:** Set $\cov^{(0)}=\sum_s\lambda_s\cov_s\succ0$.
 
 **For** $k=0,1,\ldots$ **do**:
 
@@ -571,7 +620,9 @@ $\mean=\sum_s\lambda_s\mean_s .$
 :::{admonition} Algorithm: Entropic barycenter Sinkhorn
 :class: ot4ml-algorithm
 
-**Input:** Costs $\C_s$, target weights $\b_s$, barycenter weights $\lambda_s$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Finite costs $\C_s$, positive target histograms $\b_s$,
+barycenter weights $\lambda\in\operatorname{int}(\simplex_S)$,
+regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 **Output:** Barycenter weights $\a$ and couplings $\P_s$.
 
@@ -855,7 +906,7 @@ all of $\mathcal P(\Omega)$.
 Let $S$ be a protected group and $Y=f(X)$ a score. A basic demographic-parity constraint asks that the conditional laws $\al_s=\mathcal L(Y\mid S=s)$ be independent of $s$. OT post-processing chooses a common fair law, often a Wasserstein barycenter
 
 ```{math}
-\bar\al\in\uargmin{\nu}\sum_s p_s\Wass_2^2(\al_s,\nu),
+\bar\al\in\uargmin{\zeta}\sum_s p_s\Wass_2^2(\al_s,\zeta),
 ```
 
 and transports each group toward it. In one dimension this uses monotone rearrangements; in the quadratic absolutely continuous case it uses Brenier maps $(T_s)_\sharp\al_s=\bar\al$; otherwise one can use the barycentric projection of an optimal plan. The repaired score is $\widetilde Y=T_S(Y)$ when a map is used. The barycenter is the compromise distribution, while the OT maps give minimal geometric changes to the original scores {cite:p}`DelBarrioGamboaGordalizaLoubes2018FairOT,ChzhenDenisHebiriOnetoPontil2020FairBarycenters,BuylDeBie2022FairClassifiers,HuRatzCharpentier2023FairBarycenters`. Thus the barycenter is not only an averaging tool: it can define a target distribution used to repair several observed laws simultaneously.
@@ -873,12 +924,13 @@ tensor dimension is the main computational obstacle.
 
 The multi-marginal formulation replaces a coupling between two measures by a
 joint distribution with several prescribed marginals. Given measures
-$(\alpha_s)_{s=1}^S$ on spaces $(\X_s)_{s=1}^S$ and a cost
-$c:\X_1\times\cdots\times\X_S\to\RR$, the problem reads
+$(\alpha_s)_{s=1}^S$ on spaces $(\Xx_s)_{s=1}^S$ and a lower-semicontinuous
+cost $c:\Xx_1\times\cdots\times\Xx_S\to\RR\cup\{+\infty\}$ bounded
+from below, the problem reads
 
 ```{math}
 \inf_{\pi\in\Couplings(\alpha_1,\ldots,\alpha_S)}
-\int_{\X_1\times\cdots\times\X_S}
+\int_{\Xx_1\times\cdots\times\Xx_S}
 c(x_1,\ldots,x_S)\d\pi(x_1,\ldots,x_S),
 ```
 
@@ -898,9 +950,9 @@ Gangbo--Swiech and Pass {cite:p}`GangboSciech,Pass2,PassMultiMarginalStructure,P
 (def-twist-splitting-sets)=
 :::{admonition} Definition: Twist on Splitting Sets
 :class: definition
-Fix $x_1\in\X_1$. A set $M\subset\X_2\times\cdots\times\X_S$ is a
+Fix $x_1\in\Xx_1$. A set $M\subset\Xx_2\times\cdots\times\Xx_S$ is a
 $c$-splitting set at $x_1$ if there exist functions
-$u_s:\X_s\to\RR\cup\{-\infty\}$, for $s=2,\ldots,S$, such that
+$u_s:\Xx_s\to\RR\cup\{-\infty\}$, for $s=2,\ldots,S$, such that
 
 ```{math}
 \sum_{s=2}^S u_s(x_s)\leq c(x_1,x_2,\ldots,x_S)
@@ -922,11 +974,11 @@ is injective on $M$.
 (prop-multimarginal-monge-structure)=
 :::{admonition} Proposition: Multi-Marginal Monge Structure
 :class: important
-Assume that $\X_s\subset\RR^d$, that $c$ is continuous and differentiable with
-respect to $x_1$, and that $c$ is twisted on splitting sets. Suppose that
-Kantorovich dual maximizers $(\varphi_s)_{s=1}^S$ exist and that $\varphi_1$
-is differentiable $\alpha_1$-a.e. If $\alpha_1$ is absolutely continuous, then
-every optimal plan $\pi^\star\in\Couplings(\alpha_1,\ldots,\alpha_S)$ is
+Assume that $\Xx_s\subset\RR^d$, that $c$ is continuous and differentiable
+with respect to $x_1$, and that $c$ is twisted on splitting sets. Suppose that
+Kantorovich dual maximizers $(\varphi_s)_{s=1}^S$ exist, that $\alpha_1$ is
+absolutely continuous, and that $\varphi_1$ is differentiable
+$\alpha_1$-a.e. Then every optimal plan $\pi^\star\in\Couplings(\alpha_1,\ldots,\alpha_S)$ is
 concentrated on the graph of maps
 
 ```{math}
@@ -939,15 +991,16 @@ In particular, under these hypotheses the optimizer is unique.
 :::
 
 :::{dropdown} Proof
-Let $(\varphi_s)_{s=1}^S$ be optimal dual potentials, so that
-$\sum_s\varphi_s(x_s)\leq c(x_1,\ldots,x_S)$ with equality on
-$\operatorname{supp}(\pi^\star)$. Fix a point $x_1$ where $\varphi_1$ is
-differentiable and consider the fiber
+Let $(\varphi_s)_{s=1}^S$ be optimal dual potentials. Complementary
+slackness gives a Borel contact set $\Gamma$ of full $\pi^\star$-measure on
+which $\sum_s\varphi_s(x_s)=c(x_1,\ldots,x_S)$. After disintegrating with
+respect to the first marginal, fix a point $x_1$ where $\varphi_1$ is
+differentiable and where the conditional plan is concentrated on the fiber
 
 ```{math}
 M(x_1)
 =
-\{(x_2,\ldots,x_S):(x_1,x_2,\ldots,x_S)\in\operatorname{supp}(\pi^\star)\}.
+\{(x_2,\ldots,x_S):(x_1,x_2,\ldots,x_S)\in\Gamma\}.
 ```
 
 For this fixed $x_1$, the fiber is a splitting set: indeed, the constant
@@ -1170,11 +1223,13 @@ multi-marginal plan.
 (cor-gaussian-discrete-barycenters)=
 :::{admonition} Corollary: Gaussian and Discrete Barycenters
 :class: important
-Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the
-input measures are discrete, then there exists a barycenter supported on the
-set of weighted averages $\sum_s\lambda_s x_{s,i_s}$ of one support point from
-each input. In particular, if the $s$-th input has $n_s$ atoms, a barycenter
-exists with at most $\prod_s n_s$ atoms.
+For Gaussian input measures, there exists a Gaussian quadratic Wasserstein
+barycenter. If at least one positive-weight input has positive-definite
+covariance, the barycenter is unique and is therefore Gaussian. If the input
+measures are discrete, then there exists a barycenter supported on the set of
+weighted averages $\sum_s\lambda_s x_{s,i_s}$ of one support point from each
+input. In particular, if the $s$-th input has $n_s$ atoms, a barycenter exists
+with at most $\prod_s n_s$ atoms.
 :::
 
 :::{dropdown} Proof
@@ -1190,9 +1245,11 @@ Gelbrich's inequality gives
 
 with equality for the Gaussian law with mean $m$ and covariance $\Sigma$.
 Therefore the barycenter objective is bounded below by a function depending
-only on $(m,\Sigma)$, and this lower bound is attained by the Gaussian measure
-with the minimizing mean and covariance. For discrete inputs, any
-multi-marginal optimizer is supported on the finite product of the input
+only on $(m,\Sigma)$, and this lower bound is attained by a Gaussian measure
+with minimizing mean and covariance. This proves existence of a Gaussian
+barycenter. If one active input covariance is positive definite, that input is
+absolutely continuous, so uniqueness forces every barycenter to coincide with
+this Gaussian one. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input
 supports, and $B$ maps this product to at most $\prod_s n_s$ points.
 :::
 
@@ -1257,7 +1314,8 @@ low-rank structure, convolutional kernels, or a fixed barycenter support.
 :::{admonition} Algorithm: Multi-marginal Sinkhorn
 :class: ot4ml-algorithm
 
-**Input:** Marginals $\a_s\in\simplex_{n_s}$, tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** Positive marginals $\a_s\in\simplex_{n_s}$, finite tensor cost
+$C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
 
 **Output:** Multi-marginal entropic coupling tensor $P$.
 
@@ -1389,34 +1447,35 @@ For a cost matrix $C\in\RR^{n\times m}$, the low-rank constrained OT value is
 The minimization is over triples satisfying Definition
 {ref}`def-low-rank-couplings`.
 
-This problem is non-convex, but each factor block has a familiar structure. A
-common entropic variant adds entropy to the two sub-couplings. In this entropic
-model one works with positive latent masses $g_k>0$; components of zero mass are
-simply removed before solving the problem.
+This problem is non-convex. Scetbon, Cuturi and Peyré regularize the joint
+variables $(Q,R,g)$ by the sum of their entropies and optimize them by
+constrained mirror descent {cite:p}`scetbon2021lowrank`. To isolate the simpler
+block mechanism used in Figure {ref}`fig:low-rank-ot-factorization`, fix a
+positive latent law $g\in\simplex_r$ and optimize only the two sub-couplings:
 
 ```{math}
 :label: eq-low-rank-entropic-ot
-\min_{(Q,R,g)}
+\min_{\substack{Q\ones_r=a,\;Q^\top\ones_n=g\\
+R\ones_r=b,\;R^\top\ones_m=g}}
 \sum_{k=1}^r \frac{Q_{:,k}^\top C R_{:,k}}{g_k}
 +
 \epsilon\KLD(Q|a\otimes g)
 +
-\epsilon\KLD(R|b\otimes g),
+\epsilon\KLD(R|b\otimes g).
 ```
 
-where the constraints are those of Definition {ref}`def-low-rank-couplings`.
-The full low-rank Sinkhorn factorization of {cite:t}`scetbon2021lowrank` uses
-block-coordinate updates in $(Q,R,g)$. The following fixed-$g$ version is the
-simplest way to see the mechanism: each block update is an ordinary entropic OT
-problem with an effective cost, and this is the variant used in Figure
-{ref}`fig:low-rank-ot-factorization`.
+For fixed $g$, this differs only by constants from adding the negative
+entropies of $Q$ and $R$ to the factorized transport cost. Each block subproblem
+is a strictly convex entropic OT problem with an effective cost, although the
+joint objective remains non-convex because of its bilinear $Q$--$R$ term.
 
 :::{admonition} Algorithm: Alternating Low-Rank Sinkhorn with Fixed Latent Mass
 :class: note
-**Input:** marginals $a\in\simplex_n$, $b\in\simplex_m$, cost
-$C\in\RR^{n\times m}$, rank $r$, positive latent mass $g\in\simplex_r$
-with $g_k>0$, regularization $\epsilon>0$, maximum number of iterations
-$L\geq1$, tolerance $\mathrm{tol}$.
+**Input:** positive marginals $a\in\operatorname{int}(\simplex_n)$ and
+$b\in\operatorname{int}(\simplex_m)$, cost $C\in\RR^{n\times m}$, rank
+$r$, positive latent mass $g\in\operatorname{int}(\simplex_r)$,
+regularization $\epsilon>0$, maximum number of iterations $L\geq1$, and
+tolerance $\mathrm{tol}$.
 
 **Output:** factored coupling $P=Q\operatorname{diag}(g)^{-1}R^\top$.
 
@@ -1434,13 +1493,22 @@ For $\ell=0,\ldots,L-1$:
    \langle B^{(\ell+1)},R\rangle+\epsilon\KLD(R|b\otimes g)$.
 5. Set $P^{(\ell+1)}=Q^{(\ell+1)}\operatorname{diag}(g)^{-1}(R^{(\ell+1)})^\top$.
 6. Set $J^{(\ell+1)}$ to the value of {eq}`eq-low-rank-entropic-ot` at
-   $(Q^{(\ell+1)},R^{(\ell+1)},g)$.
+   $(Q^{(\ell+1)},R^{(\ell+1)})$.
 7. If $\ell\geq1$ and
    $|J^{(\ell+1)}-J^{(\ell)}|\leq \mathrm{tol}\max\{1,|J^{(\ell)}|\}$, return
    $P^{(\ell+1)}$.
 
 Return $P^{(L)}$ if the loop reaches $L$ iterations.
 :::
+
+Each update exactly minimizes one factor block while keeping the other fixed,
+so the objective decreases monotonically. Positivity makes each block minimizer
+unique and keeps it in the relative interior of its transport polytope.
+Compactness and exact cyclic block-coordinate descent imply that every
+accumulation point is a coordinatewise minimizer, hence a stationary point of
+the constrained problem. The non-convexity does not guarantee a globally
+optimal rank-$r$ coupling.
+
 (fig:low-rank-ot-factorization)=
 
 :::{div}
@@ -1483,7 +1551,7 @@ the continuous problem, including existence and the geometry of active
 saturated regions, was developed by Korman and McCann {cite:p}`km1`.
 
 Let $\alpha\in\Mm_+^1(\Xx)$, $\beta\in\Mm_+^1(\Yy)$ and let
-$\kappa:\Xx\times\Yy\to[0,+\infty]$ be a measurable capacity. The
+$\kappa:\Xx\times\Yy\to[0,+\infty)$ be a finite-valued measurable capacity. The
 capacity-constrained transport value is
 
 ```{math}
@@ -1502,9 +1570,14 @@ capacity-constrained transport value is
 The product coupling $\alpha\otimes\beta$ is feasible whenever $\kappa\geq1$.
 Thus the constraint is not meant to promote the product plan; rather, it
 prevents the optimizer from using any pair more than the prescribed density
-ratio. Large $\kappa$ recovers the usual Kantorovich value, while $\kappa=1$
-forces the independent coupling itself, and values close to $1$ favor diffuse
-plans close to this reference.
+ratio. Separately, we adopt the convention
+$\MK_c^{+\infty}(\alpha,\beta)=\MK_c(\alpha,\beta)$: the symbol
+$\kappa\equiv+\infty$ removes both the density bound and the
+absolute-continuity requirement, and hence recovers the full Kantorovich
+problem. At the opposite extreme,
+$\kappa=1$ forces the independent coupling itself, because a density bounded
+by one and integrating to one must equal one almost everywhere. Values close
+to one therefore enforce diffuse plans close to this reference.
 
 For discrete measures $\alpha=\sum_i a_i\delta_{x_i}$ and
 $\beta=\sum_j b_j\delta_{y_j}$, a capacity is an upper matrix
@@ -1523,9 +1596,45 @@ finite-dimensional problem is the linear program
 Feasibility is now a genuine issue: the upper matrix must contain enough mass
 in every row-column cut to support the prescribed marginals. The usual
 transport polytope is recovered when $U_{i,j}=+\infty$, while small capacities
-select a smaller capped transportation polytope.
+select a smaller capped transportation polytope. For index sets $I$ and $J$,
+write $a(I)=\sum_{i\in I}a_i$, $b(J)=\sum_{j\in J}b_j$, and
+$U(I,J)=\sum_{i\in I,j\in J}U_{ij}$.
 
-Entropic smoothing gives a direct Sinkhorn-like algorithm. With
+(prop-capacity-feasibility)=
+:::{admonition} Proposition: Feasibility of a Capped Transport Polytope
+:class: important
+The capped marginal constraints are feasible if and only if
+
+```{math}
+:label: eq-capacity-cut-condition
+a(I)+b(J)-1\leq U(I,J)
+\qquad\text{for every }I\subset\{1,\ldots,n\},\ J\subset\{1,\ldots,m\}.
+```
+:::
+
+:::{dropdown} Proof
+If $P$ is feasible, then
+
+```{math}
+P(I,J)=a(I)-P(I,J^c)\geq a(I)-b(J^c)=a(I)+b(J)-1,
+```
+
+and $P(I,J)\leq U(I,J)$ proves necessity. Conversely, build a flow network
+with capacity $a_i$ from the source to row $i$, capacity $U_{ij}$ from row $i$
+to column $j$, and capacity $b_j$ from column $j$ to the sink. A cut containing
+row set $I$ and column set $J^c$ has capacity
+
+```{math}
+1-a(I)+U(I,J)+1-b(J).
+```
+
+The cut condition makes every such capacity at least one. The max-flow/min-cut
+theorem therefore gives a unit flow, whose row-to-column edge values form the
+required matrix $P$.
+:::
+
+Entropic smoothing gives a direct Sinkhorn-like algorithm. Assume the cut
+condition above. With
 $K_{i,j}=a_i b_j e^{-C_{i,j}/\epsilon}$, the regularized problem is
 
 ```{math}
@@ -1546,15 +1655,17 @@ capacity-constrained scaling scheme.
 
 :::{admonition} Algorithm: Capacity-Constrained Sinkhorn by KL-Dykstra
 :class: note
-**Input:** marginals $a\in\simplex_n$, $b\in\simplex_m$, cost $C$, capacity
-$U$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+**Input:** positive marginals $a\in\simplex_n$ and $b\in\simplex_m$,
+finite cost $C$, feasible capacity $U$, regularization $\epsilon>0$, and
+tolerance $\mathrm{tol}$.
 
 **Output:** entropic capped coupling $P$.
 
-**Convention:** all divisions are entrywise; ratios $0/0$ in correction updates
-are set to $1$.
+Restrict all arrays to the active edge set
+$E=\{(i,j):U_{ij}>0\}$; entries outside $E$ remain zero. All products and
+divisions below are entrywise on $E$.
 
-Set $K_{i,j}=a_i b_j e^{-C_{i,j}/\epsilon}$.
+Set $K_{i,j}=a_i b_j e^{-C_{i,j}/\epsilon}$ for $(i,j)\in E$.
 
 Initialize $P=K$, correction matrices $R_1=R_2=R_3=\ones_{n\times m}$ and
 $r=+\infty$.
@@ -1575,6 +1686,13 @@ While $r>\mathrm{tol}$:
 
 Return $P$.
 :::
+
+On the active support, all iterates and correction factors are positive, so
+every division is defined. Finite-dimensional KL-Dykstra convergence shows
+that, whenever the capped polytope is nonempty, the iterates converge to the
+unique regularized minimizer. Deleting zero-capacity edges is essential:
+otherwise the correction step creates undefined products of zero and infinite
+factors.
 
 (fig:capacity-constrained-ot-1d)=
 
@@ -1638,9 +1756,11 @@ impose at least one, three and five outgoing connections per source atom.*
 (sec-metric-learning-inverse-ot)=
 ## Metric Learning and Inverse OT
 
-This section points to inverse problems where the ground cost itself is
-learned. Such problems are typically bilevel and non-convex, but OT provides
-useful gradients with respect to the cost.
+Metric learning differentiates a forward transport loss through a parameterized
+cost, whereas inverse OT starts from an observed plan and asks which cost makes
+it optimal. The first viewpoint is often bilevel; the second admits a direct
+convex formulation for affine cost families, provided the intrinsic cost
+invariances are removed.
 
 ### Differentiating OT Losses
 
@@ -1757,7 +1877,9 @@ $\dotp{\Delta C}{P}$ over all optimal plans.
 (prop-ot-first-variations-entropic)=
 :::{admonition} Proposition: First variations of entropic OT
 :class: important
-Let $\epsilon>0$ and define the KL-normalized entropic value
+Under the compact-space and continuous-cost assumptions of Proposition
+{ref}`prop-ot-first-variations-unregularized`, let $\epsilon>0$ and define the
+KL-normalized entropic value
 
 ```{math}
 \mathcal V_{c,\epsilon}(\alpha,\beta)
@@ -1766,9 +1888,8 @@ Let $\epsilon>0$ and define the KL-normalized entropic value
 \int c\d\pi+\epsilon\operatorname{KL}(\pi\mid\alpha\otimes\beta).
 ```
 
-Assume that the optimal entropic potentials $(f_\epsilon,g_\epsilon)$ exist and
-are normalized so that the following density has marginals $\alpha$ and
-$\beta$:
+Choose optimal entropic potentials $(f_\epsilon,g_\epsilon)$ in soft-transform
+form, so that the following density has marginals $\alpha$ and $\beta$:
 
 ```{math}
 \d\pi_\epsilon(x,y)
@@ -1912,9 +2033,12 @@ $\widehat\pi$ is optimal for
 \int c(x,y)\d\pi(x,y).
 ```
 
-This is ill-posed without structure: adding potentials $u(x)+v(y)$ to a cost
-does not change the set of optimal couplings, and many costs can rationalize
-the same sparse plan.
+This is ill-posed without structure. Adding $u(x)+v(y)$ to a cost shifts every
+feasible objective by the same marginal-dependent constant, multiplying a cost
+by a positive scalar does not change its minimizers, and the zero cost
+rationalizes every feasible plan. An identifiable model must quotient or
+normalize these gauge and scale freedoms; a sparse observed plan can still be
+compatible with a nontrivial cone of normalized costs.
 
 A useful statistical methodology is to measure the suboptimality of the
 observed plan through a Fenchel--Young loss. Write the score as $s=-c$ and
@@ -2033,13 +2157,13 @@ matching.
 
 (fig:inverse-ot-forward-logo)=
 :::{div}
-
-:::{div}
 :class: ot4ml-interactive-note
 **Interactive panel.** Change the bilinear cost matrix and solve the corresponding equal-weight assignment in the browser; each panel uses an actual Hungarian solve.
 :::
 
 <iframe class="ot4ml-live-frame" title="Interactive inverse-OT forward assignment panel" src="../live/inverse-ot-forward.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+
+:::{div}
 :class: ot4ml-book-figure
 
 ```{code-cell} ipython3
@@ -2101,13 +2225,13 @@ of nearby costs.
 
 (fig:inverse-ot-gap-loss)=
 :::{div}
-
-:::{div}
 :class: ot4ml-interactive-note
 **Interactive panel.** Vary sample size and cost rotation to recompute the empirical Kantorovich gap along the one-parameter inverse-OT path.
 :::
 
 <iframe class="ot4ml-live-frame" title="Interactive inverse-OT gap-loss panel" src="../live/inverse-ot-gap.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+
+:::{div}
 :class: ot4ml-book-figure
 
 ```{code-cell} ipython3
@@ -2126,16 +2250,17 @@ The red dot marks the generating parameter $t=0$; the curves are convex and
 piecewise affine.*
 :::
 
-The comparison between $n=10$ and $n=100$ illustrates an important statistical
-effect: as the number of sampled points grows, the flat region of the empirical
-gap typically shrinks and the loss develops more visible curvature around the
-generating parameter. This anticipates the population theory of Peyré, Poon and
-Tron {cite:p}`peyre2026curvature`: in the limit $n\to+\infty$, when the limiting
-Monge map itself has nondegenerate curvature as the cost parameter varies, the
-iOT loss identifies the cost robustly, up to the usual marginal-only gauge
-freedoms. In that regime, minimizing the gap is not only a certificate of
-optimality of the observed transport, but also a stable way to recover the
-underlying cost.
+The comparison between $n=10$ and $n=100$ illustrates a statistical effect:
+as the number of sampled points grows, the flat zero region can shrink to a
+sharper piecewise-affine minimum. A finite-sample linear-programming gap remains
+polyhedral and has no classical second derivative inside its cells. Curvature
+is instead a population phenomenon. Peyré, Poon and Tron
+{cite:p}`peyre2026curvature` prove local curvature and identifiability modulo
+the natural cost invariances for smooth positive marginals under a
+nondegeneracy condition. They also identify affine-map settings, including
+Gaussian or elliptical examples, as genuinely degenerate cases. Larger samples
+can reveal population curvature, but do not remove structural
+non-identifiability by themselves.
 
 (prop-inverse-ot-convex)=
 :::{admonition} Proposition: Convex Dual-Gap Formulation of Inverse OT
@@ -2152,8 +2277,8 @@ f_i+g_j\leq (C_\theta)_{i,j}
 \big((C_\theta)_{i,j}-f_i-g_j\big)=0.
 ```
 
-Consequently, for a convex regularizer $R$, the noisy inverse problem can be
-relaxed as the convex program
+Consequently, for a convex regularizer $R$ and $\lambda\geq0$, the dual-gap
+fitting problem is the convex program
 
 ```{math}
 :label: eq-inverse-ot-convex
@@ -2165,7 +2290,9 @@ R(\theta)
 \big((C_\theta)_{i,j}-f_i-g_j\big)
 ```
 
-subject to $f_i+g_j\leq(C_\theta)_{i,j}$ for all $i,j$.
+subject to $f_i+g_j\leq(C_\theta)_{i,j}$ for all $i,j$. It is nontrivial
+only if $\Theta$ imposes a cost normalization or otherwise excludes the
+zero-cost and marginal-gauge degeneracies.
 :::
 
 :::{dropdown} Proof
@@ -2195,15 +2322,18 @@ Since $\widehat P$ has marginals $(a,b)$, every dual feasible pair satisfies
 
 This nonnegative quantity is exactly the primal-dual gap of $\widehat P$. It
 vanishes if and only if $\widehat P$ reaches the dual value and is therefore
-optimal. If $C_\theta$ is affine and $\Theta$ and $R$ are convex, the
-constraints and objective in the displayed program are convex.
+optimal. If $C_\theta$ is affine, $\lambda\geq0$, and $\Theta$ and $R$ are
+convex, the constraints and objective in the displayed program are convex. If
+$C_\theta=0$ is allowed and minimizes $R$, then $(C,f,g)=(0,0,0)$ is a trivial
+minimizer; this proves the need for normalization.
 :::
 
-The formulation is useful because it avoids differentiating through a forward
-OT solver: it learns a cost by making the observed plan satisfy complementary
+The formulation avoids differentiating through a forward OT solver: it learns
+a normalized cost by making the observed plan nearly satisfy complementary
 slackness. In statistical settings, $\widehat P$ is only partially observed or
 noisy, so one adds sparsity, low-rank, smoothness or metric constraints to
-select a meaningful cost. For entropic OT, the optimality condition becomes
+select a meaningful representative
+{cite:p}`dupuy2016estimating,andrade2024sparsistency`. For entropic OT, the optimality condition becomes
 smoother:
 
 ```{math}
@@ -2224,7 +2354,9 @@ iterations and transport-regularized inverse problems
 :::{admonition} Algorithm: Inverse OT by dual-gap fitting
 :class: ot4ml-algorithm
 
-**Input:** Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features $C^{(r)}$, feasible set $\Theta$, regularizer $R$.
+**Input:** Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features
+$C^{(r)}$, normalized convex feasible set $\Theta$, convex regularizer $R$,
+and weight $\lambda>0$.
 
 **Output:** Identified cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
 
@@ -2327,7 +2459,26 @@ graph. By the cyclic-monotonicity characterization of quadratic optimality,
 this plan is optimal between its two marginals.
 :::
 
-#### Weak transport costs
+(rem-barycentric-projection-everywhere)=
+:::{admonition} Remark: Barycentric Projection Appears Everywhere
+:class: ot4ml-remark
+
+Barycentric projection turns a conditional law into a mean. Definition
+{ref}`def-barycentric-projection` applies it to a disintegrated coupling, and
+Proposition {ref}`prop-barycentric-projection-optimal` shows that quadratic
+optimal plans are stable under this collapse. The barycentric weak cost below
+inserts $\bar T_\pi$ into {eq}`eq-weak-ot`; martingale OT instead imposes
+$\int y\,\d\pi_x(y)=x$ in {eq}`eq-martingale-coupling`. Conditional
+Wasserstein distances use the same disintegration language fiber by fiber in
+{eq}`eq-conditional-ot-general`. Later, the mean-shift and Gaussian-attention
+velocity {eq}`eq-l2-attention-mean-shift` is another barycentric average, while
+SVGD replaces it by the RKHS steepest-descent average {eq}`eq-svgd-velocity`.
+Across these examples, the recurring move is to retain conditional structure
+while replacing a full conditional law by a tractable first or kernelized
+moment.
+:::
+
+### Weak Transport Costs
 
 Weak transport costs use the same disintegration but allow the objective to
 depend on the whole conditional law, or on summaries such as the barycentric
@@ -2335,11 +2486,11 @@ projection {eq}`eq-barycentric-projection`. The framework was introduced
 through general transport costs and weak transport inequalities, with
 existence, duality and optimality conditions developed on Polish spaces
 {cite:p}`gozlan2017kantorovich,backhoff2019weak`. For a weak cost
-$C:\X\times\mathcal P(\Y)\to\RR\cup\{+\infty\}$, the weak OT value is
+$C:\Xx\times\mathcal P(\Yy)\to\RR\cup\{+\infty\}$, the weak OT value is
 
 ```{math}
 :label: eq-weak-ot
-\mathcal W_C(\alpha,\beta)
+\WOT_C(\alpha,\beta)
 \eqdef
 \inf_{\pi\in\Couplings(\alpha,\beta)}
 \int C(x,\pi_x)\d\alpha(x).
@@ -2353,61 +2504,58 @@ nonlinear in $\nu$.
 (prop-weak-ot-duality)=
 :::{admonition} Proposition: Weak Kantorovich Duality
 :class: important
-Assume that $\X,\Y$ are compact metric spaces and that $C(x,\nu)$ is lower
-semicontinuous, bounded from below and convex in $\nu$, with the standard
-qualification assumptions ensuring Fenchel--Rockafellar duality. For
-$g\in\mathcal C(\Y)$ define the weak $C$-transform
+Let $\Xx$ and $\Yy$ be compact metric spaces, and let
+$C:\Xx\times\mathcal P(\Yy)\to\RR\cup\{+\infty\}$ be proper, jointly
+lower semicontinuous, bounded from below, and convex in its second argument.
+Fix $\alpha\in\mathcal P(\Xx)$ and $\beta\in\mathcal P(\Yy)$, and assume that
+$\WOT_C(\alpha,\beta)<+\infty$.
+For $g\in C(\Yy)$, define
 
 ```{math}
 g^C(x)
 \eqdef
-\inf_{\nu\in\mathcal P(\Y)}
-\left\{
-C(x,\nu)-\int g(y)\d\nu(y)
-\right\}.
+\inf_{\nu\in\mathcal P(\Yy)}
+\left\{C(x,\nu)-\int g(y)\d\nu(y)\right\}.
 ```
 
 Then
 
 ```{math}
-\mathcal W_C(\alpha,\beta)
+\WOT_C(\alpha,\beta)
 =
-\sup_{g\in\mathcal C(\Y)}
-\left\{
-\int g^C(x)\d\alpha(x)
-+
-\int g(y)\d\beta(y)
-\right\}.
+\sup_{g\in C(\Yy)}
+\left\{\int g^C(x)\d\alpha(x)+\int g(y)\d\beta(y)\right\}.
 ```
 
-When $C(x,\nu)=\int c(x,y)\d\nu(y)$, this reduces to the usual Kantorovich
-dual with $g^C(x)=\inf_y(c(x,y)-g(y))$.
+For $C(x,\nu)=\int c(x,y)\d\nu(y)$, this is the usual Kantorovich dual.
 :::
 
 :::{dropdown} Proof
-For any coupling $\pi$ and any $g\in\mathcal C(\Y)$, the definition of
-$g^C$ gives
+The definition of $g^C$ gives
 
 ```{math}
-C(x,\pi_x)
-\geq
-g^C(x)
-+
-\int g(y)\d\pi_x(y).
+C(x,\pi_x)\geq g^C(x)+\int g(y)\d\pi_x(y).
 ```
 
-After integration with respect to $\alpha$, the second term becomes
-$\int g\d\beta$ because the second marginal of $\pi$ is $\beta$. This proves
-weak duality.
+Integration and the second-marginal constraint prove weak duality. For the
+converse, lift a kernel $x\mapsto\pi_x$ to
+$\alpha(\d x)\delta_{\pi_x}(\d\nu)$ on
+$\Xx\times\mathcal P(\Yy)$. Relaxing the graph constraint gives probability
+measures $P$ whose first marginal is $\alpha$ and whose intensity satisfies
 
-For the reverse inequality, consider the convex minimization over probability
-kernels $x\mapsto\pi_x$ with the affine constraint
-$\int \pi_x\d\alpha(x)=\beta$. Fenchel--Rockafellar duality gives a
-continuous Lagrange multiplier $g$ for this marginal constraint. Minimizing
-the Lagrangian over each conditional law gives exactly the pointwise term
-$g^C(x)$, while the multiplier contributes $\int g\d\beta$. The compactness,
-lower semicontinuity, convexity and qualification assumptions ensure no
-duality gap.
+```{math}
+\int_{\Xx\times\mathcal P(\Yy)}\nu\,\d P(x,\nu)=\beta.
+```
+
+This relaxation leaves the value unchanged. Disintegrate
+$P(\d x,\d\nu)=P_x(\d\nu)\alpha(\d x)$ and replace $P_x$ by its barycenter
+$\bar\nu_x=\int\nu\,\d P_x(\nu)$. The intensity is preserved and convexity
+of $C(x,\cdot)$ cannot increase the objective. The relaxed feasible set is
+compact and its integral objective is lower semicontinuous.
+Fenchel--Rockafellar duality for the affine intensity constraint therefore has
+no gap. Its continuous multiplier is $g\in C(\Yy)$; minimization in $\nu$
+gives $g^C(x)$ and the constraint contributes $\int g\d\beta$. See
+{cite:p}`backhoff2019weak` for the Polish-space formulation.
 :::
 
 (prop-barycentric-weak-ot)=
@@ -2425,7 +2573,7 @@ Equivalently, for a coupling $\pi$, the integrand is
 $\norm{x-\bar T_\pi(x)}^2$. Then
 
 ```{math}
-\mathcal W_{C_{\mathrm{bar}}}(\alpha,\beta)
+\WOT_{C_{\mathrm{bar}}}(\alpha,\beta)
 \leq
 \Wass_2^2(\alpha,\beta).
 ```
@@ -2574,7 +2722,7 @@ $\beta$, and the inequality between distribution functions gives
 $X\leq Y$ almost surely.
 :::
 
-#### Convex Order and Martingale Feasibility
+### Convex Order and Martingale Feasibility
 
 For martingale OT, the pointwise order constraint is replaced by a barycentric
 constraint on conditional laws. The corresponding order is the convex order. For
@@ -2584,11 +2732,13 @@ $\alpha,\beta\in\Pp_1(\RR^d)$,
 \alpha\preceq_{\mathrm{cx}}\beta
 \quad\Longleftrightarrow\quad
 \int\varphi\,\d\alpha\leq\int\varphi\,\d\beta
-\quad\text{for every convex }\varphi\text{ with finite integrals}.
+\quad\text{for every convex }\varphi\text{ for which both integrals are defined}.
 ```
 
-Testing affine functions gives equality of means, while convex test functions
-say that $\beta$ is more spread out than $\alpha$. Strassen's martingale theorem
+For finite-first-moment measures, it is enough to test continuous convex
+functions with at most linear growth. Testing affine functions gives equality
+of means, while the remaining convex tests say that $\beta$ is more spread
+out than $\alpha$. Strassen's martingale theorem
 says that this spread condition is exactly what is needed to realize $\beta$
 from $\alpha$ by mean-preserving randomization.
 
@@ -2623,40 +2773,83 @@ convex $\varphi$,
 and integration in $x$ gives
 $\int\varphi\d\alpha\leq\int\varphi\d\beta$.
 
-Conversely, assume $\alpha\preceq_{\mathrm{cx}}\beta$. In the compactly
-supported case, one proves existence by separating $\beta$ from the closed
-convex set of all second marginals reachable from $\alpha$ by martingale
-kernels. If $\beta$ were not in this set, a separating test function $\psi$
-would satisfy
+Conversely, assume $\alpha\preceq_{\mathrm{cx}}\beta$. First suppose both
+measures are supported in a compact convex set $K$. Separate $\beta$ from the
+closed convex set of probability measures on $K$ reachable from $\alpha$ by
+martingale kernels supported in $K$. If $\beta$ were not in this set, a
+continuous separating function $\psi:K\to\RR$ would satisfy
 
 ```{math}
 \int\psi\d\beta
 >
-\sup
-\left\{
-    \int\psi\d\eta
-    \;:\;
-    \eta\in\Pp_1(\RR^d),\
-    \Couplings_{\mathrm{mart}}(\alpha,\eta)\neq\emptyset
-\right\}.
+\sup\left\{\int\psi\d\eta:\eta\in\mathcal P(K),\;
+\Couplings_{\mathrm{mart}}(\alpha,\eta)\neq\emptyset\right\}.
 ```
 
-For a fixed $x$, optimizing over conditional laws with barycenter $x$ gives
-the concave envelope $\operatorname{conc}\psi(x)$. Hence the right-hand side is
-$\int\operatorname{conc}\psi\d\alpha$. Since
-$\alpha\preceq_{\mathrm{cx}}\beta$ is equivalently the reverse inequality for
-concave functions,
+For fixed $x\in K$, optimizing over probability measures on $K$ with
+barycenter $x$ gives the concave envelope $\operatorname{conc}_K\psi(x)$.
+Thus the right-hand side is $\int\operatorname{conc}_K\psi\d\alpha$.
+Convex order is equivalently the reverse inequality for concave functions, so
 
 ```{math}
-\int\operatorname{conc}\psi\d\alpha
+\int\operatorname{conc}_K\psi\d\alpha
 \geq
-\int\operatorname{conc}\psi\d\beta
+\int\operatorname{conc}_K\psi\d\beta
 \geq
 \int\psi\d\beta,
 ```
 
-which is a contradiction. The finite-first-moment case follows by the standard
-truncation and tightness argument in Strassen's theorem.
+a contradiction. For general measures in $\mathcal P_1(\RR^d)$, the same
+separation argument is carried out in the $\Wass_1$ topology, whose continuous
+test functions have at most linear growth. Compactness is replaced by tightness
+and uniform integrability of first moments; these properties also make the set
+of attainable second marginals closed and preserve the martingale constraint
+under limits. This is the standard extension in Strassen's theorem
+{cite:p}`Strassen1965`.
+:::
+
+The same theorem gives an exact geometric description of the barycentric weak
+cost: weak OT transports to the closest measure below $\beta$ in convex order.
+
+(prop-brenier-strassen-projection)=
+:::{admonition} Proposition: Brenier--Strassen Projection Formula
+:class: important
+For $\alpha,\beta\in\mathcal P_2(\RR^d)$,
+
+```{math}
+:label: eq-brenier-strassen-projection
+\WOT_{C_{\mathrm{bar}}}(\alpha,\beta)
+=
+\inf_{\eta\in\mathcal P_2(\RR^d):\,\eta\preceq_{\mathrm{cx}}\beta}
+\Wass_2^2(\alpha,\eta).
+```
+:::
+
+:::{dropdown} Proof
+Let $(X,Y)\sim\pi\in\Couplings(\alpha,\beta)$, set
+$Z=\mathbb E[Y\mid X]$, and denote its law by $\eta$. Conditional Jensen
+shows $\eta\preceq_{\mathrm{cx}}\beta$, while $(X,Z)$ couples $\alpha$ and
+$\eta$. Hence
+
+```{math}
+\Wass_2^2(\alpha,\eta)
+\leq\mathbb E\norm{X-Z}^2
+=\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x).
+```
+
+Conversely, fix $\eta\preceq_{\mathrm{cx}}\beta$. Strassen's theorem gives a
+martingale coupling from $\eta$ to $\beta$. Glue it conditionally to an
+optimal coupling $(X,Z)$ between $\alpha$ and $\eta$. Then
+$\mathbb E[Y\mid X]=\mathbb E[Z\mid X]$, and conditional Jensen gives
+
+```{math}
+\mathbb E\norm{X-\mathbb E[Y\mid X]}^2
+\leq\mathbb E\norm{X-Z}^2
+=\Wass_2^2(\alpha,\eta).
+```
+
+Taking the two infima proves the identity; see {cite:p}`backhoff2019weak` for
+existence and finer structure of the projected measure.
 :::
 
 Theorem {ref}`thm-strassen-martingale` explains why convex order is the right
@@ -2693,14 +2886,13 @@ functions $x\mapsto\langle u,x\rangle^2$ gives the Loewner inequality.
 show_book_figure("martingale-ot-centered-kernels")
 ```
 
-*A discrete one-dimensional martingale coupling generated by space-varying
-centered kernels. The source $\alpha$ is a red Gaussian mixture on a grid.
-Each row kernel has the form $K_i(y_j)=\kappa_i(y_j-x_i)$ with an even
-discrete profile in the displacement variable, so its discrete barycenter is
-$x_i$ and the coupling $P_{ij}=a_iK_i(y_j)$ satisfies
-$\bar T_P(x_i)=x_i$. The blue second marginal is more spread out; the
-stochastic-order discussion explains this as the convex-order feasibility
-condition behind martingale OT.*
+*A discrete one-dimensional martingale OT example. The source $\alpha$ is a
+red Gaussian mixture on a grid. A first feasible plan is generated by centered
+kernels $K_i(y_j)=\kappa_i(y_j-x_i)$, whose discrete barycenter is $x_i$.
+Keeping the same marginals, the third panel solves the martingale OT linear
+program with row, column, and constraints
+$\sum_j(y_j-x_i)P_{ij}=0$. The optimized plan is much sparser, while both
+plans have the identity barycentric projection.*
 :::
 
 :::{div}

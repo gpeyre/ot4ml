@@ -7,24 +7,22 @@ kernelspec:
 ---
 (sec-extensions)=
 
-The first family of extensions keeps the idea of a distance between measures,
-but changes the geometry used to compare them. The variants in this chapter
-relax mass conservation, reduce high-dimensional transport to
-one-dimensional projections, or replace the trace quadratic cost by spectral
-gauges and robust projected viewpoints.
-
-These constructions are useful when the standard distance $\Wass_p$ is too
-rigid or too expensive. They preserve much of the metric intuition of optimal
-transport, but expose new controls: how expensive it is to delete mass, which
-projections should be trusted, and which directions of displacement should be
-penalized.
+This chapter keeps the idea of comparing measures while changing the geometry
+of the comparison. The constructions below relax mass conservation, average
+lower-dimensional projections, quotient nuisance symmetries, linearize
+transport around a reference measure, replace the trace cost by spectral
+gauges, or constrain motion to conditional fibers. They are useful when
+standard $\Wass_p$ is too rigid or too expensive, but each modification also
+changes which metric, geodesic, or stability properties survive.
 
 :::{admonition} Guiding Comparison
 :class: tip
 Balanced Wasserstein fixes the marginals exactly. Unbalanced OT relaxes the
 marginals. Sliced OT compares many one-dimensional shadows. Linear OT embeds
 measures through maps from a fixed reference. Spectral OT changes the scalar
-quadratic cost into a gauge of the whole displacement covariance.
+quadratic cost into a gauge of the whole displacement covariance. Quotient OT
+removes prescribed symmetries, while conditional OT prohibits transport across
+different fibers.
 :::
 
 ```{code-cell} ipython3
@@ -382,10 +380,30 @@ which is positively $1$-homogeneous. It defines
 \psi_2(0)\beta^\perp(\Y).
 ```
 
+For both the proof and the cone construction, it is useful to expose the
+equivalent semi-coupling form {cite:p}`LieroMielkeSavareLong`:
+
+```{math}
+:label: eq-homogeneous-semicoupling
+\mathsf{HW}_c(\alpha,\beta)
+=
+\inf_{\substack{\lambda\in\mathcal M_+(\X\times\Y)\\u,v\geq0}}
+\left\{
+\int H_{c(x,y)}(u(x,y),v(x,y))\d\lambda(x,y)
+\; ;\;
+(\mathrm p_1)_\sharp(u\lambda)=\alpha,\quad
+(\mathrm p_2)_\sharp(v\lambda)=\beta
+\right\}.
+```
+
+The cases $u=0$ or $v=0$ encode the recession terms and therefore mass that is
+created or destroyed rather than transported.
+
 (prop-homogeneous-unbalanced)=
 :::{admonition} Proposition: Homogenization Does Not Change the Cost
 :class: important
-One has
+Assume that the entropy functions are proper, lower semicontinuous and convex,
+with their usual recession extensions at zero. Then
 
 ```{math}
 \mathsf{HW}_c(\alpha,\beta)=\mathsf{UW}_c(\alpha,\beta).
@@ -393,27 +411,40 @@ One has
 :::
 
 :::{dropdown} Proof
-The inequality $\mathsf{HW}\leq\mathsf{UW}$ follows from $H_c\leq L_c$ by
-taking $\theta=1$. Conversely, take a feasible measure $\pi$ in the
-homogeneous formulation. By definition of the perspective transform, for
-every $(x,y)$ and every $\eta>0$ there exists a scale $\theta(x,y)>0$ such
-that
+Since $H_c(r,s)\leq L_c(r,s)$ by choosing scale one, every competitor in the
+reverse formulation gives a homogeneous competitor of no larger cost. Hence
+$\mathsf{HW}\leq\mathsf{UW}$.
+
+Conversely, fix a feasible semi-coupling $(\lambda,u,v)$ in
+{eq}`eq-homogeneous-semicoupling`. For a positive measurable scale $\theta$,
+set $\widetilde\pi=\theta\lambda$. Disintegrate $\lambda$ with respect to its
+first spatial marginal. If $\bar u(x)$ and $\bar\theta(x)$ are the conditional
+averages of $u$ and $\theta$, then
+$\alpha=\bar u(\mathrm p_1)_\sharp\lambda$ and
+$\widetilde\pi_1=\bar\theta(\mathrm p_1)_\sharp\lambda$. Convexity of the
+perspective $(a,m)\mapsto a\psi_1(m/a)$ and conditional Jensen give
 
 ```{math}
-H_{c(x,y)}(F(x),G(y))+\eta
-\geq
-\theta(x,y)
-L_{c(x,y)}
-\big(F(x)/\theta(x,y),G(y)/\theta(x,y)\big).
+\mathcal D_{\psi_1}(\widetilde\pi_1\mid\alpha)
+\leq
+\int u\,\psi_1(\theta/u)\d\lambda.
 ```
 
-Replacing $\pi$ by the rescaled measure $\tilde\pi=\theta\pi$ and the
-densities by $F/\theta$ and $G/\theta$ gives an admissible competitor for the
-reverse formulation with cost no larger than the homogeneous cost plus
-$\eta\pi(\X\times\Y)$. Letting $\eta\to0$ yields
-$\mathsf{UW}\leq\mathsf{HW}$. The singular terms are unchanged because the
-same rescaling is performed before taking the Lebesgue decomposition of the
-marginals.
+The second marginal gives the analogous estimate. Therefore
+
+```{math}
+\int c\d\widetilde\pi
++\mathcal D_{\psi_1}(\widetilde\pi_1\mid\alpha)
++\mathcal D_{\psi_2}(\widetilde\pi_2\mid\beta)
+\leq
+\int\big[c\theta+u\psi_1(\theta/u)+v\psi_2(\theta/v)\big]\d\lambda.
+```
+
+The pointwise infimum over $\theta>0$ is $H_c(u,v)$. A measurable
+$\eta$-minimizing scale exists by the normal-integrand selection theorem; the
+recession conventions cover vanishing weights. Letting $\eta\downarrow0$ and
+then minimizing over semi-couplings gives
+$\mathsf{UW}\leq\mathsf{HW}$.
 :::
 
 ### Conic Lifting
@@ -443,13 +474,18 @@ r^2+s^2-2rs\cos(d(x,y)\wedge\pi/2).
 ```
 
 - $\mathcal D_\psi=\operatorname{KL}$, $p=2$, and $c(x,y)=d(x,y)^2$ give the
-  Gaussian Hellinger cone metric
+  Gaussian Hellinger formula
 
 ```{math}
 \mathsf D((x,r),(y,s))^2
 =
 r^2+s^2-2rs e^{-d(x,y)^2/2}.
 ```
+
+  This is a cone metric when the Gaussian kernel
+  $k(x,y)=e^{-d(x,y)^2/2}$ is positive definite. In particular, this holds on
+  subsets of Hilbert spaces. Positive definiteness is an additional
+  hypothesis on a general metric space.
 
 - $\mathcal D_\psi=\TV$, $p=1$, and $c(x,y)=d(x,y)$ give the partial-transport
   cone cost
@@ -460,7 +496,16 @@ r^2+s^2-2rs e^{-d(x,y)^2/2}.
 r+s-(r\wedge s)(2-d(x,y))_+.
 ```
 
-The corresponding cone value is
+For a finite measure $\eta$ on the cone, define its weighted base projection
+$\mathsf P_p\eta$ by
+
+```{math}
+\int_\X \varphi(x)\d(\mathsf P_p\eta)(x)
+=
+\int_{\mathfrak C[\X]}\varphi(x)r^p\d\eta(x,r).
+```
+
+The corresponding cone action value is
 
 ```{math}
 \mathsf{CW}(\alpha,\beta)
@@ -469,35 +514,56 @@ The corresponding cone value is
 \left\{
 \int \mathsf D((x,r),(y,s))^p\d\gamma
 \; ; \;
-\int r^p\d\gamma_1(\cdot,r)=\alpha,\quad
-\int s^p\d\gamma_2(\cdot,s)=\beta
+\mathsf P_p\gamma_1=\alpha,\quad
+\mathsf P_p\gamma_2=\beta
 \right\}.
 ```
 
 (thm-cone-unbalanced-ot)=
 :::{admonition} Theorem: Cone Formulation of Unbalanced OT
 :class: important
-One has $\mathsf{UW}=\mathsf{HW}=\mathsf{CW}$. If $\mathsf D$ is a distance,
-then $\mathsf{CW}^{1/p}$ is a distance between nonnegative measures.
+Assume that $\X$ is compact, that $(r,s)\mapsto H_{c(x,y)}(r,s)$ is convex for
+every $(x,y)$, and that $(x,y,r,s)\mapsto H_{c(x,y)}(r,s)$ is lower
+semicontinuous. Then
+$\mathsf{UW}_c=\mathsf{HW}_c=\mathsf{CW}$. If, in addition, $\mathsf D$ is a
+continuous distance on the cone, then $\mathsf{CW}^{1/p}$ is a distance between
+nonnegative finite measures.
 :::
 
 :::{dropdown} Proof
-The equality $\mathsf{UW}=\mathsf{HW}$ is the homogenization proposition. To
-prove $\mathsf{HW}=\mathsf{CW}$, disintegrate an admissible cone coupling
-$\gamma$ with respect to its spatial variables $(x,y)$ and radii $(r,s)$. The
-cone marginal constraints say precisely that the spatial marginals are
-recovered after weighting by $r^p$ and $s^p$. Since
-$\mathsf D((x,r),(y,s))^p=H_{c(x,y)}(r^p,s^p)$, integrating the cone cost
-gives the homogeneous objective. Conversely, any homogeneous competitor can be
-lifted to the cone by placing, over each $(x,y)$, radii whose $p$th powers are
-the two density factors appearing in $H_c$.
+The equality $\mathsf{UW}=\mathsf{HW}$ is the preceding proposition. A feasible
+semi-coupling $(\lambda,u,v)$ lifts to the cone through
 
-If $\mathsf D$ is a distance on the cone, then $\mathsf{CW}^{1/p}$ is the
-usual $p$-Wasserstein distance between lifted measures under the linear
-cone-marginal constraints. Symmetry and the triangle inequality follow from
-the corresponding Wasserstein properties and the gluing lemma on the cone. If
-the distance is zero, an optimal cone coupling is concentrated on the diagonal
-of the cone, so the weighted projections agree and therefore $\alpha=\beta$.
+```{math}
+(x,y)\longmapsto
+\big((x,u(x,y)^{1/p}),(y,v(x,y)^{1/p})\big).
+```
+
+Its weighted base marginals are $\alpha,\beta$, and its cone action is exactly
+$\int H_{c(x,y)}(u,v)\d\lambda$, so
+$\mathsf{CW}\leq\mathsf{HW}$. Conversely, disintegrate a cone plan over
+$(x,y)$ and set $u=\mathbb E[r^p\mid x,y]$ and
+$v=\mathbb E[s^p\mid x,y]$. Jensen's inequality for the convex function $H_c$
+produces a feasible semi-coupling of no larger action. Hence
+$\mathsf{HW}\leq\mathsf{CW}$.
+
+For the triangle inequality, two plans that share the same *weighted* middle
+projection need not share the same ordinary cone marginal. Homogeneity is the
+essential correction: common radial rescaling preserves weighted projections
+and action. After normalization and addition of harmless apex mass, two nearly
+optimal plans for $(\alpha,\beta)$ and $(\beta,\zeta)$ can be given the same
+ordinary middle lift
+
+```{math}
+M\delta_{\mathfrak o}+(x\mapsto(x,1))_\sharp\beta
+```
+
+for a sufficiently large finite $M$. The ordinary gluing lemma and Minkowski's
+inequality then prove the triangle inequality. Radial normalization by
+$(r^p+s^p)^{1/p}$ also restricts minimizing plans to bounded radii and fixed
+mass; compactness and lower semicontinuity yield an optimizer. A zero-action
+optimizer is concentrated on the cone diagonal, so its two weighted
+projections coincide and $\alpha=\beta$.
 :::
 
 ### Entropic KL Relaxation
@@ -505,6 +571,8 @@ of the cone, so the weighted projections agree and therefore $\alpha=\beta$.
 A generic entropic regularization of unbalanced OT reads
 
 ```{math}
+\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)
+\eqdef
 \inf_{\pi\in\mathcal M_+(\X\times\Y)}
 \int c\d\pi
 +
@@ -534,6 +602,17 @@ $\mathcal D_{\psi_1}=\mathcal D_{\psi_2}=\tau\operatorname{KL}$, coordinate
 maximization gives the damped soft transforms
 
 ```{math}
+f\leftarrow\omega\,g^{\bar c,\epsilon},
+\qquad
+g\leftarrow\omega\,f^{c,\epsilon},
+\qquad
+\omega\eqdef\frac{\tau}{\tau+\epsilon},
+```
+
+where the soft transforms are defined in {ref}`def-continuous-soft-c-transform`.
+Equivalently,
+
+```{math}
 \begin{aligned}
 f(x)
 &=
@@ -552,25 +631,84 @@ g(y)
 
 In the discrete case, with
 $K_{i,j}=e^{-C_{i,j}/\epsilon}a_i b_j$ and
-$\rho=\tau/(\tau+\epsilon)$, this gives the generalized Sinkhorn scaling
+$\omega=\tau/(\tau+\epsilon)$, this gives the generalized Sinkhorn scaling
 
 ```{math}
 u_i\leftarrow
-\left(\frac{a_i}{(Kv)_i}\right)^\rho,
+\left(\frac{a_i}{(Kv)_i}\right)^\omega,
 \qquad
 v_j\leftarrow
-\left(\frac{b_j}{(K^\top u)_j}\right)^\rho,
+\left(\frac{b_j}{(K^\top u)_j}\right)^\omega,
 \qquad
 P=\diag(u)K\diag(v).
 ```
 
-The exponent $\rho<1$ is the visible difference with balanced Sinkhorn:
+The exponent $\omega<1$ is the visible difference with balanced Sinkhorn:
 marginal corrections are damped because violating the marginals is allowed.
 
 The KL case in {numref}`fig:unbalanced-mass-relaxation` is obtained from these
 damped updates. The interactive panel above exposes the two most important
 regularization scales. Increasing $\tau$ pushes the transported marginals closer
 to the prescribed ones; increasing $\epsilon$ spreads the coupling itself.
+
+### Metric Contraction of the Damped Updates
+
+Balanced entropic potentials have a gauge ambiguity, whereas KL marginal
+penalties make the unbalanced potentials unique up to null sets. The natural
+metric is therefore the ordinary $L^\infty$ distance on potentials, or,
+equivalently, the Thompson metric on positive scalings,
+
+```{math}
+d_T((u,v),(u',v'))
+\eqdef
+\max\{\|\log u-\log u'\|_\infty,
+       \|\log v-\log v'\|_\infty\}.
+```
+
+(prop-unbalanced-sinkhorn-contraction)=
+:::{admonition} Proposition: Linear Contraction of Unbalanced Sinkhorn
+:class: important
+Assume that the damped soft-transform map sends bounded potentials to bounded
+potentials, as happens when $c$ is bounded. With
+$\omega=\tau/(\tau+\epsilon)<1$, define
+
+```{math}
+\mathcal T_{\rm GS}(f,g)=(\widetilde f,\widetilde g),
+\qquad
+\widetilde f=\omega g^{\bar c,\epsilon},
+\qquad
+\widetilde g=\omega\widetilde f^{c,\epsilon}.
+```
+
+Then, for
+$d_\infty((f,g),(f',g'))=\max\{\|f-f'\|_\infty,\|g-g'\|_\infty\}$,
+
+```{math}
+d_\infty(\mathcal T_{\rm GS}(f,g),\mathcal T_{\rm GS}(f',g'))
+\leq
+\omega d_\infty((f,g),(f',g')).
+```
+
+Consequently the bounded fixed point is unique and both the potential distance
+and the Thompson distance of the scalings decay at least as $\omega^k$.
+:::
+
+:::{dropdown} Proof
+Soft $c$-transforms are order reversing, commute with additive constants up to
+sign, and are $1$-Lipschitz in $L^\infty$. Thus, writing
+$D=d_\infty((f,g),(f',g'))$,
+
+```{math}
+\|\widetilde f-\widetilde f'\|_\infty\leq\omega D,
+\qquad
+\|\widetilde g-\widetilde g'\|_\infty
+\leq\omega\|\widetilde f-\widetilde f'\|_\infty
+\leq\omega^2D.
+```
+
+Hence the product distance contracts by $\omega$. Banach's fixed-point theorem
+gives existence, uniqueness, and the geometric rate.
+:::
 
 (alg-unbalanced-sinkhorn)=
 :::{admonition} Algorithm: Unbalanced Sinkhorn scaling
@@ -581,16 +719,16 @@ to the prescribed ones; increasing $\epsilon$ spreads the coupling itself.
 **Output:** Unbalanced entropic coupling $\P$.
 
 **Initialize:** Set
-$K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \rho=\frac{\tau}{\tau+\epsilon}, \quad u^{(0)}=\ones_n, \quad v^{(0)}=\ones_m, \quad \eta_0=+\infty, \quad k=0.$
+$K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \omega=\frac{\tau}{\tau+\epsilon}, \quad u^{(0)}=\ones_n, \quad v^{(0)}=\ones_m, \quad \eta_0=+\infty, \quad k=0.$
 
 **While** $\eta_k>\mathrm{tol}$ **do**:
 
 >
 > **Set** $k\leftarrow k+1$.
 >
-> $u^{(k)} = \left(\frac{\a}{K v^{(k-1)}}\right)^\rho, \qquad v^{(k)} = \left(\frac{\b}{\transp{K}u^{(k)}}\right)^\rho.$
+> $u^{(k)} = \left(\frac{\a}{K v^{(k-1)}}\right)^\omega, \qquad v^{(k)} = \left(\frac{\b}{\transp{K}u^{(k)}}\right)^\omega.$
 >
-> **Set** $\eta_k=\max\{\norm{u^{(k)}-u^{(k-1)}}_\infty,\norm{v^{(k)}-v^{(k-1)}}_\infty\}$.
+> **Set** $\eta_k=\epsilon\max\{\norm{\log u^{(k)}-\log u^{(k-1)}}_\infty,\norm{\log v^{(k)}-\log v^{(k-1)}}_\infty\}$.
 
 **Return** $\P^{(k)}=\diag(u^{(k)})K\diag(v^{(k)})$.
 :::
@@ -620,7 +758,8 @@ define
 Thus only a submeasure of $\alpha$ is transported onto a submeasure of $\beta$;
 the remaining mass is left unmatched. The corresponding Lagrangian form is
 obtained by adding total-variation penalties. For a price $\lambda>0$ for
-discarding or creating one unit of mass, consider
+discarding or creating one unit of mass, denote by
+$\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)$ the value
 
 ```{math}
 \inf_{\pi\in\mathcal M_+(\X\times\Y)}
@@ -642,32 +781,77 @@ $\pi_2\leq\beta$. If $m=\pi(\X\times\Y)$, the penalty then reduces to
 \lambda\big(\alpha(\X)-m\big)+\lambda\big(\beta(\Y)-m\big),
 ```
 
-and minimizing first over plans of fixed mass gives
+so the precise relation is a one-dimensional Lagrange duality in the transported
+mass.
+
+(prop-tv-partial-ot-lagrange)=
+:::{admonition} Proposition: TV Penalization Selects Fixed-Mass Partial OT
+:class: important
+Assume that $\X,\Y$ are compact metric spaces and that $c$ is continuous and
+nonnegative. Set $A=\alpha(\X)$, $B=\beta(\Y)$, and $M=\min(A,B)$. Then
 
 ```{math}
-\inf_{\pi\geq0}
-\left\{\int c\,\d\pi
-+
-\lambda\|\alpha-\pi_1\|_{\TV}
-+
-\lambda\|\beta-\pi_2\|_{\TV}\right\}
+\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)
 =
-\inf_{0\leq m\leq \min\{\alpha(\X),\beta(\Y)\}}
-\left\{
-\operatorname{POT}_m(\alpha,\beta)
+\lambda(A+B)
 +
-\lambda\big(\alpha(\X)+\beta(\Y)-2m\big)
-\right\}.
+\inf_{0\leq m\leq M}
+\big\{\operatorname{POT}_m(\alpha,\beta)-2\lambda m\big\}.
 ```
 
-Thus the TV-penalized formulation is the Lagrangian envelope of constrained
-partial OT: increasing $\lambda$ rewards transporting more mass, while small
-$\lambda$ makes deletion and creation cheaper. Conversely, if $2\lambda$ is a
-supporting slope of the convex value function
-$m\mapsto\operatorname{POT}_m(\alpha,\beta)$ at a prescribed mass $m$, then
-minimizers of the constrained problem solve the penalized one; on flat pieces,
-one value of $\lambda$ can select an interval of transported masses. The
-constrained theory, including active regions and free boundaries, was developed
+If a penalized optimizer has mass $m_\lambda$, it is optimal for
+$\operatorname{POT}_{m_\lambda}$ and $m_\lambda$ minimizes the scalar problem.
+Conversely, if $2\lambda\in\partial\operatorname{POT}_m$, every fixed-mass
+optimizer is penalized-optimal. Every $m\in[0,M]$ is selected by at least one
+$\lambda\geq0$, possibly together with an interval of masses on a flat exposed
+face.
+:::
+
+:::{dropdown} Proof
+Write $V(m)=\operatorname{POT}_m(\alpha,\beta)$. Compactness gives an optimizer.
+Convex combinations of subcouplings show that $V$ is convex, while rescaling a
+plan shows that it is nondecreasing. If $m_0<m_1$, choose submeasures of mass
+$m_1-m_0$ from the residual source and target measures of an optimizer at
+$m_0$, couple them, and add this coupling. This proves
+$V(m_1)-V(m_0)\leq\|c\|_\infty(m_1-m_0)$, so $V$ is Lipschitz.
+
+Grouping every penalized competitor by its total transported mass gives the
+displayed scalar infimum. Equality forces simultaneous optimality in the
+fixed-mass and scalar problems. The converse is precisely the subgradient
+inequality. Since the extended convex function is Lipschitz on $[0,M]$ and
+nondecreasing, a nonnegative subgradient exists at every mass after including
+the interval's normal cone.
+:::
+
+(prop-partial-ot-metric-slice)=
+:::{admonition} Proposition: Fixed Total Mass Reduces Partial OT to Balanced OT
+:class: important
+Let $c=d^p$, $p\geq1$, and fix $m>0$. On nonnegative measures of total mass
+exactly $m$ and finite $p$th moment,
+
+```{math}
+\operatorname{POT}_m(\alpha,\beta)^{1/p}
+=
+m^{1/p}\Wass_p(\alpha/m,\beta/m)
+```
+
+is a distance. On the larger class of measures with mass at least $m$, it is
+not a distance in general.
+:::
+
+:::{dropdown} Proof
+When both endpoint masses equal $m$, the inequalities
+$\pi_1\leq\alpha$, $\pi_2\leq\beta$ and the mass constraint force
+$\pi_1=\alpha$, $\pi_2=\beta$. Thus partial couplings are exactly balanced
+couplings, and normalization by $m$ gives the formula. On a larger class,
+$\alpha=m\delta_x+r\delta_y$ and $\beta=m\delta_x+r\delta_z$ are distinct but
+share the zero-cost partial plan $m\delta_{(x,x)}$.
+:::
+
+Thus TV penalization is the Lagrangian envelope of constrained partial OT:
+increasing $\lambda$ selects larger transported masses, while small $\lambda$
+makes deletion and creation cheaper. The constrained theory, including active
+regions and free boundaries, was developed
 by Caffarelli--McCann and
 Figalli {cite}`CaffarelliMcCannPartial,FigalliPartial`. Modern computational and
 learning applications include partial Wasserstein and partial
@@ -747,17 +931,29 @@ where $\pi_1,\pi_2$ are the marginals of $\pi$, interprets missing marginal mass
 (sec-sliced-wasserstein)=
 ## Sliced Wasserstein Distances
 
-Sliced Wasserstein trades exact high-dimensional geometry for many
-one-dimensional projections. It is cheap, differentiable after sorting, and
+Sliced Wasserstein distances replace one high-dimensional comparison by an
+average of explicit one-dimensional optimal transport problems.
+
+### One-Dimensional Projections
+
+The idea was proposed by Marc Bernot, and its first published use for
+Wasserstein barycenters and texture mixing is due to Rabin, Peyré, Delon and
+Bernot {cite:p}`rabin-ssvm-11`. It is cheap, differentiable after sorting, and
 often effective in imaging and learning. For measures on $\RR^d$ and
-$\theta\in\mathbb S^{d-1}$, let
-$P_\theta(x)=\dotp{\theta}{x}$ be the projection on direction $\theta$.
+$\theta\in\mathbb S^{d-1}$, let $P_\theta(x)=\dotp{\theta}{x}$.
+
+### Spherical Averaging
+
+The projected measures live on the real line, where Wasserstein distances are
+explicit through sorting or quantiles. Averaging over directions defines the
+sliced distance.
 
 (def-sliced-wasserstein)=
 :::{admonition} Definition: Sliced Wasserstein Distance
 :class: important
-Let $\sigma$ be the uniform probability measure on the sphere
-$\mathbb S^{d-1}$. The sliced $p$-Wasserstein distance is
+Let $p\geq1$, let $\alpha,\beta\in\mathcal P_p(\RR^d)$, and let $\sigma$ be the
+uniform probability measure on $\mathbb S^{d-1}$. The sliced $p$-Wasserstein
+distance is
 
 ```{math}
 :label: eq-sliced-wasserstein
@@ -771,7 +967,7 @@ $\mathbb S^{d-1}$. The sliced $p$-Wasserstein distance is
 
 Since each projected problem can be solved by sorting or quantiles,
 $\operatorname{SW}_p$ is much cheaper to approximate numerically than
-high-dimensional OT {cite:p}`rabin-ssvm-11,kolouri2016sliced`. It metrizes the
+high-dimensional OT. It metrizes the
 same weak-plus-moment topology as $\Wass_p$, but its geometry is not
 bi-Lipschitz equivalent to $\Wass_p$ in high dimension
 {cite:p}`nadjahi2019asymptotic`.
@@ -887,21 +1083,45 @@ $\beta$,
 \frac{1}{d}\int \norm{x-y}^2\d\pi(x,y).
 ```
 
-Optimizing over $\pi$ gives the sharper inequality. The weak-convergence
-statement follows from the same Cramer--Wold mechanism plus the moment
-condition.
+Optimizing over $\pi$ gives the sharper inequality.
+
+For the topology, $\Wass_p$ convergence implies sliced convergence by the
+upper bound. Conversely, if $\operatorname{SW}_p(\alpha_n,\alpha)\to0$, then
+
+```{math}
+\int_{\mathbb S^{d-1}}\int |\langle\theta,x\rangle|^p
+\d\alpha_n(x)\d\sigma(\theta)
+=
+c_{d,p}\int\|x\|^p\d\alpha_n(x),
+\qquad c_{d,p}>0,
+```
+
+and the projected-quantile formula give uniform moment bounds and hence
+tightness. Every subsequence has a further subsequence whose projected
+$\Wass_p$ distances vanish for almost every direction. Cramer--Wold identifies
+every weak limit with $\alpha$. If $Q_{n,\theta}$ and $Q_\theta$ are the
+projected quantiles, then
+
+```{math}
+\operatorname{SW}_p(\alpha_n,\alpha)
+=
+\|Q_{n,\theta}-Q_\theta\|_{L^p(\mathbb S^{d-1}\times(0,1))}.
+```
+
+Convergence of these $L^p$ norms and the spherical identity yield convergence
+of the $p$th moments. This is equivalent to $\Wass_p$ convergence.
 
 The reverse estimates on compact sets are deeper and use the Radon structure of
-slices. Bonnotte's Lemma 5.1.4 gives the first bound by mollifying a
+slices. Bonnotte's Lemma 5.1.4 gives the historical exponent $1/(d+1)$ by mollifying a
 Kantorovich--Rubinstein test function, representing the regularized test
 through one-dimensional projections, bounding the resulting action by
 $\operatorname{SW}_1$, and optimizing the smoothing scale
 {cite:p}`bonnotte2013unidimensional`. The scaling in $R$ follows by applying the
 unit-ball estimate to $(x\mapsto x/R)_\sharp\alpha$ and
-$(x\mapsto x/R)_\sharp\beta$. The sharper exponent $1/d$ is the main comparison
-theorem of Carlier, Figalli, Mérigot and Wang
-{cite:p}`CarlierFigalliMerigotWang2025SlicedW1`; their examples also show that
-this exponent cannot be improved in general.
+$(x\mapsto x/R)_\sharp\beta$. The exponent $1/d$ is the sharp comparison theorem
+of Carlier, Figalli, Mérigot and Wang
+{cite:p}`CarlierFigalliMerigotWang2025SlicedW1`; their examples show that it
+cannot be improved in general.
 :::
 
 The infinitesimal comparison is most transparent along smooth Brenier
@@ -997,7 +1217,7 @@ t\mapsto\alpha_t\ \text{continuous}}}
 
 This length distance is always larger than the chordal distance $\SW_2$, but it should not be confused with the usual Wasserstein distance $\Wass_2$. Recent work of Park and Slep\v{c}ev gives a systematic study of this sliced length geometry and shows in particular that the sliced Wasserstein space is not generally a length space {cite:p}`ParkSlepcev2023SlicedGeometry`.
 
-Proposition {ref}`prop-sliced-first-order-tangent` is only an upper comparison of infinitesimal speeds. Along the same perturbation $\alpha_t=(\Id+t\nabla\varphi)_\sharp\alpha$, the $\Wass_2$ metric derivative is the full norm $\|\nabla\varphi\|_{L^2(\alpha)}$. By contrast, the sliced metric derivative is obtained by projecting and then minimizing on each one-dimensional slice. Under standard smoothness assumptions, writing $\alpha_\theta=(P_\theta)_\sharp\alpha$,
+Proposition {ref}`prop-sliced-first-order-tangent` is only an upper comparison of infinitesimal speeds. Along the same perturbation $\alpha_t=(\Id+t\nabla\varphi)_\sharp\alpha$, the $\Wass_2$ metric derivative is the full norm $\|\nabla\varphi\|_{L^2(\alpha)}$. By contrast, the sliced metric derivative is obtained by projecting and then minimizing on each one-dimensional slice. Under standard smoothness assumptions, writing $\alpha_\theta=(P_\theta)_\sharp\alpha$, the tangent formula of Park and Slepčev {cite:p}`ParkSlepcev2023SlicedGeometry` gives
 
 ```{math}
 \lim_{t\to0}\frac{\SW_2(\alpha,\alpha_t)^2}{t^2}
@@ -1150,6 +1370,14 @@ For $k$-dimensional subspace projections,
 \leq
 \Wass_p(\alpha,\beta).
 ```
+
+For $p=2$, rotational invariance gives the sharper estimate
+
+```{math}
+\operatorname{SW}_{2,k}(\alpha,\beta)^2
+\leq
+\frac{k}{d}\Wass_2(\alpha,\beta)^2.
+```
 :::
 
 :::{dropdown} Proof
@@ -1160,6 +1388,10 @@ any admissible coupling between $\alpha$ and $\beta$ through a projection gives
 an admissible coupling for the projected measures with no larger transport
 cost. Optimizing over couplings and then averaging or maximizing over the
 projection gives the result.
+
+For the last estimate, use
+$\int_{\operatorname{St}(d,k)}\|U^\top z\|^2\d U=(k/d)\|z\|^2$ under any
+coupling, and then minimize over couplings.
 :::
 
 ### Min-Sliced Lifted Transport Plans
@@ -1191,8 +1423,9 @@ smallest full-dimensional quadratic cost:
 \int\norm{x-y}^2\d\pi_\theta(x,y).
 ```
 
-This quantity is not a projected distance; it is a cheap feasible-plan
-construction. Consequently,
+This is the min-SWGG construction of Mahey, Chapel, Gasso, Bonet and Courty
+{cite:p}`MaheyChapelGassoBonetCourty2023MinSWGG`. It is not a projected
+distance but a cheap feasible-plan construction. Consequently,
 
 ```{math}
 \Wass_2^2(\alpha,\beta)
@@ -1232,9 +1465,10 @@ sorting induces a lifted feasible plan in the original plane.
 :::{admonition} Algorithm: Monte Carlo sliced Wasserstein
 :class: ot4ml-algorithm
 
-**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p$, number of directions $L$.
+**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p\geq1$, number of directions $L$.
 
-**Output:** Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$.
+**Output:** Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$ for
+$\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$.
 
 **For** $\ell=1,\ldots,L$ **do**:
 
@@ -1316,14 +1550,14 @@ $\alpha,\beta\in\Pp_p(\Xx)$ is
 
 If $\mathcal G$ acts by isometries and preserves $\Pp_p(\Xx)$, then
 $\Wass_{p,\mathcal G}$ is a pseudo-distance on $\Pp_p(\Xx)$. If, in addition,
-the infimum is attained between any two orbits and all orbits are closed, then
+the infimum is attained between every pair of orbits, then
 it is a distance on the orbit space $\Pp_p(\Xx)/\mathcal G$. This applies in
 particular to continuous actions of compact groups.
 :::
 
 :::{dropdown} Proof
 Isometry of the action gives
-$\Wass_p(g_\sharp\al,g_\sharp\nu)=\Wass_p(\al,\nu)$, which proves the second
+$\Wass_p(g_\sharp\alpha,g_\sharp\beta)=\Wass_p(\alpha,\beta)$, which proves the second
 formula above. Non-negativity and symmetry are inherited from $\Wass_p$. For
 the triangle inequality, choose $g_1,g_2\in\mathcal G$ and write
 
@@ -1341,9 +1575,10 @@ The triangle inequality for $\Wass_p$, followed by the infimum over
 $g_1,g_2$, gives the result. If the infimum is attained and the quotient
 distance is zero, there exist $g,h\in\mathcal G$ such that
 $\Wass_p(g_\sharp\alpha,h_\sharp\beta)=0$, hence
-$g_\sharp\alpha=h_\sharp\beta$. Closed orbits then imply equality of orbits.
+$g_\sharp\alpha=h_\sharp\beta$, which is exactly equality of the two orbits.
 For compact groups, continuity of the action and compactness give the required
-attainment.
+attainment. Without attainment, distinct orbits at zero orbit distance must be
+identified to obtain a genuine metric space.
 :::
 
 ### Rigid Motions and Wasserstein-Procrustes
@@ -1386,6 +1621,7 @@ GW/Wasserstein estimate to the aligned pair, and then taking the infimum over
 rigid motions, gives
 
 ```{math}
+:label: eq-gw-procrustes-upper
 \operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
 \leq
 2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
@@ -1512,7 +1748,11 @@ between two successive poses.
 >
 > **Set** $k\leftarrow k+1$.
 
-**Return** $\P^{(k-1)},R^{(k)},t^{(k)}$.
+**Solve**
+$\P^{(k)}\in\argmin_{\P\in\CouplingsD(\a,\b)}
+\sum_{i,j}\P_{ij}\norm{R^{(k)}x_i+t^{(k)}-y_j}^2$.
+
+**Return** $\P^{(k)},R^{(k)},t^{(k)}$.
 :::
 
 
@@ -1606,7 +1846,9 @@ $\operatorname{LOT}_\rho(\rho,\alpha)
 =\Wass_2(\rho,\alpha)$. For two arbitrary targets, the coupling
 $(T_\alpha,T_\beta)_\sharp\rho$ is admissible but not generally optimal, so
 $\operatorname{LOT}_\rho$ is a tangent-space approximation of the Wasserstein
-geometry {cite:p}`wang2013linear`.
+geometry {cite:p}`wang2013linear`. Uniqueness of the Brenier maps also shows
+that $\operatorname{LOT}_\rho$ is a genuine distance on the class of targets
+for which these maps are defined.
 
 For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized
 barycenter is obtained by averaging maps,
@@ -1764,12 +2006,12 @@ pushing the reference forward.
 <iframe class="ot4ml-live-frame" title="Linear optimal transport controls" src="../live/generalized-linear-ot.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
 (prop-linear-ot-stability)=
-:::{admonition} Proposition: Local Stability of Linear OT
+:::{admonition} Proposition: Quantitative Stability of Linear OT
 :class: important
-Assume that the measures are supported on a fixed convex compact set, with
-densities bounded above and below, and that the Brenier maps from $\rho$ are
-regular. Then, for $\alpha,\beta$ in a sufficiently small regular
-neighborhood of $\rho$,
+Let $X,Y\subset\RR^d$ be compact convex sets, assume that $X$ has positive
+Lebesgue measure, and let $\rho$ be normalized Lebesgue measure on $X$. There
+is a constant $C=C(d,X,Y)$ such that, for all
+$\alpha,\beta\in\mathcal P(Y)$,
 
 ```{math}
 \Wass_2(\alpha,\beta)
@@ -1778,26 +2020,21 @@ neighborhood of $\rho$,
 \qquad\text{and}\qquad
 \operatorname{LOT}_\rho(\alpha,\beta)
 \leq
-C\Wass_2(\alpha,\beta)^\eta
+C\Wass_1(\alpha,\beta)^{2/15}.
 ```
-
-for constants $C>0$ and $\eta\in(0,1]$ depending on regularity.
 :::
 
 :::{dropdown} Proof
 The first inequality is immediate:
 $(T_\alpha,T_\beta)_\sharp\rho$ is a feasible coupling between $\alpha$ and
-$\beta$. The reverse local estimate is a standard stability statement for the
-Monge--Ampere equation under the stated regularity assumptions: changes in
-the target measure control changes in the Brenier potential in Holder norms,
-hence control $T_\alpha-T_\beta$ in $L^2(\rho)$.
+$\beta$. The second inequality is the global quantitative stability theorem of
+Mérigot, Delalande and Chazal {cite:p}`merigot2020stability`. Its proof controls
+the difference of Kantorovich potentials by $\Wass_1$ and then uses convexity
+and interpolation estimates to control their gradients in $L^2(\rho)$.
 
-In one-dimensional settings, quantile functions make this exact with
-$\eta=1$. In several dimensions one should not read the statement as a global
-Lipschitz estimate in $\Wass_2$. Quantitative stability results for
-semi-discrete and Monge--Ampere maps give Holder exponents depending on the
-dimension, density bounds, support geometry and regularity
-{cite:p}`merigot2020stability`.
+In one dimension, quantiles make the embedding isometric and the exponent
+improves to one. In several dimensions the theorem is global but only Hölder;
+it is not a global Lipschitz estimate in $\Wass_2$.
 :::
 
 (sec-spectral-subspace-wasserstein)=
@@ -1867,6 +2104,11 @@ the quadratic projected transport cost
 \Wass_2((A^{1/2})_\sharp\alpha,(A^{1/2})_\sharp\beta)^2.
 ```
 
+The equality remains valid when $A$ is singular. Projecting any coupling gives
+one inequality; conversely, disintegrate $\alpha$ and $\beta$ over their
+$A^{1/2}$-images and lift an optimal projected coupling by conditionally
+coupling the fibers.
+
 The polar set of the gauge is
 
 ```{math}
@@ -1912,7 +2154,9 @@ then
 \sqrt b\,\Wass_2(\alpha,\beta).
 ```
 
-In particular, $\Wass_\gamma$ is a distance.
+In particular, $\Wass_\gamma$ is a distance. When $\gamma$ is the restriction
+of a norm to the positive semidefinite cone, finite-dimensional norm
+equivalence supplies such constants automatically.
 :::
 
 :::{dropdown} Proof
@@ -1996,7 +2240,22 @@ of rank-$k$ projectors is
 and, since $M\succeq0$, the associated support function is the same Ky Fan
 gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of
 $\operatorname{SRW}_{2,k}$, while $\operatorname{SRW}_{2,k}$ keeps the
-original non-convex rank constraint. For $k=1$,
+original non-convex rank constraint. More precisely,
+
+```{math}
+\operatorname{SRW}_{2,k}(\alpha,\beta)
+\leq
+\Wass_{\gamma_k}(\alpha,\beta)
+\leq
+\Wass_2(\alpha,\beta),
+\qquad
+\sqrt{\frac{k}{d}}\Wass_2(\alpha,\beta)
+\leq
+\Wass_{\gamma_k}(\alpha,\beta).
+```
+
+Indeed, $\mathcal B_{\gamma_k}$ contains the rank-$k$ projectors and
+$(k/d)I$, and it is contained in $\{0\preceq A\preceq I\}$. For $k=1$,
 $\gamma_1(M)=\lambda_{\max}(M)$ and
 $\mathcal B_{\gamma_1}=\{A\succeq0:\tr(A)\leq1\}$.
 
@@ -2083,10 +2342,9 @@ a measure
 ```
 
 such that $\pi_s\in\Couplings(\alpha_s,\beta_s)$ for $\lambda$-a.e. $s$. The
-set of such couplings is denoted $\Couplings_\lambda(\alpha,\beta)$. For a
-Borel family of lower-semicontinuous costs
-$c_s:\Omega\times\Omega\to\RR\cup\{+\infty\}$ bounded from below, the
-conditional OT value is
+set of such couplings is denoted $\Couplings_\lambda(\alpha,\beta)$. Let
+$(s,x,y)\mapsto c_s(x,y)$ be jointly Borel, nonnegative, and lower
+semicontinuous in $(x,y)$ for every $s$. The conditional OT value is
 
 ```{math}
 :label: eq-conditional-ot-general
@@ -2104,9 +2362,11 @@ conditional OT value is
 ```
 :::
 
-The equality in {eq}`eq-conditional-ot-general` follows from measurable
-selection of fiberwise optimal plans, or from measurable near-optimal selections
-when minimizers are not available. Equivalently, conditional transport is
+The equality in {eq}`eq-conditional-ot-general` is not a formal exchange of an
+infimum and an integral. The stated hypotheses make the fiberwise value
+measurable and permit measurable selection of optimal plans, or measurable
+near-optimal selection when minimizers are unavailable. Equivalently,
+conditional transport is
 ordinary transport on $S\times\Omega$ with an infinite cost for moving mass
 between different values of $s$.
 
@@ -2129,7 +2389,7 @@ For $c_s(x,y)=\dist(x,y)^p$, define
 :::{admonition} Proposition: Metric Property
 :class: important
 For $p\geq1$, $\Wass_{p,\lambda}$ is a distance on
-$\Pp_{p,\lambda}(S\times\Omega)$.
+$\Pp_{p,\lambda}(S\times\Omega)$. This metric space is Polish.
 :::
 
 :::{dropdown} Proof
@@ -2147,21 +2407,28 @@ for a.e. $s$, Minkowski's inequality in $L^p(S,\lambda)$ gives
 \leq
 \Wass_{p,\lambda}(\alpha,\beta)+\Wass_{p,\lambda}(\beta,\gamma).
 ```
+
+For completeness and separability, identify each measure with the
+$\lambda$-a.e. equivalence class of the measurable map
+$s\mapsto\alpha_s\in\mathcal P_p(\Omega)$. The conditional distance is exactly
+the metric of $L^p(S,\lambda;\mathcal P_p(\Omega))$. Since
+$(\mathcal P_p(\Omega),\Wass_p)$ is Polish, so is this metric-valued $L^p$
+space.
 :::
 
 (prop-conditional-wasserstein-geodesics)=
 :::{admonition} Proposition: Conditional Geodesics
 :class: important
 Assume that $(\Omega,\dist)$ is a geodesic Polish space and let
-$\alpha^0,\alpha^1\in\Pp_{p,\lambda}(S\times\Omega)$. For $\lambda$-a.e. $s$,
-choose a constant-speed $\Wass_p$ geodesic $t\mapsto\alpha^t_s$ between
-$\alpha^0_s$ and $\alpha^1_s$, measurably in $s$, and set
+$\alpha_0,\alpha_1\in\Pp_{p,\lambda}(S\times\Omega)$. For $\lambda$-a.e. $s$,
+choose a constant-speed $\Wass_p$ geodesic $t\mapsto\alpha_{t,s}$ between
+$\alpha_{0,s}$ and $\alpha_{1,s}$, measurably in $s$, and set
 
 ```{math}
-\alpha^t(\d s,\d x)=\alpha^t_s(\d x)\lambda(\d s).
+\alpha_t(\d s,\d x)=\alpha_{t,s}(\d x)\lambda(\d s).
 ```
 
-Then $t\mapsto\alpha^t$ is a constant-speed geodesic for
+Then $t\mapsto\alpha_t$ is a constant-speed geodesic for
 $\Wass_{p,\lambda}$.
 :::
 
@@ -2169,24 +2436,24 @@ $\Wass_{p,\lambda}$.
 For $0\leq r\leq t\leq1$, the fiberwise geodesic property gives
 
 ```{math}
-\Wass_p(\alpha^r_s,\alpha^t_s)
+\Wass_p(\alpha_{r,s},\alpha_{t,s})
 =
-(t-r)\Wass_p(\alpha^0_s,\alpha^1_s)
+(t-r)\Wass_p(\alpha_{0,s},\alpha_{1,s})
 \quad\text{for }\lambda\text{-a.e. }s.
 ```
 
 Integrating the $p$th power over $S$ gives
 
 ```{math}
-\Wass_{p,\lambda}(\alpha^r,\alpha^t)
+\Wass_{p,\lambda}(\alpha_r,\alpha_t)
 =
-(t-r)\Wass_{p,\lambda}(\alpha^0,\alpha^1).
+(t-r)\Wass_{p,\lambda}(\alpha_0,\alpha_1).
 ```
 
 Hence the conditional curve has constant speed and realizes the distance
 between its endpoints. In Euclidean space one may take, for each $s$, an
-optimal plan $\pi_s\in\Couplings(\alpha^0_s,\alpha^1_s)$ and set
-$\alpha^t_s=((1-t)\mathrm p_1+t\mathrm p_2)_\sharp\pi_s$, where
+optimal plan $\pi_s\in\Couplings(\alpha_{0,s},\alpha_{1,s})$ and set
+$\alpha_{t,s}=((1-t)\mathrm p_1+t\mathrm p_2)_\sharp\pi_s$, where
 $\mathrm p_1,\mathrm p_2$ are the two coordinate projections. On a general
 geodesic space, the same construction uses a measurable family of optimal
 dynamical plans; when geodesics are non-unique, different measurable selections

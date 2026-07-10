@@ -8,13 +8,13 @@ kernelspec:
 (sec-matching)=
 
 This opening chapter isolates the simplest form of optimal transport: pairing
-two finite point clouds. The stakes are algorithmic and geometric at once: one
-sees the combinatorial nature of transport, the special simplicity of the line,
-and the first hints that convex relaxation will be necessary in higher
-dimension. Classical assignment algorithms such as the Hungarian method and
-auction methods {cite:p}`Kuhn1955,bertsekas1992auction` provide the
-computational backdrop, while the geometric examples prepare the Kantorovich
-relaxation.
+two finite, equally weighted point clouds of the same cardinality. The stakes
+are algorithmic and geometric at once: one sees the combinatorial nature of
+transport, the special simplicity of the line, and the limitations of
+permutations once cardinalities or weights differ. Classical assignment
+algorithms such as the Hungarian and auction methods
+{cite:p}`Kuhn1955,bertsekas1992auction` provide the computational backdrop,
+while the weighted examples motivate the Kantorovich relaxation.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
@@ -57,11 +57,11 @@ This section formulates matching as Monge's deterministic transport problem on
 two equally weighted clouds. The one-dimensional case is a transparent
 reference case where the optimal map can be read off by sorting.
 
-### Matching Problem
+### Assignment Problem
 
-Given a cost matrix $(C_{i,j})_{i \in \{1,\ldots,n\}, j \in \{1,\ldots,m\}}$
-and assuming $n=m$, the optimal assignment problem aims to find a bijection
-$\sigma$ within the set $\Perm(n)$ of permutations of $n$ elements that solves
+Let $C\in\RR^{n\times n}$ be a cost matrix, where $C_{i,j}$ is the cost of
+pairing source $i$ with target $j$, and let $\Perm(n)$ denote the bijections of
+$\{1,\ldots,n\}$. The optimal assignment problem is
 
 ```{math}
 :label: eq-optimal-assignment-web
@@ -69,64 +69,53 @@ $\sigma$ within the set $\Perm(n)$ of permutations of $n$ elements that solves
 \frac{1}{n}\sum_{i=1}^n C_{i,\sigma(i)}.
 ```
 
-One could naively evaluate the cost above for all permutations in
-$\Perm(n)$. However, this set has size $n!$, which becomes enormous even for
-small values of $n$. In general, the optimal $\sigma$ is not unique.
+When $C_{i,j}=c(x_i,y_j)$, this is the Monge problem between the two uniform
+empirical measures. The factor $1/n$ records the mass of each atom but does not
+change the optimizer. Exhaustive search evaluates all $n!$ permutations and is
+therefore impractical. Without additional assumptions on $C$, the optimizer
+need not be unique.
 
-### One-Dimensional Case
+### Convex Costs on the Line
 
 In one dimension, convex costs select monotone matchings.
 
 (prop-matching-1d-monotone)=
 :::{admonition} Proposition: Monotone Matching on the Line
 :class: important
-Assume that the points $(x_i)_i$ and $(y_j)_j$ are pairwise distinct. If the
-cost is of the form $C_{i,j}=h(x_i-y_j)$, where
-$h:\RR\to\RR^+$ is strictly convex, for instance
-$C_{i,j}=|x_i-y_j|^p$ with $p>1$, then any optimal $\sigma$ defines a strictly
-increasing map $x_i \mapsto y_{\sigma(i)}$, and hence is unique:
+Assume that the source points are pairwise distinct and that the target points
+are pairwise distinct. If $C_{i,j}=h(x_i-y_j)$ for a strictly convex function
+$h:\RR\to\RR$, then the unique optimizer is the order-preserving permutation,
+characterized by
 
 ```{math}
-\forall (i,i'), \qquad
-(x_i-x_{i'})(y_{\sigma(i)}-y_{\sigma(i')}) > 0.
+(x_i-x_{i'})(y_{\sigma(i)}-y_{\sigma(i')}) > 0
+\qquad\text{for every }i\neq i'.
 ```
 :::
 
 :::{dropdown} Proof
-If this property is violated, there exists $(i,i')$ such that
-$(x_i-x_{i'})(y_{\sigma(i)}-y_{\sigma(i')}) < 0$. One can then define a
-permutation $\tilde\sigma$ by swapping the match:
-$\tilde\sigma(i)=\sigma(i')$ and $\tilde\sigma(i')=\sigma(i)$. This gives a
-strictly better cost by the following elementary inequality.
-
-Let $h:\RR\to\RR$ be strictly convex and let $x<x'$ and $y<y'$. Then
+An assignment that does not preserve order contains an inversion: after
+relabeling, $x<x'$ are matched to $y'>y$. Set $d=y'-y>0$ and
 
 ```{math}
-h(x-y)+h(x'-y') < h(x-y')+h(x'-y).
+D(s)=\frac{h(s)-h(s-d)}{d}.
 ```
 
-Set $d:=y'-y>0$ and define, for every $s\in\RR$,
+Strict convexity makes $D$ strictly increasing. Therefore
 
 ```{math}
-D(s):=\frac{h(s)-h(s-d)}{d}
-```
-
-and
-
-```{math}
-\Delta
-=h(x-y')+h(x'-y)-h(x-y)-h(x'-y')
+ h(x-y')+h(x'-y)-h(x-y)-h(x'-y')
 =d\bigl(D(x'-y)-D(x-y)\bigr).
 ```
 
-Because $h$ is strictly convex, $D$ is strictly increasing. Since
-$x-y<x'-y$, monotonicity gives $D(x-y)<D(x'-y)$, hence $\Delta>0$.
+This quantity is positive because $x-y<x'-y$. Swapping the inverted targets
+strictly lowers the cost. Repeating the exchange eliminates every inversion;
+the only order-preserving bijection between the sorted clouds pairs equal ranks.
 :::
 
-This property extends by continuity to convex costs that are not strictly
-convex, such as $|x-y|$, but then the matching is not necessarily unique. For
-convex costs, the algorithm to compute an optimal transport is to sort the
-points: find permutations $\sigma_X,\sigma_Y$ such that
+For convex but not strictly convex $h$, the same exchange inequality is
+non-strict. Equal-rank matching remains optimal, but other optimizers may
+coexist. Choose sorting permutations $\sigma_X,\sigma_Y$ such that
 
 ```{math}
 x_{\sigma_X(1)} \leq x_{\sigma_X(2)} \leq \cdots
@@ -135,27 +124,57 @@ y_{\sigma_Y(1)} \leq y_{\sigma_Y(2)} \leq \cdots,
 ```
 
 and then map $x_{\sigma_X(k)}$ to $y_{\sigma_Y(k)}$. Equivalently, an optimal
-transport is $\sigma=\sigma_Y\circ\sigma_X^{-1}$. The computational cost is
-therefore $O(n\log n)$, using for instance quicksort.
+transport is $\sigma=\sigma_Y\circ\sigma_X^{-1}$. Comparison sorting costs
+$O(n\log n)$ in the worst case with mergesort or heapsort; quicksort has this
+complexity only in expectation.
 
-If the distance profile is concave instead of convex, the geometry changes.
-For costs such as $c_p(x,y)=|x-y|^p$ with $0<p<1$, splitting a displacement
-into several smaller displacements is expensive, so optimal matchings tend to
-create long exchanges rather than the monotone equal-rank pairing. This is the
-strictly concave regime studied by Gangbo and McCann
+### Concave Costs on the Line
+
+Concavity reverses the exchange preference: one long and one short displacement
+can cost less than two displacements of intermediate length. Thus costs
+$c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing, such as
+$g(r)=r^p$ for $0<p<1$, favor nested or crossing assignments rather than equal
+ranks. This is the regime studied by Gangbo and McCann
 {cite:p}`gangbo1996geometry`.
 
-The real line still gives special structure. After sorting all red and blue
-points together, the ordered sequence decomposes into maximal alternating
-chains, and local matching indicators can certify pairs that must be matched in
-an optimum. Removing such certified pairs and repeating yields an exact
-hierarchical algorithm for the unit-mass balanced assignment problem, with
-worst-case complexity $O(n^2)$ in the framework of Delon, Salomon and
-Sobolevski {cite:p}`delon-concave`. Very concave costs also motivate simpler
-greedy heuristics, studied for instance by Ottolini and Steinerberger
-{cite:p}`OttoliniSteinerberger2023GreedyConcave`. The point is that these
-methods are not generic linear-programming solvers; they use the
-one-dimensional order and the concavity of the distance profile.
+For a source point, its right neighbor is the nearest target to its right such
+that the intervening open interval contains equally many sources and targets;
+left neighbors and target-to-source neighbors are defined symmetrically.
+Iterating this balanced-neighbor relation partitions a unit-mass problem into
+independent alternating chains. On a chain
+
+```{math}
+p_1<q_1<p_2<q_2<\cdots<p_N<q_N,
+```
+
+with the opposite orientation handled by exchanging $p$ and $q$, the local
+indicators are
+
+```{math}
+I_k^p(i)
+=c(p_i,q_{i+k})
++\sum_{r=0}^{k-1}c(p_{i+r+1},q_{i+r})
+-\sum_{r=0}^{k}c(p_{i+r},q_{i+r}),
+```
+
+and
+
+```{math}
+I_k^q(i)
+=c(p_{i+k+1},q_i)
++\sum_{r=1}^{k}c(p_{i+r},q_{i+r})
+-\sum_{r=0}^{k}c(p_{i+r+1},q_{i+r}).
+```
+
+After the relevant lower-order indicators have been found nonnegative, a
+negative $I_k^p(i)$ certifies
+$p_{i+r}\leftrightarrow q_{i+r-1}$, while a negative $I_k^q(i)$ certifies
+$p_{i+r}\leftrightarrow q_{i+r}$, for $r=1,\ldots,k$. Recursively removing
+certified blocks gives an exact $O(n^2)$ algorithm for equal unit masses; the
+extension to arbitrary real masses has a larger $O(n^3)$ worst-case bound
+{cite:p}`delon-concave`. Repeatedly matching the closest red-blue pair is a
+simpler heuristic, with quantitative guarantees for $g(r)=r^p$ when
+$0<p<1/2$ {cite:p}`OttoliniSteinerberger2023GreedyConcave`.
 
 (fig:matching-1d-convex-concave-costs)=
 :::{div}
@@ -229,14 +248,16 @@ fig = plot_quantile_matching(
 
 <iframe class="ot4ml-live-frame" title="Quantile matching controls" src="../live/quantile.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
-If $\phi:\RR\to\RR$ is increasing, the same technique applies to costs of the
-form $h(|\phi(x)-\phi(y)|)$ after a change of variable. A typical application
-is grayscale histogram equalization. The empirical cumulative distribution of
-image luminance values is transported to a prescribed target histogram, for
-instance a concentrated or reference-image histogram. In one dimension, the
-monotone rearrangement gives the exact transport map, so the operation is both
-computationally simple and geometrically faithful: it matches distributions of
-intensities rather than individual pixels.
+### Histogram Equalization
+
+If $\phi:\RR\to\RR$ is strictly increasing and $h:\RR_+\to\RR$ is convex and
+nondecreasing, sorting also solves the problem with cost
+$h(|\phi(x)-\phi(y)|)$. A typical application is grayscale histogram
+equalization. For equal-size samples with distinct ranks, monotone rearrangement
+gives the exact assignment to a prescribed target histogram. Repeated
+intensities require consistent tie-breaking or mass splitting, but the quantile
+construction remains canonical. It matches intensity distributions rather than
+spatial pixel locations.
 
 (fig:monge-histogram-equalization)=
 :::{div}
@@ -280,11 +301,12 @@ fig = plot_histogram_equalization(
 
 <iframe class="ot4ml-live-frame" title="Histogram equalization controls" src="../live/histogram.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
-If $h$ is strictly convex, then all optimal assignments are increasing, and if
-the points are all distinct, this increasing map is unique. If $h$ is not
-strictly convex, for instance $c(x,y)=|x-y|$, non-increasing optimal
-assignments can also exist. The next example shows that this is not a
-discretization artifact, but a genuine flat direction of the linear cost.
+### Flat Directions for the Linear Cost
+
+Strict convexity makes every optimizer increasing and, for distinct points,
+unique. For a merely convex cost such as $|x-y|$, non-increasing optimal
+assignments can coexist. The next example exhibits a genuine flat direction of
+the linear cost.
 
 (ex-book-shifting-w1)=
 :::{admonition} Example: Discrete book-shifting and non-uniqueness for $\Wass_1$
@@ -353,11 +375,10 @@ orderings.
 (prop-circle-ot-cut)=
 :::{admonition} Proposition: Discrete Circle Transport by a Cut
 :class: important
-Let $x_1,\ldots,x_n$ and $y_1,\ldots,y_n$ be two families of distinct points on
-$\mathbb S^1$, with equal weights. Let $x_{(1)},\ldots,x_{(n)}$ and
-$y_{(1)},\ldots,y_{(n)}$ denote fixed cyclic orderings, with the convention
-$y_{(k+n)}=y_{(k)}$. For the cost $c_p$, $p>1$, an optimal assignment is one of
-the cyclic shifts
+Assume that the $2n$ points $x_1,\ldots,x_n,y_1,\ldots,y_n$ are pairwise
+distinct. Let $x_{(1)},\ldots,x_{(n)}$ and $y_{(1)},\ldots,y_{(n)}$ denote fixed
+cyclic orderings, with indices understood modulo $n$. For the cost $c_p$,
+$p>1$, every optimal assignment is a cyclic shift
 
 ```{math}
 x_{(k)} \longmapsto y_{(k+s)},
@@ -365,44 +386,44 @@ x_{(k)} \longmapsto y_{(k+s)},
 \qquad s\in\{0,\ldots,n-1\},
 ```
 
-and is found by minimizing
+and its cost is obtained by minimizing
 
 ```{math}
-\sum_{k=1}^n
+\frac1n\sum_{k=1}^n
 d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p
 ```
 
-over the $n$ possible shifts. Equivalently, for an optimal shift one can
-choose a cut
-$\theta\in\mathbb S^1\setminus(\{x_i\}_i\cup\{y_j\}_j)$ so that, after lifting
-all points to $(\theta,\theta+1)$ and sorting them, the optimal matching is the
-equal-rank monotone matching on this interval.
+over the $n$ possible shifts. For each optimal assignment, one can choose a cut
+$\theta\in\mathbb S^1\setminus(\{x_i\}_i\cup\{y_j\}_j)$ crossed by none of its
+shortest transport arcs. After lifting the points to $(\theta,\theta+1)$, the
+assignment is the equal-rank monotone matching on this interval.
 :::
 
 :::{dropdown} Proof
-Call two matched pairs cyclically inverted if the circular order of their
-source endpoints is opposite to the circular order of their target endpoints.
-Among optimal assignments, choose one with the smallest number of such
-inversions. The elementary exchange step is the circular analogue of the line
-argument above: if two matched pairs are inverted, then cutting the circle in a
-gap which does not meet the four endpoints and choosing integer lifts realizes
-the four geodesic distances involved in the exchange as ordinary distances
-between two ordered source lifts and two oppositely ordered target lifts. The
-one-dimensional Monge inequality for the strictly convex function
-$r\mapsto |r|^p$ then shows that swapping the two targets cannot increase the
-cost, and decreases it unless the four endpoints are in a degenerate tie
-configuration.
+Fix an optimal assignment and let $\gamma_i$ be an open shortest arc from
+$x_i$ to its matched target, choosing either orientation for an antipodal pair.
+The path-uncrossing lemma of Delon, Rabin, and Gousseau says that if two arcs of
+an optimal assignment intersect, then they have the same orientation and
+neither is strictly contained in the other {cite:p}`DelonRabinGousseau2011Circle`.
+Indeed, opposite orientations or strict containment would allow a two-edge
+exchange that is strictly cheaper by monotonicity and strict convexity of
+$r\mapsto r^p$.
 
-Thus an optimal assignment can be chosen with no cyclic inversion. A bijection
-between two finite cyclically ordered sets with no cyclic inversion is a
-rotation of the order, hence a cyclic shift. This shift specifies how the two
-cyclic orderings should be opened; after this cut, the rotation becomes an
-ordinary linear order and the matching is the equal-rank monotone assignment on
-the unfolded interval. Conversely, each cut gives one such cyclic shift, so
-minimizing over the finitely many shifts gives an optimal discrete circle
-assignment. Repeated points or ties are obtained by the same argument after an
-arbitrarily small perturbation and a limiting passage. This is the discrete
-form of the fast circle-Monge construction of {cite:p}`delon-circle`.
+Suppose that the arcs cover the circle. Because they are open, every source
+lies in another transport arc. Ordering the sources cyclically and applying the
+path-uncrossing lemma propagates a common orientation: either each forward
+neighbor lies in the preceding arc, or the analogous statement holds backward.
+Cyclically reassigning the targets in that orientation then shortens every arc,
+contradicting optimality. Hence a point $\theta$ lies outside their union.
+
+Cut at $\theta$ and lift the circle to $(\theta,\theta+1)$. Each matched
+geodesic avoids the cut, so its circular length is the ordinary distance
+between its lifted endpoints. The monotone matching proposition on the line
+implies that the lifted assignment preserves order. An order-preserving
+bijection between two cyclically ordered finite sets is a cyclic shift.
+Minimizing over the $n$ shifts therefore recovers the optimum. The argument and
+its extensions to convex costs and nonuniform masses are developed in
+{cite:p}`DelonRabinGousseau2011Circle,delon-circle`.
 :::
 
 (fig:monge-circle-cut-unfolding)=
@@ -547,20 +568,29 @@ fig = plot_regularization_sweep(
 Let
 
 ```{math}
-\al=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i},
+\alpha=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i},
 \qquad
-\nu=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j},
+\beta=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j},
 \qquad
 \sum_i k_i=\sum_j\ell_j=N,
 ```
 
-with $k_i,\ell_j\in\NN$. The discrete Kantorovich problem between $(\al,\nu)$
-is equivalent to the uniform assignment problem obtained by replacing each
-$x_i$ by $k_i$ identical copies and each $y_j$ by $\ell_j$ identical copies.
-More precisely, after multiplying transport masses by $N$, optimal couplings
-correspond to optimal integer count matrices $(n_{ij})$ with row sums $k_i$ and
-column sums $\ell_j$, and these count matrices are exactly the collapsed form
-of assignments between the duplicated clouds.
+with positive integers $k_i,\ell_j$. Replace each $x_i$ by $k_i$ identical
+copies and each $y_j$ by $\ell_j$ identical copies, producing two uniform
+$N$-point clouds. The duplicated assignment problem and the discrete
+Kantorovich problem between $\alpha$ and $\beta$ have the same optimal value.
+Moreover, an optimal coupling exists of the form
+
+```{math}
+P_{ij}=\frac{n_{ij}}N,
+\qquad n_{ij}\in\NN,
+\qquad \sum_j n_{ij}=k_i,
+\quad \sum_i n_{ij}=\ell_j.
+```
+
+Couplings whose scaled entries $NP_{ij}$ are integral are exactly the collapsed
+assignments between the duplicated clouds. Fractional optimal couplings may
+nevertheless coexist when the optimum is degenerate.
 :::
 
 :::{dropdown} Proof
@@ -577,12 +607,24 @@ $P_{ij}=n_{ij}/N$ has marginals $k_i/N$ and $\ell_j/N$. The assignment cost is
 ```
 
 Conversely, any nonnegative integer count matrix with those row and column sums
-can be realized by matching the corresponding duplicated particles. Finally,
-the transportation constraint matrix is totally unimodular, so the linear
-problem with integer supplies and demands has an optimal integer count matrix.
-Thus the optimum of the rational-weight Kantorovich problem is the same as the
-optimum of the duplicated uniform assignment problem.
+can be realized by allocating the $k_i$ copies of each $x_i$ among the target
+copies according to $(n_{ij})_j$. It remains to show that restricting to
+integer counts does not increase the optimum. Scale a feasible coupling by
+$N$ and write $Q=NP$. The constraints on $Q$ have integer right-hand sides.
+After multiplying the target rows by $-1$, their coefficient matrix is the
+oriented node-edge incidence matrix of a bipartite graph and is therefore
+totally unimodular. Every vertex of the transportation polytope is integral,
+and a linear objective attains its minimum at a vertex. Thus an integral
+optimal $Q$ exists and the two optimal values coincide. This proves existence,
+not integrality of every optimizer: convex combinations of distinct integral
+optima can be fractional.
 :::
+
+This network-flow integrality mechanism is the rational-weight counterpart of
+the Birkhoff--von Neumann theorem proved later: in both cases, a linear
+transport relaxation has an optimizer represented by integer edge flows after
+scaling. Equal unit margins specialize these flows to permutation matrices,
+whereas a degenerate optimal face may also contain fractional couplings.
 
 (fig:matching-rational-duplication)=
 :::{div}
@@ -610,28 +652,33 @@ integer count matrix of the proposition.*
 
 ### Two-Dimensional Assignments
 
-This efficient strategy to compute the OT in one dimension does not extend to
-higher dimensions. In two dimensions, as already noted by Monge, optimal
-segments for the Euclidean distance cannot cross.
+Sorting no longer orders a planar cloud, but a simple local exchange still
+rules out proper crossings for the Euclidean-distance cost. This observation,
+already present in Monge's geometric reasoning, is necessary but far from
+sufficient for computing an optimum.
 
-:::{admonition} Proposition: Non-Crossing Optimal Matchings
+:::{admonition} Proposition: No Proper Crossings in Euclidean-Distance Matchings
 :class: important
-In dimension two, for $c(x,y)=\norm{x-y}$, if $\sigma$ is an optimal
-assignment, then the segments $[x_i,y_{\sigma(i)}]$ cannot cross.
+Let $x_1,\ldots,x_n,y_1,\ldots,y_n\in\RR^2$ and let
+$c(x,y)=\norm{x-y}$. If $\sigma$ is optimal, then two matched segments cannot
+cross properly: their relative interiors cannot meet at a point where their
+supporting lines are distinct.
 :::
 
 :::{dropdown} Proof
-If two segments $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$ cross at an
-interior point $z$, then the triangle inequality gives
+Suppose that $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$ cross properly at
+$z$. The triangle inequality along the two reconnected paths gives
 
 ```{math}
-\norm{x_i-y_{\sigma(j)}}+\norm{x_j-y_{\sigma(i)}}
-<
-\norm{x_i-y_{\sigma(i)}}+\norm{x_j-y_{\sigma(j)}}.
+\norm{x_i-y_{\sigma(j)}}
+\leq \norm{x_i-z}+\norm{z-y_{\sigma(j)}},
 ```
 
-The assignment obtained by swapping $(\sigma(i),\sigma(j))$ therefore has a
-strictly smaller cost, contradicting optimality.
+and the analogous inequality after exchanging $i$ and $j$. The sum of the
+right-hand sides is the cost of the two original segments. At least one
+inequality is strict because the crossing is non-collinear. Swapping the two
+targets therefore strictly decreases the cost, a contradiction. Collinear
+overlaps are excluded because the exchange can then have equal cost.
 :::
 
 This property alone is not enough to lead to an efficient algorithm.
@@ -660,10 +707,10 @@ This recurrence characterizes the Catalan numbers, hence $M_n=C_n$.
 :::
 
 
-Thus even after forbidding crossings, an exhaustive search remains
-exponential. The two-segment swap in the proof above is nevertheless useful:
-it explains why a crossing matching cannot be optimal, but it does not select
-among the exponentially many planar matchings that survive this local test.
+Thus even after forbidding proper crossings, exhaustive search remains
+exponential. The two-segment swap explains why a transverse crossing cannot be
+optimal, but it does not select among the exponentially many planar matchings
+that survive this local test.
 
 (alg-one-dimensional-sorting)=
 :::{admonition} Algorithm: One-dimensional sorting assignment
@@ -689,33 +736,45 @@ $x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)}, \qquad y_{\sigma_Y(1)}\leq\cdots
 :::{admonition} Algorithm: Concave line matching by local indicators
 :class: ot4ml-algorithm
 
-**Input:** Unit-mass source and target points on $\RR$; strictly concave distance cost.
+**Input:** Two $n$-point unit-mass clouds on $\RR$; cost
+$c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing.
 
 **Output:** Optimal concave-cost matching $M$.
 
 **Sort** combined red-blue sequence on the line.
 
-**Decompose** it into maximal alternating chains.
+**Construct** the independent alternating chains induced by the
+balanced-neighbor relation.
 
 **Initialize:** Set $M=\emptyset$.
 
-**While** unmatched points remain **do**:
+**While** an active chain remains **do**:
 
 >
-> **For** each active alternating chain **do**:
+> **Select** the leftmost active chain and set the indicator order $k=1$.
+>
+> **While** the chain is nonempty **do**:
 
 >>
->> **Compute** local matching indicators {cite:p}`delon-concave`.
+>> **Retrieve or compute** all admissible order-$k$ indicators $I_k^p(i)$ and
+>> $I_k^q(i)$.
 >>
->> **If** an indicator certifies a pair $(i,j)$ **then**:
+>> **If** a negative indicator is found **then**:
 
 >>>
->>> **Update** $M\leftarrow M\cup\{(i,j)\}$.
+>>> **Select** the negative indicator with smallest site index $i$; prefer
+>>> $I_k^p(i)$ to break a tie.
 >>>
->>> **Remove** points $i$ and $j$.
+>>> **Add** its certified block of $k$ neighboring pairs to $M$.
 >>>
-
-> **Recompute** only chains affected by removals.
+>>> **Remove** their endpoints, invalidate affected cached indicators, relabel
+>>> the chains, and set $k=1$.
+>>>
+>> **Else if** $k$ is below the maximal admissible order **then set**
+>> $k\leftarrow k+1$.
+>>
+>> **Else** match the remaining chain by equal indices in its current
+>> orientation and remove it.
 >
 
 **Return** $M$.
@@ -727,21 +786,29 @@ $x_{\sigma_X(1)}\leq\cdots\leq x_{\sigma_X(n)}, \qquad y_{\sigma_Y(1)}\leq\cdots
 
 **Input:** Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; cost $d_{\mathbb S^1}^p$.
 
-**Output:** Optimal cyclic assignment.
+**Output:** Optimal cyclic assignment and a compatible cut $\theta_{\rm cut}$.
 
 **Let** $x_{(1)},\ldots,x_{(n)}$ and $y_{(1)},\ldots,y_{(n)}$ be the points sorted by increasing angle from a fixed origin.
 
 **For** $s=0,\ldots,n-1$ **do**:
 
-> $E_s=\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p, \qquad y_{(k+n)}=y_{(k)}.$
+> $E_s=n^{-1}\sum_{k=1}^n d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p, \qquad y_{(k+n)}=y_{(k)}.$
 
-**Set** $s^\star=\min\argmin_{0\leq s<n}E_s$.
+**Set** $s^\star$ to the smallest minimizer of $(E_s)_{s=0}^{n-1}$.
 
-**Set** $\theta_{\rm cut}$ in an empty arc separating two consecutive matched pairs for the shift $s^\star$.
+**Construct** the shortest arcs from $x_{(k)}$ to $y_{(k+s^\star)}$.
 
-**Replace** every angle by its representative in $[\theta_{\rm cut},\theta_{\rm cut}+2\pi)$.
-**Return** $x_{(k)}\mapsto y_{(k+s^\star)}$.
+**Choose** $\theta_{\rm cut}$ outside their union and outside all endpoints.
+
+**Lift** every point to its representative in
+$(\theta_{\rm cut},\theta_{\rm cut}+1)$.
+
+**Return** $x_{(k)}\mapsto y_{(k+s^\star)}$ and $\theta_{\rm cut}$.
 :::
+
+After sorting, direct enumeration costs $O(n^2)$. Faster methods exploit the
+convex dependence of the circular transport cost on a continuous shift
+parameter for weighted histograms {cite:p}`delon-circle`.
 
 
 ## Matching Algorithms
@@ -751,21 +818,27 @@ optimization. Its main point is that efficient algorithms exist, but their
 cleanest analysis is obtained only after introducing the linear-programming
 viewpoint.
 
+### Classical Assignment Methods
+
 Efficient algorithms exist to solve the optimal matching problem. The most
 well-known are the Hungarian method and auction algorithms
 {cite:p}`Kuhn1955,bertsekas1981new,bertsekas1992auction`. Auction algorithms
-use prices on the target points: each source bids for the target with largest
-reduced profit, the target price is increased, and the process terminates when
-the $\epsilon$-complementary slackness conditions are satisfied. For integer
-costs, choosing $\epsilon<1/n$ gives an exact optimum after a finite number of
-bids {cite:p}`bertsekas1992auction`. The dual chapter revisits this algorithm
-after Kantorovich duality and explains why it is a dual price method, parallel
-in spirit to Sinkhorn scaling.
+attach prices to targets: an unmatched source bids for the target of smallest
+reduced cost, equivalently largest reduced profit, and raises that target's
+price. The process terminates once $\epsilon$-complementary slackness holds.
+For integer costs, this condition places the unnormalized total cost within
+$n\epsilon$ of optimum. If $\epsilon<1/n$, the resulting integer assignment
+cost is less than one above the integer optimum and must therefore equal it
+{cite:p}`bertsekas1992auction`. The dual
+chapter revisits this algorithm after Kantorovich duality and explains why it
+is a dual price method, parallel in spirit to Sinkhorn scaling.
 
 ### Hungarian Primal-Dual Method
 
 The Hungarian method is best understood as a certificate-building algorithm for
-the assignment linear program. It maintains a partial matching $M$ and dual
+the assignment linear program. Since the factor $1/n$ in the assignment
+objective does not affect its optimizer, we use the unnormalized total cost.
+The method maintains a partial matching $M$ and dual
 prices $(u_i,v_j)$ satisfying
 
 ```{math}
@@ -775,10 +848,12 @@ u_i+v_j\leq C_{i,j}
 
 The equality graph
 $E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}$ contains the edges whose reduced cost is
-zero. The algorithm only augments $M$ along alternating paths made of equality
-edges. Starting from an unmatched source, it grows an alternating tree with
-source set $S$ and target set $T$. If the tree reaches an unmatched target, the
-matching is augmented along the path. If no such edge exists, the dual
+zero. For a source set $S$, write
+$N_E(S)=\{j:\text{some }i\in S\text{ satisfies }(i,j)\in E(u,v)\}$.
+The algorithm only augments $M$ along alternating paths made of equality edges.
+Starting from an unmatched source, it grows an alternating tree with source set
+$S$ and target set $T$. If the tree reaches an unmatched target, the matching
+is augmented along the path. If $N_E(S)\setminus T$ is empty, the dual
 variables are shifted by the smallest slack
 
 ```{math}
@@ -860,21 +935,21 @@ graph, then
 
 so the primal cost of $\sigma$ reaches the dual lower bound and is optimal.
 
-It remains to justify finite termination and the complexity bound. At each
-successful augmentation, the matching cardinality increases by one, so there
-are at most $n$ augmentations. During one augmentation phase, the algorithm
-grows an alternating tree in the equality graph. If no augmenting path is
-available, the dual update uses the smallest slack of an edge leaving the
-current tree. For edges inside the tree, adding $\delta$ to source labels and
-subtracting $\delta$ from target labels preserves tightness; for edges from $S$
-to $T^c$, the definition of $\delta$ preserves feasibility and makes at least
-one new edge tight; all other inequalities are unchanged or become looser. Thus
-the reachable sets strictly grow between two failed augmentation attempts, and
-they can grow at most $n$ times within one phase. If the current slacks
-$\min_{i\in S}(C_{i,j}-u_i-v_j)$ are updated when a source enters $S$, each
-tree expansion costs $O(n)$. A phase therefore costs $O(n^2)$, and the $n$
-phases give $O(n^3)$ operations. Hence the method reaches a perfect optimal
-matching.
+It remains to justify finite termination and the complexity bound. Each
+successful augmentation increases the matching cardinality by one, so there
+are exactly $n$ augmentation phases. During one phase, the algorithm grows an
+alternating tree in the equality graph. Before it reaches a free target, the
+tree invariant is $|S|=|T|+1$, so $T$ cannot contain every target. If
+$N_E(S)\setminus T$ is empty, every slack from $S$ to $T^c$ is positive and
+the minimum defining $\delta$ exists. On $S\times T$, adding $\delta$ to source
+labels and subtracting it from target labels preserves tightness. On
+$S\times T^c$, the definition of $\delta$ preserves feasibility and makes at
+least one new edge tight; inequalities on $S^c\times T$ become looser, and all
+others are unchanged. Thus the reachable sets strictly grow after every dual
+update and can grow at most $n$ times in one phase. If the slacks
+$\min_{i\in S}(C_{i,j}-u_i-v_j)$ are maintained when a source enters $S$, each
+tree expansion costs $O(n)$. One phase costs $O(n^2)$ and all $n$ phases cost
+$O(n^3)$. Hence the method reaches a perfect optimal matching.
 :::
 
 (alg-hungarian-primal-dual)=
@@ -931,12 +1006,17 @@ matching.
 >>
 >> **Set** $i=p(j)$.
 >>
->> **Set** $M\leftarrow M\cup\{(i,j)\}$.
->>
 >> **Set** $j_{\rm old}=q(i)$.
 >>
 >> **If** $j_{\rm old}$ is defined **then set** $M\leftarrow M\setminus\{(i,j_{\rm old})\}$.
+>>
+>> **Set** $M\leftarrow M\cup\{(i,j)\}$.
 >> **Set** $j=j_{\rm old}$.
 
 **Return** $M$.
 :::
+
+The chapter has exposed two complementary routes to finite matching: geometry
+can reduce the problem to sorting, while primal-dual labels give a global
+certificate for an arbitrary cost matrix. The next chapter passes from finite
+permutations to transport maps between general measures.
