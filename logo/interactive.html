@@ -49,7 +49,7 @@
     .letter {
       display: grid;
       grid-template-rows: minmax(0, 1fr) auto;
-      gap: 7px;
+      gap: 5px;
       min-width: 0;
     }
 
@@ -69,11 +69,17 @@
       height: 100%;
     }
 
+    .control-stack {
+      display: grid;
+      gap: 1px;
+      min-width: 0;
+    }
+
     .control {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       align-items: center;
-      min-height: 22px;
+      min-height: 19px;
       padding: 0 5px;
       color: var(--muted);
       font-size: 11px;
@@ -189,6 +195,10 @@
       display: none;
     }
 
+    html.is-snippet .control-stack {
+      display: none;
+    }
+
     html[data-focus] .letter {
       display: none;
     }
@@ -244,32 +254,57 @@
     <section class="logo-row" aria-label="Interactive OT4ML logo">
       <article class="letter" data-letter="O">
         <div class="canvas-shell"><canvas id="canvas-o" aria-label="O"></canvas></div>
-        <div class="control">
-          <input id="noise" aria-label="O noise amplitude" title="O noise amplitude" type="range" min="0" max="1.4" value="0.72" step="0.02">
+        <div class="control-stack" aria-label="O controls">
+          <div class="control">
+            <input id="noise" aria-label="O noise amplitude" title="O noise amplitude" type="range" min="0" max="1.4" value="0.72" step="0.02">
+          </div>
+          <div class="control">
+            <input id="o-points" aria-label="O number of red and blue boundary points" title="O number of red and blue boundary points" type="range" min="20" max="80" value="48" step="1">
+          </div>
         </div>
       </article>
       <article class="letter" data-letter="T">
         <div class="canvas-shell"><canvas id="canvas-t" aria-label="T"></canvas></div>
-        <div class="control">
-          <input id="t-samples" aria-label="T number of samples" title="T number of samples" type="range" min="12" max="220" value="80" step="1">
+        <div class="control-stack" aria-label="T controls">
+          <div class="control">
+            <input id="t-samples" aria-label="T number of quantization sites" title="T number of quantization sites" type="range" min="12" max="220" value="80" step="1">
+          </div>
+          <div class="control">
+            <input id="t-density-bias" aria-label="T density bias from bottom to top" title="T density bias: left favors the bottom, right favors the top" type="range" min="-1" max="1" value="0" step="0.05">
+          </div>
         </div>
       </article>
       <article class="letter" data-letter="4">
         <div class="canvas-shell"><canvas id="canvas-4" aria-label="4"></canvas></div>
-        <div class="control">
-          <input id="rhs" aria-label="4 heat equation time" title="4 heat equation time" type="range" min="0" max="1" value="0.58" step="0.01">
+        <div class="control-stack" aria-label="4 controls">
+          <div class="control">
+            <input id="rhs" aria-label="4 heat equation time" title="4 heat equation time" type="range" min="0" max="1" value="0.58" step="0.01">
+          </div>
+          <div class="control">
+            <input id="four-diracs" aria-label="4 number of Dirac sources" title="4 number of Dirac sources" type="range" min="4" max="40" value="22" step="1">
+          </div>
         </div>
       </article>
       <article class="letter" data-letter="M">
         <div class="canvas-shell"><canvas id="canvas-m" aria-label="M"></canvas></div>
-        <div class="control">
-          <input id="inside" aria-label="M number of blue points" title="M number of blue points" type="range" min="8" max="120" value="42" step="1">
+        <div class="control-stack" aria-label="M controls">
+          <div class="control">
+            <input id="inside" aria-label="M number of blue points" title="M number of blue points" type="range" min="8" max="120" value="42" step="1">
+          </div>
+          <div class="control">
+            <input id="m-red-points" aria-label="M number of red points" title="M number of red points" type="range" min="120" max="840" value="840" step="20">
+          </div>
         </div>
       </article>
       <article class="letter" data-letter="L">
         <div class="canvas-shell"><canvas id="canvas-l" aria-label="L"></canvas></div>
-        <div class="control">
-          <input id="flow-time" aria-label="L flow integration time" title="L flow integration time" type="range" min="0" max="0.5" value="0.3" step="0.01">
+        <div class="control-stack" aria-label="L controls">
+          <div class="control">
+            <input id="flow-time" aria-label="L flow integration time" title="L flow integration time" type="range" min="0" max="0.5" value="0.3" step="0.01">
+          </div>
+          <div class="control">
+            <input id="l-density-bias" aria-label="L sampling bias from bottom to top" title="L sampling bias: left favors the bottom, right favors the top" type="range" min="-1" max="1" value="0" step="0.05">
+          </div>
         </div>
       </article>
     </section>
@@ -318,20 +353,25 @@
 
     const controls = {
       noise: document.getElementById("noise"),
+      oPoints: document.getElementById("o-points"),
       tSamples: document.getElementById("t-samples"),
+      tDensityBias: document.getElementById("t-density-bias"),
       rhs: document.getElementById("rhs"),
+      fourDiracs: document.getElementById("four-diracs"),
       inside: document.getElementById("inside"),
-      flowTime: document.getElementById("flow-time")
+      mRedPoints: document.getElementById("m-red-points"),
+      flowTime: document.getElementById("flow-time"),
+      lDensityBias: document.getElementById("l-density-bias")
     };
 
     const statusEl = document.getElementById("status");
     const state = {
       masks: {},
       prepared: {},
-      renderToken: 0,
       cache: {
         O: new Map(),
         T: new Map(),
+        "4": new Map(),
         M: new Map(),
         L: new Map()
       }
@@ -343,6 +383,12 @@
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
+    }
+
+    function verticalBiasWeight(y, bbox, bias, strength = 2.2) {
+      const height = Math.max(1, bbox.maxY - bbox.minY);
+      const centeredY = 2 * (y - bbox.minY) / height - 1;
+      return Math.exp(-strength * bias * centeredY - strength * Math.abs(bias));
     }
 
     function mixColor(t, alpha = 1) {
@@ -521,6 +567,43 @@
           const val = dist2[i] * (score ? 0.62 + 0.38 * score(p) : 1);
           if (val > bestVal) {
             bestVal = val;
+            best = i;
+          }
+        }
+        if (best < 0) break;
+        chosen.push(points[best]);
+        used[best] = 1;
+      }
+      return chosen;
+    }
+
+    function densityWeightedFarthestSample(points, count, seed, densityWeight, floor = 0.002) {
+      if (points.length <= count) return points.slice();
+      const rng = mulberry32(seed);
+      const chosen = [];
+      const used = new Uint8Array(points.length);
+      const weights = points.map((p) => floor + (1 - floor) * clamp(densityWeight(p), 0, 1));
+      let first = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        if (weights[i] > weights[first]) first = i;
+      }
+      chosen.push(points[first]);
+      used[first] = 1;
+      const dist2 = new Float64Array(points.length);
+      dist2.fill(Infinity);
+      for (let k = 1; k < count; k += 1) {
+        const center = chosen[chosen.length - 1];
+        let best = -1;
+        let bestValue = -1;
+        for (let i = 0; i < points.length; i += 1) {
+          if (used[i]) continue;
+          const p = points[i];
+          const dx = p.x - center.x;
+          const dy = p.y - center.y;
+          dist2[i] = Math.min(dist2[i], dx * dx + dy * dy);
+          const value = dist2[i] * weights[i] * (0.995 + 0.01 * rng());
+          if (value > bestValue) {
+            bestValue = value;
             best = i;
           }
         }
@@ -781,17 +864,17 @@
       return inner.map((a, i) => ({ a, b: outer[assignment[i]], mass: 1 / inner.length }));
     }
 
-    function oPairsForNoise(prep, noise) {
+    function oPairsForNoise(geometry, noise) {
       const maxNoise = parseFloat(controls.noise.max) || 1.4;
       const t = clamp(noise / maxNoise, 0, 1);
-      if (t <= 1e-8) return prep.permutationPairs;
+      if (t <= 1e-8) return geometry.permutationPairs;
       const epsilon = 0.012 * t * t;
-      const key = epsilon.toExponential(4);
+      const key = `${geometry.count}:${epsilon.toExponential(4)}`;
       if (state.cache.O.has(key)) return state.cache.O.get(key);
       const iterations = epsilon < 0.001 ? 320 : 220;
-      const coupling = sinkhornCoupling(prep.inner, prep.outer, epsilon, iterations);
-      let pairs = sampleCouplingPairs(coupling, prep.pairCount, 904 + Math.round(t * 10000));
-      if (pairs.length === 0) pairs = prep.permutationPairs;
+      const coupling = sinkhornCoupling(geometry.inner, geometry.outer, epsilon, iterations);
+      let pairs = sampleCouplingPairs(coupling, geometry.pairCount, 904 + geometry.count + Math.round(t * 10000));
+      if (pairs.length === 0) pairs = geometry.permutationPairs;
       state.cache.O.set(key, pairs);
       return pairs;
     }
@@ -806,14 +889,13 @@
         const rb = b.reduce((s, p) => s + Math.hypot(p.x - cx, p.y - cy), 0) / b.length;
         return ra - rb;
       });
-      const inner = sortByAngle(farthestSample(all[0], 48, 12), cx, cy);
-      const outer = sortByAngle(farthestSample(all[1], 48, 23), cx, cy);
-      const pairCount = 5 * inner.length;
-      const permutationPairs = repeatPairs(oPermutationPairs(inner, outer), pairCount);
+      const maxCount = parseInt(controls.oPoints.max, 10) || 80;
+      const innerPool = farthestSample(all[0], maxCount, 12);
+      const outerPool = farthestSample(all[1], maxCount, 23);
       const rng = mulberry32(904);
       const steps = 72;
       const bridges = [];
-      for (let j = 0; j < pairCount; j += 1) {
+      for (let j = 0; j < 5 * maxCount; j += 1) {
         const jitter = [];
         let x = 0;
         let y = 0;
@@ -832,7 +914,25 @@
         }
         bridges.push({ jitter, steps, spin: rng() < 0.5 ? -1 : 1 });
       }
-      return { inner, outer, pairCount, permutationPairs, bridges };
+      return { innerPool, outerPool, bridges, cx, cy, geometries: new Map() };
+    }
+
+    function oGeometry(prep, requestedCount) {
+      const count = clamp(Math.round(requestedCount), 2, Math.min(prep.innerPool.length, prep.outerPool.length));
+      if (prep.geometries.has(count)) return prep.geometries.get(count);
+      const inner = sortByAngle(prep.innerPool.slice(0, count), prep.cx, prep.cy);
+      const outer = sortByAngle(prep.outerPool.slice(0, count), prep.cx, prep.cy);
+      const pairCount = 5 * count;
+      const geometry = {
+        count,
+        inner,
+        outer,
+        pairCount,
+        permutationPairs: repeatPairs(oPermutationPairs(inner, outer), pairCount),
+        bridges: prep.bridges.slice(0, pairCount)
+      };
+      prep.geometries.set(count, geometry);
+      return geometry;
     }
 
     function renderO() {
@@ -840,13 +940,15 @@
       fillBackground(ctx);
       const prep = state.prepared.O;
       const noise = parseFloat(controls.noise.value);
-      const pairs = oPairsForNoise(prep, noise);
+      const pointCount = parseInt(controls.oPoints.value, 10);
+      const geometry = oGeometry(prep, pointCount);
+      const pairs = oPairsForNoise(geometry, noise);
 
       ctx.save();
       applyLetterFrame(ctx, state.masks.O, 34);
       ctx.globalCompositeOperation = "multiply";
-      for (let i = 0; i < prep.bridges.length; i += 1) {
-        const bridge = prep.bridges[i];
+      for (let i = 0; i < geometry.bridges.length; i += 1) {
+        const bridge = geometry.bridges[i];
         const { a, b } = pairs[i % pairs.length];
         const dx = b.x - a.x;
         const dy = b.y - a.y;
@@ -876,8 +978,7 @@
           const p0 = path[k - stride];
           const p1 = path[k];
           const mid = ((p0.s + p1.s) * 0.5) / Math.max(1, total);
-          const colorT = Math.sin(Math.PI * mid);
-          ctx.strokeStyle = mixColor(colorT, 0.14);
+          ctx.strokeStyle = mixColor(mid, 0.14);
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
           ctx.lineTo(p1.x, p1.y);
@@ -885,13 +986,13 @@
         }
       }
       ctx.globalCompositeOperation = "source-over";
-      for (const p of prep.inner) {
+      for (const p of geometry.inner) {
         ctx.fillStyle = "rgba(226,53,49,0.95)";
         ctx.beginPath();
         ctx.arc(p.x, p.y, 2.8, 0, 2 * Math.PI);
         ctx.fill();
       }
-      for (const p of prep.outer) {
+      for (const p of geometry.outer) {
         ctx.fillStyle = "rgba(34,103,216,0.95)";
         ctx.beginPath();
         ctx.arc(p.x, p.y, 2.8, 0, 2 * Math.PI);
@@ -911,16 +1012,18 @@
           if (insideAt(data, px, py)) raster.push({ x: px, y: py, gx: x, gy: y });
         }
       }
-      return { candidates, raster, n };
+      return { candidates, raster, n, bbox: data.bbox };
     }
 
-    function lloydCenters(prep, count) {
-      const key = String(count);
+    function lloydCenters(prep, count, densityBias) {
+      const key = `${count}:${densityBias.toFixed(2)}`;
       if (state.cache.T.has(key)) return state.cache.T.get(key);
-      let centers = farthestSample(prep.candidates, count, 177).map((p) => ({ x: p.x, y: p.y }));
-      const iterations = count > 150 ? 5 : 7;
+      const densityWeight = (p) => verticalBiasWeight(p.y, prep.bbox, densityBias, 9.0);
+      let centers = densityWeightedFarthestSample(prep.candidates, count, 177, densityWeight)
+        .map((p) => ({ x: p.x, y: p.y }));
+      const iterations = count > 150 ? 7 : 10;
       for (let iter = 0; iter < iterations; iter += 1) {
-        const acc = centers.map(() => ({ x: 0, y: 0, n: 0 }));
+        const acc = centers.map(() => ({ x: 0, y: 0, weight: 0 }));
         for (const p of prep.raster) {
           let best = 0;
           let bestD = Infinity;
@@ -934,11 +1037,14 @@
               best = i;
             }
           }
-          acc[best].x += p.x;
-          acc[best].y += p.y;
-          acc[best].n += 1;
+          const weight = densityWeight(p);
+          acc[best].x += weight * p.x;
+          acc[best].y += weight * p.y;
+          acc[best].weight += weight;
         }
-        centers = centers.map((c, i) => acc[i].n ? { x: acc[i].x / acc[i].n, y: acc[i].y / acc[i].n } : c);
+        centers = centers.map((c, i) => acc[i].weight
+          ? { x: acc[i].x / acc[i].weight, y: acc[i].y / acc[i].weight }
+          : c);
       }
       const labels = new Int16Array(prep.n * prep.n);
       labels.fill(-1);
@@ -966,8 +1072,9 @@
       const ctx = setupCanvas(canvases.T);
       fillBackground(ctx);
       const count = parseInt(controls.tSamples.value, 10);
+      const densityBias = parseFloat(controls.tDensityBias.value);
       const prep = state.prepared.T;
-      const result = lloydCenters(prep, count);
+      const result = lloydCenters(prep, count, densityBias);
       const n = prep.n;
       ctx.save();
       applyLetterFrame(ctx, state.masks.T, 18, 0, 4);
@@ -1056,22 +1163,44 @@
           }
         }
       }
-      const sources = randomSample(candidates, 22, 422);
-      const source = new Float32Array(n * n);
-      for (const p of sources) source[p.y * n + p.x] = 1;
-
+      const maxSources = parseInt(controls.fourDiracs.max, 10) || 40;
+      const sourcePool = randomSample(candidates, maxSources, 422);
       const frameCount = 101;
-      const frames = [new Float32Array(n * n)];
-      const maxValues = [0];
       const levels = Array.from({ length: 18 }, (_, i) => Math.pow((i + 1) / 19, 1.72));
-      return { n, mask, active, source, frames, maxValues, frameCount, stepsPerFrame: 6, tau: 0.18, sources, levels };
+      return {
+        n,
+        mask,
+        active,
+        frameCount,
+        stepsPerFrame: 6,
+        tau: 0.18,
+        sourcePool,
+        levels
+      };
     }
 
-    function heatFrame(prep, frameIndex) {
+    function fourSimulation(prep, requestedCount) {
+      const count = clamp(Math.round(requestedCount), 1, prep.sourcePool.length);
+      if (state.cache["4"].has(count)) return state.cache["4"].get(count);
+      const sources = prep.sourcePool.slice(0, count);
+      const source = new Float32Array(prep.n * prep.n);
+      for (const p of sources) source[p.y * prep.n + p.x] = 1;
+      const simulation = {
+        count,
+        sources,
+        source,
+        frames: [new Float32Array(prep.n * prep.n)],
+        maxValues: [0]
+      };
+      state.cache["4"].set(count, simulation);
+      return simulation;
+    }
+
+    function heatFrame(prep, simulation, frameIndex) {
       const n = prep.n;
       const target = Math.max(0, Math.min(prep.frameCount - 1, frameIndex));
-      while (prep.frames.length <= target) {
-        let u = new Float32Array(prep.frames[prep.frames.length - 1]);
+      while (simulation.frames.length <= target) {
+        let u = new Float32Array(simulation.frames[simulation.frames.length - 1]);
         let v = new Float32Array(n * n);
         for (let step = 0; step < prep.stepsPerFrame; step += 1) {
           for (let y = 1; y < n - 1; y += 1) {
@@ -1082,7 +1211,7 @@
                 continue;
               }
               const lap = u[i - 1] + u[i + 1] + u[i - n] + u[i + n] - 4 * u[i];
-              v[i] = Math.max(0, u[i] + prep.tau * (lap + prep.source[i]));
+              v[i] = Math.max(0, u[i] + prep.tau * (lap + simulation.source[i]));
             }
           }
           const tmp = u;
@@ -1091,20 +1220,22 @@
         }
         let maxU = 0;
         for (let i = 0; i < u.length; i += 1) maxU = Math.max(maxU, u[i]);
-        prep.frames.push(new Float32Array(u));
-        prep.maxValues.push(maxU);
+        simulation.frames.push(new Float32Array(u));
+        simulation.maxValues.push(maxU);
       }
-      return { field: prep.frames[target], maxU: prep.maxValues[target] };
+      return { field: simulation.frames[target], maxU: simulation.maxValues[target] };
     }
 
     function renderFour() {
       const ctx = setupCanvas(canvases["4"]);
       fillBackground(ctx);
       const heatTime = parseFloat(controls.rhs.value);
+      const diracCount = parseInt(controls.fourDiracs.value, 10);
       const prep = state.prepared["4"];
+      const simulation = fourSimulation(prep, diracCount);
       const n = prep.n;
       const frameIndex = Math.round(clamp(heatTime, 0, 1) * (prep.frameCount - 1));
-      const { field, maxU } = heatFrame(prep, frameIndex);
+      const { field, maxU } = heatFrame(prep, simulation, frameIndex);
       ctx.save();
       applyLetterFrame(ctx, state.masks["4"], 17, 0, 2);
       const levels = prep.levels;
@@ -1184,6 +1315,12 @@
           }
         }
         ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(226,53,49,0.88)";
+      for (const source of simulation.sources) {
+        ctx.beginPath();
+        ctx.arc((source.x + 0.5) * scale, (source.y + 0.5) * scale, 1.9, 0, 2 * Math.PI);
+        ctx.fill();
       }
       ctx.restore();
     }
@@ -1273,11 +1410,11 @@
       return true;
     }
 
-    function mW2Map(prep, count) {
-      const key = String(count);
+    function mW2Map(prep, blueCount, redCount) {
+      const key = `${blueCount}:${redCount}`;
       if (state.cache.M.has(key)) return state.cache.M.get(key);
-      const red = prep.red;
-      const blue = prep.blue.slice(0, count);
+      const red = prep.red.slice(0, redCount);
+      const blue = prep.blue.slice(0, blueCount);
       const maskData = state.masks.M;
       const forbiddenCost = 1e12;
       const capacities = mBalancedCapacities(red.length, blue.length);
@@ -1309,9 +1446,10 @@
     function renderM() {
       const ctx = setupCanvas(canvases.M);
       fillBackground(ctx);
-      const count = parseInt(controls.inside.value, 10);
+      const blueCount = parseInt(controls.inside.value, 10);
+      const redCount = parseInt(controls.mRedPoints.value, 10);
       const prep = state.prepared.M;
-      const result = mW2Map(prep, count);
+      const result = mW2Map(prep, blueCount, redCount);
 
       ctx.save();
       applyLetterFrame(ctx, state.masks.M, 18, 0, 2);
@@ -1347,15 +1485,16 @@
       const candidates = data.points.filter((_, i) => i % 2 === 0);
       const density = farthestSample(candidates, 420, 700);
       const seeds = farthestSample(candidates, 270, 701);
-      return { density, seeds };
+      return { density, seeds, bbox: data.bbox };
     }
 
-    function meanShiftTrajectories(prep, flowTime, data) {
-      const key = flowTime.toFixed(2);
+    function meanShiftTrajectories(prep, flowTime, densityBias, data) {
+      const key = `${flowTime.toFixed(2)}:${densityBias.toFixed(2)}`;
       if (state.cache.L.has(key)) return state.cache.L.get(key);
       const seeds = prep.seeds;
       const h2 = 58 * 58;
       const maxSteps = Math.round(30 * flowTime);
+      const densityWeights = prep.density.map((p) => verticalBiasWeight(p.y, prep.bbox, densityBias, 3.8));
       const trajectories = [];
       for (const seed of seeds) {
         let x = seed.x;
@@ -1365,10 +1504,11 @@
           let sx = 0;
           let sy = 0;
           let sw = 0;
-          for (const p of prep.density) {
+          for (let i = 0; i < prep.density.length; i += 1) {
+            const p = prep.density[i];
             const dx = x - p.x;
             const dy = y - p.y;
-            const w = Math.exp(-(dx * dx + dy * dy) / (2 * h2));
+            const w = densityWeights[i] * Math.exp(-(dx * dx + dy * dy) / (2 * h2));
             sx += w * p.x;
             sy += w * p.y;
             sw += w;
@@ -1393,9 +1533,10 @@
       const ctx = setupCanvas(canvases.L);
       fillBackground(ctx);
       const flowTime = parseFloat(controls.flowTime.value);
+      const densityBias = parseFloat(controls.lDensityBias.value);
       const data = state.masks.L;
       const prep = state.prepared.L;
-      const trajectories = meanShiftTrajectories(prep, flowTime, data);
+      const trajectories = meanShiftTrajectories(prep, flowTime, densityBias, data);
 
       ctx.save();
       applyLetterFrame(ctx, data, 18, 0, 2);
@@ -1430,20 +1571,44 @@
       if (activeLetters.includes("L")) renderL();
     }
 
+    const pendingRenders = new Map();
+
     function scheduleRender(fn) {
-      const token = ++state.renderToken;
-      requestAnimationFrame(() => {
-        if (token !== state.renderToken && fn === renderAll) return;
+      const pending = pendingRenders.get(fn);
+      if (pending) cancelAnimationFrame(pending);
+      const request = requestAnimationFrame(() => {
+        pendingRenders.delete(fn);
         fn();
       });
+      pendingRenders.set(fn, request);
     }
 
     function bindControls() {
       controls.noise.addEventListener("input", () => scheduleRender(renderO));
+      controls.oPoints.addEventListener("input", () => {
+        state.cache.O.clear();
+        scheduleRender(renderO);
+      });
       controls.tSamples.addEventListener("input", () => scheduleRender(renderT));
+      controls.tDensityBias.addEventListener("input", () => {
+        state.cache.T.clear();
+        scheduleRender(renderT);
+      });
       controls.rhs.addEventListener("input", () => scheduleRender(renderFour));
+      controls.fourDiracs.addEventListener("input", () => {
+        state.cache["4"].clear();
+        scheduleRender(renderFour);
+      });
       controls.inside.addEventListener("input", () => scheduleRender(renderM));
+      controls.mRedPoints.addEventListener("input", () => {
+        state.cache.M.clear();
+        scheduleRender(renderM);
+      });
       controls.flowTime.addEventListener("input", () => scheduleRender(renderL));
+      controls.lDensityBias.addEventListener("input", () => {
+        state.cache.L.clear();
+        scheduleRender(renderL);
+      });
       window.addEventListener("resize", () => scheduleRender(renderAll));
     }
 

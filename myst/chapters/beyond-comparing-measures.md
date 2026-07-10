@@ -2074,7 +2074,7 @@ result, no triangle inequality is asserted.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-# Hard DTW path and soft-DTW Gibbs occupancy at epsilon = .060.
+# Hard DTW path and soft-DTW Gibbs occupancy at epsilon = .200.
 show_book_figure("dynamic-time-warping")
 ```
 
@@ -2084,7 +2084,7 @@ smooth increasing map $\gamma$; thin gray segments mark exact corresponding
 times. Middle: the pairwise squared feature-cost matrix
 $C_{ij}=|x_i-y_j|^2$, with the optimal DTW path shown in red. Right: the same
 matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from
-{eq}`eq-soft-dtw-expected-alignment` at $\epsilon=.060$; red intensity gives
+{eq}`eq-soft-dtw-expected-alignment` at $\epsilon=.200$; red intensity gives
 cell-visit probability and the dark red curve is its row-wise barycentric
 summary.
 :::
