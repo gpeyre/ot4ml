@@ -1013,10 +1013,10 @@ one-dimensional OT bound over $(x,y)$ gives the GW objective for $\pi$.
 Taking the infimum over $\pi$ proves the claim.
 :::
 
-The next figure exposes the two nested transport problems on densely sampled
-silhouettes: sorting each distance row computes the one-dimensional profile
-costs exactly, then an outer assignment couples the resulting empirical
-profile laws.
+The next figure exposes the two nested transport problems for the planar shapes
+$\mathbb X$ and $\mathbb Y$: sorting each distance profile computes the
+one-dimensional costs, then an outer assignment couples the resulting profile
+laws.
 
 (fig:gromov-memoli-distance-profiles)=
 :::{div}
@@ -1029,14 +1029,13 @@ show_book_figure("gromov-memoli-distance-profiles")
 ```
 
 *Mémoli distance profiles expose a computable lower bound for intrinsic GW
-comparison.* The cat and bunny silhouettes are discretized by $300$ well-spread
-farthest-point samples and normalized to unit diameter. Eight representative
-cat anchors are selected by a second farthest-point pass; their bunny partners are
-their exact images under the optimal profile assignment with cost
-$C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$. Matching colors identify each
-pair, its segment and its two side histograms. The $20$ histogram bins are used
-only for display: every profile cost is computed exactly by sorting all $300$
-distances. The value below the shapes is the certified Mémoli lower bound.
+comparison.* The planar shapes $\mathbb X$ and $\mathbb Y$ are represented by
+cat and bunny silhouettes, centered and normalized to unit diameter. Matching
+colors identify representative anchor pairs selected by the optimal profile
+assignment with $C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$, their connecting
+segments and their two side histograms. The histograms are display summaries
+only: every profile cost is computed by sorting the complete distance profiles.
+The resulting outer assignment realizes the Mémoli profile lower bound.
 :::
 
 This lower bound is useful computationally because the profile cost matrix
@@ -1735,8 +1734,357 @@ The same definitions extend formally from matrices to separable Hilbert spaces b
 **Return** $T_s$.
 :::
 
-Vector, metric-measure and quantum transport extend the same coupling
-principle in three different directions: richer fibers, unknown cross-space
-correspondences and non-commutative joint states. Their feasible sets and
-algorithms differ, but marginal constraints, convex duality and entropy
-regularization remain the common organizing mechanisms.
+(sec-dynamic-time-warping)=
+## Dynamic Time Warping
+
+Dynamic time warping (DTW) compares ordered feature sequences when the same
+phenomenon may be observed under different clocks. It is historically rooted
+in speech recognition {cite:p}`Vintsyuk1968DTW,SakoeChiba1978DTW`, and is now
+a standard tool for time-series alignment, retrieval and classification
+{cite:p}`BerndtClifford1994DTW,Muller2007MusicMotion`. Like OT, it minimizes an
+aggregate feature mismatch over correspondences; unlike OT, those
+correspondences must respect chronology.
+
+### Ordered Alignments Versus Transport Couplings
+
+For two empirical measures, Kantorovich OT minimizes a linear cost over the
+convex polytope of nonnegative matrices with prescribed row and column sums.
+DTW instead minimizes over the finite, non-convex set of connected monotone
+paths through the pairwise cost matrix. Every time index must be visited, but
+it may be visited repeatedly; the row and column sums therefore record
+endogenous visit counts rather than prescribed masses. Normalizing a path
+matrix produces a coupling only for these path-dependent marginals, not for
+fixed input histograms. Conversely, ordinary OT between the unordered
+empirical feature measures forgets chronology and may match indices in a
+crossing order. Temporal penalties, causal constraints, and joint OT--DTW
+models interpolate between the two viewpoints; spatio-temporal alignment, for
+example, combines regularized OT for spatial comparison with soft-DTW for
+chronological alignment {cite:p}`JanatiCuturiGramfort2020STA`. Here "dynamic"
+refers to Bellman's dynamic programming on the index grid, not to the transport
+PDEs of {ref}`sec-dynamic-optimal-transport`.
+
+### Discrete Variational Problem
+
+Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature
+space $\mathcal Z$, and set $C_{ij}=c(x_i,y_j)$ for a nonnegative cost
+$c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
+
+```{math}
+\omega=((i_\ell,j_\ell))_{\ell=1}^L
+```
+
+that starts at $(1,1)$, ends at $(n,m)$, and has increments
+
+```{math}
+(i_{\ell+1}-i_\ell,j_{\ell+1}-j_\ell)
+\in\{(1,0),(0,1),(1,1)\}.
+```
+
+Denote the set of such paths by $\Omega_{n,m}$ and the corresponding incidence
+matrix by $(A_\omega)_{ij}=\mathbf1_{\{(i,j)\in\omega\}}$. Its length satisfies
+$\max\{n,m\}\leq L\leq n+m-1$, its total mass is
+$\sum_{ij}(A_\omega)_{ij}=L$, and its two marginals are precisely the row and
+column visit counts.
+
+(def-dynamic-time-warping)=
+:::{admonition} Definition: Dynamic Time Warping
+:class: important
+
+The DTW value associated with the feature cost $c$ is
+
+```{math}
+:label: eq-dtw-variational
+\mathrm{DTW}_c(x,y)
+\eqdef
+\min_{\omega\in\Omega_{n,m}}
+\sum_{\ell=1}^L c(x_{i_\ell},y_{j_\ell})
+=
+\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{C}.
+```
+:::
+
+The definition is symmetric when $c$ is symmetric, but it is generally not a
+metric: repetitions can give zero cost to distinct sequences, and the triangle
+inequality can fail. Step weights, slope constraints and a Sakoe-Chiba band
+are common variants that penalize excessive repetition or restrict the
+admissible temporal distortion
+{cite:p}`SakoeChiba1978DTW,Muller2007MusicMotion`.
+
+### Dynamic Programming
+
+The monotone path structure converts the exponentially large variational
+problem {eq}`eq-dtw-variational` into a shortest-path computation on an acyclic
+grid.
+
+(prop-dtw-dynamic-programming)=
+:::{admonition} Proposition: DTW Dynamic-Programming Recurrence
+:class: important
+
+Set $D_{0,0}=0$, $D_{i,0}=D_{0,j}=+\infty$ for $i,j>0$, and, for
+$1\leq i\leq n$, $1\leq j\leq m$, define
+
+```{math}
+:label: eq-dtw-recurrence
+D_{ij}
+=
+C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
+```
+
+Then $D_{nm}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every
+cell and backtracking from $(n,m)$ recovers an optimal path. The computation
+takes $O(nm)$ time and $O(nm)$ memory; if only the value is required, two rows
+give $O(\min\{n,m\})$ memory.
+:::
+
+:::{dropdown} Proof
+Every admissible path reaching $(i,j)$ enters it from exactly one of
+$(i-1,j)$, $(i,j-1)$ or $(i-1,j-1)$. Removing the last cell therefore leaves
+an admissible path to one of these predecessors, while appending $(i,j)$ to
+any predecessor path gives an admissible path to $(i,j)$. Minimizing over the
+three mutually exhaustive last steps proves {eq}`eq-dtw-recurrence` by
+induction on $i+j$. Each of the $nm$ cells performs constant work.
+:::
+
+(alg-dtw-dynamic-programming)=
+:::{admonition} Algorithm: Dynamic Time Warping by Dynamic Programming
+:class: ot4ml-algorithm
+
+**Input:** Sequences $x=(x_i)_{i=1}^n$, $y=(y_j)_{j=1}^m$, local cost $c$.
+
+**Output:** DTW value $D_{nm}$ and an optimal warping path $\omega^\star$.
+
+**Initialize:** Set
+$D\in(\RR\cup\{+\infty\})^{(n+1)\times(m+1)}$ to $+\infty$,
+$D_{0,0}=0$, and allocate predecessors $B$.
+
+**For** $i=1,\ldots,n$ **do**:
+
+> **For** $j=1,\ldots,m$ **do**:
+>
+>> **Set** $C_{ij}=c(x_i,y_j)$.
+>>
+>> **Choose**
+>> $(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
+>>
+>> **Set** $B_{ij}=(r^\star,s^\star)$ and
+>> $D_{ij}=C_{ij}+D_{r^\star,s^\star}$.
+
+**Initialize:** Set $(i,j)=(n,m)$ and $\omega^\star=[\,]$.
+
+**While** $(i,j)\neq(0,0)$ **do**:
+
+> **Prepend** $(i,j)$ to $\omega^\star$.
+>
+> **Set** $(i,j)\leftarrow B_{ij}$.
+
+**Return** $D_{nm}$ and $\omega^\star$.
+:::
+
+### Continuous Time Warping
+
+Discrete DTW depends on the sampling density because every visited cell
+contributes once. A direct continuous registration minimizes
+$\int_0^1 c(x(t),y(\gamma(t)))\d t$ over nondecreasing endpoint-fixing maps
+$\gamma$, but this one-clock formulation is asymmetric and privileges the
+parameterization of $x$. Continuous DTW instead traverses both clocks and
+measures mismatch per unit length in the parameter square
+{cite:p}`BuchinNusserWong2022CDTW`.
+
+For simplicity, let $x,y:[0,1]\to\mathcal Z$ use normalized clocks, and let
+$\Gamma_\uparrow$ contain pairs $(\phi,\psi)$ of absolutely continuous,
+nondecreasing surjections of $[0,1]$ onto itself. Equivalently, the endpoint
+conditions are $\phi(0)=\psi(0)=0$ and $\phi(1)=\psi(1)=1$. The continuous DTW
+functional is
+
+```{math}
+:label: eq-continuous-dtw
+\mathrm{CDTW}_c(x,y)
+\eqdef
+\inf_{(\phi,\psi)\in\Gamma_\uparrow}
+\int_0^1
+c\bigl(x(\phi(s)),y(\psi(s))\bigr)
+\bigl(\dot\phi(s)+\dot\psi(s)\bigr)\d s.
+```
+
+Because $\dot\phi,\dot\psi\geq0$ almost everywhere, the last factor is the
+$\ell^1$ line element of the monotone path
+$s\mapsto(\phi(s),\psi(s))$. Formula {eq}`eq-continuous-dtw` is invariant under
+increasing reparameterizations of the auxiliary variable $s$ and does not
+privilege either clock; when $c$ is symmetric, the resulting functional is also
+symmetric in $x$ and $y$. After parameterization by $\ell^1$ arc length, it is
+simply the line integral of the feature mismatch along a monotone path. For
+physical clock intervals $[0,p]$ and $[0,q]$, the same formula uses
+$\phi:[0,1]\to[0,p]$ and $\psi:[0,1]\to[0,q]$. Exact computation is
+substantially harder than the discrete recurrence: for arc-length-parametrized
+one-dimensional polygonal curves and the standard cost $c(u,v)=|u-v|$, Buchin,
+Nusser and Wong propagate piecewise-quadratic boundary costs in
+$O((n+m)^5)$ time {cite:p}`BuchinNusserWong2022CDTW`. This complexity statement
+does not apply to an arbitrary feature cost $c$.
+
+### Soft-DTW and the Sinkhorn Analogy
+
+The hard minimum in {eq}`eq-dtw-recurrence` is nonsmooth when several paths
+tie. Soft-DTW replaces it with the log-sum-exp soft minimum
+{cite:p}`CuturiBlondel2017SoftDTW`,
+
+```{math}
+:label: eq-dtw-softmin
+\operatorname{softmin}_\epsilon(r_1,\ldots,r_q)
+=
+-\epsilon\log\!\left(\sum_{k=1}^q e^{-r_k/\epsilon}\right),
+```
+
+and defines $D_{00}^\epsilon=0$,
+$D_{i0}^\epsilon=D_{0j}^\epsilon=+\infty$ for $i,j>0$, together with
+
+```{math}
+:label: eq-soft-dtw-recurrence
+D_{ij}^\epsilon
+=
+C_{ij}
++\operatorname{softmin}_\epsilon
+\bigl(D_{i-1,j}^\epsilon,D_{i,j-1}^\epsilon,D_{i-1,j-1}^\epsilon\bigr),
+\qquad
+\mathrm{sDTW}_{c,\epsilon}(x,y)=D_{nm}^\epsilon.
+```
+
+Equivalently, it is the free energy of all monotone paths,
+
+```{math}
+:label: eq-soft-dtw-partition
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+=
+-\epsilon\log
+\sum_{\omega\in\Omega_{n,m}}
+\exp\!\left(-\frac{\dotp{A_\omega}{C}}{\epsilon}\right).
+```
+
+To make the regularization explicit, let $\Delta(\Omega_{n,m})$ be the simplex
+of probability laws $q=(q_\omega)_\omega$ over paths and let
+$H(q)=-\sum_\omega q_\omega\log q_\omega$ be their Shannon entropy, with
+$0\log0=0$. The Gibbs variational identity gives
+
+```{math}
+:label: eq-soft-dtw-variational
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+=
+\min_{q\in\Delta(\Omega_{n,m})}
+\left\{
+\sum_{\omega}q_\omega\dotp{A_\omega}{C}
+-\epsilon H(q)
+\right\}.
+```
+
+Its unique minimizer is the Gibbs law
+
+```{math}
+:label: eq-soft-dtw-gibbs-law
+\PP_\epsilon(\omega)
+=
+\frac{\exp(-\dotp{A_\omega}{C}/\epsilon)}
+{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{C}/\epsilon)},
+\qquad
+E_\epsilon
+\eqdef
+\nabla_C\mathrm{sDTW}_{c,\epsilon}(x,y),
+```
+
+Indeed, subtracting the value in {eq}`eq-soft-dtw-partition` from the objective
+in {eq}`eq-soft-dtw-variational` gives
+$\epsilon\KL(q|\PP_\epsilon)\geq0$. Moreover,
+
+```{math}
+:label: eq-soft-dtw-zero-temperature-bound
+\mathrm{DTW}_c(x,y)-\epsilon\log|\Omega_{n,m}|
+\leq
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+\leq
+\mathrm{DTW}_c(x,y),
+```
+
+because the partition sum is bounded below by its largest term and above by
+$|\Omega_{n,m}|$ times that term. Hence
+$\mathrm{sDTW}_{c,\epsilon}\to\mathrm{DTW}_c$ as $\epsilon\to0$.
+Forward and backward dynamic programs compute its value and gradient in
+$O(nm)$ time and $O(nm)$ memory {cite:p}`CuturiBlondel2017SoftDTW`.
+Differentiating the finite log-partition function gives
+
+```{math}
+:label: eq-soft-dtw-expected-alignment
+E_\epsilon
+=
+\EE_{\omega\sim\PP_\epsilon}[A_\omega].
+```
+
+Thus $(E_\epsilon)_{ij}$ is the probability that a Gibbs path visits cell
+$(i,j)$. The matrix $E_\epsilon$ is a diffuse expected alignment and converges,
+when the hard optimum is unique, to its path-incidence matrix.
+
+The analogy with entropic OT is now exact at the level of free energies, but not
+at the level of feasible variables. Sinkhorn regularizes a coupling with
+prescribed marginals, whereas soft-DTW regularizes the path law $q$ in
+{eq}`eq-soft-dtw-variational`. Its mean $E_\epsilon$ generally has neither
+prescribed row sums nor prescribed column sums, and the path entropy $H(q)$
+cannot in general be recovered from $E_\epsilon$ alone. Algorithmically,
+Sinkhorn uses alternating matrix scaling, while soft-DTW uses forward--backward
+dynamic programming on an acyclic grid. Global-alignment kernels sum the same
+Gibbs weights over all paths
+{cite:p}`CuturiVertBirkenesMatsui2007GlobalAlignment,Cuturi2011GlobalAlignment`.
+
+Raw soft-DTW also has an entropic self-bias and can be negative. In direct
+analogy with the Sinkhorn divergence of {ref}`sec-sinkhorn-div`, define
+
+```{math}
+:label: eq-soft-dtw-divergence
+\overline{\mathrm{sDTW}}_{c,\epsilon}(x,y)
+=
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+-\frac12\mathrm{sDTW}_{c,\epsilon}(x,x)
+-\frac12\mathrm{sDTW}_{c,\epsilon}(y,y).
+```
+
+The correction always vanishes on the diagonal, but positivity requires care.
+
+(rem-soft-dtw-divergence-validity)=
+:::{admonition} Remark: Validity of the Soft-DTW Divergence
+:class: ot4ml-remark
+
+Blondel, Mensch and Vert prove that {eq}`eq-soft-dtw-divergence` is nonnegative
+and vanishes only for identical sequences when either $c(u,v)=|u-v|$ in one
+dimension or
+
+```{math}
+c(u,v)=\delta(u,v)+\log\!\bigl(2-e^{-\delta(u,v)}\bigr),
+\qquad
+\delta(u,v)=\tfrac12\|u-v\|^2.
+```
+
+For the ordinary squared Euclidean cost used in
+{ref}`fig:dynamic-time-warping`, they prove for equal-length sequences that the
+diagonal is stationary and provide numerical evidence for nonnegativity, but do
+not prove it in general
+{cite:p}`BlondelMenschVert2021SoftDTW`. Thus debiasing alone should not be
+taken as a universal positivity theorem. Even for the costs covered by the
+result, no triangle inequality is asserted.
+:::
+
+(fig:dynamic-time-warping)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+# Hard DTW path and soft-DTW Gibbs occupancy at epsilon = .060.
+show_book_figure("dynamic-time-warping")
+```
+
+*Hard and soft monotone alignments recover a nonlinear time warp.* Left: an
+oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a
+smooth increasing map $\gamma$; thin gray segments mark exact corresponding
+times. Middle: the pairwise squared feature-cost matrix
+$C_{ij}=|x_i-y_j|^2$, with the optimal DTW path shown in red. Right: the same
+matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from
+{eq}`eq-soft-dtw-expected-alignment` at $\epsilon=.060$; red intensity gives
+cell-visit probability and the dark red curve is its row-wise barycentric
+summary.
+:::

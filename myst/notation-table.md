@@ -203,6 +203,10 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\mathrm{QOT}_C^\epsilon(A,B)$ | Entropically regularized quantum OT value. | [Eq. eq-qot-entropic-primal](beyond-comparing-measures#eq-qot-entropic-primal) |
 | $D_H(T|K)$ | Quantum relative entropy used for Bregman projections. | [Proposition prop-qot-bregman-projections](beyond-comparing-measures#prop-qot-bregman-projections) |
 | $T_e(F,G),T_s(F,G)$ | Exact Gibbs coupling and symmetric Gurvits-scaling surrogate. | [Eqs. eq-qot-gibbs-coupling](beyond-comparing-measures#eq-qot-gibbs-coupling), [eq-qot-symmetric-scaling](beyond-comparing-measures#eq-qot-symmetric-scaling) |
+| $\Omega_{n,m},A_\omega$ | Monotone warping paths and their incidence matrices. | [Definition def-dynamic-time-warping](beyond-comparing-measures#def-dynamic-time-warping) |
+| $\mathrm{DTW}_c(x,y)$ | Dynamic time-warping value between two feature sequences. | [Eq. eq-dtw-variational](beyond-comparing-measures#eq-dtw-variational) |
+| $\Gamma_\uparrow,\mathrm{CDTW}_c(x,y)$ | Monotone clock pairs and continuous time-warping value. | [Eq. eq-continuous-dtw](beyond-comparing-measures#eq-continuous-dtw) |
+| $\mathrm{sDTW}_{c,\epsilon},\PP_\epsilon,E_\epsilon$ | Soft-DTW free energy, Gibbs path law and expected alignment matrix. | [Eqs. eq-soft-dtw-variational](beyond-comparing-measures#eq-soft-dtw-variational), [eq-soft-dtw-expected-alignment](beyond-comparing-measures#eq-soft-dtw-expected-alignment) |
 
 ## Dynamic OT and Wasserstein gradient flows
 

@@ -1273,43 +1273,42 @@ K^{\ell+1}\simplex_3
 \subseteq K^\ell\simplex_3.
 ```
 
-The first panel uses the symmetric control
+The three panels use one explicit family:
 
 ```{math}
-K_1=.90I_3+\frac{.10}{3}\mathbf1_3\mathbf1_3^\top,
-```
-
-which acts as $.90I$ on the zero-sum tangent plane and therefore keeps all
-triangle edges parallel. The other panels use
-
-```{math}
-K_2=
+J_3=\frac13\mathbf1_3\mathbf1_3^\top,
+\qquad
+A=
 \begin{pmatrix}
-.92208&.00330&.02329\\
-.05499&.91801&.04136\\
-.02293&.07869&.93535
+0&-1&1\\
+1&0&-1\\
+-1&1&0
 \end{pmatrix},
 \qquad
-K_3=
-\begin{pmatrix}
-.92121&.05906&.04042\\
-.00599&.93658&.02423\\
-.07280&.00436&.93535
-\end{pmatrix}.
+K_{\rho,\delta}=\rho I_3+(1-\rho)J_3+\delta A.
 ```
 
-These positive, near-identity kernels have weak cyclic imbalances of opposite
-orientation. Their non-Perron eigenvalues are
-$.88772\pm.01224\mathrm i$ and $.89657\pm.00954\mathrm i$, respectively, so
-their restrictions to the tangent plane combine slow contraction with a
-gradual turn. Writing
+This family is doubly stochastic and is strictly positive when
+$|\delta|<(1-\rho)/3$. We use
+
+```{math}
+\rho=.90,\qquad \delta=.014,\qquad
+K_1=K_{\rho,0},\quad K_2=K_{\rho,\delta},\quad K_3=K_{\rho,-\delta}.
+```
+
+The control $K_1$ acts as $\rho I$ on the zero-sum tangent plane. Since the
+restriction of $A$ has eigenvalues $\pm\mathrm i\sqrt3$, the non-Perron
+eigenvalues of $K_{\rho,\delta}$ are
+$\rho\pm\mathrm i\sqrt3\delta$. Thus $K_2$ and $K_3=K_2^\top$ have the same
+contraction and turn gradually in opposite directions. Writing
 
 ```{math}
 r_i=\max\{|z|:z\in\operatorname{spec}(K_i),\ z\ne1\}
 ```
 
-distinguishes this asymptotic spectral rate from the global Birkhoff factor
-$\lambda(K_i)$ in Hilbert's metric.
+gives $r_1=\rho$ and
+$r_2=r_3=\sqrt{\rho^2+3\delta^2}\simeq.9003$. This Euclidean asymptotic rate
+is distinct from the global Birkhoff factor $\lambda(K_i)$ in Hilbert's metric.
 
 (fig:sinkhorn-birkhoff-simplex-contraction)=
 :::{div}
@@ -1317,18 +1316,18 @@ $\lambda(K_i)$ in Hilbert's metric.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-# Slowly rotating nested images with spectral and Hilbert rates.
+# Parameterized positive kernels with opposite cyclic orientations.
 show_book_figure("sinkhorn-birkhoff-simplex-contraction")
 ```
 
 *Positive Markov kernels contract the three-state simplex and can
-simultaneously rotate its image.* In panel $i$, color $\ell$ represents
-$K_i^\ell\simplex_3$, from the red simplex at $\ell=0$ to the blue image at
-$\ell=15$; the blue star is $\pi_i$. The symmetric $K_1$ keeps parallel edges,
-whereas $K_2$ and $K_3$ turn the sixteen consecutive triangles gradually in opposite
-directions. The titles compare $r_i$ with the Birkhoff factor $\lambda(K_i)$.
-The boundary at $\ell=0$ is only a geometric reference, since the Hilbert
-metric becomes finite after positivity sends the simplex into its interior.
+simultaneously rotate its image.* With $K_{\rho,\delta}$ defined above, the
+headings give $(\rho,\delta)=(.90,0),(.90,.014),(.90,-.014)$. Color progresses
+from red at $\ell=0$ to blue at $\ell=15$, and the star is the common
+stationary vector $\mathbf1_3/3$. The symmetric $K_1$ keeps parallel edges,
+whereas the transposed pair $K_2,K_3$ turns the consecutive triangles in
+opposite directions. The outer boundary is only a geometric reference, since
+the Hilbert metric becomes finite after the first positive image.
 :::
 
 The theorem applies to positive linear maps between proper cones. Related
@@ -1486,13 +1485,13 @@ After one cycle they lie in the positive cone, and the preceding theorem gives
 ```
 
 The figure reuses the three kernels $K_i$ from
-{ref}`fig:sinkhorn-birkhoff-simplex-contraction`, now with uniform Sinkhorn
-marginals $a=b=\mathbf1_3/3$. This isolates the passage from the linear action
+{ref}`fig:sinkhorn-birkhoff-simplex-contraction`, with the same uniform
+Sinkhorn marginals $a=b=\mathbf1_3/3$ in every panel. This isolates the passage from the linear action
 $K_i^\ell$ to the nonlinear balancing map $\widehat F_{u,i}^{\,\ell}$. The
 symmetric control remains aligned, while the cyclic imbalances of $K_2$ and
 $K_3$ gently turn the curved images in opposite directions. The normalized
-Sinkhorn fixed ray $\widehat u_i^\star$ need not equal the stationary Markov
-vector $\pi_i$, because the two vectors solve different fixed-point equations.
+Sinkhorn fixed ray and stationary Markov vector both equal $\mathbf1_3/3$ in
+this doubly stochastic example, although they need not coincide in general.
 
 (fig:sinkhorn-projective-scaling-simplex)=
 :::{div}
@@ -1500,19 +1499,19 @@ vector $\pi_i$, because the two vectors solve different fixed-point equations.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
+# Parameterized kernels with common uniform Sinkhorn marginals.
 show_book_figure("sinkhorn-projective-scaling-simplex")
 ```
 
 *Complete Sinkhorn cycles curve, turn and contract the simplex of normalized
-left scalings.* Panel $i$ reuses $K_i$ from the preceding linear figure. Color
-$\ell$ is the densely sampled boundary of
-$\widehat F_{u,i}^{\,\ell}(\simplex_3)$, from the red triangle at $\ell=0$ to
-the blue curve at $\ell=15$; the star is $\widehat u_i^\star$. Reciprocal
-scaling bends the sixteen boundaries, and $K_2,K_3$ turn them through small steps in
-opposite directions. The displayed $q_i=\lambda(K_i)^2$ is the certified
-contraction per complete cycle. For these invertible kernels the curves are the
-actual boundaries of the nested image sets. The Hilbert estimate begins after
-the first positive cycle.
+left scalings.* Panel $i$ reuses $K_i$ from the preceding linear figure and
+the common marginals $a=b=\mathbf1_3/3$. Color is the densely sampled boundary
+of $\widehat F_{u,i}^{\,\ell}(\simplex_3)$, progressing from the red triangle
+at $\ell=0$ to the blue curve at $\ell=15$; the star is
+$\widehat u_i^\star=\mathbf1_3/3$. Reciprocal scaling bends the sixteen
+boundaries, and $K_2,K_3$ turn them through small steps in opposite directions.
+For these invertible kernels the curves are the actual boundaries of the
+nested image sets. The Hilbert estimate begins after the first positive cycle.
 :::
 
 ### Dual-Potential Form

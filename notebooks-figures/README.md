@@ -845,6 +845,18 @@ cells separate the main numerical steps.
 </tr>
 </table>
 
+<table>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="dynamic-time-warping.ipynb"><img src="thumbnails/dynamic-time-warping.png" alt="Hard and soft dynamic time warping" width="210"></a><br>
+  <strong>Hard and soft dynamic time warping</strong><br>
+  <a href="dynamic-time-warping.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-time-warping.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
+</table>
+
 ## Dynamic Optimal Transport
 
 <table>
