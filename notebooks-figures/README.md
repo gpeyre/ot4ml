@@ -7,13 +7,13 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 124
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 128
 live `OT4ML/figures/<figure-name>/` directories referenced by the LaTeX sources
 have a matching live `.ipynb` file, thumbnail in [`thumbnails/`](thumbnails/),
 and generated PDF panels in `../OT4ML/figures/`. The searchable gallery
-currently exposes 125 figure views, because
-`generative-diffusion-versus-ot-2d.ipynb` also provides the distinct
-schedule-comparison view. The book currently has 127 LaTeX figure labels because
+currently exposes 128 figure views, including the distinct schedule-comparison
+view provided by `generative-diffusion-versus-ot-2d.ipynb`. The book currently
+has 131 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet below
 is built from the same active thumbnail set.
 
@@ -581,6 +581,18 @@ cells separate the main numerical steps.
   <a href="sinkhorn-mfunctions-nonvariational-scaling.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-mfunctions-nonvariational-scaling.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-birkhoff-simplex-contraction.ipynb"><img src="thumbnails/sinkhorn-birkhoff-simplex-contraction.png" alt="Birkhoff contraction on the probability simplex" width="210"></a><br>
+  <strong>Birkhoff contraction on the simplex</strong><br>
+  <a href="sinkhorn-birkhoff-simplex-contraction.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-birkhoff-simplex-contraction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-projective-scaling-simplex.ipynb"><img src="thumbnails/sinkhorn-projective-scaling-simplex.png" alt="Projective contraction of Sinkhorn scalings" width="210"></a><br>
+  <strong>Projective Sinkhorn scaling contraction</strong><br>
+  <a href="sinkhorn-projective-scaling-simplex.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-projective-scaling-simplex.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
 </tr>
 </table>
 
@@ -819,12 +831,16 @@ cells separate the main numerical steps.
 </td>
 
 <td width="33%" align="center" valign="top">
+  <a href="gromov-memoli-distance-profiles.ipynb"><img src="thumbnails/gromov-memoli-distance-profiles.png" alt="Mémoli distance profiles and the GW lower bound" width="210"></a><br>
+  <strong>Mémoli distance profiles and GW lower bound</strong><br>
+  <a href="gromov-memoli-distance-profiles.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/gromov-memoli-distance-profiles.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+<td width="33%" align="center" valign="top">
   <a href="fused-gromov-feature-geometry.ipynb"><img src="thumbnails/fused-gromov-feature-geometry.png" alt="Fused Gromov-Wasserstein: features versus geometry" width="210"></a><br>
   <strong>Fused Gromov-Wasserstein: features versus geometry</strong><br>
   <a href="fused-gromov-feature-geometry.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/fused-gromov-feature-geometry.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
-
-<td width="33%"></td>
 
 </tr>
 </table>

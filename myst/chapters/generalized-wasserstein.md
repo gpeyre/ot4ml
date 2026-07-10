@@ -1607,9 +1607,20 @@ registration problem. Classical iterative closest point methods alternate
 nearest-neighbor assignment and rigid least squares {cite:p}`BeslMcKay1992ICP`.
 Wasserstein-Procrustes replaces these hard many-to-one nearest-neighbor
 correspondences by a mass-preserving OT plan. This makes the registration
-less tied to sampling density and better suited to ambiguous correspondences;
-closely related Wasserstein-Procrustes objectives are used for unsupervised
-alignment of embeddings {cite:p}`grave2018unsupervised`.
+less tied to sampling density and better suited to ambiguous correspondences.
+
+Two complementary machine-learning formulations clarify the scope of this
+construction. Grave, Joulin and Berthet {cite:p}`grave2018unsupervised`
+formulate unsupervised alignment of high-dimensional embeddings as a
+Wasserstein-Procrustes problem. In their equal-weight setting, one jointly
+estimates an orthogonal matrix and a permutation; they use a convex-relaxation
+initialization and a stochastic large-scale solver, with bilingual lexicon
+induction as the main application. Alvarez-Melis, Jegelka and Jaakkola
+{cite:p}`alvarez2018towards` place the same idea in a broader framework: the
+coupling and a latent global transformation are optimized jointly over a
+flexible invariance class because cross-space costs are otherwise ill-defined.
+The rigid quadratic model and block updates below are the isometric Procrustes
+specialization of this global-invariance viewpoint.
 
 This is an extrinsic counterpart of the Gromov--Wasserstein viewpoint
 developed in {ref}`sec-gromov-wasserstein`. Procrustes alignment searches only

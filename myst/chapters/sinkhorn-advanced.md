@@ -346,6 +346,7 @@ $\Cc_1=\Cc^1_\a, \qquad \Cc_2=\Cc^2_\b, \qquad B_\Phi=\KL.$
 :::
 
 
+(sec-sinkhorn-monotone)=
 ## Sinkhorn Convergence: Monotone Point of View
 
 This section isolates the order structure of Sinkhorn's potential updates. A
@@ -1260,6 +1261,76 @@ $\tanh(\Delta(K)/4)=(\sqrt{\eta(K)}-1)/(\sqrt{\eta(K)}+1)$
 {cite:p}`birkhoff1957extensions`.
 :::
 
+### Nested Simplex Images
+
+The contraction is already visible on the three-state probability simplex.
+With the column-vector convention, every positive column-stochastic matrix
+$K$ maps $\simplex_3$ into its interior, and
+
+```{math}
+K^{\ell+1}\simplex_3
+=K^\ell(K\simplex_3)
+\subseteq K^\ell\simplex_3.
+```
+
+The first panel uses the symmetric control
+
+```{math}
+K_1=.90I_3+\frac{.10}{3}\mathbf1_3\mathbf1_3^\top,
+```
+
+which acts as $.90I$ on the zero-sum tangent plane and therefore keeps all
+triangle edges parallel. The other panels use
+
+```{math}
+K_2=
+\begin{pmatrix}
+.92208&.00330&.02329\\
+.05499&.91801&.04136\\
+.02293&.07869&.93535
+\end{pmatrix},
+\qquad
+K_3=
+\begin{pmatrix}
+.92121&.05906&.04042\\
+.00599&.93658&.02423\\
+.07280&.00436&.93535
+\end{pmatrix}.
+```
+
+These positive, near-identity kernels have weak cyclic imbalances of opposite
+orientation. Their non-Perron eigenvalues are
+$.88772\pm.01224\mathrm i$ and $.89657\pm.00954\mathrm i$, respectively, so
+their restrictions to the tangent plane combine slow contraction with a
+gradual turn. Writing
+
+```{math}
+r_i=\max\{|z|:z\in\operatorname{spec}(K_i),\ z\ne1\}
+```
+
+distinguishes this asymptotic spectral rate from the global Birkhoff factor
+$\lambda(K_i)$ in Hilbert's metric.
+
+(fig:sinkhorn-birkhoff-simplex-contraction)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+# Slowly rotating nested images with spectral and Hilbert rates.
+show_book_figure("sinkhorn-birkhoff-simplex-contraction")
+```
+
+*Positive Markov kernels contract the three-state simplex and can
+simultaneously rotate its image.* In panel $i$, color $\ell$ represents
+$K_i^\ell\simplex_3$, from the red simplex at $\ell=0$ to the blue image at
+$\ell=15$; the blue star is $\pi_i$. The symmetric $K_1$ keeps parallel edges,
+whereas $K_2$ and $K_3$ turn the sixteen consecutive triangles gradually in opposite
+directions. The titles compare $r_i$ with the Birkhoff factor $\lambda(K_i)$.
+The boundary at $\ell=0$ is only a geometric reference, since the Hilbert
+metric becomes finite after positivity sends the simplex into its interior.
+:::
+
 The theorem applies to positive linear maps between proper cones. Related
 nonlinear projective results require order preservation and homogeneity; a
 generic affine map is not covered.
@@ -1362,6 +1433,86 @@ $\log(P_{ij}^{(\ell)}/P_{ij}^\star)=\xi_i+\zeta_j$. Both plans have mass one,
 so zero lies between the minimum and maximum of $\xi\oplus\zeta$; its sup norm
 is bounded by its oscillation, which is
 $\norm\xi_V+\norm\zeta_V$.
+:::
+
+### Nonlinear Sinkhorn Images of the Simplex
+
+The projective contraction can be visualized simultaneously for every possible
+left-scaling ray. Using the row and column maps from the proof, define the
+full-cycle map
+
+```{math}
+F_u(u)
+=
+R(C(u))
+=
+a\oslash\left[K\left(b\oslash(K^\top u)\right)\right].
+```
+
+It satisfies $F_u(su)=sF_u(u)$ for every $s>0$. It therefore induces the
+projective self-map
+
+```{math}
+\widehat F_u(p)
+=
+\frac{F_u(p)}{\langle F_u(p),\mathbf1_3\rangle},
+\qquad p\in\simplex_3,
+```
+
+and the normalized complete-cycle iterates obey
+$\widehat u^{(\ell+1)}=\widehat F_u(\widehat u^{(\ell)})$. The image sets are
+nested because
+
+```{math}
+\widehat F_u^{\,\ell+1}(\simplex_3)
+=
+\widehat F_u^{\,\ell}\!\left(\widehat F_u(\simplex_3)\right)
+\subseteq
+\widehat F_u^{\,\ell}(\simplex_3).
+```
+
+After one cycle they lie in the positive cone, and the preceding theorem gives
+
+```{math}
+\operatorname{diam}_{\mathsf H}\!\left(
+\widehat F_u^{\,\ell}(\simplex_3)
+\right)
+\leq
+\lambda(K)^{2(\ell-1)}
+\operatorname{diam}_{\mathsf H}\!\left(
+\widehat F_u(\simplex_3)
+\right),
+\qquad \ell\geq1.
+```
+
+The figure reuses the three kernels $K_i$ from
+{ref}`fig:sinkhorn-birkhoff-simplex-contraction`, now with uniform Sinkhorn
+marginals $a=b=\mathbf1_3/3$. This isolates the passage from the linear action
+$K_i^\ell$ to the nonlinear balancing map $\widehat F_{u,i}^{\,\ell}$. The
+symmetric control remains aligned, while the cyclic imbalances of $K_2$ and
+$K_3$ gently turn the curved images in opposite directions. The normalized
+Sinkhorn fixed ray $\widehat u_i^\star$ need not equal the stationary Markov
+vector $\pi_i$, because the two vectors solve different fixed-point equations.
+
+(fig:sinkhorn-projective-scaling-simplex)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-projective-scaling-simplex")
+```
+
+*Complete Sinkhorn cycles curve, turn and contract the simplex of normalized
+left scalings.* Panel $i$ reuses $K_i$ from the preceding linear figure. Color
+$\ell$ is the densely sampled boundary of
+$\widehat F_{u,i}^{\,\ell}(\simplex_3)$, from the red triangle at $\ell=0$ to
+the blue curve at $\ell=15$; the star is $\widehat u_i^\star$. Reciprocal
+scaling bends the sixteen boundaries, and $K_2,K_3$ turn them through small steps in
+opposite directions. The displayed $q_i=\lambda(K_i)^2$ is the certified
+contraction per complete cycle. For these invertible kernels the curves are the
+actual boundaries of the nested image sets. The Hilbert estimate begins after
+the first positive cycle.
 :::
 
 ### Dual-Potential Form

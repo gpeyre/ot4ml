@@ -16,6 +16,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSET_DIR = ROOT / "assets" / "favicon"
+# Exported from the default O panel in logo/interactive.html (noise = 0.72).
 MASTER_PNG = ROOT / "assets" / "favicon.png"
 TEMPLATE_PNG = ASSET_DIR / "template.png"
 MYST_DIR = ROOT / "myst"

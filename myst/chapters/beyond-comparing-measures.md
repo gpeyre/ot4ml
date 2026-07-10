@@ -1013,11 +1013,36 @@ one-dimensional OT bound over $(x,y)$ gives the GW objective for $\pi$.
 Taking the infimum over $\pi$ proves the claim.
 :::
 
+The next figure exposes the two nested transport problems on densely sampled
+silhouettes: sorting each distance row computes the one-dimensional profile
+costs exactly, then an outer assignment couples the resulting empirical
+profile laws.
+
+(fig:gromov-memoli-distance-profiles)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+# Exact sorted profiles; the histograms are display summaries only.
+show_book_figure("gromov-memoli-distance-profiles")
+```
+
+*Mémoli distance profiles expose a computable lower bound for intrinsic GW
+comparison.* The cat and bunny silhouettes are discretized by $300$ well-spread
+farthest-point samples and normalized to unit diameter. Eight representative
+cat anchors are selected by a second farthest-point pass; their bunny partners are
+their exact images under the optimal profile assignment with cost
+$C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$. Matching colors identify each
+pair, its segment and its two side histograms. The $20$ histogram bins are used
+only for display: every profile cost is computed exactly by sorting all $300$
+distances. The value below the shapes is the certified Mémoli lower bound.
+:::
+
 This lower bound is useful computationally because the profile cost matrix
 $C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between
 points. Solving this easier OT problem gives a geometry-aware initialization
-for the non-convex GW iterations; it is the same idea used above as a useful
-initialization principle for a non-convex solver.
+for the non-convex GW iterations.
 
 ### Relation With Wasserstein-Procrustes
 

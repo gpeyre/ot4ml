@@ -1494,14 +1494,15 @@ For $\tau=1$ this is discrete blurring mean shift; for small $\tau$ it approxima
 \index{mean shift!iteration}% strictindex
 \index{barycentric!attention}% strictindex
 
-\paragraph{Consensus and clustering.}
+\paragraph{Consensus and Markov averaging.}
 \index{opinion dynamics}% strictindex
 \index{Hegselmann--Krause model}% strictindex
 \index{bounded confidence}% strictindex
 \index{consensus}% strictindex
 \index{clustering}% strictindex
+\index{Markov!averaging}% strictindex
 
-When the measure in the averaging field evolves together with the particles, mean shift is also a model of opinion dynamics. The Hegselmann--Krause model updates each opinion by averaging the opinions inside a confidence neighborhood~\cite{HegselmannKrause2002OpinionDynamics}; its finite-agent convergence theory was developed further in~\cite{BlondelHendrickxTsitsiklis2009Krause}, and an Eulerian formulation for probability measures appears in~\cite{CanutoFagnaniTilli2012EulerianKrause}. The row-normalized environmental average used in~\eqref{eq-l2-attention-mean-shift} is also characteristic of Motsch--Tadmor dynamics~\cite{MotschTadmor2014Heterophilious}.
+When the averaging measure evolves together with the particles, mean shift becomes a consensus model. The Hegselmann--Krause model updates each opinion by averaging the opinions inside a confidence neighborhood~\cite{HegselmannKrause2002OpinionDynamics}; its finite-agent convergence theory was developed further in~\cite{BlondelHendrickxTsitsiklis2009Krause}, and an Eulerian formulation for probability measures appears in~\cite{CanutoFagnaniTilli2012EulerianKrause}. The row-normalized environmental average below is also characteristic of Motsch--Tadmor dynamics~\cite{MotschTadmor2014Heterophilious}.
 
 To isolate this mechanism, replace $K_\epsilon$ by a positive kernel $K$ and write
 \begin{equation}\label{eq-general-mean-shift-field}
@@ -1510,127 +1511,316 @@ To isolate this mechanism, replace $K_\epsilon$ by a positive kernel $K$ and wri
 	\frac{\int (y-x)K(x,y)\d\alpha(y)}
 	     {\int K(x,y)\d\alpha(y)}.
 \end{equation}
-For an empirical law $\alpha_t=\sum_{i=1}^n a_i\delta_{x_i(t)}$, with positive fixed weights summing to one, the transport equation becomes the row-normalized particle system
-\begin{equation}\label{eq-mean-shift-particle-system}
-	\dot x_i(t)
-	=
-	\frac{\sum_j a_jK(x_i(t),x_j(t))(x_j(t)-x_i(t))}
-	     {\sum_j a_jK(x_i(t),x_j(t))}.
+For an empirical law $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$, where $a_i>0$ and $\sum_i a_i=1$, let $X\in\RR^{n\times d}$ have rows $x_i^\top$, set $\a=(a_i)_i$, and define
+\begin{equation}\label{eq-mean-shift-markov-matrix}
+	(\K_X)_{ij}=K(x_i,x_j),
+	\qquad
+	\mathsf P_X
+	\eqdef
+	\diag(\K_X\a)^{-1}\K_X\diag(\a).
 \end{equation}
-The following theorem treats this finite system and its compactly supported measure-valued extension simultaneously.
+The matrix $\mathsf P_X$ is positive and row-stochastic, $\mathsf P_X\ones_n=\ones_n$. Its $i$th row is precisely the probability law used to average the cloud from the viewpoint of $x_i$. Figure~\ref{fig:sinkhorn-birkhoff-simplex-contraction} visualizes the corresponding loss of memory for a fixed Markov matrix; mean shift applies the same averaging mechanism to every spatial coordinate, but with a matrix that changes with the cloud. The particle system~\eqref{eq-general-mean-shift-field} is therefore
+\begin{equation}\label{eq-mean-shift-particle-system}
+	\dot x_i
+	=
+	\frac{\sum_j a_jK(x_i,x_j)(x_j-x_i)}
+	     {\sum_j a_jK(x_i,x_j)},
+	\qquad\text{or equivalently}\qquad
+	\dot X=(\mathsf P_X-I_n)X.
+\end{equation}
+Thus blurring mean shift is a state-dependent Markov averaging process.
 
-\begin{thm}[Exponential consensus for positive mean shift]\label{thm-mean-shift-consensus}
+\paragraph{Dobrushin contraction from Hilbert geometry.}
+\index{Dobrushin coefficient}% strictindex
+\index{variation seminorm}% strictindex
+\index{Birkhoff!contraction theorem}% strictindex
+
+The Sinkhorn analysis already contains the two geometries needed here. Section~\ref{sec-sinkhorn-monotone} introduced the variation seminorm of Definition~\ref{def-variation-seminorm} on functions modulo additive constants, while Section~\ref{sec-sinkhorn-hilbert} introduced Hilbert's metric~\eqref{eq-hilbert-metric} on positive vectors modulo multiplication. Logarithmic coordinates identify these quotients exactly:
+\[
+	\Hilbert(e^z,e^{z'})=\norm{z-z'}_V.
+\]
+A row-stochastic matrix $\mathsf P$ is order preserving and satisfies $\mathsf P(z+s\ones_n)=\mathsf Pz+s\ones_n$. It is therefore a linear topical map, so Proposition~\ref{prop-topical-variation-nonexpansive} gives nonexpansiveness on the additive quotient. Strict positivity yields more: Birkhoff contraction can be linearized at the constant ray to obtain a strict variation contraction.
+
+\begin{prop}[Dobrushin contraction is the tangent form of Birkhoff contraction]\label{prop-dobrushin-birkhoff-contraction}
+	Let $\mathsf P\in\RR_+^{n\times n}$ be row-stochastic. Its Dobrushin coefficient is
+	\begin{equation}\label{eq-dobrushin-coefficient}
+		\delta(\mathsf P)
+		\eqdef
+		\frac12\max_{i,\ell}\sum_j\abs{\mathsf P_{ij}-\mathsf P_{\ell j}}
+		=
+		1-\min_{i,\ell}\sum_j\min\{\mathsf P_{ij},\mathsf P_{\ell j}\}.
+	\end{equation}
+	It is the exact operator norm induced by $\norm{\cdot}_V$ on $\RR^n/\Span(\ones_n)$:
+	\begin{equation}\label{eq-dobrushin-exact-quotient-norm}
+		\delta(\mathsf P)
+		=
+		\sup_{z\notin\Span(\ones_n)}
+		\frac{\norm{\mathsf Pz}_V}{\norm{z}_V}.
+	\end{equation}
+	Consequently,
+	\begin{equation}\label{eq-dobrushin-variation-contraction}
+		\norm{\mathsf Pz}_V
+		\leq
+		\delta(\mathsf P)\norm{z}_V
+		\qquad (z\in\RR^n).
+	\end{equation}
+	If $\mathsf P>0$, then this exact tangent factor is bounded by the Birkhoff coefficient of Theorem~\ref{thm-birkhoff}:
+	\begin{equation}\label{eq-dobrushin-birkhoff-comparison}
+		\delta(\mathsf P)\leq\la(\mathsf P)<1.
+	\end{equation}
+\end{prop}
+
+\begin{proof}
+	Fix two rows $p=(\mathsf P_{ij})_j$ and $p'=(\mathsf P_{\ell j})_j$, and remove their common mass $r_j=\min\{p_j,p'_j\}$. The two residual nonnegative measures have the same mass
+	\[
+		1-\sum_jr_j
+		=
+		\frac12\sum_j\abs{p_j-p'_j}.
+	\]
+	Their averages of $z$ can differ by at most this mass times $\norm{z}_V$. Maximizing over the two output rows proves the upper bound in~\eqref{eq-dobrushin-exact-quotient-norm}. Conversely, for a pair of rows attaining the maximum, choose $z_j=1$ when $p_j\geq p'_j$ and $z_j=0$ otherwise. Then $\norm{z}_V=1$ and $(\mathsf Pz)_i-(\mathsf Pz)_\ell=\frac12\sum_j\abs{p_j-p'_j}$, proving equality and hence~\eqref{eq-dobrushin-variation-contraction}.
+
+	Assume now that $\mathsf P>0$. Apply Theorem~\ref{thm-birkhoff} to $u_s=e^{sz}$ and $\ones_n$. Since $\mathsf P\ones_n=\ones_n$,
+	\[
+		\Hilbert(\mathsf P e^{sz},\ones_n)
+		\leq
+		\la(\mathsf P)\Hilbert(e^{sz},\ones_n)
+		=
+		\la(\mathsf P)|s|\norm{z}_V.
+	\]
+	Moreover, $\mathsf P e^{sz}=\ones_n+s\mathsf Pz+O(s^2)$, hence $\log(\mathsf P e^{sz})=s\mathsf Pz+O(s^2)$. Divide by $|s|$ and let $s\to0$ to obtain $\norm{\mathsf Pz}_V\leq\la(\mathsf P)\norm{z}_V$. Taking the exact quotient norm~\eqref{eq-dobrushin-exact-quotient-norm} yields~\eqref{eq-dobrushin-birkhoff-comparison}. This Hilbert--Hopf--Dobrushin relation extends to Markov operators on general cones~\cite{GaubertQu2015Dobrushin}.
+\end{proof}
+
+By duality, the same coefficient is the exact contraction factor of the adjoint Markov evolution on probability vectors: for $\p,\p'\in\simplex_n$,
+\[
+	\norm{\mathsf P^\top\p-\mathsf P^\top\p'}_{\ell^1}
+	\leq
+	\delta(\mathsf P)\norm{\p-\p'}_{\ell^1}.
+\]
+Thus~\eqref{eq-dobrushin-variation-contraction} contracts observables modulo constants, while the adjoint inequality contracts probability laws in total variation. The proposition also separates two useful constants. The Dobrushin coefficient is sharp but depends on the normalized rows. The Birkhoff coefficient can be looser, but its cross-ratio formula is explicit and invariant under positive diagonal scalings, precisely the invariance exploited in the Sinkhorn proof of Theorem~\ref{thm-sinkhorn-hilbert-linear}.
+
+The same coefficient applies to the measure-valued dynamics. For $\alpha\in\Pp(C)$, where $C\subset\RR^d$ is compact, define the Markov operator
+\begin{equation}\label{eq-mean-shift-markov-operator}
+	(\mathsf P_\alpha h)(x)
+	\eqdef
+	\int_C h(y)p_{\alpha,x}(y)\d\alpha(y),
+	\qquad
+	p_{\alpha,x}(y)
+	\eqdef
+	\frac{K(x,y)}{Z_\alpha(x)},
+	\qquad
+	Z_\alpha(x)
+	\eqdef
+	\int_C K(x,z)\d\alpha(z).
+\end{equation}
+Its Dobrushin coefficient is
+\begin{equation}\label{eq-mean-shift-continuous-dobrushin}
+	\delta(\mathsf P_\alpha)
+	\eqdef
+	\frac12\sup_{x,x'\in\supp\alpha}
+	\int_C\abs{p_{\alpha,x}(y)-p_{\alpha,x'}(y)}\d\alpha(y).
+\end{equation}
+Writing $\norm{h}_{V,S}=\sup_S h-\inf_S h$ for a compact set $S$, the common-mass proof of Proposition~\ref{prop-dobrushin-birkhoff-contraction} gives
+\[
+	\norm{\mathsf P_\alpha h}_{V,\supp\alpha}
+	\leq
+	\delta(\mathsf P_\alpha)\norm{h}_{V,\supp\alpha}.
+\]
+To obtain a uniform computable bound, set
+\begin{equation}\label{eq-mean-shift-kernel-birkhoff-factor}
+	\eta_K(C)
+	\eqdef
+	\sup_{x,x',y,y'\in C}
+	\frac{K(x,y)K(x',y')}{K(x',y)K(x,y')},
+	\qquad
+	\la_K(C)
+	\eqdef
+	\frac{\sqrt{\eta_K(C)}-1}{\sqrt{\eta_K(C)}+1}.
+\end{equation}
+Row normalization does not change projective cross-ratios. In the discrete case, for instance,
+\begin{equation}\label{eq-mean-shift-cross-ratio}
+	\frac{(\mathsf P_X)_{ij}(\mathsf P_X)_{\ell r}}
+	     {(\mathsf P_X)_{ir}(\mathsf P_X)_{\ell j}}
+	=
+	\frac{K(x_i,x_j)K(x_\ell,x_r)}
+	     {K(x_i,x_r)K(x_\ell,x_j)}.
+\end{equation}
+Consequently, for every weighted configuration supported in $C$,
+\begin{equation}\label{eq-mean-shift-projective-chain}
+	\delta(\mathsf P_X)
+	\leq
+	\la(\mathsf P_X)
+	=
+	\la(\K_X)
+	\leq
+	\la_K(C).
+\end{equation}
+The equality in the middle is the same diagonal-scaling invariance used by Sinkhorn: the normalization $\diag(\K_X\a)^{-1}$ and the weight matrix $\diag(\a)$ disappear from every projective cross-ratio.
+The integral-operator form of the Birkhoff--Hopf theorem and the same linearization as above therefore give
+\begin{equation}\label{eq-mean-shift-uniform-dobrushin}
+	\bar\delta_K(C)
+	\eqdef
+	\sup_{\alpha\in\Pp(C)}\delta(\mathsf P_\alpha)
+	\leq
+	\la_K(C)<1.
+\end{equation}
+In particular, if $0<k_-\leq K\leq k_+$ on $C\times C$, then
+\begin{equation}\label{eq-mean-shift-coarse-birkhoff-bound}
+	\la_K(C)
+	\leq
+	\frac{k_+-k_-}{k_++k_-}.
+\end{equation}
+
+\begin{thm}[Dobrushin consensus for positive mean shift]\label{thm-mean-shift-consensus}
 \index{convex hull}% strictindex
 \index{diameter!contraction}% strictindex
-	Let $\alpha_0\in\Pp(\RR^d)$ have compact support $S_0$, and set
+\index{consensus!Dobrushin contraction}% strictindex
+	Let $\alpha_0\in\Pp(\RR^d)$ have compact support, and set
 	\[
-		C_0=\operatorname{conv}(S_0),
+		C_0=\operatorname{conv}(\supp\alpha_0),
 		\qquad
-		D_0=\operatorname{diam}(S_0).
+		D_0=\operatorname{diam}(\supp\alpha_0),
+		\qquad
+		\bar\delta=\bar\delta_K(C_0)<1.
 	\]
-	Assume that $K:C_0\times C_0\to(0,+\infty)$ is Lipschitz and satisfies
+	Assume that $K:C_0\times C_0\to(0,+\infty)$ is Lipschitz.
+
+	For an empirical initial measure $\alpha_0=\sum_i a_i\delta_{x_i^0}$, let $X^k$ follow the damped blurring iteration
 	\[
-		0<k_-\leq K(x,y)\leq k_+<+\infty.
+		X^{k+1}
+		=
+		\bigl((1-\tau)I_n+\tau\mathsf P_{X^k}\bigr)X^k,
+		\qquad 0<\tau\leq1,
 	\]
-	Let $\alpha_t$ be the characteristic solution of
+	define
+	\[
+		\delta_k=\delta(\mathsf P_{X^k}),
+		\qquad
+		q_k=1-\tau(1-\delta_k),
+		\qquad
+		q_\tau=1-\tau(1-\bar\delta)<1.
+	\]
+	Then
+	\begin{equation}\label{eq-mean-shift-discrete-diameter-contraction}
+		D(X^k)
+		\eqdef
+		\max_{i,j}\norm{x_i^k-x_j^k}
+		\leq
+		D_0\prod_{r=0}^{k-1}q_r
+		\leq
+		q_\tau^kD_0.
+	\end{equation}
+	All particles converge to a common $x_\infty^{\rm d}\in C_0$, and
+	\[
+		\max_i\norm{x_i^k-x_\infty^{\rm d}}
+		\leq
+		\frac{D_0}{1-\bar\delta}q_\tau^k.
+	\]
+
+	The characteristic solution of
 	\begin{equation}\label{eq-positive-mean-shift-pde}
 		\partial_t\alpha_t+\diverg\bigl(\alpha_tM_K[\alpha_t]\bigr)=0,
 		\qquad
-		\alpha_{t=0}=\alpha_0.
+		\alpha_{t=0}=\alpha_0,
 	\end{equation}
-	Then this solution is globally defined, its convex hulls are nested,
+	is globally defined and has nested convex hulls,
 	\[
 		\operatorname{conv}(\supp\alpha_t)
 		\subset
 		\operatorname{conv}(\supp\alpha_s)
-		\qquad (t\geq s\geq0),
+		\qquad (t\geq s\geq0).
 	\]
-	and, with $\kappa_K=k_-/k_+$,
+	Writing $D(t)=\operatorname{diam}(\supp\alpha_t)$, one has the adaptive estimate
 	\begin{equation}\label{eq-mean-shift-diameter-contraction}
-		D(t)\eqdef\operatorname{diam}(\supp\alpha_t)
+		D(t)
 		\leq
-		e^{-\kappa_K t}D_0.
+		D(s)\exp\!\left(-\int_s^t\bigl[1-\delta(\mathsf P_{\alpha_r})\bigr]\d r\right)
+		\leq
+		e^{-(1-\bar\delta)(t-s)}D(s)
+		\qquad (t\geq s\geq0).
 	\end{equation}
-	Consequently there exists $x_\infty\in C_0$ such that
+	Consequently there exists $x_\infty^{\rm c}\in C_0$ such that
 	\begin{equation}\label{eq-mean-shift-dirac-convergence}
-		\Wass_\infty(\alpha_t,\delta_{x_\infty})
+		\Wass_\infty(\alpha_t,\delta_{x_\infty^{\rm c}})
 		\leq
-		\frac{D_0}{\kappa_K}e^{-\kappa_K t}.
+		\frac{D_0}{1-\bar\delta}e^{-(1-\bar\delta)t}.
 	\end{equation}
-	For the Gaussian kernel $K_\epsilon(x,y)=e^{-\norm{x-y}^2/(2\epsilon)}$, the identity $\operatorname{diam}(C_0)=D_0$ gives
-	\[
-		k_+=1,
-		\qquad
-		k_-=e^{-D_0^2/(2\epsilon)},
-		\qquad
-		\kappa_K=e^{-D_0^2/(2\epsilon)}.
-	\]
 \end{thm}
 
 \begin{proof}
-	Since $K$ is positive and Lipschitz on the compact set $C_0\times C_0$, the denominator in $M_K$ is bounded below by $k_-$. On probability measures supported in $C_0$, the map $(x,\alpha)\mapsto M_K[\alpha](x)$ is therefore uniformly Lipschitz in $x$ and Lipschitz in $\alpha$ for $\Wass_1$. Standard characteristic theory gives a unique solution as long as its support remains in $C_0$.
+	Because $K$ is positive and Lipschitz on the compact set $C_0\times C_0$, its minimum is positive. Hence the denominator in~\eqref{eq-general-mean-shift-field} is uniformly bounded away from zero, and the characteristic vector field is uniformly Lipschitz in $x$ and Lipschitz in $\alpha$ for $\Wass_1$. Moreover, $x+M_K[\alpha](x)=\mathsf P_\alpha\Id(x)$ lies in $\operatorname{conv}(\supp\alpha)$. No characteristic can cross an outward supporting hyperplane of the current convex hull, so the convex hulls are nested and the dynamics is globally well posed.
 
-	For $x\in\supp\alpha_t$, introduce the probability measure
-	\[
-		p_{t,x}(\d y)
+	For any compact set $S\subset\RR^d$, the support-function identity
+	\begin{equation}\label{eq-mean-shift-directional-diameter}
+		\operatorname{diam}(S)
 		=
-		\frac{K(x,y)}{\int K(x,z)\d\alpha_t(z)}\d\alpha_t(y).
-	\]
-	Then $M_K[\alpha_t](x)=\int y\,p_{t,x}(\d y)-x$ points from $x$ toward a point of $\operatorname{conv}(\supp\alpha_t)$. Hence no characteristic can cross an outward supporting hyperplane, which proves that the convex hulls are nested and closes the global-existence argument.
+		\sup_{\theta\in\Sphere^{d-1}}
+		\left(\sup_{x\in S}\dotp{\theta}{x}-\inf_{x\in S}\dotp{\theta}{x}\right)
+	\end{equation}
+	reduces Euclidean diameter contraction to scalar variation contraction. For a finite configuration, set $z_\theta=X\theta\in\RR^n$. Proposition~\ref{prop-dobrushin-birkhoff-contraction} gives
+	\begin{align*}
+		\norm{z_\theta^{k+1}}_V
+		&\leq
+		(1-\tau)\norm{z_\theta^k}_V
+		+\tau\norm{\mathsf P_{X^k}z_\theta^k}_V\\
+		&\leq
+		\bigl[1-\tau(1-\delta(\mathsf P_{X^k}))\bigr]\norm{z_\theta^k}_V
+		\leq
+		q_\tau\norm{z_\theta^k}_V.
+	\end{align*}
+	Taking the supremum over $\theta$ gives the one-step factor $q_k$; multiplying these factors and using $q_k\leq q_\tau$ proves~\eqref{eq-mean-shift-discrete-diameter-contraction}. Since $\norm{x_i^{k+1}-x_i^k}\leq\tau D(X^k)$, every particle path is Cauchy; the vanishing diameter forces a common limit, and summing the uniform geometric tail yields the displayed pointwise estimate.
 
-	The same observation yields a quantitative contraction. Fix $\theta\in\Sphere^{d-1}$ and write
+	For the measure-valued flow, let $f_\theta(x)=\dotp{\theta}{x}$ and denote by $w_\theta(t)=\norm{f_\theta}_{V,\supp\alpha_t}$ the width of the support in direction $\theta$. The upper Dini derivative of the extrema along characteristics satisfies
 	\[
-		h_\theta^+(t)=\max_{x\in\supp\alpha_t}\dotp{\theta}{x},
-		\qquad
-		h_\theta^-(t)=\min_{x\in\supp\alpha_t}\dotp{\theta}{x},
-		\qquad
-		\bar h_\theta(t)=\int\dotp{\theta}{y}\d\alpha_t(y).
-	\]
-	Because $\int K(x,z)\d\alpha_t(z)\leq k_+$, one has the measure inequality
-	\[
-		p_{t,x}\geq\kappa_K\alpha_t.
-	\]
-	Thus $p_{t,x}=\kappa_K\alpha_t+(1-\kappa_K)q_{t,x}$ for some probability measure $q_{t,x}$ supported on $\supp\alpha_t$. At a point attaining $h_\theta^+$, the $q_{t,x}$-average cannot exceed $h_\theta^+$; at a point attaining $h_\theta^-$, it cannot be smaller than $h_\theta^-$. The standard envelope argument for extrema of transported compact sets therefore gives, for almost every $t$,
-	\[
-		\frac{\d}{\d t}h_\theta^+(t)
+		D^+w_\theta(t)
 		\leq
-		\kappa_K\bigl(\bar h_\theta(t)-h_\theta^+(t)\bigr),
-		\qquad
-		\frac{\d}{\d t}h_\theta^-(t)
-		\geq
-		\kappa_K\bigl(\bar h_\theta(t)-h_\theta^-(t)\bigr).
-	\]
-	Subtracting and applying Gronwall's lemma yields
-	\[
-		h_\theta^+(t)-h_\theta^-(t)
+		\norm{\mathsf P_{\alpha_t}f_\theta}_{V,\supp\alpha_t}
+		-w_\theta(t)
 		\leq
-		e^{-\kappa_Kt}
-		\bigl(h_\theta^+(0)-h_\theta^-(0)\bigr).
+		-\bigl[1-\delta(\mathsf P_{\alpha_t})\bigr]w_\theta(t).
 	\]
-	Taking the supremum over $\theta\in\Sphere^{d-1}$ proves~\eqref{eq-mean-shift-diameter-contraction}.
-
-	Finally, every characteristic satisfies $\abs{\dot X_t}\leq D(t)$. It is therefore Cauchy, and any two characteristics have the same limit because their distance is bounded by $D(t)\to0$. Calling this common limit $x_\infty$ and integrating the velocity bound from $t$ to $+\infty$ gives
-	\[
-		\abs{X_t-x_\infty}
-		\leq
-		\int_t^{+\infty}D(s)\d s
-		\leq
-		\frac{D_0}{\kappa_K}e^{-\kappa_Kt}.
-	\]
-	Pushing $\alpha_0$ forward by the characteristic flow proves~\eqref{eq-mean-shift-dirac-convergence}.
+	Gronwall's lemma, followed by the support-function identity~\eqref{eq-mean-shift-directional-diameter}, proves~\eqref{eq-mean-shift-diameter-contraction}. Finally, every characteristic satisfies $\norm{\dot X_t}\leq D(t)$. It is therefore Cauchy, all characteristic limits coincide because $D(t)\to0$, and integrating the uniform exponential bound from $t$ to $+\infty$ gives~\eqref{eq-mean-shift-dirac-convergence}.
 \end{proof}
 
-For the Gaussian kernel, the proof yields more than the uniform rate stated in the theorem. Repeating the directional-width estimate with the diameter of the current hull gives, for $t\geq s$,
+For the Gaussian kernel $K_\epsilon(x,y)=e^{-\norm{x-y}^2/(2\epsilon)}$, the cross-ratio has the closed form
+\[
+	\log\frac{K_\epsilon(x,y)K_\epsilon(x',y')}
+	          {K_\epsilon(x',y)K_\epsilon(x,y')}
+	=
+	\frac{\dotp{x-x'}{y-y'}}{\epsilon}.
+\]
+Hence, for a compact convex set $C$ of diameter $D$,
+\begin{equation}\label{eq-gaussian-mean-shift-birkhoff-factor}
+	\eta_{K_\epsilon}(C)=e^{D^2/\epsilon},
+	\qquad
+	\la_{K_\epsilon}(C)=\tanh\!\left(\frac{D^2}{4\epsilon}\right).
+\end{equation}
+Combining this identity with~\eqref{eq-mean-shift-projective-chain} gives the projectively certified adaptive estimate for the full discrete update,
+\[
+	D(X^{k+1})
+	\leq
+	\tanh\!\left(\frac{D(X^k)^2}{4\epsilon}\right)D(X^k)
+	\leq
+	\frac{D(X^k)^3}{4\epsilon},
+\]
+while the continuous flow obeys
 \begin{equation}\label{eq-gaussian-mean-shift-adaptive-contraction}
 	D(t)
 	\leq
 	D(s)\exp\!\left(
-		-\int_s^t e^{-D(r)^2/(2\epsilon)}\d r
+		-\int_s^t
+		\left[1-\tanh\!\left(\frac{D(r)^2}{4\epsilon}\right)\right]\d r
 	\right).
 \end{equation}
-Since $D(r)\leq D_0$, this implies~\eqref{eq-mean-shift-diameter-contraction}; as the cloud contracts, the guaranteed instantaneous rate improves and tends to one.
+Thus strict positivity gives a global exponential rate, and the certified contraction becomes much stronger once the cloud is narrow relative to the bandwidth. These are Birkhoff bounds; the exact Dobrushin factors can be smaller.
 
-The theorem concerns the self-consistent flow, in which $\alpha_t$ changes inside the mean-shift field. Because row normalization makes the pairwise coefficients asymmetric, $x_\infty$ need not equal the barycenter of $\alpha_0$; that barycenter is conserved for the constant kernel, but not in general. The self-consistent flow should also not be confused with classical mode seeking, where the data measure is frozen and different initial points may converge to different modes. Nor does one-point consensus hold for the hard confidence kernel $K_R(x,y)=\mathbf{1}_{\{\norm{x-y}\leq R\}}$: then $k_-=0$ whenever the cloud spans more than one confidence neighborhood. The discrete Hegselmann--Krause dynamics converges instead to opinion clusters~\cite{BlondelHendrickxTsitsiklis2009Krause}; under the hypotheses of the Eulerian theory, the limiting measure is a finite convex combination of Dirac masses separated by at least $R$~\cite{CanutoFagnaniTilli2012EulerianKrause}. For the Gaussian kernel, global positivity ultimately forces a single Dirac, although the initial lower bound $e^{-D_0^2/(2\epsilon)}$ can be very small and the multimodal transient can be long.
+\begin{rem}[Sinkhorn and mean shift share one projective mechanism]\label{rem-sinkhorn-mean-shift-contraction}
+	The link with Sinkhorn is exact at the level of positive operators, but the state variables differ. In Theorem~\ref{thm-sinkhorn-hilbert-linear}, entrywise multiplication and inversion are Hilbert isometries, while the two multiplications by $\K$ and $\K^\top$ each contribute one Birkhoff factor; hence a full scaling cycle contracts rays by $\la(\K)^2$ as in~\eqref{eq-convlin-sinkh}. Mean shift performs one row-normalized multiplication by the state-dependent matrix $\K_X$. Diagonal normalization preserves its Birkhoff factor, and row stochasticity fixes the constant ray; the tangent dynamics on $\RR^n/\Span(\ones_n)$ therefore contracts by the exact factor $\delta(\mathsf P_X)\leq\la(\K_X)$.
+
+	The analogy has precise limits. Sinkhorn compares two scaling iterates for a fixed kernel in the multiplicative projective metric. Mean shift contracts coordinate widths inside one evolving cloud in the additive tangent norm; because $X\mapsto\mathsf P_XX$ is state dependent, the theorem does not assert contraction between two different clouds. Nevertheless, both slow regimes have the same origin: when the positive kernel has a large projective diameter, its Birkhoff factor approaches one. This occurs for small entropic temperature in Sinkhorn and for a narrow Gaussian bandwidth relative to the cloud diameter in mean shift.
+\end{rem}
+
+\paragraph{Scope of the consensus result.}
+The projective argument also clarifies what is not conserved and when clustering replaces consensus. Because row normalization makes the pairwise coefficients asymmetric, the consensus point need not equal the barycenter of $\alpha_0$; that barycenter is conserved for the constant kernel, but not in general. The self-consistent flow should not be confused with classical mode seeking, where the data measure is frozen and different initial points may converge to different modes. Finally, one-point consensus can fail for the hard confidence kernel $K_R(x,y)=\mathbf{1}_{\{\norm{x-y}\leq R\}}$: once the interaction graph disconnects, its Dobrushin and Birkhoff coefficients can equal one. The discrete Hegselmann--Krause dynamics then converges to opinion clusters~\cite{BlondelHendrickxTsitsiklis2009Krause}; under the hypotheses of the Eulerian theory, the limiting measure is a finite convex combination of Dirac masses separated by at least $R$~\cite{CanutoFagnaniTilli2012EulerianKrause}. For the Gaussian kernel, global positivity ultimately forces a single Dirac, although $1-\tanh(D_0^2/(4\epsilon))$ can be very small and the multimodal transient can be long.
 
 Figure~\ref{fig:generative-mean-shift-pde} visualizes this transient contraction: particles climb the current smoothed density while the density itself sharpens, well before the eventual consensus guaranteed by Theorem~\ref{thm-mean-shift-consensus}.
 

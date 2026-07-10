@@ -483,6 +483,16 @@ Further background on RKHS spaces can be found in
 The hypothesis in Proposition {ref}`prop-mmd-metrization` is called universality of the kernel. Equivalently, finite sums of the form $\sum_{i=1}^n a_i K(x_i,\cdot)$ are dense in $\Cc(\X)$ for the uniform norm. For a bounded continuous translation-invariant kernel on $\RR^d$, a standard sufficient condition is that its Bochner spectral measure have support equal to all of $\RR^d$; under the usual $C_0$ assumptions this characterizes $C_0$-universality {cite:p}`sriperumbudur2008injective,sriperumbudur2012empirical`.
 :::
 
+The preceding discrepancies are widely used as sample-based criteria, both for
+testing whether two populations agree and for evaluating generative models.
+
+(ex-two-sample-testing-fid)=
+:::{admonition} Example: Two-sample testing and generative-model evaluation
+:class: ot4ml-example
+
+Given samples $X_1,\ldots,X_n\sim\al$ and $Y_1,\ldots,Y_m\sim\be$, a two-sample test evaluates a statistic $D(\hat\al_n,\hat\be_m)$ under the null hypothesis $H_0:\al=\be$. Wasserstein distances provide geometric choices of $D$, whereas MMD and the energy distance provide kernel and negative-type alternatives {cite:p}`ramdas2017wasserstein,gretton2012kernel,szekely2004testing`. In generative-model evaluation, the Frechet Inception Distance embeds the data in a neural feature space, fits a Gaussian to each empirical feature distribution, and computes the squared $\Wass_2$ distance between these Gaussian laws: the squared distance between their empirical means plus the Bures covariance term of Proposition {ref}`prop-gaussian-w2-bures` {cite:p}`HeuselRamsauerUnterthinerNesslerHochreiter2017FID`. The Kernel Inception Distance instead estimates a squared MMD, typically with a polynomial kernel, in the same feature space {cite:p}`BinkowskiSutherlandArbelGretton2018MMDGAN`. In both settings, the geometry encoded by $D$ must be distinguished from the finite-sample calibration of $D(\hat\al_n,\hat\be_m)$; Sections {ref}`sec-sample-complexity` and {ref}`sec-bias-variance-ot` analyze the resulting rates, bias and fluctuations.
+:::
+
 
 In the special case where $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$ is discrete,
 one obtains

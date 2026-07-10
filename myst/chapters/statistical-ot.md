@@ -51,14 +51,6 @@ def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
 ```
 
-(ex-two-sample-testing-fid)=
-:::{admonition} Example: Application to two-sample testing and generative-model evaluation
-:class: ot4ml-example
-
-Given samples $X_1,\ldots,X_n\sim\al$ and $Y_1,\ldots,Y_m\sim\be$, a two-sample test uses a statistic $D(\hat\al_n,\hat\be_m)$ to test $H_0:\al=\be$. OT distances are geometric choices of $D$, while MMD and energy distances give kernel or negative-type alternatives {cite:p}`ramdas2017wasserstein,gretton2012kernel,szekely2004testing`. In generative-model evaluation, the Frechet Inception Distance first embeds data in a neural feature space, fits Gaussian laws, and computes their squared $\Wass_2$ distance: the squared distance between empirical means plus the Bures covariance term {cite:p}`HeuselRamsauerUnterthinerNesslerHochreiter2017FID`. KID replaces this Gaussian approximation by an MMD statistic {cite:p}`BinkowskiSutherlandArbelGretton2018MMDGAN`. These examples separate statistical calibration under $H_0$ from the interpretability of the chosen discrepancy; the rest of this chapter explains why the plug-in statistic can have very different bias and variance depending on the discrepancy.
-:::
-
-
 (sec-law-large-numbers-clt)=
 ## Law of Large Numbers and Central Limit Theorem
 
