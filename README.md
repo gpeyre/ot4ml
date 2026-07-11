@@ -48,17 +48,19 @@ is available on arXiv.
 
 The book figures are generated from executable notebooks and assembled by the
 LaTeX source. The current searchable gallery has been checked against the live
-LaTeX and MyST figure references: it exposes 128 figure views, covers all 128
+LaTeX and MyST figure references: it exposes 129 figure views, covers all 129
 referenced `OT4ML/figures/<figure-name>/` directories, and every active view has
 a notebook link, thumbnail, and generated PDF panels. The manuscript contains
-131 LaTeX figure labels because some figure directories generate several labeled
+132 LaTeX figure labels because some figure directories generate several labeled
 figures. Browse the rendered web gallery at
 [www.gpeyre.com/ot4ml/notebooks-figures/index.html](https://www.gpeyre.com/ot4ml/notebooks-figures/index.html)
 or the Markdown version in
 [`notebooks-figures/README.md`](notebooks-figures/README.md), with thumbnails,
 notebook links, and Open in Colab badges. The figure notebooks are
-self-bootstrapping on Colab: they fetch the repository helper files and install
-POT automatically when a figure needs the `ot` package.
+self-bootstrapping on Colab: they load one lightweight shared core, fetch only
+explicit computational assets, and install only missing dependencies such as
+POT. They neither clone the repository nor add it wholesale to Python's import
+path.
 
 <p align="center">
   <a href="notebooks-figures/README.md">

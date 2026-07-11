@@ -7,13 +7,13 @@ are compact PNG previews rendered from those outputs.
 
 Rendered web version: [www.gpeyre.com/ot4ml/notebooks-figures/](https://www.gpeyre.com/ot4ml/notebooks-figures/).
 
-**Gallery status.** Checked against the current LaTeX and MyST sources: all 128
+**Gallery status.** Checked against the current LaTeX and MyST sources: all 129
 live `OT4ML/figures/<figure-name>/` directories referenced by the LaTeX sources
 have a matching live `.ipynb` file, thumbnail in [`thumbnails/`](thumbnails/),
 and generated PDF panels in `../OT4ML/figures/`. The searchable gallery
-currently exposes 128 figure views, including the distinct schedule-comparison
+currently exposes 129 figure views, including the distinct schedule-comparison
 view provided by `generative-diffusion-versus-ot-2d.ipynb`. The book currently
-has 131 LaTeX figure labels because
+has 132 LaTeX figure labels because
 some figure directories generate several labeled views. The contact sheet below
 is built from the same active thumbnail set.
 
@@ -26,11 +26,15 @@ They are kept for provenance but omitted from this paper gallery.
 Open a notebook locally from the **Open notebook** link, or launch it in Google
 Colab from the badge. The Colab links target the `main` branch of
 [`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml). Each active notebook starts
-with a small bootstrap cell: when it is opened standalone in Colab, it downloads
-only the shared plotting module, that notebook's preview thumbnail, and any
-small bitmap assets it explicitly uses. It then adds `notebooks-figures/` to
-the Python path and installs only missing dependencies, such as POT for
-notebooks that import `ot`; a multi-gigabyte repository clone is not required.
+with a small bootstrap cell. When opened standalone in Colab, it loads exactly
+one shared core module, [`figure_style.py`](figure_style.py), without cloning the
+repository or adding repository directories to Python's import path. The core
+then installs only missing dependencies and downloads only the input bitmap
+assets explicitly declared by that notebook. Generated preview thumbnails are
+not runtime dependencies.
+
+Run `python notebooks-figures/check_colab_runtime.py` from the repository root
+to verify this contract for every active figure notebook.
 
 **Notebook hygiene.** The active figure notebooks are written to be readable as
 standalone pedagogical documents: helper functions carry short docstrings, long

@@ -856,7 +856,7 @@ The factor $\epsilon/2$ is essential because~\eqref{eq-gw-sinkh} is one half of 
 \index{entropic!OT}% strictindex
 
 \begin{alg}[Entropic Gromov--Wasserstein linearization]\label{alg:entropic-gromov-wasserstein}
-\textbf{Input:} Symmetric metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, maximum iterations $L$.
+\textbf{Input:} Symmetric metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Approximate entropic GW coupling $\P\in\CouplingsD(\a,\b)$.
 
@@ -1182,7 +1182,7 @@ Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-co
 \begin{alg}[Exact quantum Bregman projections]\label{alg:quantum-exact-bregman}
 \index{Bregman!projection}% strictindex
 \index{quantum!Bregman projection}% strictindex
-\textbf{Input:} Positive definite density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, maximum iterations $L$.
+\textbf{Input:} Positive definite density matrices $A,B$, cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Approximate quantum entropic coupling $T$ and its partial-trace residual.
 
@@ -1202,13 +1202,16 @@ Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-co
 
 \textbf{Set} $G^{(k+1)}=G^+$.
 
-\textbf{If} both partial-trace residuals are at most $\mathrm{tol}$ \textbf{then}:
+\textbf{Set} $T^{(k+1)}=T_e(F^{(k+1)},G^{(k+1)})$ and
+\(r_{k+1}=\max\{\norm{\operatorname{Tr}_B T^{(k+1)}-A}_{\mathrm F},\norm{\operatorname{Tr}_A T^{(k+1)}-B}_{\mathrm F}\}.\)
+
+\textbf{If} $r_{k+1}\leq\mathrm{tol}$ \textbf{then}:
 \begin{algblock}
-\textbf{Return} $T_e(F^{(k+1)},G^{(k+1)})$.
+\textbf{Return} $T^{(k+1)}$ and $r_{k+1}$.
 \end{algblock}
 \end{algblock}
 \algreturnskip
-\textbf{Return} $T_e(F^{(L)},G^{(L)})$ and its residual.
+\textbf{Return} $T^{(L)}$ and $r_L$.
 \end{alg}
 
 \paragraph{Gurvits scaling and quantum Sinkhorn.}
@@ -1255,9 +1258,9 @@ They can be enforced by the explicit congruence normalizations
 \end{equation}
 \begin{alg}[Gurvits/operator scaling for quantum Sinkhorn]\label{alg:quantum-gurvits-scaling}
 \index{operator scaling}% strictindex
-\textbf{Input:} Positive definite marginals $A,B$, positive definite kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$, maximum iterations $L$.
+\textbf{Input:} Positive definite marginals $A,B$, positive definite kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
-\textbf{Output:} Symmetrically scaled coupling $T_s$ with approximate prescribed marginals.
+\textbf{Output:} Symmetrically scaled coupling $T_s$ and its marginal residual $r$.
 
 \textbf{Initialize:} Set $U=\Id_n$ and $V=\Id_m$.
 
@@ -1274,7 +1277,7 @@ They can be enforced by the explicit congruence normalizations
 \textbf{Set} $k\leftarrow k+1$.
 \end{algblock}
 \algreturnskip
-\textbf{Return} \(T_s\).
+\textbf{Return} \(T_s\) and $r$.
 \end{alg}
 These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. Under the standard strict-positivity and scalability hypotheses, the alternating normalizations converge to the prescribed marginals~\cite{georgiou2015positive,garg2018recent}; the finite algorithm returns once the residual is below tolerance or the iteration budget is exhausted. This is Gurvits/operator scaling with prescribed targets. When all matrices are diagonal it reduces to classical Sinkhorn scaling, and when the targets are proportional to identities it matches the usual bistochastic operator-scaling normalization, up to the conventional trace normalization.
 \index{Gurvits scaling}% strictindex
@@ -1380,7 +1383,8 @@ Algorithm~\ref{alg-dtw-dynamic-programming} makes the value computation and path
 \begin{algblock}
 \textbf{Set} $C_{ij}=c(x_i,y_j)$.
 
-\textbf{Choose} $(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
+\textbf{Choose} the lexicographically first
+$(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
 
 \textbf{Set} $B_{ij}=(r^\star,s^\star)$ and $D_{ij}=C_{ij}+D_{r^\star,s^\star}$.
 \end{algblock}

@@ -206,9 +206,9 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 %
 
 \begin{alg}[Flow matching regression and sampling]\label{alg:flow-matching-regression}
-\textbf{Input:} Interpolant $I_t(u)$, training source $u\sim\pi$, parametrized field $v_\theta(t,z)$, training steps $N$.
+\textbf{Input:} Differentiable interpolant $I_t(u)$, training source $u\sim\pi$, field $v_\theta(t,z)$, initial parameter $\theta^{(0)}$, learning rates $(\eta_q)_{q=1}^N$.
 
-\textbf{Output:} Learned sampler $X_0\mapsto X_1$.
+\textbf{Output:} Trained parameter $\theta^{(N)}$ and generated sample $X_1$.
 
 \textbf{Training:}
 
@@ -218,7 +218,8 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 
 \textbf{Set} $z_q=I_{t_q}(u_q)$ and $w_q=\partial_t I_t(u_q)|_{t=t_q}$.
 
-\textbf{Update} $\theta$ by one stochastic-gradient step on \(\norm{v_\theta(t_q,z_q)-w_q}^2\).
+\textbf{Set}
+\(\theta^{(q)}=\theta^{(q-1)}-\eta_q\nabla_\theta\norm{v_\theta(t_q,z_q)-w_q}^2\big|_{\theta=\theta^{(q-1)}}.\)
 
 \end{algblock}
 
@@ -227,10 +228,10 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 \textbf{Draw} $X_0\sim\alpha_0$.
 
 \textbf{Integrate}
-\(\dot X_t=v_\theta(t,X_t), \qquad t\in[0,1]\).
+\(\dot X_t=v_{\theta^{(N)}}(t,X_t), \qquad t\in[0,1].\)
 
 \algreturnskip
-\textbf{Return} $X_1$.
+\textbf{Return} $\theta^{(N)}$ and $X_1$.
 \end{alg}
 
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$. Thus the same interpolation as~\eqref{eq:interp-coupling} is represented by a deterministic flow rather than by the original coupling.
@@ -450,7 +451,7 @@ The same probability-flow intuition is visible in two dimensions. For a discrete
 \begin{alg}[Exact probability-flow sampling for a Gaussian mixture]\label{alg:gaussian-mixture-probability-flow-sampling}
 \index{flow!probability ODE}% strictindex
 \index{Gaussian!mixture}% strictindex
-\textbf{Input:} Gaussian-mixture data law, schedule $(a_t,b_t)$, noise level $\sigma$, number of samples $R$.
+\textbf{Input:} Gaussian-mixture data law, differentiable schedule $(a_t,b_t)$ with $(a_0,b_0)=(1,0)$ and $(a_1,b_1)=(0,1)$, noise level $\sigma>0$, sample count $R\geq1$.
 
 \textbf{Output:} Backward samples $(Z_0^{(r)})_r$.
 
@@ -461,6 +462,8 @@ The same probability-flow intuition is visible in two dimensions. For a discrete
 
 \textbf{Set} probability-flow velocity:
 \(v_t(z)=\frac{a'_t}{a_t}z+ \left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z)\).
+
+\textbf{Use} the continuous endpoint extension of $v_t$ wherever $a_t=0$.
 
 \textbf{For} $r=1,\ldots,R$ \textbf{do}:
 \begin{algblock}
@@ -831,24 +834,25 @@ This is an ideal function-space update. If the residuals were stored as a growin
 
 \begin{alg}[One-step Wasserstein-flow generator update]\label{alg:one-step-wgf-generator-update}
 \index{one-step generative model}% strictindex
-\textbf{Input:} Generator $G_{\theta_k}$, latent law $\zeta$, data law $\beta$, numerical descent-field oracle $W_\beta$, step size $\tau$, batch size $B$.
+\textbf{Input:} Current generator map $G_k$, latent law $\zeta$, data law $\beta$, descent-field oracle $W_\beta$, step size $\tau>0$, batch size $B$.
 
-\textbf{Output:} Updated generator $G_{\theta_{k+1}}$.
+\textbf{Output:} Functional generator update $G_{k+1}$.
 
 \textbf{Draw} $z_b\sim\zeta$ for $b=1,\ldots,B$.
 
-\textbf{Set} $x_b=G_{\theta_k}(z_b)$.
+\textbf{Set} $x_b=G_k(z_b)$.
 
-\textbf{Set} \(w_k(x)=W_\beta[\alpha_{\theta_k}](x)\), where \(W_\beta[\alpha]=-\nabla\delta_\alpha\mathcal E_\beta(\alpha)\).
+\textbf{Set} $\alpha_k=(G_k)_\sharp\zeta$ and
+\(w_k(x)=W_\beta[\alpha_k](x)=-\nabla\delta_\alpha\mathcal E_\beta(\alpha_k)(x).\)
 
 \textbf{Set} $\eta_k$ by minimizing the empirical least-squares loss:
 \(\frac1B\sum_{b=1}^B \norm{U_{\eta}(x_b)-w_k(x_b)}^2\).
 
 \textbf{Update by composition:}
-\(G_{\theta_{k+1}}(z) = G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z))\).
+\(G_{k+1}(z) = G_k(z)+\tau U_{\eta_k}(G_k(z)).\)
 
 \algreturnskip
-\textbf{Return} $G_{\theta_{k+1}}$.
+\textbf{Return} $G_{k+1}$; optionally distill it into the chosen fixed architecture.
 \end{alg}
 
 After many training updates, the fixed-architecture or distilled generator is evaluated once at test time. This is the organizing principle behind recent one-step methods based on Wasserstein gradient flows: W-Flow uses such a construction with the Sinkhorn divergence as a tractable global discrepancy~\cite{Han2026WFlow}, while drifting methods evolve the generated distribution during training through a fitted vector field and also admit one-step inference~\cite{Deng2026Drifting}. The gradient-flow interpretation of drifting models, and its relation to KL, MMD, sliced-Wasserstein and Sinkhorn-type discrepancies, is analyzed in~\cite{Gretton2026DriftingWGF,He2026SinkhornDrifting}. These ideas are also connected to the Sinkhorn-type normalization dynamics used to model attention in Sinkformers~\cite{Sander2022Sinkformers}.
@@ -1429,7 +1433,7 @@ As $\tau \to 0$, this converges formally to the conservation equation
 \textbf{For} $k=0,\ldots,T-1$ \textbf{do}:
 \begin{algblock}
 
-\textbf{For} $i=1,\ldots,n$ \textbf{do}
+\textbf{For} $i=1,\ldots,n$ \textbf{do}:
 \begin{algblock}
 \(\Gamma_{\theta_k}[\alpha_k](x_i^k) = \frac{\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})\,V_kx_j^k} {\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})}\).
 

@@ -268,7 +268,7 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 \begin{alg}[Gaussian barycenter fixed point]\label{alg:gaussian-barycenter-fixed-point}
 \index{Gaussian!barycenter}% strictindex
 \index{fixed-point iteration}% strictindex
-\textbf{Input:} Gaussian measures $\Gaussian(\mean_s,\cov_s)$ with $\cov_s\succeq0$ and at least one positive-definite active covariance, positive weights $\lambda_s$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Gaussian measures $\Gaussian(\mean_s,\cov_s)$ with $\cov_s\succeq0$ and at least one positive-definite active covariance, positive weights $\lambda_s$ summing to one, tolerance $\mathrm{tol}$, iteration budget $K\geq1$.
 
 \textbf{Output:} Gaussian barycenter $\Gaussian(\mean,\cov)$.
 
@@ -277,7 +277,7 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 
 \textbf{Initialize:} Set $\cov^{(0)}=\sum_s\lambda_s\cov_s\succ0$.
 
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
+\textbf{For} $k=0,\ldots,K-1$ \textbf{do}:
 \begin{algblock}
 \(S^{(k)} = \sum_s\lambda_s \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.\)
 
@@ -290,6 +290,8 @@ Gaussian barycenters show that the same separation as in the Gaussian Wasserstei
 \textbf{Return} $\Gaussian(\mean,\cov)$.
 \end{algblock}
 \end{algblock}
+\algreturnskip
+\textbf{Return} $\Gaussian(\mean,\cov^{(K)})$.
 \end{alg}
 
 \begin{figure}[ht]
@@ -370,25 +372,25 @@ and the generalized Sinkhorn iterations are
 The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all couplings share the same barycenter marginal.
 
 \begin{alg}[Entropic barycenter Sinkhorn]\label{alg:entropic-barycenter-sinkhorn}
-\textbf{Input:} Finite costs $\C_s$, positive target histograms $\b_s$, barycenter weights $\lambda\in\operatorname{int}(\simplex_S)$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Finite costs $\C_s$, positive target histograms $\b_s$, barycenter weights $\lambda\in\operatorname{int}(\simplex_S)$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Barycenter weights $\a$ and couplings $\P_s$.
 
 \textbf{Initialize:} Set $\K_s=e^{-\C_s/\epsilon}$, $\uD_s^{(0)}=\ones_n$ for all $s$, \(r_0=+\infty\), and \(k=0\).
 
-\textbf{While} \(r_k>\mathrm{tol}\) \textbf{do}:
+\textbf{While} \(r_k>\mathrm{tol}\) and $k<L$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Set} \(k\leftarrow k+1\).
 
-\textbf{For} each marginal $s$ \textbf{do}
+\textbf{For} each marginal $s$ \textbf{do}:
 \begin{algblock}
 \(\vD_s^{(k)} = \frac{\b_s}{\transp{\K_s}\uD_s^{(k-1)}}.\)
 \end{algblock}
 \textbf{Compute} barycenter marginal:
 \(\a^{(k)} = \prod_s \bigl(\K_s\vD_s^{(k)}\bigr)^{\lambda_s}.\)
 
-\textbf{For} each marginal $s$ \textbf{do}
+\textbf{For} each marginal $s$ \textbf{do}:
 \begin{algblock}
 \(\uD_s^{(k)} = \frac{\a^{(k)}}{\K_s\vD_s^{(k)}}.\)
 \end{algblock}
@@ -857,26 +859,29 @@ Practical barycenter solvers therefore exploit separability of the cost, low-ran
 In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn. The explicit algorithm below assumes positive marginals and a finite cost tensor; forbidden configurations with infinite cost can instead be removed from the tensor support, provided the remaining marginal constraints are feasible.
 
 \begin{alg}[Multi-marginal Sinkhorn]\label{alg:multimarginal-sinkhorn}
-\textbf{Input:} Positive marginals $\a_s\in\simplex_{n_s}$, finite tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive marginals $\a_s\in\simplex_{n_s}$, finite tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Multi-marginal entropic coupling tensor $P$.
 
 \textbf{Build}
 \(K_{i_1,\ldots,i_S} = \exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right) \prod_{s=1}^S(\a_s)_{i_s}.\)
 
-\textbf{Initialize:} Set \(u_s=\ones_{n_s}\) for all $s$ and residual \(r=+\infty\).
+\textbf{Initialize:} Set \(u_s=\ones_{n_s}\) for all $s$, residual \(\eta=+\infty\), and $k=0$.
 
-\textbf{While} \(r>\mathrm{tol}\) \textbf{do}:
+\textbf{While} \(\eta>\mathrm{tol}\) and $k<L$ \textbf{do}:
 \begin{algblock}
+\textbf{Set} $k\leftarrow k+1$.
 
 \textbf{For} $s=1,\ldots,S$ \textbf{do}:
 \begin{algblock}
+\textbf{Use} the newest available values of the other scaling vectors.
+
 \((u_s)_i \leftarrow \frac{(\a_s)_i} { \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S} K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S} \prod_{r\neq s}(u_r)_{i_r}}.\)
 \end{algblock}
 
 \textbf{Set} \(P_{i_1,\ldots,i_S}=K_{i_1,\ldots,i_S}\prod_s (u_s)_{i_s}\).
 
-\textbf{Set} \(r=\max_s\norm{(\mathrm{proj}_s)_\sharp P-\a_s}_1\).
+\textbf{Set} \(\eta=\max_s\norm{(\mathrm{proj}_s)_\sharp P-\a_s}_1\).
 \end{algblock}
 \algreturnskip
 \textbf{Return} \(P\).
@@ -977,7 +982,7 @@ where $Q,R$ are nonnegative. For fixed $g$, this differs only by constants from 
 
 \begin{algH}[Alternating low-rank Sinkhorn with fixed latent mass]\label{alg-low-rank-sinkhorn-fixed-g}
 \index{Sinkhorn!low-rank}% strictindex
-\textbf{Input:} Positive marginals $\a\in\operatorname{int}(\simplex_n)$ and $\b\in\operatorname{int}(\simplex_m)$, cost $C\in\RR^{n\times m}$, rank $r$, positive latent mass $g\in\operatorname{int}(\simplex_r)$, regularization $\epsilon>0$, maximum number of iterations $L\geq1$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive marginals $\a\in\operatorname{int}(\simplex_n)$ and $\b\in\operatorname{int}(\simplex_m)$, cost $C\in\RR^{n\times m}$, rank $r$, positive latent mass $g\in\operatorname{int}(\simplex_r)$, regularization $\epsilon>0$, iteration budget $L\geq1$, tolerance $\mathrm{tol}$.
 
 \textbf{Output:} Factored coupling $P=Q\diag(g)^{-1}R^\top$.
 
@@ -1120,7 +1125,7 @@ Equivalently, up to additive constants, the objective is $\epsilon\KLD(\P|\K)$. 
 
 \begin{algH}[Capacity-constrained Sinkhorn by KL-Dykstra]\label{alg-capacity-constrained-sinkhorn}
 \index{capacity-constrained Sinkhorn}% strictindex
-\textbf{Input:} Positive marginals $\a\in\simplex_n$, $\b\in\simplex_m$, finite cost $\C$, feasible capacity $\overline{\P}$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive marginals $\a\in\simplex_n$, $\b\in\simplex_m$, finite cost $\C$, feasible capacity $\overline{\P}$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Entropic capped coupling $\P$.
 
@@ -1130,10 +1135,12 @@ Equivalently, up to additive constants, the objective is $\epsilon\KLD(\P|\K)$. 
 
 \textbf{Set} $\K_{i,j}=a_i b_j e^{-\C_{i,j}/\epsilon}$ for $(i,j)\in E$.
 
-\textbf{Initialize:} Set $\P=\K$, correction matrices $R_1=R_2=R_3=\ones_{n\times m}$ and $r=+\infty$.
+\textbf{Initialize:} Set $\P=\K$, correction matrices $R_1=R_2=R_3=\ones_{n\times m}$, residual $r=+\infty$, and $k=0$.
 
-\textbf{While} $r>\mathrm{tol}$ \textbf{do}:
+\textbf{While} $r>\mathrm{tol}$ and $k<L$ \textbf{do}:
 \begin{algblock}
+\textbf{Set} $k\leftarrow k+1$ and $\P_{\rm old}=\P$.
+
 \textbf{Set} $Z=\P\odot R_1$.
 
 \textbf{Project rows:} $\P= \diag\!\left(\a/(Z\ones_m)\right) Z$.
@@ -1152,7 +1159,8 @@ Equivalently, up to additive constants, the objective is $\epsilon\KLD(\P|\K)$. 
 
 \textbf{Update} $R_3=Z\oslash \P$.
 
-\textbf{Set} $r=\max\{\|\P\ones_m-\a\|_\infty,\|\P^\top\ones_n-\b\|_\infty,\|(\P-\overline{\P})_+\|_\infty\}$.
+\textbf{Set} $r$ to the maximum of the three feasibility defects and the fixed-point defect:
+\(r=\max\{\|\P\ones_m-\a\|_\infty,\|\P^\top\ones_n-\b\|_\infty,\|(\P-\overline{\P})_+\|_\infty,\|\P-\P_{\rm old}\|_1\}.\)
 \end{algblock}
 
 \textbf{Return} $\P$.

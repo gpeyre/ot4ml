@@ -215,13 +215,13 @@ initialized with any positive vector, for instance $\init{\vD}=\ones_m$. Divisio
 The alternating normalization can be read directly on the coupling matrix: a row update enforces the source marginal and generally perturbs the target marginal, while the next column update does the converse.
 
 \begin{alg}[Sinkhorn scaling]\label{alg:sinkhorn-scaling}
-\textbf{Input:} Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Entropic coupling $\P$.
 
 \textbf{Initialize:} Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$, $\vD^{(0)}=\ones_m$, \(r_0=+\infty\), and \(k=0\).
 
-\textbf{While} \(r_k>\mathrm{tol}\) \textbf{do}:
+\textbf{While} \(r_k>\mathrm{tol}\) and $k<L$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Set} \(k\leftarrow k+1\).
@@ -950,13 +950,13 @@ Exponentiating these iterations recovers exactly the Sinkhorn algorithm. These i
 and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized version (equal when using infinite precision computation) ${\min}_{\b}^\epsilon(h-\min(h)) + \min(h)$.
 
 \begin{alg}[Log-domain Sinkhorn by soft transforms]\label{alg:log-domain-sinkhorn}
-\textbf{Input:} Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive weights $\a,\b$, cost matrix $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Entropic coupling $\P$ computed from stabilized potentials.
 
 \textbf{Initialize:} Set $\gD^{(0)}=0$, \(\eta_0=+\infty\), and \(k=0\).
 
-\textbf{While} \(\eta_k>\mathrm{tol}\) \textbf{do}:
+\textbf{While} \(\eta_k>\mathrm{tol}\) and $k<L$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Set} \(k\leftarrow k+1\).
@@ -1467,21 +1467,21 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 \index{endpoint coupling}% strictindex
 
 \begin{alg}[Endpoint-to-path Schr\"odinger lift]\label{alg:schrodinger-endpoint-path-lift}
-\textbf{Input:} Endpoint laws $\al,\be$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
+\textbf{Input:} Endpoint laws $\al,\be$, a static optimizer $\pi_\epsilon^\star$, reference bridge kernel $(x,y)\mapsto\Rr^{\epsilon,x,y}$, sample count $R\geq1$.
 
-\textbf{Output:} Schr\"odinger path law $M_\epsilon^\star$.
+\textbf{Output:} Schr\"odinger path law $M_\epsilon^\star$ and independent paths $(\omega^{(r)})_{r=1}^R$ sampled from it.
 
-\textbf{Let} $\pi_\epsilon^\star$ be a minimizer of the static entropic endpoint problem:
-\(\pi_\epsilon^\star \in \argmin_{\pi\in\Couplings(\al,\be)} \int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).\)
+\textbf{Set} exact lifted law:
+\(M_\epsilon^\star=\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).\)
 
-\textbf{For} each endpoint pair $(x,y)$ sampled from $\pi_\epsilon^\star$ \textbf{do}:
+\textbf{For} $r=1,\ldots,R$ \textbf{do}:
 \begin{algblock}
+\textbf{Draw} $(X_0^{(r)},X_1^{(r)})\sim\pi_\epsilon^\star$.
 
-\textbf{Draw} bridge path:
-\(\omega\sim\Rr^{\epsilon,x,y}.\)
+\textbf{Draw} \(\omega^{(r)}\sim\Rr^{\epsilon,X_0^{(r)},X_1^{(r)}}.\)
 \end{algblock}
 \algreturnskip
-\textbf{Return} \(M_\epsilon^\star= \int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).\)
+\textbf{Return} $M_\epsilon^\star$ and $(\omega^{(r)})_{r=1}^R$.
 \end{alg}
 
 \begin{figure}[H]
@@ -1656,16 +1656,18 @@ When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two du
 
 \begin{alg}[Generalized Sinkhorn for marginal penalties]\label{alg-generalized-sinkhorn-marginal-penalties}
 \index{generalized Sinkhorn algorithm}% strictindex
-\textbf{Input:} Reference weights $\a,\b$, cost $\C$, convex marginal penalties $\mathsf F,\mathsf G$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Reference weights $\a,\b$, cost $\C$, convex marginal penalties $\mathsf F,\mathsf G$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Coupling $\P$ and optimized marginals $r=\P\ones_m$, $s=\transp{\P}\ones_n$.
 
 \textbf{Set} $\K_{ij}=a_i b_j e^{-\C_{ij}/\epsilon}$.
 
-\textbf{Initialize:} $\uD=\ones_n$, $\vD=\ones_m$, $\eta=+\infty$.
+\textbf{Initialize:} $\uD=\ones_n$, $\vD=\ones_m$, $\eta=+\infty$, and $k=0$.
 
-\textbf{While} $\eta>\mathrm{tol}$ \textbf{do}:
+\textbf{While} $\eta>\mathrm{tol}$ and $k<L$ \textbf{do}:
 \begin{algblock}
+\textbf{Set} $k\leftarrow k+1$.
+
 \textbf{Store} $\uD_{\mathrm{old}}=\uD$ and $\vD_{\mathrm{old}}=\vD$.
 
 \textbf{Set} $z=\K\vD$.

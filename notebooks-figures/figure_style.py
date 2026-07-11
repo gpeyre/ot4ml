@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import importlib.util
+import os
 from pathlib import Path
+import subprocess
+import sys
+import urllib.request
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,6 +18,11 @@ from matplotlib.colors import to_rgb
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEX_FIGURES = ROOT / "OT4ML" / "figures"
+
+_DOWNLOAD_BASES = (
+    "https://raw.githubusercontent.com/gpeyre/ot4ml/main",
+    "https://www.gpeyre.com/ot4ml",
+)
 
 RED = "#d73027"
 BLUE = "#2166ac"
@@ -30,6 +40,74 @@ TRANSPORT_LINE_MAX_WIDTH = 1.75
 TRANSPORT_LINE_ALPHA_SCALE = 0.68
 AXIS_LINE_WIDTH = 0.75
 POINT_EDGE_WIDTH = 0.0
+
+
+def _in_colab() -> bool:
+    """Return whether the active Python process is a Google Colab runtime."""
+    try:
+        return importlib.util.find_spec("google.colab") is not None
+    except ModuleNotFoundError:
+        return False
+
+
+def _install_missing_package(module_name: str, package_name: str) -> None:
+    """Install one unavailable package in Colab without touching local environments."""
+    if _in_colab() and importlib.util.find_spec(module_name) is None:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", package_name],
+            check=True,
+        )
+
+
+def _download_file(relative_path: str, target: Path) -> None:
+    """Download one explicit notebook asset from the project mirrors."""
+    if target.exists():
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(target.suffix + ".tmp")
+    errors = []
+    for base in _DOWNLOAD_BASES:
+        url = f"{base}/{relative_path}"
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                temporary.write_bytes(response.read())
+            temporary.replace(target)
+            return
+        except Exception as error:
+            errors.append(f"{url}: {error}")
+            temporary.unlink(missing_ok=True)
+    raise RuntimeError(
+        f"Unable to download required notebook asset {relative_path}.\n"
+        + "\n".join(errors)
+    )
+
+
+def configure_notebook(
+    *,
+    packages: tuple[tuple[str, str], ...] = (),
+    required_files: tuple[str, ...] = (),
+) -> Path:
+    """Prepare the lightweight runtime used by a standalone figure notebook.
+
+    Only explicitly listed packages and data files are considered. The function
+    never clones the repository and never downloads generated previews.
+
+    Args:
+        packages: Pairs ``(module_name, distribution_name)`` to check in Colab.
+        required_files: Repository-relative input assets needed by the notebook.
+
+    Returns:
+        Root of the local checkout or lightweight Colab runtime.
+    """
+    for module_name, package_name in packages:
+        _install_missing_package(module_name, package_name)
+    for relative_path in required_files:
+        _download_file(relative_path, ROOT / relative_path)
+
+    LATEX_FIGURES.mkdir(parents=True, exist_ok=True)
+    (ROOT / "notebooks-figures" / "thumbnails").mkdir(parents=True, exist_ok=True)
+    os.chdir(ROOT)
+    return ROOT
 
 
 def setup_matplotlib() -> None:
