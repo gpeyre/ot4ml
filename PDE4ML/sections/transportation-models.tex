@@ -1353,7 +1353,7 @@ The map $x\mapsto m_\epsilon[\alpha](x)$ is exactly Gaussian-kernel attention, i
 	=
 	\epsilon\nabla\log\rho_\epsilon[\alpha](x)
 \end{equation}
-and, when $\alpha$ is empirical, $\rho_\epsilon[\alpha]$ is a Gaussian kernel density estimate up to normalization. Thus \(M_\epsilon[\alpha]\) is the classical Gaussian mean-shift vector~\cite{FukunagaHostetler1975,Cheng1995MeanShift,ComaniciuMeer2002MeanShift}. Consequently, the barycentric residual update
+and, when $\alpha$ is empirical, $\rho_\epsilon[\alpha]$ is a Gaussian kernel density estimate up to normalization. Thus \(M_\epsilon[\alpha]\) is the classical Gaussian mean-shift vector~\cite{FukunagaHostetler1975,Cheng1995MeanShift,ComaniciuMeer2002MeanShift}. If the data measure is frozen, $x\leftarrow m_\epsilon[\alpha](x)$ is the classical mode-seeking iteration. If every support point moves and the empirical measure is recomputed, one obtains the self-consistent, or blurring, mean-shift process~\cite{Chen2015BlurringMeanShift}. Its damped update
 \index{kernel density estimate}% strictindex
 \index{mean shift!vector}% strictindex
 \[
@@ -1367,7 +1367,7 @@ is an explicit Euler step of the continuous-time mean-shift equation
 \[
 	\partial_t\alpha_t+\diverg\bigl(\alpha_tM_\epsilon[\alpha_t]\bigr)=0.
 \]
-With time step one this recovers the usual mean-shift iteration $x\leftarrow m_\epsilon[\alpha](x)$; with small residual steps it becomes a transport PDE that moves each token uphill along the log of the smoothed token density. This distinction between the raw barycentric attention output $m_\epsilon$ and the velocity $M_\epsilon=m_\epsilon-\Id$ is important: adding $m_\epsilon$ directly as a residual would produce a different drift. The mean-shift form isolates a purely metric attention mechanism from the learned bilinear geometry of $\dotp{Qx}{Ky}$.
+For $\tau=1$ this is discrete blurring mean shift; for small $\tau$ it approximates a transport PDE that moves each token uphill along the log of the smoothed token density. This distinction between the frozen and self-consistent processes, and between the raw barycentric output $m_\epsilon$ and the velocity $M_\epsilon=m_\epsilon-\Id$, is important: adding $m_\epsilon$ directly as a residual would produce a different drift. The mean-shift form isolates a purely metric attention mechanism from the learned bilinear geometry of $\dotp{Qx}{Ky}$.
 \index{mean shift!iteration}% strictindex
 \index{barycentric attention}% strictindex
 
@@ -1392,6 +1392,50 @@ Figure~\ref{fig:generative-mean-shift-pde} visualizes this positive-feedback mec
 \index{kernel!Gaussian}% strictindex
 \index{kernel!regression}% strictindex
 \index{transport PDE}% strictindex
+
+\paragraph{Consensus contraction.}
+When the averaging law evolves with the particles, blurring mean shift is also a consensus model, closely related to Hegselmann--Krause and Motsch--Tadmor opinion dynamics~\cite{HegselmannKrause2002OpinionDynamics,BlondelHendrickxTsitsiklis2009Krause,MotschTadmor2014Heterophilious}. This viewpoint gives a direct convergence mechanism. For a positive kernel $K$ and an empirical law $\alpha=\sum_i a_i\delta_{x_i}$, define
+\begin{equation}\label{eq-pde4ml-mean-shift-markov}
+	(\mathsf P_X)_{ij}
+	=
+	\frac{a_jK(x_i,x_j)}{\sum_r a_rK(x_i,x_r)}.
+\end{equation}
+Then $\mathsf P_X$ is row-stochastic and the damped update is $X^+=((1-\tau)I+\tau\mathsf P_X)X$. Its contraction is measured by the Dobrushin coefficient
+\begin{equation}\label{eq-pde4ml-dobrushin}
+	\delta(\mathsf P)
+	=
+	\frac12\max_{i,\ell}\sum_j|\mathsf P_{ij}-\mathsf P_{\ell j}|
+	=
+	1-\min_{i,\ell}\sum_j\min\{\mathsf P_{ij},\mathsf P_{\ell j}\}.
+\end{equation}
+This is the variation-seminorm analogue of projective contraction for positive operators: it measures how much two normalized averaging rows can still disagree~\cite{GaubertQu2015Dobrushin}.
+
+\begin{thm}[Dobrushin consensus for positive blurring mean shift]\label{thm-pde4ml-mean-shift-consensus}
+	Let $\alpha_0=\sum_i a_i\delta_{x_i^0}$ have positive weights, and let $C_0$ be the convex hull of its support. Assume that $K:C_0\times C_0\to(0,+\infty)$ is continuous. Set
+	\[
+		\bar\delta=\sup_{X\in C_0^n}\delta(\mathsf P_X)<1,
+		\qquad
+		q_\tau=1-\tau(1-\bar\delta),
+		\qquad 0<\tau\leq1.
+	\]
+	For the iteration $X^{k+1}=((1-\tau)I+\tau\mathsf P_{X^k})X^k$,
+	\begin{equation}\label{eq-pde4ml-mean-shift-diameter}
+		\max_{i,j}\|x_i^k-x_j^k\|
+		\leq
+		q_\tau^k\max_{i,j}\|x_i^0-x_j^0\|.
+	\end{equation}
+	Consequently all particles converge to a common point in $C_0$. In particular, strict positivity on the compact invariant hull rules out persistent multimodal clustering; several limiting clusters require a kernel with vanishing or asymptotically negligible interactions.
+\end{thm}
+
+\begin{proof}
+	Every updated point is a convex combination of the current points, hence the convex hulls are nested. For a scalar vector $z\in\RR^n$, the common-mass decomposition of two rows of a stochastic matrix gives
+	\[
+		\max_i(\mathsf Pz)_i-\min_i(\mathsf Pz)_i
+		\leq
+		\delta(\mathsf P)(\max_i z_i-\min_i z_i).
+	\]
+	Apply this inequality to every projection $z_i=\dotp{e}{x_i^k}$, $\|e\|=1$, and to $(1-\tau)I+\tau\mathsf P_{X^k}$, whose Dobrushin coefficient is at most $1-\tau(1-\delta(\mathsf P_{X^k}))\leq q_\tau$. Taking the supremum over $e$ yields~\eqref{eq-pde4ml-mean-shift-diameter}. The increments are bounded by $\tau$ times the current diameter, so the geometric bound makes every particle trajectory Cauchy; the vanishing diameter forces a common limit. Finally, continuity and strict positivity of $K$ on the compact set $C_0\times C_0$ imply $\bar\delta<1$.
+\end{proof}
 
 \paragraph{Gradient structure and limitations.}
 \index{gradient!structure}% strictindex
@@ -1972,6 +2016,46 @@ Not every PDE preserves Gaussianity exactly. Wasserstein flows of generic higher
 \index{Gaussian!closure}% strictindex
 \index{affine!closure}% strictindex
 \end{example}
+
+\paragraph{One-dimensional case.}
+The one-dimensional Gaussian family makes the preceding catalogue especially transparent. Fix a target $\gamma=\Gaussian(\bar m,\bar\sigma^2)$, $\bar\sigma>0$, and write $\alpha=\Gaussian(m,\sigma^2)$, $\sigma>0$. By Proposition~\ref{prop-gaussian-w2-bures}, $(m,\sigma)\mapsto\Gaussian(m,\sigma^2)$ identifies this family isometrically with the Euclidean upper half-plane. For a functional $f$, set $g_f(m,\sigma)=f(\Gaussian(m,\sigma^2))$ and $\delta=m-\bar m$. For the Sinkhorn row, define
+\[
+	\psi_\epsilon(r)
+	=
+	-\frac{\sqrt{\epsilon^2+16r^2}-\epsilon}{2}
+	-\frac{\epsilon}{2}
+	\log\!\left(\frac{2\epsilon}{\sqrt{\epsilon^2+16r^2}+\epsilon}\right),
+	\qquad r>0.
+\]
+The principal exact closures reduce to the following scalar landscapes.
+\begin{center}
+\begingroup
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{.34\linewidth}>{\raggedright\arraybackslash}X}
+	\hline
+	Functional $f(\alpha)$ & Restriction $g_f(m,\sigma)$ \\
+	\hline
+	$\KL(\alpha|\gamma)$
+	& $\displaystyle \log\frac{\bar\sigma}{\sigma}+\frac{\sigma^2+\delta^2}{2\bar\sigma^2}-\frac12$ \\
+	$\Wass_2^2(\alpha,\gamma)$
+	& $\displaystyle \delta^2+(\sigma-\bar\sigma)^2$ \\
+	$\displaystyle \bar\MK_{\norm{\cdot-\cdot}^2}^{\epsilon}(\alpha,\gamma)$
+	& $\displaystyle \delta^2+\psi_\epsilon(\sigma\bar\sigma)-\frac12\psi_\epsilon(\sigma^2)-\frac12\psi_\epsilon(\bar\sigma^2)$ \\
+	$\mathcal I(\alpha|\gamma)$
+	& $\displaystyle \frac{\delta^2}{\bar\sigma^4}+\frac{(\sigma^2-\bar\sigma^2)^2}{\sigma^2\bar\sigma^4}$ \\
+	\hline
+\end{tabularx}
+\endgroup
+\end{center}
+Here $\bar\MK^\epsilon$ denotes the debiased entropic transport cost used in the catalogue, and $\mathcal I$ is relative Fisher information. Since $\psi_\epsilon(r)\to-2r$ as $\epsilon\downarrow0$, the Sinkhorn landscape converges to the squared-Wasserstein landscape. Figure~\ref{fig:gradflow-gaussian-1d-energy-landscapes} compares the four exact ambient Wasserstein flows; none is a projection onto the Gaussian family.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/gradflow-gaussian-1d-energy-landscapes/flows.pdf}
+\caption{\emph{One-dimensional Gaussian Wasserstein gradient flows in the parameter half-plane $(m,\sigma)$.} From left to right: relative entropy, squared Wasserstein distance, debiased Sinkhorn divergence, and relative Fisher information. The trajectories start from the same well-spread initial parameters and converge to the common target $(\bar m,\bar\sigma)$.}
+\label{fig:gradflow-gaussian-1d-energy-landscapes}
+\end{figure}
 
 \paragraph{Constrained evolution on the Gaussian manifold.}
 \index{Gaussian!manifold}% strictindex

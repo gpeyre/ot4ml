@@ -12,6 +12,42 @@ This primer fixes the optimal-transport notation used throughout the review. The
 
 Let $\X$ and $\Y$ be Polish metric spaces, meaning complete separable metric spaces. This assumption is the natural background for probability theory because it gives enough measurable structure for disintegration, weak convergence and compactness arguments while still covering Euclidean spaces, manifolds, discrete spaces and many path spaces.
 
+\paragraph{Weak convergence and moment classes.}
+The PDE constructions below use both weak convergence of laws and the stronger topology induced by transport. A sequence $(\alpha_n)_n\subset\Pp(\X)$ converges weakly to $\alpha$, written $\alpha_n\rightharpoonup\alpha$, when
+\[
+	\int g\,\d\alpha_n\longrightarrow\int g\,\d\alpha
+\]
+for every bounded continuous function $g$. After fixing $x_0\in\X$, define
+\begin{equation}\label{eq-primer-p-moment-space}
+	\Pp_p(\X)
+	\eqdef
+	\left\{\alpha\in\Pp(\X):\int d(x,x_0)^p\,\d\alpha(x)<+\infty\right\}.
+\end{equation}
+This definition does not depend on the choice of $x_0$. The finite $p$-moment assumption is exactly what makes the $p$-Wasserstein distance finite. On a Polish space, $\Pp_p(\X)$ is itself Polish for $\Wass_p$, and
+\begin{equation}\label{eq-primer-wasserstein-convergence}
+	\Wass_p(\alpha_n,\alpha)\longrightarrow0
+	\quad\Longleftrightarrow\quad
+	\alpha_n\rightharpoonup\alpha
+	\qquad\text{and}\qquad
+	\int d(x,x_0)^p\,\d\alpha_n(x)
+	\longrightarrow
+	\int d(x,x_0)^p\,\d\alpha(x).
+\end{equation}
+These standard facts explain why Wasserstein compactness arguments combine tightness with moment bounds~\cite{Villani09,ambrosio2006gradient}.
+
+\paragraph{Conditional laws and disintegration.}
+Flow matching repeatedly conditions a latent trajectory on its current position, so the underlying measure-theoretic operation should be explicit. If $\pi\in\Pp(\X\times\Y)$ has first marginal $\alpha$, the disintegration theorem on Polish spaces provides a measurable family $(\pi_x)_{x\in\X}\subset\Pp(\Y)$ such that
+\begin{equation}\label{eq-primer-disintegration}
+	\int_{\X\times\Y} h(x,y)\,\d\pi(x,y)
+	=
+	\int_\X\left(\int_\Y h(x,y)\,\d\pi_x(y)\right)\d\alpha(x)
+\end{equation}
+for every bounded measurable $h$. The family is unique for $\alpha$-almost every $x$ and is the conditional law of $Y$ given $X=x$. In particular, for an integrable vector-valued function $q(x,y)$,
+\[
+	\EE[q(X,Y)\mid X=x]=\int q(x,y)\,\d\pi_x(y).
+\]
+This is the conditional expectation that later turns latent path velocities into Eulerian vector fields.
+
 \begin{defn}[Discrete measure]\label{def-discrete-measure}
 	A discrete probability measure on $\X$ is
 	\begin{equation}\label{eq-discr-meas}
@@ -291,6 +327,20 @@ Figure~\ref{fig:kantorovich-coupling-polylines} gives a first visual dictionary 
 	The set $\Couplings(\alpha,\beta)$ is tight and closed for weak convergence, hence compact. The functional $\pi\mapsto\int c\,\d\pi$ is continuous on this compact set.
 \end{proof}
 
+\paragraph{Dual potentials.}
+The dual formulation exposes the scalar potentials that later reappear in Hamilton--Jacobi equations, entropic transport and adversarial objectives. Under the preceding compactness assumptions,
+\begin{equation}\label{eq-primer-kantorovich-duality}
+	\MK_c(\alpha,\beta)
+	=
+	\sup_{f,g}
+	\left\{
+	\int_\X f\,\d\alpha+\int_\Y g\,\d\beta
+	\;:\;
+	f(x)+g(y)\leq c(x,y)
+	\right\},
+\end{equation}
+where the supremum may be taken over continuous potentials. Weak duality follows by integrating the pointwise constraint against any coupling. Strong duality is the infinite-dimensional linear-programming duality theorem for transport~\cite{Kantorovich42,Villani09}. At optimality, complementary slackness gives $f(x)+g(y)=c(x,y)$ on the support of an optimal plan.
+
 \subsubsection{Discrete Kantorovich Problem}
 \label{sec-discrete-relaxation}
 
@@ -366,6 +416,25 @@ Two complementary pictures of the discrete relaxation are useful. Figure~\ref{fi
 \caption{\emph{Coupling matrices with their prescribed marginals.} The central grayscale image displays $P_{ij}$; the red curve on the left is the source marginal $a$, and the blue curve on top is the target marginal $b$. The independent product plan is diffuse, whereas the one-dimensional optimal plan concentrates near the monotone quantile correspondence.}
 \label{fig:kantorovich-coupling-matrix-marginals}
 \end{figure}
+
+\paragraph{One-dimensional transport by quantiles.}
+The line is the exceptional setting where the optimal coupling is explicit without any density assumption. For $\alpha\in\Pp(\RR)$, let
+\[
+	F_\alpha(x)=\alpha(( -\infty,x]),
+	\qquad
+	Q_\alpha(s)=\inf\{x:F_\alpha(x)\geq s\},\quad s\in(0,1).
+\]
+For every $p\geq1$ and $\alpha,\beta\in\Pp_p(\RR)$, the monotone coupling
+\begin{equation}\label{eq-primer-quantile-coupling}
+	\pi=(Q_\alpha,Q_\beta)_\sharp\mathcal U_{(0,1)}
+\end{equation}
+is optimal for $|x-y|^p$, and therefore
+\begin{equation}\label{eq-primer-quantile-wasserstein}
+	\Wass_p^p(\alpha,\beta)
+	=
+	\int_0^1|Q_\alpha(s)-Q_\beta(s)|^p\,\d s.
+\end{equation}
+If $\alpha$ has no atoms, the coupling is induced by the monotone map $T=Q_\beta\circ F_\alpha$. The proof is the uncrossing argument: convexity of $r\mapsto|r|^p$ shows that swapping two crossed pairs cannot increase the cost, and approximation by empirical measures yields the general statement. Thus one-dimensional Wasserstein geometry is linearized by quantile functions, a fact used below for geodesics, scalar gradient flows and numerical illustrations.
 
 \subsection{Brenier Maps and Quadratic OT}
 \label{sec-monge-existence-uniqueness}
@@ -605,5 +674,47 @@ The last two primer figures should be read together. Figure~\ref{fig:kantorovich
 \end{figure}
 
 This geodesic viewpoint is the static counterpart of the Benamou--Brenier formulation in Section~\ref{sec-dynamic-optimal-transport}. It is also the geometry behind the Wasserstein gradient flows of Section~\ref{sec-wasserstein-gradient-flows}.
+
+\subsection{Functionals and Discrepancies on Measures}
+\label{sec-primer-functionals-discrepancies}
+
+The metric specifies how a law is allowed to move; a functional specifies what the evolution tries to decrease. The following compact dictionary fixes the objects used repeatedly in the gradient-flow and generative-model sections.
+
+\paragraph{First variations and scores.}
+Let $f:\Pp(\RR^d)\to\RR\cup\{+\infty\}$. A first variation $\delta f(\alpha)$ is a function, defined up to an additive constant, such that for signed perturbations $\eta$ of zero total mass,
+\begin{equation}\label{eq-primer-first-variation}
+	f(\alpha+\varepsilon\eta)
+	=
+	f(\alpha)+\varepsilon\int\delta f(\alpha)(x)\,\d\eta(x)+o(\varepsilon).
+\end{equation}
+When $\alpha=\rho\,\d x$ has a positive differentiable density, its score is $\nabla\log\rho$. The spatial gradient $\nabla\delta f(\alpha)$, rather than the additive normalization of $\delta f(\alpha)$, determines the Wasserstein velocity in Section~\ref{sec-wasserstein-gradient-flows}.
+
+\paragraph{Relative entropy and kernel discrepancies.}
+If $\alpha\ll\beta$, the relative entropy is
+\begin{equation}\label{eq-primer-relative-entropy}
+	\KL(\alpha|\beta)
+	=
+	\int\log\left(\frac{\d\alpha}{\d\beta}\right)\d\alpha,
+\end{equation}
+and it is $+\infty$ otherwise. For smooth positive densities, its first variation is $\log(\rho_\alpha/\rho_\beta)$ up to a constant. If $k$ is a positive-definite kernel with reproducing-kernel Hilbert space $\RKHS_k$, the maximum mean discrepancy is
+\begin{equation}\label{eq-primer-mmd}
+	\MMD_k^2(\alpha,\beta)
+	=
+	\left\|\int k(x,\cdot)\,\d(\alpha-\beta)(x)\right\|_{\RKHS_k}^2
+	=
+	\iint k(x,y)\,\d(\alpha-\beta)(x)\d(\alpha-\beta)(y).
+\end{equation}
+Its first variation with respect to $\alpha$ is $2\int k(x,y)\,\d(\alpha-\beta)(y)$. Entropy produces local score-driven diffusion, whereas MMD produces a nonlocal interaction field; this contrast is central in the particle examples below.
+
+\paragraph{Sliced Wasserstein discrepancy.}
+For $\theta\in\Sphere^{d-1}$, set $P_\theta(x)=\dotp{\theta}{x}$ and let $\sigma$ be the uniform probability measure on the sphere. The sliced quadratic Wasserstein distance is
+\begin{equation}\label{eq-primer-sliced-wasserstein}
+	\SW_2^2(\alpha,\beta)
+	=
+	\int_{\Sphere^{d-1}}
+	\Wass_2^2\bigl((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\beta\bigr)
+	\d\sigma(\theta).
+\end{equation}
+Each integrand is computed by the one-dimensional quantile formula~\eqref{eq-primer-quantile-wasserstein}. This makes $\SW_2$ computationally attractive, while its Wasserstein gradient still defines a genuinely multidimensional flow through the average of projected one-dimensional velocities.
 
 \FloatBarrier

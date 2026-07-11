@@ -13,8 +13,12 @@ Create a standalone long review paper titled **PDE4ML: PDEs for Machine Learning
   - Monge problem for discrete measures;
   - Kantorovich problem for general measures;
   - Kantorovich problem for discrete measures;
+  - weak convergence, moment classes and Wasserstein convergence;
+  - conditional laws and disintegration;
+  - Kantorovich dual potentials and one-dimensional quantile transport;
   - Brenier theorem;
   - Wasserstein metric properties and geodesics.
+  - first variations and the entropy, MMD and sliced-Wasserstein discrepancies used later.
 - Reuse the current **Dynamic Optimal Transport** material as a top-level section.
 - Reuse the current **Wasserstein Gradient Flows** material as a top-level section.
 - Reuse the current **Generative Models via Transportation** material as a top-level section.

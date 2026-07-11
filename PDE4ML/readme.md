@@ -4,7 +4,7 @@ This directory contains a standalone long-review project on PDE tools for machin
 
 The project is currently a curated reorganization of material from the full OT4ML manuscript. It keeps only the foundations needed for PDE and ML dynamics:
 
-- a compact OT primer covering Monge, Kantorovich, Brenier maps and Wasserstein geometry;
+- a self-contained OT primer covering probability measures, moments, disintegration, Monge and Kantorovich formulations, dual potentials, quantile transport, Brenier maps, Wasserstein geometry, first variations and recurring discrepancies;
 - dynamic optimal transport and Benamou--Brenier formulations;
 - Wasserstein gradient flows, JKO schemes, particle limits and mean-field training;
 - transportation views of generative models, diffusion, flow matching, transformers and Gaussian closures.
@@ -14,7 +14,7 @@ The project is currently a curated reorganization of material from the full OT4M
 - `PDE4ML.tex`: main LaTeX source.
 - `PDE4ML.pdf`: compiled review.
 - `Makefile`: local build helper.
-- `sections/primer-ot.tex`: new compact OT primer.
+- `sections/primer-ot.tex`: self-contained OT primer containing the prerequisites used by the PDE sections.
 - `sections/dynamic-ot.tex`: copied from the full manuscript and converted into a review-paper section.
 - `sections/wasserstein-gradient-flows.tex`: copied from the full manuscript and converted into a review-paper section.
 - `sections/transportation-models.tex`: copied from the full manuscript and converted into a review-paper section.
