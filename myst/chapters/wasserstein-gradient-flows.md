@@ -1065,46 +1065,7 @@ a smoothed grid density. The noise slider controls the entropy strength.
 
 <iframe class="ot4ml-live-frame" title="Fokker-Planck representation controls" src="../live/gradflow-fokker.html" loading="lazy" style="width:100%;height:570px;border:0;display:block;"></iframe>
 
-(alg-jko-minimizing-movement)=
-:::{admonition} Algorithm: JKO minimizing movement
-:class: ot4ml-algorithm
 
-**Input:** Energy $f$, initial measure $\alpha^0$, time step $\tau>0$, number of steps $K$.
-
-**Output:** Discrete gradient-flow trajectory $(\alpha^k)_{k=0}^K$.
-
-**For** $k=0,\ldots,K-1$ **do**:
-
-> $\alpha^{k+1} \in \uargmin{\alpha\in\Pp_2(\RR^d)} \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).$
->
-> **Set** $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
->
-
-**Return** $(\alpha^k)_{k=0}^K$ and $\alpha_t^\tau$.
-:::
-
-(alg-empirical-wasserstein-particle-flow)=
-:::{admonition} Algorithm: Empirical Wasserstein particle descent
-:class: ot4ml-algorithm
-
-**Input:** Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$, tolerance $\mathrm{tol}$.
-
-**Output:** Particle trajectory $(X^k)_k$ and empirical measures.
-
-**Define**
-$F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).$
-
-**For** $k=0,1,\ldots$ **do**:
-
->
-> **For** $i=1,\ldots,n$ **do**
-
->> $g_i^k=n\nabla_{x_i}F(X^k), \qquad x_i^{k+1}=x_i^k-h\,g_i^k.$
-
-> **If** $\max_i\norm{x_i^{k+1}-x_i^k}\leq \mathrm{tol}$ **then**:
-
->> **Return** $\frac1n\sum_i\delta_{x_i^{k+1}}$.
-:::
 
 
 :::{admonition} Example: Linear potentials generate independent particles
@@ -1179,40 +1140,6 @@ d_{L^2}^2(\alpha,\beta)=\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
 so $\delta\mathcal D/\delta\rho=-\Delta\rho$ and the $L^2$ gradient flow $\partial_t\rho_t=-\delta\mathcal D/\delta\rho(\rho_t)$ gives $\partial_t\rho_t=\Delta\rho_t$. This viewpoint says that heat flow decreases oscillations and regularizes the density. In Wasserstein geometry, the same equation is instead the $\Wass_2$ gradient flow of the Shannon entropy $\int \rho\log\rho\d x$, so the driving mechanism is entropic spreading. The example is a useful warning: explaining a dynamics as a gradient flow requires specifying both an energy and a metric, and different pairs $(f,d)$ may produce the same PDE.
 :::
 
-(alg-mmd-particle-flow)=
-:::{admonition} Algorithm: MMD particle flow against a teacher law
-:class: ot4ml-algorithm
-
-**Input:** Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$ or teacher samples $(y_b)_{b=1}^B$, kernel $k$, step size $h$.
-
-**Output:** Particle trajectory targeting $\beta$.
-
-**For** $k=0,1,\ldots$ **do**:
-
->
-> **For** $i=1,\ldots,n$ **do**
-
->> **Set** self-interaction $r_i^k=-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)$.
->>
->> **If** $\beta$ is available analytically **then**:
-
->>>
->>> **Set** teacher attraction $a_i^k=2\int\nabla_x k(x_i^k,y)\d\beta(y)$.
->>>
-
->> **If** only samples $(y_b)_{b=1}^B$ are available **then**:
-
->>>
->>> **Set** $a_i^k=\frac{2}{B}\sum_{b=1}^B\nabla_x k(x_i^k,y_b)$.
->>>
-
->> **Set** velocity $v_i^k=r_i^k+a_i^k$.
->>
->> **Update**
->> $x_i^{k+1}=x_i^k+h\,v_i^k.$
-
-**Return** $(x_i^k)_{i,k}$.
-:::
 
 
 :::{admonition} Example: Langevin drift as a free-energy flow

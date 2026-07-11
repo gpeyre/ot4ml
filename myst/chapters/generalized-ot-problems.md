@@ -588,33 +588,6 @@ Classical applications include two-dimensional image interpolation,
 three-dimensional shape interpolation, and barycenters on surfaces where the
 ground cost is the square of the geodesic distance {cite:p}`2015-solomon-siggraph`.
 
-(alg-gaussian-barycenter-fixed-point)=
-:::{admonition} Algorithm: Gaussian barycenter fixed point
-:class: ot4ml-algorithm
-
-**Input:** Gaussian measures $\Gaussian(\mean_s,\cov_s)$ with
-$\cov_s\succeq0$ and at least one positive-definite active covariance,
-positive weights $\lambda_s$, tolerance $\mathrm{tol}$.
-
-**Output:** Gaussian barycenter $\Gaussian(\mean,\cov)$.
-
-**Set**
-$\mean=\sum_s\lambda_s\mean_s .$
-
-**Initialize:** Set $\cov^{(0)}=\sum_s\lambda_s\cov_s\succ0$.
-
-**For** $k=0,1,\ldots$ **do**:
-
-> $S^{(k)} = \sum_s\lambda_s \left((\cov^{(k)})^{1/2}\cov_s(\cov^{(k)})^{1/2}\right)^{1/2}.$
->
-> $\cov^{(k+1)} = (\cov^{(k)})^{-1/2} \left(S^{(k)}\right)^2 (\cov^{(k)})^{-1/2}.$
->
-> **If** $\norm{\cov^{(k+1)}-\cov^{(k)}}\leq\mathrm{tol}$ **then**:
-
->>
->> **Set** $\cov=\cov^{(k+1)}$.
->> **Return** $\Gaussian(\mean,\cov)$.
-:::
 
 (alg-entropic-barycenter-sinkhorn)=
 :::{admonition} Algorithm: Entropic barycenter Sinkhorn
@@ -2350,26 +2323,6 @@ $C_\theta$ is affine, and connects inverse OT with generalized Sinkhorn
 iterations and transport-regularized inverse problems
 {cite:p}`karlsson2016generalized,ma2020learning`.
 
-(alg-inverse-ot-dual-gap-learning)=
-:::{admonition} Algorithm: Inverse OT by dual-gap fitting
-:class: ot4ml-algorithm
-
-**Input:** Observed plan $\widehat P\in\CouplingsD(\a,\b)$, features
-$C^{(r)}$, normalized convex feasible set $\Theta$, convex regularizer $R$,
-and weight $\lambda>0$.
-
-**Output:** Identified cost $C_{\theta^\star}$ and potentials $(f^\star,g^\star)$.
-
-**Set** parametric cost:
-$C_\theta=\sum_r\theta_r C^{(r)}.$
-
-**Let** $(\theta^\star,f^\star,g^\star)$ be a minimizer of
-$\min_{\theta\in\Theta,f,g} R(\theta)+\lambda \sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)$
-
-**Subject to**
-$f_i+g_j\leq(C_\theta)_{i,j} \qquad\text{for all }(i,j).$
-**Return** $\theta^\star$, $C_{\theta^\star}$, and $(f^\star,g^\star)$.
-:::
 
 
 (sec-weak-ot)=

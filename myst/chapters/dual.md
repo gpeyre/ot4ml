@@ -981,25 +981,6 @@ fixed point after one full cycle:
 =(f^{c\bar c},f^c).
 ```
 
-(alg-hard-c-transform-closure)=
-:::{admonition} Algorithm: Hard alternating $c$-transform closure
-:class: ot4ml-algorithm
-
-**Input:** Source potential $f$ on $\X$, cost $c$.
-
-**Output:** A $c$-closed admissible pair $(\tilde f,\tilde g)$.
-
-**Set** target best response:
-$g=f^c$, with $g(y)=\inf_{x\in\X}\{c(x,y)-f(x)\}$.
-
-**Set** source closure:
-$\tilde f=g^{\bar c}=f^{c\bar c}$.
-
-**Set** closed target potential:
-$\tilde g=\tilde f^c=f^{c\bar c c}=f^c$.
-
-**Return** $(\tilde f,\tilde g)=(f^{c\bar c},f^c)$.
-:::
 
 The resulting pair is dual feasible but need not maximize the joint objective,
 because its value still depends on the arbitrary initial $f$. Entropic

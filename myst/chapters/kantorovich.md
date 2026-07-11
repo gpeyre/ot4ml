@@ -403,20 +403,6 @@ grid. Induction proves that the complete sweep is optimal. Sorting has cost
 $O(n\log n+m\log m)$, and the sweep creates at most $n+m-1$ nonzero entries.
 :::
 
-(alg-weighted-one-dimensional-sweep)=
-:::{admonition} Algorithm: Weighted one-dimensional sweep
-:class: ot4ml-algorithm
-
-**Input:** One-dimensional atoms $(x_i,\a_i)$ and $(y_j,\b_j)$; convex cost $h(x-y)$.
-
-**Output:** Monotone optimal coupling $\P$.
-
-**Sort** atoms:
-$x_1\leq\cdots\leq x_n, \qquad y_1\leq\cdots\leq y_m.$
-
-**Set** $\P$ to the output of Algorithm {ref}`alg-north-west-corner` applied to the sorted weights $(\a_i)_i$ and $(\b_j)_j$.
-**Return** $\P$.
-:::
 
 
 (def-permutation-matrices)=
@@ -1519,32 +1505,6 @@ own segment. When the optimal plan is not induced by a map, one source atom can
 split into several moving atoms. If the optimal plan is not unique, different
 optimal plans may also induce different $\Wass_2$ geodesics.
 
-(alg-plan-displacement-interpolation)=
-:::{admonition} Algorithm: Displacement interpolation from a transport plan
-:class: ot4ml-algorithm
-
-**Input:** Measures $\al,\be$ on $\RR^d$, time $t\in[0,1]$.
-
-**Output:** Displacement interpolant $\al_t$.
-
-**Let** $\pi^\star$ be any minimizer of the quadratic Kantorovich problem.
-
-**Set** interpolation map:
-$e_t(x,y)=(1-t)x+t y.$
-
-**Push forward:**
-$\al_t=(e_t)_\sharp\pi^\star.$
-
-**If** $\pi^\star=\sum_{i,j}P^\star_{ij}\delta_{(x_i,y_j)}$ **then**:
-
->
-> **Compute**
-> $\al_t= \sum_{i,j}P^\star_{ij} \delta_{(1-t)x_i+t y_j}.$
-
-**Return** $\al_t$.
-:::
-
-
 (prop-plan-interpolation-w2-geodesic)=
 :::{admonition} Proposition: Optimal-Plan Interpolation Is A $\Wass_2$ Geodesic
 :class: important
@@ -2288,10 +2248,11 @@ by its worst penalized perturbation. For $p=1$ and an $L_\theta$-Lipschitz loss,
 \frac1n\sum_i\ell_\theta(z_i)+\rho L_\theta.
 ```
 
-Figure {ref}`fig:kantorovich-dro-ambiguity` shows this robustification as a
-spatial perturbation picture. The Wasserstein ball permits empirical atoms to
-move in the data geometry, while the global transport budget controls how many
-atoms can move far toward high-loss regions.
+Figure {ref}`fig:kantorovich-dro-ambiguity` shows this robustification for a
+genuinely nonlinear classification problem. The red and blue samples form two
+noisy interlocking crescents whose opposing tips overlap locally. The
+Wasserstein adversary transports samples toward high-loss regions under a
+global root-mean-square displacement budget.
 
 (fig:kantorovich-dro-ambiguity)=
 :::{div}
@@ -2303,16 +2264,18 @@ atoms can move far toward high-loss regions.
 show_book_figure("kantorovich-dro-ambiguity")
 ```
 
-*Wasserstein distributional robustness as a geometric ambiguity set. The red
-empirical atoms sit next to a dashed linear decision boundary. Local disks
-suggest admissible spatial perturbations, and the last panel shows a simple
-budgeted adversary moving atoms along a fixed loss-gradient direction.*
+*Wasserstein robustness reshapes the separator between two noisy interlocking
+moons. The black curve is the learned zero-score boundary. Filled dots are
+observed samples; hollow dots and violet segments show a deterministic
+approximation of the adversarial transport for increasing quadratic
+Wasserstein radii.*
 :::
 
 :::{div}
 :class: ot4ml-interactive-note
-**Interactive panel.** Increase the Wasserstein radius to see how a robust
-classifier protects against spatial adversarial shifts of the empirical atoms.
+**Interactive panel.** Increase the Wasserstein radius to move the two moons
+toward high-loss regions and observe how their winding nonlinear separator
+reorganizes.
 :::
 
 <iframe class="ot4ml-live-frame" title="Wasserstein DRO classifier controls" src="../live/kantorovich-dro.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>

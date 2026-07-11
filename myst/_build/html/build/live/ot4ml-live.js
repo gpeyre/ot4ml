@@ -9112,43 +9112,175 @@ function drawKantoBirkhoff() {
 
 function drawKantoDRO() {
   const rho = val("kdroRho");
+  const bandwidth = val("kdroBandwidth");
   const seed = val("kdroSeed");
   const random = rng(seed);
   const { ctx, w, h } = resizeCanvas(410);
-  const box = { x: 18, y: 28, w: w - 36, h: h - 58 };
-  const pts = [];
-  for (let i = 0; i < 52; i += 1) {
-    const label = i < 26 ? -1 : 1;
-    const cx = label < 0 ? -0.55 : 0.55;
-    const cy = label < 0 ? -0.25 : 0.25;
-    pts.push([cx + 0.42 * randn(random), cy + 0.34 * randn(random), label]);
+  const box = { x: 22, y: 24, w: w - 44, h: h - 54 };
+  const points = [];
+  const labels = [];
+  const nPerClass = 66;
+  const rotationAngle = 17 * Math.PI / 180;
+  const rotate = (point) => [
+    Math.cos(rotationAngle) * point[0] - Math.sin(rotationAngle) * point[1],
+    Math.sin(rotationAngle) * point[0] + Math.cos(rotationAngle) * point[1],
+  ];
+  const perturbMoon = (point, theta, tipWeight) => {
+    const normalNoise = (0.030 + 0.032 * tipWeight) * randn(random);
+    const tangentNoise = (0.018 + 0.014 * tipWeight) * randn(random);
+    return [
+      point[0] + normalNoise * Math.cos(theta) - tangentNoise * Math.sin(theta),
+      point[1] + normalNoise * Math.sin(theta) + tangentNoise * Math.cos(theta),
+    ];
+  };
+  for (let i = 0; i < nPerClass; i += 1) {
+    const theta = 0.025 + ((Math.PI - 0.05) * i) / (nPerClass - 1) + 0.010 * randn(random);
+    const tipWeight = Math.exp(-(((theta - Math.PI) / 0.34) ** 2));
+    const point = perturbMoon(
+      [0.64 * (1 - Math.cos(theta)) - 0.44, 0.27 - 0.53 * Math.sin(theta)],
+      theta,
+      tipWeight,
+    );
+    points.push(rotate(point));
+    labels.push(1);
   }
-  const lim = { xmin: -1.85, xmax: 1.85, ymin: -1.45, ymax: 1.45 };
-  const X = (p) => box.x + ((p[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
-  const Y = (p) => box.y + box.h - ((p[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
-  ctx.fillStyle = "#fbfcfd"; ctx.fillRect(box.x, box.y, box.w, box.h);
-  ctx.strokeStyle = "#d8dee8"; ctx.strokeRect(box.x, box.y, box.w, box.h);
-  function boundary(offset, color, width, dash = []) {
-    ctx.save(); ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
-    const x0 = lim.xmin, x1 = lim.xmax;
-    ctx.moveTo(X([x0, 0.72 * x0 + offset]), Y([x0, 0.72 * x0 + offset]));
-    ctx.lineTo(X([x1, 0.72 * x1 + offset]), Y([x1, 0.72 * x1 + offset]));
-    ctx.stroke(); ctx.restore();
+  for (let i = 0; i < nPerClass; i += 1) {
+    const theta = 0.025 + ((Math.PI - 0.05) * i) / (nPerClass - 1) + 0.010 * randn(random);
+    const tipWeight = Math.exp(-((theta / 0.34) ** 2));
+    const point = perturbMoon(
+      [0.64 * Math.cos(theta) - 0.20, 0.53 * Math.sin(theta) - 0.07],
+      theta,
+      tipWeight,
+    );
+    points.push(rotate(point));
+    labels.push(-1);
   }
-  boundary(0, "#111827", 1.6);
-  boundary(0.32 * rho, "rgba(123,50,148,.8)", 1.25, [5, 4]);
-  boundary(0.62 * rho, "rgba(33,102,172,.85)", 1.25, [2, 4]);
-  const nrm = Math.hypot(0.72, -1);
-  const normal = [0.72 / nrm, -1 / nrm];
-  for (const p of pts) {
-    const toward = p[2] > 0 ? -1 : 1;
-    const moved = [p[0] + toward * rho * 0.28 * normal[0], p[1] + toward * rho * 0.28 * normal[1]];
-    ctx.strokeStyle = "rgba(35,45,55,.22)"; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(X(p), Y(p)); ctx.lineTo(X(moved), Y(moved)); ctx.stroke();
-    ctx.fillStyle = p[2] < 0 ? RED : BLUE; ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.arc(X(p), Y(p), 5 + 9 * rho, 0, 2 * Math.PI); ctx.fill(); ctx.globalAlpha = 1;
-    ctx.beginPath(); ctx.arc(X(p), Y(p), 3.2, 0, 2 * Math.PI); ctx.fill();
+  const adversarial = points.map((point, i) => {
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (let j = 0; j < points.length; j += 1) {
+      if (labels[j] === labels[i]) continue;
+      const distance = Math.hypot(points[j][0] - point[0], points[j][1] - point[1]);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = points[j];
+      }
+    }
+    const scale = rho / Math.max(nearestDistance, 1e-8);
+    return [
+      point[0] + scale * (nearest[0] - point[0]),
+      point[1] + scale * (nearest[1] - point[1]),
+    ];
+  });
+  const kernel = (x, z) => Math.exp(-Math.hypot(x[0] - z[0], x[1] - z[1]) / bandwidth);
+  const n = points.length;
+  const gram = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => kernel(points[i], points[j])));
+  const displacedGram = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => kernel(adversarial[i], points[j])));
+  const coefficients = Array(n).fill(0);
+  let intercept = 0;
+  const ridge = 0.018;
+  for (let iteration = 0; iteration < 260; iteration += 1) {
+    const scoreDerivative = Array(n).fill(0);
+    for (let i = 0; i < n; i += 1) {
+      let score = intercept;
+      for (let j = 0; j < n; j += 1) score += displacedGram[i][j] * coefficients[j];
+      scoreDerivative[i] = -labels[i] / (n * (1 + Math.exp(clamp(labels[i] * score, -40, 40))));
+    }
+    const gradient = Array(n).fill(0);
+    for (let j = 0; j < n; j += 1) {
+      for (let i = 0; i < n; i += 1) gradient[j] += displacedGram[i][j] * scoreDerivative[i];
+      let regularization = 0;
+      for (let k = 0; k < n; k += 1) regularization += gram[j][k] * coefficients[k];
+      gradient[j] += ridge * regularization;
+    }
+    const step = 0.48 / (1 + 0.004 * iteration);
+    for (let j = 0; j < n; j += 1) coefficients[j] -= step * gradient[j];
+    intercept -= step * scoreDerivative.reduce((sum, value) => sum + value, 0);
   }
-  drawSmallLabel(ctx, "plain / medium / large robust boundary", box.x + box.w / 2, h - 14);
-  setStatus(`rho ${rho.toFixed(2)}; disks suggest the ambiguity set and arrows show worst-case loss motion.`);
+  const scoreAt = (point) => {
+    let score = intercept;
+    for (let j = 0; j < n; j += 1) score += coefficients[j] * kernel(point, points[j]);
+    return score;
+  };
+  const lim = { xmin: -1.12, xmax: 1.02, ymin: -0.65, ymax: 0.78 };
+  const X = (point) => box.x + ((point[0] - lim.xmin) / (lim.xmax - lim.xmin)) * box.w;
+  const Y = (point) => box.y + box.h - ((point[1] - lim.ymin) / (lim.ymax - lim.ymin)) * box.h;
+  const backgroundStep = 5;
+  for (let py = box.y; py < box.y + box.h; py += backgroundStep) {
+    for (let px = box.x; px < box.x + box.w; px += backgroundStep) {
+      const point = [
+        lim.xmin + ((px - box.x + backgroundStep / 2) / box.w) * (lim.xmax - lim.xmin),
+        lim.ymax - ((py - box.y + backgroundStep / 2) / box.h) * (lim.ymax - lim.ymin),
+      ];
+      const probability = 1 / (1 + Math.exp(-clamp(scoreAt(point), -30, 30)));
+      const confidence = Math.abs(2 * probability - 1);
+      ctx.fillStyle = probability >= 0.5
+        ? `rgba(33,102,172,${0.06 + 0.17 * confidence})`
+        : `rgba(215,48,39,${0.06 + 0.17 * confidence})`;
+      ctx.fillRect(px, py, backgroundStep + 1, backgroundStep + 1);
+    }
+  }
+  const resolution = 72;
+  const values = Array.from({ length: resolution }, (_, iy) => Array.from({ length: resolution }, (_, ix) => {
+    const point = [
+      lerp(lim.xmin, lim.xmax, ix / (resolution - 1)),
+      lerp(lim.ymin, lim.ymax, iy / (resolution - 1)),
+    ];
+    return scoreAt(point);
+  }));
+  const interpolateEdge = (a, b, va, vb) => {
+    const t = va === vb ? 0.5 : va / (va - vb);
+    return [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
+  };
+  ctx.strokeStyle = "#202020";
+  ctx.lineWidth = 2.0;
+  for (let iy = 0; iy < resolution - 1; iy += 1) {
+    for (let ix = 0; ix < resolution - 1; ix += 1) {
+      const corners = [
+        [lerp(lim.xmin, lim.xmax, ix / (resolution - 1)), lerp(lim.ymin, lim.ymax, iy / (resolution - 1))],
+        [lerp(lim.xmin, lim.xmax, (ix + 1) / (resolution - 1)), lerp(lim.ymin, lim.ymax, iy / (resolution - 1))],
+        [lerp(lim.xmin, lim.xmax, (ix + 1) / (resolution - 1)), lerp(lim.ymin, lim.ymax, (iy + 1) / (resolution - 1))],
+        [lerp(lim.xmin, lim.xmax, ix / (resolution - 1)), lerp(lim.ymin, lim.ymax, (iy + 1) / (resolution - 1))],
+      ];
+      const v = [values[iy][ix], values[iy][ix + 1], values[iy + 1][ix + 1], values[iy + 1][ix]];
+      const crossings = [];
+      for (const [a, b] of [[0, 1], [1, 2], [2, 3], [3, 0]]) {
+        if ((v[a] <= 0 && v[b] > 0) || (v[a] > 0 && v[b] <= 0)) crossings.push(interpolateEdge(corners[a], corners[b], v[a], v[b]));
+      }
+      if (crossings.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(X(crossings[0]), Y(crossings[0]));
+        ctx.lineTo(X(crossings[1]), Y(crossings[1]));
+        ctx.stroke();
+      }
+    }
+  }
+  if (rho > 1e-8) {
+    for (let i = 0; i < n; i += 1) {
+      ctx.strokeStyle = "rgba(123,50,148,.42)";
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(X(points[i]), Y(points[i]));
+      ctx.lineTo(X(adversarial[i]), Y(adversarial[i]));
+      ctx.stroke();
+      ctx.strokeStyle = labels[i] > 0 ? "rgba(33,102,172,.65)" : "rgba(215,48,39,.65)";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(X(adversarial[i]), Y(adversarial[i]), 3.5, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+  }
+  for (let i = 0; i < n; i += 1) {
+    ctx.fillStyle = labels[i] > 0 ? BLUE : RED;
+    ctx.beginPath();
+    ctx.arc(X(points[i]), Y(points[i]), 3.8, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "#d8dee8";
+  ctx.lineWidth = 0.8;
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  drawSmallLabel(ctx, "Laplacian-kernel logistic boundary", box.x + box.w / 2, 15);
+  setStatus(`W2 radius ${rho.toFixed(2)}; Laplacian bandwidth ${bandwidth.toFixed(2)}. Hollow samples show the deterministic RMS-budget adversary.`);
 }
 
 function bridgeCoupling(source, target, eps) {
@@ -11542,7 +11674,8 @@ function init() {
     bind(drawKantoBirkhoff);
   } else if (kind === "kantodro") {
     controls.innerHTML = [
-      slider("kdroRho", "radius", 0.55, 0, 1.1, 0.01),
+      slider("kdroRho", "W2 radius", 0.055, 0, 0.13, 0.005),
+      slider("kdroBandwidth", "Laplacian bandwidth", 0.24, 0.16, 0.38, 0.01),
       slider("kdroSeed", "seed", 4090, 4050, 4140, 1),
     ].join("");
     bind(drawKantoDRO);

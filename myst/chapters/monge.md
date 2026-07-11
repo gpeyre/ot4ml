@@ -2024,32 +2024,6 @@ then upgrade convergence in law to convergence in $L^2(\al)$.
 In higher dimension, Brenier maps for the quadratic cost are gradients of convex functions, and such maps do not generally remain gradients after composition. The simplest obstruction is linear. If $\T_1(x)=A_1x$ and $\T_2(x)=A_2x$ with $A_1,A_2$ symmetric positive definite, then $\T_2\circ\T_1$ has matrix $A_2A_1$. It is a gradient field only when this product is symmetric, equivalently $A_1A_2=A_2A_1$. Gaussian transport gives a concrete instance: between nondegenerate Gaussian laws, the Brenier map is affine with symmetric positive definite linear part. Compositions of Gaussian optimal maps are therefore optimal only in special commuting situations, for instance when all covariance matrices are simultaneously diagonalizable. Otherwise the composition contains a rotational or shearing component and is not the Brenier map between the initial and final Gaussians.
 :::
 
-(alg-quantile-rearrangement-geodesic)=
-:::{admonition} Algorithm: Quantile rearrangement and one-dimensional geodesic
-:class: ot4ml-algorithm
-
-**Input:** One-dimensional probability measures $\al,\be$; time $t\in[0,1]$.
-
-**Output:** Quantile coupling, Monge map when defined, and geodesic point $\al_t$.
-
-**Compute** $\cumul{\al}$, $\cumul{\be}$ and generalized inverses.
-
-**Couple** equal quantile levels:
-$X=\cumul{\al}^{-1}(r), \qquad Y=\cumul{\be}^{-1}(r), \qquad r\in(0,1).$
-
-**If** $\al$ has no atoms **then**:
-
->
-> **Set**
-> $T(x)=\cumul{\be}^{-1}(\cumul{\al}(x)).$
-
-**Interpolate** quantiles:
-$Q_t(r)=(1-t)\cumul{\al}^{-1}(r)+t\cumul{\be}^{-1}(r).$
-
-**Set** $\al_t=(Q_t)_\sharp\mathrm{Leb}_{[0,1]}.$
-
-**Return** $(X,Y)$, $T$ if defined, and $\al_t$.
-:::
 
 (alg-triangular-rearrangement)=
 :::{admonition} Algorithm: Knothe--Rosenblatt triangular rearrangement

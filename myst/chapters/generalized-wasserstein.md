@@ -1461,54 +1461,7 @@ sorting induces a lifted feasible plan in the original plane.
 
 <iframe class="ot4ml-live-frame" title="Sliced Wasserstein controls" src="../live/generalized-sliced.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
-(alg-monte-carlo-sliced-wasserstein)=
-:::{admonition} Algorithm: Monte Carlo sliced Wasserstein
-:class: ot4ml-algorithm
 
-**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, exponent $p\geq1$, number of directions $L$.
-
-**Output:** Monte Carlo estimate $\widehat{\SW}_p^p(\alpha,\beta)$ for
-$\alpha=n^{-1}\sum_i\delta_{x_i}$ and $\beta=n^{-1}\sum_i\delta_{y_i}$.
-
-**For** $\ell=1,\ldots,L$ **do**:
-
->
-> **Sample** $\theta_\ell\sim\sigma$ on $\Sphere^{d-1}$.
->
-> **Set** $s_i^\ell=\dotp{\theta_\ell}{x_i}$ and $t_i^\ell=\dotp{\theta_\ell}{y_i}$.
->
-> **Let** $\sigma_\ell,\tau_\ell$ be stable sorting permutations:
-> $s_{\sigma_\ell(1)}^\ell\leq\cdots\leq s_{\sigma_\ell(n)}^\ell, \quad t_{\tau_\ell(1)}^\ell\leq\cdots\leq t_{\tau_\ell(n)}^\ell.$
->
-> **Compute**
-> $E_\ell=\frac1n\sum_{i=1}^n\abs{s_{\sigma_\ell(i)}^\ell-t_{\tau_\ell(i)}^\ell}^p.$
-
-**Return** $\widehat{\SW}_p^p(\alpha,\beta)=\frac1L\sum_{\ell=1}^L E_\ell.$
-:::
-
-(alg-lifted-min-sliced-matching)=
-:::{admonition} Algorithm: Lifted min-sliced matching
-:class: ot4ml-algorithm
-
-**Input:** Equal-weight point clouds $(x_i)_{i=1}^n$, $(y_i)_{i=1}^n$, finite direction set $\Theta\subset\Sphere^{d-1}$.
-
-**Output:** Feasible coupling $\pi_{\theta^\star}$ induced by the selected projection direction.
-
-**For** each $\theta\in\Theta$ **do**:
-
->
-> **Let** $\sigma_\theta,\tau_\theta$ be stable sorting permutations of $\dotp{\theta}{x_i}$ and $\dotp{\theta}{y_j}$.
->
-> **Match** $x_{\sigma_\theta(k)}$ to $y_{\tau_\theta(k)}$ for $k=1,\ldots,n$.
->
-> **Store** rank-matching permutation $\rho_\theta=\tau_\theta\circ\sigma_\theta^{-1}$.
->
-> **Evaluate**
-> $E(\theta)=\frac1n\sum_{i=1}^n\norm{x_i-y_{\rho_\theta(i)}}^2.$
-
-**Set** $\theta^\star=\min\argmin_{\theta\in\Theta}E(\theta)$ for the fixed order on $\Theta$.
-**Return** $\pi_{\theta^\star}=\frac1n\sum_i\delta_{(x_i,y_{\rho_{\theta^\star}(i)})}.$
-:::
 
 
 (sec-quotient-wasserstein-procrustes)=

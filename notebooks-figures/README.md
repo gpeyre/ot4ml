@@ -277,8 +277,8 @@ cells separate the main numerical steps.
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="kantorovich-dro-ambiguity.ipynb"><img src="thumbnails/kantorovich-dro-ambiguity.png" alt="Wasserstein DRO logistic boundaries" width="210"></a><br>
-  <strong>Wasserstein DRO logistic boundaries</strong><br>
+  <a href="kantorovich-dro-ambiguity.ipynb"><img src="thumbnails/kantorovich-dro-ambiguity.png" alt="Wasserstein DRO with a Laplacian-kernel classifier" width="210"></a><br>
+  <strong>Wasserstein DRO with a Laplacian-kernel classifier</strong><br>
   <a href="kantorovich-dro-ambiguity.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/kantorovich-dro-ambiguity.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 

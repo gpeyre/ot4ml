@@ -1421,25 +1421,6 @@ rays to noisy Brownian-bridge lifts with a more diffuse endpoint coupling.
 
 <iframe class="ot4ml-live-frame" title="Schrodinger bridge path controls" src="../live/sinkhorn-bridges.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
 
-(alg-schrodinger-endpoint-path-lift)=
-:::{admonition} Algorithm: Endpoint-to-path Schrodinger lift
-:class: ot4ml-algorithm
-
-**Input:** Endpoint laws $\al,\be$, cost $c$, regularization $\epsilon>0$, reference bridges $\Rr^{\epsilon,x,y}$.
-
-**Output:** Schrodinger path law $M_\epsilon^\star$.
-
-**Let** $\pi_\epsilon^\star$ be a minimizer of the static entropic endpoint problem:
-$\pi_\epsilon^\star \in \argmin_{\pi\in\Couplings(\al,\be)} \int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be).$
-
-**For** each endpoint pair $(x,y)$ sampled from $\pi_\epsilon^\star$ **do**:
-
->
-> **Draw** bridge path:
-> $\omega\sim\Rr^{\epsilon,x,y}.$
-
-**Return** $M_\epsilon^\star= \int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).$
-:::
 
 
 (sec-sinkhorn-marginal-dependent)=

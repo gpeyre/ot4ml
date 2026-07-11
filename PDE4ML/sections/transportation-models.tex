@@ -205,33 +205,6 @@ Numerically, $(x,t) \to v_t(x)$ can be parameterized by a neural network (e.g., 
 \index{flow matching}% strictindex
 %
 
-\begin{alg}[Flow matching regression and sampling]\label{alg:flow-matching-regression}
-\textbf{Input:} Interpolant $P_t(u)$, training source $u\sim\pi$, parametrized field $v_\theta(t,z)$, training steps $N$.
-
-\textbf{Output:} Learned sampler $X_0\mapsto X_1$.
-
-\textbf{Training:}
-
-\textbf{For} $q=1,\ldots,N$ \textbf{do}:
-\begin{algblock}
-\textbf{Draw} $t_q\sim\mathrm{Unif}(0,1)$ and $u_q\sim\pi$.
-
-\textbf{Set} $z_q=P_{t_q}(u_q)$ and $w_q=\partial_tP_t(u_q)|_{t=t_q}$.
-
-\textbf{Update} $\theta$ by one stochastic-gradient step on \(\norm{v_\theta(t_q,z_q)-w_q}^2\).
-
-\end{algblock}
-
-\textbf{Sampling:}
-
-\textbf{Draw} $X_0\sim\alpha_0$.
-
-\textbf{Integrate}
-\(\dot X_t=v_\theta(t,X_t), \qquad t\in[0,1]\).
-
-\algreturnskip
-\textbf{Return} $X_1$.
-\end{alg}
 
 For the exact field $v_t$, integrating the ODE $\dot{x}=v_t(x)$ defines a transport map $T_t$. If $v_t$ is regular enough, or more generally if the continuity equation has a unique solution for this velocity, then $(T_t)_\sharp\alpha_0=\alpha_t$. Thus the same interpolation as~\eqref{eq:interp-coupling} is represented by a deterministic flow rather than by the original coupling.
 \index{transport map}% strictindex
@@ -447,32 +420,6 @@ The same probability-flow intuition is visible in two dimensions. For a discrete
 \index{noising schedule}% strictindex
 \index{score function}% strictindex
 
-\begin{alg}[Exact probability-flow sampling for a Gaussian mixture]\label{alg:gaussian-mixture-probability-flow-sampling}
-\index{flow!probability ODE}% strictindex
-\index{Gaussian mixture}% strictindex
-\textbf{Input:} Gaussian-mixture data law, schedule $(a_t,b_t)$, noise level $\sigma$, number of samples $R$.
-
-\textbf{Output:} Backward samples $(Z_0^{(r)})_r$.
-
-\textbf{Define} the noising variable:
-\(Z_t=a_tX+b_tY, \qquad Y\sim\Gaussian(0,\sigma^2\Id)\).
-
-\textbf{Compute} closed-form mixture density $p_t$ and score $s_t=\nabla\log p_t$.
-
-\textbf{Set} probability-flow velocity:
-\(v_t(z)=\frac{a'_t}{a_t}z+ \left(\frac{a'_tb_t^2}{a_t}-b'_tb_t\right)\sigma^2s_t(z)\).
-
-\textbf{For} $r=1,\ldots,R$ \textbf{do}:
-\begin{algblock}
-
-\textbf{Draw} $Z_1^{(r)}$ from the Gaussian endpoint.
-
-\textbf{Integrate} $\dot Z_t^{(r)}=v_t(Z_t^{(r)})$ backward from $t=1$ to $t=0$.
-
-\end{algblock}
-\algreturnskip
-\textbf{Return} $(Z_0^{(r)})_r$.
-\end{alg}
 
 \begin{figure}[ht]
 \centering
@@ -829,27 +776,6 @@ In a particle or generator implementation, the learned residual is then used to 
 \]
 This is an ideal function-space update. If the residuals were stored as a growing composition, evaluation would still require one layer per training update and the model would not be one-step. A genuine one-step implementation therefore fits the updated outputs back into a fixed generator architecture, or distills the accumulated transport into one network, so that the final sampler remains a single evaluation of $G_\theta$.
 
-\begin{alg}[One-step Wasserstein-flow generator update]\label{alg:one-step-wgf-generator-update}
-\index{one-step generative model}% strictindex
-\textbf{Input:} Generator $G_{\theta_k}$, latent law $\zeta$, data law $\beta$, numerical descent-field oracle $W_\beta$, step size $\tau$, batch size $B$.
-
-\textbf{Output:} Updated generator $G_{\theta_{k+1}}$.
-
-\textbf{Draw} $z_b\sim\zeta$ for $b=1,\ldots,B$.
-
-\textbf{Set} $x_b=G_{\theta_k}(z_b)$.
-
-\textbf{Set} \(w_k(x)=W_\beta[\alpha_{\theta_k}](x)\), where \(W_\beta[\alpha]=-\nabla\delta_\alpha\mathcal E_\beta(\alpha)\).
-
-\textbf{Set} $\eta_k$ by minimizing the empirical least-squares loss:
-\(\frac1B\sum_{b=1}^B \norm{U_{\eta}(x_b)-w_k(x_b)}^2\).
-
-\textbf{Update by composition:}
-\(G_{\theta_{k+1}}(z) = G_{\theta_k}(z)+\tau U_{\eta_k}(G_{\theta_k}(z))\).
-
-\algreturnskip
-\textbf{Return} $G_{\theta_{k+1}}$.
-\end{alg}
 
 After many training updates, the fixed-architecture or distilled generator is evaluated once at test time. This is the organizing principle behind recent one-step methods based on Wasserstein gradient flows: W-Flow uses such a construction with the Sinkhorn divergence as a tractable global discrepancy~\cite{Han2026WFlow}, while drifting methods evolve the generated distribution during training through a fitted vector field and also admit one-step inference~\cite{Deng2026Drifting}. The gradient-flow interpretation of drifting models, and its relation to KL, MMD, sliced-Wasserstein and Sinkhorn-type discrepancies, is analyzed in~\cite{Gretton2026DriftingWGF,He2026SinkhornDrifting}. These ideas are also connected to the Sinkhorn-type normalization dynamics used to model attention in Sinkformers~\cite{Sander2022Sinkformers}.
 \index{attention}% strictindex
@@ -998,28 +924,6 @@ The first term pulls samples toward data, while the second term corrects self-at
 \index{kernel!norm}% strictindex
 \index{entropic!OT}% strictindex
 
-\begin{alg}[Self-corrected drifting particle update]\label{alg:self-corrected-drifting-particles}
-\index{drifting!model}% strictindex
-\textbf{Input:} Particles $x_i^k$ for $\alpha_k$, data samples $(y_b)_{b=1}^B$ from $\beta$, kernel scale $\epsilon$, step $h$.
-
-\textbf{Output:} Updated particles $x_i^{k+1}$.
-
-\textbf{For} each particle $i$ \textbf{do}:
-\begin{algblock}
-
-\textbf{Set} \(Z_{\beta,i}=\sum_{b=1}^B K_\epsilon(x_i^k,y_b)\) and \(b_i^k=Z_{\beta,i}^{-1}\sum_{b=1}^B (y_b-x_i^k)K_\epsilon(x_i^k,y_b)\).
-
-\textbf{Set} \(Z_{\alpha,i}=\sum_{j=1}^n K_\epsilon(x_i^k,x_j^k)\) and \(m_i^k=Z_{\alpha,i}^{-1}\sum_{j=1}^n (x_j^k-x_i^k)K_\epsilon(x_i^k,x_j^k)\).
-
-\textbf{Set}
-\(u_i^k=b_i^k-m_i^k\).
-
-\textbf{Update}
-\(x_i^{k+1}=x_i^k+h\,u_i^k\).
-\end{algblock}
-\algreturnskip
-\textbf{Return} $(x_i^{k+1})_i$.
-\end{alg}
 
 Figure~\ref{fig:generative-drifting-model-trajectories} illustrates why the self term matters: it corrects the collapse created by target attraction alone and improves coverage of separated modes.
 
@@ -1415,32 +1319,6 @@ As $\tau \to 0$, this converges formally to the conservation equation
     \partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.
 \end{equation*}
 
-\begin{alg}[Residual attention depth evolution]\label{alg:residual-attention-depth-evolution}
-\index{attention!self-attention}% strictindex
-\index{transformer}% strictindex
-\textbf{Input:} Tokens $(x_i^0)_{i=1}^n$, depth $T$, layer parameters $(Q_k,K_k,V_k)$.
-
-\textbf{Output:} Final token measure $\alpha_T$.
-\index{token measure}% strictindex
-
-\textbf{Initialize:}
-\(\alpha_0=\frac{1}{n}\sum_{i=1}^n\delta_{x_i^0}, \qquad \tau=1/T\).
-
-\textbf{For} $k=0,\ldots,T-1$ \textbf{do}:
-\begin{algblock}
-
-\textbf{For} $i=1,\ldots,n$ \textbf{do}
-\begin{algblock}
-\(\Gamma_{\theta_k}[\alpha_k](x_i^k) = \frac{\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})\,V_kx_j^k} {\sum_j \exp(\dotp{Q_kx_i^k}{K_kx_j^k})}\).
-
-\(x_i^{k+1}=x_i^k+\tau\,\Gamma_{\theta_k}[\alpha_k](x_i^k)\).
-\end{algblock}
-\textbf{Set}
-\(\alpha_{k+1}=(\Id+\tau\Gamma_{\theta_k}[\alpha_k])_\sharp\alpha_k\).
-\end{algblock}
-\algreturnskip
-\textbf{Return} $\alpha_T$.
-\end{alg}
 
 
 \paragraph{$L^2$ attention and mean shift.}

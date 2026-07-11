@@ -1148,44 +1148,6 @@ the column identity is analogous. Each observed dual ascent is therefore a
 marginal KL defect. The residual is not itself the remaining dual gap: a
 certificate also needs the quotient-radius estimate used above.
 
-(alg-certified-entropic-ot-accuracy)=
-:::{admonition} Algorithm: Worst-case certified entropic approximation of discrete OT
-:class: ot4ml-algorithm
-
-**Input:** Finite cost matrix $C\in\RR^{n\times m}$, positive weights
-$a\in\simplex_n$, $b\in\simplex_m$ with $nm>1$, target accuracy $\delta>0$.
-
-**Output:** Lower bound $L_{\epsilon,K}$ with
-$0\leq\operatorname{OT}_C(a,b)-L_{\epsilon,K}\leq\delta$.
-
-**Set** $R=\max_{i,j}C_{ij}-\min_{i,j}C_{ij}$.
-
-**Set** $\epsilon=\delta/(2\log(nm))$.
-
-**Set**
-$K=\max\{1,\lceil32R^2\log(nm)/\delta^2\rceil\}$.
-
-**Initialize** $g_0=0$.
-
-**For** $k=0,\ldots,K-1$ **do**:
-
-> **Compute** $f_{k+1}=g_k^{\bar c,\epsilon}$ by a stabilized row soft transform.
->
-> **Compute** $g_{k+1}=f_{k+1}^{c,\epsilon}$ by a stabilized column soft transform.
-
-**Compute** $\mathcal D_{\epsilon,K}$ and set
-$L_{\epsilon,K}=\mathcal D_{\epsilon,K}-\epsilon H(a)-\epsilon H(b)$.
-
-**Check**
-
-```{math}
-\epsilon\log(nm)+\frac{8R^2}{\epsilon K}
-\leq\delta.
-```
-
-**Return** $L_{\epsilon,K}$ with
-$0\leq\operatorname{OT}_C(a,b)-L_{\epsilon,K}\leq\delta$.
-:::
 
 (sec-sinkhorn-hilbert)=
 ## Sinkhorn Convergence: Linear Hilbert Metric Rate

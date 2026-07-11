@@ -282,17 +282,6 @@ In one dimension, the transportation polytope has a canonical monotone optimizer
 		$\P_{11}=\min(\a_1,\b_1)$, exactly the first north-west assignment. It exhausts row $1$, column $1$, or both. Removing every exhausted index reduces the problem to a smaller ordered transportation problem. Induction on $n+m$ produces the complete north-west plan without increasing cost. Sorting costs $O(n\log n+m\log m)$ and the sweep uses at most $n+m-1$ positive assignments.
 \end{proof}
 
-\begin{alg}[Weighted one-dimensional sweep]\label{alg:weighted-one-dimensional-sweep}
-\textbf{Input:} One-dimensional atoms $(x_i,\a_i)$ and $(y_j,\b_j)$; convex cost $h(x-y)$.
-
-\textbf{Output:} Monotone optimal coupling $\P$.
-
-\textbf{Sort} atoms:
-\(x_1\leq\cdots\leq x_n, \qquad y_1\leq\cdots\leq y_m.\)
-
-\textbf{Set} $\P$ to the output of Algorithm~\ref{alg:north-west-corner} applied to the sorted weights $(\a_i)_i$ and $(\b_j)_j$.
-\textbf{Return} $\P$.
-\end{alg}
 
 \paragraph{Permutation matrices as couplings.}
 \index{matrix!permutation}% strictindex
@@ -1419,31 +1408,6 @@ In the discrete case, each mass $\P_{ij}$ moves from $x_i$ to $y_j$ along its ow
 \index{discrete!measure}% strictindex
 \index{plan!transport}% strictindex
 
-\begin{alg}[Displacement interpolation from a transport plan]\label{alg:plan-displacement-interpolation}
-\index{plan!interpolation}% strictindex
-\index{McCann interpolation}% strictindex
-\textbf{Input:} Measures $\al,\be$ on $\RR^d$, time $t\in[0,1]$.
-
-\textbf{Output:} Displacement interpolant $\al_t$.
-
-\textbf{Let} $\pi^\star$ be any minimizer of the quadratic Kantorovich problem.
-
-\textbf{Set} interpolation map:
-\(e_t(x,y)=(1-t)x+t y.\)
-
-\textbf{Push forward:}
-\(\al_t=(e_t)_\sharp\pi^\star.\)
-
-\textbf{If} $\pi^\star=\sum_{i,j}P^\star_{ij}\delta_{(x_i,y_j)}$ \textbf{then}:
-\begin{algblock}
-
-\textbf{Compute}
-\(\al_t= \sum_{i,j}P^\star_{ij} \delta_{(1-t)x_i+t y_j}.\)
-\end{algblock}
-\algreturnskip
-\textbf{Return} $\al_t$.
-\end{alg}
-
 \begin{prop}[Optimal-plan interpolation is a $\Wass_2$ geodesic]\label{prop-plan-interpolation-w2-geodesic}
 \index{Wasserstein!geodesic}% strictindex
 \index{constant-speed geodesic}% strictindex
@@ -2097,7 +2061,7 @@ which exhibits Wasserstein robustness as a Lipschitz regularizer. The bound is s
 In machine learning, the inner supremum in~\eqref{eq-dro-dual-envelope} has the form of an adversarial perturbation problem: the adversary moves each datum away from $z_i$ but pays a transport penalty. This connects Wasserstein DRO to adversarial training and certified robustness~\cite{sinha2018certifying,NIPS2015_5745}. In sequential decision problems, the same idea places Wasserstein ambiguity sets around transition kernels or rewards, producing robust Bellman operators and robust reinforcement-learning models~\cite{xu2012distributionallyrobustmdp,yang2017convex}.
 \index{adversarial!perturbation}% strictindex
 
-Figure~\ref{fig:kantorovich-dro-ambiguity} gives the corresponding geometric picture for binary logistic classification. A Wasserstein ball is not just a scalar uncertainty level: it permits an adversary to move data points in feature space, so increasing the radius forces the classifier to account for a thicker neighborhood around its decision boundary.
+Figure~\ref{fig:kantorovich-dro-ambiguity} gives the corresponding geometric picture for nonlinear binary classification. The score belongs to the reproducing-kernel Hilbert space of the Laplacian kernel $k_h(x,z)=e^{-\norm{x-z}/h}$. The two classes form noisy interlocking crescents whose opposing tips overlap locally. The nominal boundary winds through the narrow channel between the moons; increasing the Wasserstein radius moves samples toward high-loss regions and visibly widens and reorganizes this fragile separator.
 
 \begin{figure}[htbp]
 \centering
@@ -2106,10 +2070,10 @@ Figure~\ref{fig:kantorovich-dro-ambiguity} gives the corresponding geometric pic
 \includegraphics[width=.30\linewidth]{figures/kantorovich-dro-ambiguity--rho-medium.pdf} &
 \includegraphics[width=.30\linewidth]{figures/kantorovich-dro-ambiguity--rho-large.pdf} \\[-.15em]
 {\small $\rho=0$} &
-{\small medium $\rho$} &
-{\small large $\rho$}
+{\small $\rho=0.055$} &
+{\small $\rho=0.11$}
 \end{tabular}
-\caption{\emph{Wasserstein distributional robustness as a geometric ambiguity set for logistic classification.} Red and blue dots are the two classes, the black line is the learned linear decision boundary and the faint background shows the logistic score. From left to right, the classifier is trained with no robustness, a medium $\Wass_2$ radius and a larger $\Wass_2$ radius. The violet strip is the Euclidean $\rho$-neighborhood of the boundary, used as a local proxy for feature perturbations; the actual Wasserstein constraint is a global average transport budget.}
+\caption{\emph{Wasserstein robustness reshapes the separator between two noisy interlocking moons.} Filled dots are the observed classes, the black curve is the learned zero-score boundary, and the background encodes the logistic probability. The opposing tips of the red and blue crescents overlap locally, forcing the nominal classifier to wind through a narrow nonlinear channel. In the robust panels, the dashed gray curve recalls this nominal boundary; hollow dots show all adversarial locations, while violet segments display a representative half of their transports. As $\rho$ increases, the separator moves away from the most fragile overlap regions and trades clean fit for wider margins. The root-mean-square displacement equals the global quadratic Wasserstein budget $\rho$.}
 \label{fig:kantorovich-dro-ambiguity}
 \end{figure}
 

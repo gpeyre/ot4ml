@@ -25,22 +25,6 @@ We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_
     \alpha_{t+\tau} := \arg\min_\alpha \frac{1}{2 \tau} \Wass_2(\alpha_t, \alpha)^2 + f(\alpha). \label{eq:jko-discr}
 \end{equation}
 
-\begin{alg}[JKO minimizing movement]\label{alg:jko-minimizing-movement}
-\index{JKO scheme}% strictindex
-\textbf{Input:} Energy $f$, initial measure $\alpha^0$, time step $\tau>0$, number of steps $K$.
-
-\textbf{Output:} Discrete gradient-flow trajectory $(\alpha^k)_{k=0}^K$.
-
-\textbf{For} $k=0,\ldots,K-1$ \textbf{do}:
-\begin{algblock}
-\(\alpha^{k+1} \in \uargmin{\alpha\in\Pp_2(\RR^d)} \frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+f(\alpha).\)
-
-\textbf{Set} $\alpha_t^\tau=\alpha^k$ for $t\in[k\tau,(k+1)\tau)$.
-
-\end{algblock}
-\algreturnskip
-\textbf{Return} $(\alpha^k)_{k=0}^K$ and $\alpha_t^\tau$.
-\end{alg}
 
 \paragraph{Euclidean gradient flows.}
 \index{gradient!flow}% strictindex
@@ -226,28 +210,6 @@ If $f(\alpha)$ can be evaluated on discrete distributions and $\Wgrad$ is contin
 \end{equation}
 where $F(X) := f\left(\frac{1}{n} \sum_i \delta_{x_i}\right)$ and the factor $n$ comes from the empirical Wasserstein metric $\frac1n\sum_i \norm{\dot x_i}^2$.
 
-\begin{alg}[Empirical Wasserstein particle descent]\label{alg:empirical-wasserstein-particle-flow}
-\index{particle Wasserstein descent}% strictindex
-\textbf{Input:} Particles $X^0=(x_1^0,\ldots,x_n^0)$, functional $f$, step size $h$, tolerance $\mathrm{tol}$.
-
-\textbf{Output:} Particle trajectory $(X^k)_k$ and empirical measures.
-
-\textbf{Define}
-\(F(X)=f\!\left(\frac1n\sum_{i=1}^n\delta_{x_i}\right).\)
-
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
-\begin{algblock}
-
-\textbf{For} $i=1,\ldots,n$ \textbf{do}
-\begin{algblock}
-\(g_i^k=n\nabla_{x_i}F(X^k), \qquad x_i^{k+1}=x_i^k-h\,g_i^k.\)
-\end{algblock}
-\textbf{If} \(\max_i\norm{x_i^{k+1}-x_i^k}\leq \mathrm{tol}\) \textbf{then}:
-\begin{algblock}
-\textbf{Return} $\frac1n\sum_i\delta_{x_i^{k+1}}$.
-\end{algblock}
-\end{algblock}
-\end{alg}
 
 %%%
 \paragraph{Linear Functionals.}
@@ -368,42 +330,7 @@ In a similar spirit, to obtain nonlinear evolutions without requiring the measur
 		2\int\nabla_x k(x_i(t),y)\d\beta(y).
        \]
 
-The corresponding simulation loop is Algorithm~\ref{alg:mmd-particle-flow}.
 
-\begin{alg}[MMD particle flow against a teacher law]\label{alg:mmd-particle-flow}
-\index{maximum mean discrepancy}% strictindex
-\textbf{Input:} Initial particles $(x_i^0)_{i=1}^n$, teacher law $\beta$ or teacher samples $(y_b)_{b=1}^B$, kernel $k$, step size $h$.
-
-\textbf{Output:} Particle trajectory targeting $\beta$.
-
-\textbf{For} $k=0,1,\ldots$ \textbf{do}:
-\begin{algblock}
-
-\textbf{For} $i=1,\ldots,n$ \textbf{do}
-\begin{algblock}
-\textbf{Set} self-interaction \(r_i^k=-\frac{2}{n}\sum_{j=1}^n\nabla_x k(x_i^k,x_j^k)\).
-
-\textbf{If} $\beta$ is available analytically \textbf{then}:
-\begin{algblock}
-
-\textbf{Set} teacher attraction \(a_i^k=2\int\nabla_x k(x_i^k,y)\d\beta(y)\).
-
-\end{algblock}
-\textbf{If} only samples $(y_b)_{b=1}^B$ are available \textbf{then}:
-\begin{algblock}
-
-\textbf{Set} \(a_i^k=\frac{2}{B}\sum_{b=1}^B\nabla_x k(x_i^k,y_b)\).
-
-\end{algblock}
-\textbf{Set} velocity \(v_i^k=r_i^k+a_i^k\).
-
-\textbf{Update}
-\(x_i^{k+1}=x_i^k+h\,v_i^k.\)
-\end{algblock}
-\end{algblock}
-\algreturnskip
-\textbf{Return} $(x_i^k)_{i,k}$.
-\end{alg}
 
 	       The first term is a kernelized self-interaction, while the second is the attraction induced by the continuous teacher kernel mean. At the continuum level, characteristic positive-definite kernels, and the Euclidean energy-distance kernel on probability measures, have $\beta$ as the unique minimizer of $\norm{\alpha-\beta}_k^2$. For a finite number of particles, however, the flow can only form a kernelized quadrature of $\beta$, and small particle systems may cover the target modes poorly. Figure~\ref{fig:gradflow-mmd-particle-count} illustrates this finite-particle effect.
 \index{kernelized self-interaction}% strictindex
