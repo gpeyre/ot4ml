@@ -1,6 +1,6 @@
 # PDE4ML: PDEs for Machine Learning
 
-This directory contains a standalone long-review project on PDE tools for machine learning, written from an optimal-transport viewpoint.
+This directory contains a standalone long-review project on PDE tools for machine learning, written from an optimal-transport viewpoint and prepared for eventual submission to *Acta Numerica*.
 
 The project is currently a curated reorganization of material from the full OT4ML manuscript. It keeps only the foundations needed for PDE and ML dynamics:
 
@@ -12,6 +12,7 @@ The project is currently a curated reorganization of material from the full OT4M
 ## Files
 
 - `PDE4ML.tex`: main LaTeX source.
+- `acta-numerica.cls`: local Cambridge/Acta submission class following the official CUP medium-template interface and mathematical-review layout.
 - `PDE4ML.pdf`: compiled review.
 - `Makefile`: local build helper.
 - `sections/primer-ot.tex`: self-contained OT primer containing the prerequisites used by the PDE sections.
@@ -39,6 +40,6 @@ pdflatex -interaction=nonstopmode -halt-on-error PDE4ML.tex
 pdflatex -interaction=nonstopmode -halt-on-error PDE4ML.tex
 ```
 
-The current scaffold builds as a self-contained PDF with local figures, local bibliography and local style files.
+The current scaffold builds as a self-contained PDF with local figures, local bibliography and local style files. Acta Numerica currently accepts standard LaTeX but does not publish a journal-coded class; the local class therefore keeps the source submission-ready and can be replaced by a production class supplied by Cambridge without changing the section files.
 
 Generated auxiliary files are ignored locally; the PDF is kept as the review output.

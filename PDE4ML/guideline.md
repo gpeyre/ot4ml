@@ -4,6 +4,8 @@
 
 Create a standalone long review paper titled **PDE4ML: PDEs for Machine Learning**. The review should explain how PDE and optimal-transport tools are used to analyze machine-learning methods, especially training dynamics and generative models.
 
+The manuscript is intended for eventual submission to **Acta Numerica**. Use the local `acta-numerica.cls`, the Cambridge-style article front matter, author--year references, restrained journal headings, and explicit competing-interest and data-availability declarations.
+
 ## Organization
 
 - Start with a new abstract tailored to PDEs for ML.

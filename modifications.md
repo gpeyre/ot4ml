@@ -41,3 +41,15 @@ Compared the independent `PDE4ML/` review with the current OT4ML sources for dyn
 - Checked all included graphics: no missing files.
 - Completed the BibTeX and two-pass pdfLaTeX build without undefined citations, undefined references or overfull boxes.
 - Visually inspected representative pages from the expanded primer, mean-shift theorem and Gaussian closure addition; no clipping, overlap or unreadable layout was found.
+
+## Acta Numerica submission layout
+
+- Replaced the bespoke PDE4ML article layout with the local `PDE4ML/acta-numerica.cls`, a submission-oriented class following Cambridge's restrained single-column medium-journal conventions.
+- Kept A4 paper and two-sided running heads while replacing the decorative blue section treatment with journal-style black section, subsection and run-in paragraph headings.
+- Replaced the custom title page by compact Cambridge-style front matter containing the article title, author, affiliation, email, abstract and keywords.
+- Switched the text and mathematics to the matched NewTX family and retained the existing PDE4ML theorem, remark, example, algorithm and figure conventions.
+- Switched the bibliography to author--year `natbib` citations with `plainnat`, matching the citation style expected of a mathematical review article.
+- Added explicit competing-interest and data-availability statements before the bibliography.
+- Updated the PDE4ML README and editing guidelines to document the intended Acta Numerica submission and the role of the local class. Acta Numerica accepts standard LaTeX but does not currently publish a journal-coded class; the local class can therefore be replaced by Cambridge's production class without changing the section files.
+- Rebuilt the standalone manuscript as a 115-page A4 PDF. The final log contains no undefined citations, unresolved references, duplicate labels or overfull boxes.
+- Visually inspected the title and abstract, contents and opening section, theorem/remark pages, figure-heavy pages and bibliography ending after the migration.
