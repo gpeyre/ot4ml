@@ -786,30 +786,36 @@
       return { aPts, bPts, n, m, plan, total, epsilon: eps };
     }
 
-    function sampleCouplingPairs(coupling, count, seed = 1) {
-      const rng = mulberry32(seed);
-      const cdf = new Float64Array(coupling.plan.length);
-      let total = 0;
-      for (let k = 0; k < coupling.plan.length; k += 1) {
-        total += coupling.plan[k];
-        cdf[k] = total;
-      }
-      if (total <= 0) return [];
-      const pairs = [];
-      for (let s = 0; s < count; s += 1) {
-        const r = rng() * total;
-        let lo = 0;
-        let hi = cdf.length - 1;
-        while (lo < hi) {
-          const mid = (lo + hi) >> 1;
-          if (cdf[mid] < r) lo = mid + 1;
-          else hi = mid;
+    function oPairSeed(i, j, salt = 0) {
+      // Stable 32-bit hash: the same endpoint pair always receives the same random stream.
+      let seed = (0x6d2b79f5 ^ salt) >>> 0;
+      seed ^= Math.imul((i + 1) >>> 0, 0x9e3779b1);
+      seed ^= Math.imul((j + 1) >>> 0, 0x85ebca77);
+      seed ^= seed >>> 16;
+      seed = Math.imul(seed, 0x7feb352d);
+      seed ^= seed >>> 15;
+      seed = Math.imul(seed, 0x846ca68b);
+      seed ^= seed >>> 16;
+      return seed >>> 0;
+    }
+
+    function deterministicCouplingPairs(coupling, count) {
+      // Exponential-race sampling without replacement, with one fixed key per pair.
+      const entries = [];
+      const massFloor = coupling.total * 1e-7;
+      for (let i = 0; i < coupling.n; i += 1) {
+        const a = coupling.aPts[i];
+        for (let j = 0; j < coupling.m; j += 1) {
+          const mass = coupling.plan[i * coupling.m + j];
+          if (mass <= massFloor) continue;
+          const b = coupling.bPts[j];
+          const random = mulberry32(oPairSeed(a.oIndex, b.oIndex, 0x51f15e))();
+          const priority = -Math.log(Math.max(random, 1e-12)) / mass;
+          entries.push({ a, b, mass, priority });
         }
-        const i = Math.floor(lo / coupling.m);
-        const j = lo - i * coupling.m;
-        pairs.push({ a: coupling.aPts[i], b: coupling.bPts[j], mass: coupling.plan[lo] });
       }
-      return pairs;
+      entries.sort((x, y) => x.priority - y.priority);
+      return entries.slice(0, Math.min(count, entries.length));
     }
 
     function sparseTransportCoupling(aPts, bPts) {
@@ -844,15 +850,6 @@
       return pairs;
     }
 
-    function repeatPairs(pairs, count) {
-      const repeated = [];
-      for (let i = 0; i < count; i += 1) {
-        const pair = pairs[i % pairs.length];
-        repeated.push({ a: pair.a, b: pair.b, mass: pair.mass });
-      }
-      return repeated;
-    }
-
     function oPermutationPairs(inner, outer) {
       const cost = inner.map((a) => outer.map((b) => {
         const dx = a.x - b.x;
@@ -872,7 +869,7 @@
       if (state.cache.O.has(key)) return state.cache.O.get(key);
       const iterations = epsilon < 0.001 ? 320 : 220;
       const coupling = sinkhornCoupling(geometry.inner, geometry.outer, epsilon, iterations);
-      let pairs = sampleCouplingPairs(coupling, geometry.pairCount, 904 + geometry.count + Math.round(t * 10000));
+      let pairs = deterministicCouplingPairs(coupling, geometry.pairCount);
       if (pairs.length === 0) pairs = geometry.permutationPairs;
       state.cache.O.set(key, pairs);
       return pairs;
@@ -889,31 +886,37 @@
         return ra - rb;
       });
       const maxCount = parseInt(controls.oPoints.max, 10) || 80;
-      const innerPool = farthestSample(all[0], maxCount, 12);
-      const outerPool = farthestSample(all[1], maxCount, 23);
-      const rng = mulberry32(904);
+      const innerPool = farthestSample(all[0], maxCount, 12)
+        .map((p, i) => ({ ...p, oIndex: i }));
+      const outerPool = farthestSample(all[1], maxCount, 23)
+        .map((p, j) => ({ ...p, oIndex: j }));
+      return { innerPool, outerPool, cx, cy, geometries: new Map(), bridgeCache: new Map() };
+    }
+
+    function oBridgeForPair(prep, a, b) {
+      const key = `${a.oIndex}:${b.oIndex}`;
+      if (prep.bridgeCache.has(key)) return prep.bridgeCache.get(key);
+      const rng = mulberry32(oPairSeed(a.oIndex, b.oIndex, 0xb4d63));
       const steps = 72;
-      const bridges = [];
-      for (let j = 0; j < 5 * maxCount; j += 1) {
-        const jitter = [];
-        let x = 0;
-        let y = 0;
-        for (let k = 0; k <= steps; k += 1) {
-          if (k > 0) {
-            x += randn(rng);
-            y += randn(rng);
-          }
-          jitter.push({ x, y });
+      const jitter = [];
+      let x = 0;
+      let y = 0;
+      for (let k = 0; k <= steps; k += 1) {
+        if (k > 0) {
+          x += randn(rng);
+          y += randn(rng);
         }
-        const end = jitter[steps];
-        for (let k = 0; k <= steps; k += 1) {
-          const t = k / steps;
-          jitter[k].x = (jitter[k].x - t * end.x) / Math.sqrt(steps);
-            jitter[k].y = (jitter[k].y - t * end.y) / Math.sqrt(steps);
-        }
-        bridges.push({ jitter, steps, spin: rng() < 0.5 ? -1 : 1 });
+        jitter.push({ x, y });
       }
-      return { innerPool, outerPool, bridges, cx, cy, geometries: new Map() };
+      const end = jitter[steps];
+      for (let k = 0; k <= steps; k += 1) {
+        const t = k / steps;
+        jitter[k].x = (jitter[k].x - t * end.x) / Math.sqrt(steps);
+        jitter[k].y = (jitter[k].y - t * end.y) / Math.sqrt(steps);
+      }
+      const bridge = { jitter, steps, spin: rng() < 0.5 ? -1 : 1 };
+      prep.bridgeCache.set(key, bridge);
+      return bridge;
     }
 
     function oGeometry(prep, requestedCount) {
@@ -927,8 +930,7 @@
         inner,
         outer,
         pairCount,
-        permutationPairs: repeatPairs(oPermutationPairs(inner, outer), pairCount),
-        bridges: prep.bridges.slice(0, pairCount)
+        permutationPairs: oPermutationPairs(inner, outer)
       };
       prep.geometries.set(count, geometry);
       return geometry;
@@ -946,9 +948,8 @@
       ctx.save();
       applyLetterFrame(ctx, state.masks.O, 34);
       ctx.globalCompositeOperation = "multiply";
-      for (let i = 0; i < geometry.bridges.length; i += 1) {
-        const bridge = geometry.bridges[i];
-        const { a, b } = pairs[i % pairs.length];
+      for (const { a, b } of pairs) {
+        const bridge = oBridgeForPair(prep, a, b);
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const len = Math.max(1, Math.hypot(dx, dy));
@@ -1011,7 +1012,8 @@
           if (insideAt(data, px, py)) raster.push({ x: px, y: py, gx: x, gy: y });
         }
       }
-      return { candidates, raster, n, bbox: data.bbox, states: new Map() };
+      const centroidRaster = raster.filter((p) => ((p.gx + 2 * p.gy) & 3) === 0);
+      return { candidates, raster, centroidRaster, n, bbox: data.bbox, states: new Map() };
     }
 
     function lloydCenters(prep, count, densityBias) {
@@ -1022,14 +1024,14 @@
         ? previous.centers.map((p) => ({ x: p.x, y: p.y }))
         : densityWeightedFarthestSample(prep.candidates, count, 177, densityWeight)
           .map((p) => ({ x: p.x, y: p.y }));
-      const baseIterations = count > 150 ? 2 : 3;
+      const baseIterations = count > 150 ? 4 : 6;
       const iterations = previous
-        ? Math.min(count > 150 ? 14 : 20,
+        ? Math.min(count > 150 ? 20 : 28,
           baseIterations + Math.ceil(12 * Math.abs(densityBias - previous.densityBias)))
-        : (count > 150 ? 7 : 10);
+        : (count > 150 ? 10 : 16);
       for (let iter = 0; iter < iterations; iter += 1) {
         const acc = centers.map(() => ({ x: 0, y: 0, weight: 0 }));
-        for (const p of prep.raster) {
+        for (const p of prep.centroidRaster) {
           let best = 0;
           let bestD = Infinity;
           for (let i = 0; i < centers.length; i += 1) {
