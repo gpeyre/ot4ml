@@ -26,9 +26,11 @@ They are kept for provenance but omitted from this paper gallery.
 Open a notebook locally from the **Open notebook** link, or launch it in Google
 Colab from the badge. The Colab links target the `main` branch of
 [`gpeyre/ot4ml`](https://github.com/gpeyre/ot4ml). Each active notebook starts
-with a small bootstrap cell: when it is opened standalone in Colab, it clones
-the repository if needed, adds `notebooks-figures/` to the Python path, and
-installs POT for notebooks that import `ot`.
+with a small bootstrap cell: when it is opened standalone in Colab, it downloads
+only the shared plotting module, that notebook's preview thumbnail, and any
+small bitmap assets it explicitly uses. It then adds `notebooks-figures/` to
+the Python path and installs only missing dependencies, such as POT for
+notebooks that import `ot`; a multi-gigabyte repository clone is not required.
 
 **Notebook hygiene.** The active figure notebooks are written to be readable as
 standalone pedagogical documents: helper functions carry short docstrings, long
