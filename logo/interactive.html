@@ -270,7 +270,7 @@
             <input id="t-samples" aria-label="T number of quantization sites" title="T number of quantization sites" type="range" min="12" max="220" value="80" step="1">
           </div>
           <div class="control">
-            <input id="t-density-bias" aria-label="T density bias from bottom to top" title="T density bias: left favors the bottom, right favors the top" type="range" min="-1" max="1" value="0" step="0.05">
+            <input id="t-density-bias" aria-label="T density bias from bottom to top" title="T density bias: left favors the bottom, right favors the top" type="range" min="-1" max="1" value="0" step="0.01">
           </div>
         </div>
       </article>
@@ -278,10 +278,10 @@
         <div class="canvas-shell"><canvas id="canvas-4" aria-label="4"></canvas></div>
         <div class="control-stack" aria-label="4 controls">
           <div class="control">
-            <input id="rhs" aria-label="4 heat equation time" title="4 heat equation time" type="range" min="0" max="1" value="0.58" step="0.01">
+            <input id="rhs" aria-label="4 heat equation time" title="4 heat equation time" type="range" min="0" max="2" value="0.58" step="0.01">
           </div>
           <div class="control">
-            <input id="four-diracs" aria-label="4 number of Dirac sources" title="4 number of Dirac sources" type="range" min="4" max="40" value="22" step="1">
+            <input id="four-diracs" aria-label="4 number of Dirac sources" title="4 number of Dirac sources" type="range" min="1" max="80" value="22" step="1">
           </div>
         </div>
       </article>
@@ -370,7 +370,6 @@
       prepared: {},
       cache: {
         O: new Map(),
-        T: new Map(),
         "4": new Map(),
         M: new Map(),
         L: new Map()
@@ -1012,16 +1011,22 @@
           if (insideAt(data, px, py)) raster.push({ x: px, y: py, gx: x, gy: y });
         }
       }
-      return { candidates, raster, n, bbox: data.bbox };
+      return { candidates, raster, n, bbox: data.bbox, states: new Map() };
     }
 
     function lloydCenters(prep, count, densityBias) {
-      const key = `${count}:${densityBias.toFixed(2)}`;
-      if (state.cache.T.has(key)) return state.cache.T.get(key);
       const densityWeight = (p) => verticalBiasWeight(p.y, prep.bbox, densityBias, 9.0);
-      let centers = densityWeightedFarthestSample(prep.candidates, count, 177, densityWeight)
-        .map((p) => ({ x: p.x, y: p.y }));
-      const iterations = count > 150 ? 7 : 10;
+      // Continue existing sites so Voronoi identities and colors remain stable.
+      const previous = prep.states.get(count);
+      let centers = previous
+        ? previous.centers.map((p) => ({ x: p.x, y: p.y }))
+        : densityWeightedFarthestSample(prep.candidates, count, 177, densityWeight)
+          .map((p) => ({ x: p.x, y: p.y }));
+      const baseIterations = count > 150 ? 2 : 3;
+      const iterations = previous
+        ? Math.min(count > 150 ? 14 : 20,
+          baseIterations + Math.ceil(12 * Math.abs(densityBias - previous.densityBias)))
+        : (count > 150 ? 7 : 10);
       for (let iter = 0; iter < iterations; iter += 1) {
         const acc = centers.map(() => ({ x: 0, y: 0, weight: 0 }));
         for (const p of prep.raster) {
@@ -1046,6 +1051,7 @@
           ? { x: acc[i].x / acc[i].weight, y: acc[i].y / acc[i].weight }
           : c);
       }
+
       const labels = new Int16Array(prep.n * prep.n);
       labels.fill(-1);
       for (const p of prep.raster) {
@@ -1064,7 +1070,10 @@
         labels[p.gy * prep.n + p.gx] = best;
       }
       const result = { centers, labels };
-      state.cache.T.set(key, result);
+      prep.states.set(count, {
+        densityBias,
+        centers: centers.map((c) => ({ x: c.x, y: c.y }))
+      });
       return result;
     }
 
@@ -1163,15 +1172,17 @@
           }
         }
       }
-      const maxSources = parseInt(controls.fourDiracs.max, 10) || 40;
+      const maxSources = parseInt(controls.fourDiracs.max, 10) || 80;
       const sourcePool = randomSample(candidates, maxSources, 422);
-      const frameCount = 101;
+      const maxTime = parseFloat(controls.rhs.max) || 2;
+      const frameCount = Math.round(100 * maxTime) + 1;
       const levels = Array.from({ length: 18 }, (_, i) => Math.pow((i + 1) / 19, 1.72));
       return {
         n,
         mask,
         active,
         frameCount,
+        maxTime,
         stepsPerFrame: 6,
         tau: 0.18,
         sourcePool,
@@ -1234,7 +1245,9 @@
       const prep = state.prepared["4"];
       const simulation = fourSimulation(prep, diracCount);
       const n = prep.n;
-      const frameIndex = Math.round(clamp(heatTime, 0, 1) * (prep.frameCount - 1));
+      const frameIndex = Math.round(
+        clamp(heatTime, 0, prep.maxTime) / prep.maxTime * (prep.frameCount - 1)
+      );
       const { field, maxU } = heatFrame(prep, simulation, frameIndex);
       ctx.save();
       applyLetterFrame(ctx, state.masks["4"], 17, 0, 2);
@@ -1590,10 +1603,7 @@
         scheduleRender(renderO);
       });
       controls.tSamples.addEventListener("input", () => scheduleRender(renderT));
-      controls.tDensityBias.addEventListener("input", () => {
-        state.cache.T.clear();
-        scheduleRender(renderT);
-      });
+      controls.tDensityBias.addEventListener("input", () => scheduleRender(renderT));
       controls.rhs.addEventListener("input", () => scheduleRender(renderFour));
       controls.fourDiracs.addEventListener("input", () => {
         state.cache["4"].clear();
