@@ -28,13 +28,16 @@ Unbalanced OT allows mass creation and destruction by penalizing marginal mismat
 \paragraph{Relaxed formulation.}
 \index{Kantorovich!relaxation}% strictindex
 
-For nonnegative measures $(\al,\be) \in \Mm_+(\Xx) \times \Mm_+(\Yy)$, a generic relaxed formulation is
+The relaxed coupling problem replaces exact marginal constraints by divergence penalties.
+\begin{defn}[Unbalanced optimal transport]\label{def-unbalanced-optimal-transport}
+For nonnegative measures $(\al,\be) \in \Mm_+(\Xx) \times \Mm_+(\Yy)$, a nonnegative measurable cost $c$, and proper lower-semicontinuous convex entropy functions $\psi_s:[0,+\infty)\to[0,+\infty]$ satisfying $\psi_s(1)=0$, define
 \index{nonnegative measure}% strictindex
 \eql{\label{eq-unbalanced-primal}
-	\UW_c(\al,\be)= \uinf{\pi \in \Mm_+(\Xx \times \Yy)} \int_{\Xx \times \Yy} c(x,y) \d\pi(x,y)
+	\UW_c(\al,\be)\eqdef \uinf{\pi \in \Mm_+(\Xx \times \Yy)} \int_{\Xx \times \Yy} c(x,y) \d\pi(x,y)
 		+ \Dd_{\psi_1}(\pi_1|\al) + \Dd_{\psi_2}(\pi_2|\be),
 }
-where $\psi_1,\psi_2$ are convex entropy functions. Exact conservation $(\pi_1,\pi_2)=(\al,\be)$ is replaced by a cost for changing the marginals. Writing $\psi_s=\tau\bar\psi_s$ exposes the relaxation scale:
+\end{defn}
+Exact conservation $(\pi_1,\pi_2)=(\al,\be)$ is replaced by a cost for changing the marginals. Writing $\psi_s=\tau\bar\psi_s$ exposes the relaxation scale:
 \index{entropy!function}% strictindex
 \[
 	\UW_{c,\tau}(\alpha,\beta)
@@ -324,10 +327,13 @@ to mass that is created or destroyed rather than transported.
 \index{conic lifting}% strictindex
 \index{cone!lifting}% strictindex
 
-Assume now that $\Xx=\Yy$ and $\psi_1=\psi_2=\psi$. The last formulation lifts the problem to the cone space $\mathfrak C[\Xx]\eqdef(\Xx\times\RR_+)/\sim$, where all points $(x,0)$ are identified at the apex. For an exponent $p\geq1$, define
+Assume now that $\Xx=\Yy$ and $\psi_1=\psi_2=\psi$. The homogeneous formulation naturally lifts mass to a radial coordinate.
+\begin{defn}[Cone lift]\label{def-unbalanced-cone-lift}
+The cone over $\Xx$ is $\mathfrak C[\Xx]\eqdef(\Xx\times\RR_+)/\sim$, where all $(x,0)$ form one apex. For $p\geq1$, its ground cost is
 \[
 	\De((x,r),(y,s))\eqdef H_{c(x,y)}(r^p,s^p)^{1/p}.
 \]
+\end{defn}
 Several classical unbalanced geometries are obtained by choosing $\psi$, $c$ and $p$ so that $\De$ is a distance on the cone:
 \begin{itemize}
 	\item $\Dd_\psi=\KL$, $p=2$, and $c(x,y)=-\log\cos^2(d(x,y)\wedge\pi/2)$ give the Hellinger--Kantorovich or Wasserstein--Fisher--Rao cone metric
@@ -367,6 +373,15 @@ the weight $r^p$ vanishes there. The corresponding cone value is
 	\right\}.
 \]
 
+The cosine cone gives the intrinsic metric most commonly used for simultaneous transport and mass variation.
+\begin{defn}[Wasserstein--Fisher--Rao distance]\label{def-wfr-distance}
+For $p=2$ and
+\[
+\De((x,r),(y,s))^2=r^2+s^2-2rs\cos(d(x,y)\wedge\pi/2),
+\]
+the Wasserstein--Fisher--Rao, or Hellinger--Kantorovich, distance is
+$\WFR(\al,\be)\eqdef\CW(\al,\be)^{1/2}$.
+\end{defn}
 
 In the following theorem, \(\CW\) denotes the \(p\)-action value on the cone. Thus, when the cone cost comes from a distance \(\De\), the actual metric is \(\CW^{1/p}\).
 
@@ -705,32 +720,216 @@ All matrix square roots are principal; the products above are similar to positiv
 			r_0+r_1-2\sqrt{r_0r_1}\,\mathfrak a_\tau
 		\right).
 	\end{equation}
-	Moreover, if the two marginal penalties tend to infinity and the input masses agree, then balanced Gaussian transport is recovered. More precisely, for fixed $\bar\tau_0,\bar\tau_1>0$ and $r_0=r_1=r$,
-	\begin{equation}\label{eq-gaussian-uot-balanced-limit}
-		\lim_{\lambda\to+\infty}
-		\inf_{\pi\geq0}
-		\left\{
-			\int\norm{x-y}^2\d\pi
-			+\lambda\bar\tau_0\KL(\pi_1|\alpha)
-			+\lambda\bar\tau_1\KL(\pi_2|\beta)
-		\right\}
-		=
-		r\,\Wass_2^2\bigl(\Gaussian(m_0,\Sigma_0),\Gaussian(m_1,\Sigma_1)\bigr).
-	\end{equation}
 \end{prop}
 
 \begin{proof}
-	Quadratic dual potentials are closed under the KL optimality equations. Solving the resulting matrix fixed point and integrating the associated scaled Gaussian plan gives~\eqref{eq-gaussian-ghk-closed-form}; equivalently, it is the zero-coupling-entropy limit of the formula below~\cite{janati2020gaussian}. The scalar $\mathfrak a_\tau\in(0,1]$ is the resulting Gaussian affinity. In particular, as $\tau\to+\infty$,
+	Write $\bar\alpha=\Gaussian(m_0,\Sigma_0)$ and
+	$\bar\beta=\Gaussian(m_1,\Sigma_1)$, so that
+	$\alpha=r_0\bar\alpha$ and $\beta=r_1\bar\beta$. We first separate
+	the amount of transported mass from the shapes of the two transported
+	marginals. If $M=\pi(\RR^d\times\RR^d)>0$, write
+	$\pi=M\bar\pi$, where $\bar\pi$ is a probability coupling with marginals
+	$\tilde\alpha$ and $\tilde\beta$. The homogeneity identity for generalized
+	relative entropy gives
 	\[
-		\mathfrak a_\tau
+		\KL(M\tilde\alpha\mid r_0\bar\alpha)
 		=
-		1-\frac{1}{2\tau}
-		\Wass_2^2\bigl(\Gaussian(m_0,\Sigma_0),\Gaussian(m_1,\Sigma_1)\bigr)
-		+o(\tau^{-1}),
+		M\KL(\tilde\alpha\mid\bar\alpha)
+		+M\log\frac{M}{r_0}-M+r_0,
 	\]
-	which inserted into~\eqref{eq-gaussian-ghk-closed-form} gives the common-penalty instance of~\eqref{eq-gaussian-uot-balanced-limit}.
+	and analogously for the second marginal. After minimizing $\bar\pi$ for
+	fixed marginals, the objective in~\eqref{eq-gaussian-ghk-endpoint} becomes
+	\begin{align}
+		M\mathcal A(\tilde\alpha,\tilde\beta)
+		&+\tau\left(M\log\frac{M}{r_0}-M+r_0\right)
+		+\tau\left(M\log\frac{M}{r_1}-M+r_1\right),
+		\label{eq-gaussian-ghk-mass-reduction}\\[-1mm]
+		\mathcal A(\tilde\alpha,\tilde\beta)
+		&=
+		\Wass_2^2(\tilde\alpha,\tilde\beta)
+		+\tau\KL(\tilde\alpha\mid\bar\alpha)
+		+\tau\KL(\tilde\beta\mid\bar\beta).
+		\label{eq-gaussian-ghk-normalized-action}
+	\end{align}
+	For fixed normalized marginals, differentiation with respect to $M$ gives
+	\begin{equation}\label{eq-gaussian-ghk-optimal-mass}
+		M(\tilde\alpha,\tilde\beta)
+		=
+		\sqrt{r_0r_1}\,
+		\exp\!\left(-\frac{\mathcal A(\tilde\alpha,\tilde\beta)}{2\tau}\right),
+	\end{equation}
+	and substitution in~\eqref{eq-gaussian-ghk-mass-reduction} yields
+	$\tau(r_0+r_1)-2\tau M$. The zero plan has value $\tau(r_0+r_1)$,
+	whereas every finite normalized competitor gives $M>0$ and a strictly
+	smaller value. It therefore remains to minimize the normalized
+	action~\eqref{eq-gaussian-ghk-normalized-action}.
 
-	The two-penalty statement also follows directly from the variational problem. A balanced optimal plan of mass $r$ is an admissible competitor and gives the right-hand side as an upper bound. Conversely, any sequence with bounded objective has both marginal KL divergences converging to zero. Entropy tightness and lower semicontinuity then force its two marginals to converge to $\alpha$ and $\beta$, while lower semicontinuity of the quadratic transport cost gives the matching lower bound. If $r_0\neq r_1$, the leading term in the common-penalty formula is instead $\tau(\sqrt{r_0}-\sqrt{r_1})^2$, reflecting the incompatibility of balanced marginals with unequal mass.
+	This second problem reduces without loss to Gaussian marginals. Indeed, let
+	$(u,P)$ and $(v,Q)$ be the means and covariances of
+	$\tilde\alpha$ and $\tilde\beta$. Gelbrich's theorem
+	(Theorem~\ref{thm-gelbrich-projection}) gives
+	\[
+		\Wass_2^2(\tilde\alpha,\tilde\beta)
+		\geq
+		\Wass_2^2\bigl(\Gaussian(u,P),\Gaussian(v,Q)\bigr).
+	\]
+	Moreover, because the logarithm of the ratio of two non-degenerate Gaussian
+	densities is quadratic, moment matching gives the Pythagorean identity
+	\[
+		\KL(\tilde\alpha\mid\bar\alpha)
+		=
+		\KL\bigl(\tilde\alpha\mid\Gaussian(u,P)\bigr)
+		+\KL\bigl(\Gaussian(u,P)\mid\bar\alpha\bigr),
+	\]
+	with the analogous identity for $\tilde\beta$. Replacing each marginal by
+	the Gaussian with the same first two moments can thus only decrease
+	$\mathcal A$.
+
+	We now solve the resulting finite-dimensional problem. Set
+	\[
+		\eta=\frac{2}{\tau},\qquad
+		A_i=\Sigma_i^{-1},\qquad
+		C_i=A_i+\eta\Id,
+	\]
+	and define
+	\begin{equation}\label{eq-gaussian-ghk-adjusted-map}
+		L_\tau
+		=
+		C_1^{-1/2}
+		\left(C_1^{1/2}C_0C_1^{1/2}\right)^{1/2}
+		C_1^{-1/2}.
+	\end{equation}
+	For the means, the first-order equations are
+	\[
+		2(u-v)+\tau A_0(u-m_0)=0,
+		\qquad
+		2(v-u)+\tau A_1(v-m_1)=0.
+	\]
+	Writing $\Delta m=m_0-m_1$ and recalling
+	$X_\tau=\Sigma_0+\Sigma_1+\tau\Id/2$, their unique solution is
+	\begin{equation}\label{eq-gaussian-ghk-adjusted-means}
+		u_\tau=m_0-\Sigma_0X_\tau^{-1}\Delta m,
+		\qquad
+		v_\tau=m_1+\Sigma_1X_\tau^{-1}\Delta m.
+	\end{equation}
+	The minimum of the mean-dependent part of $\mathcal A$ is
+	\begin{equation}\label{eq-gaussian-ghk-mean-value}
+		\frac{\tau}{2}\norm{\Delta m}_{X_\tau^{-1}}^2.
+	\end{equation}
+
+	For the covariances, let $L\succ0$ be the Gaussian optimal map from
+	$\Gaussian(0,P)$ to $\Gaussian(0,Q)$, so that $Q=LPL$. The differential
+	of the squared Bures term is $\Id-L$ with respect to $P$ and
+	$\Id-L^{-1}$ with respect to $Q$. The two stationarity equations are
+	\begin{equation}\label{eq-gaussian-ghk-covariance-stationarity}
+		P^{-1}=A_0+\eta(\Id-L),
+		\qquad
+		Q^{-1}=A_1+\eta(\Id-L^{-1}).
+	\end{equation}
+	Using $Q^{-1}=L^{-1}P^{-1}L^{-1}$ reduces these equations to
+	$LC_1L=C_0$. Its unique positive-definite solution is precisely
+	$L=L_\tau$ from~\eqref{eq-gaussian-ghk-adjusted-map}; hence
+	\begin{equation}\label{eq-gaussian-ghk-adjusted-covariances}
+		P_\tau=\left[A_0+\eta(\Id-L_\tau)\right]^{-1},
+		\qquad
+		Q_\tau=L_\tau P_\tau L_\tau.
+	\end{equation}
+	The Riccati equation also gives
+	\[
+		(\Id-L_\tau)^2+\eta^{-1}A_0
+		+\eta^{-1}L_\tau A_1L_\tau
+		=2\eta^{-1}\left[A_0+\eta(\Id-L_\tau)\right].
+	\]
+	Its left-hand side is positive definite, so $P_\tau\succ0$ and hence
+	$Q_\tau\succ0$.
+
+	It remains to evaluate the covariance contribution. Since
+	$Q_\tau=L_\tau P_\tau L_\tau$, the Bures term is
+	$\tr(P_\tau+Q_\tau-2L_\tau P_\tau)$. Taking traces in
+	~\eqref{eq-gaussian-ghk-covariance-stationarity} gives
+	\[
+		\tr(A_0P_\tau+A_1Q_\tau-2\Id)
+		=-\eta\tr(P_\tau+Q_\tau-2L_\tau P_\tau).
+	\]
+	Thus the trace terms in the two Gaussian KL divergences cancel the Bures
+	term, leaving
+	\begin{equation}\label{eq-gaussian-ghk-covariance-value}
+		\mathcal A_{\rm cov}
+		=
+		\frac{\tau}{2}
+		\log\frac{\det\Sigma_0\det\Sigma_1}
+		{\det P_\tau\det Q_\tau}.
+	\end{equation}
+	To identify this determinant with the stated formula, note that
+	$\widehat\Sigma_i=\Sigma_iC_i$ and, using $L_\tau C_1L_\tau=C_0$,
+	\[
+		\left(\Sigma_0\widehat\Sigma_0^{-1}
+		\widehat\Sigma_1^{-1}\Sigma_1\right)^{1/2}
+		=(C_0^{-1}C_1^{-1})^{1/2}
+		=L_\tau^{-1}C_1^{-1}.
+	\]
+	The definition of $J_\tau$, the identity
+	$P_\tau^{-1}=L_\tau(C_1L_\tau-\eta\Id)$, and
+	$Q_\tau=L_\tau P_\tau L_\tau$ therefore yield
+	\begin{align*}
+		\det J_\tau
+		&=\sqrt{\det\Sigma_0\det\Sigma_1\det C_0\det C_1}\,
+		\det(\Id-\eta L_\tau^{-1}C_1^{-1})\\
+		&=\sqrt{\det\Sigma_0\det\Sigma_1}\,
+		\det(C_1L_\tau-\eta\Id)\\
+		&=\frac{\sqrt{\det\Sigma_0\det\Sigma_1}}
+		{\det P_\tau\det L_\tau}
+		=
+		\left(
+		\frac{\det\Sigma_0\det\Sigma_1}
+		{\det P_\tau\det Q_\tau}
+		\right)^{1/2}.
+	\end{align*}
+	Combining this identity with~\eqref{eq-gaussian-ghk-mean-value}
+	and~\eqref{eq-gaussian-ghk-covariance-value} yields
+	\[
+		\min\mathcal A
+		=
+		\frac{\tau}{2}\norm{m_0-m_1}_{X_\tau^{-1}}^2
+		+\tau\log\det J_\tau,
+	\]
+	so~\eqref{eq-gaussian-ghk-optimal-mass} becomes
+	$M_\tau=\sqrt{r_0r_1}\,\mathfrak a_\tau$.
+
+	For completeness, global optimality is certified directly in the KL dual.
+	Let $\tilde\alpha_\tau=\Gaussian(u_\tau,P_\tau)$,
+	$\tilde\beta_\tau=\Gaussian(v_\tau,Q_\tau)$, and let
+	$\pi_\tau=M_\tau(\Id,T_\tau)_\#\tilde\alpha_\tau$, where
+	$T_\tau(x)=v_\tau+L_\tau(x-u_\tau)$. Define, using Lebesgue densities,
+	\[
+		\varphi(x)=-\tau\log\frac{M_\tau\tilde\alpha_\tau(x)}
+		{r_0\bar\alpha(x)},
+		\qquad
+		\psi(y)=-\tau\log\frac{M_\tau\tilde\beta_\tau(y)}
+		{r_1\bar\beta(y)}.
+	\]
+	With $X=x-u_\tau$, $Y=y-v_\tau$ and $h=u_\tau-v_\tau$, the preceding
+	stationarity equations give
+	\[
+		\varphi(x)=X^\top(\Id-L_\tau)X+2h^\top X+c_0,
+		\qquad
+		\psi(y)=Y^\top(\Id-L_\tau^{-1})Y-2h^\top Y+c_1,
+	\]
+	where the mass equation implies $c_0+c_1=\norm{h}^2$. Consequently,
+	\[
+		\norm{x-y}^2-\varphi(x)-\psi(y)
+		=
+		\norm{L_\tau^{1/2}X-L_\tau^{-1/2}Y}^2\geq0,
+	\]
+	with equality on the graph $Y=L_\tau X$ supporting $\pi_\tau$.
+	Furthermore, $e^{-\varphi/\tau}\alpha=M_\tau\tilde\alpha_\tau$ and
+	$e^{-\psi/\tau}\beta=M_\tau\tilde\beta_\tau$. These are exactly the
+	complementary-slackness conditions for the KL specialization of
+	Proposition~\ref{prop-dual-unbalanced-ot}, proving that $\pi_\tau$ is
+	globally optimal. Finally, inserting its mass into
+	~\eqref{eq-gaussian-ghk-mass-reduction} proves
+	~\eqref{eq-gaussian-ghk-closed-form}. This direct calculation is equivalent
+	to the zero-coupling-entropy limit obtained in~\cite{janati2020gaussian}.
 \end{proof}
 
 \begin{rem}[Failure of Gaussian closure for WFR]\label{rem-gaussian-uot-geodesic-caveat}
@@ -843,13 +1042,10 @@ Define the transported mass
 %%%
 \paragraph{Partial optimal transport.}
 \index{partial transport}% strictindex
-\index{partial transport}% strictindex
-Total variation gives a sharp active-mass selection and connects unbalanced OT with the classical partial-transport problem. The latter fixes in advance the amount of transported mass. For
+Total variation gives a sharp active-mass selection and connects unbalanced OT with the classical partial-transport problem. The latter fixes in advance the amount of transported mass.
 \index{active mass}% strictindex
-\[
-	0\leq m\leq \min\{\al(\Xx),\be(\Yy)\},
-\]
-define
+\begin{defn}[Partial optimal transport]\label{def-partial-optimal-transport}
+For \(0\leq m\leq \min\{\al(\Xx),\be(\Yy)\}\), define
 \[
 	\operatorname{POT}_m(\al,\be)
 	\eqdef
@@ -858,6 +1054,14 @@ define
 	\pi(\Xx\times\Yy)=m}}
 	\int c\,\d\pi .
 \]
+Writing \(A=\al(\Xx)\) and \(B=\be(\Yy)\), for \(\lambda\geq0\) its TV-penalized form is
+\[
+\operatorname{POT}^{\TV}_\lambda(\al,\be)
+\eqdef
+\inf_{\substack{\pi\in\Mm_+(\Xx\times\Yy)\\ \pi_1\leq\al,\ \pi_2\leq\be}}
+\left\{\int c\,\d\pi+\lambda\big(A+B-2\pi(\Xx\times\Yy)\big)\right\}.
+\]
+\end{defn}
 Thus only a submeasure of $\al$ is transported onto a submeasure of $\be$; the remaining mass is left unmatched. The corresponding Lagrangian form is obtained by adding total-variation penalties. For a price $\lambda>0$ for discarding or creating one unit of mass, consider
 \[
 	\inf_{\pi\in\Mm_+(\Xx\times\Yy)}
@@ -873,19 +1077,11 @@ Assume $c\geq0$. Allowing transported marginals larger than the available margin
 \]
 	so the precise relation is a one-dimensional Lagrange duality in the transported mass.
 
+The trimmed expression in Definition~\ref{def-partial-optimal-transport} makes the relation between penalized and prescribed transported mass explicit.
+
 \begin{prop}[TV penalization selects fixed-mass partial OT]\label{prop-tv-partial-ot-lagrange}
 \index{partial transport!TV penalization}% strictindex
-	Assume that $\Xx,\Yy$ are compact metric spaces, that $c$ is continuous and nonnegative, and set $A=\al(\Xx)$, $B=\be(\Yy)$, $M=\min(A,B)$. For $\lambda\geq0$, define the TV-penalized partial value
-	\[
-		\operatorname{POT}^{\TV}_\lambda(\al,\be)
-		\eqdef
-		\inf_{\substack{\pi\in\Mm_+(\Xx\times\Yy)\\ \pi_1\leq\al,\ \pi_2\leq\be}}
-		\left\{
-		\int c\,\d\pi
-		+
-		\lambda\big(A+B-2\pi(\Xx\times\Yy)\big)
-		\right\}.
-	\]
+	Assume that $\Xx,\Yy$ are compact metric spaces, that $c$ is continuous and nonnegative, and set $A=\al(\Xx)$, $B=\be(\Yy)$, $M=\min(A,B)$. For $\lambda\geq0$,
 	Then
 	\[
 		\operatorname{POT}^{\TV}_\lambda(\al,\be)
@@ -1022,18 +1218,21 @@ Since each projected problem can be solved by sorting or quantiles, $\SW_p$ is m
 \index{quantile!function}% strictindex
 \index{probability measure}% strictindex
 
+The family of all projected laws is itself a transform of measures.
+\begin{defn}[Measure-valued Radon transform]\label{def-measure-radon-transform}
+For $\al\in\Pp(\RR^d)$, define
+\[
+\mathfrak R\al(\theta)\eqdef(P_\theta)_\sharp\al,
+\qquad \theta\in\Sphere^{d-1}.
+\]
+\end{defn}
+
 \begin{rem}[Radon viewpoint]\label{rem-sliced-radon-viewpoint}
 \index{measure-valued Radon transform}% strictindex
 \index{projected measure}% strictindex
 \index{Radon transform}% strictindex
 \index{sliced Wasserstein!distance}% strictindex
-	Slicing can also be understood as applying a Radon transform before measuring discrepancy. For a probability measure $\al$ on $\RR^d$, define its measure-valued Radon transform by
-	\[
-		\mathfrak R\al(\theta)\eqdef (P_\theta)_\sharp\al,
-		\qquad
-		\theta\in\Sphere^{d-1}.
-	\]
-	Thus $\mathfrak R\al$ is a collection of one-dimensional projected measures indexed by directions. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density given by the classical Radon transform
+	Slicing can also be understood as applying Definition~\ref{def-measure-radon-transform} before measuring discrepancy. Thus $\mathfrak R\al$ is a collection of one-dimensional projected measures indexed by directions. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density given by the classical Radon transform
 	\[
 		R\rho(\theta,s)
 		=
@@ -1727,6 +1926,7 @@ and let
 	\mathrm{Leb}_{[0,1]}
 \]
 be their canonical monotone coupling, as in Theorem~\ref{prop-1d-kantorovich-quantile-coupling}. Define
+\begin{defn}[Min-SW discrepancy and lifted plans]\label{def-min-sw}
 \begin{equation}\label{eq-min-sw-constrained-lifts}
 	\mathcal C_\theta(\alpha,\beta)
 	\eqdef
@@ -1736,6 +1936,15 @@ be their canonical monotone coupling, as in Theorem~\ref{prop-1d-kantorovich-qua
 		(P_\theta,P_\theta)_\sharp\pi=\varpi_\theta
 	\right\}.
 \end{equation}
+The Min-SW discrepancy is
+\begin{equation}\label{eq-min-sw-definition}
+	\MinSW_2(\alpha,\beta)^2
+	\eqdef
+	\min_{\theta\in\Sphere^{d-1}}
+	\min_{\pi\in\mathcal C_\theta(\alpha,\beta)}
+	\int_{\RR^d\times\RR^d}\norm{x-y}^2\d\pi(x,y).
+\end{equation}
+\end{defn}
 This set is nonempty. Indeed, disintegrate
 \[
 	\alpha(\d x)=\int_\RR \alpha^s(\d x)\d\alpha_\theta(s),
@@ -1750,14 +1959,7 @@ along $P_\theta$. The conditionally independent lift
 	\alpha^s(\d x)\beta^t(\d y)
 	\d\varpi_\theta(s,t)
 \end{equation}
-belongs to $\mathcal C_\theta(\alpha,\beta)$. A representation-invariant measure-level extension is therefore
-\begin{equation}\label{eq-min-sw-definition}
-	\MinSW_2(\alpha,\beta)^2
-	\eqdef
-	\min_{\theta\in\Sphere^{d-1}}
-	\min_{\pi\in\mathcal C_\theta(\alpha,\beta)}
-	\int_{\RR^d\times\RR^d}\norm{x-y}^2\d\pi(x,y).
-\end{equation}
+belongs to $\mathcal C_\theta(\alpha,\beta)$. This proves that the representation-invariant measure-level discrepancy in Definition~\ref{def-min-sw} is well posed.
 Both minima are attained for $\alpha,\beta\in\Pp_2(\RR^d)$~\cite{TanguyChapelDelon2025SlicedTransportPlans}. Unlike the particular lift~\eqref{eq-min-sw-fiber-lift}, the inner minimization may correlate the conditional laws on
 $P_\theta^{-1}(s)\times P_\theta^{-1}(t)$; it chooses the least costly transverse coupling compatible with the prescribed projected coupling. When the empirical projections have no ties, $\mathcal C_\theta(\alpha,\beta)=\{\pi_\theta\}$ and~\eqref{eq-min-sw-definition} reduces to~\eqref{eq-min-sw-empirical-plan}.
 
@@ -1891,12 +2093,18 @@ Many comparison problems contain nuisance transformations: two shapes, images or
 \index{rigid motion}% strictindex
 \index{Procrustes!problem}% strictindex
 
-The most common example is the Euclidean group $\mathrm E(d)=\mathrm O(d)\ltimes\RR^d$. For measures on $\RR^d$, quotienting by rotations and translations gives the Wasserstein--Procrustes problem
+The most common example is the Euclidean group $\mathrm E(d)=\mathrm O(d)\ltimes\RR^d$. Its quotient distance has a standard registration name.
+\begin{defn}[Wasserstein--Procrustes distance]\label{def-wasserstein-procrustes}
+For $\alpha,\beta\in\Pp_2(\RR^d)$, define
 \[
-	\inf_{R\in\mathrm O(d),\,t\in\RR^d,\,\pi\in\Couplings(\alpha,\beta)}
+	\operatorname{WP}_2(\alpha,\beta)^2
+	\eqdef
+	\inf_{\substack{R\in\mathrm O(d),\,t\in\RR^d\\ \pi\in\Couplings(\alpha,\beta)}}
 	\int\norm{Rx+t-y}^2\d\pi(x,y).
 \]
-This is the case $p=2$ of the quotient distance; for a general exponent $p$, one replaces the quadratic cost by the $p$th power of the Euclidean distance. Replacing $\mathrm O(d)$ by $\mathrm{SO}(d)$ enforces orientation preservation. Although the translation group is noncompact, the quadratic problem is well behaved: for fixed $R$ and $\pi$, the optimal translation aligns $R\bar x$ with $\bar y$. The remaining rigid step is therefore an orthogonal Procrustes problem over the compact group $\mathrm O(d)$.
+Restricting \(R\) to \(\mathrm{SO}(d)\) defines the orientation-preserving variant.
+\end{defn}
+This is the case $p=2$ of the quotient distance; for a general exponent $p$, one replaces the quadratic cost by the $p$th power of the Euclidean distance. Although the translation group is noncompact, the quadratic problem is well behaved: for fixed $R$ and $\pi$, the optimal translation aligns $R\bar x$ with $\bar y$. The remaining rigid step is therefore an orthogonal Procrustes problem over the compact group $\mathrm O(d)$.
 \index{Wasserstein!Procrustes}% strictindex
 \index{Procrustes!orthogonal}% strictindex
 For empirical measures, this couples a transport problem with a rigid registration problem. Classical iterative closest point methods alternate nearest-neighbor assignment and rigid least squares~\cite{BeslMcKay1992ICP}. Wasserstein--Procrustes replaces these hard many-to-one nearest-neighbor correspondences by a mass-preserving OT plan. This makes the registration less tied to sampling density and better suited to ambiguous correspondences.
@@ -2097,11 +2305,14 @@ This construction is canonical only after fixing $\alpha_{\rm ref}$: changing th
 Linear OT replaces a nonlinear transport distance by a Hilbert norm between reference maps. It is useful when one reference measure is fixed and many nearby distributions must be compared cheaply. Let $T_\alpha$ be the Brenier map pushing $\alpha_{\rm ref}$ to $\alpha$, understood as an element of $L^2(\alpha_{\rm ref};\RR^d)$ and hence defined only $\alpha_{\rm ref}$-almost everywhere. The linear OT embedding is
 \index{reference!measure}% strictindex
 \index{linear!OT}% strictindex
+\begin{defn}[Linear optimal-transport embedding]\label{def-lot-embedding}
+Fix an absolutely continuous reference measure $\alpha_{\rm ref}\in\Pp_2(\RR^d)$, and let $T_\alpha$ denote the Brenier map from $\alpha_{\rm ref}$ to $\alpha\in\Pp_2(\RR^d)$. Then
 \begin{equation}\label{eq-lot-embedding}
 	\alpha \mapsto T_\alpha-\Id\in L^2(\alpha_{\rm ref};\RR^d),
 	\qquad
 	\LOT_{\alpha_{\rm ref}}(\alpha,\beta)=\norm{T_\alpha-T_\beta}_{L^2(\alpha_{\rm ref})}.
 \end{equation}
+\end{defn}
 If one of the two targets equals the reference, the linearized distance is exact. For instance,
 \[
 	\LOT_{\alpha_{\rm ref}}(\alpha_{\rm ref},\alpha)
