@@ -103,8 +103,8 @@ cells separate the main numerical steps.
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="matching-hungarian-progression.ipynb"><img src="thumbnails/matching-hungarian-progression.png" alt="Hungarian algorithm progression" width="210"></a><br>
-  <strong>Hungarian algorithm progression</strong><br>
+  <a href="matching-hungarian-progression.ipynb"><img src="thumbnails/matching-hungarian-progression.png" alt="Geometric Hungarian progression" width="210"></a><br>
+  <strong>Geometric Hungarian progression</strong><br>
   <a href="matching-hungarian-progression.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/matching-hungarian-progression.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -327,8 +327,8 @@ cells separate the main numerical steps.
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="dual-auction-progression.ipynb"><img src="thumbnails/dual-auction-progression.png" alt="Auction algorithm progression" width="210"></a><br>
-  <strong>Auction algorithm progression</strong><br>
+  <a href="dual-auction-progression.ipynb"><img src="thumbnails/dual-auction-progression.png" alt="Geometric auction progression" width="210"></a><br>
+  <strong>Geometric auction progression</strong><br>
   <a href="dual-auction-progression.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dual-auction-progression.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -653,8 +653,8 @@ cells separate the main numerical steps.
 </td>
 
 <td width="33%" align="center" valign="top">
-  <a href="min-sliced-transport-plan.ipynb"><img src="thumbnails/min-sliced-transport-plan.png" alt="Min-sliced lifted transport plan" width="210"></a><br>
-  <strong>Min-sliced lifted transport plan</strong><br>
+  <a href="min-sliced-transport-plan.ipynb"><img src="thumbnails/min-sliced-transport-plan.png" alt="Min-SW lifted transport plan" width="210"></a><br>
+  <strong>Min-SW lifted transport plan</strong><br>
   <a href="min-sliced-transport-plan.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/min-sliced-transport-plan.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
@@ -895,7 +895,11 @@ cells separate the main numerical steps.
   <a href="discrete-markov-simplex-distances.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/discrete-markov-simplex-distances.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
-<td width="33%"></td>
+<td width="33%" align="center" valign="top">
+  <a href="dynamic-variational-mfg-hard-congestion.ipynb"><img src="thumbnails/dynamic-variational-mfg-hard-congestion.png" alt="Variational mean field game with hard congestion" width="210"></a><br>
+  <strong>Variational mean field game with hard congestion</strong><br>
+  <a href="dynamic-variational-mfg-hard-congestion.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-variational-mfg-hard-congestion.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
 
 <td width="33%"></td>
 

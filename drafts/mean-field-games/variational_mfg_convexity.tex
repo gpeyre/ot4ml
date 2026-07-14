@@ -1,0 +1,582 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage[authoryear,round]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+  citecolor=red!45!black,urlcolor=blue!45!black]{hyperref}
+
+\definecolor{otblue}{HTML}{1F4E79}
+\definecolor{otgray}{HTML}{F1F3F5}
+\definecolor{otline}{HTML}{AAB5BF}
+\titleformat{\section}{\normalfont\Large\bfseries\color{otblue}}
+  {\thesection}{.7em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{otblue!80!black}}
+  {\thesubsection}{.65em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\bfseries\color{otblue!75!black}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.7ex plus .7ex minus .2ex}{1.1ex}
+\titlespacing*{\subsection}{0pt}{2ex plus .5ex minus .2ex}{.75ex}
+\titlespacing*{\paragraph}{0pt}{1.3ex plus .3ex minus .1ex}{.55em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newmdenv[
+  backgroundcolor=otgray,linecolor=otline,linewidth=.5pt,roundcorner=2pt,
+  innerleftmargin=8pt,innerrightmargin=8pt,innertopmargin=6pt,
+  innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt
+]{definitionbox}
+\newenvironment{definition}[1][]{%
+  \begin{definitionbox}\refstepcounter{theorem}%
+  \noindent\textbf{Definition~\thetheorem}%
+  \if\relax\detokenize{#1}\relax.\else\ \textbf{(#1).}\fi\enspace
+}{\end{definitionbox}}
+
+\newcommand{\RR}{\mathbb R}
+\newcommand{\Pp}{\mathcal P}
+\newcommand{\Ptwo}{\mathcal P_2}
+\newcommand{\Wass}{\mathcal W}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\diverg}{\operatorname{div}}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\al}{\alpha}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+\newcommand{\ind}{\iota}
+
+\title{Why Variational Mean Field Games Are Convex\\
+  \large Momentum variables, perspective functions, and the Benamou--Brenier structure}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+\hypersetup{
+  pdftitle={Why Variational Mean Field Games Are Convex},
+  pdfauthor={Gabriel Peyre},
+  pdfsubject={Variational mean field games and convex momentum formulations},
+  pdfkeywords={mean field games, optimal transport, Benamou-Brenier, perspective function, convex optimization}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A basic variational mean field game minimizes kinetic effort and congestion
+over a population curve whose initial distribution is prescribed and whose
+final distribution is penalized. In density and velocity variables, neither
+the kinetic energy \(\rho|v|^2/2\) nor the constraint
+\(\partial_t\rho+\operatorname{div}(\rho v)=0\) is jointly convex. Convexity
+appears after introducing the mass flux \(m=\rho v\): the constraint becomes
+affine and the kinetic energy becomes \(|m|^2/(2\rho)\), the perspective of a
+quadratic function. This note proves that mechanism carefully, including the
+extension at vacuum, the hypotheses on the congestion potential, the convex
+dual, and the Hamilton--Jacobi/continuity optimality system. It also separates
+this full-horizon problem from Benamou--Brenier transport and JKO minimizing
+movements.
+\end{abstract}
+
+\tableofcontents
+
+\section{The model and the short answer}
+
+Let \(\mathcal X=\mathbb T^d\), or let \(\mathcal X=\RR^d\) under suitable
+moment assumptions. The initial probability measure is
+\(\al_0=\rho_0\dd x\). A population curve
+\(\al_t=\rho_t\dd x\) is transported by a velocity \(v_t\) according to
+\begin{equation}\label{eq:velocity-continuity}
+  \partial_t\rho_t+\diverg(\rho_tv_t)=0,
+  \qquad \rho_{t=0}=\rho_0.
+\end{equation}
+The final density is free and is charged through a terminal potential
+\(\Psi:\mathcal X\to\RR\). Given a congestion potential
+\(G:[0,+\infty)\to\RR\cup\{+\infty\}\), consider
+\begin{equation}\label{eq:velocity-primal}
+  \inf_{\rho,v}
+  \left\{
+    \int_0^1\!\int_{\mathcal X}
+      \left(\frac12\rho_t\abs{v_t}^2+G(\rho_t)\right)\dd x\dd t
+    +\int_{\mathcal X}\Psi\rho_1\dd x
+  \right\}
+\end{equation}
+subject to~\eqref{eq:velocity-continuity} and \(\rho\geq0\). This is a
+standard variational MFG model
+\citep{BenamouCarlier2015,BenamouCarlierSantambrogio2017}. The factor \(1/2\)
+is only a normalization.
+
+\begin{definition}[Momentum or mass flux]
+The momentum variable is
+\begin{equation}\label{eq:momentum-change}
+  m_t(x)=\rho_t(x)v_t(x).
+\end{equation}
+Thus \(m_t\dd x\) is a vector-valued measure recording transported mass per
+unit time, rather than velocity per particle.
+\end{definition}
+
+In the variables \((\rho,m)\), the problem becomes
+\begin{equation}\label{eq:momentum-primal-preview}
+  \inf_{\rho,m}
+  \left\{
+    \int_0^1\!\int_{\mathcal X}
+      \left(\frac{\abs{m_t}^2}{2\rho_t}+G(\rho_t)\right)\dd x\dd t
+    +\int_{\mathcal X}\Psi\rho_1\dd x
+  \right\},
+\end{equation}
+subject to the affine conservation law
+\begin{equation}\label{eq:momentum-continuity}
+  \partial_t\rho_t+\diverg m_t=0,
+  \qquad \rho_{t=0}=\rho_0.
+\end{equation}
+The quotient must be extended correctly at \(\rho=0\), as explained below.
+
+\begin{definition}[Convex variational MFG]
+Problem~\eqref{eq:momentum-primal-preview} is a convex optimization problem
+provided that \(G\) is convex: the kinetic integrand is jointly convex in
+\((\rho,m)\), the congestion is convex in \(\rho\), the terminal cost is
+linear, and the constraints are affine.
+\end{definition}
+
+\section{Why the velocity formulation is not convex}
+
+The product \(\rho|v|^2\) is convex in each variable separately, but separate
+convexity does not imply joint convexity.
+
+\begin{proposition}[Nonconvexity in density--velocity variables]
+\label{prop:velocity-nonconvex}
+For \(v\neq0\), the map
+\[
+  (\rho,v)\longmapsto \frac12\rho\abs v^2,\qquad \rho>0,
+\]
+is not jointly convex. Moreover,
+\(\partial_t\rho+\diverg(\rho v)=0\) is nonlinear in \((\rho,v)\).
+\end{proposition}
+
+\begin{proof}
+In one dimension, the Hessian of \(K(\rho,v)=\rho v^2/2\) is
+\[
+  \nabla^2K(\rho,v)=
+  \begin{pmatrix}0&v\\v&\rho\end{pmatrix},
+\]
+whose determinant is \(-v^2<0\). It is therefore indefinite whenever
+\(v\neq0\). The multidimensional claim follows by restriction to a line.
+The product \(\rho v\) in the continuity equation is bilinear.
+\end{proof}
+
+The nonlinear change \((\rho,v)\mapsto(\rho,m=\rho v)\) does two things at
+once: it linearizes conservation and changes the kinetic integrand. At vacuum,
+\(v\) is physically irrelevant, while finite action forces \(m=0\).
+
+\section{The perspective mechanism}\label{sec-perspective}
+
+\begin{definition}[Closed perspective]
+Let \(L:\RR^d\to\RR\cup\{+\infty\}\) be proper, convex, and lower
+semicontinuous. Its closed perspective is
+\begin{equation}\label{eq:general-perspective}
+  J_L(a,m)=
+  \begin{cases}
+    aL(m/a),&a>0,\\
+    L^\infty(m),&a=0,\\
+    +\infty,&a<0,
+  \end{cases}
+\end{equation}
+where \(L^\infty\) is the recession function of \(L\).
+\end{definition}
+
+For the quadratic Lagrangian \(L(v)=|v|^2/2\), this is
+\begin{equation}\label{eq:quadratic-perspective}
+  J(a,m)=
+  \begin{cases}
+    \dfrac{\abs m^2}{2a},&a>0,\\[1mm]
+    0,&(a,m)=(0,0),\\
+    +\infty,&a=0,\ m\neq0,\\
+    +\infty,&a<0.
+  \end{cases}
+\end{equation}
+This boundary convention is essential; the symbol \(0/0\) is not a
+definition.
+
+\begin{proposition}[Convexity of the perspective]
+\label{prop:perspective-convexity}
+If \(L\) is proper, convex, and lower semicontinuous, then \(J_L\) is jointly
+convex, lower semicontinuous, and positively one-homogeneous:
+\[
+  J_L(\lambda a,\lambda m)=\lambda J_L(a,m)
+  \qquad(\lambda\geq0).
+\]
+\end{proposition}
+
+\begin{proof}
+Take \(a_0,a_1>0\), \(m_0,m_1\in\RR^d\), and \(\theta\in[0,1]\). Set
+\[
+  a_\theta=(1-\theta)a_0+\theta a_1,\quad
+  \lambda_0=\frac{(1-\theta)a_0}{a_\theta},\quad
+  \lambda_1=\frac{\theta a_1}{a_\theta}.
+\]
+Then \(\lambda_0+\lambda_1=1\) and
+\[
+  \frac{(1-\theta)m_0+\theta m_1}{a_\theta}
+  =\lambda_0\frac{m_0}{a_0}+\lambda_1\frac{m_1}{a_1}.
+\]
+Convexity of \(L\), multiplied by \(a_\theta\), proves the convexity
+inequality. The recession value at \(a=0\) is precisely the
+lower-semicontinuous closure. Homogeneity follows from the definition.
+\end{proof}
+
+For the quadratic case, the epigraph is the rotated second-order cone
+\[
+  \operatorname{epi}J
+  =\{(a,m,s):a\geq0,\ s\geq0,\ \abs m^2\leq2as\},
+\]
+which gives another direct proof of convexity.
+
+\begin{remark}[A recurring convexity mechanism]
+The same perspective transform makes
+\(b\varphi(a/b)\) jointly convex in the theory of
+\(\varphi\)-divergences. Here it turns a per-particle velocity cost into a
+convex density--flux cost.
+\end{remark}
+
+\section{The convex primal problem}
+
+Define
+\begin{equation}\label{eq:convex-energy}
+  \mathcal E(\rho,m)=
+  \int_0^1\!\int_{\mathcal X}
+    \bigl(J(\rho_t,m_t)+G(\rho_t)\bigr)\dd x\dd t
+  +\int_{\mathcal X}\Psi\rho_1\dd x.
+\end{equation}
+The variational MFG is
+\begin{equation}\label{eq:convex-primal}
+  \inf\left\{
+    \mathcal E(\rho,m):
+    \partial_t\rho+\diverg m=0,\ \rho_{t=0}=\rho_0
+  \right\}.
+\end{equation}
+
+\begin{theorem}[Convexity of the variational MFG]
+\label{thm:variational-mfg-convexity}
+If \(G:[0,+\infty)\to\RR\cup\{+\infty\}\) is proper, convex, and lower
+semicontinuous, then~\eqref{eq:convex-primal} is a convex optimization problem
+in \((\rho,m)\).
+\end{theorem}
+
+\begin{proof}
+The perspective \(J\) is jointly convex by
+Proposition~\ref{prop:perspective-convexity}; \(G\) is convex by assumption;
+integration preserves convexity; and the endpoint term is linear. The
+continuity equation and initial condition are affine constraints.
+\end{proof}
+
+If \(G\) is nonconvex, the momentum substitution still convexifies the kinetic
+term and linearizes the PDE, but it cannot convexify \(G\). A convex terminal
+functional \(\mathcal G(\rho_1\dd x)\) may replace the linear terminal term
+without changing the theorem. A fixed endpoint is also a convex affine
+constraint.
+
+\begin{proposition}[Basic existence]
+\label{prop:variational-mfg-existence}
+Let \(\mathcal X=\mathbb T^d\), let \(\Psi\) be lower semicontinuous and
+bounded below, and assume
+\(G\) is convex, lower semicontinuous, and superlinear:
+\[
+  G(r)/r\longrightarrow+\infty\qquad(r\to+\infty).
+\]
+If the infimum is finite, then the lower-semicontinuous relaxation of
+\eqref{eq:convex-primal} to density--flux measures admits a minimizer.
+\end{proposition}
+
+\begin{proof}
+For a minimizing sequence, superlinearity gives uniform integrability of the
+densities. The kinetic action controls the Wasserstein metric variation of the
+curves. The continuity equation is closed under weak convergence of
+density--flux pairs. Convexity, lower semicontinuity, and one-homogeneity of
+\(J\) give lower semicontinuity of its integral, while the congestion term is
+lower semicontinuous by convexity and uniform integrability. Since \(\Psi\) is
+lower semicontinuous and bounded below, the terminal term is lower
+semicontinuous under narrow convergence. The direct method produces a
+minimizer. On \(\RR^d\), an additional moment or coercivity bound is needed to
+prevent escape to infinity.
+\end{proof}
+
+\paragraph{Strict convexity.}
+The perspective \(J\) is one-homogeneous and hence not strictly convex along
+rays. If \(G\) is strictly convex, any two minimizers have the same density.
+Once \(\rho>0\) is fixed, strict convexity of
+\(m\mapsto|m|^2/(2\rho)\) identifies the flux.
+
+\section{Optimality conditions and the MFG PDE}
+
+The congestion potential \(G\) is not itself the pointwise cost perceived by
+one infinitesimal agent. The coupling appearing in the HJB equation is
+\[
+  g(r)=G'(r)
+\]
+when \(G\) is differentiable, or a subgradient \(g\in\partial G(r)\) in the
+nonsmooth case.
+
+\begin{theorem}[Euler--Lagrange system]
+\label{thm:variational-mfg-kkt}
+Assume a minimizer \((\rho,m)\) is smooth, \(\rho>0\), and \(G\) is
+differentiable. Then there is a potential \(u\) such that
+\begin{equation}\label{eq:variational-mfg-system}
+  \left\{
+  \begin{aligned}
+    -\partial_tu+\frac12\abs{\nabla u}^2&=G'(\rho),
+      &&u_{t=1}=\Psi,\\
+    \partial_t\rho-\diverg(\rho\nabla u)&=0,
+      &&\rho_{t=0}=\rho_0,\\
+    m&=-\rho\nabla u.
+  \end{aligned}
+  \right.
+\end{equation}
+This is the first-order quadratic MFG system with local coupling
+\(g(\rho)=G'(\rho)\).
+\end{theorem}
+
+\begin{proof}
+Introduce the multiplier \(-u\) for the continuity equation. Integration by
+parts gives the Lagrangian
+\begin{align*}
+  \mathscr L(\rho,m,u)
+  &=
+  \int_0^1\!\int_{\mathcal X}
+  \left(
+    \frac{\abs m^2}{2\rho}+G(\rho)
+    +\rho\partial_tu+m\cdot\nabla u
+  \right)\dd x\dd t\\
+  &\quad
+  +\int_{\mathcal X}(\Psi-u_1)\rho_1\dd x
+  +\int_{\mathcal X}u_0\rho_0\dd x.
+\end{align*}
+Stationarity in \(m\) gives \(m/\rho+\nabla u=0\), hence
+\(m=-\rho\nabla u\). Stationarity in \(\rho\) gives
+\[
+  -\frac{\abs m^2}{2\rho^2}+G'(\rho)+\partial_tu=0.
+\]
+Substituting the flux relation yields the HJB equation. Since the terminal
+density is free and positive, terminal stationarity gives \(u_1=\Psi\).
+Primal feasibility gives the continuity equation.
+\end{proof}
+
+\begin{remark}[Vacuum and terminal complementarity]
+Without positivity, the terminal condition is
+\[
+  u_1\leq\Psi,\qquad(\Psi-u_1)\rho_1=0.
+\]
+Thus equality holds on the support of \(\rho_1\). Likewise, \(G'(\rho)\) is
+replaced by a subgradient when \(G\) is nonsmooth.
+\end{remark}
+
+\paragraph{General kinetic costs.}
+For a convex Lagrangian \(L(v)\), use
+\(J_L(\rho,m)=\rho L(m/\rho)\). With
+\[
+  H(p)=\sup_{v\in\RR^d}\{-v\cdot p-L(v)\},
+\]
+the optimality system becomes
+\begin{equation}\label{eq:general-mfg-system}
+  -\partial_tu+H(\nabla u)=G'(\rho),
+  \qquad
+  \partial_t\rho+\diverg\left(-\rho\nabla_pH(\nabla u)\right)=0.
+\end{equation}
+The quadratic case has \(H(p)=|p|^2/2\).
+
+\section{The convex dual}
+
+Extend \(G\) by \(+\infty\) on negative arguments and define
+\[
+  G^*(s)=\sup_{r\geq0}\{rs-G(r)\}.
+\]
+The restriction \(r\geq0\) implies that \(G^*\) is nondecreasing.
+
+\begin{proposition}[Dual problem]
+\label{prop:variational-mfg-dual}
+Under a standard qualification condition, the dual of
+\eqref{eq:convex-primal} is
+\begin{equation}\label{eq:variational-mfg-dual}
+  \sup_{u:\,u_1\leq\Psi}
+  \left\{
+    \int_{\mathcal X}u_0\rho_0\dd x
+    -
+    \int_0^1\!\int_{\mathcal X}
+      G^*\left(-\partial_tu+\frac12\abs{\nabla u}^2\right)\dd x\dd t
+  \right\}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Use the integrated Lagrangian from
+Theorem~\ref{thm:variational-mfg-kkt}. Pointwise in \((t,x)\),
+\[
+  \inf_m\left\{\frac{\abs m^2}{2\rho}+m\cdot\nabla u\right\}
+  =-\frac12\rho\abs{\nabla u}^2.
+\]
+The remaining density infimum is
+\[
+  \inf_{\rho\geq0}
+  \left\{G(\rho)+\rho\left(
+    \partial_tu-\frac12\abs{\nabla u}^2\right)\right\}
+  =
+  -G^*\left(-\partial_tu+\frac12\abs{\nabla u}^2\right).
+\]
+The infimum over the free terminal density is finite exactly when
+\(u_1\leq\Psi\). The fixed initial density contributes
+\(\int u_0\rho_0\), proving the formula.
+\end{proof}
+
+At smooth primal--dual optimality, Fenchel equality gives
+\[
+  -\partial_tu+\frac12\abs{\nabla u}^2=G'(\rho),
+\]
+which is the HJB equation. The dual is indeed concave: the argument of
+\(G^*\) is convex in \(u\), and \(G^*\) is convex and nondecreasing.
+
+\section{Examples of congestion}
+
+\begin{example}[Power congestion]
+For \(q>1\),
+\[
+  G(r)=\frac{r^q}{q},\qquad g(r)=G'(r)=r^{q-1}.
+\]
+This is strictly convex and superlinear. It penalizes concentration and gives
+the compactness used in Proposition~\ref{prop:variational-mfg-existence}.
+\end{example}
+
+\begin{example}[Entropy congestion]
+Let \(G(r)=r\log r\) for \(r>0\) and \(G(0)=0\). Then
+\(g(r)=1+\log r\). Additive constants in the coupling only shift the value
+function, so one often writes \(g(r)=\log r\).
+\end{example}
+
+\begin{example}[Hard density cap]
+For \(\kappa>0\), define
+\[
+  G(r)=\ind_{[0,\kappa]}(r)
+  =
+  \begin{cases}
+    0,&0\leq r\leq\kappa,\\
+    +\infty,&\text{otherwise}.
+  \end{cases}
+\]
+This is convex but nonsmooth. Its subgradient is a pressure that is inactive
+below the cap and active where \(\rho=\kappa\).
+\end{example}
+
+\begin{example}[A nonconvex choice]
+For \(G(r)=-r^2/2\), the kinetic term remains convex after the momentum
+change, but the full problem does not. Multiple local minima and concentration
+instabilities can occur. The momentum substitution cannot remove
+nonconvexity already present in \(G\).
+\end{example}
+
+\section{Benamou--Brenier, JKO, and variational MFG}
+
+\subsection{Benamou--Brenier}
+
+Quadratic dynamic optimal transport is
+\begin{equation}\label{eq:bb-comparison}
+  \frac12\Wass_2^2(\al_0,\al_1)
+  =
+  \inf_{\rho,m}
+  \left\{
+    \int_0^1\!\int J(\rho_t,m_t)\dd x\dd t:
+    \partial_t\rho+\diverg m=0,\
+    \rho_{t=0}=\rho_0,\
+    \rho_{t=1}=\rho_1
+  \right\}.
+\end{equation}
+The variational MFG adds the running potential
+\(\int_0^1\int G(\rho_t)\) and leaves the endpoint free, selecting it through
+\(\int\Psi\rho_1\). It is thus a convex dynamic transport problem, but not a
+distance between two prescribed measures. Setting \(G=0\) and fixing the
+endpoint recovers Benamou--Brenier \citep{BenamouBrenier2000}.
+
+\subsection{JKO}
+
+A JKO step for an energy \(f\) is
+\begin{equation}\label{eq:jko-comparison}
+  \al^{k+1}\in\argmin_{\al}
+  \left\{
+    \frac1{2\tau}\Wass_2^2(\al^k,\al)+f(\al)
+  \right\}.
+\end{equation}
+Using~\eqref{eq:bb-comparison}, it is a one-period planning problem with a
+free endpoint and terminal functional \(f(\al_1)\). It has no running
+congestion unless one adds it explicitly.
+
+A variational MFG minimizes one full-horizon action containing
+\(\int_0^1G(\rho_t)\dd t\) and encodes anticipation over that horizon. A JKO
+scheme repeatedly solves short proximal problems; its small-step limit is a
+dissipative Wasserstein gradient flow
+\citep{JordanKinderlehrerOtto1998,AmbrosioGigliSavare2008}.
+
+\begin{remark}[The common core]
+Benamou--Brenier is endpoint-to-endpoint transport, JKO is repeated
+short-horizon descent, and a potential MFG is a full-horizon variational game.
+All three share the convex mass--momentum perspective.
+\end{remark}
+
+\section{Diffusion and discretization}
+
+\paragraph{Diffusion.}
+With idiosyncratic Brownian noise of variance \(2\nu\), use
+\[
+  \partial_t\rho+\diverg m=\nu\Delta\rho.
+\]
+This is still affine in \((\rho,m)\), so convexity is unchanged. The
+optimality system becomes
+\[
+  -\partial_tu-\nu\Delta u+\frac12\abs{\nabla u}^2=G'(\rho),
+  \qquad
+  \partial_t\rho-\nu\Delta\rho-\diverg(\rho\nabla u)=0.
+\]
+For quadratic drift costs, the problem also has an entropy-minimization
+interpretation on path space and admits Sinkhorn-like algorithms
+\citep{BenamouCarlierDiMarinoNenna2019}.
+
+\paragraph{Discrete convex program.}
+After conservative discretization, collect cell densities in \(r\) and edge
+fluxes in \(M\). The continuity equation becomes the affine system
+\[
+  Ar+BM=b.
+\]
+The objective is a sum of local convex perspective and congestion terms plus
+a terminal linear term. Hence the discretized problem is finite-dimensional
+and convex. Primal--dual splitting, ADMM, and augmented-Lagrangian methods
+exploit the split between local proximal operations and the global linear
+conservation constraint \citep{BenamouCarlier2015,AchdouLauriere2020}.
+
+\section{Summary}
+
+The precise answer is
+\[
+  \boxed{\text{the momentum formulation is convex whenever \(G\) is convex.}}
+\]
+The reason is not that the original density--velocity problem was secretly
+jointly convex. Rather:
+\begin{enumerate}[leftmargin=2em]
+  \item \(m=\rho v\) makes conservation affine;
+  \item the kinetic term becomes the closed perspective
+  \(J(\rho,m)=|m|^2/(2\rho)\);
+  \item this perspective is jointly convex and lower semicontinuous, including
+  at vacuum;
+  \item convex congestion and convex endpoint penalties preserve convexity.
+\end{enumerate}
+If \(G\) is nonconvex, the full problem remains nonconvex. When \(G\) is
+convex, the KKT equations are exactly the Hamilton--Jacobi/continuity system
+of a potential MFG, with coupling \(g=G'\).
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

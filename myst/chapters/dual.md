@@ -50,23 +50,23 @@ mass.
 (def-admissible-potentials)=
 :::{admonition} Definition: Admissible Potentials
 :class: important
-For a cost matrix $C\in\RR^{n\times m}$ and weights
+For a cost matrix $\C\in\RR^{n\times m}$ and weights
 $a\in\simplex_n$, $b\in\simplex_m$, a pair
 $(f,g)\in\RR^n\times\RR^m$ is admissible if it lies below the cost:
 
 ```{math}
 :label: eq-feasible-potential
-\mathcal{D}_C
+\mathcal{D}_\C
 \eqdef
 \left\{
 (f,g)\in\RR^n\times\RR^m
 \;:\;
-f_i+g_j\le C_{ij}
+f_i+g_j\le \C_{ij}
 \quad\text{for all } i,j
 \right\}.
 ```
 
-Equivalently, $f\oplus g\le C$ entrywise.
+Equivalently, $f\oplus g\le \C$ entrywise.
 :::
 
 The two vectors play the role of source and target prices; admissibility means
@@ -77,14 +77,14 @@ by minimizing over couplings or by maximizing over a pair of dual vectors.
 (prop-duality-discr)=
 :::{admonition} Proposition: Discrete Kantorovich Duality
 :class: important
-For a cost matrix $C\in\RR^{n\times m}$ and weights
+For a cost matrix $\C\in\RR^{n\times m}$ and weights
 $a\in\simplex_n$, $b\in\simplex_m$,
 
 ```{math}
 :label: eq-dual
-\mathcal{L}_C(a,b)
+\mathcal{L}_\C(a,b)
 =
-\max_{(f,g)\in\mathcal{D}_C}
+\max_{(f,g)\in\mathcal{D}_\C}
 \langle f,a\rangle+\langle g,b\rangle.
 ```
 :::
@@ -93,31 +93,31 @@ $a\in\simplex_n$, $b\in\simplex_m$,
 Start from the primal problem
 
 ```{math}
-\min_{P\ge0,\;P\mathbf{1}_m=a,\;P^\top\mathbf{1}_n=b}
-\langle C,P\rangle
+\min_{\P\ge0,\;\P\mathbf{1}_m=a,\;\P^\top\mathbf{1}_n=b}
+\langle \C,\P\rangle
 ```
 
 Introduce multipliers $(f,g)$ for its two marginal constraints. The
 Lagrangian is
 
 ```{math}
-\mathcal L(P,f,g)
+\mathcal L(\P,f,g)
 =
-\langle C,P\rangle
-+\langle a-P\mathbf{1}_m,f\rangle
-+\langle b-P^\top\mathbf{1}_n,g\rangle .
+\langle \C,\P\rangle
++\langle a-\P\mathbf{1}_m,f\rangle
++\langle b-\P^\top\mathbf{1}_n,g\rangle .
 ```
 
 For fixed potentials, the dual function is
 
 ```{math}
-\inf_{P\ge0}\mathcal L(P,f,g)
+\inf_{\P\ge0}\mathcal L(\P,f,g)
 =
 \langle a,f\rangle+\langle b,g\rangle
-+\inf_{P\ge0}\langle C-(f\oplus g),P\rangle.
++\inf_{\P\ge0}\langle \C-(f\oplus g),\P\rangle.
 ```
 
-The last infimum is zero when $C_{ij}-f_i-g_j\ge0$ for all $i,j$, and
+The last infimum is zero when $\C_{ij}-f_i-g_j\ge0$ for all $i,j$, and
 $-\infty$ otherwise. The primal coupling polytope is nonempty because it
 contains $a\otimes b$, and it is compact. Finite-dimensional
 linear-programming strong duality and attainment therefore give
@@ -127,36 +127,38 @@ linear-programming strong duality and attainment therefore give
 (prop-discrete-complementary-slackness)=
 :::{admonition} Proposition: Discrete Complementary Slackness
 :class: important
-For every feasible plan $P$ and admissible pair $(f,g)$,
+For every feasible plan $\P$ and admissible pair $(f,g)$,
 
 ```{math}
-\langle C,P\rangle-\langle f,a\rangle-\langle g,b\rangle
+\langle \C,\P\rangle-\langle f,a\rangle-\langle g,b\rangle
 =
-\sum_{i,j}P_{ij}(C_{ij}-f_i-g_j)\ge0.
+\sum_{i,j}\P_{ij}(\C_{ij}-f_i-g_j)\ge0.
 ```
 
 They are primal and dual optimal if and only if
 
 ```{math}
 :label: eq-mk-pd-rel-web
-\operatorname{supp}(P)
+\operatorname{supp}(\P)
 \subset
-\left\{(i,j): f_i+g_j=C_{ij}\right\}.
+\left\{(i,j): f_i+g_j=\C_{ij}\right\}.
 ```
 :::
 
 :::{dropdown} Proof
 The marginal constraints give
 $\langle f,a\rangle+\langle g,b\rangle
-=\sum_{i,j}P_{ij}(f_i+g_j)$, proving the gap identity. All summands are
+=\sum_{i,j}\P_{ij}(f_i+g_j)$, proving the gap identity. All summands are
 nonnegative. If the two feasible objects are optimal, strong duality makes
-their gap zero, so every summand with $P_{ij}>0$ vanishes. Conversely, the
+their gap zero, so every summand with $\P_{ij}>0$ vanishes. Conversely, the
 contact condition makes the gap zero and weak duality forces optimality.
 :::
 
 Thus potentials are not transport maps themselves. They are certificates, and
 their equality set with the cost matrix is where an optimal coupling is
 allowed to place mass.
+
+Figure {ref}`fig:dual-kantorovich-discrete-potentials` shows these finite-dimensional certificates on a one-dimensional quadratic problem.
 
 (fig:dual-kantorovich-discrete-potentials)=
 :::{div}
@@ -168,11 +170,11 @@ show_book_figure("dual-kantorovich-discrete-potentials")
 ```
 
 *Discrete Kantorovich dual potentials for the quadratic cost
-$C_{ij}=|x_i-y_j|^2$. The upper strip shows the fixed source histogram in red
+$\C_{ij}=|x_i-y_j|^2$. The upper strip shows the fixed source histogram in red
 and the target histogram in blue. The lower strip shows optimal dual vectors
 $(f,g)$, with a gauge chosen so that $\langle f,a\rangle=0$. Complementary
 slackness states that mass can be transported only through entries where
-$f_i+g_j=C_{ij}$.*
+$f_i+g_j=\C_{ij}$.*
 :::
 
 The interactive demo varies the target law and the number of bins. The lower curves
@@ -187,230 +189,10 @@ set moves as the coupling support changes.
 <iframe class="ot4ml-live-frame" title="Discrete dual potential controls" src="../live/dual-discrete.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
 The formula {eq}`eq-dual` also shows that
-$(a,b)\mapsto\mathcal{L}_C(a,b)$ is convex, being a supremum of linear
-functions. From the primal formulation, $C\mapsto\mathcal{L}_C(a,b)$ is
+$(a,b)\mapsto\mathcal{L}_\C(a,b)$ is convex, being a supremum of linear
+functions. From the primal formulation, $\C\mapsto\mathcal{L}_\C(a,b)$ is
 concave.
 
-(sec-auction-dual-ascent)=
-## Auction Algorithm and Dual Prices
-
-Assignment algorithms become more transparent once one has dual variables. The
-auction algorithm is a dual-price method: it updates target prices and
-maintains an approximate complementary-slackness certificate. The tolerance
-$\varepsilon$ removes ties, stabilizes price updates, and gives a quantitative
-optimality certificate {cite:p}`bertsekas1981new,bertsekas1992auction,merigot2020optimaltransportalgorithms`.
-
-### Bidding Dynamics
-
-The price update is chosen so that every currently owned pair satisfies an
-approximate dual certificate.
-
-Consider a square assignment problem of size $n\ge2$ with costs $C_{ij}$ and rewrite it as a
-profit maximization problem with $a_{ij}=-C_{ij}$. The auction algorithm keeps
-prices $p_j$ on the target points and a partial assignment. For an unassigned
-source $i$, define the best and second-best reduced profits
-
-```{math}
-v_i=\max_j(a_{ij}-p_j),
-\qquad
-j_i\in\operatorname*{arg\,max}_j(a_{ij}-p_j),
-\qquad
-w_i=\max_{j\ne j_i}(a_{ij}-p_j).
-```
-
-Source $i$ bids for $j_i$ and increases its price by the gap to the
-second-best target, plus a margin:
-
-```{math}
-p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\varepsilon .
-```
-
-The target $j_i$ is assigned to $i$, and its previous owner, if any, becomes
-unassigned. The iteration stops when all sources are assigned.
-
-(fig:dual-auction-progression)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("dual-auction-progression")
-```
-
-*Matrix view of actual auction iterates on a diagonally dominant
-one-dimensional squared-distance assignment. Each panel records the current
-ownership state: unassigned bidders are shown as flat rows, while assigned
-bidders are shown as one-hot rows at their currently held target. The snapshots
-show initialization, intermediate price updates, and the final identity
-assignment satisfying complementary slackness.*
-:::
-
-The interactive auction view exposes the price dynamics directly. Increasing
-$\varepsilon$ makes bids coarser and the final certificate looser; decreasing
-it makes the price landscape closer to exact complementary slackness.
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Use the step and gap controls to inspect how auction prices and assignments evolve toward complementary slackness.
-:::
-
-<iframe class="ot4ml-live-frame" title="Auction dual price controls" src="../live/dual-auction.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-
-### Approximate Optimality
-
-The bidding invariant gives both finite termination and a quantitative
-suboptimality bound.
-
-For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual
-minimization gives the convex objective
-
-```{math}
-D(p)=\sum_j p_j+\sum_i \max_j(a_{ij}-p_j),
-```
-
-which comes from the dual constraints $u_i+p_j\ge a_{ij}$. The auction update
-should therefore be viewed as a price-adjustment method on this nonsmooth dual
-landscape, rather than as a generic gradient step.
-
-(def-auction-eps-cs)=
-:::{admonition} Definition: $\varepsilon$-Complementary Slackness
-:class: important
-An assignment $\sigma$ and prices $p$ satisfy
-$\varepsilon$-complementary slackness if, for every source $i$,
-
-```{math}
-a_{i,\sigma(i)}-p_{\sigma(i)}
-\ge
-\max_j(a_{ij}-p_j)-\varepsilon .
-```
-
-For a partial assignment, require the same condition only for currently
-assigned sources.
-:::
-
-(prop-auction-termination)=
-:::{admonition} Proposition: Auction Invariant And Finite Termination
-:class: important
-At every iteration of Algorithm {ref}`alg-auction-bidding`, each currently
-owned pair satisfies $\varepsilon$-complementary slackness. If
-
-```{math}
-\Delta_A=\max_{i,j}a_{ij}-\min_{i,j}a_{ij},
-```
-
-then the algorithm terminates after at most
-
-```{math}
-1+\left\lfloor\frac{n(\Delta_A+\varepsilon)}{\varepsilon}\right\rfloor
-```
-
-bids.
-:::
-
-:::{dropdown} Proof
-Immediately after source $i$ bids for $j_i$, its reduced profit there is
-$w_i-\varepsilon$, whereas every alternative is at most $w_i$. Later bids
-only increase competing prices. The price of $j_i$ cannot change while $i$
-remains its owner, because such a change displaces $i$. Hence the invariant
-persists.
-
-Each bid raises one price by at least $\varepsilon$. After a nonterminal bid,
-some other target remains unassigned and therefore has price zero. Calling it
-$k$ gives $w_i\ge a_{ik}$ and
-
-```{math}
-p_{j_i}^{\mathrm{new}}=a_{i,j_i}-w_i+\varepsilon
-\le\Delta_A+\varepsilon.
-```
-
-Thus the sum of prices bounds the number of nonterminal bids; at most one
-terminal bid remains.
-:::
-
-(prop-auction-eps-cs)=
-:::{admonition} Proposition: Auction Optimality Certificate
-:class: important
-If a complete assignment $\sigma$ satisfies
-$\varepsilon$-complementary slackness, then it is $n\varepsilon$-optimal for
-the profit maximization problem, equivalently $n\varepsilon$-optimal for the
-original cost minimization problem. If all costs are integers and
-$\varepsilon<1/n$, then $\sigma$ is optimal.
-:::
-
-:::{dropdown} Proof
-Let $\tau$ be any assignment. By $\varepsilon$-complementary slackness,
-
-```{math}
-a_{i,\tau(i)}-p_{\tau(i)}
-\le
-\max_j(a_{ij}-p_j)
-\le
-a_{i,\sigma(i)}-p_{\sigma(i)}+\varepsilon .
-```
-
-Summing over $i$ cancels the prices, since both $\sigma$ and $\tau$ are
-permutations:
-
-```{math}
-\sum_i a_{i,\tau(i)}
-\le
-\sum_i a_{i,\sigma(i)}+n\varepsilon .
-```
-
-No assignment has profit more than $n\varepsilon$ above that of $\sigma$.
-Since $a=-C$, the cost of $\sigma$ is at most $n\varepsilon$ above the minimum
-cost. If the costs are integers, all assignment costs are integers; a gap
-strictly smaller than one forces the gap to be zero.
-:::
-
-Propositions {ref}`prop-auction-termination` and
-{ref}`prop-auction-eps-cs` give a complete correctness argument:
-the algorithm terminates with a complete assignment, and that assignment is
-$n\varepsilon$-optimal.
-
-:::{admonition} Remark: $\epsilon$-scaling and relation with Sinkhorn
-:class: ot4ml-remark
-
-In practice one starts with a coarse $\epsilon$ and repeatedly decreases it, warm-starting the prices and assignment. This $\epsilon$-scaling strategy is a homotopy method: large $\epsilon$ regularizes the combinatorial problem by enforcing a visible margin between the best and second-best reduced profits, while small $\epsilon$ recovers the exact dual certificate. If one wants a continuous-optimization analogy, the margin is closer to an exact-penalty or proximal continuation parameter than to a literal quadratic penalty.
-
-Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum in the dual $c$-transform is replaced by a soft minimum, or log-sum-exp, with temperature $\epsilon$; in the auction algorithm, the hard maximum is kept but the complementary slackness condition is relaxed by $\epsilon$. Both methods therefore use an $\epsilon$-controlled dual continuation, and both recover the unregularized transport certificate as $\epsilon\to0$ under the usual assumptions. The outputs are different: Sinkhorn produces dense entropic couplings, whereas auction keeps a sparse assignment throughout.
-:::
-
-(alg-auction-bidding)=
-:::{admonition} Algorithm: Auction bidding with target prices
-:class: ot4ml-algorithm
-
-**Input:** Profit matrix $A=(a_{ij})$, bid increment $\epsilon>0$.
-
-**Output:** Assignment map $\sigma$.
-
-**Initialize:** Set prices $p_j=0$, ownership map $o(j)=\emptyset$, and $U=\{1,\ldots,n\}$.
-
-**While** the unassigned set $U$ is nonempty **do**:
-
-> **Set** $i=\min U$.
->
-> **Set** $j_i=\min\argmax_j(a_{ij}-p_j)$.
->
-> **Set** $v_i=a_{ij_i}-p_{j_i}$ and $w_i=\max_{j\neq j_i}(a_{ij}-p_j)$.
->
-> **Update price:**
-> $p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.$
->
-> **If** $o(j_i)=i'\neq\emptyset$ **then**:
-
->>
->> **Set** $U\leftarrow U\cup\{i'\}$.
->>
-
-> **Set** $o(j_i)=i$ and $U\leftarrow U\setminus\{i\}$.
->
-
-**Return** $\sigma(i)=j$ iff $o(j)=i$.
-:::
-
-
-(sec-dual-general)=
 ## General Formulation
 
 The continuous dual is the analytic counterpart of the discrete linear
@@ -575,6 +357,8 @@ For the one-dimensional quadratic cost, the continuous potentials can be read
 from the monotone map $T=F_\beta^{-1}\circ F_\alpha$: on the active graph,
 $f'(x)=2(x-T(x))$ and $g=f^c$.
 
+Figure {ref}`fig:dual-kantorovich-continuous-potentials` shows how these continuous potentials adapt to increasingly multimodal source and target densities while retaining the same complementary-slackness interpretation.
+
 (fig:dual-kantorovich-continuous-potentials)=
 :::{div}
 :class: ot4ml-book-figure
@@ -603,6 +387,8 @@ figure shows this zero set for increasingly structured one-dimensional
 transports, including a Gaussian source mapped to a separated three-component
 target mixture: the transported graph is not guessed from the potentials
 separately, but appears as the contact valley of the dual inequality.
+
+Figure {ref}`fig:dual-complementary-slackness-contacts` shows this zero set for increasingly structured one-dimensional transports, including a Gaussian source mapped to a three-component target mixture: the transported graph is not guessed from the potentials separately, but appears as the contact valley of the dual inequality.
 
 (fig:dual-complementary-slackness-contacts)=
 :::{div}
@@ -725,6 +511,8 @@ Thus the continuous best-response operation reduces exactly to taking column min
 
 Since $\beta$ is nonnegative, maximizing $\int g\,\d\beta$ is achieved by taking
 $g=f^c$ on the support of $\beta$, equivalently $\beta$-almost everywhere.
+
+Figure {ref}`fig:dual-c-transform-envelope` makes the best-response operation geometric: the discrete $c$-transform is the lower envelope of the shifted cost functions.
 
 (fig:dual-c-transform-envelope)=
 :::{div}
@@ -991,6 +779,8 @@ For $c(x,y)=-xy$ on compact intervals, $f^{c\bar c}$ is the smallest concave
 majorant representable with slopes in the opposite interval. In the displayed
 example that interval contains every relevant supporting slope, so the
 restricted closure is the ordinary concave envelope.
+
+In Figure {ref}`fig:dual-alternating-c-transform-failure`, the displayed interval contains all relevant supporting slopes, so this restricted closure agrees with the ordinary concave envelope.
 
 (fig:dual-alternating-c-transform-failure)=
 :::{div}

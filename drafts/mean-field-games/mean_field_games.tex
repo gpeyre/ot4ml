@@ -1,0 +1,1022 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage[authoryear,round]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+  citecolor=red!45!black,urlcolor=blue!45!black]{hyperref}
+
+\definecolor{otblue}{HTML}{1F4E79}
+\definecolor{otgray}{HTML}{F1F3F5}
+\definecolor{otline}{HTML}{AAB5BF}
+\definecolor{otremark}{HTML}{6D8E9F}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{otblue}}
+  {\thesection}{.7em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{otblue!80!black}}
+  {\thesubsection}{.65em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\bfseries\color{otblue!75!black}}
+  {}{0pt}{}
+\titlespacing*{\section}{0pt}{2.7ex plus .7ex minus .2ex}{1.1ex}
+\titlespacing*{\subsection}{0pt}{2.0ex plus .5ex minus .2ex}{.75ex}
+\titlespacing*{\paragraph}{0pt}{1.3ex plus .3ex minus .1ex}{.55em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+\newmdenv[
+  backgroundcolor=otgray,
+  linecolor=otline,
+  linewidth=.5pt,
+  roundcorner=2pt,
+  innerleftmargin=8pt,
+  innerrightmargin=8pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  skipabove=8pt,
+  skipbelow=8pt
+]{definitionbox}
+
+\newenvironment{definition}[1][]{%
+  \begin{definitionbox}\refstepcounter{theorem}%
+  \noindent\textbf{Definition~\thetheorem}%
+  \if\relax\detokenize{#1}\relax.\else\ \textbf{(#1).}\fi\enspace
+}{\end{definitionbox}}
+
+\newcommand{\RR}{\mathbb R}
+\newcommand{\Pp}{\mathcal P}
+\newcommand{\Ptwo}{\mathcal P_2}
+\newcommand{\Wass}{\mathcal W}
+\newcommand{\Wgrad}{\nabla_{\!\Wass}}
+\newcommand{\Id}{\operatorname{Id}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\diverg}{\operatorname{div}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Ent}{\operatorname{Ent}}
+\newcommand{\Law}{\operatorname{Law}}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert#1\right\rvert}
+\newcommand{\pair}[2]{\left\langle#1,#2\right\rangle}
+\newcommand{\al}{\alpha}
+\newcommand{\be}{\beta}
+\newcommand{\R}{\mathbb R}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{A Gentle Introduction to Mean Field Games\\
+  \large Optimal transport, variational problems on measures, and forward--backward PDEs}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\hypersetup{
+  pdftitle={A Gentle Introduction to Mean Field Games},
+  pdfauthor={Gabriel Peyre},
+  pdfsubject={Mean field games, optimal transport, and forward-backward PDEs},
+  pdfkeywords={mean field games, optimal transport, JKO scheme, Hamilton-Jacobi-Bellman equation, Fokker-Planck equation}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Mean field games describe Nash equilibria in populations containing very many
+weakly interacting decision makers.  Their basic mathematical object is a
+forward--backward PDE system: a Hamilton--Jacobi--Bellman equation propagates
+the value of a representative agent backward in time, while a continuity or
+Fokker--Planck equation propagates the population law forward.  This note gives
+a gentle introduction using the notation and viewpoint of \emph{Optimal
+Transport for Machine Learners}.  The emphasis is on the links with transport
+of probability measures, Benamou--Brenier actions, first variations of
+functionals, potential games, Wasserstein geometry, and minimizing movements.
+It also stresses an important boundary: a generic mean field game is a Nash
+equilibrium problem, not a Wasserstein gradient flow.  The JKO scheme and the
+global variational formulation of a potential game are closely related but
+encode different time structures.  After deriving the MFG system, we discuss
+monotonicity, uniqueness, finite-player limits, master equations, examples,
+and the main numerical strategies.
+\end{abstract}
+
+\tableofcontents
+
+\section{Why mean field games?}
+
+Mean field games (MFGs) were introduced independently by
+\citet{LasryLions2006a,LasryLions2006b,LasryLions2007} and by
+\citet{HuangMalhameCaines2006} to describe differential games with a very
+large number of statistically similar agents.  The motivating compromise is
+simple.  A game with $N$ players has an $N$-body state and, in feedback
+form, an $N$-body system of Hamilton--Jacobi equations.  Direct computation
+quickly becomes impossible.  Yet replacing the players by one centrally
+controlled fluid changes the model: selfish agents seek a Nash equilibrium,
+not the minimizer of a social cost.  The mean field limit keeps the strategic
+character of the game while compressing the other $N-1$ players into their
+empirical distribution.
+
+The resulting state variable is a probability measure
+$\al_t\in\Pp(\mathcal X)$.  This makes MFGs naturally close to optimal
+transport, mean-field particle systems, and Wasserstein gradient flows.  The
+same continuity and Fokker--Planck equations occur in all these theories, but
+their interpretations differ:
+
+\begin{itemize}[leftmargin=2em]
+  \item in optimal transport, a velocity is chosen to move one prescribed
+  measure to another with minimal kinetic action;
+  \item in a Wasserstein gradient flow, the velocity follows the steepest
+  descent of one functional of the current measure;
+  \item in mean field control, a planner chooses the population dynamics to
+  minimize one collective objective;
+  \item in a mean field game, every infinitesimal agent optimizes against a
+  population curve that must, at equilibrium, be generated by the agents'
+  optimal responses.
+\end{itemize}
+
+This last fixed-point requirement is the source of the characteristic
+forward--backward coupling.  The population law determines the value function;
+the value function determines an optimal feedback; and that feedback must
+reproduce the population law.
+
+\paragraph{Scope.}
+We work mostly on the flat torus $\mathcal X=\mathbb T^d$, which avoids
+boundary conditions, or on $\RR^d$ under sufficient moment and decay
+assumptions.  We present smooth equations first and indicate where weak or
+viscosity solutions are needed.  Systematic treatments include
+\citet{CardaliaguetNotes2010,BensoussanFrehseYam2013,
+CarmonaDelarue2018a,CarmonaDelarue2018b,CardaliaguetDelarueLasryLions2019};
+the numerical viewpoint is surveyed by \citet{AchdouLauriere2020}.
+
+\section{From an \texorpdfstring{$N$}{N}-player game to a population law}
+
+\paragraph{The finite game.}
+Consider $N$ exchangeable players.  Player $i$ has state
+$X_t^i\in\RR^d$ and chooses a progressively measurable control
+$a_t^i\in\RR^d$.  In the simplest model,
+\begin{equation}\label{eq:n-player-dynamics}
+  \dd X_t^i=a_t^i\,\dd t+\sqrt{2\nu}\,\dd B_t^i,
+  \qquad \nu\geq0,
+\end{equation}
+where the Brownian motions are independent.  The other players enter only
+through the empirical measure
+\begin{equation}\label{eq:empirical-population}
+  \al_t^{N,-i}=\frac1{N-1}\sum_{j\neq i}\delta_{X_t^j}.
+\end{equation}
+Given a running Lagrangian $L(x,a)$, a running interaction $F(x,\al)$, and
+a terminal interaction $G(x,\al)$, player $i$ minimizes
+\begin{equation}\label{eq:n-player-cost}
+  J_i^N(a^1,\ldots,a^N)
+  =\mathbb E\!\left[
+    \int_0^T \bigl(L(X_t^i,a_t^i)+F(X_t^i,\al_t^{N,-i})\bigr)\,\dd t
+    +G(X_T^i,\al_T^{N,-i})
+  \right].
+\end{equation}
+
+\begin{definition}[Nash equilibrium]
+A control profile $(a^{1,*},\ldots,a^{N,*})$ is a Nash equilibrium if no
+player can lower its own cost by changing only its control: for every $i$
+and every admissible $a^i$,
+\[
+  J_i^N(a^{1,*},\ldots,a^{N,*})
+  \leq
+  J_i^N(a^{1,*},\ldots,a^{i-1,*},a^i,a^{i+1,*},\ldots,a^{N,*}).
+\]
+It is an $\eps$-Nash equilibrium if the right-hand side may improve the cost
+by at most $\eps$.
+\end{definition}
+
+The equilibrium is non-cooperative: the feedback of player $i$ minimizes
+its own objective while the strategies of all other players are frozen.  This
+is different from minimizing $\sum_iJ_i^N$, which is a centralized control
+problem.
+
+\paragraph{The mean field ansatz.}
+When $N$ is large and each player has weight $1/N$, one expects a typical
+agent to have a negligible effect on the population law.  The empirical
+measure is replaced by a deterministic curve
+$(\al_t)_{0\leq t\leq T}$, and the representative agent solves a standard
+control problem with this curve frozen.  The optimal controlled state must
+then have law $\al_t$.  Symbolically,
+\[
+  \text{population curve}
+  \longmapsto
+  \text{optimal feedback}
+  \longmapsto
+  \text{law of the optimally controlled state}.
+\]
+An MFG equilibrium is a fixed point of this map.
+
+Under suitable regularity and uniqueness assumptions, the feedback obtained
+from the MFG system yields an $\eps_N$-Nash equilibrium for the finite game,
+with $\eps_N\to0$.  The probabilistic mechanism is propagation of chaos:
+finitely many tagged players become asymptotically independent with common law
+$\al_t$.  Precise open-loop and closed-loop results require different
+arguments; see \citet{CarmonaDelarueLacker2016,Lacker2020,
+CardaliaguetDelarueLasryLions2019}.
+
+\section{The representative-agent control problem}
+
+Fix for the moment a continuous curve
+$t\mapsto\al_t\in\Ptwo(\RR^d)$.  Starting from $X_t=x$, a representative
+agent chooses $a_s$ in
+\begin{equation}\label{eq:representative-sde}
+  \dd X_s=a_s\,\dd s+\sqrt{2\nu}\,\dd B_s,
+  \qquad s\in[t,T],
+\end{equation}
+and minimizes
+\begin{equation}\label{eq:representative-cost}
+  \mathbb E\!\left[
+    \int_t^T\bigl(L(X_s,a_s)+F(X_s,\al_s)\bigr)\,\dd s
+    +G(X_T,\al_T)
+  \right].
+\end{equation}
+Its value is denoted by $u(t,x)$.
+
+We use the Hamiltonian convention
+\begin{equation}\label{eq:mfg-hamiltonian}
+  H(x,p)=\sup_{a\in\RR^d}\bigl\{-a\cdot p-L(x,a)\bigr\}.
+\end{equation}
+If $L(x,\cdot)$ is strictly convex and smooth, the maximizing control is
+\begin{equation}\label{eq:optimal-feedback}
+  a^*(x,p)=-\nabla_pH(x,p).
+\end{equation}
+For $L(x,a)=\abs a^2/2$, one has $H(x,p)=\abs p^2/2$ and $a^*=-p$.
+
+\begin{proposition}[Hamilton--Jacobi--Bellman equation]
+\label{prop:hjb-fixed-population}
+Assume temporarily that the value function is smooth.  For a prescribed
+population curve $(\al_t)_t$, the value function of
+\eqref{eq:representative-cost} satisfies
+\begin{equation}\label{eq:mfg-hjb-fixed}
+  -\partial_tu-\nu\Delta u+H(x,\nabla u)=F(x,\al_t),
+  \qquad
+  u(T,x)=G(x,\al_T).
+\end{equation}
+The optimal Markov feedback is
+$a_t^*(x)=-\nabla_pH(x,\nabla u(t,x))$.
+\end{proposition}
+
+\begin{proof}
+The dynamic-programming principle over a short interval $[t,t+h]$ gives
+\[
+u(t,x)=\inf_a\mathbb E\!\left[
+  \int_t^{t+h}(L(X_s,a_s)+F(X_s,\al_s))\,\dd s
+  +u(t+h,X_{t+h})\right].
+\]
+Apply It\^o's formula to $u(s,X_s)$, divide by $h$, and let $h\downarrow0$.
+The local minimization is
+$\inf_a\{L(x,a)+a\cdot\nabla u\}=-H(x,\nabla u)$, which gives
+\eqref{eq:mfg-hjb-fixed}.  The optimizer is
+\eqref{eq:optimal-feedback}.
+\end{proof}
+
+When smoothness fails, the HJB equation is naturally interpreted in the
+viscosity sense.  This is one reason why the backward equation and the forward
+equation do not live in identical function spaces.
+
+\section{The mean field game PDE system}
+
+\paragraph{Closing the fixed point.}
+Apply the optimal feedback from Proposition~\ref{prop:hjb-fixed-population} to
+an initial random state $X_0\sim\al_0$.  Its law solves the Kolmogorov forward
+equation.  Requiring this law to equal the curve used in the control problem
+closes the system.
+
+\begin{definition}[Finite-horizon mean field game system]
+Given an initial law $\al_0$, a classical MFG equilibrium is a pair
+$(u,\al)$ satisfying
+\begin{equation}\label{eq:mfg-system}
+\left\{
+\begin{aligned}
+ -\partial_tu_t-\nu\Delta u_t+H(x,\nabla u_t)
+   &=F(x,\al_t),
+   &&u_T(x)=G(x,\al_T),\\
+ \partial_t\al_t-\nu\Delta\al_t
+   -\diverg\!\left(\al_t\nabla_pH(x,\nabla u_t)\right)
+   &=0,
+   &&\al_{t=0}=\al_0.
+\end{aligned}
+\right.
+\end{equation}
+The second equation is understood distributionally when $\al_t$ has no
+density.
+\end{definition}
+
+The first equation runs backward because its terminal value is prescribed;
+the second runs forward because its initial law is prescribed.  Neither can be
+solved independently: $F$ and $G$ couple the population into the HJB
+equation, while $u$ determines the drift in the Fokker--Planck equation.
+
+\begin{proposition}[Weak forward equation and mass conservation]
+\label{prop:mfg-weak-fp}
+Let $b_t(x)=-\nabla_pH(x,\nabla u_t(x))$.  The forward equation in
+\eqref{eq:mfg-system} is equivalent to
+\begin{equation}\label{eq:mfg-weak-fp}
+  \frac{\dd}{\dd t}\int\varphi(x)\,\dd\al_t(x)
+  =\int\bigl(\nabla\varphi(x)\cdot b_t(x)
+      +\nu\Delta\varphi(x)\bigr)\,\dd\al_t(x)
+\end{equation}
+for every smooth test function $\varphi$.  In particular,
+$\al_t(\mathcal X)=\al_0(\mathcal X)$.
+\end{proposition}
+
+\begin{proof}
+Multiply the Fokker--Planck equation by $\varphi$ and integrate by parts.
+Taking $\varphi\equiv1$ gives mass conservation.
+\end{proof}
+
+For $\nu=0$, the forward equation is exactly the continuity equation
+\begin{equation}\label{eq:mfg-continuity}
+  \partial_t\al_t+\diverg(\al_tv_t)=0,
+  \qquad
+  v_t=-\nabla_pH(x,\nabla u_t).
+\end{equation}
+This is the same Eulerian kinematics used by dynamic optimal transport and
+Wasserstein gradient flows.  For $\nu>0$, it is a Fokker--Planck equation.
+If $\al_t=\rho_t\dd x$ is smooth and positive, it can also be rewritten as a
+continuity equation with current velocity
+\begin{equation}\label{eq:mfg-current-velocity}
+  \partial_t\rho_t+\diverg(\rho_t\widetilde v_t)=0,
+  \qquad
+  \widetilde v_t=-\nabla_pH(x,\nabla u_t)-\nu\nabla\log\rho_t.
+\end{equation}
+The score correction is the same one that relates Langevin diffusion and
+deterministic probability-flow representations.
+
+\begin{remark}[What is forward and what is backward]
+The density equation is causal once a feedback is known.  The feedback is not
+causal in the population curve because a rational agent anticipates future
+congestion and the terminal cost.  This anticipation is encoded by the
+backward HJB equation.  Setting $u_t$ from an instantaneous cost only would
+produce a myopic interacting-particle or gradient-flow model, not the same
+game.
+\end{remark}
+
+\section{An optimal-transport dictionary}
+
+The analogy with the rest of the book is clearest at the level of mathematical
+objects rather than slogans.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\bfseries}P{.24\textwidth}Y}
+\toprule
+Optimal-transport/PDE object & Role in a mean field game\\
+\midrule
+Probability measure $\al_t$ & Distribution of the state of a representative agent.\\
+Empirical measure & Finite-player approximation of the population law.\\
+Continuity equation & Deterministic transport of the population by the equilibrium feedback.\\
+Fokker--Planck equation & Transport plus idiosyncratic Brownian exploration.\\
+Kinetic action & Individual effort, and in potential games the dynamic transport term of the social potential.\\
+Hamilton--Jacobi equation & Dual/optimality equation for a representative agent.\\
+First variation & Converts a potential functional of $\al$ into the coupling cost perceived by one agent.\\
+JKO step & A proximal, myopic evolution of measures; related to but distinct from a finite-horizon MFG equilibrium.\\
+Geodesic convexity & A useful convexity mechanism for potential planning problems, not a replacement for Nash monotonicity.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{The Benamou--Brenier limit.}
+If $F=0$, $G$ imposes a hard terminal law, $\nu=0$, and
+$L(a)=\abs a^2/2$, the population planning problem reduces to dynamic
+quadratic optimal transport.  The HJB equation becomes the Hamilton--Jacobi
+equation dual to the Benamou--Brenier formulation, and the optimal population
+velocity is a gradient.  MFGs enlarge this picture by adding endogenous
+running and terminal interactions, while generic games lose the global
+variational structure entirely \citep{BenamouBrenier2000}.
+
+\paragraph{Schr\"odinger bridges.}
+With $\nu>0$ and prescribed endpoint laws, minimizing quadratic drift energy
+relative to Brownian motion gives the Schr\"odinger bridge.  A second-order
+potential MFG has a similar controlled-diffusion constraint, but its final law
+is usually endogenous and its congestion or interaction potential is
+integrated along the path.  The entropy-on-path-space representation of
+variational second-order MFGs is developed by
+\citet{BenamouCarlierDiMarinoNenna2019}.
+
+\section{Potential mean field games as variational problems}
+
+A generic MFG is only a fixed point.  A particularly important subclass is
+generated by functionals on the space of measures.
+
+\begin{definition}[Potential couplings]
+The running and terminal couplings are potential if there exist functionals
+$\mathcal F,\mathcal G:\Pp(\mathcal X)\to\RR\cup\{+\infty\}$ such that
+\begin{equation}\label{eq:potential-first-variations}
+  \frac{\delta\mathcal F}{\delta\al}(\al)(x)=F(x,\al),
+  \qquad
+  \frac{\delta\mathcal G}{\delta\al}(\al)(x)=G(x,\al),
+\end{equation}
+up to additive constants independent of $x$.
+\end{definition}
+
+For clarity, first take $L(a)=\abs a^2/2$.  The potential planning problem is
+\begin{equation}\label{eq:potential-mfg-primal}
+\inf_{(\al,v)}
+\left\{
+  \int_0^T\left[
+    \frac12\int\abs{v_t(x)}^2\,\dd\al_t(x)+\mathcal F(\al_t)
+  \right]\dd t
+  +\mathcal G(\al_T)
+\right\},
+\end{equation}
+subject to
+\begin{equation}\label{eq:potential-mfg-constraint}
+  \partial_t\al_t+\diverg(\al_tv_t)=\nu\Delta\al_t,
+  \qquad \al_{t=0}=\al_0.
+\end{equation}
+The unknown final law is selected by the terminal potential.  Prescribing
+$\al_T=\al_1$ instead gives the mean field planning problem.
+
+\begin{proposition}[Optimality system of a quadratic potential MFG]
+\label{prop:potential-mfg-optimality}
+Assume all fields are smooth, $\al_t=\rho_t\dd x$ is positive, and
+\eqref{eq:potential-mfg-primal} admits a minimizer.  Then its first-order
+optimality conditions are
+\begin{equation}\label{eq:potential-mfg-system}
+\left\{
+\begin{aligned}
+ -\partial_tu-\nu\Delta u+\frac12\abs{\nabla u}^2
+   &=F(x,\al_t),\\
+ \partial_t\al_t-\nu\Delta\al_t-\diverg(\al_t\nabla u)&=0,\\
+ \al_{t=0}&=\al_0,
+ \qquad u_T=G(\cdot,\al_T).
+\end{aligned}
+\right.
+\end{equation}
+Thus a minimizer gives an MFG equilibrium.
+\end{proposition}
+
+\begin{proof}
+Introduce the multiplier $-u$ for
+\eqref{eq:potential-mfg-constraint}, namely add
+\[
+ -\int_0^T\!\int u
+  (\partial_t\rho+\diverg(\rho v)-\nu\Delta\rho)\,\dd x\dd t
+\]
+to the objective.
+After integration by parts, the terms depending on $v$ are
+$\int\rho(\abs v^2/2+v\cdot\nabla u)$.  Their minimizer is
+$v=-\nabla u$.  Variation in $\rho$, together with
+\eqref{eq:potential-first-variations}, gives the HJB equation.  The free
+terminal variation gives $u_T=G(\cdot,\al_T)$.  These are precisely
+\eqref{eq:potential-mfg-system}.
+\end{proof}
+
+The sign bookkeeping in the proof is conventional; the invariant statement
+is that minimizing the kinetic term produces the Legendre relation between
+the velocity and the HJB momentum.  For a general convex Lagrangian, the
+Eulerian action is
+\begin{equation}\label{eq:general-potential-mfg-action}
+  \int_0^T\int L(x,v_t(x))\,\dd\al_t(x)\dd t,
+\end{equation}
+and the same calculation yields
+$v_t=-\nabla_pH(x,\nabla u_t)$.
+
+\paragraph{Convex momentum variables.}
+As in dynamic OT, write the momentum measure $m_t=\al_tv_t$.  For a density
+$\rho$ and momentum density $m$, the quadratic kinetic perspective is
+\begin{equation}\label{eq:mfg-perspective}
+  J(\rho,m)=
+  \begin{cases}
+    \dfrac{\abs m^2}{2\rho},&\rho>0,\\[1mm]
+    0,&(\rho,m)=(0,0),\\
+    +\infty,&\rho=0,\ m\neq0.
+  \end{cases}
+\end{equation}
+It is jointly convex and positively one-homogeneous.  Therefore
+\eqref{eq:potential-mfg-primal} becomes a convex problem in $(\rho,m)$ when
+$\mathcal F$ and $\mathcal G$ are convex, under the linear constraint
+\begin{equation}\label{eq:mfg-linear-constraint}
+  \partial_t\rho+\diverg m=\nu\Delta\rho.
+\end{equation}
+This is the precise bridge to Benamou--Brenier algorithms and primal--dual
+splitting; see \citet{BenamouCarlier2015,BenamouCarlierSantambrogio2017}.
+
+\begin{example}[Local congestion]
+Suppose $\al=\rho\dd x$ and agents pay $F(x,\al)=f(\rho(x))$, where $f$
+is increasing.  Let $U'(r)=f(r)$.  Then
+\[
+  \mathcal F(\al)=\int U(\rho(x))\,\dd x
+\]
+has first variation $F$.  The convexity of $U$ expresses aversion to
+congestion.  A hard density cap is obtained by taking $U(r)=+\infty$ for
+$r>\kappa$, leading to a pressure multiplier.
+\end{example}
+
+\begin{example}[Nonlocal interactions]
+Let
+\[
+  F(x,\al)=V(x)+\int W(x,y)\,\dd\al(y),
+\]
+with a symmetric kernel $W(x,y)=W(y,x)$.  Then
+\[
+  \mathcal F(\al)=\int V\,\dd\al
+  +\frac12\iint W(x,y)\,\dd\al(x)\dd\al(y).
+\]
+Convexity of this functional is a positive-semidefiniteness condition on the
+kernel over signed measures of zero mass; it should not be confused with
+pointwise convexity of $W(x,y)$.
+\end{example}
+
+\begin{remark}[Potential does not mean cooperative]
+The agents remain non-cooperative.  Potentiality means that unilateral
+first-order incentives integrate to one scalar functional.  Minimizing that
+functional recovers the Nash equilibrium, just as a finite-dimensional
+potential game can be solved by minimizing its potential.  A generic social
+planner has different first-order conditions because changing the population
+law changes every agent's cost.
+\end{remark}
+
+\section{JKO schemes, planning, and gradient flows}
+
+The variational formula~\eqref{eq:potential-mfg-primal} looks close to a
+Wasserstein gradient flow, but the two constructions should not be identified.
+
+\paragraph{The JKO construction.}
+For an energy $f:\Ptwo(\mathcal X)\to\RR\cup\{+\infty\}$, the JKO step with
+time step $\tau>0$ is
+\begin{equation}\label{eq:mfg-jko}
+  \al^{k+1}\in\argmin_{\al\in\Ptwo(\mathcal X)}
+  \left\{
+    \frac1{2\tau}\Wass_2^2(\al^k,\al)+f(\al)
+  \right\}.
+\end{equation}
+As $\tau\to0$, its interpolation converges under standard assumptions to
+the Wasserstein gradient flow
+\begin{equation}\label{eq:mfg-wgf}
+  \partial_t\al_t
+  =\diverg\!\left(
+    \al_t\nabla\frac{\delta f}{\delta\al}(\al_t)
+  \right).
+\end{equation}
+This evolution is initial-value and dissipative: the current measure
+determines the next proximal step, and $f(\al_t)$ decreases.
+
+By contrast, a finite-horizon MFG is an equilibrium over an entire time
+interval.  Its HJB equation is terminal-value and agents anticipate future
+population costs.  Even a potential MFG minimizes one global action over the
+whole curve; it is closer to a problem in the calculus of variations than to a
+sequence of greedy descents.
+
+\begin{proposition}[A JKO step is a one-period planning problem]
+\label{prop:jko-as-planning}
+The JKO problem~\eqref{eq:mfg-jko} is equivalent to
+\begin{equation}\label{eq:jko-dynamic-planning}
+  \inf_{(\al_s,v_s)}
+  \left\{
+    \frac1{2\tau}\int_0^1\int\abs{v_s}^2\,\dd\al_s\dd s
+    +f(\al_1)
+  \right\},
+\end{equation}
+subject to
+$\partial_s\al_s+\diverg(\al_sv_s)=0$ and
+$\al_{s=0}=\al^k$, with $\al_1$ free.
+\end{proposition}
+
+\begin{proof}
+For each candidate endpoint $\al_1$, the Benamou--Brenier formula says that
+the infimum of the kinetic action over connecting curves is
+$\Wass_2^2(\al^k,\al_1)$.  Minimizing also over $\al_1$ gives
+\eqref{eq:mfg-jko}.
+\end{proof}
+
+The minimizing-movement construction is due to
+\citet{JordanKinderlehrerOtto1998}; its metric-space theory is developed by
+\citet{AmbrosioGigliSavare2008}.  Proposition~\ref{prop:jko-as-planning} is
+the dynamic-transport reading of the same step.
+
+This proposition gives a useful interpretation: a JKO step is a short-horizon
+planning problem with terminal potential $f$.  Repeating the problem after
+each short interval produces a receding-horizon or myopic dynamics.  A
+finite-horizon MFG instead solves one rational-expectations fixed point over
+$[0,T]$.
+
+\begin{remark}[Three variational objects]
+It is useful to keep three levels separate.
+\begin{enumerate}[leftmargin=2em]
+  \item The Benamou--Brenier problem fixes both endpoint measures and minimizes
+  kinetic action.
+  \item A potential MFG fixes the initial measure, usually leaves the terminal
+  measure free, and adds running and terminal population potentials.
+  \item A JKO step is a single short planning problem whose terminal potential
+  is the energy to be decreased; iteration and the limit $\tau\to0$ create a
+  gradient flow.
+\end{enumerate}
+The formulas overlap, but their boundary conditions and time semantics do not.
+\end{remark}
+
+\paragraph{Mean field control versus mean field games.}
+Suppose a planner minimizes
+\begin{equation}\label{eq:mean-field-control-cost}
+  \mathbb E\!\left[
+    \int_0^T \bigl(L(X_t,a_t)+F(X_t,\Law(X_t))\bigr)\,\dd t
+    +G(X_T,\Law(X_T))
+  \right].
+\end{equation}
+The planner internalizes how changing the law modifies the costs of all
+agents.  Its optimality equation therefore contains derivatives of $F$ and
+$G$ with respect to the measure argument.  In the MFG best response, one
+agent treats $(\al_t)_t$ as fixed and does not differentiate through it.  The
+two systems coincide only under special potential structures, and even then
+the scalar potential minimized by the game must be distinguished from the
+sum of individual costs.
+
+\section{Monotonicity, convexity, and uniqueness}
+
+Potentiality is sufficient for a global minimization principle, but it is not
+necessary for well-posedness.  The central game-theoretic condition introduced
+by Lasry and Lions is monotonicity in the measure variable.
+
+\paragraph{Existence as a fixed point.}
+The MFG construction itself suggests an existence proof: freeze a population
+curve, solve the backward control problem, propagate the resulting feedback
+forward, and look for a fixed point.  The following intentionally strong
+version isolates this mechanism without entering the optimal regularity
+theory.
+
+\begin{theorem}[A basic parabolic existence principle]
+\label{thm:mfg-basic-existence}
+Let $\mathcal X=\mathbb T^d$ and $\nu>0$.  Assume that $H$ is smooth and
+uniformly convex in its momentum variable, with at most quadratic growth.
+Assume that $F(\cdot,\al)$ and $G(\cdot,\al)$ are uniformly bounded in
+$C^2(\mathbb T^d)$ and depend continuously on $\al$ for the narrow topology.
+If $\al_0$ has a smooth positive density, then the system
+\eqref{eq:mfg-system} admits at least one classical solution.
+\end{theorem}
+
+\begin{proof}
+Fix a continuous measure curve
+$\be=(\be_t)_{0\leq t\leq T}$.  Parabolic HJB theory gives a solution
+$u^\be$ with estimates controlled uniformly by the assumed bounds on $F$ and
+$G$.  Hence the feedback
+$b^\be=-\nabla_pH(\cdot,\nabla u^\be)$ is bounded and Hölder regular.  Solving
+the linear Fokker--Planck equation with drift $b^\be$ and initial law $\al_0$
+defines a new curve $\Phi(\be)$.
+
+Parabolic compactness makes $\Phi$ map a closed convex bounded set of
+Hölder-continuous density curves into a relatively compact subset of itself.
+Stability of the HJB and Fokker--Planck equations with respect to their
+coefficients makes $\Phi$ continuous.  Schauder's fixed-point theorem gives a
+curve $\al=\Phi(\al)$.  Together with $u^\al$, it solves
+\eqref{eq:mfg-system}.  The diffusion and smooth nonlocal couplings are what
+make this short classical argument work; local or singular couplings require
+weak-solution and compactness techniques.
+\end{proof}
+
+This fixed-point route is conceptually distinct from the direct method for a
+potential game.  In the potential case, coercivity and lower
+semicontinuity can produce a minimizer of~\eqref{eq:potential-mfg-primal};
+the PDE system is then recovered from its optimality conditions.  General
+existence theories and substantially weaker assumptions are developed in
+\citet{LasryLions2007,CardaliaguetNotes2010}.
+
+\begin{definition}[Lasry--Lions monotonicity]
+A coupling $F:\mathcal X\times\Pp(\mathcal X)\to\RR$ is monotone if
+\begin{equation}\label{eq:lasry-lions-monotonicity}
+  \int_{\mathcal X}
+  \bigl(F(x,\al)-F(x,\be)\bigr)\,\dd(\al-\be)(x)\geq0
+\end{equation}
+for all $\al,\be$.  It is strictly monotone if equality forces
+$\al=\be$ in the relevant class.  The same definition applies to $G$.
+\end{definition}
+
+Local congestion $F(x,\rho\dd x)=f(\rho(x))$ is monotone whenever $f$ is
+increasing.  A nonlocal linear coupling $F=W*\al$ is monotone exactly when
+$\iint W(x,y)\dd\eta(x)\dd\eta(y)\geq0$ for every signed zero-mass measure
+$\eta$.  When $F=\delta\mathcal F/\delta\al$, condition
+\eqref{eq:lasry-lions-monotonicity} is the monotonicity of the first variation
+and is implied by ordinary convexity of $\mathcal F$ under linear mixtures.
+
+\begin{theorem}[Uniqueness under monotonicity]
+\label{thm:mfg-uniqueness}
+Let $H(x,\cdot)$ be strictly convex, and suppose $F$ and $G$ satisfy
+Lasry--Lions monotonicity.  Assume two smooth solutions
+$(u,\al)$ and $(\widetilde u,\widetilde\al)$ of
+\eqref{eq:mfg-system} have the same initial law.  Then their equilibrium
+feedbacks agree $\al_t\dd t$- and
+$\widetilde\al_t\dd t$-almost everywhere.  If one coupling is strictly
+monotone, the population curves agree; after a normalization, so do the value
+functions.
+\end{theorem}
+
+\begin{proof}
+Write $w=u-\widetilde u$ and
+$\eta=\al-\widetilde\al$.  Differentiate the dual pairing
+$I(t)=\int w_t\,\dd\eta_t$, use the two HJB equations and the two forward
+equations, and integrate by parts.  The diffusion terms cancel.  Integrating
+from $0$ to $T$, using $\eta_0=0$ and the terminal conditions, gives
+\begin{align}\label{eq:mfg-uniqueness-identity}
+&\int\bigl(G(x,\al_T)-G(x,\widetilde\al_T)\bigr)
+     \,\dd(\al_T-\widetilde\al_T)(x)\\
+&\quad+\int_0^T\!\int
+  \bigl(F(x,\al_t)-F(x,\widetilde\al_t)\bigr)
+  \,\dd(\al_t-\widetilde\al_t)(x)\dd t\nonumber\\
+&\quad+\int_0^T\!\int
+  D_H(\nabla u_t,\nabla\widetilde u_t)\,\dd\al_t\dd t
+  +\int_0^T\!\int
+  D_H(\nabla\widetilde u_t,\nabla u_t)
+  \,\dd\widetilde\al_t\dd t=0,\nonumber
+\end{align}
+where
+\[
+  D_H(p,q)=H(x,q)-H(x,p)-\nabla_pH(x,p)\cdot(q-p)\geq0
+\]
+is the Bregman divergence of the convex Hamiltonian.  Every term in
+\eqref{eq:mfg-uniqueness-identity} is nonnegative.  Hence all vanish.  Strict
+convexity of $H$ identifies the gradients, and strict monotonicity identifies
+the measures.  The PDEs then identify the remaining quantities up to the usual
+additive constant in $u$ when applicable.
+\end{proof}
+
+The calculation is the MFG counterpart of a monotone-operator energy estimate.
+It is not the contraction estimate of a Wasserstein gradient flow, although
+both exploit a positive pairing between a difference of states and a
+difference of forces.
+
+\paragraph{Two notions of convexity.}
+Lasry--Lions monotonicity concerns linear interpolation of measures and the
+pairing of first variations.  Wasserstein geodesic convexity concerns
+displacement interpolations.  Neither notion implies the other in complete
+generality.  For a potential game, linear convexity is the natural condition
+for convexity of the Eulerian momentum formulation, while displacement
+convexity can provide additional estimates along transport geodesics.  The
+distinction is important: importing a convergence theorem from Wasserstein
+gradient flows into an MFG requires checking that the dynamics is actually a
+gradient flow, not merely that the state variable is a probability measure.
+
+\section{Canonical examples}
+
+\subsection{Crowd motion with congestion}
+
+Take $L(a)=\abs a^2/2$, a desired-location potential $V$, and a local
+congestion cost $f(\rho)$.  The first-order system is
+\begin{equation}\label{eq:mfg-crowd}
+\left\{
+\begin{aligned}
+ -\partial_tu+\tfrac12\abs{\nabla u}^2&=V(x)+f(\rho),\\
+ \partial_t\rho-\diverg(\rho\nabla u)&=0.
+\end{aligned}
+\right.
+\end{equation}
+The density anticipates bottlenecks because $u$ is solved backward.  This is
+different from a purely repulsive McKean--Vlasov flow, where the drift reacts
+only to the current density.  Increasing $f$ yields Lasry--Lions monotonicity;
+if $f=U'$, the game is potential with internal energy $\int U(\rho)$.
+
+\subsection{Quadratic and linear--quadratic games}
+
+Linear dynamics, quadratic effort, and couplings through the population mean
+lead to Riccati equations.  For example, let
+\begin{equation}\label{eq:lq-coupling}
+  F(x,\al)=\frac q2\abs{x-\bar x_\al}^2,
+  \qquad
+  \bar x_\al=\int y\,\dd\al(y).
+\end{equation}
+A quadratic ansatz for $u$ closes the HJB equation, while the forward
+equation closes on the mean and covariance.  These models are the most direct
+test bed for comparing finite-player Nash systems, MFG limits, and mean field
+control; see \citet{HuangMalhameCaines2006,BensoussanFrehseYam2013}.
+
+The coupling~\eqref{eq:lq-coupling} should be interpreted carefully: agents
+are attracted toward the current mean when $q>0$.  Depending on signs and
+terminal terms, related models can instead penalize crowding or encourage
+dispersion.
+
+\subsection{Multi-population games}
+
+For $K$ populations, the state is a vector of measures
+$\boldsymbol{\al}=(\al^1,\ldots,\al^K)$.  Each population has its own value
+function and forward equation,
+\begin{equation}\label{eq:multi-population-mfg}
+\left\{
+\begin{aligned}
+ -\partial_tu^k-\nu_k\Delta u^k
+   +H_k(x,\nabla u^k)&=F_k(x,\boldsymbol{\al}_t),\\
+ \partial_t\al_t^k-\nu_k\Delta\al_t^k
+   -\diverg\!\left(\al_t^k\nabla_pH_k(x,\nabla u_t^k)\right)&=0.
+\end{aligned}
+\right.
+\end{equation}
+Cross-couplings can encode attraction, segregation, competition for a shared
+resource, or heterogeneous mobility.  Potentiality requires the vector field
+of couplings $(F_1,\ldots,F_K)$ to be the first variation of one functional
+of all populations, an infinite-dimensional analogue of symmetry of cross
+derivatives.
+
+\subsection{Stationary and ergodic games}
+
+Over a long horizon, one often seeks a stationary density $\al$, a value
+function $u$, and an ergodic constant $\lambda$:
+\begin{equation}\label{eq:stationary-mfg}
+\left\{
+\begin{aligned}
+ -\nu\Delta u+H(x,\nabla u)&=F(x,\al)+\lambda,\\
+ -\nu\Delta\al-\diverg\!\left(\al\nabla_pH(x,\nabla u)\right)&=0,\\
+ \al(\mathcal X)&=1.
+\end{aligned}
+\right.
+\end{equation}
+The scalar $\lambda$ is the equilibrium average cost per unit time.  It plays
+the role of an eigenvalue in the HJB equation.  Long-time convergence of
+finite-horizon systems toward ergodic equilibria is subtle because the system
+is forward--backward; see \citet{CardaliaguetPorretta2019}.
+
+\section{The master equation: a PDE on Wasserstein space}
+
+The pair $(u_t,\al_t)$ solves one MFG for one initial distribution.  To encode
+all initial laws simultaneously, introduce
+\begin{equation}\label{eq:master-value}
+  U(t,x,\al),
+\end{equation}
+the value at position $x$, time $t$, and population law $\al$.  Along an
+equilibrium curve,
+\begin{equation}\label{eq:master-characteristic}
+  u(t,x)=U(t,x,\al_t).
+\end{equation}
+This is analogous to solving a finite-dimensional Hamilton--Jacobi equation
+and then evaluating it along characteristics, except that the state variable
+now contains a probability measure.
+
+Write $\delta U/\delta\al(t,x,\al)(y)$ for the linear first variation in the
+measure and
+\begin{equation}\label{eq:lions-intrinsic-derivative}
+  D_\al U(t,x,\al)(y)
+  =\nabla_y\frac{\delta U}{\delta\al}(t,x,\al)(y)
+\end{equation}
+for its intrinsic, or Lions, derivative.  In the absence of common noise, the
+formal master equation associated with~\eqref{eq:mfg-system} is
+\begin{align}\label{eq:mfg-master-equation}
+ -\partial_tU
+ &-\nu\Delta_xU+H(x,\nabla_xU)
+ -\nu\int\diverg_yD_\al U(t,x,\al)(y)\,\dd\al(y)\nonumber\\
+ &+\int D_\al U(t,x,\al)(y)\cdot
+   \nabla_pH\bigl(y,\nabla_xU(t,y,\al)\bigr)\,\dd\al(y)
+ =F(x,\al),
+\end{align}
+with terminal condition $U(T,x,\al)=G(x,\al)$.
+
+\begin{proposition}[The MFG system as characteristics of the master equation]
+\label{prop:master-characteristics}
+Assume $U$ is a smooth solution of~\eqref{eq:mfg-master-equation}.  Let
+$\al_t$ solve the forward equation driven by
+$u_t(x)=U(t,x,\al_t)$.  Then $(u,\al)$ solves the MFG
+system~\eqref{eq:mfg-system}.
+\end{proposition}
+
+\begin{proof}
+Differentiate~\eqref{eq:master-characteristic} along $\al_t$:
+\[
+  \partial_tu(t,x)=\partial_tU(t,x,\al_t)
+  +\int\frac{\delta U}{\delta\al}(t,x,\al_t)(y)
+       \,\partial_t\al_t(\dd y).
+\]
+Insert the forward Fokker--Planck equation and integrate by parts in $y$.
+The diffusion gives
+$\nu\int\diverg_yD_\al U\,\dd\al_t$, and the drift gives the integral
+containing $D_\al U\cdot\nabla_pH$, with the signs displayed in
+\eqref{eq:mfg-master-equation}.  The master equation therefore reduces to the
+HJB equation along the curve.  The forward equation holds by construction.
+\end{proof}
+
+Common noise makes the population law itself stochastic and adds second-order
+derivatives with respect to the measure variable.  The master equation is also
+the key object for proving that the $N$-player Nash system converges to the
+MFG limit; see \citet{CardaliaguetDelarueLasryLions2019}.
+
+\begin{remark}[Measure derivatives versus Wasserstein gradients]
+The scalar first variation $\delta U/\delta\al$ and the intrinsic derivative
+$D_\al U=\nabla_y\delta U/\delta\al$ mirror the book's distinction between a
+functional derivative and its Wasserstein gradient.  The master equation is
+not itself a Wasserstein gradient-flow equation: it is a Hamilton--Jacobi
+equation on a space whose state includes a measure.
+\end{remark}
+
+\section{Numerical viewpoints}
+
+The forward--backward structure is the main numerical difficulty.  A naive
+time march cannot solve both boundary conditions simultaneously.
+
+\subsection{Forward--backward fixed-point iteration}
+
+The simplest method alternates best response and population propagation.
+Starting from a guessed curve $\al^{(0)}$, repeat
+\begin{enumerate}[leftmargin=2em]
+  \item solve the HJB equation backward using $\al^{(k)}$;
+  \item propagate the Fokker--Planck equation forward using the resulting
+  feedback, obtaining $\widehat\al^{(k+1)}$;
+  \item damp the update,
+  $\al^{(k+1)}=(1-\theta_k)\al^{(k)}+\theta_k\widehat\al^{(k+1)}$.
+\end{enumerate}
+This is a best-response or fictitious-play mechanism.  Convergence is not
+automatic, but monotonicity and suitable averaging can stabilize it; see
+\citet{Hadikhanloo2017,CardaliaguetHadikhanloo2017}.
+
+\begin{center}
+\fbox{\begin{minipage}{.9\textwidth}
+\textbf{Forward--backward MFG iteration}\\
+\textbf{Input:} initial law $\al_0$, horizon $T$, couplings $F,G$,
+Hamiltonian $H$, damping sequence $(\theta_k)_k$.\\
+\textbf{Initialize:} choose a population path
+$\al^{(0)}=(\al_t^{(0)})_{0\leq t\leq T}$.\\
+\textbf{For} $k=0,1,\ldots$\\
+\hspace*{1em}$u_T^{(k)}\leftarrow G(\cdot,\al_T^{(k)})$.\\
+\hspace*{1em}\textbf{Solve backward:}
+$-\partial_tu^{(k)}-\nu\Delta u^{(k)}
++H(x,\nabla u^{(k)})=F(x,\al_t^{(k)})$.\\
+\hspace*{1em}\textbf{Solve forward:}
+$\partial_t\widehat\al^{(k+1)}-\nu\Delta\widehat\al^{(k+1)}
+-\diverg(\widehat\al^{(k+1)}\nabla_pH(x,\nabla u^{(k)}))=0$,
+$\widehat\al_{t=0}^{(k+1)}=\al_0$.\\
+\hspace*{1em}$\al^{(k+1)}\leftarrow
+(1-\theta_k)\al^{(k)}+\theta_k\widehat\al^{(k+1)}$.\\
+\hspace*{1em}\textbf{Stop if} the path residual is below tolerance.\\
+\textbf{Output:} approximate equilibrium $(u^{(k)},\al^{(k)})$.
+\end{minipage}}
+\end{center}
+
+\subsection{Variational and primal--dual algorithms}
+
+For potential games, the momentum formulation
+\eqref{eq:mfg-perspective}--\eqref{eq:mfg-linear-constraint} is often preferable.
+It exposes a convex objective under a linear space--time PDE constraint.
+Augmented-Lagrangian, Douglas--Rachford, ADMM, and primal--dual methods then
+alternate a local proximal step for the perspective/congestion integrand with
+a global projection onto the discrete continuity or Fokker--Planck equation.
+This is exactly the algorithmic architecture used for dynamic optimal
+transport, with additional running and terminal potentials
+\citep{BenamouCarlier2015,BenamouCarlierSantambrogio2017}.
+
+With diffusion and quadratic Hamiltonian, a path-space entropy formulation can
+turn the kinetic control cost into relative entropy with respect to Brownian
+motion.  Time discretization then yields multi-marginal entropic problems and
+Sinkhorn-like scaling algorithms \citep{BenamouCarlierDiMarinoNenna2019}.
+
+\subsection{Finite differences, particles, and learning}
+
+Monotone finite-difference schemes are natural for the HJB equation, while
+mass-conservative schemes are required for the Fokker--Planck equation.
+Discrete adjointness between the two is valuable: it preserves the duality
+used in uniqueness and variational arguments.  Convergence of representative
+schemes is developed in \citet{AchdouCamilliCapuzzoDolcetta2013}; see
+\citet{AchdouLauriere2020} for a broader account.
+
+Particle methods approximate $\al_t$ by an empirical measure.  They are
+especially natural for probabilistic formulations and high-dimensional
+problems, but estimating density-dependent congestion from particles requires
+regularization.  Neural solvers can parametrize $u$, the feedback, or the
+master field $U(t,x,\al)$; doing so does not remove the equilibrium
+constraint, and training residuals must still control both the backward and
+forward equations.
+
+\section{What to remember}
+
+\begin{enumerate}[leftmargin=2em]
+  \item An MFG is the limit of a large symmetric non-cooperative game.  Its
+  state is a population law, but its defining principle is Nash consistency.
+  \item The value function solves a backward HJB equation; the population law
+  solves a forward continuity or Fokker--Planck equation.  Their coupling is a
+  fixed point between optimal response and induced law.
+  \item Optimal transport supplies the kinematics, kinetic action, momentum
+  perspective, and Hamilton--Jacobi duality.  Potential MFGs become
+  Benamou--Brenier-type variational problems over curves of measures.
+  \item A generic MFG is not a Wasserstein gradient flow.  JKO is best viewed
+  here as a one-step/myopic planning construction; repeating short planning
+  problems creates a dissipative flow, whereas an MFG encodes anticipation
+  over a fixed horizon.
+  \item Lasry--Lions monotonicity is the central uniqueness mechanism.  It is
+  related to convexity of potential couplings but distinct from displacement
+  convexity along Wasserstein geodesics.
+  \item The master equation is a Hamilton--Jacobi equation on the space of
+  positions and probability measures.  It organizes dependence on the initial
+  population and the convergence from finite-player Nash systems.
+\end{enumerate}
+
+The conceptual payoff is a unified but non-reductive picture.  Optimal
+transport, Wasserstein flows, mean field control, and mean field games share
+the language of evolving probability measures.  They differ in who chooses
+the velocity, which endpoint data are prescribed, and whether the governing
+principle is transport optimality, dissipation, centralized control, or Nash
+equilibrium.  Keeping these distinctions visible is what makes the common PDE
+and variational machinery useful.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

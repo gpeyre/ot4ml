@@ -14,7 +14,8 @@ transport, the special simplicity of the line, and the limitations of
 permutations once cardinalities or weights differ. Classical assignment
 algorithms such as the Hungarian and auction methods
 {cite:p}`Kuhn1955,bertsekas1992auction` provide the computational backdrop,
-while the weighted examples motivate the Kantorovich relaxation.
+while the restriction to equal cardinalities and weights motivates the
+Kantorovich relaxation.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
@@ -46,7 +47,6 @@ from ot4ml_web import (
     plot_histogram_equalization,
     plot_cost_power_sweep,
     plot_quantile_matching,
-    plot_regularization_sweep,
 )
 ```
 
@@ -59,20 +59,20 @@ reference case where the optimal map can be read off by sorting.
 
 ### Assignment Problem
 
-Let $C\in\RR^{n\times n}$ be a cost matrix, where $C_{i,j}$ is the cost of
+Let $\C\in\RR^{n\times n}$ be a cost matrix, where $\C_{i,j}$ is the cost of
 pairing source $i$ with target $j$, and let $\Perm(n)$ denote the bijections of
 $\{1,\ldots,n\}$. The optimal assignment problem is
 
 ```{math}
 :label: eq-optimal-assignment-web
 \min_{\sigma \in \Perm(n)}
-\frac{1}{n}\sum_{i=1}^n C_{i,\sigma(i)}.
+\frac{1}{n}\sum_{i=1}^n \C_{i,\sigma(i)}.
 ```
 
-When $C_{i,j}=c(x_i,y_j)$, this is the Monge problem between the two uniform
+When $\C_{i,j}=c(x_i,y_j)$, this is the Monge problem between the two uniform
 empirical measures. The factor $1/n$ records the mass of each atom but does not
 change the optimizer. Exhaustive search evaluates all $n!$ permutations and is
-therefore impractical. Without additional assumptions on $C$, the optimizer
+therefore impractical. Without additional assumptions on $\C$, the optimizer
 need not be unique.
 
 ### Convex Costs on the Line
@@ -83,7 +83,7 @@ In one dimension, convex costs select monotone matchings.
 :::{admonition} Proposition: Monotone Matching on the Line
 :class: important
 Assume that the source points are pairwise distinct and that the target points
-are pairwise distinct. If $C_{i,j}=h(x_i-y_j)$ for a strictly convex function
+are pairwise distinct. If $\C_{i,j}=h(x_i-y_j)$ for a strictly convex function
 $h:\RR\to\RR$, then the unique optimizer is the order-preserving permutation,
 characterized by
 
@@ -176,6 +176,8 @@ extension to arbitrary real masses has a larger $O(n^3)$ worst-case bound
 simpler heuristic, with quantitative guarantees for $g(r)=r^p$ when
 $0<p<1/2$ {cite:p}`OttoliniSteinerberger2023GreedyConcave`.
 
+Figure {ref}`fig:matching-1d-convex-concave-costs` contrasts this alternating-chain behavior with monotone rank matching for a convex cost, first on unimodal clouds and then on multimodal clouds.
+
 (fig:matching-1d-convex-concave-costs)=
 :::{div}
 :class: ot4ml-book-figure
@@ -205,6 +207,8 @@ The next figure shows the monotone case more explicitly. The red and blue
 curves are smooth laws used to generate equal-weight empirical measures; the
 dots are inverse-CDF samples at common quantile levels. The monotone assignment
 connects equal ranks.
+
+Figure {ref}`fig:matching-1d-quantile-assignment` isolates the rank-matching mechanism for both unimodal and multimodal laws: sampling the two quantile functions at the same levels produces the non-crossing optimal assignment.
 
 (fig:matching-1d-quantile-assignment)=
 :::{div}
@@ -258,6 +262,8 @@ gives the exact assignment to a prescribed target histogram. Repeated
 intensities require consistent tie-breaking or mass splitting, but the quantile
 construction remains canonical. It matches intensity distributions rather than
 spatial pixel locations.
+
+Figure {ref}`fig:monge-histogram-equalization` applies this construction to image intensities and shows simultaneously the interpolated images and the monotone evolution of their histograms.
 
 (fig:monge-histogram-equalization)=
 :::{div}
@@ -426,6 +432,8 @@ its extensions to convex costs and nonuniform masses are developed in
 {cite:p}`DelonRabinGousseau2011Circle,delon-circle`.
 :::
 
+Figure {ref}`fig:monge-circle-cut-unfolding` shows how the selected cut turns the circular assignment into an ordinary ordered matching on an interval.
+
 (fig:monge-circle-cut-unfolding)=
 :::{div}
 :class: ot4ml-book-figure
@@ -449,6 +457,8 @@ the two green endpoints identified.*
 :::
 
 <iframe class="ot4ml-live-frame" title="Circle cut controls" src="../live/circle.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
+
+Figure {ref}`fig:matching-2d-cost-exponent` returns to planar assignments and shows that, even for fixed point clouds, changing the exponent of the Euclidean cost can reorganize the optimal permutation globally.
 
 (fig:matching-2d-cost-exponent)=
 :::{div}
@@ -499,156 +509,6 @@ fig = plot_cost_power_sweep(
 :::
 
 <iframe class="ot4ml-live-frame" title="Cost power controls" src="../live/cost.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-
-### Rational Weights
-
-The strict assignment model is also tied to equal cardinalities and equal
-weights. As soon as the target resolution changes or the weights are not
-uniform, a permutation no longer describes the feasible transports. One instead
-needs a nonnegative transport matrix with prescribed row and column sums; this
-is the finite-dimensional Kantorovich relaxation developed in the next
-chapters.
-
-(fig:matching-resolution-and-weights)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("matching-resolution-and-weights")
-```
-
-*From assignments to transport plans, using the same disk-to-annulus geometry.
-In the balanced equal-weight case, each source atom is matched to one target
-atom. With a target cloud that has half as many atoms, or with strongly
-nonuniform target weights, the coupling matrix can merge or split mass; segment
-thickness and opacity encode its nonzero entries, and blue marker areas encode
-the prescribed target masses.*
-:::
-
-The interactive panel below exposes the target resolution, target weights, and
-regularization level. The first displayed plan is sparse, while positive
-regularization values show the entropic smoothing used later in the Sinkhorn
-chapter.
-
-```{code-cell} ipython3
-:tags: [remove-input]
-n_source = 36
-n_target = 18
-weight_mode = "angular"     # uniform, angular, right_heavy
-weight_strength = 1.4
-epsilons = (0.0, 0.03, 0.12)
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-fig = plot_regularization_sweep(
-    n_source=n_source,
-    n_target=n_target,
-    source_shape="disk",
-    target_shape="annulus",
-    cost_power=2,
-    epsilons=epsilons,
-    weight_mode=weight_mode,
-    weight_strength=weight_strength,
-    seed=2031,
-)
-```
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Use the source and target sizes, weight pattern, and regularization sliders to see how unequal masses and finite resolution change the matching picture.
-:::
-
-<iframe class="ot4ml-live-frame" title="Resolution and weight controls" src="../live/resolution.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
-
-(prop-rational-weights-duplicated-matching)=
-:::{admonition} Proposition: Rational Weights as Duplicated Uniform Matching
-:class: important
-Let
-
-```{math}
-\alpha=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i},
-\qquad
-\beta=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j},
-\qquad
-\sum_i k_i=\sum_j\ell_j=N,
-```
-
-with positive integers $k_i,\ell_j$. Replace each $x_i$ by $k_i$ identical
-copies and each $y_j$ by $\ell_j$ identical copies, producing two uniform
-$N$-point clouds. The duplicated assignment problem and the discrete
-Kantorovich problem between $\alpha$ and $\beta$ have the same optimal value.
-Moreover, an optimal coupling exists of the form
-
-```{math}
-P_{ij}=\frac{n_{ij}}N,
-\qquad n_{ij}\in\NN,
-\qquad \sum_j n_{ij}=k_i,
-\quad \sum_i n_{ij}=\ell_j.
-```
-
-Couplings whose scaled entries $NP_{ij}$ are integral are exactly the collapsed
-assignments between the duplicated clouds. Fractional optimal couplings may
-nevertheless coexist when the optimum is degenerate.
-:::
-
-:::{dropdown} Proof
-Any assignment between the duplicated source and target clouds defines integers
-$n_{ij}$ counting how many copied particles of type $x_i$ are matched to copied
-particles of type $y_j$. These counts satisfy
-$\sum_j n_{ij}=k_i$ and $\sum_i n_{ij}=\ell_j$, and the associated coupling
-$P_{ij}=n_{ij}/N$ has marginals $k_i/N$ and $\ell_j/N$. The assignment cost is
-
-```{math}
-\frac1N\sum_{i,j} n_{ij}c(x_i,y_j)
-=
-\sum_{i,j}P_{ij}c(x_i,y_j).
-```
-
-Conversely, any nonnegative integer count matrix with those row and column sums
-can be realized by allocating the $k_i$ copies of each $x_i$ among the target
-copies according to $(n_{ij})_j$. It remains to show that restricting to
-integer counts does not increase the optimum. Scale a feasible coupling by
-$N$ and write $Q=NP$. The constraints on $Q$ have integer right-hand sides.
-After multiplying the target rows by $-1$, their coefficient matrix is the
-oriented node-edge incidence matrix of a bipartite graph and is therefore
-totally unimodular. Every vertex of the transportation polytope is integral,
-and a linear objective attains its minimum at a vertex. Thus an integral
-optimal $Q$ exists and the two optimal values coincide. This proves existence,
-not integrality of every optimizer: convex combinations of distinct integral
-optima can be fractional.
-:::
-
-This network-flow integrality mechanism is the rational-weight counterpart of
-the Birkhoff--von Neumann theorem proved later: in both cases, a linear
-transport relaxation has an optimizer represented by integer edge flows after
-scaling. Equal unit margins specialize these flows to permutation matrices,
-whereas a degenerate optimal face may also contain fractional couplings.
-
-(fig:matching-rational-duplication)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("matching-rational-duplication")
-```
-
-*Rational weights as duplicated uniform matchings, using the same
-disk-to-annulus geometry with fewer displayed atoms. The red and blue locations
-are kept fixed, while disk areas encode the integer multiplicities $k_i$ and
-$\ell_j$. Solving the assignment problem after duplicating particles produces
-several collapsed segments attached to high-multiplicity atoms; this is the
-integer count matrix of the proposition.*
-:::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Use the site and multiplicity sliders to see how rational weights can be represented by duplicated unit masses before solving an ordinary matching problem.
-:::
-
-<iframe class="ot4ml-live-frame" title="Rational duplication controls" src="../live/duplication.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
 ### Two-Dimensional Assignments
 
@@ -811,67 +671,163 @@ convex dependence of the circular transport cost on a continuous shift
 parameter for weighted histograms {cite:p}`delon-circle`.
 
 
-## Matching Algorithms
+## Hungarian Algorithm
 
-This section briefly locates matching within classical combinatorial
-optimization. Its main point is that efficient algorithms exist, but their
-cleanest analysis is obtained only after introducing the linear-programming
-viewpoint.
-
-### Classical Assignment Methods
-
-Efficient algorithms exist to solve the optimal matching problem. The most
-well-known are the Hungarian method and auction algorithms
-{cite:p}`Kuhn1955,bertsekas1981new,bertsekas1992auction`. Auction algorithms
-attach prices to targets: an unmatched source bids for the target of smallest
-reduced cost, equivalently largest reduced profit, and raises that target's
-price. The process terminates once $\epsilon$-complementary slackness holds.
-For integer costs, this condition places the unnormalized total cost within
-$n\epsilon$ of optimum. If $\epsilon<1/n$, the resulting integer assignment
-cost is less than one above the integer optimum and must therefore equal it
-{cite:p}`bertsekas1992auction`. The dual
-chapter revisits this algorithm after Kantorovich duality and explains why it
-is a dual price method, parallel in spirit to Sinkhorn scaling.
+We now present a first algorithm for solving the optimal matching problem. The
+Hungarian method {cite:p}`Kuhn1955,Burkard09` provides a gentle, self-contained
+preview of duality: it computes a permutation together with a certificate of
+its optimality. The auction algorithm
+{cite:p}`bertsekas1981new,bertsekas1992auction` is postponed to Section
+{ref}`sec-auction-dual-ascent`, after discrete duality and the semi-dual
+formulation have been fully developed.
 
 ### Hungarian Primal-Dual Method
 
-The Hungarian method is best understood as a certificate-building algorithm for
-the assignment linear program. Since the factor $1/n$ in the assignment
-objective does not affect its optimizer, we use the unnormalized total cost.
-The method maintains a partial matching $M$ and dual
-prices $(u_i,v_j)$ satisfying
+The method constructs an assignment and its optimality certificate
+simultaneously. Its derivation below uses only the elementary lower bound
+derived next; Section {ref}`sec-discrete-dual` later embeds this certificate in
+general discrete Kantorovich duality.
 
+The factor $1/n$ in the assignment objective does not affect its optimizer, so
+consider the unnormalized dual problem
+
+(eq-hungarian-dual)=
 ```{math}
-u_i+v_j\leq C_{i,j}
-\qquad \forall i,j.
+\max_{(\fD,\gD)\in\RR^n\times\RR^n}
+\sum_{i=1}^n\fD_i+\sum_{j=1}^n\gD_j
+\qquad\text{subject to}\qquad
+\fD_i+\gD_j\leq\C_{i,j}\quad\forall i,j.
 ```
 
-The equality graph
-$E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}$ contains the edges whose reduced cost is
-zero. For a source set $S$, write
-$N_E(S)=\{j:\text{some }i\in S\text{ satisfies }(i,j)\in E(u,v)\}$.
-The algorithm only augments $M$ along alternating paths made of equality edges.
-Starting from an unmatched source, it grows an alternating tree with source set
-$S$ and target set $T$. If the tree reaches an unmatched target, the matching
-is augmented along the path. If $N_E(S)\setminus T$ is empty, the dual
-variables are shifted by the smallest slack
+The certificate used by both Hungarian and auction methods is worth isolating.
+
+(prop-assignment-dual-certificate)=
+:::{admonition} Proposition: Dual Certificate for an Assignment
+:class: important
+Let $(\fD,\gD)$ be feasible for the assignment dual. Then every
+$\tau\in\Perm(n)$ satisfies
 
 ```{math}
-\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr),
-\qquad
-u_i\leftarrow u_i+\delta\ (i\in S),
-\qquad
-v_j\leftarrow v_j-\delta\ (j\in T).
+:label: eq-assignment-dual-lower-bound-web
+\sum_i\C_{i,\tau(i)}
+\geq\sum_i\fD_i+\sum_j\gD_j.
 ```
 
-This update preserves all inequalities $u_i+v_j\leq C_{i,j}$, keeps the
-current alternating tree tight, and creates at least one new equality edge
-leaving $S$. Maintaining these slacks incrementally gives the standard
-$O(n^3)$ implementation for an $n\times n$ assignment problem.
+If a permutation $\sigma$ uses only tight constraints,
 
-The following figure summarizes actual iterates by displaying only the
-evolving partial assignment: unmatched rows are shown as flat rows to keep a
-fixed matrix format, and matched rows are shown as one-hot rows.
+```{math}
+:label: eq-assignment-tight-certificate-web
+\fD_i+\gD_{\sigma(i)}=\C_{i,\sigma(i)}
+\qquad\text{for every }i,
+```
+
+then $\sigma$ is an optimal assignment and $(\fD,\gD)$ is dual optimal.
+Equality in the lower bound at $\tau=\sigma$ holds if and only if every edge
+$(i,\sigma(i))$ is tight.
+:::
+
+:::{dropdown} Proof
+Dual feasibility gives
+$\C_{i,\tau(i)}\geq\fD_i+\gD_{\tau(i)}$ for every $i$. Summing and using
+that $\tau$ permutes the target indices yields
+
+```{math}
+\sum_i\C_{i,\tau(i)}
+\geq
+\sum_i\fD_i+\sum_i\gD_{\tau(i)}
+=
+\sum_i\fD_i+\sum_j\gD_j.
+```
+
+If all edges selected by $\sigma$ are tight, its assignment cost equals the
+dual value of $(\fD,\gD)$. The lower bound shows that no permutation has
+smaller cost. Applied to $\sigma$ and any other feasible dual pair, it also
+shows that no feasible dual value can exceed this cost. Conversely, the difference is the sum of the
+nonnegative slacks
+$\C_{i,\sigma(i)}-\fD_i-\gD_{\sigma(i)}$, and it vanishes exactly when every
+one of these slacks vanishes.
+:::
+
+This is exactly the uniform-mass specialization of the discrete Kantorovich
+dual {eq}`eq-dual`, multiplied by $n$.
+
+The method maintains feasible potentials and a partial matching $M$, meaning a
+set of source--target pairs in which no vertex occurs twice. Its slack, or
+reduced cost, is
+
+(eq-hungarian-slack)=
+```{math}
+s_{i,j}=\C_{i,j}-\fD_i-\gD_j\geq0.
+```
+
+The **equality graph** consists precisely of the zero-slack edges,
+
+```{math}
+E(\fD,\gD)=\{(i,j):s_{i,j}=0\}
+=\{(i,j):\fD_i+\gD_j=\C_{i,j}\}.
+```
+
+The invariant $M\subset E(\fD,\gD)$ means that every matched pair already
+saturates its dual constraint. If $M$ is perfect, Proposition
+{ref}`prop-assignment-dual-certificate` certifies that its associated
+permutation is optimal. It remains to enlarge $M$ while preserving dual
+feasibility and $M\subset E(\fD,\gD)$.
+
+To increase the matching, choose an unmatched source $i_0$. Starting from that
+root, grow a tree in the bipartite equality graph. From a reached source,
+follow a zero-slack edge to a new target; from a reached target that is already
+matched, follow its unique matched edge back to a source. The tree edges
+therefore alternate between unmatched and matched edges, which explains the
+term **alternating tree**. Write $p(j)$ for the source preceding a reached
+target $j$, and $q(i)$ for the matched target preceding a reached non-root
+source $i$. If the tree reaches an unmatched target, these pointers form an
+**augmenting path**. Exchanging matched and unmatched edges along this path
+increases $|M|$ by one.
+
+Let $S$ and $T$ denote the reached source and target sets, and let
+$N_E(S)=\{j:\exists i\in S,\ (i,j)\in E(\fD,\gD)\}$. If no equality edge leaves
+$S$ toward an unreached target, shift the potentials by the smallest such
+slack:
+
+(eq-hungarian-dual-shift)=
+```{math}
+\delta=\min_{i\in S,\ j\notin T}
+\bigl(\C_{i,j}-\fD_i-\gD_j\bigr),
+\qquad
+\fD_i\leftarrow\fD_i+\delta\ (i\in S),
+\qquad
+\gD_j\leftarrow\gD_j-\delta\ (j\in T).
+```
+
+Here $\delta>0$ because no edge from $S$ to $T^c$ is currently tight. The
+update leaves slacks unchanged on $S\times T$, decreases them by $\delta$ on
+$S\times T^c$, and increases them on $S^c\times T$. Feasibility and existing
+tree edges are preserved, while at least one new equality edge appears from
+$S$ to $T^c$. Since $|S|=|T|+1$ before a free target is reached, the dual
+objective increases by $\delta(|S|-|T|)=\delta$.
+
+A cubic implementation stores, for every unreached target,
+
+(eq-hungarian-maintained-slack)=
+```{math}
+\ell_j=\min_{i\in S}s_{i,j}
+```
+
+and a parent source $p(j)$ attaining the minimum. When a source $i'$ enters
+$S$, each unreached target is updated by comparing $\ell_j$ with the single
+new slack $s_{i',j}$. A dual shift uses
+$\delta=\min_{j\notin T}\ell_j$ and replaces $\ell_j$ by
+$\ell_j-\delta$ for $j\notin T$. A tree expansion therefore costs $O(n)$
+rather than requiring a rescan of $S\times T^c$.
+
+Hungarian and auction methods use the same dual potentials and reduced costs in
+different ways. Hungarian grows an exact zero-slack augmenting tree, whereas
+the auction method in Section {ref}`sec-auction-dual-ascent` uses
+$\epsilon$-relaxed contacts, price bids, and ownership changes. Figure
+{ref}`fig:matching-hungarian-progression` shows the Hungarian mechanism on the
+same planar clouds as Figure {ref}`fig:matching-2d-cost-exponent`: thick violet
+edges form the current matching, while faint edges indicate unmatched pairs
+whose reduced costs are closest to zero.
 
 (fig:matching-hungarian-progression)=
 :::{div}
@@ -879,144 +835,160 @@ fixed matrix format, and matched rows are shown as one-hot rows.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-show_book_figure("matching-hungarian-progression")
+show_book_figure("matching-hungarian-progression", width=840)
 ```
 
-*Matrix view of actual Hungarian primal-dual iterates on a diagonally dominant
-ordered one-dimensional squared-distance assignment. Each panel records the
-current partial assignment state: unassigned rows are kept flat, while assigned
-rows are one-hot. The snapshots are taken at initialization and after two,
-four, six and eight augmentations; for this pedagogical instance the partial
-assignments grow along the diagonal, and the final matrix is the identity
-assignment certified by complementary slackness.*
+*Growth of the Hungarian matching on the planar point clouds of Figure
+{ref}`fig:matching-2d-cost-exponent`.* Thick violet segments show the partial
+matching, whose cardinality $|M|$ is reported in each panel. Thin translucent
+segments show the $2n$ lowest-slack unmatched edges, ranked by
+$s_{i,j}=\C_{i,j}-\fD_i-\gD_j$; exact zero-slack candidates are slightly
+stronger. This overlay summarizes the near-tight dual constraints, while the
+algorithm selects its next edge only across the current alternating-tree cut.
+The final thick matching is optimal and all its edges are dual-tight.
 :::
 
 :::{div}
 :class: ot4ml-interactive-note
-**Interactive panel.** Use the size, jitter, and seed controls to regenerate the assignment instance and inspect snapshots of the Hungarian augmentation process.
-:::
-
-
-(prop-hungarian-correct)=
-:::{admonition} Proposition: Correctness and Complexity of the Hungarian Primal-Dual Method
-:class: important
-Assume the Hungarian method terminates with a perfect matching $\sigma$
-contained in the equality graph
-
-```{math}
-E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\},
-```
-
-where $(u,v)$ is dual feasible, i.e. $u_i+v_j\leq C_{i,j}$ for all $(i,j)$.
-Then $\sigma$ is an optimal assignment. Moreover, the usual Hungarian updates
-terminate after finitely many augmentations. With maintained slacks, the method
-uses $O(n^3)$ arithmetic operations.
-:::
-
-:::{dropdown} Proof
-For any permutation $\tau$, dual feasibility gives
-
-```{math}
-\sum_i C_{i,\tau(i)}
-\geq
-\sum_i (u_i+v_{\tau(i)})
-=
-\sum_i u_i+\sum_j v_j.
-```
-
-This is the weak duality lower bound. If $\sigma$ is contained in the equality
-graph, then
-
-```{math}
-\sum_i C_{i,\sigma(i)}
-=
-\sum_i u_i+\sum_j v_j,
-```
-
-so the primal cost of $\sigma$ reaches the dual lower bound and is optimal.
-
-It remains to justify finite termination and the complexity bound. Each
-successful augmentation increases the matching cardinality by one, so there
-are exactly $n$ augmentation phases. During one phase, the algorithm grows an
-alternating tree in the equality graph. Before it reaches a free target, the
-tree invariant is $|S|=|T|+1$, so $T$ cannot contain every target. If
-$N_E(S)\setminus T$ is empty, every slack from $S$ to $T^c$ is positive and
-the minimum defining $\delta$ exists. On $S\times T$, adding $\delta$ to source
-labels and subtracting it from target labels preserves tightness. On
-$S\times T^c$, the definition of $\delta$ preserves feasibility and makes at
-least one new edge tight; inequalities on $S^c\times T$ become looser, and all
-others are unchanged. Thus the reachable sets strictly grow after every dual
-update and can grow at most $n$ times in one phase. If the slacks
-$\min_{i\in S}(C_{i,j}-u_i-v_j)$ are maintained when a source enters $S$, each
-tree expansion costs $O(n)$. One phase costs $O(n^2)$ and all $n$ phases cost
-$O(n^3)$. Hence the method reaches a perfect optimal matching.
+**Interactive panel.** Use the size, jitter, and seed controls to regenerate an
+assignment instance and inspect the augmentation process. The static book figure
+above fixes the canonical point clouds and additionally overlays low-slack edges.
 :::
 
 (alg-hungarian-primal-dual)=
 :::{admonition} Algorithm: Hungarian primal-dual augmentation
 :class: ot4ml-algorithm
 
-**Input:** Square cost matrix $C\in\RR^{n\times n}$.
+**Input:** Square cost matrix $\C\in\RR^{n\times n}$.
 
-**Output:** Minimum-cost perfect matching $M$.
+**Output:** Optimal permutation $\sigma$ and feasible potentials
+$(\fD,\gD)$ certifying its optimality.
 
-**Initialize:** Set $u_i=\min_j C_{ij}$ and $v_j=0$.
+**Initialize:** Set $\fD_i=\min_j\C_{i,j}$, $\gD_j=0$, and $M=\emptyset$.
 
-**Set** $M=\emptyset$.
+**While** $|M|<n$ **do**:
 
-**While** $M$ is not perfect **do**:
-
+> **Set** $i_0=\min\{i:i\text{ is unmatched in }M\}$,
+> $S=\{i_0\}$, and $T=\emptyset$; leave $j_0$ and $q(i_0)$ undefined.
 >
-> **Build** equality graph:
-> $E(u,v)=\{(i,j):u_i+v_j=C_{i,j}\}.$
+> **For** $j=1,\ldots,n$ **do**:
 >
-> **Set** root $i_0=\min\{i:\ i\text{ is unmatched in }M\}$.
+>> **Set** $\ell_j=\C_{i_0,j}-\fD_{i_0}-\gD_j$ and $p(j)=i_0$.
 >
-> **Set** reached sets $S=\{i_0\}$ and $T=\emptyset$; clear parent pointers.
+> **While** $j_0$ is undefined **do**:
 >
-> **While** $T$ contains no unmatched target **do**:
-
+>> **Set** $\delta=\min_{j\notin T}\ell_j$.
 >>
->> **If** $N_E(S)\setminus T=\emptyset$ **then**:
-
->>>
->>> **Compute** $\delta=\min_{i\in S,\ j\notin T}\bigl(C_{i,j}-u_i-v_j\bigr)$.
->>>
->>> **Update** $u_i\leftarrow u_i+\delta$ for $i\in S$ and $v_j\leftarrow v_j-\delta$ for $j\in T$.
->>>
->>> **Refresh** equality graph $E(u,v)$.
->>>
-
->> **Set** $J=N_E(S)\setminus T$.
+>> **Update** $\fD_i\leftarrow\fD_i+\delta$ for $i\in S$,
+>> $\gD_j\leftarrow\gD_j-\delta$ for $j\in T$, and
+>> $\ell_j\leftarrow\ell_j-\delta$ for $j\notin T$.
 >>
->> **For** each $j\in J$ in increasing order **do**:
-
+>> **Select** $j=\min\{k\notin T:\ell_k=0\}$ and set
+>> $T\leftarrow T\cup\{j\}$.
+>>
+>> **If** $j$ is unmatched in $M$ **then**:
+>>
+>>> **Set** $j_0=j$ and exit the inner while loop.
+>>
+>> **Otherwise set** $i'$ to the source matched to $j$,
+>> $S\leftarrow S\cup\{i'\}$, and $q(i')=j$.
+>>
+>> **For** $k\notin T$ **do**:
+>>
+>>> **Set** $r=\C_{i',k}-\fD_{i'}-\gD_k$.
 >>>
->>> **Add** $j$ to $T$ and set parent row $p(j)=\min\{i\in S:(i,j)\in E(u,v)\}$.
->>>
->>> **If** $j$ is matched to $i'$ in $M$ **then set** $S\leftarrow S\cup\{i'\}$ and $q(i')=j$.
->>>
-
-> **Set** $j_0=\min\{j\in T:\ j\text{ is unmatched in }M\}$.
+>>> **If** $r<\ell_k$ **then set** $\ell_k=r$ and $p(k)=i'$.
 >
 > **Set** $j=j_0$.
 >
 > **While** $j$ is defined **do**:
+>
+>> **Set** $i=p(j)$ and $j_{\rm old}=q(i)$.
+>>
+>> **Delete** $(i,j_{\rm old})$ from $M$ when $j_{\rm old}$ is defined.
+>>
+>> **Set** $M\leftarrow M\cup\{(i,j)\}$ and $j\leftarrow j_{\rm old}$.
 
->>
->> **Set** $i=p(j)$.
->>
->> **Set** $j_{\rm old}=q(i)$.
->>
->> **If** $j_{\rm old}$ is defined **then set** $M\leftarrow M\setminus\{(i,j_{\rm old})\}$.
->>
->> **Set** $M\leftarrow M\cup\{(i,j)\}$.
->> **Set** $j=j_{\rm old}$.
+**Return** the permutation $\sigma$ defined by
+$M=\{(i,\sigma(i))\}_i$ and the potentials $(\fD,\gD)$.
+:::
 
-**Return** $M$.
+(prop-hungarian-correct)=
+:::{admonition} Proposition: Correctness and Complexity of the Hungarian Primal-Dual Method
+:class: important
+For every cost matrix $\C\in\RR^{n\times n}$, the Hungarian algorithm
+terminates after $n$ augmentation phases. It returns a permutation
+$\sigma\in\Perm(n)$ and feasible potentials $(\fD,\gD)$ satisfying
+
+```{math}
+\fD_i+\gD_{\sigma(i)}=\C_{i,\sigma(i)}
+\qquad\forall i.
+```
+
+Consequently, $\sigma$ is optimal. With the maintained slacks
+{eq}`eq-hungarian-maintained-slack`, the algorithm uses $O(n^3)$ arithmetic
+and comparison operations and $O(n^2)$ storage, including the cost matrix.
+:::
+
+:::{dropdown} Proof
+Initialization is dual feasible and the empty matching lies in the equality
+graph. At the beginning of a phase, the slack initialization gives
+
+$$
+\ell_j=\min_{i\in S}s_{i,j}=s_{p(j),j}
+\qquad(j\notin T).
+$$
+
+This identity is preserved when a matched source $i'$ enters $S$, because the
+algorithm compares every $\ell_j$ with the single new candidate $s_{i',j}$.
+
+Before a free target is reached, every target in $T$ is matched to a source in
+$S$, while every source in $S$ except the unmatched root was reached through
+its matched target. Thus $|S|=|T|+1$, so $T$ cannot contain every target.
+Dual feasibility gives
+
+$$
+\delta=\min_{j\notin T}\ell_j
+=\min_{i\in S,\,j\notin T}s_{i,j}\geq0.
+$$
+
+After the potential update,
+
+```{math}
+s_{i,j}^{+}=
+\begin{cases}
+s_{i,j},&(i,j)\in S\times T,\\
+s_{i,j}-\delta,&(i,j)\in S\times T^c,\\
+s_{i,j}+\delta,&(i,j)\in S^c\times T,\\
+s_{i,j},&(i,j)\in S^c\times T^c.
+\end{cases}
+```
+
+All slacks remain nonnegative. For $j\notin T$, both the slacks from $S$ and
+$\ell_j$ decrease by $\delta$, so the maintained-minimum identity remains
+valid. At least one $\ell_j$ becomes zero, and $p(j)$ supplies the corresponding
+equality edge. Every matched edge remains tight.
+
+Each inner iteration adds a new target to $T$. It either reaches a free target
+or adds that target's matched source to $S$ and updates the slack array. Hence a
+phase reaches a free target after at most $n$ iterations. The pointers $p$ and
+$q$ trace an alternating path; flipping it preserves the matching property,
+increases $|M|$ by one, and uses only equality edges. Starting from the empty
+matching, exactly $n$ phases produce a perfect matching.
+
+At termination every matched edge is tight, so Proposition
+{ref}`prop-assignment-dual-certificate` directly proves that $\sigma$ is
+optimal and the returned potentials are dual optimal. This is the finite
+assignment instance of the complementary-slackness mechanism proved in general
+in Proposition {ref}`prop-discrete-complementary-slackness`.
+Initializing the slack array costs $O(n)$. Each inner iteration scans at most
+$n$ targets to find $\delta$, update the slacks, and compare them with one newly
+reached source row. It therefore costs $O(n)$, giving $O(n^2)$ per phase and
+$O(n^3)$ overall. The cost matrix requires $O(n^2)$ storage, while the matching,
+reached sets, parent arrays, and slacks require only $O(n)$ additional storage.
 :::
 
 The chapter has exposed two complementary routes to finite matching: geometry
-can reduce the problem to sorting, while primal-dual labels give a global
+can reduce the problem to sorting, while primal-dual potentials give a global
 certificate for an arbitrary cost matrix. The next chapter passes from finite
 permutations to transport maps between general measures.

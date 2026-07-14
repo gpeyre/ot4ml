@@ -7,11 +7,14 @@ kernelspec:
 ---
 (sec-semidiscr-w1)=
 
-This chapter focuses on two computationally useful degeneracies of the dual
-problem. Semi-discrete optimal transport turns a continuous-to-discrete map
-into finite-dimensional geometry, while $\Wass_1$ replaces convex potentials by
-Lipschitz functions and flow fields. The material connects computational
-geometry {cite:p}`AurenhammerHA98,Merigot11,merigot2013comparison` with the
+This chapter develops three computational consequences of duality. Eliminating
+one potential gives the semi-dual; for discrete measures, this viewpoint leads
+to auction algorithms, while a continuous source and discrete target lead to
+Laguerre-cell geometry. The final part specializes duality to $\Wass_1$, where
+Lipschitz functions and flow fields replace convex potentials. The material
+connects auction and network-flow methods
+{cite:p}`bertsekas1992auction,bertsekas1988dual`, computational geometry
+{cite:p}`AurenhammerHA98,Merigot11,merigot2013comparison`, and the
 Kantorovich--Rubinstein and Beckmann formulations
 {cite:p}`kantorovich1958space,Beckmann52`.
 
@@ -46,35 +49,476 @@ def show_book_figure(name, width=760):
 The semi-dual eliminates one potential by an exact $c$-transform. It preserves
 concavity while removing the explicit pointwise inequality constraint.
 
-Write the dual problem as
+### General Measure Semi-dual
+
+For arbitrary measures, partial maximization converts the constrained
+two-potential dual into an unconstrained optimization over one function.
+
+Denote the extended full-dual objective by
 
 ```{math}
-\sup_{f,g\in\Cc(\X)\times\Cc(\Y)} \mathcal{E}(f,g),
+:label: eq-full-dual-functional-web
+\mathcal E_0(f,g)
+\eqdef
+\begin{cases}
+\displaystyle \int_\X f\,\d\alpha+\int_\Y g\,\d\beta,
+& (f,g)\in\Potentials(c),\\
+-\infty,&\text{otherwise}.
+\end{cases}
 ```
 
-where $\mathcal{E}(f,g)$ is the dual objective, extended by $-\infty$ outside
-the feasible set. For fixed $f$, feasibility is equivalent to $g\leq f^c$.
-Since $\beta$ is nonnegative, the largest admissible choice $g=f^c$ maximizes
-the objective and gives
+Thus $\mathcal L_c(\alpha,\beta)=\max_{f,g}\mathcal E_0(f,g)$. For fixed $g$,
+feasibility is equivalent to $f\leq g^{\bar c}$. Since $\alpha$ is nonnegative,
+the largest admissible choice $f=g^{\bar c}$ maximizes the objective and gives
 
 ```{math}
 :label: eq-semi-dual-web
-\sup_{f\in\Cc(\X)} \widetilde{\mathcal{E}}(f)
+\mathcal L_c(\alpha,\beta)
+=
+\sup_{g\in\Cc(\Y)}\mathcal E(g),
+\qquad
+\mathcal E(g)
 \eqdef
-\mathcal{E}(f,f^c)
+\mathcal E_0(g^{\bar c},g)
 =
-\sup_g \mathcal{E}(f,g)
+\sup_{f\in\Cc(\X)}\mathcal E_0(f,g)
 =
-\int_\X f\,\d\alpha
-+
-\int_\Y f^c\,\d\beta .
+\int_\X g^{\bar c}\,\d\alpha+\int_\Y g\,\d\beta.
 ```
 
 Partial maximization preserves concavity. Moreover,
-$\widetilde{\mathcal{E}}(f+s)=\widetilde{\mathcal{E}}(f)$ because
-$(f+s)^c=f^c-s$ and both measures have unit mass. Potentials are therefore
+$\mathcal E(g+s)=\mathcal E(g)$ because $(g+s)^{\bar c}=g^{\bar c}-s$ and
+both measures have unit mass. Potentials are therefore
 defined only up to an additive constant, while the optimization is
 unconstrained.
+
+### Discrete Semi-dual
+
+For two discrete measures
+
+```{math}
+\alpha=\sum_{i=1}^n a_i\delta_{x_i},
+\qquad
+\beta=\sum_{j=1}^m b_j\delta_{y_j},
+\qquad
+\C_{ij}=c(x_i,y_j),
+```
+
+with common total mass $M$, use the same notation for vectors:
+
+```{math}
+\mathcal E_0(f,g)
+\eqdef
+\begin{cases}
+\langle f,a\rangle+\langle g,b\rangle,&f\oplus g\leq\C,\\
+-\infty,&\text{otherwise}.
+\end{cases}
+```
+
+Eliminating the source vector gives
+
+```{math}
+:label: eq-discrete-semi-dual-web
+\mathcal L_{\C}(a,b)
+=
+\max_{g\in\mathbb R^m}\mathcal E(g),
+\qquad
+\mathcal E(g)
+=
+\mathcal E_0(g^{\bar\C},g)
+=
+\sum_{i=1}^n a_i(g^{\bar\C})_i
++
+\sum_{j=1}^m b_jg_j,
+```
+
+where
+
+```{math}
+(g^{\bar\C})_i=\min_{1\le j\le m}(\C_{ij}-g_j).
+```
+
+The function $\mathcal E$ is concave, piecewise affine, and invariant
+under $g\mapsto g+s\mathbf 1$. If ties are resolved by choosing
+$\sigma_g(i)\in\arg\min_j(\C_{ij}-g_j)$, then a supergradient is
+
+```{math}
+b-\widehat b(g),
+\qquad
+\widehat b_j(g)=\sum_{i:\,\sigma_g(i)=j}a_i.
+```
+
+It is therefore the mismatch between the desired target mass and the mass
+currently attracted by each target coordinate. At ties, splitting source mass
+among active targets describes the full superdifferential.
+
+(sec-auction-dual-ascent)=
+## Auction Algorithm
+
+The auction algorithm is derived from coordinate maximization of the semi-dual
+of the linear assignment problem. Its practical form uses bidder-specific
+dual-weight updates that cross the selected row's next indifference threshold by
+$\varepsilon$; this controlled relaxation prevents jamming at nonsmooth ties.
+We follow the account of Mérigot and Thibert
+{cite:p}`merigot2020optimaltransportalgorithms`, itself based on Bertsekas'
+auction algorithm and its $\varepsilon$-scaling refinement
+{cite:p}`bertsekas1981new,bertsekas1988dual,bertsekas1992auction`. In this
+section, $\C\in\mathbb R^{n\times n}$ and $n\ge2$. A permutation matrix $P$
+represents the probability coupling $P/n$.
+
+### Coordinate Ascent and Discrete Laguerre Cells
+
+Write $g_j$ for the target Kantorovich potential. Specializing the discrete
+semi-dual to uniform weights gives
+
+```{math}
+:label: eq-auction-semidual-web
+\mathcal E(g)
+=
+\frac1n\sum_{i=1}^n(g^{\bar\C})_i+\frac1n\sum_{j=1}^n g_j,
+\qquad
+(g^{\bar\C})_i=\min_{1\le j\le n}(\C_{ij}-g_j).
+```
+
+Thus $(g^{\bar\C},g)$ is dual feasible. This is the discrete $\bar C$-transform
+of Remark {ref}`rem-discrete-c-transform`, with the same sign convention as in
+the general and semi-discrete formulations.
+
+The discrete Laguerre cells are
+
+```{math}
+:label: eq-auction-discrete-laguerre-web
+\operatorname{Lag}^{\mathrm D}_j(g)
+=
+\left\{i:\ \C_{ij}-g_j\le \C_{ik}-g_k\ \text{for every }k\right\}.
+```
+
+They can overlap at ties. They are the finite counterparts of the general
+semi-discrete Laguerre cells in Definition {ref}`def-laguerre-power-cells`:
+the displayed cell is that definition restricted to row indices. If every row
+has a unique minimizer, then
+
+```{math}
+\frac{\partial}{\partial g_j}\mathcal E(g)
+=
+\frac{1-|\operatorname{Lag}^{\mathrm D}_j(g)|}{n}.
+```
+
+An overfull cell therefore calls for a decrease of its dual weight. Proposition
+{ref}`prop-assignment-dual-certificate` shows that a perfect matching in the
+contact graph $i\in\operatorname{Lag}^{\mathrm D}_j(g)$ certifies optimality of
+$g$; conversely, assignment duality and complementary slackness produce such a
+matching at every maximizer.
+
+For $i\in\operatorname{Lag}^{\mathrm D}_j(g)$, define
+
+```{math}
+:label: eq-auction-bid-web
+\operatorname{bid}_j(g,i)
+=
+\min_{k\ne j}(\C_{ik}-g_k)-(\C_{ij}-g_j).
+```
+
+When the cell is nonempty, the largest maximizing decrement along the negative
+$j$th coordinate is the largest such bid
+{cite:p}`merigot2020optimaltransportalgorithms`. At a tie, even this largest
+maximizing decrement can vanish, so naive coordinate ascent may jam before
+reaching a dual maximizer.
+
+### Bids and Relaxed Contacts
+
+Auction avoids jamming by moving an unassigned row
+$\varepsilon$ beyond its next indifference point. Let $j_0$ and $j_1$ be its
+best and second-best targets:
+
+```{math}
+:label: eq-auction-reduced-costs-web
+j_0\in\arg\min_j(\C_{ij}-g_j),
+\qquad
+j_1\in\arg\min_{j\ne j_0}(\C_{ij}-g_j).
+```
+
+The winning dual weight is updated by
+
+```{math}
+:label: eq-auction-dual-update-web
+\Delta_i
+=
+\operatorname{bid}_{j_0}(g,i)+\varepsilon
+=
+(\C_{i,j_1}-g_{j_1})-(\C_{i,j_0}-g_{j_0})+\varepsilon,
+\qquad
+g_{j_0}\leftarrow g_{j_0}-\Delta_i.
+```
+
+Unlike exact coordinate maximization, this update uses the selected row's bid
+rather than the maximum bid over the whole cell. Afterward, the reduced cost of
+$j_0$ is exactly $\varepsilon$ above that of the unchanged alternative $j_1$.
+The row nevertheless takes $j_0$; its former owner, if any, becomes unassigned.
+Because of this overshoot, a bid need not increase the nonsmooth semi-dual.
+Coordinate ascent motivates the update, but $\varepsilon$-complementary
+slackness is the invariant used in the convergence proof.
+
+(def-auction-eps-cs)=
+:::{admonition} Definition: $\varepsilon$-Complementary Slackness
+:class: important
+A partial permutation matrix $P\in\{0,1\}^{n\times n}$ has at most one nonzero
+entry in each row and column. Such a matrix and target potential $g$ satisfy
+$\varepsilon$-complementary slackness if
+
+```{math}
+:label: eq-auction-epsilon-cs-web
+P_{ij}=1
+\quad\Longrightarrow\quad
+\C_{ij}-g_j\le(g^{\bar\C})_i+\varepsilon.
+```
+:::
+
+A bid gives the newly assigned row this property. Decreasing $g_{j_0}$ can only
+make $j_0$ less attractive to rows assigned elsewhere, and the previous owner
+of $j_0$ is removed. Every iteration therefore preserves the condition.
+
+(alg-auction-bidding)=
+:::{admonition} Algorithm: Bertsekas Auction
+:class: ot4ml-algorithm
+
+**Input:** Cost matrix $\C\in\mathbb R^{n\times n}$, tolerance
+$\varepsilon>0$, initial target potential $g\in\mathbb R^n$ (default $g=0$).
+
+**Output:** Permutation matrix $P$ and target potential $g$; the source
+potential is $g^{\bar\C}$.
+
+**Initialize:** Set $P=0$.
+
+**While** some row $i$ satisfies $\sum_jP_{ij}=0$ **do**:
+
+> **Choose** any such row $i$.
+>
+> **Set** $j_0\in\arg\min_j(\C_{ij}-g_j)$ and
+> $j_1\in\arg\min_{j\ne j_0}(\C_{ij}-g_j)$.
+>
+> **Set**
+> $\Delta\leftarrow(\C_{i,j_1}-g_{j_1})-(\C_{i,j_0}-g_{j_0})+\varepsilon$.
+>
+> **Set** $g_{j_0}\leftarrow g_{j_0}-\Delta$.
+>
+> **If** $P_{i_0,j_0}=1$ for some $i_0$ **then**, set $P_{i_0,j_0}\leftarrow0$.
+>
+> **Set** $P_{i,j_0}\leftarrow1$.
+
+**Return** $P$ and $g$.
+:::
+
+Figure {ref}`fig:dual-auction-progression` shows actual iterates on the planar
+point clouds used in {ref}`fig:matching-2d-cost-exponent`. For the current
+target potential, define the auction reduced costs
+
+$$
+r_{ij}(g)=\C_{ij}-g_j-(g^{\bar\C})_i\geq 0.
+$$
+
+Exact zeros are the discrete Laguerre contacts of row $i$, whereas an owned
+edge only needs to satisfy $r_{ij}(g)\leq\varepsilon$ by
+$\varepsilon$-complementary slackness.
+
+At an intermediate state, the current ownership matching is
+$M=\{(i,j):P_{ij}=1\}$; the labels in the figure report its cardinality.
+
+(fig:dual-auction-progression)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("dual-auction-progression", width=850)
+```
+
+*Geometric progression of the unit-mass transportation auction.* Thick violet
+segments form the current partial ownership matching, while thin translucent
+segments show the $2n$ unmatched edges with smallest auction reduced costs.
+The labels report matching cardinality and cumulative bid count. With
+$\varepsilon=0.002$, the final assignment is reached after $505$ bids and
+coincides with the exact squared-distance optimum.
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Vary the bid increment and inspect how assignments and
+target dual weights evolve toward complementary slackness.
+:::
+
+<iframe class="ot4ml-live-frame" title="Auction dual-weight controls" src="../live/dual-auction.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+### Fixed Tolerance
+
+For a prescribed tolerance, relaxed contact gives both an optimality
+certificate and a finite bound on the number of bids.
+
+(prop-auction-termination)=
+:::{admonition} Proposition: Fixed-$\varepsilon$ Auction Convergence and Complexity
+:class: important
+Set
+$R_{\C}=\max_{i,j}\C_{ij}-\min_{i,j}\C_{ij}$.
+Started from $g=0$, Algorithm {ref}`alg-auction-bidding` terminates after at most
+
+```{math}
+n\left(\left\lfloor R_{\C}/\varepsilon\right\rfloor+1\right)
+```
+
+bids. It returns a permutation matrix satisfying $\varepsilon$-complementary
+slackness and
+
+```{math}
+:label: eq-auction-cost-certificate-web
+0
+\le
+\frac1n\langle\C,P\rangle
+-
+\min_{P'\in\mathcal P_n^{\mathrm{perm}}}\frac1n\langle\C,P'\rangle
+\le
+\varepsilon.
+```
+
+Dense scans require $O(n^2(1+R_{\C}/\varepsilon))$ operations and $O(n^2)$
+storage. If $\C$ is integer-valued and $\varepsilon<1/n$, the assignment is
+exactly optimal.
+:::
+
+:::{dropdown} Proof
+Each bid decreases one target potential by at least $\varepsilon$. Once a target has an
+owner, later bids may change that owner but never leave the target empty. While
+the algorithm is incomplete, an unassigned target therefore retains its
+initial zero potential. A selected target is either unassigned, hence has zero
+potential, or has value at least $-R_{\C}$ by comparison with a zero-potential
+target. Each target can consequently receive
+at most $\lfloor R_{\C}/\varepsilon\rfloor+1$ bids. At termination every row and
+column has one active entry.
+
+For the cost certificate, summing $\varepsilon$-complementary slackness over
+the returned permutation gives the first inequality below. The second is the
+dual lower bound of Proposition {ref}`prop-assignment-dual-certificate`,
+applied to $(g^{\bar\C},g)$:
+
+```{math}
+\frac1n\langle\C,P\rangle
+\le
+\frac1n\sum_i(g^{\bar\C})_i+\frac1n\sum_jg_j+\varepsilon
+\le
+\min_{P'}\frac1n\langle\C,P'\rangle+\varepsilon.
+```
+
+One dense bid scans $n$ reduced costs, proving the complexity bound. For integer
+costs, the unnormalized assignment gap is an integer smaller than one and must
+therefore vanish.
+:::
+
+### $\varepsilon$-Scaling
+
+The cold-start estimate above exposes the limitation of a single tolerance. A
+large $\varepsilon$ is fast but gives only a coarse certificate, whereas the
+small $\varepsilon$ required for high accuracy can produce a bid count
+proportional to $R_{\C}/\varepsilon$. Continuation first learns a rough
+dual-potential landscape and then sharpens it instead of restarting from zero.
+
+Algorithm {ref}`alg-auction-epsilon-scaling` starts at the cost scale
+$\max\{R_{\C},\eta\}$ and halves the tolerance until it reaches the requested
+value $\eta$. Each phase rebuilds the ownership matrix but retains the target
+potential from the preceding phase. The previous complete assignment already
+certifies approximate contact for this potential, so the next auction refines an existing
+dual landscape.
+
+(alg-auction-epsilon-scaling)=
+:::{admonition} Algorithm: Auction With $\varepsilon$-Scaling
+:class: ot4ml-algorithm
+
+**Input:** Cost matrix $\C\in\mathbb R^{n\times n}$, final tolerance $\eta>0$.
+
+**Output:** Permutation matrix $P$ and target potential $g$; the source
+potential is $g^{\bar\C}$.
+
+**Initialize:** Set
+$R_{\C}\leftarrow\max_{i,j}\C_{ij}-\min_{i,j}\C_{ij}$ and $g\leftarrow0$.
+
+**If** $R_{\C}=0$ **then**, return any permutation matrix and $g=0$.
+
+**Set** $\varepsilon\leftarrow\max\{R_{\C},\eta\}$.
+
+**While** $\varepsilon>\eta$ **do**:
+
+> **Set** $(P,g)\leftarrow\operatorname{Auction}(\C,\varepsilon,g)$.
+>
+> **Set** $\varepsilon\leftarrow\max\{\varepsilon/2,\eta\}$.
+
+**Set** $(P,g)\leftarrow\operatorname{Auction}(\C,\eta,g)$.
+
+**Return** $P$ and $g$.
+:::
+
+(prop-auction-epsilon-scaling)=
+:::{admonition} Proposition: Complexity of $\varepsilon$-Scaling
+:class: important
+For $\eta>0$, Algorithm {ref}`alg-auction-epsilon-scaling` returns a
+permutation satisfying $\eta$-complementary slackness and
+{eq}`eq-auction-cost-certificate-web` with $\varepsilon$ replaced by $\eta$.
+If $R_{\C}>0$, it uses at most
+
+```{math}
+1+\left\lceil\log_2^+\!\left(\frac{R_{\C}}{\eta}\right)\right\rceil,
+\qquad
+\log_2^+(s)=\max\{0,\log_2 s\},
+```
+
+auction phases. Its dense worst-case complexity is
+
+```{math}
+O\!\left(n^3\left(1+\log_+\frac{R_{\C}}{\eta}\right)\right),
+\qquad
+\log_+(s)=\max\{0,\log s\}.
+```
+
+If $R_{\C}=0$, it terminates immediately. For integer-valued $\C$ and
+$\eta<1/n$, its output is exactly optimal.
+:::
+
+:::{dropdown} Proof
+The initial tolerance is $\varepsilon_0=\max\{R_{\C},\eta\}$. If it equals
+$\eta$, the fixed-tolerance proposition gives the result in one phase.
+Otherwise the first phase starts from the zero potential and costs $O(n^2)$ because
+$R_{\C}/\varepsilon_0=1$.
+
+Consider a later $\varepsilon$-phase initialized from a target potential obtained at
+preceding tolerance $\lambda$. The preceding assignment satisfies
+$\lambda$-complementary slackness. Lemma 25 of Mérigot and Thibert
+{cite:p}`merigot2020optimaltransportalgorithms`, expressed in the present sign
+convention, bounds the decrease of each potential component during the new
+phase by $n(\lambda+\varepsilon)$. Since each bid decreases one component by at
+least $\varepsilon$, the phase uses at most
+
+```{math}
+n^2\left(1+\frac{\lambda}{\varepsilon}\right)
+```
+
+bids. Consecutive tolerances satisfy $\lambda/\varepsilon\leq2$, hence each
+warm-started phase costs $O(n^3)$ dense operations. Halving gives the stated
+phase count. The last phase enforces $\eta$-complementary slackness, so the
+fixed-tolerance proposition yields the accuracy and integer-cost conclusions.
+:::
+
+A cold-started $\eta$-auction has bound
+$O(n^2(1+R_{\C}/\eta))$, while scaling uses a logarithmic number of $O(n^3)$
+phases. Thus scaling is a high-accuracy guarantee, not an unconditional
+speedup: its bound improves the cold-start estimate when $R_{\C}/\eta$ is large
+compared with $n(1+\log_+(R_{\C}/\eta))$. For integer costs, choosing
+$\eta<1/n$ gives an exact assignment in
+$O(n^3(1+\log_+(nR_{\C})))$ operations.
+
+:::{admonition} $\varepsilon$-Scaling Versus Sinkhorn
+:class: note
+Sinkhorn's continuation parameter has a different role. Entropy smooths the
+hard minimum into a log-sum-exp, whereas auction retains the hard transform and
+relaxes only the contact condition. Sinkhorn evolves a dense coupling; auction
+maintains a partial permutation matrix through dual-weight bids and ownership changes.
+:::
 
 ## Semi-discrete
 
@@ -116,6 +560,8 @@ $\beta$ is discrete yields the finite-dimensional semi-dual
 \max_{g\in\RR^m}
 \mathcal{E}(g)
 \eqdef
+\mathcal E_0(g^{\bar c},g)
+=
 \int_\X g^{\bar c}(x)\,\d\alpha(x)
 +
 \sum_{j=1}^m g_j b_j .
@@ -157,6 +603,8 @@ Voronoi diagram.
 For quadratic costs, varying the dual weights moves the walls between adjacent
 cells while keeping them parallel. This is the geometric mechanism by which
 the cell masses are adjusted.
+
+Figure {ref}`fig:semidiscrete-laguerre-cells` follows this adjustment from unweighted Voronoi cells to a power diagram whose cell masses match the prescribed discrete target weights.
 
 (fig:semidiscrete-laguerre-cells)=
 :::{div}
@@ -260,6 +708,8 @@ The sign of the gradient has a direct geometric interpretation. Increasing
 $g_j$ lowers the corresponding power distance and expands $\mathcal L_j(g)$;
 decreasing $g_j$ shrinks it. The dotted outline marks the balanced cell, so
 semi-dual ascent can be read as a mass-balancing procedure on a power diagram.
+
+Figure {ref}`fig:semidiscrete-weight-gradient-cells` makes the sign of this gradient geometric.
 
 (fig:semidiscrete-weight-gradient-cells)=
 :::{div}
@@ -791,6 +1241,8 @@ which makes the negative exponent, hence the ultrafast-diffusion character,
 explicit. Its stationary site density is proportional to
 $\rho^{d/(d+p)}$.
 
+Figure {ref}`fig:semidiscrete-lloyd-flow-mixtures` shows the relaxed Lloyd flow in a two-dimensional toy problem.
+
 (fig:semidiscrete-lloyd-flow-mixtures)=
 :::{div}
 :class: ot4ml-book-figure
@@ -808,6 +1260,8 @@ trace the labelled sites under the explicit-Euler Lloyd ODE. The right panel
 displays the relative quantization energy, illustrating the monotone decay of
 the objective along the relaxed iterations.*
 :::
+
+Figure {ref}`fig:semidiscrete-lloyd-quantization` follows the associated Voronoi cells and generators through Lloyd iterations, making the decrease of the quantization energy visible.
 
 (fig:semidiscrete-lloyd-quantization)=
 :::{div}
@@ -1097,6 +1551,8 @@ while i.i.d. empirical sampling has expected squared error of order $m^{-1}$, he
 root-mean-square $\mathcal W_2$ error of order $m^{-1/2}$. This is consistent
 with broader empirical OT sample-complexity theory
 {cite:p}`dereich2013constructive,fournier2015rate,weed2017sharp`.
+
+Figure {ref}`fig:semidiscrete-quantile-quantization-rates` illustrates both parts of this comparison: optimal atoms are uniform in quantile coordinates, and their error decays one power of $m$ faster than the root-mean-square empirical error.
 
 (fig:semidiscrete-quantile-quantization-rates)=
 :::{div}
@@ -1417,6 +1873,8 @@ because this is a finite-dimensional linear program with a nonempty feasible
 set: connectedness and $\sum_i r_i=0$ allow the signed surplus to be routed
 along paths.
 :::
+
+Figure {ref}`fig:w1-graph-transport-flow` shows the optimal edge flux on both a quasi-regular and a nonuniform Delaunay graph, emphasizing that the Beckmann variables live only on graph edges.
 
 (fig:w1-graph-transport-flow)=
 :::{div}

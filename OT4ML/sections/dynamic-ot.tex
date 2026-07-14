@@ -4,7 +4,7 @@
 \index{dynamic!optimal transport}% strictindex
 \label{sec-dynamic-optimal-transport}
 
-Optimal transport becomes especially powerful once distances between measures are seen as actions of moving mass. This chapter first develops the dynamic language: continuity equations describe admissible measure evolutions, while the Benamou--Brenier formula identifies $\Wass_2$ with a least-action principle. These ideas prepare the gradient-flow and generative-model chapters that follow.
+Optimal transport becomes especially powerful once distances between measures are seen as actions of moving mass. This chapter first develops the dynamic language: continuity equations describe admissible measure evolutions, while the Benamou--Brenier formula identifies $\Wass_2$ with a least-action principle. After extending this construction to other transport geometries, the chapter closes with variational mean field games, where congestion and a terminal cost turn the Benamou--Brenier action into a population-planning problem. These ideas prepare the gradient-flow and generative-model chapters that follow.
 \index{continuity equation}% strictindex
 \index{generative model}% strictindex
 \index{Benamou-Brenier@Benamou--Brenier}% strictindex
@@ -974,7 +974,7 @@ The following result, in the form used for normalized spectral flows in~\cite{pe
 		=
 		\Wass_\gamma^2(\alpha_0,\alpha_1).
 	\]
-		In particular, $\Wass_\gamma$ defines a distance on $\Pp_2(\RR^d)$.
+	The common value defines a distance on $\Pp_2(\RR^d)$; the triangle inequality is established by the robust representation in Proposition~\ref{prop-spectral-wasserstein-robust}.
 \end{prop}
 
 \begin{proof}
@@ -1242,7 +1242,48 @@ where the infimum is over all curves solving \eqref{eq-nonlocal-continuity-weak}
 	after this constant-speed parametrization. Thus finite-distance pairs are joined by constant-speed geodesics. The consequences for entropy dynamics and fractional PDE examples are developed in Section~\ref{sec-nonlocal-wasserstein-pdes}.
 \end{proof}
 
-For a fixed jump kernel, this geometry is genuinely nonlocal and does not coincide with ordinary $\Wass_2$. The local metric is nevertheless recovered as a small-jump limit: for symmetric kernels concentrated at scale $\varepsilon$, with the second moment normalized appropriately, the nonlocal actions and distances converge as $\varepsilon\to0$ to the classical Benamou--Brenier action and $\Wass_2$~\cite{SlepcevWarren2022NonlocalWasserstein}. Thus the continuum and graph constructions below are nonlocal analogues of Wasserstein geometry, while sharply concentrated isotropic jumps return the local theory.
+For a fixed jump kernel, this geometry is genuinely nonlocal and does not coincide with ordinary $\Wass_2$. The local metric is nevertheless recovered in a small-jump limit. More explicitly, on $\mathcal X=\RR^d$, let $\eta(z)=\bar\eta(\norm{z})$ be a nonnegative radial profile with
+\[
+	M_2(\eta)\eqdef\int_{\RR^d}\norm{z}^2\eta(z)\,\d z\in(0,+\infty),
+\]
+and define
+\begin{equation}\label{eq-small-jump-kernel-scaling}
+	K_\varepsilon(x,\d y)
+	\eqdef
+	\eta_\varepsilon(y-x)\,\d y,
+	\qquad
+	\eta_\varepsilon(z)
+	\eqdef
+	\varepsilon^{-d}\eta(z/\varepsilon).
+\end{equation}
+Radiality implies symmetry and isotropy, and a change of variables gives
+\begin{equation}\label{eq-small-jump-kernel-moments}
+	\int\norm{y-x}^2K_\varepsilon(x,\d y)
+	=
+	\varepsilon^2M_2(\eta),
+	\qquad
+	\int (y-x)(y-x)^\top K_\varepsilon(x,\d y)
+	=
+	\varepsilon^2\frac{M_2(\eta)}{d}\Id.
+\end{equation}
+Equation~\eqref{eq-small-jump-kernel-moments} is the precise sense in which the second-moment jump scale is $\varepsilon$. To obtain a nontrivial local limit, one simultaneously accelerates the jump rate by $\varepsilon^{-2}$ and sets
+\[
+	\widehat K_\varepsilon
+	\eqdef
+	\frac{2d}{\varepsilon^2M_2(\eta)}K_\varepsilon,
+	\qquad
+	\int (y-x)(y-x)^\top\widehat K_\varepsilon(x,\d y)=2\Id.
+\]
+Multiplying a jump kernel by a constant $c>0$ divides the associated distance by $\sqrt c$. Hence, under the regularity and irreducibility hypotheses of~\cite{SlepcevWarren2022NonlocalWasserstein}, for endpoints supported in a fixed compact set,
+\[
+	\mathcal W_{\widehat K_\varepsilon}
+	=
+	\varepsilon\sqrt{\frac{M_2(\eta)}{2d}}\,
+	\mathcal W_{K_\varepsilon}
+	\underset{\varepsilon\to0}{\longrightarrow}
+	\Wass_2.
+\]
+This makes precise how sharply concentrated isotropic jumps recover the local Benamou--Brenier geometry. Without isotropy, the covariance matrix in~\eqref{eq-small-jump-kernel-moments} need not be proportional to $\Id$, and the limit is instead an anisotropic Wasserstein geometry.
 \index{small-jump limit}% strictindex
 
 \paragraph{Discrete Wasserstein distances on Markov chains.}\label{sec-discrete-wasserstein-markov}
@@ -1542,4 +1583,165 @@ The distinction is visible already for one-dimensional mixtures with mismatched 
 \label{fig:dynamic-unbalanced-geodesic}
 \end{figure}
 
-The chapter has separated three dynamic mechanisms: local transport by vector fields, nonlocal transport by pairwise jumps, and unbalanced transport by coupled displacement and reaction. Each mechanism defines its own path geometry; the next chapter uses these geometries to turn energies on measures into evolution equations.
+\section{Variational Mean Field Games}
+\label{sec-variational-mean-field-games}
+\index{mean field game}% strictindex
+\index{variational!mean field game}% strictindex
+
+Mean field games use a population law to summarize strategic interactions among a very large number of individually negligible agents. This section only considers the special \emph{potential} subclass in which the equilibrium system is the optimality condition of one convex planning problem. In that setting, the relation with dynamic OT is particularly transparent: one augments the Benamou--Brenier kinetic action by congestion and may replace a prescribed final measure by a terminal penalty.
+
+\paragraph{From individual control to a population equilibrium.}
+\index{Nash equilibrium}% strictindex
+\index{population law}% strictindex
+Mean field games were introduced by Lasry and Lions~\cite{LasryLions2007MeanFieldGames} and, in a parallel large-population stochastic-control framework, by Huang, Malham\'e and Caines~\cite{HuangMalhameCaines2006}. Given a candidate population density $(\rho_t)_{t\in[0,1]}$, a representative deterministic agent starting from $x$ chooses a path $\gamma$ by minimizing
+\begin{equation}\label{eq-mfg-individual-control}
+	\inf_{\gamma(0)=x}
+	\left\{
+		\int_0^1
+		\left(
+			\frac12\norm{\dot\gamma(t)}^2
+			+g\bigl(\rho_t(\gamma(t))\bigr)
+		\right)\d t
+		+\Psi(\gamma(1))
+	\right\}.
+\end{equation}
+Here the kinetic term prices individual effort, $g(\rho)$ is the running cost created by the local population density, and $\Psi$ assigns a cost to the final state. A mean field Nash equilibrium requires consistency: when all agents use an optimal feedback for~\eqref{eq-mfg-individual-control}, the resulting law of their positions must be precisely $\alpha_t=\rho_t\,\d x$.
+
+\paragraph{A Benamou--Brenier planning problem.}
+\index{potential game}% strictindex
+\index{congestion}% strictindex
+The consistency condition is usually coupled to an individual Hamilton--Jacobi--Bellman equation. A global variational reduction is available when the local coupling is a first variation: assume
+\begin{equation}\label{eq-mfg-congestion-primitive}
+	g(r)=G'(r)
+\end{equation}
+for a proper convex congestion potential $G:[0,+\infty)\to\RR\cup\{+\infty\}$. Starting from $\alpha_0=\rho_0\,\d x$, the associated potential MFG minimizes
+\begin{equation}\label{eq-variational-mfg-velocity}
+	\inf_{(\rho_t,v_t)}
+	\left\{
+		\int_0^1\!\int_{\RR^d}
+		\left(
+			\frac12\rho_t(x)\norm{v_t(x)}^2+G(\rho_t(x))
+		\right)\d x\,\d t
+		+\int_{\RR^d}\Psi(x)\rho_1(x)\d x
+	\right\},
+\end{equation}
+subject to
+\begin{equation}\label{eq-variational-mfg-continuity}
+	\partial_t\rho_t+\diverg(\rho_t v_t)=0,
+	\qquad
+	\rho_{t=0}\,\d x=\alpha_0.
+\end{equation}
+Unlike in~\eqref{eq:benamou-brenier}, the final measure is not prescribed. The terminal potential $\Psi$ selects desirable final states softly, while the integral of $G(\rho_t)$ penalizes crowded intermediate configurations. It is important that the planner pays $G(\rho)$ rather than $\rho g(\rho)$: the marginal cost perceived by one infinitesimal agent is the first variation $G'(\rho)=g(\rho)$. For the usual congestion models, $g$ is nondecreasing, equivalently $G$ is convex; superlinear choices of $G$ increasingly penalize concentration.
+
+This potential formulation and its deterministic and diffusive variants are developed by Benamou, Carlier and Santambrogio~\cite{BenamouCarlierSantambrogio2017}; first-order MFG systems with local couplings are analyzed, in particular, by Cardaliaguet and Graber~\cite{CardaliaguetGraber2015FirstOrderMFG}.
+
+\paragraph{Convex momentum formulation.}
+\index{momentum formulation}% strictindex
+\index{mass flux}% strictindex
+As in the Benamou--Brenier problem, the density--velocity integrand and the constraint in~\eqref{eq-variational-mfg-velocity}--\eqref{eq-variational-mfg-continuity} are not jointly convex. Set $\omega_t=\alpha_t v_t$, or $m_t=\rho_t v_t$ when densities exist, and define the congestion functional
+\begin{equation}\label{eq-mfg-congestion-functional}
+	\mathcal C_G(\alpha)
+	\eqdef
+	\begin{cases}
+		\displaystyle\int_{\RR^d}G(\rho(x))\d x,
+			& \alpha=\rho\,\d x,\\[4pt]
+		+\infty,&\text{otherwise}.
+	\end{cases}
+\end{equation}
+Using the measure perspective action~\eqref{eq-measure-perspective-action}, the same problem becomes the generalized Benamou--Brenier formula
+\begin{equation}\label{eq-variational-mfg-momentum}
+	\inf_{(\alpha_t,\omega_t)}
+	\left\{
+		\int_0^1
+		\left(
+			\frac12\mathbb J(\alpha_t,\omega_t)
+			+\mathcal C_G(\alpha_t)
+		\right)\d t
+		+\int_{\RR^d}\Psi\,\d\alpha_1
+	\right\},
+	\qquad
+	\partial_t\alpha_t+\diverg\omega_t=0,
+	\quad \alpha_{t=0}=\alpha_0.
+\end{equation}
+Equivalently, in density--momentum variables, the running integrand is
+\begin{equation}\label{eq-variational-mfg-density-momentum}
+	\frac12J(\rho_t,m_t)+G(\rho_t)
+	=
+	\frac{\norm{m_t}^2}{2\rho_t}+G(\rho_t),
+\end{equation}
+with the vacuum convention of~\eqref{eq-quadratic-perspective}, under the affine equation $\partial_t\rho_t+\diverg m_t=0$.
+
+The perspective term $(\alpha,\omega)\mapsto\mathbb J(\alpha,\omega)$ is convex by~\eqref{eq-quadratic-perspective}--\eqref{eq-measure-perspective-action}, while $\mathcal C_G$ is convex whenever $G$ is proper and convex. Since the terminal term is linear and the constraints are affine, problem~\eqref{eq-variational-mfg-momentum} is then convex in $(\alpha,\omega)$. If $G$ is nonconvex, the momentum substitution still convexifies the kinetic term and linearizes the constraint, but it does not convexify the congestion term.
+
+\paragraph{Optimality system and game interpretation.}
+\index{Hamilton-Jacobi-Bellman equation}% strictindex
+The potential structure matters because the optimality conditions of the planner reproduce the best-response and consistency equations of the game. The following smooth calculation makes this identification explicit.
+
+\begin{prop}[Potential MFG system]\label{prop-variational-mfg-system}
+	Assume that an optimizer of~\eqref{eq-variational-mfg-momentum} has a smooth positive density $\rho$, that $G$ is differentiable, and set $g=G'$. Then there is a value function $u$ such that
+	\begin{equation}\label{eq-variational-mfg-system}
+		\left\{
+		\begin{aligned}
+			-\partial_tu+\frac12\norm{\nabla u}^2&=g(\rho),
+			& u_{t=1}&=\Psi,\\
+			\partial_t\rho-\diverg(\rho\nabla u)&=0,
+			& \rho_{t=0}\,\d x&=\alpha_0,
+		\end{aligned}
+		\right.
+		\qquad
+		m=-\rho\nabla u.
+	\end{equation}
+\end{prop}
+
+\begin{proof}
+	Use $-u$ as the multiplier for $\partial_t\rho+\diverg m=0$. After integration by parts, the space--time Lagrangian density is
+	\[
+		\frac{\norm m^2}{2\rho}+G(\rho)
+		+\rho\,\partial_tu+m\cdot\nabla u.
+	\]
+	Stationarity in $m$ gives $m=-\rho\nabla u$. Stationarity in $\rho$, followed by this substitution, gives the first equation in~\eqref{eq-variational-mfg-system}. The free terminal density contributes $(\Psi-u_1)\rho_1$, hence $u_1=\Psi$ under the positivity assumption. Primal feasibility gives the second equation.
+\end{proof}
+
+The backward Hamilton--Jacobi--Bellman equation describes the representative agent's optimal response to the density-dependent cost $g(\rho)$; the forward continuity equation transports the population under the resulting feedback $v=-\nabla u$. Their coupling enforces the Nash consistency condition. For nonsmooth $G$, $g(\rho)$ is replaced by an element of $\partial G(\rho)$; hard density caps then produce a pressure supported on the saturated region.
+
+\paragraph{Hard congestion through a bottleneck.}
+\index{hard congestion}% strictindex
+\index{density!constraint}% strictindex
+A global hard crowd-capacity constraint is obtained from
+\begin{equation}\label{eq-variational-mfg-hard-cap}
+	G_\kappa(r)=\iota_{[0,\kappa]}(r)
+	=
+	\begin{cases}
+		0,&0\leq r\leq\kappa,\\
+		+\infty,&\text{otherwise}.
+	\end{cases}
+\end{equation}
+In order to make the cap active while retaining a prescribed terminal preference, one may replace the linear terminal term in~\eqref{eq-variational-mfg-momentum} by the convex penalty
+\begin{equation}\label{eq-variational-mfg-quadratic-terminal}
+	\Gamma_\eta(\rho_1)
+	=
+	\frac{\eta}{2}
+	\int_\Omega\abs{\rho_1(x)-\rho_\star(x)}^2\d x,
+\end{equation}
+where $\rho_\star$ is a desired terminal density. Such $L^1$ and $L^2$ endpoint penalties are part of the augmented-Lagrangian experiments of Benamou and Carlier~\cite{benamou2015augmented}; the two-room hard-congestion geometry follows Benamou, Carlier and Santambrogio~\cite{BenamouCarlierSantambrogio2017}.
+
+The role of endpoint relaxation depends on the geometry. If two fixed endpoint densities on $\RR^d$ satisfy a spatially constant cap, their ordinary $\Wass_2$ geodesic satisfies the same cap by Proposition~\ref{prop-density-cap-geodesic-convex}, so the cap does not alter that geodesic. This argument no longer applies inside a nonconvex domain, where straight displacement segments may leave the domain and a narrow passage creates a genuine capacity bottleneck. The terminal penalty~\eqref{eq-variational-mfg-quadratic-terminal} additionally lets the planner trade terminal mismatch against kinetic cost while enforcing the running cap everywhere.
+
+Figure~\ref{fig:dynamic-variational-mfg-hard-congestion} illustrates this mechanism in two rooms connected by a one-cell doorway. Here we specialize the terminal term to the hard constraint $\rho_{t=1}=\rho_\star$, equivalently the indicator terminal cost $\Psi=\iota_{\{\rho_\star\}}$. Both endpoints are uniform on mirrored disks. Writing $M_0=\|\rho_0\|_\infty$, the constrained experiment uses the tight feasible capacity $\kappa=M_0$: the crowd starts at saturation and cannot compress above its initial packing density. The uncapped hard-endpoint path forms a thin, dense jet through the doorway, whereas the capped path builds a broad saturated queue upstream. The convex density--momentum problem is discretized on a $48\times31$ spatial grid with eight time slabs. Douglas--Rachford splitting computes the variational solution, and a final Dykstra projection onto the intersection of the affine continuity/end-point constraints and the global density box removes the small feasibility error of the finite splitting iterate.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.99\linewidth]{figures/dynamic-variational-mfg-hard-congestion/evolution.pdf}
+\caption{\emph{Hard-congestion variational MFG through two communicating rooms.} The initial and hard terminal profiles are uniform on mirrored disks; the dashed outlines show the latter, and the five columns advance from red to blue. The top row has no cap and concentrates into a narrow doorway jet. The bottom row imposes $\kappa=\|\rho_0\|_\infty$ everywhere, forcing a broader saturated queue. Dark contours mark regions within $1\%$ of the cap, and both rows use the same density levels.}
+\label{fig:dynamic-variational-mfg-hard-congestion}
+\end{figure}
+
+\begin{rem}[Scope of the variational reduction]
+	A general MFG need not be the optimality system of a global convex functional. The reduction above applies because the coupling is the first variation of the potential $\mathcal C_G$ and the terminal cost is linear, or more generally convex, in the final law. More general nonlocal, non-potential or non-monotone couplings retain the coupled best-response/consistency interpretation but generally fall outside~\eqref{eq-variational-mfg-momentum}.
+\end{rem}
+
+\paragraph{Computational consequence.}
+\index{augmented Lagrangian}% strictindex
+The convexification is not merely formal. After conservative space--time discretization, the objective is a sum of local perspective and congestion terms subject to one affine divergence constraint. Augmented-Lagrangian and primal--dual methods can therefore alternate local proximal updates with the solution of a linear space--time equation, closely paralleling the Benamou--Brenier solver. This route was developed for transport and variational MFGs by Benamou and Carlier~\cite{benamou2015augmented} and is reviewed with numerical examples in~\cite{BenamouCarlierSantambrogio2017}.
+
+The chapter has separated three dynamic transport mechanisms---local advection, nonlocal jumps, and coupled displacement--reaction---and then shown how the local Benamou--Brenier action becomes a convex population game after adding a potential congestion cost. The next chapter uses dynamic transport geometries to turn energies on measures into evolution equations.

@@ -695,6 +695,8 @@ methods used affine statistics or iterated one-dimensional projections
 three-dimensional OT map gives a more intrinsic palette match
 {cite:p}`rabin-ssvm-11`.
 
+Figure {ref}`fig:monge-color-transfer-rgb` shows a finite-dimensional instance of this deterministic viewpoint.
+
 (fig:monge-color-transfer-rgb)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1154,6 +1156,8 @@ $\T=\nabla\phi$, $\T_t$ is the gradient of
 $(1-t)\|x\|^2/2+t\phi(x)$, which is strongly convex for every $t<1$ and hence
 injective on the differentiability set of $\phi$.
 :::
+
+Figure {ref}`fig:monge-shape-mccann-interpolation` illustrates this displacement geodesic on two non-convex silhouettes, both through representative particle paths and through the evolving transported density.
 
 (fig:monge-shape-mccann-interpolation)=
 :::{div}
@@ -1747,6 +1751,8 @@ the Wasserstein geometry is not globally Hilbertian.
 :::
 
 
+The last panel of Figure {ref}`fig:monge-1d-quantile-geodesic` is the one-dimensional specialization of the displacement interpolation introduced above.
+
 (fig:monge-1d-quantile-geodesic)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1931,6 +1937,8 @@ monotone rearrangement from $\al^k_{x_{<k}}$ to
 $\be^k_{\T_{<k}(x_{<k})}$. The chain rule for disintegrations shows that after
 step $k$ the first $k$ coordinates of $\T_\sharp\al$ match those of $\be$.
 :::
+
+Figure {ref}`fig:monge-triangular-rearrangement` shows the two-dimensional mechanism on image histograms.
 
 (fig:monge-triangular-rearrangement)=
 :::{div}
@@ -2358,6 +2366,8 @@ smooth nonlinear geometry, whose geodesics are the covariance parts of Gaussian
 optimal transport rather than the straight chords inherited from $\RR^3$. The
 cone panel below illustrates this distinction.
 
+Figure {ref}`fig:monge-gaussian-w2-geodesic-1d` displays this Euclidean half-plane geometry and the corresponding displacement interpolation of the Gaussian densities.
+
 (fig:monge-gaussian-w2-geodesic-1d)=
 :::{div}
 :class: ot4ml-book-figure
@@ -2458,6 +2468,8 @@ half-plane.
 :::
 
 <iframe class="ot4ml-live-frame" title="Gaussian W2 and Fisher-Rao controls" src="../live/monge-gaussian-metrics.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+The cone panel in Figure {ref}`fig:monge-gaussian-w2-geodesic-2d` illustrates this distinction.
 
 (fig:monge-gaussian-w2-geodesic-2d)=
 The two-dimensional Gaussian panels in the boxed figure show covariance

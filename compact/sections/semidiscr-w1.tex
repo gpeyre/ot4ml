@@ -1,13 +1,68 @@
 \section{\texorpdfstring{Semi-discrete and $\Wass_1$}{Semi-discrete and W1}}
 \label{sec-semidiscr-w1}
-\subsection{Semi-dual}
-\(\usup{f,g \in \Cc(\Xx) \times \Cc(\Yy)} \Ee(f,g)\)
-where $\Ee(f,g)$ is the dual objective, extended by $-\infty$ outside the feasible set. For fixed $f$, feasibility is equivalent to $g\leq f^c$.
-
+\subsection{Semi-dual}\label{sec-semi-dual}
+\paragraph{General measure semi-dual.}
+Denote by $\Ee_0(f,g)$ the full dual objective $\int f\d\al+\int g\d\be$, extended by $-\infty$ outside $\Potentials(\c)$. For fixed $g$, dual feasibility is equivalent to $f\leq g^{\bar c}$, so positivity of $\al$ gives the unconstrained concave problem
 \eql{\label{eq-semi-dual}
-\usup{f \in \Cc(\Xx)} \tilde\Ee(f) \eqdef \Ee(f,f^c) = \usup{g} \Ee(f,g) =
-\int_\Xx f \d \al + \int_\Yy f^c \d \be.
+\MK_\c(\al,\be)
+=
+\usup{g \in \Cc(\Yy)}\Ee(g),
+\qquad
+\Ee(g)\eqdef\Ee_0(g^{\bar c},g)
+=\int_\Xx g^{\bar c}\d\al+\int_\Yy g\d\be.
 }
+It is invariant under $g\mapsto g+s$.
+
+\paragraph{Discrete semi-dual.}
+For $\al=\sum_i\a_i\de_{x_i}$, $\be=\sum_j\b_j\de_{y_j}$, $\C_{ij}=c(x_i,y_j)$, and common mass $M$, eliminating the source potential gives
+\eql{\label{eq-discrete-semi-dual}
+\MKD_\C(\a,\b)
+=
+\umax{\gD\in\RR^m}\Ee(\gD),
+\qquad
+\Ee(\gD)
+=
+\Ee_0(\gD^{\bar\C},\gD)
+=
+\sum_i\a_i(\gD^{\bar\C})_i+\sum_j\b_j\gD_j,
+\quad
+(\gD^{\bar\C})_i=\min_j(\C_{ij}-\gD_j).
+}
+The objective is concave, piecewise affine, and gauge invariant. If $\sigma_\gD(i)\in\argmin_j(\C_{ij}-\gD_j)$, then $\b-\widehat\b(\gD)$ is a supergradient, where $\widehat\b_j(\gD)=\sum_{i:\sigma_\gD(i)=j}\a_i$.
+
+\subsection{Auction Algorithm}\label{sec-auction-dual-ascent}
+For the square uniform assignment problem, auction is derived from coordinate maximization of the discrete semi-dual, but uses bidder-specific $\epsilon$-overshoots to avoid jamming at nonsmooth ties. With $\gD$ denoting the target Kantorovich potential, set
+\[
+(\gD^{\bar\C})_i=\min_j(\C_{ij}-\gD_j),
+\qquad
+\Ee(\gD)=\frac1n\sum_i(\gD^{\bar\C})_i+\frac1n\sum_j\gD_j.
+\]
+The discrete Laguerre cells are
+\[
+\Laguerre_j^{\rm D}(\gD)=\{i:\C_{ij}-\gD_j\leq\C_{ik}-\gD_k\ \forall k\}.
+\]
+They are the restriction of Definition~\ref{def-laguerre-power-cells}. At points with unique minimizers,
+\(
+\partial_{\gD_j}\Ee(\gD)=(1-|\Laguerre_j^{\rm D}(\gD)|)/n.
+\)
+
+\paragraph{Bids and certificate.}
+For an unassigned row $i$, choose its best and second-best targets $j_0,j_1$ and update
+\eql{\label{eq-auction-dual-update}
+\gD_{j_0}\leftarrow\gD_{j_0}
+-\left[(\C_{i,j_1}-\gD_{j_1})-(\C_{i,j_0}-\gD_{j_0})+\epsilon\right].
+}
+Assign row $i$ to $j_0$ and unassign the previous owner of $j_0$, if any. The overshoot need not increase the nonsmooth semi-dual; its invariant is instead
+\[
+\P_{ij}=1\quad\Longrightarrow\quad
+\C_{ij}-\gD_j\leq(\gD^{\bar\C})_i+\epsilon.
+\]
+If $R_\C=\max\C_{ij}-\min\C_{ij}$ and $\gD=0$ initially, the method terminates after at most $n(\lfloor R_\C/\epsilon\rfloor+1)$ bids and
+\[
+0\leq\frac1n\dotp{\C}{\P}-\min_{\P'\in\mathcal P_n^{\rm perm}}\frac1n\dotp{\C}{\P'}\leq\epsilon.
+\]
+The second inequality follows by applying Proposition~\ref{prop-assignment-dual-certificate} to the feasible pair $(\gD^{\bar\C},\gD)$ defined by the final target potential.
+Dense implementation costs $O(n^2(1+R_\C/\epsilon))$. If $\C$ is integral, $\epsilon<1/n$ gives an exact assignment. Warm-starting auctions while halving $\epsilon$ yields an $\eta$-optimal assignment in $O(n^3(1+\log_+(R_\C/\eta)))$ operations.
 \subsection{Semi-discrete}
 \paragraph{Discrete target and Laguerre cells.}
 One can adapt Definition~\ref{def-c-transform} of the $\bar c$-transform to this setting by restricting the minimization to the finite support $\{y_j\}_{j=1}^m$ of $\be$. Equivalently, one applies the same definition with the discrete target space $\Y=\{y_j\}_{j=1}^m$ and identifies a vector $\gD\in\RR^m$ with the function $g:\Y\to\RR$ defined by $g(y_j)=\gD_j$:
@@ -20,7 +75,7 @@ One can adapt Definition~\ref{def-c-transform} of the $\bar c$-transform to this
 \eql{\label{eq-semi-dual-discr}
 \MK_\c(\al,\be) =
 \umax{\gD \in \RR^m}
-\Ee(\gD) \eqdef
+\Ee(\gD) \eqdef \Ee_0(\gD^{\bar c},\gD) =
 \int_\Xx \gD^{\bar \c}(x) \d\al(x) + \sum_j \gD_j \b_j.
 }
 The objective satisfies $\Ee(\gD+s\ones)=\Ee(\gD)$ for every $s\in\RR$. One may therefore impose the gauge $\sum_j\gD_j=0$ without changing the problem.

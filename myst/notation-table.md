@@ -32,7 +32,7 @@ This appendix collects the main notation used throughout the book. The last colu
 | $(x_i)_i,(y_j)_j$ | Source and target point clouds. | [Eq. eq-optimal-assignment](matching#eq-optimal-assignment-web) |
 | $\C=(\C_{i,j})$ | Cost matrix between source and target points. | [Eq. eq-optimal-assignment](matching#eq-optimal-assignment-web) |
 | $\sigma\in\Perm(n)$ | Permutation encoding a one-to-one matching. | [Eq. eq-optimal-assignment](matching#eq-optimal-assignment-web) |
-| $P_\sigma,\mathcal P_n^{\mathrm{perm}}$ | Permutation matrix and the set of all such matrices. | [Definition def-permutation-matrices](kantorovich#def-permutation-matrices) |
+| $\P_\sigma,\mathcal P_n^{\mathrm{perm}}$ | Permutation matrix and the set of all such matrices. | [Definition def-permutation-matrices](kantorovich#def-permutation-matrices) |
 | $\mathcal B_n$ | Birkhoff polytope of bistochastic matrices. | [Definition def-birkhoff-polytope](kantorovich#def-birkhoff-polytope) |
 | $\a,\b$ | Discrete probability histograms. | [Eq. eq-discr-couplings](kantorovich#eq-discr-couplings-web) |
 | $\P$ | Discrete transport/coupling matrix. | [Eq. eq-discr-couplings](kantorovich#eq-discr-couplings-web) |
@@ -86,9 +86,10 @@ This appendix collects the main notation used throughout the book. The last colu
 | --- | --- | --- |
 | $\fD,\gD$ | Discrete dual potentials. | [Eq. eq-dual](dual#eq-dual) |
 | $\f,\g$ | Continuous dual potentials. | [Eq. eq-dual-generic](dual#eq-dual-generic) |
+| $\Ee_0(f,g),\Ee(g)$ | Full dual and semi-dual objectives, for functions or vectors. | [Eqs. eq-full-dual-functional-web and eq-semi-dual-web](semidiscrete-w1#eq-full-dual-functional-web) |
 | $\PotentialsD(\C)$ | Feasible set of discrete dual potentials for cost $\C$. | [Eq. eq-feasible-potential](dual#eq-feasible-potential) |
 | $\Potentials(\c)$ | Feasible set of continuous dual potentials. | [Eq. eq-dfn-pot-dual](dual#eq-dfn-pot-dual-web) |
-| $f^c,g^c$ | $c$-transform of a potential. | [Definition def-c-transform](dual#c-transforms) |
+| $f^c,g^{\bar c}$ | $c$- and $\bar c$-transforms of dual potentials. | [Definition def-c-transform](dual#c-transforms) |
 | $\Laguerre_j(\gD)$ | Laguerre/power cell in semi-discrete OT. | [Eq. eq-laguerre-cells](semidiscrete-w1#eq-laguerre-cells-web) |
 | $\VV_j(Y)$ | Voronoi cell of codepoint $y_j$. | [Proposition prop-free-masses-voronoi](semidiscrete-w1#prop-free-masses-voronoi) |
 | $\Qq_m(\al)$ | Optimal $m$-point quantization error. | [Eq. eq-optimal-quantization](semidiscrete-w1#eq-optimal-quantization-web) |
@@ -160,16 +161,20 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\SW_p$ | Sliced Wasserstein distance. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
 | $\Sphere^{d-1}$ | Unit sphere of projection directions. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
 | $P_\theta$ | Projection on direction $\theta$. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
-| $\MaxSW_p$ | Max-sliced Wasserstein distance. | [Definition def-sliced-variants](generalized-wasserstein#sliced-wasserstein-distances) |
-| $\operatorname{MSWGG}_2$ | Min-sliced lifted-plan upper bound on $\Wass_2$. | [Section sec-sliced-wasserstein](generalized-wasserstein#sliced-wasserstein-distances) |
-| $\SW_{p,k},\MaxSW_{p,k}$ | Average and max Wasserstein distances over $k$-dimensional projections. | [Definition def-subspace-sliced-wasserstein](generalized-wasserstein#subspace-sliced-variants) |
+| $\mathfrak R\al$ | Measure-valued Radon transform of $\alpha$. | [Remark rem-sliced-radon-viewpoint](generalized-wasserstein#rem-sliced-radon-viewpoint) |
+| $R\rho$ | Density Radon transform of $\rho$. | [Remark rem-sliced-radon-viewpoint](generalized-wasserstein#rem-sliced-radon-viewpoint) |
+| $R^\dagger h$ | Least-squares Radon pseudoinverse density reconstructed from a sinogram $h$. | [Proposition prop-radon-pseudoinverse](generalized-ot-problems#prop-radon-pseudoinverse) |
+| $\gamma_\theta$ | One-dimensional projected/Radon-domain barycenter law. | [Section sec-barycenters](generalized-ot-problems#sec-barycenters) |
+| $\SW_{p,q,k}$ | $L^q$ aggregate of $p$-Wasserstein distances over $k$-dimensional projections. | [Definition def-sliced-variants](generalized-wasserstein#def-sliced-variants) |
+| $\SW_{p,q},\MaxSW_{p,k}$ | Line-sliced and max-sliced abbreviations, with $\MaxSW_{p,k}=\SW_{p,\infty,k}$. | [Definition def-sliced-variants](generalized-wasserstein#def-sliced-variants) |
+| $\MinSW_2$ | Min-SW lifted-plan discrepancy, upper-bounding $\Wass_2$. | [Proposition prop-min-sw-comparison](generalized-wasserstein#prop-min-sw-comparison) |
 | $\Wass_\gamma$ | Spectral Wasserstein distance associated with a matrix gauge $\gamma$. | [Eq. eq-spectral-wasserstein](generalized-wasserstein#eq-spectral-wasserstein) |
 | $\mathcal B_\gamma$ | Polar set defining the robust projected form of $\Wass_\gamma$. | [Eq. eq-spectral-polar-set](generalized-wasserstein#eq-spectral-polar-set) |
 | $\Wass_{2,A}$ | Quadratic Wasserstein pseudodistance after projection by $A^{1/2}$. | [Eq. eq-quadratic-projected-cost](generalized-wasserstein#eq-quadratic-projected-cost) |
 | $\SRW_{2,k}$ | Paty--Cuturi subspace robust Wasserstein distance. | [Section sec-spectral-subspace-wasserstein](generalized-wasserstein#spectral-and-robust-wasserstein-distances) |
 | $\LOT_\rho$ | Linear OT distance around reference $\rho$. | [Eq. eq-lot-embedding](generalized-wasserstein#eq-lot-embedding) |
 | $Q,R,g$ | Low-rank OT factors and latent mass vector. | [Definition def-low-rank-couplings](generalized-ot-problems#def-low-rank-couplings) |
-| $P(Q,R,g)$ | Coupling induced by a low-rank factored representation. | [Eq. eq-low-rank-coupling-factor](generalized-ot-problems#eq-low-rank-coupling-factor) |
+| $\P(\Q,\R,g)$ | Coupling induced by a low-rank factored representation. | [Eq. eq-low-rank-coupling-factor](generalized-ot-problems#eq-low-rank-coupling-factor) |
 | $\eta=\sum_k g_k\delta_{z_k}$ | Abstract intermediate measure in low-rank OT. | [Definition def-low-rank-couplings](generalized-ot-problems#def-low-rank-couplings) |
 | $\MK_c^\kappa,\kappa$ | Capacity-constrained OT value and capacity density. | [Eq. eq-capacity-constrained-ot](generalized-ot-problems#eq-capacity-constrained-ot) |
 | $U_{ij}$ | Discrete upper-capacity matrix for a capped coupling. | [Eq. eq-discrete-capacity-constrained-ot](generalized-ot-problems#eq-discrete-capacity-constrained-ot) |
@@ -251,7 +256,7 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\mathcal I(\alpha|\beta)$ | Relative Fisher information of $\alpha$ with respect to $\beta$. | {eq}`eq-relative-fisher-information` |
 | $\Pp_{p,\lambda}(S\times\Omega)$ | Conditional probability laws with fixed condition marginal $\lambda$ and finite $p$th moment. | [Section sec-conditional-wasserstein-distances](generalized-wasserstein#sec-conditional-wasserstein-distances) |
 | $\Couplings_\lambda(\alpha,\beta)$ | Conditional couplings that keep the condition variable fixed. | [Eq. eq-conditional-ot-general](generalized-wasserstein#eq-conditional-ot-general) |
-| $\MK_c^\lambda,\Wass_{p,\lambda}$ | Conditional OT value and conditional Wasserstein distance. | [Eqs. eq-conditional-ot-general](generalized-wasserstein#eq-conditional-ot-general), [eq-conditional-wasserstein-distance](generalized-wasserstein#eq-conditional-wasserstein-distance) |
+| $\MK_c^\lambda,\Wass_{p,\lambda}$ | Conditional OT value and, for $c_s=\dist^p$, its $p$th-root metric. | [Eqs. eq-conditional-ot-general](generalized-wasserstein#eq-conditional-ot-general), [eq-conditional-wasserstein-distance](generalized-wasserstein#eq-conditional-wasserstein-distance) |
 | $\operatorname{PMO}_{\mathbb A_\gamma,\alpha}(g)$ | Spectral specialization of the penalized minimization oracle. | [Proposition prop-normalized-spectral-polar](wasserstein-gradient-flows#prop-normalized-spectral-polar) |
 | $S_\alpha(g),A_\alpha^\star$ | Gradient covariance and active polar preconditioner in spectral flow. | [Proposition prop-normalized-spectral-polar](wasserstein-gradient-flows#prop-normalized-spectral-polar) |
 | $\Pp_{2,\mathbf m}(\Omega;\RR_+^p)$ | Positive multi-species measures with fixed component masses. | [Eq. eq-multispecies-space](wasserstein-gradient-flows#eq-multispecies-space) |

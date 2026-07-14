@@ -63,6 +63,8 @@ PRESERVE_ENVS = {
 SKIP_ENVS = {
     "figure",
     "table",
+    "tabular",
+    "tabularx",
     "rem",
     "rem1",
     "rem2",
@@ -149,6 +151,18 @@ def strip_citations(text: str) -> str:
     text = text.replace(
         r"every division in Algorithm~\ref{alg-capacity-constrained-sinkhorn} is well defined",
         "every division in the KL--Dykstra iteration is well defined",
+    )
+    text = text.replace(
+        r"At every iteration of Algorithm~\ref{alg:auction-bidding}",
+        "At every iteration of the auction method",
+    )
+    text = text.replace(
+        r", and use Remark~\ref{rem-lsi-wasserstein-pl}",
+        ", and use the logarithmic Sobolev inequality as the corresponding Wasserstein--PL inequality",
+    )
+    text = text.replace(
+        r"let $R$ be the density Radon transform from Remark~\ref{rem-sliced-radon-viewpoint}.",
+        r"let $R\rho(\theta,t)=\int_{\{x:\dotp{\theta}{x}=t\}}\rho(x)\,\d\mathcal H^{d-1}(x)$ be the density Radon transform.",
     )
     text = text.replace(
         r"\((\Id,\bar T_\pi)_\sharp\alpha\)",

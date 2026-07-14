@@ -116,7 +116,7 @@ Figure~\ref{fig:dual-kantorovich-discrete-potentials} shows these finite-dimensi
 \small strongly shifted target &
 \small three-mode target
 \end{tabular}
-\caption{\emph{Discrete Kantorovich dual potentials for the quadratic cost $C_{i,j}=|x_i-y_j|^2$.} In each panel the upper strip shows the fixed source histogram in red and the target histogram in blue: a balanced bimodal target, a more strongly shifted target, and a three-component mixture. The lower strip shows an optimal pair of dual vectors $(\fD,\gD)$, with gauge chosen so that $\dotp{\fD}{\a}=0$. Complementary slackness states that mass can be transported only through entries where $\fD_i+\gD_j=C_{i,j}$.}
+\caption{\emph{Discrete Kantorovich dual potentials for the quadratic cost $C_{i,j}=|x_i-y_j|^2$.} In each panel the upper strip shows the fixed source histogram in red and the target histogram in blue: a balanced bimodal target, a more strongly shifted target, and a three-component mixture. The lower strip shows an optimal pair of dual vectors $(\fD,\gD)$, with gauge chosen so that $\dotp{\fD}{\a}=0$. Complementary slackness states that mass can be transported only through entries where $\fD_i+\gD_j=\C_{i,j}$.}
 \index{complementary slackness}% strictindex
 \index{dual!potential}% strictindex
 \index{quadratic!cost}% strictindex
@@ -125,175 +125,6 @@ Figure~\ref{fig:dual-kantorovich-discrete-potentials} shows these finite-dimensi
 
 The formulation~\eqref{eq-dual} shows that $(\a,\b) \mapsto \MKD_\C(\a,\b)$ is a convex function (as a supremum of linear functions). From the primal problem~\eqref{eq-kanto-discr}, one also sees that $\C \mapsto \MKD_\C(\a,\b)$ is concave.
 \index{convex!function}% strictindex
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Auction Algorithm and Dual Prices}
-\index{auction algorithm}% strictindex
-\index{dual!price}% strictindex
-\label{sec-auction-dual-ascent}
-
-The assignment algorithms mentioned in Chapter~\ref{sec-matching} become more transparent once one has dual variables. The auction algorithm is a dual price method: it updates target prices and maintains an approximate complementary-slackness certificate. The small tolerance $\epsilon$ removes ties, stabilizes the price updates and gives a quantitative optimality certificate~\cite{bertsekas1981new,bertsekas1992auction,merigot2020optimaltransportalgorithms}.
-\index{optimality!certificate}% strictindex
-\index{complementary slackness}% strictindex
-
-\paragraph{Bidding dynamics.}
-The price update is chosen so that every currently owned pair satisfies an approximate dual certificate.
-
-Consider a square assignment problem of size $n\geq2$ with costs $C_{i,j}$ and rewrite it as the profit maximization problem with $a_{i,j}=-C_{i,j}$. The case $n=1$ is immediate. The auction algorithm keeps prices $p_j$ on the target points and a partial assignment. For an unassigned source $i$, define the best and second-best reduced profits
-\index{assignment problem}% strictindex
-\[
-	v_i=\max_j (a_{i,j}-p_j),\qquad
-	j_i\in\operatorname*{argmax}_j(a_{i,j}-p_j),\qquad
-	w_i=\max_{j\neq j_i}(a_{i,j}-p_j).
-\]
-Source $i$ bids for $j_i$ and increases its price by the gap to the second-best target, plus a margin:
-\[
-	p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.
-\]
-The target $j_i$ is then assigned to $i$, and its previous owner, if any, becomes unassigned. The iteration stops when all sources are assigned. Algorithm~\ref{alg:auction-bidding} records the bidding loop. Figure~\ref{fig:dual-auction-progression} displays actual auction iterates using the same assignment-state convention as Figure~\ref{fig:matching-hungarian-progression}: flat rows denote unassigned bidders, and one-hot rows denote currently owned targets.
-\index{Hungarian primal-dual method}% strictindex
-
-\begin{alg}[Auction bidding with target prices]\label{alg:auction-bidding}
-\textbf{Input:} Profit matrix $A=(a_{ij})$, bid increment $\epsilon>0$.
-
-\textbf{Output:} Assignment map $\sigma$.
-
-\textbf{Initialize:} Set prices $p_j=0$, ownership map $o(j)=\emptyset$, and $U=\{1,\ldots,n\}$.
-
-\textbf{While} the unassigned set $U$ is nonempty \textbf{do}:
-\begin{algblock}
-\textbf{Set} $i=\min U$.
-
-\textbf{Set} $j_i=\min\argmax_j(a_{ij}-p_j)$.
-
-\textbf{Set} \(v_i=a_{ij_i}-p_{j_i}\) and \(w_i=\max_{j\neq j_i}(a_{ij}-p_j)\).
-
-\textbf{Update price:}
-\(p_{j_i}\leftarrow p_{j_i}+v_i-w_i+\epsilon.\)
-
-\textbf{If} $o(j_i)=i'\neq\emptyset$ \textbf{then}:
-\begin{algblock}
-
-\textbf{Set} $U\leftarrow U\cup\{i'\}$.
-
-\end{algblock}
-\textbf{Set} $o(j_i)=i$ and $U\leftarrow U\setminus\{i\}$.
-
-\end{algblock}
-\algreturnskip
-\textbf{Return} $\sigma(i)=j$ iff $o(j)=i$.
-\end{alg}
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{ccccc}
-\includegraphics[width=.18\linewidth]{figures/dual-auction-progression--stage-0.pdf} &
-\includegraphics[width=.18\linewidth]{figures/dual-auction-progression--stage-1.pdf} &
-\includegraphics[width=.18\linewidth]{figures/dual-auction-progression--stage-2.pdf} &
-\includegraphics[width=.18\linewidth]{figures/dual-auction-progression--stage-3.pdf} &
-\includegraphics[width=.18\linewidth]{figures/dual-auction-progression--stage-4.pdf} \\[-.1em]
-\small initial &
-\small 2 bids &
-\small 5 bids &
-\small 7 bids &
-\small final
-\end{tabular}
-\caption{\emph{Matrix view of actual auction iterates on the same diagonally dominant one-dimensional squared-distance assignment as Figure~\ref{fig:matching-hungarian-progression}.} Each panel records the current ownership state: unassigned bidders are shown as flat rows, while assigned bidders are shown as one-hot rows at their currently held target. The snapshots show initialization, intermediate price updates, and the final identity assignment satisfying complementary slackness.}
-\index{complementary slackness}% strictindex
-\label{fig:dual-auction-progression}
-\end{figure}
-
-\paragraph{Approximate optimality.}
-The bidding invariant yields both finite termination and a quantitative suboptimality bound.
-
-For fixed prices $p$, eliminating the bidder utilities $u_i$ in the dual minimization gives the convex objective
-\[
-	D(p)=\sum_j p_j+\sum_i \max_j(a_{i,j}-p_j),
-\]
-which comes from the dual constraints $u_i+p_j\geq a_{i,j}$. The auction update should thus be viewed as a price-adjustment method on this nonsmooth dual landscape, rather than as a generic gradient step: the proof of correctness is through approximate complementary slackness.
-\index{complementary slackness}% strictindex
-
-\begin{defn}[$\epsilon$-complementary slackness]\label{def-auction-eps-cs}
-	An assignment $\sigma$ and prices $p$ satisfy $\epsilon$-complementary slackness if, for every source $i$,
-	\[
-		a_{i,\sigma(i)}-p_{\sigma(i)}
-		\geq
-		\max_j(a_{i,j}-p_j)-\epsilon.
-	\]
-	For a partial assignment, the same condition is required only for currently assigned sources.
-\end{defn}
-
-\begin{prop}[Auction invariant and finite termination]\label{prop-auction-termination}
-\index{auction algorithm}% strictindex
-	At every iteration of Algorithm~\ref{alg:auction-bidding}, each currently owned pair satisfies $\epsilon$-complementary slackness. Moreover, if
-	\[
-		\Delta_A\eqdef\max_{i,j}a_{i,j}-\min_{i,j}a_{i,j},
-	\]
-	then the algorithm terminates after at most
-	\[
-		1+\left\lfloor\frac{n(\Delta_A+\epsilon)}{\epsilon}\right\rfloor
-	\]
-	bids.
-\end{prop}
-\begin{proof}
-	Immediately after source $i$ bids for $j_i$, its reduced profit there is
-	\[
-		a_{i,j_i}-p_{j_i}^{\mathrm{new}}=w_i-\epsilon,
-	\]
-	whereas every alternative has reduced profit at most $w_i$. Later bids only increase competing prices. The price of $j_i$ itself cannot change while $i$ remains its owner, because such a change would reassign $j_i$ and make $i$ unassigned. Thus every owned pair satisfies the claimed invariant.
-
-	Each bid raises one price by at least $\epsilon$. After any nonterminal bid, at least one target different from the selected target remains unassigned; it has never been owned and still has price zero. Denote such a target by $k$. Since it was also available before the bid, the second-best value satisfies $w_i\geq a_{i,k}$, and hence
-	\[
-		p_{j_i}^{\mathrm{new}}=a_{i,j_i}-w_i+\epsilon
-		\leq \Delta_A+\epsilon.
-	\]
-	Consequently, before the terminal bid the sum of all prices is at most $n(\Delta_A+\epsilon)$. Since this sum grows by at least $\epsilon$ per bid, there can be at most $n(\Delta_A+\epsilon)/\epsilon$ nonterminal bids, followed by at most one terminal bid.
-\end{proof}
-
-\begin{prop}[Auction optimality certificate]\label{prop-auction-eps-cs}
-\index{optimality!certificate}% strictindex
-	If a complete assignment $\sigma$ satisfies $\epsilon$-complementary slackness, then it is $n\epsilon$-optimal for the profit maximization problem, or equivalently $n\epsilon$-optimal for the original cost minimization problem. If all costs are integers and $\epsilon<1/n$, then $\sigma$ is optimal.
-\index{complementary slackness}% strictindex
-\end{prop}
-
-\begin{proof}
-	Let $\tau$ be any assignment. By $\epsilon$-complementary slackness,
-	\[
-		a_{i,\tau(i)}-p_{\tau(i)}
-		\leq
-		\max_j(a_{i,j}-p_j)
-		\leq
-		a_{i,\sigma(i)}-p_{\sigma(i)}+\epsilon.
-	\]
-	Summing over $i$ cancels prices, because both $\sigma$ and $\tau$ are permutations:
-	\[
-		\sum_i a_{i,\tau(i)}
-		\leq
-		\sum_i a_{i,\sigma(i)}+n\epsilon.
-	\]
-	Thus no assignment has profit more than $n\epsilon$ above that of $\sigma$. Since $a=-C$, the same statement says that the cost of $\sigma$ is at most $n\epsilon$ above the minimum cost. If the costs are integers, all assignment costs are integers; a gap strictly smaller than one therefore forces the gap to be zero.
-\index{cost!assignment}% strictindex
-\end{proof}
-
-Propositions~\ref{prop-auction-termination} and~\ref{prop-auction-eps-cs} therefore give a complete correctness argument: the algorithm terminates with a complete assignment, and that assignment is $n\epsilon$-optimal. Sharper complexity bounds, $\epsilon$-scaling variants and efficient implementations are developed in~\cite{bertsekas1992auction,merigot2020optimaltransportalgorithms}.
-\index{complementary slackness}% strictindex
-
-\begin{rem}[$\epsilon$-scaling and relation with Sinkhorn]
-\index{matrix!scaling}% strictindex
-\index{Sinkhorn!algorithm}% strictindex
-	In practice one starts with a coarse $\epsilon$ and repeatedly decreases it, warm-starting the prices and assignment. This $\epsilon$-scaling strategy is a homotopy method: large $\epsilon$ regularizes the combinatorial problem by enforcing a visible margin between the best and second-best reduced profits, while small $\epsilon$ recovers the exact dual certificate. If one wants a continuous-optimization analogy, the margin is closer to an exact-penalty or proximal continuation parameter than to a literal quadratic penalty.
-\index{dual!certificate}% strictindex
-
-	Sinkhorn scaling plays a parallel role for entropic OT. There, the hard minimum in the dual $c$-transform is replaced by a soft minimum, or log-sum-exp, with temperature $\epsilon$; in the auction algorithm, the hard maximum is kept but the complementary slackness condition is relaxed by $\epsilon$. Both methods therefore use an $\epsilon$-controlled dual continuation, and both recover the unregularized transport certificate as $\epsilon\to0$ under the usual assumptions. The outputs are different: Sinkhorn produces dense entropic couplings, whereas auction keeps a sparse assignment throughout.
-\index{Sinkhorn!scaling}% strictindex
-\index{entropic!OT}% strictindex
-\index{log-sum-exp}% strictindex
-\index{complementary slackness}% strictindex
-\index{auction algorithm}% strictindex
-\index{soft!minimum}% strictindex
-\index{c-transform}% strictindex
-\end{rem}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{General formulation}
@@ -422,6 +253,8 @@ The discrete case~\eqref{eq-dual} corresponds to the dual vectors being samples 
 For the one-dimensional quadratic cost, the continuous potentials can be read from the monotone map $T=F_\be^{-1}\circ F_\al$: on the active graph, $f'(x)=2(x-T(x))$ and $g=f^c$.
 \index{quadratic!cost}% strictindex
 
+Figure~\ref{fig:dual-kantorovich-continuous-potentials} shows how these continuous potentials adapt to increasingly multimodal source and target densities while retaining the same complementary-slackness interpretation.
+
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}ccc@{}}
@@ -525,6 +358,8 @@ The constraint can be replaced by
 \index{Laguerre cell}% strictindex
 \end{rem}
 Since $\be$ is nonnegative, maximizing $\int \g \d \be$ saturates the bound $\g\leq\f^\c$ on $\Supp(\be)$, equivalently $\be$-almost everywhere.
+
+Figure~\ref{fig:dual-c-transform-envelope} makes the best-response operation geometric: the discrete $c$-transform is the lower envelope of the shifted cost functions.
 
 \begin{figure}[H]
 \centering
@@ -740,3 +575,5 @@ For the bilinear cost $c(x,y)=-xy$ on a compact interval, $f^{c\bar c}$ is the s
 \index{dual!certificate}% strictindex
 \label{fig:dual-alternating-c-transform-failure}
 \end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,10 +1,10 @@
 """Prepare the compact Waddington-OT asset used by the Kantorovich figure.
 
 The official tutorial archives are several gigabytes. This script relies on
-HTTP byte ranges to extract only the variable-gene matrix, cell-day metadata,
-and one consecutive transport map. It then stores the two-dimensional PCA
+HTTP byte ranges to extract only the official force-layout embedding and one
+consecutive transport map. It then stores the two-dimensional display
 coordinates and deterministic farthest-point display subsets in a small NPZ
-file consumed by ``kantorovich-waddington-ot.ipynb``.
+file consumed by the Kantorovich Waddington-OT notebook.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ import zipfile
 import anndata as ad
 import fsspec
 import numpy as np
-from sklearn.decomposition import PCA
 
 
 DATA_ARCHIVE = (
@@ -29,8 +28,7 @@ TRANSPORT_ARCHIVE = (
     "https://drive.usercontent.google.com/download"
     "?id=1DiUObEYx5MafOfKcDDpuavvOKMyO4fmk&export=download&confirm=t"
 )
-EXPRESSION_MEMBER = "data/ExprMatrix.var.genes.h5ad"
-CELL_DAYS_MEMBER = "data/cell_days.txt"
+FLE_MEMBER = "data/fle_coords.txt"
 TRANSPORT_MEMBER = "tmaps/serum_10.0_10.5.h5ad"
 RANDOM_SEED = 2026
 
@@ -111,37 +109,48 @@ def farthest_point_indices(
     return selected
 
 
-def shared_pairwise_pca(
-    expression_path: Path,
+def official_force_layout_coordinates(
+    embedding_path: Path,
     source_ids: np.ndarray,
     target_ids: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Project two cell snapshots into one shared two-dimensional PCA space.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Load the official two-dimensional force-layout coordinates.
 
     Args:
-        expression_path: Official variable-gene AnnData matrix.
+        embedding_path: Official Waddington-OT force-layout coordinate table.
         source_ids: Cell identifiers for the first snapshot.
         target_ids: Cell identifiers for the second snapshot.
 
     Returns:
-        Source coordinates, target coordinates, and the two explained-variance
-        ratios.
+        Source and target coordinates in the shared force-layout embedding.
+
+    Raises:
+        KeyError: If a transport-map cell is absent from the embedding table.
     """
-    expression = ad.read_h5ad(expression_path, backed="r")
-    requested_ids = np.concatenate([source_ids, target_ids])
-    pair_expression = expression[requested_ids, :].X.toarray().astype(np.float32)
-    expression.file.close()
-
-    pca = PCA(n_components=2, random_state=RANDOM_SEED)
-    coordinates = pca.fit_transform(pair_expression)
-    source = coordinates[: len(source_ids)]
-    target = coordinates[len(source_ids) :]
-
-    # PCA signs are arbitrary. Orient PC1 along the observed temporal shift.
-    if target[:, 0].mean() < source[:, 0].mean():
-        source[:, 0] *= -1
-        target[:, 0] *= -1
-    return source, target, pca.explained_variance_ratio_
+    table = np.genfromtxt(
+        embedding_path,
+        delimiter="\t",
+        names=True,
+        dtype=None,
+        encoding="utf-8",
+    )
+    coordinates = {
+        cell_id: np.array([x, y], dtype=np.float32)
+        for cell_id, x, y in zip(table["id"], table["x"], table["y"])
+    }
+    missing = [
+        cell_id
+        for cell_id in np.concatenate([source_ids, target_ids])
+        if cell_id not in coordinates
+    ]
+    if missing:
+        raise KeyError(
+            "{} transport-map cells are missing from the official "
+            "force-layout embedding".format(len(missing))
+        )
+    source = np.stack([coordinates[cell_id] for cell_id in source_ids])
+    target = np.stack([coordinates[cell_id] for cell_id in target_ids])
+    return source, target
 
 
 def sample_representative_plan_atoms(
@@ -156,8 +165,8 @@ def sample_representative_plan_atoms(
 
     Args:
         plan: Nonnegative Waddington-OT transport matrix.
-        source: Source PCA coordinates.
-        target: Target PCA coordinates.
+        source: Source display coordinates.
+        target: Target display coordinates.
         n_candidates: Number of mass-weighted candidate pairs.
         n_display: Number of representative trajectories retained by FPS.
 
@@ -201,8 +210,8 @@ def select_high_mass_segments(
 
     Args:
         plan: Nonnegative Waddington-OT transport matrix.
-        source: Source PCA coordinates.
-        target: Target PCA coordinates.
+        source: Source display coordinates.
+        target: Target display coordinates.
         n_candidates: Number of largest plan entries considered.
         n_segments: Number of segments retained for the coupling panel.
 
@@ -236,21 +245,19 @@ def prepare_asset(cache_dir: Path, output_path: Path) -> None:
     """Build and save the reduced plotting asset.
 
     Args:
-        cache_dir: Directory used for the three extracted official files.
+        cache_dir: Directory used for the two extracted official files.
         output_path: Destination NPZ path.
     """
-    expression_path = cache_dir / Path(EXPRESSION_MEMBER).name
-    cell_days_path = cache_dir / Path(CELL_DAYS_MEMBER).name
+    embedding_path = cache_dir / Path(FLE_MEMBER).name
     transport_path = cache_dir / Path(TRANSPORT_MEMBER).name
-    extract_zip_member(DATA_ARCHIVE, EXPRESSION_MEMBER, expression_path)
-    extract_zip_member(DATA_ARCHIVE, CELL_DAYS_MEMBER, cell_days_path)
+    extract_zip_member(DATA_ARCHIVE, FLE_MEMBER, embedding_path)
     extract_zip_member(TRANSPORT_ARCHIVE, TRANSPORT_MEMBER, transport_path)
 
     transport = ad.read_h5ad(transport_path)
     source_ids = np.asarray(transport.obs_names)
     target_ids = np.asarray(transport.var_names)
-    source, target, explained_variance_ratio = shared_pairwise_pca(
-        expression_path,
+    source, target = official_force_layout_coordinates(
+        embedding_path,
         source_ids,
         target_ids,
     )
@@ -281,7 +288,6 @@ def prepare_asset(cache_dir: Path, output_path: Path) -> None:
         segment_source=segment_source.astype(np.int32),
         segment_target=segment_target.astype(np.int32),
         segment_mass=segment_mass.astype(np.float32),
-        explained_variance_ratio=explained_variance_ratio.astype(np.float32),
         source_day=np.float32(10.0),
         target_day=np.float32(10.5),
     )

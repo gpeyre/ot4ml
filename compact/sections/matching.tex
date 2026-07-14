@@ -75,19 +75,6 @@ Suppose that the arcs cover the circle. Since each $\gamma_i$ is open, every sou
 
 Cut the circle at such a $\theta$ and lift it to $(\theta,\theta+1)$. Every matched geodesic avoids the cut, so its circular length equals the ordinary distance between the corresponding lifts. Proposition~\ref{prop-matching-1d-monotone} now implies that the lifted matching preserves order. Returning to the circle, an order-preserving bijection between two cyclically ordered $n$-point sets is a cyclic shift. Minimizing over these $n$ shifts therefore recovers the optimum.
 \end{proof}
-\paragraph{Rational weights.}
-\begin{proposition}[Rational weights as duplicated uniform matching]\label{prop-rational-weights-duplicated-matching}
-Let
-\(\alpha=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i}, \qquad \beta=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j}, \qquad \sum_i k_i=\sum_j\ell_j=N,\)
-with positive integers $k_i,\ell_j$. Replace each $x_i$ by $k_i$ identical copies and each $y_j$ by $\ell_j$ identical copies, producing two uniform $N$-point clouds. Then the duplicated assignment problem and the discrete Kantorovich problem between $\alpha$ and $\beta$ have the same optimal value. Moreover, there exists an optimal coupling of the form
-\(P_{ij}=\frac{n_{ij}}{N}, \qquad n_{ij}\in\NN, \qquad \sum_j n_{ij}=k_i, \quad \sum_i n_{ij}=\ell_j,\)
-and couplings whose scaled entries $NP_{ij}$ are integral are exactly the collapsed assignments between duplicated clouds. Fractional optimal couplings may nevertheless coexist when the optimum is degenerate.
-\end{proposition}
-\begin{proof}
-Any assignment between the duplicated source and target clouds defines integers $n_{ij}$ counting how many copied particles of type $x_i$ are matched to copied particles of type $y_j$. These counts satisfy $\sum_j n_{ij}=k_i$ and $\sum_i n_{ij}=\ell_j$, and the associated coupling $P_{ij}=n_{ij}/N$ has marginals $k_i/N$ and $\ell_j/N$. The assignment cost is
-\(\frac1N\sum_{i,j} n_{ij}c(x_i,y_j) = \sum_{i,j}P_{ij}c(x_i,y_j).\)
-Conversely, any nonnegative integer count matrix with those row and column sums can be realized by allocating the $k_i$ copies of each $x_i$ among the target copies according to $(n_{ij})_j$. Scale a feasible coupling by $N$ and write $Q=NP$. The constraints on $Q$ have integer right-hand sides $(k_1,\ldots,k_n,\ell_1,\ldots,\ell_m)$. After multiplying the target rows by $-1$, their coefficient matrix is the oriented node-edge incidence matrix of a bipartite graph and is therefore totally unimodular. Every vertex of this transportation polytope is integral. Since a linear objective attains its minimum at a vertex, an integral optimal $Q$ exists, proving equality of the two optimal values. The argument establishes existence, not integrality of every optimizer; convex combinations of distinct integral optima give fractional optima.
-\end{proof}
 \paragraph{Two-dimensional geometry.}
 \begin{proposition}[No proper crossings in Euclidean-distance matchings]\label{prop-planar-no-proper-crossing}
 Let $x_1,\ldots,x_n,y_1,\ldots,y_n\in\RR^2$ and let $c(x,y)=\norm{x-y}$. If $\sigma$ is optimal, then two matched segments cannot cross properly: their relative interiors cannot meet at a point where their supporting lines are distinct.
@@ -99,29 +86,30 @@ and
 The sum of the two right-hand sides is exactly the cost of the two original segments. At least one inequality is strict because a proper crossing is non-collinear. Swapping $\sigma(i)$ and $\sigma(j)$ therefore strictly decreases the assignment cost, contradicting optimality. Collinear overlaps are excluded from the statement precisely because the exchange can then have equal cost.
 \end{proof}
 \(C_n=\frac{1}{n+1}\binom{2n}{n}\sim \frac{4^n}{\sqrt{\pi}n^{3/2}}.\)
-\subsection{Matching Algorithms}
-\paragraph{Classical assignment methods.}
-Efficient algorithms avoid enumerating $n!$ permutations. Auction algorithms attach prices to targets: an unmatched source bids for the target of smallest reduced cost, equivalently largest reduced profit, and raises that target's price.
+\subsection{Hungarian Algorithm}
+We now present a first algorithm for solving the optimal matching problem. The Hungarian method gives a self-contained preview of duality by computing an assignment together with an optimality certificate. The auction algorithm is postponed to Section~\ref{sec-auction-dual-ascent}, after the discrete semi-dual has been introduced.
 
 \paragraph{Hungarian primal-dual method.}
-\(u_i+v_j\leq \C_{i,j}\qquad\forall i,j.\)
-\[
-\delta=\min_{i\in S,\ j\notin T}\bigl(\C_{i,j}-u_i-v_j\bigr),
-\qquad
-u_i\leftarrow u_i+\delta\ (i\in S),\qquad
-v_j\leftarrow v_j-\delta\ (j\in T).
-\]
-\begin{prop}[Correctness and complexity of the Hungarian primal-dual method]\label{prop-hungarian-correct}
-Assume the Hungarian method terminates with a perfect matching $\sigma$ contained in the equality graph
-\(E(u,v)=\enscond{(i,j)}{u_i+v_j=\C_{i,j}},\)
-where $(u,v)$ is dual feasible, i.e. $u_i+v_j\leq \C_{i,j}$ for all $(i,j)$. Then $\sigma$ is an optimal assignment. Moreover, the usual Hungarian updates terminate after finitely many augmentations.
-With maintained slacks, the method uses $O(n^3)$ arithmetic operations.
+The Hungarian method constructs a partial matching and a dual certificate together. The certificate can be isolated as follows.
+\begin{prop}[Dual certificate for an assignment]\label{prop-assignment-dual-certificate}
+If $\fD_i+\gD_j\leq\C_{i,j}$ for all $i,j$, then every $\tau\in\Perm(n)$ satisfies
+\(\sum_i\C_{i,\tau(i)}\geq\sum_i\fD_i+\sum_j\gD_j.\)
+If equality holds on every edge $(i,\sigma(i))$ of a permutation $\sigma$, then $\sigma$ is optimal and $(\fD,\gD)$ is dual optimal.
 \end{prop}
 \begin{proof}
-For any permutation $\tau$, dual feasibility gives \(\sum_i \C_{i,\tau(i)} \geq \sum_i (u_i+v_{\tau(i)}) = \sum_i u_i+\sum_j v_j.\)
-This is the weak duality lower bound. If $\sigma$ is contained in the equality graph, then
-\(\sum_i \C_{i,\sigma(i)} = \sum_i u_i+\sum_j v_j,\)
-so the primal cost of $\sigma$ reaches the dual lower bound and is optimal.
-
-At each successful augmentation, the matching cardinality increases by one, so there are exactly $n$ augmentation phases. During one phase, the algorithm grows an alternating tree in the equality graph. Before reaching a free target, the tree invariant is $|S|=|T|+1$, so $T$ cannot contain every target. If $N_E(S)\setminus T$ is empty, every slack from $S$ to $T^c$ is positive and the minimum defining $\delta$ exists. For edges in $S\times T$, adding $\delta$ to source labels and subtracting it from target labels preserves tightness. For edges in $S\times T^c$, the definition of $\delta$ preserves feasibility and makes at least one new edge tight; edges in $S^c\times T$ become looser, and all remaining inequalities are unchanged. Thus the reachable sets strictly grow after every dual update and can grow at most $n$ times in one phase. If the slacks $\min_{i\in S}(\C_{i,j}-u_i-v_j)$ are maintained when a source enters $S$, each tree expansion costs $O(n)$. A phase costs $O(n^2)$ and the $n$ phases cost $O(n^3)$. Hence the method reaches a perfect optimal matching.
+Sum $\C_{i,\tau(i)}\geq\fD_i+\gD_{\tau(i)}$ over $i$ and use that $\tau$ permutes the target indices. Tightness along $\sigma$ makes this lower bound equal to its assignment cost.
+\end{proof}
+This is the uniform-mass instance of the discrete dual in Section~\ref{sec-discrete-dual}. The equality graph contains the zero-slack edges $(i,j)$ satisfying $\fD_i+\gD_j=\C_{i,j}$. By Proposition~\ref{prop-assignment-dual-certificate}, a perfect matching in this graph is optimal. Starting at an unmatched source, an alternating tree follows equality edges to targets and matched edges back to sources. Reaching an unmatched target gives an augmenting path. If no equality edge leaves the reached source set $S$ toward $T^c$, use
+\[
+\delta=\min_{i\in S,\ j\notin T}\bigl(\C_{i,j}-\fD_i-\gD_j\bigr),
+\qquad
+\fD_i\leftarrow \fD_i+\delta\ (i\in S),\qquad
+\gD_j\leftarrow \gD_j-\delta\ (j\in T),
+\]
+which preserves feasibility and creates a new equality edge. Since $|S|=|T|+1$, this shift increases the dual objective by $\delta$. Section~\ref{sec-auction-dual-ascent} contrasts this exact augmenting-tree mechanism with the $\epsilon$-relaxed auction ascent.
+\begin{prop}[Correctness and complexity of the Hungarian primal-dual method]\label{prop-hungarian-correct}
+For every $\C\in\RR^{n\times n}$, the Hungarian method terminates after $n$ augmentation phases and returns an optimal permutation $\sigma$. With maintained slacks, it uses $O(n^3)$ arithmetic and comparison operations and $O(n^2)$ storage.
+\end{prop}
+\begin{proof}
+Initialize $\fD_i=\min_j\C_{i,j}$ and $\gD_j=0$. Feasibility holds and the empty matching uses only equality edges. Before reaching a free target, the tree has $|S|=|T|+1$, so $T$ omits a target. A dual shift leaves slacks unchanged on $S\times T$, decreases them by $\delta$ on $S\times T^c$, and increases them on $S^c\times T$. Hence it preserves feasibility and tight matched edges while creating a new equality edge. The tree therefore reaches a free target in at most $n$ expansions; flipping the resulting alternating path adds one matched pair. Exactly $n$ phases produce a perfect matching $\sigma$. Its edges are tight, so Proposition~\ref{prop-assignment-dual-certificate} proves optimality. Maintaining $\ell_j=\min_{i\in S}(\C_{i,j}-\fD_i-\gD_j)$ and a minimizing parent costs $O(n)$ per tree expansion: when a source enters $S$, one compares its row of slacks with the current $\ell_j$. Hence one phase costs $O(n^2)$ and all $n$ phases cost $O(n^3)$.
 \end{proof}

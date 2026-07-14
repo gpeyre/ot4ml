@@ -68,12 +68,12 @@ scaling algorithms.
 (def-discrete-shannon-boltzmann-entropy)=
 :::{admonition} Definition: Discrete Shannon--Boltzmann Entropy
 :class: important
-For a nonnegative matrix $P$, its Shannon--Boltzmann entropy is
+For a nonnegative matrix $\P$, its Shannon--Boltzmann entropy is
 
 ```{math}
-H(P)
+H(\P)
 \eqdef
--\sum_{i,j}P_{i,j}\log P_{i,j},
+-\sum_{i,j}\P_{i,j}\log \P_{i,j},
 ```
 
 with the convention $0\log 0=0$.
@@ -84,23 +84,23 @@ value
 
 ```{math}
 :label: eq-regularized-discrete-web
-\mathcal{L}_{C}^{\epsilon}(a,b)
+\mathcal{L}_{\C}^{\epsilon}(a,b)
 \eqdef
-\min_{P\in\mathbf{U}(a,b)}
-\langle P,C\rangle
+\min_{\P\in\mathbf{U}(a,b)}
+\langle \P,\C\rangle
 -
-\epsilon H(P).
+\epsilon H(\P).
 ```
 
 Equivalently, the regularizer is
-$\epsilon\sum_{i,j}P_{i,j}\log P_{i,j}$. It penalizes concentrated couplings
+$\epsilon\sum_{i,j}\P_{i,j}\log \P_{i,j}$. It penalizes concentrated couplings
 and makes the objective strictly convex on the relative interior of the
 transport polytope.
 
 (prop-entropic-unique)=
 :::{admonition} Proposition: Existence and Uniqueness of Entropic OT
 :class: important
-Assume that $a,b$ are probability histograms and that $C$ is finite. For every
+Assume that $a,b$ are probability histograms and that $\C$ is finite. For every
 $\epsilon>0$, problem {eq}`eq-regularized-discrete-web` admits a unique
 minimizer. If all entries of $a$ and $b$ are positive, then this minimizer is
 positive on every entry.
@@ -112,14 +112,14 @@ continuous with the convention $0\log0=0$, so a minimizer exists. On the
 relative interior,
 
 ```{math}
--\partial^2 H(P)=\operatorname{diag}(1/P_{i,j})
+-\partial^2 H(\P)=\operatorname{diag}(1/\P_{i,j})
 ```
 
 is positive definite on every non-zero feasible direction. Hence
 $-H$ is strictly convex on the polytope, which gives uniqueness.
 
-If $a_i,b_j>0$ and a minimizer had $P_{i,j}=0$, then the perturbation
-$P_t=(1-t)P+t\,a\otimes b$ remains feasible for small $t>0$. The derivative
+If $a_i,b_j>0$ and a minimizer had $\P_{i,j}=0$, then the perturbation
+$\P_t=(1-t)\P+t\,a\otimes b$ remains feasible for small $t>0$. The derivative
 of $r\log r$ at zero along a positive direction is $-\infty$, so the objective
 decreases, contradicting optimality.
 :::
@@ -127,11 +127,13 @@ decreases, contradicting optimality.
 ### Smoothing Effect
 
 The entropy acts as a barrier for positivity and makes
-$\mathcal{L}_{C}^{\epsilon}(a,b)$ smooth in $a$, $b$, and $C$ as long as these
+$\mathcal{L}_{\C}^{\epsilon}(a,b)$ smooth in $a$, $b$, and $\C$ as long as these
 variables stay in the relative interior. As $\epsilon\to+\infty$, the
 minimizer converges to the independent coupling $a\otimes b$; as
 $\epsilon\to0$, it approaches the optimal face of the original transport
 linear program.
+
+Figure {ref}`fig:sinkhorn-entropy-lp-geometry` visualizes this temperature-dependent path and contrasts it with a generic logarithmic barrier on linear-programming slacks.
 
 (fig:sinkhorn-entropy-lp-geometry)=
 :::{div}
@@ -164,7 +166,7 @@ interior-point barrier. The canonical barrier is the Burg, or reverse-KL,
 barrier $-\sum_i\log s_i$, which leads to Newton systems.
 
 Optimal transport is special because entropy is placed on the entries of
-$P$, while the constraints are only row and column marginals. This separable
+$\P$, while the constraints are only row and column marginals. This separable
 structure turns Bregman projections into diagonal rescalings, giving the
 Sinkhorn iterations.
 
@@ -184,17 +186,17 @@ scaling form.
 (prop-regularized-primal)=
 :::{admonition} Proposition: Scaling Form of Entropic OT
 :class: important
-$P$ is the unique solution of {eq}`eq-regularized-discrete-web` if and only if
+$\P$ is the unique solution of {eq}`eq-regularized-discrete-web` if and only if
 there exist nonnegative vectors $u\in\RR_+^n$ and $v\in\RR_+^m$ such that
 
 ```{math}
 :label: eq-scaling-form-web
-P_{i,j}=u_iK_{i,j}v_j,
+\P_{i,j}=u_iK_{i,j}v_j,
 \qquad
-K_{i,j}\eqdef\exp(-C_{i,j}/\epsilon),
+K_{i,j}\eqdef\exp(-\C_{i,j}/\epsilon),
 ```
 
-and $P\in\mathbf{U}(a,b)$.
+and $\P\in\mathbf{U}(a,b)$.
 :::
 
 :::{dropdown} Proof
@@ -204,34 +206,34 @@ Introduce Lagrange multipliers $f\in\RR^n$ and $g\in\RR^m$ for the two
 marginal constraints. The Lagrangian is
 
 ```{math}
-\mathcal{L}(P,f,g)
+\mathcal{L}(\P,f,g)
 =
-\langle P,C\rangle
+\langle \P,\C\rangle
 +
-\epsilon\sum_{i,j}P_{i,j}\log P_{i,j}
+\epsilon\sum_{i,j}\P_{i,j}\log \P_{i,j}
 +
-\langle f,a-P\mathbf 1\rangle
+\langle f,a-\P\mathbf 1\rangle
 +
-\langle g,b-P^\top\mathbf 1\rangle .
+\langle g,b-\P^\top\mathbf 1\rangle .
 ```
 
-Stationarity with respect to $P_{i,j}$ gives
+Stationarity with respect to $\P_{i,j}$ gives
 
 ```{math}
-C_{i,j}
+\C_{i,j}
 +
-\epsilon(\log P_{i,j}+1)
+\epsilon(\log \P_{i,j}+1)
 -
 f_i-g_j
 =0.
 ```
 
 Thus
-$P_{i,j}=\exp((f_i+g_j-C_{i,j})/\epsilon-1)$, which is exactly the scaling
+$\P_{i,j}=\exp((f_i+g_j-\C_{i,j})/\epsilon-1)$, which is exactly the scaling
 form after absorbing the one-body terms into $u$ and $v$.
 :::
 
-In matrix notation, $P=\operatorname{diag}(u)K\operatorname{diag}(v)$. The
+In matrix notation, $\P=\operatorname{diag}(u)K\operatorname{diag}(v)$. The
 marginal constraints become
 
 ```{math}
@@ -255,7 +257,9 @@ v^{(\ell+1)}
 ```
 
 The division is entrywise. The scaling vectors are not unique: multiplying
-$u$ by $\lambda>0$ and $v$ by $1/\lambda$ leaves $P$ unchanged.
+$u$ by $\lambda>0$ and $v$ by $1/\lambda$ leaves $\P$ unchanged.
+
+Figure {ref}`fig:sinkhorn-marginal-errors` exposes the alternating feasibility mechanism on a small matrix: each row or column normalization enforces one marginal exactly while generally perturbing the other.
 
 (fig:sinkhorn-marginal-errors)=
 :::{div}
@@ -282,6 +286,8 @@ lose the other, and then converge toward both.
 
 <iframe class="ot4ml-live-frame" title="Sinkhorn scaling controls" src="../live/sinkhorn-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
+Figure {ref}`fig:sinkhorn-continuous-marginal-scaling` shows the same alternating projection mechanism on a dense one-dimensional discretization, where the marginal defects appear as continuous side curves.
+
 (fig:sinkhorn-continuous-marginal-scaling)=
 :::{div}
 :class: ot4ml-book-figure
@@ -301,6 +307,8 @@ kernel remains visible in the optimal plan. Small $\epsilon$ produces a
 concentrated transport band, while larger $\epsilon$ spreads the same
 marginals into a smoother coupling.
 
+Figure {ref}`fig:sinkhorn-coupling-iterations` compares these converged plans at four temperatures while keeping both marginals fixed.
+
 (fig:sinkhorn-coupling-iterations)=
 :::{div}
 :class: ot4ml-book-figure
@@ -315,6 +323,8 @@ regularization strengths. Decreasing $\epsilon$ sharpens the plan toward an
 optimal-transport graph; increasing $\epsilon$ keeps more of the product
 structure.*
 :::
+
+Before that, Figure {ref}`fig:sinkhorn-potentials-iterations` tracks the same Sinkhorn scaling in dual variables.
 
 (fig:sinkhorn-potentials-iterations)=
 :::{div}
@@ -344,10 +354,12 @@ Complexity bounds for Sinkhorn and comparisons with accelerated first-order
 methods are discussed in
 {cite:p}`altschuler2017near,pmlr-v80-dvurechensky18a,knight2008sinkhorn`.
 For a dense $n\times m$ problem, each iteration costs one multiplication by
-$K$ and one by $K^\top$, so the cost scales like $Cnm$ for $C$ iterations.
+$K$ and one by $K^\top$, so the cost scales like $Cnm$ for $\C$ iterations.
 For fixed positive $\epsilon$, the marginal error eventually has a linear
 regime, but small $\epsilon$ makes the Gibbs kernel more peaked and scaling
 harder.
+
+Figure {ref}`fig:sinkhorn-linear-rate-epsilon` complements the complexity discussion by plotting the marginal defect across half-steps and showing how smaller temperatures slow the observed linear regime.
 
 (fig:sinkhorn-linear-rate-epsilon)=
 :::{div}
@@ -535,6 +547,8 @@ The tensor-product reference is nevertheless useful when supports vary. It
 makes explicit which entries may vanish and passes cleanly to the continuous
 formulation.
 
+Figure {ref}`fig:sinkhorn-dual-potentials-epsilon` shows how the corresponding KL-normalized dual potentials deform with temperature, from nearly hard Kantorovich potentials to smoother log-sum-exp profiles.
+
 (fig:sinkhorn-dual-potentials-epsilon)=
 :::{div}
 :class: ot4ml-book-figure
@@ -593,6 +607,8 @@ Testing the objective at $a\otimes b$ gives
 
 so the KL divergence to $a\otimes b$ vanishes.
 :::
+
+Figure {ref}`fig:sinkhorn-plan-epsilon` illustrates the two limiting regimes established above: the plan approaches a sparse optimal coupling as $\epsilon\downarrow0$ and the product coupling as $\epsilon$ grows.
 
 (fig:sinkhorn-plan-epsilon)=
 :::{div}
@@ -902,15 +918,15 @@ The KL-normalized problem has the dual
 
 ```{math}
 :label: eq-dual-formulation
-\min_{P\in\mathbf U(a,b)}
-\langle P,C\rangle+\epsilon\operatorname{KL}(P|a\otimes b)
+\min_{\P\in\mathbf U(a,b)}
+\langle \P,\C\rangle+\epsilon\operatorname{KL}(\P|a\otimes b)
 =
 \max_{f,g}
 \left[
 \langle f,a\rangle+\langle g,b\rangle
 -
 \epsilon\sum_{i,j}
-\exp\left(\frac{f_i+g_j-C_{i,j}}{\epsilon}\right)a_i b_j
+\exp\left(\frac{f_i+g_j-\C_{i,j}}{\epsilon}\right)a_i b_j
 +
 \epsilon
 \right].
@@ -933,7 +949,7 @@ f_i
 =
 -\epsilon\log
 \sum_j
-\exp\left(\frac{g_j-C_{i,j}}{\epsilon}\right)b_j.
+\exp\left(\frac{g_j-\C_{i,j}}{\epsilon}\right)b_j.
 ```
 
 This is a smoothed minimum.
@@ -950,13 +966,13 @@ For $h\in\RR^m$ and weights $b\in\simplex_m$,
 ```
 
 It converges to $\min_{j:\,b_j>0}h_j$ as $\epsilon\to0$, and hence to
-$\min_j h_j$ when all weights are positive. Given a cost matrix $C$, the
+$\min_j h_j$ when all weights are positive. Given a cost matrix $\C$, the
 discrete soft $c$-transforms are
 
 ```{math}
-f_i=\min_b^\epsilon(C_{i,\cdot}-g),
+f_i=\min_b^\epsilon(\C_{i,\cdot}-g),
 \qquad
-g_j=\min_a^\epsilon(C_{\cdot,j}-f).
+g_j=\min_a^\epsilon(\C_{\cdot,j}-f).
 ```
 :::
 
@@ -964,6 +980,8 @@ Exponentiating the alternating soft-transform iterations recovers Sinkhorn's
 algorithm. For small $\epsilon$, one must compute the log-sum-exp terms with
 the usual stabilization trick: subtract the minimum before exponentiating and
 add it back afterward.
+
+Figure {ref}`fig:sinkhorn-soft-c-transform-epsilon` visualizes the corresponding soft minimum: decreasing $\epsilon$ sharpens the smooth best response toward the hard $c$-transform envelope.
 
 (fig:sinkhorn-soft-c-transform-epsilon)=
 :::{div}
@@ -1399,6 +1417,8 @@ problem is exactly the continuous Sinkhorn problem up to an additive constant.
 Sinkhorn computes which endpoints should be paired; the path-space
 Schrodinger bridge then connects each pair by a Brownian bridge.
 
+Figure {ref}`fig:sinkhorn-path-space-bridges` illustrates this endpoint-to-path lifting on a small discrete example.
+
 (fig:sinkhorn-path-space-bridges)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1754,6 +1774,8 @@ $\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this
 length is sent to zero faster than the grid spacing, metrication artifacts and
 inconsistent discretizations can dominate the intended geodesic limit.
 
+Figure {ref}`fig:sinkhorn-geodesics-in-heat` compares the exact distance to a non-convex source curve with heat-kernel and shifted-Laplacian approximations at several smoothing scales.
+
 (fig:sinkhorn-geodesics-in-heat)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1896,6 +1918,8 @@ The first figure below isolates the biconjugation effect.  It compares the hard
 lower convex envelope with finite-temperature soft biconjugates for both a simple
 and a more oscillatory non-convex profile.
 
+Figure {ref}`fig:sinkhorn-soft-biconjugates` illustrates the biconjugation viewpoint directly.
+
 (fig:sinkhorn-soft-biconjugates)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1932,6 +1956,8 @@ dimension this is the classical Cole--Hopf transform; in higher dimension this
 scalar reduction applies to irrotational velocity fields.
 The figure below keeps only the PDE content: the same initial potential is
 evolved through the Hopf--Cole transform for three values of the viscosity.
+
+Figure {ref}`fig:sinkhorn-hopf-cole-transform` starts from a Gaussian velocity bump, whose inviscid evolution would form a shock on its decreasing flank, and shows how the viscosity parameter $\epsilon/2$ regularizes this steepening.
 
 (fig:sinkhorn-hopf-cole-transform)=
 :::{div}
@@ -2065,6 +2091,8 @@ dual variables. The update $f^{c,\epsilon,\phi}$ is defined symmetrically by
 exchanging $(x,\alpha,f)$ and $(y,\beta,g)$. For KL, this reduces to the
 log-integral soft transform; for Burg or quadratic penalties, the update is
 still one-dimensional and monotone but no longer a log-sum-exp.
+
+Figures {ref}`fig:sinkhorn-phi-soft-c-transforms` and {ref}`fig:sinkhorn-entropic-versus-quadratic-regularization` show the two visible consequences of changing $\phi$: it modifies both the smoothing of the dual envelope and the concentration pattern of the primal coupling.
 
 (fig:sinkhorn-phi-soft-c-transforms)=
 :::{div}
@@ -2241,6 +2269,8 @@ debiased Sinkhorn divergence is
 \frac12\mathcal L_c^\epsilon(\beta,\beta).
 ```
 :::
+
+Figure {ref}`fig:sinkhorn-divergence-debiasing` demonstrates the role of the two self-cost corrections by optimizing a finite point cloud against a fixed target with and without debiasing.
 
 (fig:sinkhorn-divergence-debiasing)=
 :::{div}
@@ -2461,24 +2491,24 @@ identities, not as a positivity statement.
 ### Discrete histograms
 
 If $\alpha=\sum_i a_i\delta_{x_i}$ and
-$\beta=\sum_j b_j\delta_{y_j}$, set $C_{ij}=c(x_i,y_j)$ and define
+$\beta=\sum_j b_j\delta_{y_j}$, set $\C_{ij}=c(x_i,y_j)$ and define
 
 ```{math}
-K_\epsilon(C)_{ij}=\exp(-C_{ij}/\epsilon).
+K_\epsilon(\C)_{ij}=\exp(-\C_{ij}/\epsilon).
 ```
 
 The direct discretization of {eq}`eq-complex-measure-coupling-web` is
 
 ```{math}
-P_{\epsilon,ij}=a_i b_j u_i K_\epsilon(C)_{ij}v_j,
+\P_{\epsilon,ij}=a_i b_j u_i K_\epsilon(\C)_{ij}v_j,
 ```
 
 with fixed-point equations
 
 ```{math}
-u_i\sum_j b_j K_\epsilon(C)_{ij}v_j=1,
+u_i\sum_j b_j K_\epsilon(\C)_{ij}v_j=1,
 \qquad
-v_j\sum_i a_i K_\epsilon(C)_{ij}u_i=1.
+v_j\sum_i a_i K_\epsilon(\C)_{ij}u_i=1.
 ```
 
 Equivalently, absorbing the fixed marginal weights into the scalings by setting
@@ -2486,13 +2516,13 @@ $\tilde u_i=a_i u_i$ and $\tilde v_j=b_j v_j$ gives the matrix-scaling
 convention used in Sinkhorn's algorithm:
 
 ```{math}
-P_\epsilon
+\P_\epsilon
 =
-\operatorname{diag}(\tilde u)K_\epsilon(C)\operatorname{diag}(\tilde v),
+\operatorname{diag}(\tilde u)K_\epsilon(\C)\operatorname{diag}(\tilde v),
 \qquad
-P_\epsilon\mathbf 1_m=a,
+\P_\epsilon\mathbf 1_m=a,
 \qquad
-P_\epsilon^\top\mathbf 1_n=b.
+\P_\epsilon^\top\mathbf 1_n=b.
 ```
 
 The corresponding formal complex Sinkhorn iteration is
@@ -2501,11 +2531,11 @@ The corresponding formal complex Sinkhorn iteration is
 :label: eq-complex-sinkhorn-iteration-web
 \tilde u^{(k+1)}
 =
-a\oslash\bigl(K_\epsilon(C)\tilde v^{(k)}\bigr),
+a\oslash\bigl(K_\epsilon(\C)\tilde v^{(k)}\bigr),
 \qquad
 \tilde v^{(k+1)}
 =
-b\oslash\bigl(K_\epsilon(C)^\top \tilde u^{(k+1)}\bigr).
+b\oslash\bigl(K_\epsilon(\C)^\top \tilde u^{(k+1)}\bigr).
 ```
 
 For complex $\epsilon$, this iteration should be read as a local analytic
@@ -2527,55 +2557,55 @@ formula used in the theorem below.
 :::{admonition} Theorem: Carlier's Holomorphic Continuation of Sinkhorn
 :class: important
 Fix positive histograms $a^0\in\Delta_n$, $b^0\in\Delta_m$, a finite real cost
-matrix $C^0$, and a real temperature $\epsilon_0>0$. Let $(f^0,g^0)$ be the
+matrix $\C^0$, and a real temperature $\epsilon_0>0$. Let $(f^0,g^0)$ be the
 absorbed log-scalings at this point, normalized by $\sum_i a_i^0 f_i^0=0$.
 Then
-there are complex neighborhoods of $(\epsilon_0,a^0,b^0,C^0)$, inside the
+there are complex neighborhoods of $(\epsilon_0,a^0,b^0,\C^0)$, inside the
 affine constraint $\sum_i a_i=\sum_j b_j$, and a unique holomorphic map
 
 ```{math}
-(\epsilon,a,b,C)\mapsto(f_\epsilon,g_\epsilon)\in\mathbb C^n\times\mathbb C^m
+(\epsilon,a,b,\C)\mapsto(f_\epsilon,g_\epsilon)\in\mathbb \C^n\times\mathbb \C^m
 ```
 
 satisfying the fixed gauge $\sum_i a_i^0 f_{\epsilon,i}=0$ and solving
 
 ```{math}
-P_{\epsilon,ij}
+\P_{\epsilon,ij}
 =
-\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-C_{ij}}{\epsilon}\right),
+\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-\C_{ij}}{\epsilon}\right),
 \qquad
-P_\epsilon\mathbf 1_m=a,
+\P_\epsilon\mathbf 1_m=a,
 \qquad
-P_\epsilon^\top\mathbf 1_n=b.
+\P_\epsilon^\top\mathbf 1_n=b.
 ```
 
 Consequently the gauge-fixed scalings $u_\epsilon=e^{f_\epsilon/\epsilon}$,
-$v_\epsilon=e^{g_\epsilon/\epsilon}$ and the coupling $P_\epsilon$ are
-holomorphic in $(\epsilon,a,b,C)$ near the base point.
+$v_\epsilon=e^{g_\epsilon/\epsilon}$ and the coupling $\P_\epsilon$ are
+holomorphic in $(\epsilon,a,b,\C)$ near the base point.
 :::
 
 :::{dropdown} Proof
-Consider the holomorphic map which sends $(f,g,\epsilon,a,b,C)$ to the $n$ row
+Consider the holomorphic map which sends $(f,g,\epsilon,a,b,\C)$ to the $n$ row
 residuals, the first $m-1$ column residuals, and the gauge condition:
 
 ```{math}
 R_i=
-\sum_j\exp\!\left(\frac{f_i+g_j-C_{ij}}{\epsilon}\right)-a_i,
+\sum_j\exp\!\left(\frac{f_i+g_j-\C_{ij}}{\epsilon}\right)-a_i,
 \qquad
 S_j=
-\sum_i\exp\!\left(\frac{f_i+g_j-C_{ij}}{\epsilon}\right)-b_j,
+\sum_i\exp\!\left(\frac{f_i+g_j-\C_{ij}}{\epsilon}\right)-b_j,
 \qquad
 G=\sum_i a_i^0 f_i.
 ```
 
 Here $1\le i\le n$ and $1\le j\le m-1$. At the real base point the coupling
-$P^0$ is strictly positive. Let $(\delta f,\delta g)$ belong to the kernel of
+$\P^0$ is strictly positive. Let $(\delta f,\delta g)$ belong to the kernel of
 the derivative with respect to $(f,g)$, viewed as a complex-linear map, and set
 
 ```{math}
-\delta P_{ij}
+\delta \P_{ij}
 =
-\frac1{\epsilon_0}P^0_{ij}(\delta f_i+\delta g_j).
+\frac1{\epsilon_0}\P^0_{ij}(\delta f_i+\delta g_j).
 ```
 
 The linearized row sums vanish; the first $m-1$ column sums vanish by
@@ -2585,12 +2615,12 @@ column sums. Hence
 ```{math}
 0
 =
-\sum_i\overline{\delta f_i}\sum_j\delta P_{ij}
+\sum_i\overline{\delta f_i}\sum_j\delta \P_{ij}
 +
-\sum_j\overline{\delta g_j}\sum_i\delta P_{ij}
+\sum_j\overline{\delta g_j}\sum_i\delta \P_{ij}
 =
 \frac1{\epsilon_0}
-\sum_{i,j}P^0_{ij}|\delta f_i+\delta g_j|^2.
+\sum_{i,j}\P^0_{ij}|\delta f_i+\delta g_j|^2.
 ```
 
 Thus $\delta f_i+\delta g_j=0$ for all $i,j$. The perturbations are therefore
@@ -2612,6 +2642,8 @@ $\Re(\fD_{\epsilon_0+i\eta}-\fD_{\epsilon_0})$. Since the potentials enter only
 through exponentials, the complex logarithm has to be followed on a continuous
 local branch; this is a display convention, while the coupling itself is
 defined by the exponential formula.
+
+Figure {ref}`fig:sinkhorn-complex-epsilon-continuation` shows this local continuation on a one-dimensional finite histogram problem.
 
 (fig:sinkhorn-complex-epsilon-continuation)=
 :::{div}

@@ -1275,7 +1275,9 @@ $\alpha_0,\alpha_1\in\mathcal P_2(\RR^d)$. Then
 \Wass_\gamma^2(\alpha_0,\alpha_1).
 ```
 
-In particular, $\Wass_\gamma$ defines a distance on $\Pp_2(\RR^d)$.
+The common value defines a distance on $\Pp_2(\RR^d)$; the triangle inequality
+is established by the robust representation in Proposition
+{ref}`prop-spectral-wasserstein-robust`.
 :::
 
 :::{dropdown} Proof
@@ -1643,12 +1645,64 @@ in the nonlocal Wasserstein-flow section below.
 
 For a fixed jump kernel this geometry is genuinely nonlocal and does not
 coincide with ordinary $\Wass_2$. The local metric is nevertheless recovered
-as a small-jump limit: for symmetric kernels concentrated at scale
-$\varepsilon$, with an appropriate second-moment normalization, the nonlocal
-actions and distances converge as $\varepsilon\to0$ to the classical
-Benamou--Brenier action and $\Wass_2$
-{cite:p}`SlepcevWarren2022NonlocalWasserstein`. Thus sharply concentrated
-isotropic jumps connect the nonlocal construction back to the local theory.
+in a small-jump limit. More explicitly, on $\mathcal X=\mathbb R^d$, let
+$\eta(z)=\bar\eta(\lVert z\rVert)$ be a nonnegative radial profile with
+
+```{math}
+M_2(\eta):=\int_{\mathbb R^d}\lVert z\rVert^2\eta(z)\,\mathrm dz
+\in(0,+\infty),
+```
+
+and define
+
+```{math}
+:label: eq-small-jump-kernel-scaling
+K_\varepsilon(x,\mathrm dy)
+:=\eta_\varepsilon(y-x)\,\mathrm dy,
+\qquad
+\eta_\varepsilon(z):=\varepsilon^{-d}\eta(z/\varepsilon).
+```
+
+Radiality implies symmetry and isotropy, and a change of variables gives
+
+```{math}
+:label: eq-small-jump-kernel-moments
+\int\lVert y-x\rVert^2K_\varepsilon(x,\mathrm dy)
+=\varepsilon^2M_2(\eta),
+\qquad
+\int (y-x)(y-x)^\top K_\varepsilon(x,\mathrm dy)
+=\varepsilon^2\frac{M_2(\eta)}{d}\operatorname{Id}.
+```
+
+Equation {eq}`eq-small-jump-kernel-moments` is the precise sense in which the
+second-moment jump scale is $\varepsilon$. To obtain a nontrivial local limit,
+one simultaneously accelerates the jump rate by $\varepsilon^{-2}$ and sets
+
+```{math}
+\widehat K_\varepsilon
+:=\frac{2d}{\varepsilon^2M_2(\eta)}K_\varepsilon,
+\qquad
+\int (y-x)(y-x)^\top\widehat K_\varepsilon(x,\mathrm dy)
+=2\operatorname{Id}.
+```
+
+Multiplying a jump kernel by $c>0$ divides the associated distance by
+$\sqrt c$. Hence, under the regularity and irreducibility hypotheses of
+{cite:t}`SlepcevWarren2022NonlocalWasserstein`, for endpoints supported in a
+fixed compact set,
+
+```{math}
+\mathcal W_{\widehat K_\varepsilon}
+=\varepsilon\sqrt{\frac{M_2(\eta)}{2d}}\,
+\mathcal W_{K_\varepsilon}
+\longrightarrow\Wass_2
+\qquad(\varepsilon\to0).
+```
+
+This makes precise how sharply concentrated isotropic jumps recover the local
+Benamou--Brenier geometry. Without isotropy, the covariance matrix in
+{eq}`eq-small-jump-kernel-moments` need not be proportional to the identity,
+and the limit is instead an anisotropic Wasserstein geometry.
 
 (sec-discrete-wasserstein-markov)=
 ### Discrete Wasserstein Distances on Markov Chains
@@ -1828,6 +1882,8 @@ a_{t=0}=a_0,
 Thus the three-state distance is an explicit two-dimensional Riemannian geodesic problem on the open triangle. The formula is simple enough to compute directly, but it already shows the main difference with Euclidean geometry on the simplex: the local metric depends nonlinearly on the current density through logarithmic edge mobilities.
 :::
 
+
+Figure {ref}`fig:discrete-markov-simplex-distances` visualizes these small-dimensional geometries and compares them with the ordinary Wasserstein distance associated with the $0/1$ ground metric, for which $\Wass_2^2$ is exactly the total variation distance.
 
 (fig:discrete-markov-simplex-distances)=
 :::{div}
@@ -2035,6 +2091,8 @@ trade transport against reaction. The next figure uses entropic balanced and
 KL-relaxed barycenters as a qualitative numerical surrogate: the unbalanced
 row illustrates the mechanism but is not asserted to be an exact
 $\WFR_\kappa$ geodesic.
+
+Figure {ref}`fig:dynamic-unbalanced-geodesic` uses entropic balanced and KL-relaxed barycenters as a qualitative numerical surrogate; its unbalanced row illustrates the reaction--transport mechanism but is not asserted to be an exact $\WFR_\kappa$ geodesic.
 
 (fig:dynamic-unbalanced-geodesic)=
 :::{div}

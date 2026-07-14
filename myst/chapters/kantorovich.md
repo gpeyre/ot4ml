@@ -38,6 +38,8 @@ thumbnails = repo_root / "notebooks-figures" / "thumbnails"
 
 def show_book_figure(name, width=760):
     display(DisplayImage(filename=str(thumbnails / f"{name}.png"), width=width))
+
+from ot4ml_web import plot_regularization_sweep
 ```
 
 (sec-discrete-relaxation)=
@@ -57,7 +59,7 @@ cannot be split into two by a deterministic map.
 Kantorovich's idea is to relax deterministic transportation. Instead of sending
 each source point $x_i$ to exactly one target, the mass at $x_i$ may be
 dispatched across several targets. The relaxation is encoded by a coupling
-matrix $P\in\RR_+^{n\times m}$ for two discrete measures
+matrix $\P\in\RR_+^{n\times m}$ for two discrete measures
 
 ```{math}
 \al=\sum_i a_i\delta_{x_i},
@@ -75,10 +77,10 @@ Admissible couplings are constrained only by conservation of mass:
 \CouplingsD(a,b)
 \eqdef
 \left\{
-P\in\RR_+^{n\times m}
+\P\in\RR_+^{n\times m}
 \;:\;
-P\mathbf{1}_m=a,\quad
-P^\top\mathbf{1}_n=b
+\P\mathbf{1}_m=a,\quad
+\P^\top\mathbf{1}_n=b
 \right\}.
 ```
 
@@ -86,9 +88,9 @@ Equivalently, rows sum to the source masses and columns sum to the target
 masses:
 
 ```{math}
-\left(\sum_j P_{ij}\right)_i=a,
+\left(\sum_j \P_{ij}\right)_i=a,
 \qquad
-\left(\sum_i P_{ij}\right)_j=b.
+\left(\sum_i \P_{ij}\right)_j=b.
 ```
 :::
 
@@ -144,36 +146,38 @@ the marginal constraints appear as prescribed row and column sums.
 :::{admonition} Proposition: Discrete Product Optimality Is Degenerate
 :class: important
 Assume that all zero-mass rows and columns have been removed, so that
-$a_i>0$ and $b_j>0$, and let $C$ be a finite cost matrix. The product plan
-$a\otimes b$ minimizes $P\mapsto\langle C,P\rangle$ over
+$a_i>0$ and $b_j>0$, and let $\C$ be a finite cost matrix. The product plan
+$a\otimes b$ minimizes $\P\mapsto\langle \C,\P\rangle$ over
 $\CouplingsD(a,b)$ if and only if every coupling
-$P\in\CouplingsD(a,b)$ minimizes it.
+$\P\in\CouplingsD(a,b)$ minimizes it.
 :::
 
 :::{dropdown} Proof
 The reverse implication is immediate. Conversely, assume that $a\otimes b$ is
-optimal and let $Q\in\CouplingsD(a,b)$ be arbitrary. Since all entries of
+optimal and let $\Q\in\CouplingsD(a,b)$ be arbitrary. Since all entries of
 $a\otimes b$ are positive, there exists $t>0$ small enough that
 
 ```{math}
-R\eqdef(1+t)(a\otimes b)-tQ
+\R\eqdef(1+t)(a\otimes b)-tQ
 ```
 
 is nonnegative. It still has row sums $a$ and column sums $b$, so
-$R\in\CouplingsD(a,b)$. Also
+$\R\in\CouplingsD(a,b)$. Also
 
 ```{math}
-a\otimes b=\frac{1}{1+t}R+\frac{t}{1+t}Q.
+a\otimes b=\frac{1}{1+t}\R+\frac{t}{1+t}\Q.
 ```
 
-Taking scalar products with $C$, the optimality of $a\otimes b$ forces both
-$R$ and $Q$ to have the same cost as $a\otimes b$. Since $Q$ was arbitrary, all
+Taking scalar products with $\C$, the optimality of $a\otimes b$ forces both
+$\R$ and $\Q$ to have the same cost as $a\otimes b$. Since $\Q$ was arbitrary, all
 couplings are optimal.
 :::
 
 Thus the product plan is mainly a feasibility witness. Except when the linear
 cost is constant on the whole transportation polytope, it is not expected to
 solve optimal transport.
+
+Figure {ref}`fig:kantorovich-coupling-polylines` contrasts deterministic, product and optimal couplings through weighted transport segments.
 
 (fig:kantorovich-coupling-polylines)=
 :::{div}
@@ -201,6 +205,8 @@ approximations.
 
 <iframe class="ot4ml-live-frame" title="Kantorovich coupling controls" src="../live/kantorovich-couplings.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+Figure {ref}`fig:kantorovich-coupling-matrix-marginals` gives the complementary matrix view and displays the prescribed marginals next to each coupling.
+
 (fig:kantorovich-coupling-matrix-marginals)=
 :::{div}
 :class: ot4ml-book-figure
@@ -211,7 +217,7 @@ show_book_figure("kantorovich-coupling-matrix-marginals")
 ```
 
 *Coupling matrices with their prescribed marginals. The central grayscale image
-displays $P_{ij}$; the red curve on the left is the source marginal $a$, and
+displays $\P_{ij}$; the red curve on the left is the source marginal $a$, and
 the blue curve on top is the target marginal $b$. The independent product plan
 is diffuse, whereas the one-dimensional optimal plan concentrates near the
 monotone quantile correspondence.*
@@ -227,22 +233,50 @@ transition from diffuse independence to monotone transport visually explicit.
 
 <iframe class="ot4ml-live-frame" title="Coupling matrix controls" src="../live/kantorovich-matrix.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
-The Kantorovich feasible set is symmetric: $P\in\CouplingsD(a,b)$ if and only
-if $P^\top\in\CouplingsD(b,a)$. With a unit transport cost matrix
-$C_{ij}$, the discrete Kantorovich problem reads
+The Kantorovich feasible set is symmetric: $\P\in\CouplingsD(a,b)$ if and only
+if $\P^\top\in\CouplingsD(b,a)$. With a unit transport cost matrix
+$\C_{ij}$, the discrete Kantorovich problem reads
 
 ```{math}
 :label: eq-kanto-discr-web
-\mathcal{L}_C(a,b)
+\mathcal{L}_\C(a,b)
 \eqdef
-\min_{P\in\CouplingsD(a,b)}
-\langle C,P\rangle
+\min_{\P\in\CouplingsD(a,b)}
+\langle \C,\P\rangle
 =
-\min_{P\in\CouplingsD(a,b)}
-\sum_{i,j} C_{ij}P_{ij}.
+\min_{\P\in\CouplingsD(a,b)}
+\sum_{i,j} \C_{ij}\P_{ij}.
 ```
 
 This is a linear program, and its solutions need not be unique.
+
+(prop-discrete-kantorovich-joint-convexity)=
+:::{admonition} Proposition: Joint Convexity of Discrete OT
+:class: important
+For every fixed cost matrix $\C\in\RR^{n\times m}$, the map
+
+```{math}
+(a,b)\longmapsto\mathcal L_\C(a,b)
+```
+
+is jointly convex on $\simplex_n\times\simplex_m$.
+:::
+
+:::{dropdown} Proof
+For $r\in\{0,1\}$, let $\P_r$ be optimal between $a_r$ and $b_r$. For
+$t\in[0,1]$, the matrix $\P_t=(1-t)\P_0+tP_1$ couples
+$(1-t)a_0+ta_1$ and $(1-t)b_0+tb_1$. Therefore
+
+```{math}
+\mathcal L_\C\big((1-t)a_0+ta_1,(1-t)b_0+tb_1\big)
+\leq
+\langle \C,\P_t\rangle
+=
+(1-t)\mathcal L_\C(a_0,b_0)+t\mathcal L_\C(a_1,b_1).
+```
+:::
+
+Figure {ref}`fig:kantorovich-permutation-versus-splitting` contrasts permutation plans for uniform empirical measures with the splitting couplings needed for nonuniform marginals.
 
 (fig:kantorovich-permutation-versus-splitting)=
 :::{div}
@@ -270,6 +304,50 @@ visible.
 
 <iframe class="ot4ml-live-frame" title="Splitting coupling controls" src="../live/kantorovich-splitting.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
+Sparsity here is not peculiar to transport. For nonnegative variables, the
+relevant quantity is the rank of the constraint operator, not the raw number
+of listed constraints, which may contain redundancies. The following standard
+linear-programming principle makes this precise.
+
+(prop-lp-rank-sparsity)=
+:::{admonition} Proposition: Rank-Controlled Sparse Minimizers
+:class: important
+Let $\mathcal A:\RR^{n\times m}\to\RR^q$ be linear, let
+$d\in\RR^q$ and $\C\in\RR^{n\times m}$, and consider
+
+```{math}
+\inf_{\P\geq0,\;\mathcal A(\P)\leq d}\langle \C,\P\rangle,
+```
+
+with componentwise inequalities. If the feasible set is nonempty and the
+objective is bounded below, then there is a minimizer $\P^\star$ with at most
+$\operatorname{rank}(\mathcal A)$ positive entries, where
+$\operatorname{rank}(\mathcal A)=\dim(\operatorname{Im}\mathcal A)$. The same
+conclusion holds with equality constraints.
+:::
+
+:::{dropdown} Proof
+The feasible region is a nonempty polyhedron, so the attainment theorem for
+linear programs gives a minimizer. Among all minimizers, choose $\P^\star$ with
+minimal support $S$. If $\#S>\operatorname{rank}(\mathcal A)$, rank-nullity
+gives a nonzero matrix $H$ supported on $S$ with $\mathcal A(H)=0$. Both
+$\P^\star+tH$ and $\P^\star-tH$ are nonnegative for sufficiently small $t>0$,
+and all their constraint values agree with those of $\P^\star$. Optimality
+therefore forces $\langle \C,H\rangle=0$.
+
+Choose $\sigma\in\{-1,1\}$ so that $\sigma H$ has a negative entry, and set
+
+```{math}
+t_\star=
+\min_{(i,j):\,\sigma H_{ij}<0}
+\frac{\P^\star_{ij}}{-\sigma H_{ij}}>0.
+```
+
+Then $\P^\star+t_\star\sigma H$ is feasible and optimal. At least one positive
+entry has vanished, and no entry outside $S$ has appeared, contradicting the
+minimality of $S$.
+:::
+
 (prop-sparse-optimal-plans)=
 :::{admonition} Proposition: Sparse Optimal Plans
 :class: important
@@ -278,15 +356,20 @@ above admits an optimal coupling with at most $n+m-1$ nonzero entries.
 :::
 
 :::{dropdown} Proof
-The transportation polytope is compact, so a linear objective attains its
-minimum at an extreme point. Let $P$ be an extreme point and let
-$E=\{(i,j):P_{ij}>0\}$ be its support graph on the bipartite vertex set of
-source and target indices. If this graph contains a cycle, put alternating
-signs $+1,-1$ on the cycle, obtaining a nonzero matrix $H$ supported on $E$
-with zero row and column sums. For small $t>0$, both $P+tH$ and $P-tH$ are
-nonnegative couplings and $P$ is their midpoint, contradicting extremality.
-Thus the support graph is a forest, which has at most $n+m-1$ edges.
+Apply the rank-controlled proposition to the marginal operator
+$\mathcal A_{\mathrm{marg}}(\P)=(\P\mathbf 1_m,\P^\top\mathbf 1_n)$. It has rank
+$n+m-1$: equality of total row and column mass gives one relation. Conversely,
+if $(u,v)$ annihilates its image, testing the identity on each elementary
+matrix gives $u_i+v_j=0$ for every $(i,j)$. Thus all $u_i$ equal one scalar and
+all $v_j$ equal its opposite, so this is the only relation. The preceding
+proposition therefore supplies an optimal coupling with at most $n+m-1$
+positive entries.
 :::
+
+For transportation polytopes, the same kernel argument has a graph
+interpretation: a cycle in the bipartite support carries an alternating
+perturbation with zero row and column sums. Thus every extreme coupling has a
+forest support.
 
 (prop-northwest-corner)=
 :::{admonition} Proposition: North-West Corner Feasible Plan
@@ -296,7 +379,7 @@ sweep constructs a coupling with at most $n+m-1$ positive entries: start at
 $(i,j)=(1,1)$ with residual masses $r_i=a_i$ and $s_j=b_j$, set
 
 ```{math}
-P_{ij}=\min(r_i,s_j),
+\P_{ij}=\min(r_i,s_j),
 ```
 
 subtract this value from both residuals, and advance every index whose residual
@@ -391,13 +474,13 @@ h(x_i-y_j)+h(x_{i'}-y_{j'})
 h(x_i-y_{j'})+h(x_{i'}-y_j).
 ```
 
-We prove optimality by induction on $n+m$. Let $P$ be an optimal plan that
-maximizes $P_{11}$. If $P_{11}<\min(a_1,b_1)$, then row $1$ sends positive
+We prove optimality by induction on $n+m$. Let $\P$ be an optimal plan that
+maximizes $\P_{11}$. If $\P_{11}<\min(a_1,b_1)$, then row $1$ sends positive
 mass to some $j'>1$ and column $1$ receives positive mass from some $i'>1$.
 Moving the same small amount from $(1,j')$ and $(i',1)$ to $(1,1)$ and
 $(i',j')$ preserves both marginals and, by the displayed inequality, does not
-increase the cost. It strictly increases $P_{11}$, a contradiction. Hence
-$P_{11}=\min(a_1,b_1)$, exactly as in the north-west rule. Row $1$ or column
+increase the cost. It strictly increases $\P_{11}$, a contradiction. Hence
+$\P_{11}=\min(a_1,b_1)$, exactly as in the north-west rule. Row $1$ or column
 $1$ is exhausted; deleting it leaves the same problem on a smaller ordered
 grid. Induction proves that the complete sweep is optimal. Sorting has cost
 $O(n\log n+m\log m)$, and the sweep creates at most $n+m-1$ nonzero entries.
@@ -414,10 +497,10 @@ per column.
 
 :::{admonition} Definition: Permutation Matrices
 :class: important
-For a permutation $\sigma\in\Perm(n)$, its permutation matrix $P_\sigma$ is
+For a permutation $\sigma\in\Perm(n)$, its permutation matrix $\P_\sigma$ is
 
 ```{math}
-(P_\sigma)_{i,j}
+(\P_\sigma)_{i,j}
 =
 \begin{cases}
 1 & \text{if } j=\sigma(i),\\
@@ -431,18 +514,18 @@ The set of all permutation matrices is
 \mathcal P_n^{\mathrm{perm}}
 \eqdef
 \left\{
-P_\sigma:\sigma\in\Perm(n)
+\P_\sigma:\sigma\in\Perm(n)
 \right\}.
 ```
 :::
 
-The corresponding probability coupling is $P_\sigma/n$. If the matching cost
-matrix is $C$, then
+The corresponding probability coupling is $\P_\sigma/n$. If the matching cost
+matrix is $\C$, then
 
 ```{math}
-\langle C,P_\sigma/n\rangle
+\langle \C,\P_\sigma/n\rangle
 =
-\frac1n\sum_{i=1}^n C_{i,\sigma(i)}.
+\frac1n\sum_{i=1}^n \C_{i,\sigma(i)}.
 ```
 
 Thus the assignment problem is the minimization of a linear function over the
@@ -458,10 +541,10 @@ The Birkhoff polytope is the convex set of bistochastic matrices
 \mathcal B_n
 \eqdef
 \left\{
-P\in\RR_+^{n\times n}
+\P\in\RR_+^{n\times n}
 \;:\;
-P\mathbf{1}_n=\mathbf{1}_n,\quad
-P^\top\mathbf{1}_n=\mathbf{1}_n
+\P\mathbf{1}_n=\mathbf{1}_n,\quad
+\P^\top\mathbf{1}_n=\mathbf{1}_n
 \right\}.
 ```
 :::
@@ -546,8 +629,8 @@ $7\times7$ bistochastic matrix which is not a permutation matrix. The right
 panel shows its bipartite positive-support graph, with the column nodes sorted
 as $j_1,\ldots,j_7$ from top to bottom to match the matrix order: red nodes are
 rows, blue nodes are columns, thin purple edges
-correspond to $0<P_{ij}<1$, and bold black edges correspond to isolated entries
-$P_{ij}=1$. The orange halo marks the longer alternating fractional cycle along
+correspond to $0<\P_{ij}<1$, and bold black edges correspond to isolated entries
+$\P_{ij}=1$. The orange halo marks the longer alternating fractional cycle along
 which one can add and subtract mass while preserving all row and column sums.*
 :::
 
@@ -561,29 +644,29 @@ all row and column sums remain unchanged.
 
 :::{dropdown} Proof
 We first prove that permutation matrices are extreme. Let
-$P_\sigma\in\mathcal P_n^{\mathrm{perm}}$ and assume that
+$\P_\sigma\in\mathcal P_n^{\mathrm{perm}}$ and assume that
 
 ```{math}
-P_\sigma=\frac{Q+R}{2}
+\P_\sigma=\frac{\Q+\R}{2}
 \qquad\text{with}\qquad
-Q,R\in\mathcal B_n .
+\Q,\R\in\mathcal B_n .
 ```
 
 Every bistochastic matrix has entries in $[0,1]$. Since the only extreme
-points of $[0,1]$ are $0$ and $1$, each entry of $P_\sigma$ fixes the
-corresponding entries of $Q$ and $R$: if $(P_\sigma)_{ij}=0$, then
-$Q_{ij}=R_{ij}=0$, while if $(P_\sigma)_{ij}=1$, then $Q_{ij}=R_{ij}=1$.
-Hence $Q=R=P_\sigma$, so $P_\sigma$ is extreme.
+points of $[0,1]$ are $0$ and $1$, each entry of $\P_\sigma$ fixes the
+corresponding entries of $\Q$ and $\R$: if $(\P_\sigma)_{ij}=0$, then
+$\Q_{ij}=\R_{ij}=0$, while if $(\P_\sigma)_{ij}=1$, then $\Q_{ij}=\R_{ij}=1$.
+Hence $\Q=\R=\P_\sigma$, so $\P_\sigma$ is extreme.
 
 We now prove the converse by contrapositive. Pick
-$P\in\mathcal B_n\setminus\mathcal P_n^{\mathrm{perm}}$. Since an integral
-bistochastic matrix is necessarily a permutation matrix, $P$ has at least one
-fractional entry. We shall split $P=(Q+R)/2$ with
-$Q,R\in\mathcal B_n$ and $Q\neq R$, proving that $P$ is not extreme.
+$\P\in\mathcal B_n\setminus\mathcal P_n^{\mathrm{perm}}$. Since an integral
+bistochastic matrix is necessarily a permutation matrix, $\P$ has at least one
+fractional entry. We shall split $\P=(\Q+\R)/2$ with
+$\Q,\R\in\mathcal B_n$ and $\Q\neq \R$, proving that $\P$ is not extreme.
 
-Associate with $P$ the bipartite graph whose left vertices are the rows, whose
+Associate with $\P$ the bipartite graph whose left vertices are the rows, whose
 right vertices are the columns, and whose edges are the fractional entries
-$0<P_{ij}<1$. An entry equal to $1$ uses the whole mass of its row and column,
+$0<\P_{ij}<1$. An entry equal to $1$ uses the whole mass of its row and column,
 so it is isolated in the positive support and does not appear in this fractional
 graph. If a left vertex is incident to one fractional edge, then it must be
 incident to at least one other fractional edge: after the first fractional
@@ -610,10 +693,10 @@ where both $(i_s,j_s)$ and $(i_{s+1},j_s)$ are fractional for every $s$. Define
 \eqdef
 \min_{1\leq s\leq p}
 \{
-P_{i_s,j_s},
-P_{i_{s+1},j_s},
-1-P_{i_s,j_s},
-1-P_{i_{s+1},j_s}
+\P_{i_s,j_s},
+\P_{i_{s+1},j_s},
+1-\P_{i_s,j_s},
+1-\P_{i_{s+1},j_s}
 \}>0,
 ```
 
@@ -625,12 +708,12 @@ A=\{(i_s,j_s)\}_{s=1}^p,
 B=\{(i_{s+1},j_s)\}_{s=1}^p .
 ```
 
-Set $Q=P$ and $R=P$ outside $A\cup B$; on $A$, set
-$Q_{ij}=P_{ij}+\epsilon/2$ and $R_{ij}=P_{ij}-\epsilon/2$; on $B$, set
-$Q_{ij}=P_{ij}-\epsilon/2$ and $R_{ij}=P_{ij}+\epsilon/2$. By the definition of
+Set $\Q=\P$ and $\R=\P$ outside $A\cup B$; on $A$, set
+$\Q_{ij}=\P_{ij}+\epsilon/2$ and $\R_{ij}=\P_{ij}-\epsilon/2$; on $B$, set
+$\Q_{ij}=\P_{ij}-\epsilon/2$ and $\R_{ij}=\P_{ij}+\epsilon/2$. By the definition of
 $\epsilon$, all modified entries stay in $[0,1]$. Each row and column of the
 cycle sees one $+\epsilon/2$ and one $-\epsilon/2$, so the row and column sums
-remain one. Thus $Q,R\in\mathcal B_n$, $Q\neq R$, and $P=(Q+R)/2$. Hence $P$
+remain one. Thus $\Q,\R\in\mathcal B_n$, $\Q\neq \R$, and $\P=(\Q+\R)/2$. Hence $\P$
 is not extreme. Consequently every extreme point of $\mathcal B_n$ is integral,
 and every integral bistochastic matrix is a permutation matrix.
 :::
@@ -642,28 +725,28 @@ express a bistochastic matrix as a convex combination of permutations.
 :::{admonition} Algorithm: Birkhoff--von Neumann decomposition
 :class: ot4ml-algorithm
 
-**Input:** Bistochastic matrix $P\in\mathcal B_n$.
+**Input:** Bistochastic matrix $\P\in\mathcal B_n$.
 
-**Output:** Decomposition $P=\sum_r\lambda_rP_{\sigma_r}$.
+**Output:** Decomposition $\P=\sum_r\lambda_rP_{\sigma_r}$.
 
-**Initialize:** Set $R=P$, $s=1$, and $\mathcal L=\emptyset$.
+**Initialize:** Set $\R=\P$, $s=1$, and $\mathcal L=\emptyset$.
 
 **While** $s>0$ **do**:
 
 >
-> **Build** bipartite graph $G_R=\{(i,j):R_{ij}>0\}$.
+> **Build** bipartite graph $G_\R=\{(i,j):\R_{ij}>0\}$.
 >
-> **Set** $\sigma$ to the lexicographically first perfect matching of $G_R$.
+> **Set** $\sigma$ to the lexicographically first perfect matching of $G_\R$.
 >
 > **Set**
-> $\lambda=\min_i R_{i,\sigma(i)}.$
+> $\lambda=\min_i \R_{i,\sigma(i)}.$
 >
 > **Append** $(\lambda,\sigma)$ to $\mathcal L$.
 >
 > **Update**
-> $R\leftarrow R-\lambda P_\sigma$ and $s\leftarrow s-\lambda$.
+> $\R\leftarrow \R-\lambda \P_\sigma$ and $s\leftarrow s-\lambda$.
 
-**Return** $P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r}, \qquad \sum_r\lambda_r=1.$
+**Return** $\P=\sum_{(\lambda_r,\sigma_r)\in\mathcal L}\lambda_rP_{\sigma_r}, \qquad \sum_r\lambda_r=1.$
 :::
 
 The perfect matching required at each iteration exists by Hall's theorem.
@@ -673,16 +756,16 @@ any set $I$ of row vertices and its neighborhood $N(I)$ satisfy
 ```{math}
 s|I|
 =
-\sum_{i\in I}\sum_{j\in N(I)}R_{ij}
+\sum_{i\in I}\sum_{j\in N(I)}\R_{ij}
 \leq
 \sum_{j\in N(I)}\sum_iR_{ij}
 =s|N(I)|.
 ```
 
 Thus $|N(I)|\geq|I|$, which is Hall's condition. Subtracting
-$\lambda P_\sigma$ preserves a common row and column sum $s-\lambda$ and
+$\lambda \P_\sigma$ preserves a common row and column sum $s-\lambda$ and
 removes at least one positive entry. The algorithm therefore terminates after
-finitely many steps with $R=0$; summing the updates yields the announced
+finitely many steps with $\R=0$; summing the updates yields the announced
 convex decomposition and $\sum_r\lambda_r=1$.
 
 
@@ -690,7 +773,7 @@ convex decomposition and $\sum_r\lambda_r=1$.
 :::{admonition} Corollary: Kantorovich For Matching
 :class: important
 If $m=n$ and $\a=\b=\ones_n/n$, then the discrete Kantorovich problem admits an
-optimal solution of the form $P_\sigma/n$. The associated permutation $\sigma$
+optimal solution of the form $\P_\sigma/n$. The associated permutation $\sigma$
 solves the assignment problem.
 :::
 
@@ -699,8 +782,8 @@ The feasible set is $\mathcal B_n/n$. By Proposition
 {ref}`prop-linear-program-extreme-minimizer`, the linear objective has an
 optimal extreme point. Since scaling preserves extreme points and Theorem
 {ref}`thm-birkhoff-von-neumann` identifies the extreme points of
-$\mathcal B_n$, this optimizer is $P_\sigma/n$ for some permutation $\sigma$.
-Its cost is exactly $n^{-1}\sum_i C_{i,\sigma(i)}$, so $\sigma$ is an optimal
+$\mathcal B_n$, this optimizer is $\P_\sigma/n$ for some permutation $\sigma$.
+Its cost is exactly $n^{-1}\sum_i \C_{i,\sigma(i)}$, so $\sigma$ is an optimal
 assignment.
 :::
 
@@ -714,6 +797,158 @@ relaxation is tight for assignment problems.
 For general input measures, one does not have equivalence between Monge and Kantorovich problems, since the Monge constraint can be empty. In finite dimension, however, the support of an optimal coupling still enjoys strong sparsity: one can choose an optimal basic feasible plan whose bipartite support is cycle-free, hence with at most $n+m-1$ nonzero entries. Figure {ref}`fig:kantorovich-permutation-versus-splitting` illustrates the difference between the tight uniform matching case and the genuinely splitting nonuniform case.
 :::
 
+
+### Rational Weights
+
+The strict assignment model is tied to equal cardinalities and equal weights,
+whereas the coupling set {ref}`def-discrete-couplings` accommodates arbitrary
+discrete masses and different support sizes. Figure
+{ref}`fig:matching-resolution-and-weights` contrasts these regimes. For rational
+weights, the relaxed problem can in fact be reduced back to a larger uniform
+assignment problem.
+
+(fig:matching-resolution-and-weights)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("matching-resolution-and-weights")
+```
+
+*From assignments to transport plans, using the same disk-to-annulus geometry.
+In the balanced equal-weight case, each source atom is matched to one target
+atom. With a target cloud that has half as many atoms, or with strongly
+nonuniform target weights, the coupling matrix can merge or split mass; segment
+thickness and opacity encode its nonzero entries, and blue marker areas encode
+the prescribed target masses.*
+:::
+
+The interactive panel below exposes the target resolution, target weights, and
+regularization level. The first displayed plan is sparse, while positive
+regularization values show the entropic smoothing used later in the Sinkhorn
+chapter.
+
+```{code-cell} ipython3
+:tags: [remove-input]
+n_source = 36
+n_target = 18
+weight_mode = "angular"     # uniform, angular, right_heavy
+weight_strength = 1.4
+epsilons = (0.0, 0.03, 0.12)
+```
+
+```{code-cell} ipython3
+:tags: [remove-input]
+fig = plot_regularization_sweep(
+    n_source=n_source,
+    n_target=n_target,
+    source_shape="disk",
+    target_shape="annulus",
+    cost_power=2,
+    epsilons=epsilons,
+    weight_mode=weight_mode,
+    weight_strength=weight_strength,
+    seed=2031,
+)
+```
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the source and target sizes, weight pattern, and regularization sliders to see how unequal masses and finite resolution change the matching picture.
+:::
+
+<iframe class="ot4ml-live-frame" title="Resolution and weight controls" src="../live/resolution.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
+
+(prop-rational-weights-duplicated-matching)=
+:::{admonition} Proposition: Rational Weights as Duplicated Uniform Matching
+:class: important
+Let
+
+```{math}
+\al=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i},
+\qquad
+\be=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j},
+\qquad
+\sum_i k_i=\sum_j\ell_j=N,
+```
+
+with positive integers $k_i,\ell_j$. Replace each $x_i$ by $k_i$ identical
+copies and each $y_j$ by $\ell_j$ identical copies, producing two uniform
+$N$-point clouds. The duplicated assignment problem and the discrete
+Kantorovich problem between $\al$ and $\be$ have the same optimal value.
+Moreover, an optimal coupling exists of the form
+
+```{math}
+\P_{ij}=\frac{n_{ij}}N,
+\qquad n_{ij}\in\NN,
+\qquad \sum_j n_{ij}=k_i,
+\quad \sum_i n_{ij}=\ell_j.
+```
+
+Couplings whose scaled entries $N\P_{ij}$ are integral are exactly the collapsed
+assignments between the duplicated clouds. Fractional optimal couplings may
+nevertheless coexist when the optimum is degenerate.
+:::
+
+:::{dropdown} Proof
+Any assignment between the duplicated source and target clouds defines integers
+$n_{ij}$ counting how many copied particles of type $x_i$ are matched to copied
+particles of type $y_j$. These counts satisfy
+$\sum_j n_{ij}=k_i$ and $\sum_i n_{ij}=\ell_j$, and the associated coupling
+$\P_{ij}=n_{ij}/N$ has marginals $k_i/N$ and $\ell_j/N$. The assignment cost is
+
+```{math}
+\frac1N\sum_{i,j} n_{ij}c(x_i,y_j)
+=
+\sum_{i,j}\P_{ij}c(x_i,y_j).
+```
+
+Conversely, any nonnegative integer count matrix with those row and column sums
+can be realized by allocating the $k_i$ copies of each $x_i$ among the target
+copies according to $(n_{ij})_j$. It remains to show that restricting to
+integer counts does not increase the optimum. Scale a feasible coupling by
+$N$ and write $\Q=N\P$. The constraints on $\Q$ have integer right-hand sides.
+After multiplying the target rows by $-1$, their coefficient matrix is the
+oriented node-edge incidence matrix of a bipartite graph and is therefore
+totally unimodular. Every vertex of the transportation polytope is integral,
+and a linear objective attains its minimum at a vertex. Thus an integral
+optimal $\Q$ exists and the two optimal values coincide. This proves existence,
+not integrality of every optimizer: convex combinations of distinct integral
+optima can be fractional.
+:::
+
+This network-flow integrality mechanism is the rational-weight counterpart of
+the Birkhoff--von Neumann theorem above ({ref}`thm-birkhoff-von-neumann`): in both cases, a linear
+transport relaxation has an optimizer represented by integer edge flows after
+scaling. Equal unit margins specialize these flows to permutation matrices,
+whereas a degenerate optimal face may also contain fractional couplings.
+
+Figure {ref}`fig:matching-rational-duplication` makes this reduction explicit by replacing each rational mass with identical unit copies and then regrouping the resulting uniform assignment.
+
+(fig:matching-rational-duplication)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("matching-rational-duplication")
+```
+
+*Rational weights as duplicated uniform matchings, using the same
+disk-to-annulus geometry with fewer displayed atoms. The red and blue locations
+are kept fixed, while disk areas encode the integer multiplicities $k_i$ and
+$\ell_j$. Solving the assignment problem after duplicating particles produces
+several collapsed segments attached to high-multiplicity atoms; this is the
+integer count matrix of the proposition.*
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the site and multiplicity sliders to see how rational weights can be represented by duplicated unit masses before solving an ordinary matching problem.
+:::
+
+<iframe class="ot4ml-live-frame" title="Rational duplication controls" src="../live/duplication.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
 (sec-kantorovich-lp-algorithms)=
 ## Linear-Programming Algorithms
@@ -748,17 +983,19 @@ transport polytope is
 
 ```{math}
 :label: eq-transport-log-barrier-web
-P_\epsilon
+\P_\epsilon
 \eqdef
-\argmin_{\substack{P\mathbf{1}_m=a,\;P^\top\mathbf{1}_n=b\\P_{ij}>0}}
-\langle C,P\rangle
+\argmin_{\substack{\P\mathbf{1}_m=a,\;\P^\top\mathbf{1}_n=b\\P_{ij}>0}}
+\langle \C,\P\rangle
 -
-\epsilon\sum_{i,j}\log P_{ij}.
+\epsilon\sum_{i,j}\log \P_{ij}.
 ```
 
 The barrier is singular at the boundary, so each iterate stays strictly inside
 the transportation polytope. As $\epsilon\downarrow0$, the central path
 approaches the set of LP minimizers.
+
+Figure {ref}`fig:kantorovich-log-barrier-lp-geometry` isolates this mechanism on a two-dimensional polytope: decreasing the barrier parameter moves the minimizer along the central path toward the optimal face.
 
 (fig:kantorovich-log-barrier-lp-geometry)=
 :::{div}
@@ -940,6 +1177,72 @@ Kantorovich problem becomes, for arbitrary measures,
 ```
 
 This is an infinite-dimensional linear program over a space of measures.
+
+The linear formulation gives the Kantorovich value opposite curvature
+properties in its two kinds of arguments: it is convex in the marginals but
+concave in the ground cost.
+
+(prop-kantorovich-value-curvature)=
+:::{admonition} Proposition: Convexity in the Marginals and Concavity in the Cost
+:class: important
+Fix a nonnegative Borel cost $c$. The extended-valued map
+
+```{math}
+(\alpha,\beta)\longmapsto\mathcal L_c(\alpha,\beta)
+```
+
+is jointly convex on pairs of probability measures. Conversely, for fixed
+marginals $(\alpha,\beta)$, the map $c\mapsto\mathcal L_c(\alpha,\beta)$ is
+concave on the cone of nonnegative Borel costs: for any such $c_0,c_1$ and
+$t\in[0,1]$,
+
+```{math}
+\mathcal L_{(1-t)c_0+tc_1}(\alpha,\beta)
+\geq
+(1-t)\mathcal L_{c_0}(\alpha,\beta)
++t\mathcal L_{c_1}(\alpha,\beta).
+```
+
+The inequality is understood in $[0,+\infty]$; in particular, the map is
+concave on every convex family of costs on which it is finite.
+:::
+
+:::{dropdown} Proof
+For joint convexity, let $(\alpha_0,\beta_0)$ and $(\alpha_1,\beta_1)$ be two
+pairs of probability measures. The claim is immediate at $t\in\{0,1\}$ or if
+one of the two values on the right-hand side is infinite. Otherwise, for
+$\eta>0$, choose $\pi_i\in\Couplings(\alpha_i,\beta_i)$ such that
+
+```{math}
+\int c\d\pi_i
+\leq
+\mathcal L_c(\alpha_i,\beta_i)+\eta,
+\qquad i\in\{0,1\}.
+```
+
+Then $(1-t)\pi_0+t\pi_1$ couples $(1-t)\alpha_0+t\alpha_1$ and
+$(1-t)\beta_0+t\beta_1$, and hence
+
+```{math}
+\mathcal L_c\big((1-t)\alpha_0+t\alpha_1,(1-t)\beta_0+t\beta_1\big)
+\leq
+(1-t)\mathcal L_c(\alpha_0,\beta_0)
++t\mathcal L_c(\alpha_1,\beta_1)+\eta.
+```
+
+Letting $\eta\to0$ proves joint convexity. For concavity, the endpoint cases
+are immediate, so assume $t\in(0,1)$. Every
+$\pi\in\Couplings(\alpha,\beta)$ satisfies
+
+```{math}
+\int\big((1-t)c_0+tc_1\big)\d\pi
+\geq
+(1-t)\mathcal L_{c_0}(\alpha,\beta)
++t\mathcal L_{c_1}(\alpha,\beta).
+```
+
+Taking the infimum over $\pi$ proves the stated inequality.
+:::
 
 (prop-kantorovich-existence-compact)=
 :::{admonition} Proposition: Existence For Lower-Semicontinuous Costs
@@ -1293,22 +1596,22 @@ The discrete gluing lemma is the finite-dimensional mechanism behind the triangl
 :::{admonition} Lemma: Discrete Gluing Lemma
 :class: important
 Given $a\in\simplex_n$, $b\in\simplex_p$, $c\in\simplex_m$,
-$P\in\CouplingsD(a,b)$ and $Q\in\CouplingsD(b,c)$, define
+$\P\in\CouplingsD(a,b)$ and $\Q\in\CouplingsD(b,c)$, define
 
 ```{math}
-R=P\diag(1/b)Q,
+\R=\P\diag(1/b)\Q,
 \qquad
-R_{ik}=\sum_{j:b_j>0}\frac{P_{ij}Q_{jk}}{b_j}.
+\R_{ik}=\sum_{j:b_j>0}\frac{\P_{ij}\Q_{jk}}{b_j}.
 ```
 
-Then $R\in\CouplingsD(a,c)$. It is the first-third marginal of the tensor
+Then $\R\in\CouplingsD(a,c)$. It is the first-third marginal of the tensor
 coupling
 
 ```{math}
 S_{ijk}
 =
 \begin{cases}
-P_{ij}Q_{jk}/b_j, & b_j>0,\\
+\P_{ij}\Q_{jk}/b_j, & b_j>0,\\
 0, & b_j=0.
 \end{cases}
 ```
@@ -1316,11 +1619,13 @@ P_{ij}Q_{jk}/b_j, & b_j>0,\\
 
 :::{dropdown} Proof
 If $b_j>0$, summing $S_{ijk}$ over $k$ gives
-$P_{ij}b_j/b_j=P_{ij}$; if $b_j=0$, the corresponding column of $P$ and row of
-$Q$ are zero. The other prescribed marginal is checked in the same way. Summing
-over the intermediate index $j$ gives $R$. Its row and column sums are
+$\P_{ij}b_j/b_j=\P_{ij}$; if $b_j=0$, the corresponding column of $\P$ and row of
+$\Q$ are zero. The other prescribed marginal is checked in the same way. Summing
+over the intermediate index $j$ gives $\R$. Its row and column sums are
 $a$ and $c$.
 :::
+
+Figure {ref}`fig:kantorovich-discrete-gluing-lemma` displays this construction in matrix form.
 
 (fig:kantorovich-discrete-gluing-lemma)=
 :::{div}
@@ -1549,6 +1854,8 @@ All inequalities are therefore equalities, in particular the middle segment
 has the claimed length.
 :::
 
+Figure {ref}`fig:kantorovich-plan-interpolation` visualizes the construction when the optimal plan splits mass, so that the intermediate measure is obtained by moving every coupled pair along its Euclidean segment.
+
 (fig:kantorovich-plan-interpolation)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1759,14 +2066,16 @@ show_book_figure("kantorovich-waddington-ot")
 ```
 
 *Waddington-OT between consecutive single-cell snapshots.* The left panel
-superposes day-10 cells in red and day-10.5 cells in blue in a shared
-two-dimensional PCA space; violet segments show a farthest-point subset of
-high-mass coupling entries. The remaining panels move a mass-weighted,
-farthest-point-thinned sample of plan atoms along their Euclidean segments,
-with color interpolated from red to blue. The unbalanced Waddington-OT plan is
-normalized only to sample these representative paths, which illustrate
-coupling-induced displacement rather than cells observed at intermediate
-times.
+superposes day-10 cells in red and day-10.5 cells in blue in the shared
+force-layout embedding released with the Waddington-OT tutorial; violet
+segments show a farthest-point subset of high-mass coupling entries. This
+embedding is used only for display: the released plan uses the authors'
+local-PCA transport geometry. The remaining panels move a mass-weighted,
+farthest-point-thinned sample of plan atoms along their Euclidean display
+segments, with color interpolated from red to blue; pale endpoints provide a
+common positional reference. The unbalanced plan is normalized only to sample
+these representative paths, which illustrate coupling-induced displacement
+rather than cells observed at intermediate times.
 :::
 
 (ex-word-mover-distance)=
@@ -2309,30 +2618,16 @@ reorganizes.
 
 <iframe class="ot4ml-live-frame" title="Wasserstein DRO classifier controls" src="../live/kantorovich-dro.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
 
-(prop-wasserstein-cost-convex)=
-:::{admonition} Proposition: Convexity Of Transport Costs
-:class: important
-For any nonnegative lower-semicontinuous cost $c$, the value
+Applied to $c=d^p$, Proposition {ref}`prop-kantorovich-value-curvature` shows
+that $(\alpha,\beta)\mapsto\Wass_p(\alpha,\beta)^p$ is jointly convex. Thus
+$\Wass_1$ itself is jointly convex, but $\Wass_p$ need not be convex for
+$p>1$: on the real line,
 
 ```{math}
-(\al,\be)\mapsto\mathcal{L}_c(\al,\be)
+\Wass_p\big((1-t)\delta_0+t\delta_1,\delta_0\big)=t^{1/p},
 ```
 
-is jointly convex. In particular, $(\al,\be)\mapsto\Wass_p(\al,\be)^p$
-is jointly convex. The distance $\Wass_1$ is jointly convex, but
-$\Wass_p$ itself need not be convex for $p>1$.
-:::
-
-:::{dropdown} Proof
-If either endpoint value is infinite, the convexity inequality is immediate.
-Otherwise, let $\pi_0$ and $\pi_1$ be $\eta$-optimal couplings for
-$(\al_0,\be_0)$ and $(\al_1,\be_1)$. Then
-$(1-t)\pi_0+t\pi_1$ is a coupling between the convex combinations of the
-marginals, and its cost is the corresponding convex combination. Letting
-$\eta\downarrow0$ proves joint convexity. For $p>1$, the root can destroy convexity; on
-the line,
-$\Wass_p((1-t)\delta_0+t\delta_1,\delta_0)=t^{1/p}$ is concave.
-:::
+which is strictly concave for $p>1$.
 
 The limiting distance
 

@@ -7,31 +7,382 @@
 \index{semi-discrete!OT}% strictindex
 \label{sec-semidiscr-w1}
 
-This chapter focuses on two computationally useful degeneracies of the dual problem. Semi-discrete OT turns a continuous-to-discrete map into finite-dimensional geometry, while $\Wass_1$ replaces convex potentials by Lipschitz functions and flow fields. The material connects computational geometry~\cite{AurenhammerHA98,Merigot11,merigot2013comparison} with the Kantorovich--Rubinstein and Beckmann formulations~\cite{kantorovich1958space,Beckmann52}.
+This chapter develops three computational consequences of duality. Eliminating one potential gives the semi-dual; for discrete measures, this viewpoint leads to auction algorithms, while a continuous source and discrete target lead to Laguerre-cell geometry. The final part specializes duality to $\Wass_1$, where Lipschitz functions and flow fields replace convex potentials. The material connects auction and network-flow methods~\cite{bertsekas1992auction,bertsekas1988dual}, computational geometry~\cite{AurenhammerHA98,Merigot11,merigot2013comparison}, and the Kantorovich--Rubinstein and Beckmann formulations~\cite{kantorovich1958space,Beckmann52}.
 \index{Beckmann!formulation}% strictindex
 \index{Lipschitz!function}% strictindex
 \index{convex!potential}% strictindex
 \index{dual!problem}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Semi-dual}
+\section{Semi-dual}\label{sec-semi-dual}
 \index{semi-dual}% strictindex
 
 The semi-dual eliminates one potential by an exact $c$-transform. It preserves concavity while removing the explicit pointwise inequality constraint.
 \index{c-transform}% strictindex
 
-Under the compactness and continuity assumptions of Chapter~\ref{sec-dual}, write the dual problem~\eqref{eq-dual-generic} as
+\paragraph{General measure semi-dual.}
+For arbitrary measures, partial maximization converts the constrained two-potential dual into an unconstrained optimization over one function.
+
+Under the compactness and continuity assumptions of Chapter~\ref{sec-dual}, denote the extended full-dual objective by
 \index{dual!problem}% strictindex
-\eq{
-	\usup{f,g \in \Cc(\Xx) \times \Cc(\Yy)} \Ee(f,g)
+\eql{\label{eq-full-dual-functional}
+	\Ee_0(f,g)
+	\eqdef
+	\begin{cases}
+		\displaystyle \int_\Xx f\d\al+\int_\Yy g\d\be,
+		& (f,g)\in\Potentials(\c),\\
+		-\infty, & \text{otherwise}.
+	\end{cases}
 }
-where $\Ee(f,g)$ is the dual objective, extended by $-\infty$ outside the feasible set. For fixed $f$, feasibility is equivalent to $g\leq f^c$. Since $\be$ is nonnegative, the largest admissible choice $g=f^c$ maximizes the objective. Consequently,
+Thus the dual problem~\eqref{eq-dual-generic} is $\MK_\c(\al,\be)=\max_{f,g}\Ee_0(f,g)$. For fixed $g$, feasibility is equivalent to $f\leq g^{\bar c}$. Since $\al$ is nonnegative, the largest admissible choice $f=g^{\bar c}$ maximizes the objective. Consequently,
 \index{semi-dual}% strictindex
 \eql{\label{eq-semi-dual}
-	\usup{f \in \Cc(\Xx)} \tilde\Ee(f) \eqdef \Ee(f,f^c) = \usup{g} \Ee(f,g) =
-	\int_\Xx f \d \al + \int_\Yy f^c \d \be.
+	\MK_\c(\al,\be)
+	=
+	\usup{g\in\Cc(\Yy)}\Ee(g),
+	\qquad
+	\Ee(g)
+	\eqdef
+	\Ee_0(g^{\bar c},g)
+	=
+	\usup{f\in\Cc(\Xx)}\Ee_0(f,g)
+	=
+	\int_\Xx g^{\bar c}\d\al+\int_\Yy g\d\be.
 }
-Partial maximization of a jointly concave objective preserves concavity, so $\tilde \Ee$ is concave. The semi-dual is invariant under $f\mapsto f+s$: indeed, $(f+s)^c=f^c-s$ and both measures have unit mass. Potentials are therefore determined only up to an additive constant, exactly as in the full dual. The main computational advantage is that the semi-dual is unconstrained.
+Partial maximization of a jointly concave objective preserves concavity, so $\Ee$ is concave. The semi-dual is invariant under $g\mapsto g+s$: indeed, $(g+s)^{\bar c}=g^{\bar c}-s$ and both measures have unit mass. Potentials are therefore determined only up to an additive constant, exactly as in the full dual. The main computational advantage is that the semi-dual is unconstrained.
+
+\paragraph{Discrete semi-dual.}
+When both measures are discrete, the same elimination produces a finite-dimensional concave objective whose active affine pieces are selected by the discrete $c$-transform.
+
+Let
+\[
+\al=\sum_{i=1}^n \a_i\de_{x_i},
+\qquad
+\be=\sum_{j=1}^m \b_j\de_{y_j},
+\qquad
+\C_{i,j}=c(x_i,y_j),
+\]
+where $\a\in\RR_+^n$ and $\b\in\RR_+^m$ have the same total mass $M$. We use the same notation for functions and vectors: in the discrete setting,
+\[
+	\Ee_0(\fD,\gD)
+	\eqdef
+	\begin{cases}
+		\dotp{\fD}{\a}+\dotp{\gD}{\b},
+		& \fD\oplus\gD\leq\C,\\
+		-\infty, & \text{otherwise}.
+	\end{cases}
+\]
+Eliminating the source potential through the discrete $\bar C$-transform of Remark~\ref{rem-discrete-c-transform} gives
+\eql{\label{eq-discrete-semi-dual}
+	\MKD_\C(\a,\b)
+	=
+	\umax{\gD\in\RR^m}\Ee(\gD),
+	\qquad
+	\Ee(\gD)
+	\eqdef
+	\Ee_0(\gD^{\bar\C},\gD)
+	=
+	\sum_{i=1}^n \a_i(\gD^{\bar\C})_i
+	+
+	\sum_{j=1}^m \b_j\gD_j,
+}
+with
+\[
+	(\gD^{\bar\C})_i
+	=
+	\min_{1\leq j\leq m}(\C_{i,j}-\gD_j).
+\]
+The function $\Ee$ is concave and piecewise affine. It is invariant under $\gD\mapsto\gD+s\ones_m$, because the two marginals have equal mass. If a tie-breaking rule selects
+\[
+	\sigma_\gD(i)\in\argmin_j(\C_{i,j}-\gD_j),
+\]
+then a supergradient is $\b-\widehat\b(\gD)$, where
+\[
+	\widehat\b_j(\gD)
+	\eqdef
+	\sum_{i:\,\sigma_\gD(i)=j}\a_i.
+\]
+Thus the semi-dual supergradient is exactly the mismatch between prescribed target mass and mass currently attracted by each target coordinate. At ties, splitting the corresponding source mass gives the full superdifferential. The auction method developed next specializes this same target-potential formulation to uniform square assignments and couples targeted dual updates with ownership changes.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Auction Algorithm}
+\index{auction algorithm}% strictindex
+\label{sec-auction-dual-ascent}
+
+The auction algorithm is derived from coordinate maximization of the semi-dual of the linear assignment problem. Its practical form uses bidder-specific dual-weight updates that cross the selected row's next indifference threshold by $\epsilon$; this controlled relaxation prevents jamming at nonsmooth ties. We follow the particularly transparent account of M\'erigot and Thibert~\cite[Sec.~3.2]{merigot2020optimaltransportalgorithms}, itself based on Bertsekas' auction algorithm and its $\epsilon$-scaling refinement~\cite{bertsekas1981new,bertsekas1988dual,bertsekas1992auction}. Throughout this section, $\C\in\RR^{n\times n}$ and $n\geq2$; the case $n=1$ is immediate. A permutation matrix $\P\in\mathcal P_n^{\mathrm{perm}}$, as defined in Definition~\ref{def-permutation-matrices}, represents the probability coupling $\P/n$.
+\index{primal-dual!method}% strictindex
+\index{assignment problem}% strictindex
+
+\paragraph{Coordinate ascent and discrete Laguerre cells.}
+Auction dual weights give the discrete semi-dual a geometric partition whose cell cardinalities are its coordinate derivatives.
+
+Write $\gD_j$ for the target Kantorovich potential. Specializing~\eqref{eq-discrete-semi-dual} to uniform weights gives
+\eql{\label{eq-auction-semidual}
+	\Ee(\gD)
+	=
+	\frac1n\sum_{i=1}^n (\gD^{\bar\C})_i
+	+
+	\frac1n\sum_{j=1}^n \gD_j,
+	\qquad
+	(\gD^{\bar\C})_i
+	=
+	\min_{1\leq j\leq n}(\C_{i,j}-\gD_j).
+}
+Thus $(\gD^{\bar\C},\gD)$ is dual feasible. This is precisely the discrete $\bar C$-transform of Remark~\ref{rem-discrete-c-transform}, with the same sign convention as in the general and semi-discrete formulations.
+
+The discrete Laguerre cell of target $j$ is
+\eql{\label{eq-auction-discrete-laguerre}
+	\Laguerre_j^{\rm D}(\gD)
+	\eqdef
+	\enscond{i\in\range{n}}{
+		\C_{i,j}-\gD_j
+		\leq
+		\C_{i,k}-\gD_k
+		\text{ for every }k
+	}.
+}
+These cells can overlap at ties. They are the finite counterpart of the Laguerre cells introduced for the general semi-discrete problem in Definition~\ref{def-laguerre-power-cells}: specifically,~\eqref{eq-auction-discrete-laguerre} is that definition restricted to the source indices. When every row has a unique minimizer, differentiation of~\eqref{eq-auction-semidual} gives
+\eql{\label{eq-auction-coordinate-derivative}
+	\frac{\partial}{\partial \gD_j}\Ee(\gD)
+	=
+	\frac{1-\abs{\Laguerre_j^{\rm D}(\gD)}}{n}.
+}
+Hence an overfull cell calls for a decrease of its dual weight. More generally, Proposition~\ref{prop-assignment-dual-certificate} shows that a perfect matching in the contact graph $i\in\Laguerre_j^{\rm D}(\gD)$ certifies optimality of $\gD$ in~\eqref{eq-auction-semidual}; conversely, assignment duality and complementary slackness produce such a matching at every maximizer. Auction searches for this certificate while moving one coordinate of $\gD$ at a time.
+
+For $i\in\Laguerre_j^{\rm D}(\gD)$, define the bid needed to make row $i$ indifferent between $j$ and its best alternative,
+\eql{\label{eq-auction-bid}
+	\operatorname{bid}_j(\gD,i)
+	\eqdef
+	\min_{k\neq j}(\C_{i,k}-\gD_k)
+	-
+	(\C_{i,j}-\gD_j).
+}
+When $\Laguerre_j^{\rm D}(\gD)$ is nonempty, the largest maximizing decrement along the negative $j$th coordinate is given by
+\(
+	\max_{i\in\Laguerre_j^{\rm D}(\gD)}\operatorname{bid}_j(\gD,i)
+\)
+	\cite[Lem.~20]{merigot2020optimaltransportalgorithms}. This formula explains both the coordinate-ascent interpretation and its weakness: at a tie, even this largest maximizing decrement can vanish, and naive coordinate ascent can jam before reaching a dual maximizer.
+
+\paragraph{Bids and relaxed contacts.}
+Exact coordinate maximization can stall at a nonsmooth tie, so auction deliberately moves a bidder $\epsilon$ beyond its next indifference point.
+
+Suppose row $i$ is currently unassigned. Let $j_0$ and $j_1$ be its best and second-best targets for the current dual weights,
+\eql{\label{eq-auction-reduced-costs}
+	j_0\in\argmin_j(\C_{i,j}-\gD_j),
+	\qquad
+	j_1\in\argmin_{j\neq j_0}(\C_{i,j}-\gD_j),
+}
+with fixed deterministic tie-breaking. The bid decreases only the winning dual weight by
+\eql{\label{eq-auction-dual-update}
+	\Delta_i
+	\eqdef
+	\operatorname{bid}_{j_0}(\gD,i)+\epsilon
+	=
+	(\C_{i,j_1}-\gD_{j_1})
+	-
+	(\C_{i,j_0}-\gD_{j_0})
+	+
+	\epsilon,
+	\qquad
+	\gD_{j_0}\leftarrow\gD_{j_0}-\Delta_i.
+}
+Unlike exact coordinate maximization, this update uses the bid of the selected row rather than the maximum bid over the whole cell. Since $\Delta_i\geq\epsilon$, every selected weight decreases by at least $\epsilon$. After the update, the reduced cost of $j_0$ for row $i$ is exactly $\epsilon$ above that of the unchanged alternative $j_1$. The row nevertheless takes $j_0$; if that target already has an owner, the former owner becomes unassigned. Because of this overshoot, a bid need not increase the nonsmooth semi-dual. Coordinate ascent motivates the update, but $\epsilon$-complementary slackness, rather than monotonicity of the objective, is the invariant that drives the convergence proof.
+
+\begin{defn}[$\epsilon$-complementary slackness]\label{def-auction-eps-cs}
+	A partial permutation matrix $\P\in\{0,1\}^{n\times n}$ has at most one nonzero entry in each row and column. Such a matrix and target potential $\gD$ satisfy $\epsilon$-complementary slackness if
+	\eql{\label{eq-auction-epsilon-cs}
+		\P_{i,j}=1
+		\quad\Longrightarrow\quad
+		\C_{i,j}-\gD_j
+		\leq
+		(\gD^{\bar\C})_i+\epsilon.
+	}
+\end{defn}
+The bid~\eqref{eq-auction-dual-update} gives the newly assigned row this property. Decreasing $\gD_{j_0}$ can only make $j_0$ less attractive to rows assigned elsewhere, and its previous owner is removed. Therefore every iteration preserves $\epsilon$-complementary slackness.
+
+\begin{alg}[Bertsekas auction]\label{alg:auction-bidding}
+\textbf{Input:} Cost matrix $\C\in\RR^{n\times n}$, tolerance $\epsilon>0$, initial target potential $\gD\in\RR^n$ (default $\gD=0$).
+
+\textbf{Output:} Permutation matrix $\P$ and target potential $\gD$; the source potential is $\gD^{\bar\C}$.
+
+\textbf{Initialize:} Set $\P=0$.
+
+\textbf{While} some row $i$ satisfies $\sum_j\P_{i,j}=0$ \textbf{do}:
+\begin{algblock}
+\textbf{Choose} any such row $i$.
+
+\textbf{Set} $j_0\in\argmin_j(\C_{i,j}-\gD_j)$ and $j_1\in\argmin_{j\neq j_0}(\C_{i,j}-\gD_j)$.
+
+\textbf{Set} $\Delta\leftarrow(\C_{i,j_1}-\gD_{j_1})-(\C_{i,j_0}-\gD_{j_0})+\epsilon$.
+
+\textbf{Set} $\gD_{j_0}\leftarrow\gD_{j_0}-\Delta$.
+
+\textbf{If} $\P_{i_0,j_0}=1$ for some $i_0$ \textbf{then}:
+\begin{algblock}
+\textbf{Set} $\P_{i_0,j_0}\leftarrow0$.
+\end{algblock}
+
+\textbf{Set} $\P_{i,j_0}\leftarrow1$.
+\end{algblock}
+
+\textbf{Return} $\P$ and $\gD$.
+\end{alg}
+
+Figure~\ref{fig:dual-auction-progression} shows actual iterates of Algorithm~\ref{alg:auction-bidding} on the planar point clouds of Figure~\ref{fig:matching-2d-cost-exponent}. To expose the dual mechanism geometrically, define the auction reduced costs
+\[
+\mathrm{r}_{i,j}(\gD)
+\eqdef
+\C_{i,j}-\gD_j-(\gD^{\bar\C})_i
+\geq 0.
+\]
+At any intermediate state, write
+\(
+	M\eqdef\{(i,j):\P_{i,j}=1\}
+\)
+for the current ownership matching. Exact zeros of $\mathrm{r}_{i,j}$ are the discrete Laguerre contacts of row $i$, whereas an edge in $M$ only needs to satisfy $\mathrm{r}_{i,j}(\gD)\leq\epsilon$ by $\epsilon$-complementary slackness.
+
+\begin{figure}[H]
+\centering
+\setlength{\tabcolsep}{1pt}
+\begin{tabular}{ccccc}
+\includegraphics[width=.19\linewidth]{figures/dual-auction-progression/stage-0.pdf} &
+\includegraphics[width=.19\linewidth]{figures/dual-auction-progression/stage-1.pdf} &
+\includegraphics[width=.19\linewidth]{figures/dual-auction-progression/stage-2.pdf} &
+\includegraphics[width=.19\linewidth]{figures/dual-auction-progression/stage-3.pdf} &
+\includegraphics[width=.19\linewidth]{figures/dual-auction-progression/stage-4.pdf} \\[-.1em]
+\small $|M|=0$ &
+\small $|M|=9$ &
+\small $|M|=18$ &
+\small $|M|=27$ &
+\small $|M|=36$ \\[-.2em]
+\footnotesize $0$ bids &
+\footnotesize $10$ bids &
+\footnotesize $40$ bids &
+\footnotesize $98$ bids &
+\footnotesize $505$ bids
+\end{tabular}
+\caption{\emph{Geometric progression of the unit-mass transportation auction.} Thick violet segments form the current partial ownership matching $M$, while the thin translucent segments are the $2n$ unmatched edges with smallest auction reduced costs; exact zero-reduced-cost alternatives are slightly stronger. The panels record the first states with the indicated $|M|$ and report the cumulative number of bids. For $\epsilon=2\times10^{-3}$, the final assignment is reached after $505$ bids and coincides with the exact squared-distance optimum.}
+\index{complementary slackness}% strictindex
+\label{fig:dual-auction-progression}
+\end{figure}
+
+\paragraph{Fixed tolerance.}
+For a prescribed tolerance, the relaxed contact condition gives both an optimality certificate and a finite bound on the number of bids.
+
+\begin{prop}[Fixed-$\epsilon$ auction convergence and complexity]\label{prop-auction-termination}
+\index{auction algorithm}% strictindex
+	Let
+	\[
+		R_\C\eqdef\max_{i,j}\C_{i,j}-\min_{i,j}\C_{i,j}.
+	\]
+	Started from $\gD=0$, Algorithm~\ref{alg:auction-bidding} terminates after at most
+	\(
+		n\bigl(\lfloor R_\C/\epsilon\rfloor+1\bigr)
+	\)
+	bids. It returns a permutation matrix $\P$ satisfying $\epsilon$-complementary slackness and
+	\eql{\label{eq-auction-cost-certificate}
+		0
+		\leq
+		\frac1n\dotp{\C}{\P}
+		-
+		\umin{\P'\in\mathcal P_n^{\mathrm{perm}}}
+		\frac1n\dotp{\C}{\P'}
+		\leq
+		\epsilon.
+	}
+	With dense scans for the two smallest reduced costs, the algorithm requires
+	\(
+		O\bigl(n^2(1+R_\C/\epsilon)\bigr)
+	\)
+	arithmetic and comparison operations and $O(n^2)$ storage, including $\C$. If $\C$ has integer entries and $\epsilon<1/n$, the returned assignment is exactly optimal.
+\end{prop}
+\begin{proof}
+	At every bid,~\eqref{eq-auction-dual-update} decreases one target potential by at least $\epsilon$. Once a target is assigned, it remains assigned: a later bid can change its owner but never leaves it empty. While the algorithm is incomplete, there is therefore an unassigned target whose potential is still zero. If the selected target $j_0$ is already assigned, comparison with such a zero-potential target gives $\gD_{j_0}\geq-R_\C$; if it is unassigned, its potential is itself zero. Thus a target can be selected at most $\lfloor R_\C/\epsilon\rfloor+1$ times. Summing over the $n$ targets proves finite termination and the bid bound. At termination, every row and column has exactly one nonzero entry, so $\P$ is a permutation matrix.
+
+	The $\epsilon$-complementary-slackness invariant was established above. Summing it over the returned permutation gives the first inequality below. The second is the dual lower bound of Proposition~\ref{prop-assignment-dual-certificate}, applied to the feasible pair $(\gD^{\bar\C},\gD)$:
+	\[
+		\frac1n\dotp{\C}{\P}
+		\leq
+		\frac1n\sum_i(\gD^{\bar\C})_i
+		+
+		\frac1n\sum_j\gD_j
+		+
+		\epsilon
+		\leq
+		\umin{\P'\in\mathcal P_n^{\mathrm{perm}}}
+		\frac1n\dotp{\C}{\P'}
+		+
+		\epsilon,
+	\]
+	which proves~\eqref{eq-auction-cost-certificate}. Each bid scans one row of $\C$ and otherwise uses constant work if the current owner of every target is stored, proving the complexity bound. For integer costs, the unnormalized assignment gap is an integer bounded by $n\epsilon<1$, hence it vanishes.
+\end{proof}
+
+\paragraph{$\epsilon$-scaling.}
+The cold-start estimate in Proposition~\ref{prop-auction-termination} exposes the limitation of using a single tolerance. A large $\epsilon$ terminates quickly but gives only a coarse certificate, whereas the small $\epsilon$ needed for high accuracy can produce a bid count proportional to $R_\C/\epsilon$. The remedy is continuation: first learn the rough dual-potential landscape with a coarse auction, then decrease the tolerance while retaining that potential.
+\index{epsilon-scaling@$\epsilon$-scaling}% strictindex
+
+Algorithm~\ref{alg:auction-epsilon-scaling} starts at the cost scale $\max\{R_\C,\eta\}$ and halves the tolerance until it reaches the requested value $\eta$. Each phase rebuilds the ownership matrix but warm-starts $\gD$ with the preceding phase. Intuitively, the previous complete assignment already certifies approximate contact for this potential; the next phase only needs to refine that contact rather than rediscover the dual landscape from $\gD=0$.
+
+\begin{algH}[Auction with $\epsilon$-scaling]\label{alg:auction-epsilon-scaling}
+\textbf{Input:} Cost matrix $\C\in\RR^{n\times n}$, final tolerance $\eta>0$.
+
+\textbf{Output:} Permutation matrix $\P$ and target potential $\gD$; the source potential is $\gD^{\bar\C}$.
+
+\textbf{Initialize:} Set $R_\C\leftarrow\max_{i,j}\C_{i,j}-\min_{i,j}\C_{i,j}$ and $\gD\leftarrow0$.
+
+\textbf{If} $R_\C=0$ \textbf{then}:
+\begin{algblock}
+\textbf{Return} any permutation matrix $\P$ and $\gD=0$.
+\end{algblock}
+
+\textbf{Set} $\epsilon\leftarrow\max\{R_\C,\eta\}$.
+
+\textbf{While} $\epsilon>\eta$ \textbf{do}:
+\begin{algblock}
+\textbf{Set} $(\P,\gD)\leftarrow\operatorname{Auction}(\C,\epsilon,\gD)$.
+
+\textbf{Set} $\epsilon\leftarrow\max\{\epsilon/2,\eta\}$.
+\end{algblock}
+
+\textbf{Set} $(\P,\gD)\leftarrow\operatorname{Auction}(\C,\eta,\gD)$.
+\par\noindent
+\textbf{Return} $\P$ and $\gD$.
+\end{algH}
+
+\begin{prop}[Complexity of $\epsilon$-scaling]\label{prop-auction-epsilon-scaling}
+\index{epsilon-scaling@$\epsilon$-scaling}% strictindex
+	For a final tolerance $\eta>0$, Algorithm~\ref{alg:auction-epsilon-scaling} returns a permutation matrix satisfying $\eta$-complementary slackness and~\eqref{eq-auction-cost-certificate} with $\epsilon$ replaced by $\eta$. If $R_\C>0$, it uses at most
+	\[
+		1+\left\lceil\log_2^+\!\left(\frac{R_\C}{\eta}\right)\right\rceil
+	\]
+	auction phases, where $\log_2^+(s)\eqdef\max\{0,\log_2 s\}$. Its dense worst-case complexity is
+	\[
+		O\left(n^3\left(1+\log_+\frac{R_\C}{\eta}\right)\right),
+		\qquad
+		\log_+(s)\eqdef\max\{0,\log s\}.
+	\]
+	When $R_\C=0$, the algorithm terminates immediately. If $\C$ has integer entries and $\eta<1/n$, the returned assignment is exactly optimal.
+\end{prop}
+\begin{proof}
+	Assume $R_\C>0$. The first tolerance is $\epsilon_0=\max\{R_\C,\eta\}$. If $\epsilon_0=\eta$, Proposition~\ref{prop-auction-termination} directly gives the claim with one phase. Otherwise, the first phase starts from the zero potential and costs $O(n^2)$ operations because $R_\C/\epsilon_0=1$.
+
+	Consider a later phase with tolerance $\epsilon$, initialized from a target potential produced at tolerance $\lambda$. The preceding complete assignment satisfies $\lambda$-complementary slackness for this potential. Expressed in the present dual-potential convention, the warm-start estimate of~\cite[Lem.~25]{merigot2020optimaltransportalgorithms} shows that the new phase decreases each component of $\gD$ by at most $n(\lambda+\epsilon)$. Since every bid decreases one component by at least $\epsilon$, the phase performs at most
+	\[
+		n^2\left(1+\frac{\lambda}{\epsilon}\right)
+	\]
+	bids. Consecutive tolerances in Algorithm~\ref{alg:auction-epsilon-scaling} satisfy $\lambda/\epsilon\leq2$, so a warm-started phase uses $O(n^2)$ bids and $O(n^3)$ dense operations.
+
+	Halving from $R_\C$ to $\eta$ gives the announced phase count. The final phase enforces $\eta$-complementary slackness, and Proposition~\ref{prop-auction-termination} gives the $\eta$-optimality certificate. Its integer-cost conclusion also applies with $\epsilon=\eta$.
+\end{proof}
+
+Compared with a single $\eta$-auction started from zero, whose dense bound grows as $O(n^2(1+R_\C/\eta))$, scaling replaces the linear accuracy factor by a logarithmic number of $O(n^3)$ phases. This is a high-accuracy guarantee rather than an unconditional speedup: at coarse tolerances the cold-start bound can be smaller, while the scaling bound improves it once $R_\C/\eta$ is large compared with $n\bigl(1+\log_+(R_\C/\eta)\bigr)$. For integer costs, choosing $\eta<1/n$ gives an exact assignment with complexity $O\bigl(n^3(1+\log_+(nR_\C))\bigr)$.
+
+\begin{rem}[$\epsilon$-scaling and relation with Sinkhorn]
+	Sinkhorn uses a superficially similar continuation parameter, but its role is different. Entropy replaces the hard minimum in the semi-dual by a smooth log-sum-exp, whereas auction retains the hard discrete transform and relaxes only the contact condition. Sinkhorn evolves a dense coupling by smooth block maximization; auction maintains a partial permutation matrix through dual-weight bids and ownership changes.
+\index{Sinkhorn!algorithm}% strictindex
+\index{entropic!regularization}% strictindex
+\index{log-sum-exp}% strictindex
+\end{rem}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,10 +415,10 @@ This transform maps a vector $\gD$ to a continuous function $\gD^{\bar \c} \in \
 Crucially, using the discrete $\bar c$-transform, when $\be$ is a discrete measure, yields a finite-dimensional optimization,
 \eql{\label{eq-semi-dual-discr}
 \index{semi-dual}% strictindex
-	\MK_\c(\al,\be) =
-		\umax{\gD \in \RR^m}
-			\Ee(\gD) \eqdef
-			\int_\Xx \gD^{\bar \c}(x) \d\al(x) + \sum_j \gD_j \b_j.
+		\MK_\c(\al,\be) =
+			\umax{\gD \in \RR^m}
+				\Ee(\gD) \eqdef \Ee_0(\gD^{\bar\c},\gD) =
+				\int_\Xx \gD^{\bar \c}(x) \d\al(x) + \sum_j \gD_j \b_j.
 }
 The objective satisfies $\Ee(\gD+s\ones)=\Ee(\gD)$ for every $s\in\RR$. One may therefore impose the gauge $\sum_j\gD_j=0$ without changing the problem. The geometric object encoded by the dual weights is a weighted nearest-neighbor diagram: each source point is assigned to a target atom realizing the discrete $\bar c$-transform.
 
@@ -86,6 +437,8 @@ For quadratic costs, varying the dual weights moves the walls between adjacent c
 \index{quadratic!cost}% strictindex
 \index{dual!weight}% strictindex
 %
+Figure~\ref{fig:semidiscrete-laguerre-cells} follows this adjustment from unweighted Voronoi cells to a power diagram whose cell masses match the prescribed discrete target weights.
+
 \begin{figure}[H]
 \centering
 \begin{tabular}{@{}ccc@{}}
@@ -602,6 +955,8 @@ Figure~\ref{fig:semidiscrete-lloyd-flow-mixtures} shows the relaxed Lloyd flow i
 \textbf{Return} $Y^{(k)}$.
 \end{alg}
 
+Figure~\ref{fig:semidiscrete-lloyd-quantization} follows the associated Voronoi cells and generators through Lloyd iterations, making the decrease of the quantization energy visible.
+
 \begin{figure}[H]
 \centering
 \begin{tabular}{@{}ccc@{}}
@@ -762,6 +1117,8 @@ and $Q((i-1/2)/m)-y_i^\star=o(m^{-1})$ uniformly when $Q\in C^1([0,1])$. Random 
 \end{proof}
 
 Combining Propositions~\ref{prop-1d-equal-weight-quantization} and~\ref{prop-1d-random-quantile-process}, one obtains a sharp contrast between optimal placement and random placement on the line. Deterministic equal-weight quantization has squared error of order $m^{-2}$, hence $\Wass_2$ error of order $m^{-1}$, while i.i.d. empirical sampling has expected squared error of order $m^{-1}$, hence root-mean-square $\Wass_2$ error of order $m^{-1/2}$. This one-dimensional comparison is consistent with the broader empirical OT sample-complexity theory~\cite{dereich2013constructive,fournier2015rate,weed2017sharp}.
+
+Figure~\ref{fig:semidiscrete-quantile-quantization-rates} illustrates both parts of this comparison: optimal atoms are uniform in quantile coordinates, and their error decays one power of $m$ faster than the root-mean-square empirical error.
 
 \begin{figure}
 \centering
@@ -972,6 +1329,8 @@ This graph distance turns $\Wass_1$ into a finite-dimensional flow problem.
 \index{finite-dimensional linear program}% strictindex
 \index{dual!problem}% strictindex
 \end{proof}
+
+Figure~\ref{fig:w1-graph-transport-flow} shows the optimal edge flux on both a quasi-regular and a nonuniform Delaunay graph, emphasizing that the Beckmann variables live only on graph edges.
 
 \begin{figure}[H]
 \centering

@@ -300,9 +300,9 @@ on the Bures-Wasserstein space of Gaussian components. Given two component laws
 \]
 the discrete problem induced by~\eqref{eq-wow-distance} uses the component cost
 \[
-	C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
+	\C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
 \]
-Let $\Pi^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
+Let $\P^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
 \[
 	m_{ij,t}=(1-t)m_i+t n_j,
 	\qquad
@@ -314,12 +314,14 @@ Let $\Pi^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{i
 and collapsing these component geodesics gives
 \[
 	\bar\alpha_t=
-	\sum_{i,j}\Pi^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
+	\sum_{i,j}\P^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
 \]
 This component-level interpolation transports Gaussian components as atoms of the Wasserstein space before returning to measures on~$\X$. It is generally not the same as the true $\Wass_2$ interpolation between the collapsed mixture densities, which can split and recombine mass inside and across components.
 \index{Bures!Wasserstein geometry}% strictindex
 \index{collapsed mixture}% strictindex
 \index{Wasserstein!space}% strictindex
+
+Figure~\ref{fig:kantorovich-wow-mixtures} contrasts this component-level geodesic with the true one-dimensional Wasserstein interpolation of the collapsed mixtures, making the internal mass splitting absent from the former visible.
 
 \begin{figure}[htbp]
 \centering
@@ -434,6 +436,8 @@ The relaxed coupling formulation used in GW can therefore be read as a soft grap
 \index{graph!matching}% strictindex
 	Graphs, molecules, meshes and point clouds often do not come with a common coordinate system or a reliable node-to-node correspondence. GW compares them through their internal distances, so the coupling \(\P_{ij}\) becomes a soft structural correspondence rather than a spatial displacement. This is useful for graph matching, node embedding, shape comparison and molecule or mesh alignment~\cite{peyre2016gromov,vayer2019optimaltransportstructured}. When node attributes are also available, fused GW below adds a feature transport term to the intrinsic distortion, separating what should be preserved as structure from what should be matched as signal.
 \end{example}
+
+Figure~\ref{fig:gromov-isometry-matching} shows this intrinsic matching principle under progressively stronger deformations: correspondences are selected from within-space distance patterns rather than an ambient cross-space cost.
 
 \begin{figure}[ht]
 \centering
@@ -698,6 +702,8 @@ The metric structure also gives geodesics. Sturm's construction is useful concep
 	so $\GW(\XX_s,\XX_t)\geq(t-s)D$. This proves equality.
 \end{proof}
 
+Figure~\ref{fig:gromov-nonisometric-distortion} complements the global GW objective with local diagnostics, displaying where a mildly non-isometric correspondence creates the largest pairwise-distance residuals.
+
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}cc@{}}
@@ -768,47 +774,20 @@ Figure~\ref{fig:gromov-memoli-distance-profiles} makes the two transport levels 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.99\linewidth]{figures/gromov-memoli-distance-profiles/profiles.pdf}
-\caption{\emph{M\'emoli distance profiles expose a computable lower bound for intrinsic GW comparison.} The planar shapes $\XX$ and $\YY$ are represented by cat and bunny silhouettes, centered and normalized to unit diameter. Matching colors identify representative anchor pairs selected by the optimal assignment for the profile cost $C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$, their connecting segments, and the corresponding distance-profile histograms in the side columns. The histograms are display summaries only: the profile costs are computed by sorting the complete distance profiles. The resulting outer assignment realizes the M\'emoli profile lower bound.}
+\caption{\emph{M\'emoli distance profiles expose a computable lower bound for intrinsic GW comparison.} The planar shapes $\XX$ and $\YY$ are represented by cat and bunny silhouettes, centered and normalized to unit diameter. Matching colors identify representative anchor pairs selected by the optimal assignment for the profile cost $\C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$, their connecting segments, and the corresponding distance-profile histograms in the side columns. The histograms are display summaries only: the profile costs are computed by sorting the complete distance profiles. The resulting outer assignment realizes the M\'emoli profile lower bound.}
 \label{fig:gromov-memoli-distance-profiles}
 \index{Memoli profile@M\'emoli profile}% strictindex
 \index{distance profile}% strictindex
 \index{Wasserstein-over-Wasserstein}% strictindex
 \end{figure}
 
-This lower bound is useful computationally because the profile cost matrix $C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
+This lower bound is useful computationally because the profile cost matrix $\C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
 
 \paragraph{Relation with Wasserstein--Procrustes.}
 \index{Wasserstein!Procrustes}% strictindex
 \index{quotient!Wasserstein distance}% strictindex
 The profile lower bound is intrinsic. In Euclidean applications, it is naturally paired with an extrinsic upper certificate obtained by registering the two measures before applying the ordinary Wasserstein distance.
-
-\begin{prop}[Wasserstein--Procrustes upper certificate]\label{prop-gw-procrustes-upper-certificate}
-\index{Gromov-Wasserstein@Gromov--Wasserstein}% strictindex
-	Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the Euclidean distance, and take $\De(u,v)=|u-v|$ in~\eqref{eq-gw-generic}. If $\Wass_{p,\mathrm E(d)}$ denotes the quotient Wasserstein distance of Definition~\ref{def-quotient-wasserstein} for the Euclidean group, then
-	\begin{equation}\label{eq-gw-procrustes-upper-gw-section}
-	\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
-	\leq
-	2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
-	\end{equation}
-\end{prop}
-
-\begin{proof}
-	Let $g,h\in\mathrm E(d)$ be rigid motions. They preserve all pairwise Euclidean distances, so
-	\[
-	(\RR^d,\norm{\cdot},\alpha)
-	\quad\text{is isometric to}\quad
-	(\RR^d,\norm{\cdot},g_\sharp\alpha),
-	\]
-	and similarly for $\beta$ and $h_\sharp\beta$. Hence $\GW$ is unchanged by pushing the two measures forward by $g$ and $h$. Applying Proposition~\ref{prop-gw-controlled-by-wasserstein} to $g_\sharp\alpha$ and $h_\sharp\beta$ gives
-	\[
-	\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
-	\leq
-	2\,\Wass_p(g_\sharp\alpha,h_\sharp\beta).
-	\]
-	Taking the infimum over $g,h\in\mathrm E(d)$ gives~\eqref{eq-gw-procrustes-upper-gw-section}.
-\end{proof}
-
-Wasserstein--Procrustes therefore gives an extrinsic certificate that a Euclidean GW distance is small. The converse need not hold, because a small GW value may be achieved by an intrinsic correspondence that is not induced by any ambient rigid motion. Combining Proposition~\ref{prop-memoli-gw-profile-lower-bound} with Proposition~\ref{prop-gw-procrustes-upper-certificate} gives the Euclidean sandwich
+Proposition~\ref{prop-gw-procrustes-upper-certificate}, proved in the Wasserstein--Procrustes discussion of Section~\ref{sec-quotient-wasserstein-procrustes}, supplies exactly this certificate. The converse need not hold, because a small GW value may be achieved by an intrinsic correspondence that is not induced by any ambient rigid motion. Combining that proposition with Proposition~\ref{prop-memoli-gw-profile-lower-bound} gives the Euclidean sandwich
 \index{Wasserstein!Procrustes}% strictindex
 \begin{equation}\label{eq-gw-profile-procrustes-sandwich}
 \mathbb W_p(\mathfrak D_\XX,\mathfrak D_\YY)
@@ -892,6 +871,8 @@ Fused Gromov--Wasserstein augments the structural term with a feature transport 
 	\sum_{i,j,i',j'}\De(\distD_{ii'},\distD'_{jj'})^p\P_{ij}\P_{i'j'}.
 \]
 The first term compares node attributes in the usual OT sense, while the second compares the intrinsic geometry. The endpoints $\lambda=0$ and $\lambda=1$ recover feature-only OT and pure GW respectively; intermediate values trade attribute matching against structural matching. This is useful when the two spaces have both distances and features, and these two sources of information may disagree.
+
+Figure~\ref{fig:fused-gromov-feature-geometry} isolates this tradeoff on a small graph pair by comparing feature-only, structure-only and fused correspondences.
 
 \begin{figure}[ht]
 \centering
@@ -1323,7 +1304,7 @@ For two empirical measures, Kantorovich OT minimizes a linear cost over the conv
 \index{monotone!alignment}% strictindex
 
 \paragraph{Discrete variational problem.}
-Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature space $\mathcal Z$, and set $C_{ij}=c(x_i,y_j)$ for a nonnegative cost $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
+Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature space $\mathcal Z$, and set $\C_{ij}=c(x_i,y_j)$ for a nonnegative cost $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
 \[
 	\omega=((i_\ell,j_\ell))_{\ell=1}^L
 \]
@@ -1343,7 +1324,7 @@ Denote the set of such paths by $\Omega_{n,m}$ and the corresponding incidence m
 		\min_{\omega\in\Omega_{n,m}}
 		\sum_{\ell=1}^L c(x_{i_\ell},y_{j_\ell})
 		=
-		\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{C}.
+		\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{\C}.
 	\end{equation}
 \end{defn}
 The definition is symmetric when $c$ is symmetric, but it is generally not a metric: repetitions can give zero cost to distinct sequences, and the triangle inequality can fail. Step weights, slope constraints and a Sakoe--Chiba band are common variants that penalize excessive repetition or restrict the admissible temporal distortion~\cite{SakoeChiba1978DTW,Muller2007MusicMotion}.
@@ -1358,7 +1339,7 @@ The monotone path structure converts the exponentially large variational problem
 	\begin{equation}\label{eq-dtw-recurrence}
 		D_{ij}
 		=
-		C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
+		\C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
 	\end{equation}
 	Then $D_{nm}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every cell and backtracking from $(n,m)$ recovers an optimal path. The computation takes $O(nm)$ time and $O(nm)$ memory; if only the value is required, two rows give $O(\min\{n,m\})$ memory.
 \end{prop}
@@ -1381,12 +1362,12 @@ Algorithm~\ref{alg-dtw-dynamic-programming} makes the value computation and path
 \begin{algblock}
 \textbf{For} $j=1,\ldots,m$ \textbf{do}:
 \begin{algblock}
-\textbf{Set} $C_{ij}=c(x_i,y_j)$.
+\textbf{Set} $\C_{ij}=c(x_i,y_j)$.
 
 \textbf{Choose} the lexicographically first
 $(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
 
-\textbf{Set} $B_{ij}=(r^\star,s^\star)$ and $D_{ij}=C_{ij}+D_{r^\star,s^\star}$.
+\textbf{Set} $B_{ij}=(r^\star,s^\star)$ and $D_{ij}=\C_{ij}+D_{r^\star,s^\star}$.
 \end{algblock}
 \end{algblock}
 \textbf{Initialize:} Set $(i,j)=(n,m)$ and $\omega^\star=[\,]$.
@@ -1427,7 +1408,7 @@ and defines $D_{00}^\epsilon=0$, $D_{i0}^\epsilon=D_{0j}^\epsilon=+\infty$ for $
 \begin{equation}\label{eq-soft-dtw-recurrence}
 	D_{ij}^\epsilon
 	=
-	C_{ij}
+	\C_{ij}
 	+
 	\operatorname{softmin}_\epsilon
 	\bigl(D_{i-1,j}^\epsilon,D_{i,j-1}^\epsilon,D_{i-1,j-1}^\epsilon\bigr),
@@ -1441,7 +1422,7 @@ Equivalently, it is the free energy of all monotone paths,
 	=
 	-\epsilon\log
 	\sum_{\omega\in\Omega_{n,m}}
-	\exp\!\left(-\frac{\dotp{A_\omega}{C}}{\epsilon}\right).
+	\exp\!\left(-\frac{\dotp{A_\omega}{\C}}{\epsilon}\right).
 \end{equation}
 To make the regularization explicit, let $\Delta(\Omega_{n,m})$ be the simplex of probability laws $q=(q_\omega)_\omega$ over paths and let $H(q)=-\sum_\omega q_\omega\log q_\omega$ be their Shannon entropy, with $0\log0=0$. The Gibbs variational identity gives
 \begin{equation}\label{eq-soft-dtw-variational}
@@ -1449,7 +1430,7 @@ To make the regularization explicit, let $\Delta(\Omega_{n,m})$ be the simplex o
 	=
 	\min_{q\in\Delta(\Omega_{n,m})}
 	\left\{
-	\sum_{\omega}q_\omega\dotp{A_\omega}{C}
+	\sum_{\omega}q_\omega\dotp{A_\omega}{\C}
 	-\epsilon H(q)
 	\right\}.
 \end{equation}
@@ -1459,12 +1440,12 @@ Its unique minimizer is the Gibbs law
 \begin{equation}\label{eq-soft-dtw-gibbs-law}
 	\PP_\epsilon(\omega)
 	=
-	\frac{\exp(-\dotp{A_\omega}{C}/\epsilon)}
-	{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{C}/\epsilon)},
+	\frac{\exp(-\dotp{A_\omega}{\C}/\epsilon)}
+	{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{\C}/\epsilon)},
 	\qquad
 	E_\epsilon
 	\eqdef
-	\nabla_C\mathrm{sDTW}_{c,\epsilon}(x,y).
+	\nabla_\C\mathrm{sDTW}_{c,\epsilon}(x,y).
 \end{equation}
 Indeed, subtracting the value in~\eqref{eq-soft-dtw-partition} from the objective in~\eqref{eq-soft-dtw-variational} gives $\epsilon\KL(q|\PP_\epsilon)\geq0$. Moreover,
 \begin{equation}\label{eq-soft-dtw-zero-temperature-bound}
@@ -1509,7 +1490,7 @@ Figure~\ref{fig:dynamic-time-warping} contrasts the hard minimizing path with th
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.98\linewidth]{figures/dynamic-time-warping/dtw-alignment.pdf}
-\caption{\emph{Hard and soft monotone alignments recover a nonlinear time warp.} Left: an oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a smooth increasing map $\gamma$; thin gray segments mark exact corresponding times. Middle: the pairwise squared feature-cost matrix $C_{ij}=\abs{x_i-y_j}^2$, with the optimal DTW path shown in red. Right: the same matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from~\eqref{eq-soft-dtw-expected-alignment} at $\epsilon=.200$; red intensity gives cell-visit probability and the dark red curve is its row-wise barycentric summary.}
+\caption{\emph{Hard and soft monotone alignments recover a nonlinear time warp.} Left: an oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a smooth increasing map $\gamma$; thin gray segments mark exact corresponding times. Middle: the pairwise squared feature-cost matrix $\C_{ij}=\abs{x_i-y_j}^2$, with the optimal DTW path shown in red. Right: the same matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from~\eqref{eq-soft-dtw-expected-alignment} at $\epsilon=.200$; red intensity gives cell-visit probability and the dark red curve is its row-wise barycentric summary.}
 \label{fig:dynamic-time-warping}
 \index{dynamic time warping!numerics}% strictindex
 \index{soft-DTW!expected alignment}% strictindex

@@ -74,7 +74,7 @@ The next elementary proposition explains why~\eqref{eq-barycenter-generic} is a 
 	Letting $\eta\to0$ gives the claim.
 \end{proof}
 
-Even when all input measures are discrete, the support of a barycenter is not known a priori. The multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that a discrete barycenter can be supported on all weighted averages of one support point from each input. This gives at most $\prod_s n_s$ candidate points if the $s$-th input has $n_s$ atoms, which is prohibitive when the number of inputs is large. A common numerical compromise is therefore to prescribe a smaller support for the barycenter and solve a fixed-support problem.
+Even when all input measures are discrete, the support of a barycenter is not known a priori. The multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that a discrete barycenter can be supported on weighted averages of one support point from each input. There can be $\prod_s n_s$ candidate locations, but Corollary~\ref{cor-discrete-barycenters} shows that there exists a barycenter for which at most $\sum_s n_s-S+1$ carry positive mass. A common numerical compromise is nevertheless to prescribe a smaller support for the barycenter and solve a fixed-support problem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \paragraph{One-dimensional case.}
@@ -296,18 +296,15 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 	If $\al^\star$ is any barycenter, choose optimal couplings between $\al^\star$ and each $\be_s$ and glue them along the common $\al^\star$ marginal. Since the barycenter and multi-marginal values are equal, the conditional minimization inequality above must be an equality. Thus $X=B(Y_1,\ldots,Y_S)$ almost surely for the induced optimal multi-marginal plan, and $\al^\star=B_\sharp\pi^\star$.
 \end{proof}
 
-\begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
-	Quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If the input measures are discrete, then there exists a barycenter supported on the set of weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input; in particular, if the $s$-th input has $n_s$ atoms, a barycenter exists with at most $\prod_s n_s$ atoms.
+\begin{cor}[Sparse discrete barycenters]\label{cor-discrete-barycenters}
+	Let $\be_s=\sum_{i_s=1}^{n_s}b_{s,i_s}\de_{x_{s,i_s}}$ be discrete input measures. There exists a quadratic Wasserstein barycenter $\al^\star$ supported on weighted averages $\sum_s\la_s x_{s,i_s}$ and satisfying
+	\[
+		\#\supp(\al^\star)\leq\sum_{s=1}^S n_s-S+1.
+	\]
 \end{cor}
 
 \begin{proof}
-	Let the input Gaussians have means $\mean_s$ and covariances $\cov_s$. For any candidate barycenter $\al$ with mean $\mean$ and covariance $\cov$, Gelbrich's inequality~\cite{gelbrich1990formula} gives
-	\[
-		\Wass_2^2(\al,\be_s)
-		\geq
-		\norm{\mean-\mean_s}^2+\Bb(\cov,\cov_s)^2,
-	\]
-	with equality for the Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by the Gaussian measure with the minimizing mean and covariance. Hence at least one barycenter is Gaussian, and uniqueness in the usual nondegenerate setting gives the Gaussian barycenter mentioned above. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
+	Let $\mathcal A_{\mathrm{marg}}$ map the tensor $\Pi=(\Pi_{i_1,\ldots,i_S})$ to its $S$ marginals. Its annihilator consists of vectors $u_s\in\RR^{n_s}$ satisfying $\sum_su_{s,i_s}=0$ for every multi-index. Hence $u_s=c_s\ones_{n_s}$ with $\sum_sc_s=0$, so $\operatorname{rank}(\mathcal A_{\mathrm{marg}})=\sum_s n_s-S+1$. A linear objective over the multi-marginal polytope has an optimal basic feasible tensor with at most this many positive entries. Its push-forward by $B$ has no more support points.
 \end{proof}
 
 \paragraph{Entropic regularization of multi-marginal OT.}
@@ -324,7 +321,45 @@ The optimizer has the generalized Gibbs form
 	\exp\!\left(\frac{\sum_s f_s(x_s)-c(x_1,\ldots,x_S)}{\epsilon}\right)
 	\prod_s\d\al_s(x_s),
 \]
-and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case. Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
+and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. The bottleneck is the tensor size $\prod_s n_s$ in the discrete case.
+
+\paragraph{Treewidth and graphical structure.}
+
+Suppose the cost factors over a finite undirected graph $G=(V,E)$,
+\begin{equation}\label{eq-multimarginal-graph-cost}
+	c(x_1,\ldots,x_S)=\sum_{(r,s)\in E}c_{r,s}(x_r,x_s),
+	\qquad V=\{1,\ldots,S\}.
+\end{equation}
+The complexity is governed by the largest intermediate clique created during variable elimination.
+
+\begin{defn}[Tree decomposition and treewidth]\label{def-treewidth}
+	A tree decomposition of $G$ is a tree $\mathcal T=(Q,F)$ with bags $B_q\subseteq V$ such that the bags cover $V$, every edge of $G$ is contained in a bag, and, for each $s\in V$, the bags containing $s$ form a connected subtree. Its width is $\max_q|B_q|-1$; the treewidth $\operatorname{tw}(G)$ is the smallest width of any tree decomposition.
+\end{defn}
+
+The connected-subtree requirement is the running-intersection property. Equivalently, treewidth is the minimum, over variable-elimination orders, of the largest number of remaining neighbors encountered after adding the necessary fill-in edges. Trees, including chains and stars, have treewidth one; cycles have treewidth two; and the complete graph $K_S$ has treewidth $S-1$. Thus a chain requires only pairwise tables, a cycle requires three-variable tables, while a complete interaction graph offers no reduction from the full tensor.
+
+\paragraph{Message passing inside Sinkhorn.}
+
+Define $K^{r,s}_{i_r,i_s}=\exp(-C^{r,s}_{i_r,i_s}/\epsilon)$ and $h_s(i_s)=(a_s)_{i_s}(u_s)_{i_s}$. The current coupling is represented implicitly by
+\[
+	P_{i_1,\ldots,i_S}
+	=
+	\prod_s h_s(i_s)\prod_{(r,s)\in E}K^{r,s}_{i_r,i_s}.
+\]
+On a tree, its marginals are computed by sum-product messages
+\[
+	m_{r\to s}(i_s)
+	=
+	\sum_{i_r}K^{r,s}_{i_r,i_s}h_r(i_r)
+	\prod_{q\in N_G(r)\setminus\{s\}}m_{q\to r}(i_r),
+	\qquad
+	(\widehat a_s)_{i_s}
+	=
+	h_s(i_s)\prod_{r\in N_G(s)}m_{r\to s}(i_s),
+\]
+followed, for the block selected by cyclic scaling, by $u_s\leftarrow u_s\odot a_s/\widehat a_s$. Updating all blocks at once would instead define a Jacobi scheme. For a reduced tree decomposition of width $w$, the analogous junction-tree pass stores functions on separators and sums functions on bags. If $n_s\leq n$, one inference pass at fixed scalings costs $O(|Q|n^{w+1})$ time and $O(|Q|n^w)$ message memory, rather than $O(n^S)$. This memory bound assumes that bag contractions are streamed from the original local factors; explicitly storing dense bag beliefs costs $O(|Q|n^{w+1})$. After one scaling changes, only the messages along the path to the host bag of the next constrained marginal need updating, at a cost $O(\ell n^{w+1})$ for a path of length $\ell$. In particular, equal-size trees cost $O(Sn^2)$ for a full pass and cycles cost $O(Sn^3)$. The algorithm stores only the local factors and separator messages; forming every entry of $P$ would necessarily restore the $\prod_s n_s$ cost. This is the mechanism exploited by structured multi-marginal Sinkhorn solvers~\cite{HaaslerSinghZhangKarlssonChen2020PGMMOT,FanHaaslerKarlssonChen2021GraphCostMOT,AltschulerBoixAdsera2022StructuredMOT}.
+
+Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

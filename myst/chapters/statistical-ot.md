@@ -174,6 +174,8 @@ distances make this qualitative convergence quantitative. The next result is
 a $\Wass_1$ form of the Berry--Esseen theorem: it controls the error uniformly
 over all $1$-Lipschitz test functions.
 
+Figure {ref}`fig:matching-quantitative-clt` illustrates the elementary Bernoulli case.
+
 (fig:matching-quantitative-clt)=
 :::{div}
 :class: ot4ml-book-figure
@@ -319,6 +321,8 @@ dimension-adaptive: it sees the intrinsic dimension of the data support
 through its covering numbers {cite:p}`dudley1969speed,weed2017sharp`.
 Related two-sample-testing viewpoints are developed in
 {cite:p}`ramdas2017wasserstein`.
+
+Figure {ref}`fig:sinkhorn-bias-variance-tradeoff` gives a numerical overview: exact OT exhibits dimension-dependent empirical fluctuations, whereas MMD and fixed-temperature Sinkhorn divergences lie much closer to the parametric $n^{-1/2}$ scale.
 
 (fig:sinkhorn-bias-variance-tradeoff)=
 :::{div}
@@ -620,7 +624,7 @@ $\epsilon=0$ denoting the unregularized Kantorovich problem, and then uses the
 soft $c$-transform as an out-of-sample extrapolator.
 
 For the quadratic cost $c_2(x,y)=\norm{x-y}^2/2$, let
-$P_{n,m}^\epsilon=(P_{ij}^\epsilon)$ be the empirical entropic coupling and let
+$\P_{n,m}^\epsilon=(\P_{ij}^\epsilon)$ be the empirical entropic coupling and let
 $\mathbf g_{n,m}^\epsilon$ be the target-side dual potential. Define
 
 ```{math}
@@ -846,7 +850,7 @@ one-dimensional $J_2$ quantile-process estimate
 :::{admonition} Remark: Directions are another sample budget
 :class: ot4ml-remark
 
-The theorem concerns the statistical samples used to form $\hat\alpha_n$ and $\hat\beta_m$. In computation one also replaces the spherical average in the definition of $\SW_p$ by an empirical average over $L$ random directions. For bounded support, the resulting Monte-Carlo error for $\SW_p^p$ is of order $L^{-1/2}$, independently of $d$, because it is just the average of bounded one-dimensional costs. This should not be read as saying that a small number of directions captures full $\Wass_2$ geometry in high dimension. Even the exact sliced distance is an averaged projected geometry, not a bi-Lipschitz surrogate for $\Wass_2$ uniformly in dimension; see Proposition {ref}`prop-sliced-wasserstein-metric` and Remark {ref}`rem-sliced-length-not-wasserstein`. Moreover, if a discrepancy is visible only inside a spherical cap of angular radius $\delta$, the probability that $L$ random directions hit it is roughly $1-(1-\sigma(\mathrm{cap}_\delta))^L$, and $\sigma(\mathrm{cap}_\delta)$ scales like $\delta^{d-1}$ for small caps. For a fixed narrow aperture, it decays exponentially with $d$. Thus estimating the sliced objective is dimension-friendly, while using random slices to approximate a worst direction, a max-sliced distance, or a proxy meant to behave like full $\Wass_2$, reintroduces an angular-covering cost. This is the practical no-free-lunch behind sliced, max-sliced and subspace-sliced variants; see also Section {ref}`sec-sliced-wasserstein`.
+The theorem concerns the statistical samples used to form $\hat\alpha_n$ and $\hat\beta_m$. In computation one also replaces the spherical average in the definition of $\SW_p$ by an empirical average over $L$ random directions. For bounded support, the resulting Monte-Carlo error for $\SW_p^p$ is of order $L^{-1/2}$, independently of $d$, because it is just the average of bounded one-dimensional costs. This should not be read as saying that a small number of directions captures full $\Wass_2$ geometry in high dimension. Even the exact sliced distance is an averaged projected geometry, not a bi-Lipschitz surrogate for $\Wass_2$ uniformly in dimension; see Proposition {ref}`prop-sliced-wasserstein-metric` and {ref}`par-sliced-intrinsic-length`. Moreover, if a discrepancy is visible only inside a spherical cap of angular radius $\delta$, the probability that $L$ random directions hit it is roughly $1-(1-\sigma(\mathrm{cap}_\delta))^L$, and $\sigma(\mathrm{cap}_\delta)$ scales like $\delta^{d-1}$ for small caps. For a fixed narrow aperture, it decays exponentially with $d$. Thus estimating the sliced objective is dimension-friendly, while using random slices to approximate a worst direction, a max-sliced distance, or a proxy meant to behave like full $\Wass_2$, reintroduces an angular-covering cost. This is the practical no-free-lunch behind sliced, max-sliced and subspace-sliced variants; see also Section {ref}`sec-sliced-wasserstein`.
 :::
 
 
@@ -1727,6 +1731,8 @@ matrix $B$, but the five-point Gram matrix $K$ gives
 Thus $K\in\mathrm{DNN}_5\setminus\mathrm{CP}_5$, and the kernel is doubly
 positive but not totally positive.
 
+Figure {ref}`fig:sinkhorn-doubly-positive-counterexample` displays this finite certificate and the separating witness.
+
 (fig:sinkhorn-doubly-positive-counterexample)=
 ```{code-cell} ipython3
 :tags: [remove-input]
@@ -1805,6 +1811,8 @@ Gaussian-kernel approximations for quadratic transport
 {cite:p}`AltschulerBachRudiWeed2018QuadraticTransport`, and factored-coupling
 models in which the coupling itself is constrained to have low rank
 {cite:p}`scetbon2021lowrank`.
+
+Figure {ref}`fig:sinkhorn-positive-feature-sketching` compares the exact Sinkhorn plan with positive-feature approximations and displays the associated approximation of the ground cost.
 
 (fig:sinkhorn-positive-feature-sketching)=
 ```{code-cell} ipython3

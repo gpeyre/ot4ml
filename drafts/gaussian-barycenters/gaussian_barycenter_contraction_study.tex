@@ -1,0 +1,1669 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  citecolor=ForestGreen,
+  urlcolor=BrickRed,
+  pdftitle={Gaussian Wasserstein barycenters and contraction of the raw covariance map},
+  pdfauthor={Technical study prepared with Codex}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=0.25em,itemsep=0.2em,leftmargin=1.6em}
+\setlist[enumerate]{topsep=0.25em,itemsep=0.2em,leftmargin=1.8em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Splus}{\mathbb S_+^d}
+\newcommand{\Spp}{\mathbb S_{++}^d}
+\newcommand{\Id}{I_d}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\newcommand{\spec}{\operatorname{spec}}
+\newcommand{\rhoop}{\rho}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\cN}{\mathcal N}
+\newcommand{\cP}{\mathcal P}
+\newcommand{\cG}{\mathcal G}
+\newcommand{\cK}{\mathcal K}
+\newcommand{\cL}{\mathcal L}
+\newcommand{\cT}{\mathcal T}
+\newcommand{\cH}{\mathcal H}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\preceqL}{\preccurlyeq}
+
+\title{\bfseries Gaussian Wasserstein Barycenters and the Raw Covariance Map\\
+\large Fixed points, algorithms, contraction on compact spectral sets,\\
+and entropic and unbalanced extensions}
+\author{Technical study}
+\date{Literature status and analysis as of 13 July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For positive weights $\lambda_s$ summing to one and positive definite covariance
+matrices $\Sigma_s$, the centered Gaussian $2$-Wasserstein barycenter has the
+unique covariance $\Sigma_\star$ satisfying
+\[
+  \Sigma_\star=\Psi_\lambda(\Sigma_\star),\qquad
+  \Psi_\lambda(X):=\sum_s\lambda_s
+  \bigl(X^{1/2}\Sigma_sX^{1/2}\bigr)^{1/2}.
+\]
+The fixed-point identity is classical, but it does not by itself justify the raw
+Picard iteration $X_{n+1}=\Psi_\lambda(X_n)$.  This note separates that raw map
+from the globally convergent transport/gradient update
+\[
+  K(X)=X^{-1/2}\Psi_\lambda(X)^2X^{-1/2}.
+\]
+It proves exact scalar and commuting results, derives the full Fr\'echet derivative
+of $\Psi_\lambda$ through two Sylvester equations, gives an explicit sufficient
+contraction certificate on compact spectral boxes, and formulates the remaining
+noncommutative issue as a precise derivative-product problem.  In particular,
+on each fixed invariant scalar interval bounded away from zero, a sufficiently
+high iterate $\Psi_\lambda^k$ is a contraction; nevertheless, no fixed $k$ works
+uniformly over all such intervals or all condition numbers.  Thus a common
+one-dimensional objection has the wrong quantifier, while a general matrix
+contraction theorem remains unsupported by the literature located for this
+study.
+
+The note also proves Gaussian preservation of ordinary Wasserstein barycenters
+from Gelbrich's nonexpansive Gaussianization map, distinguishes three inequivalent
+notions of entropic/Sinkhorn barycenter, and explains why the same Gaussianization
+argument fails for ambient Hellinger--Kantorovich/Wasserstein--Fisher--Rao
+geometry.  At the Hellinger endpoint the barycenter of Gaussian densities is
+generically a Gaussian mixture, not a Gaussian.  A Gaussian-restricted BWFR
+geometry is presented as a valid but explicitly constrained alternative.
+\end{abstract}
+
+\tableofcontents
+
+\section{Executive conclusions}
+
+The conclusions are easiest to state before the details.
+
+\begin{enumerate}
+  \item A compact subset of strictly positive definite matrices must be bounded
+  away from the boundary.  The natural model domain is
+  \[
+    \cK_{m,M}:=\{X\in\Spp:m\Id\preceq X\preceq M\Id\},
+    \qquad 0<m\leq M<\infty.
+  \]
+  Saying that a map is ``contractive'' is incomplete until a metric, a domain,
+  and whether the map preserves that domain have been specified.
+
+  \item The Gaussian covariance equation has a unique positive definite
+  solution.  This follows from the Wasserstein barycenter theory of
+  Agueh--Carlier and from matrix-analytic convexity arguments
+  \cite{AguehCarlier2011,BhatiaJainLim2019}.  Brouwer's theorem proves existence
+  of a fixed point on a compact spectral box; it does not prove that the raw
+  Picard iterates converge.
+
+  \item The algorithm with a classical global convergence theorem is
+  \[
+    X_{n+1}=K(X_n):=X_n^{-1/2}\Psi_\lambda(X_n)^2X_n^{-1/2},
+  \]
+  not $X_{n+1}=\Psi_\lambda(X_n)$.  The two maps have the same positive
+  definite fixed point but different dynamics.  In one dimension $K$ reaches
+  the answer in one step, whereas the raw map only halves the exponent at each
+  iteration.
+
+  \item In dimension one, with
+  $c:=\sum_s\lambda_s\sqrt{\Sigma_s}$ and $x_\star=c^2$,
+  \[
+    \Psi(x)=c\sqrt{x},\qquad
+    \Psi^k(x)=x_\star^{1-2^{-k}}x^{2^{-k}}.
+  \]
+  On an invariant interval $[m,M]$ the exact Euclidean contraction constant is
+  \[
+    q_k=2^{-k}\left(\frac{x_\star}{m}\right)^{1-2^{-k}}.
+  \]
+  Hence $q_k\to0$ for every fixed $m>0$, but for every prescribed $k$ one can
+  choose $m$ so small that $q_k>1$.  The correct statement is therefore:
+  eventual contraction holds on each fixed compact interval, but there is no
+  universal iterate independent of the lower spectral bound.
+
+  \item For general noncommuting matrices, this note gives (i) the exact
+  derivative, (ii) a computable local spectral-radius criterion, and (iii) a
+  conservative analytic compact-box certificate.  These yield rigorous
+  contraction results in several regimes, including commuting data and
+  sufficiently well-conditioned boxes.  A theorem covering every collection
+  of positive definite inputs on every invariant compact spectral box was not
+  found in the primary literature.  The older numerical reports concerning
+  the raw map are not rigorous counterexamples.
+
+  \item Gaussian Wasserstein barycenters are Gaussian because moment-matching
+  Gaussianization is $1$-Lipschitz for $W_2$ by Gelbrich's inequality.  This is
+  a nonexpansive projection argument, not a strict contraction argument.
+
+  \item ``Entropic barycenter'' can mean a product-reference entropic OT
+  barycenter, a Schrodinger barycenter with Lebesgue/Brownian reference, or a
+  debiased Sinkhorn-divergence barycenter.  They have different covariance
+  equations and opposite variance biases.  General contraction of their
+  covariance Picard maps is not known; scalar derivatives already rule out a
+  generic one-step Euclidean contraction near the positive-semidefinite
+  boundary.
+
+  \item Ordinary ambient HK/WFR barycenters do not admit a Gelbrich-style
+  Gaussianization proof.  Moment Gaussianization is not even continuous for
+  HK on a compact covariance range.  At the pure Hellinger endpoint, the exact
+  barycenter of Gaussian-shaped densities is generically a finite Gaussian
+  mixture.  Gaussian-restricted BWFR barycenters are meaningful finite-
+  dimensional surrogates, but Gaussianity then holds by restriction, not by an
+  ambient preservation theorem.
+\end{enumerate}
+
+\section{Problem and notation}
+
+Let $\Sigma_1,\ldots,\Sigma_N\in\Spp$ and let
+$\lambda_s>0$ with $\sum_{s=1}^N\lambda_s=1$.  On $\Splus$ define the
+Bures--Wasserstein distance
+\begin{equation}\label{eq:bures-distance}
+ d_{\mathrm{BW}}^2(A,B)
+ :=\tr A+\tr B-2\tr\bigl(A^{1/2}BA^{1/2}\bigr)^{1/2}.
+\end{equation}
+For Gaussian laws,
+\begin{equation}\label{eq:gaussian-w2}
+ W_2^2\bigl(\cN(m,A),\cN(n,B)\bigr)
+ =\norm{m-n}_2^2+d_{\mathrm{BW}}^2(A,B).
+\end{equation}
+The covariance part of the barycenter problem is
+\begin{equation}\label{eq:barycenter-objective}
+ \min_{X\in\Splus} F(X),\qquad
+ F(X):=\frac12\sum_{s=1}^N\lambda_s
+ d_{\mathrm{BW}}^2(X,\Sigma_s).
+\end{equation}
+
+The map under study is
+\begin{equation}\label{eq:Psi-def}
+ \boxed{\quad
+ \Psi(X)=\Psi_\lambda(X):=\sum_{s=1}^N\lambda_s
+ R_s(X),\qquad
+ R_s(X):=\bigl(X^{1/2}\Sigma_sX^{1/2}\bigr)^{1/2}.
+ \quad}
+\end{equation}
+It is continuous and smooth on $\Spp$, maps $\Spp$ into $\Spp$, and is
+positively homogeneous of degree $1/2$:
+\begin{equation}\label{eq:homogeneity}
+ \Psi(tX)=t^{1/2}\Psi(X),\qquad t>0.
+\end{equation}
+It is orthogonally equivariant, but it is not generally equivariant under an
+arbitrary congruence.  That loss of full congruence equivariance is one source
+of difficulty in the noncommutative contraction problem.
+
+We use $\norm{\cdot}_F$ for the Frobenius norm and $\norm{\cdot}_{\mathrm{op}}$
+for the spectral norm.  Unless explicitly stated otherwise, ``contraction''
+below means a strict Lipschitz contraction for $\norm{\cdot}_F$.
+
+\begin{remark}[Positive definite versus positive semidefinite]
+The phrase ``a compact domain of positive PSD matrices'' should be made
+precise.  A compact subset of $\Spp$ has a uniform lower eigenvalue bound
+$m>0$.  If singular matrices are admitted and the domain meets the boundary,
+the scalar square root is not Lipschitz there.  Thus no Euclidean Lipschitz
+theorem uniform down to $0$ can hold even in dimension one.
+\end{remark}
+
+\section{Why Wasserstein barycenters of Gaussians are Gaussian}
+
+\subsection{Gelbrich's inequality}
+
+For a probability measure $\mu\in\cP_2(\R^d)$, write $m_\mu$ and
+$C_\mu$ for its mean and covariance.  Its moment-matching Gaussianization is
+\begin{equation}\label{eq:gaussianization}
+ \cG(\mu):=\cN(m_\mu,C_\mu).
+\end{equation}
+
+\begin{theorem}[Gelbrich bound]\label{thm:gelbrich}
+For $\mu,\nu\in\cP_2(\R^d)$,
+\begin{equation}\label{eq:gelbrich}
+ W_2^2(\mu,\nu)\geq
+ \norm{m_\mu-m_\nu}_2^2+
+ d_{\mathrm{BW}}^2(C_\mu,C_\nu).
+\end{equation}
+Equality holds for Gaussian measures and, more generally, for compatible
+location-scatter families.  Consequently,
+\begin{equation}\label{eq:G-nonexpansive}
+ W_2\bigl(\cG(\mu),\cG(\nu)\bigr)\leq W_2(\mu,\nu).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Take any coupling $(X,Y)$ of $\mu$ and $\nu$ and center it:
+$\widetilde X=X-m_\mu$, $\widetilde Y=Y-m_\nu$.  If
+$C=\mathbb E[\widetilde X\widetilde Y^\top]$, then
+\begin{equation}\label{eq:coupling-cost-cross}
+ \mathbb E\norm{X-Y}_2^2
+ =\norm{m_\mu-m_\nu}_2^2+
+ \tr C_\mu+\tr C_\nu-2\tr C.
+\end{equation}
+The block covariance is positive semidefinite:
+\[
+ \begin{pmatrix}C_\mu&C\\C^\top&C_\nu\end{pmatrix}\succeq0.
+\]
+When the covariances are invertible, the block factorization criterion gives
+$C=C_\mu^{1/2}KC_\nu^{1/2}$ for a contraction $K$; the singular case follows
+by approximation.  Von Neumann's trace inequality, or equivalently the polar
+factor maximization, yields
+\[
+ \tr C\leq
+ \tr\bigl(C_\mu^{1/2}C_\nu C_\mu^{1/2}\bigr)^{1/2}.
+\]
+Substitution in \eqref{eq:coupling-cost-cross} and minimization over couplings
+give \eqref{eq:gelbrich}.  For two Gaussians, the maximizing cross-covariance
+is realized by a jointly Gaussian coupling, which proves equality and
+\eqref{eq:G-nonexpansive}.
+\end{proof}
+
+This result is due to Gelbrich \cite{Gelbrich1990}; the Gaussian distance
+formula was obtained earlier in
+\cite{DowsonLandau1982,OlkinPukelsheim1982,GivensShortt1984}.
+
+\subsection{Gaussian preservation of the barycenter}
+
+\begin{theorem}[Gaussian barycenter by Gaussianization]\label{thm:gaussian-barycenter}
+Let $\nu_s=\cN(m_s,\Sigma_s)$ with $\Sigma_s\succ0$.  The unique minimizer of
+\begin{equation}\label{eq:measure-barycenter}
+ \mu\longmapsto \frac12\sum_s\lambda_sW_2^2(\mu,\nu_s)
+\end{equation}
+over $\cP_2(\R^d)$ is Gaussian.  Its mean is
+$m_\star=\sum_s\lambda_sm_s$, and its covariance is the unique minimizer of
+\eqref{eq:barycenter-objective}.
+\end{theorem}
+
+\begin{proof}
+Since $\cG(\nu_s)=\nu_s$, \cref{thm:gelbrich} gives, for every candidate
+$\mu$,
+\[
+ W_2\bigl(\cG(\mu),\nu_s\bigr)\leq W_2(\mu,\nu_s)
+ \quad\text{for every }s.
+\]
+Thus Gaussianization cannot increase the barycenter objective.  General
+Wasserstein barycenter theory gives uniqueness when at least one input is
+absolutely continuous; here every nondegenerate Gaussian is absolutely
+continuous.  Hence the unique minimizer equals its Gaussianization.  Formula
+\eqref{eq:gaussian-w2} separates mean and covariance, and the mean minimizer is
+the weighted Euclidean mean.
+\end{proof}
+
+\begin{remark}
+The Gaussianization map is nonexpansive, not strictly contractive.  Equality
+holds for every pair of Gaussians.  Gaussian preservation should therefore not
+be confused with a Banach contraction mechanism.
+\end{remark}
+
+\section{The covariance equation and its unique solution}
+
+\subsection{Optimal maps and first-order condition}
+
+The optimal linear transport from $\cN(0,X)$ to $\cN(0,\Sigma_s)$ is
+\begin{equation}\label{eq:optimal-map}
+ T_s(X):=X^{-1/2}R_s(X)X^{-1/2}.
+\end{equation}
+It is symmetric positive definite and satisfies
+$T_s(X)XT_s(X)=\Sigma_s$.  Define its weighted mean
+\begin{equation}\label{eq:H-def}
+ H(X):=\sum_s\lambda_sT_s(X).
+\end{equation}
+Since $R_s(X)=X^{1/2}T_s(X)X^{1/2}$,
+\begin{equation}\label{eq:Psi-H}
+ \Psi(X)=X^{1/2}H(X)X^{1/2}.
+\end{equation}
+
+\begin{proposition}[Differential of the Bures objective]
+For a symmetric perturbation $Z$,
+\begin{equation}\label{eq:bures-differential}
+ D\,d_{\mathrm{BW}}^2(X,\Sigma_s)[Z]
+ =\tr\bigl((\Id-T_s(X))Z\bigr),
+\end{equation}
+and therefore
+\begin{equation}\label{eq:F-gradient}
+ \nabla F(X)=\frac12(\Id-H(X)).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The non-linear trace term may equivalently be written
+\[
+ \tr R_s(X)=
+ \tr\bigl(\Sigma_s^{1/2}X\Sigma_s^{1/2}\bigr)^{1/2}.
+\]
+For a positive definite $Y$, spectral calculus and cyclicity of the trace give
+\[
+ D\,\tr(Y^{1/2})[W]=\frac12\tr(Y^{-1/2}W).
+\]
+With $Y=\Sigma_s^{1/2}X\Sigma_s^{1/2}$, this yields
+\[
+ D\,\tr R_s(X)[Z]
+ =\frac12\tr\left(
+ \Sigma_s^{1/2}(\Sigma_s^{1/2}X\Sigma_s^{1/2})^{-1/2}
+ \Sigma_s^{1/2}Z\right)
+ =\frac12\tr(T_s(X)Z),
+\]
+where the last matrix is the equivalent target-side formula for the Gaussian
+optimal map.  Differentiating \eqref{eq:bures-distance} proves
+\eqref{eq:bures-differential}; summing proves \eqref{eq:F-gradient}.
+\end{proof}
+
+Thus the stationarity equation is
+\begin{equation}\label{eq:stationarity-H}
+ H(X)=\Id.
+\end{equation}
+By \eqref{eq:Psi-H}, this is equivalent to
+\begin{equation}\label{eq:fixed-equation}
+ \boxed{\Psi(X)=X.}
+\end{equation}
+
+\begin{theorem}[Existence and uniqueness]\label{thm:exist-unique}
+For $\Sigma_s\succ0$ and positive weights summing to one, there is a unique
+$\Sigma_\star\succ0$ satisfying \eqref{eq:fixed-equation}.  It is the unique
+minimizer of \eqref{eq:barycenter-objective}.
+\end{theorem}
+
+This is the Gaussian part of Agueh--Carlier's barycenter theorem
+\cite[Theorem 6.1]{AguehCarlier2011}.  Earlier work derived the equation and
+studied the associated multi-coupling problem
+\cite{KnottSmith1994,RuschendorfUckelmann2002}.  Bhatia--Jain--Lim give a
+matrix-analysis proof based on convexity of the fidelity functional
+\cite{BhatiaJainLim2019}.
+
+For completeness, strict uniqueness can also be seen directly.  The map
+$Y\mapsto\tr(Y^{1/2})$ is strictly concave on positive definite matrices.  As
+$X\mapsto\Sigma_s^{1/2}X\Sigma_s^{1/2}$ is injective when
+$\Sigma_s\succ0$, each function
+\[
+ X\longmapsto \tr X+\tr\Sigma_s
+ -2\tr(\Sigma_s^{1/2}X\Sigma_s^{1/2})^{1/2}
+\]
+is strictly convex.  Hence $F$ has at most one stationary point, and the
+fixed point constructed on the compact box below is that unique minimizer.
+
+\subsection{The compact spectral box used for existence}
+
+Assume
+\begin{equation}\label{eq:data-bounds}
+ a_s\Id\preceq\Sigma_s\preceq b_s\Id,
+ \qquad 0<a_s\leq b_s.
+\end{equation}
+Set
+\begin{equation}\label{eq:cpm}
+ c_-:=\sum_s\lambda_s\sqrt{a_s},\qquad
+ c_+:=\sum_s\lambda_s\sqrt{b_s}.
+\end{equation}
+
+\begin{lemma}[Spectral enclosure]\label{lem:spectral-enclosure}
+If $X\in\cK_{m,M}$, then
+\begin{equation}\label{eq:image-box}
+ c_-\sqrt m\,\Id\preceq\Psi(X)
+ \preceq c_+\sqrt M\,\Id.
+\end{equation}
+Consequently, $\cK_{m,M}$ is forward invariant under $\Psi$ whenever
+\begin{equation}\label{eq:invariance-condition}
+ m\leq c_-^2,\qquad M\geq c_+^2.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+From \eqref{eq:data-bounds},
+\[
+ a_sX\preceq X^{1/2}\Sigma_sX^{1/2}\preceq b_sX.
+\]
+The matrix square root is operator monotone, so for $X\in\cK_{m,M}$,
+\[
+ \sqrt{a_sm}\,\Id\preceq R_s(X)
+ \preceq\sqrt{b_sM}\,\Id.
+\]
+Sum with weights.  Conditions \eqref{eq:invariance-condition} are exactly
+$c_-\sqrt m\geq m$ and $c_+\sqrt M\leq M$.
+\end{proof}
+
+Thus $\Psi$ is a continuous self-map of a convex compact set, and Brouwer
+gives a fixed point.  This is an existence argument only.  A continuous
+self-map of a compact convex set need not be a contraction, and its Picard
+iterates need not converge.
+
+\section{Algorithms in the literature: the essential distinction}
+
+\subsection{Raw Picard versus the transport update}
+
+The raw fixed-point iteration is
+\begin{equation}\label{eq:raw-picard}
+ X_{n+1}=\Psi(X_n).
+\end{equation}
+The measure pushforward construction of Alvarez-Esteban et al. instead gives
+the covariance update
+\begin{equation}\label{eq:K-update}
+ \boxed{\quad
+ K(X):=H(X)XH(X)
+ =X^{-1/2}\Psi(X)^2X^{-1/2}.
+ \quad}
+\end{equation}
+The identity follows from \eqref{eq:Psi-H}.  Both maps have the same positive
+definite fixed point, but they are not the same map.
+
+More generally, a damped Bures--Wasserstein gradient step has the form
+\begin{equation}\label{eq:damped-rgd}
+ K_\eta(X)=\bigl((1-\eta)\Id+\eta H(X)\bigr)
+ X\bigl((1-\eta)\Id+\eta H(X)\bigr),
+\end{equation}
+with normalization depending on whether the objective contains a factor
+$1/2$.  The unit step $\eta=1$ is \eqref{eq:K-update}.
+
+\begin{theorem}[Global convergence of the stabilized update]
+Suppose the input covariances are positive semidefinite and at least one is
+positive definite.  Starting from $X_0\succ0$, the sequence
+$X_{n+1}=K(X_n)$ converges to the Bures--Wasserstein barycenter covariance.
+Moreover, the barycenter variance decreases and controls the step:
+\begin{equation}\label{eq:variance-descent}
+ F(X)\geq F(K(X))+\frac12d_{\mathrm{BW}}^2(X,K(X)),
+\end{equation}
+up to the normalization of $F$.
+\end{theorem}
+
+This is the covariance specialization of
+\cite[Theorem 4.2]{AlvarezEsteban2016}; see also
+\cite{BhatiaJainLim2019}.  Determinant control keeps the iterates away from
+the boundary, the variance inequality identifies cluster points as fixed
+points, and uniqueness finishes the proof.
+
+\begin{example}[The scalar contrast]
+In dimension one, $H(x)=c/\sqrt{x}$ and therefore
+\[
+ K(x)=\frac{c}{\sqrt{x}}x\frac{c}{\sqrt{x}}=c^2=x_\star.
+\]
+The stabilized update is exact in one step.  The raw map is
+$x\mapsto c\sqrt{x}$ and generally needs infinitely many steps.
+\end{example}
+
+\subsection{What is known about the raw iteration}
+
+Ruschendorf--Uckelmann considered an equivalent square-root iteration in the
+multi-coupling formulation \cite{RuschendorfUckelmann2002}.  Alvarez-Esteban
+et al. explicitly distinguish it from \eqref{eq:K-update}, label it their
+iteration (27), and state that no theoretical consistency result was available
+for it \cite[Section 5]{AlvarezEsteban2016}.  They report satisfactory
+two-dimensional examples and quote unfavorable behavior for some
+three-dimensional initializations.  These are numerical observations, not a
+rigorous divergent orbit or cycle.
+
+As of the literature audit for this note, no primary theorem was located that
+proves a Banach contraction of the raw map $\Psi$, or of a fixed iterate
+$\Psi^k$, on every invariant spectral compact.  Later global and linear-rate
+results concern $K$ or damped Riemannian gradient descent, not raw Picard:
+\begin{itemize}
+  \item Chewi--Maunu--Rigollet--Stromme prove global rates for Bures gradient
+  descent and stochastic gradient descent using a Polyak--Lojasiewicz
+  inequality \cite{ChewiEtAl2020}.
+  \item Altschuler--Chewi--Gerber--Stromme obtain dimension-free rates under
+  uniform eigenvalue bounds.  For a damped step and condition number
+  $\kappa$, the objective gap decays like
+  $\exp(-cT/\kappa^{5/2})$ with a universal constant $c>0$
+  \cite{AltschulerEtAl2021}.
+  \item Zemel--Panaretos connect the update with Procrustes alignment and
+  Wasserstein gradient descent \cite{ZemelPanaretos2019}.
+  \item Brahmachari--Rubboli--Tomamichel prove exponential convergence for a
+  broader Bures projection fixed-point algorithm that specializes to the
+  Alvarez-Esteban $K$ update \cite{BrahmachariEtAl2025}.
+\end{itemize}
+
+\subsection{Other computational formulations}
+
+The Bures fidelity has the semidefinite representation
+\begin{equation}\label{eq:fidelity-sdp}
+ \tr\bigl(X^{1/2}\Sigma_sX^{1/2}\bigr)^{1/2}
+ =\max_{Z_s}\left\{\tr Z_s:
+ \begin{pmatrix}X&Z_s\\Z_s^\top&\Sigma_s\end{pmatrix}\succeq0\right\}.
+\end{equation}
+Consequently, \eqref{eq:barycenter-objective} is an SDP:
+\begin{equation}\label{eq:barycenter-sdp}
+ \begin{aligned}
+ \min_{X,Z_1,\ldots,Z_N}\quad&
+ \sum_s\lambda_s\bigl(\tr X+\tr\Sigma_s-2\tr Z_s\bigr),\\
+ \text{subject to}\quad&
+ \begin{pmatrix}X&Z_s\\Z_s^\top&\Sigma_s\end{pmatrix}\succeq0,
+ \qquad s=1,\ldots,N.
+ \end{aligned}
+\end{equation}
+It is robust but expensive at large $d$ or $N$.  Other choices include
+Euclidean projected gradient, Bures Riemannian gradient or trust-region
+methods, stochastic gradient for population barycenters, and generalized
+Procrustes alternating alignment.  For the Gaussian covariance problem, the
+stabilized update \eqref{eq:K-update} remains especially simple: each step
+requires matrix square roots and linear solves but no step-size selection.
+
+\section{What a contraction statement must say}
+
+\begin{definition}
+Let $(D,d)$ be a metric space.  A map $G:D\to D$ is a strict contraction if
+there is $q<1$ such that
+\[
+ d(G(X),G(Y))\leq qd(X,Y),\qquad X,Y\in D.
+\]
+An iterate $G^k$ is an eventual contraction if this holds for some finite $k$.
+\end{definition}
+
+Three quantifiers are distinct:
+\begin{enumerate}
+  \item for each fixed data set and each fixed invariant compact $D$, there
+  exists a $k=k(D,\{\Sigma_s\})$;
+  \item for each fixed data set, one $k$ works for every invariant compact;
+  \item one universal $k$ works for every data set and compact.
+\end{enumerate}
+The scalar calculation below proves the first and disproves the second and
+third in their unrestricted form.
+
+Metric choice matters.  The Frobenius, operator, affine-invariant,
+log-Euclidean, Thompson, and Bures metrics can give different Lipschitz
+constants.  Equivalent norms on a finite-dimensional compact have the same
+topology, but ``constant $<1$'' is not invariant under a change of norm.
+
+\begin{proposition}[Why eventual contraction would settle raw Picard]
+Let $D$ be complete and forward invariant under a continuous map $G$.  If
+$G^k:D\to D$ is a contraction for some $k$, then $G$ has a unique fixed point
+$p$ in $D$, and every raw orbit $G^n(X)$ converges to $p$.
+\end{proposition}
+
+\begin{proof}
+Banach's theorem gives a unique fixed point $p$ of $G^k$ and convergence of
+$G^{kn}(X)$ to $p$.  Since $G(p)$ is also fixed by $G^k$,
+\[
+ G^k(G(p))=G(G^k(p))=G(p),
+\]
+uniqueness implies $G(p)=p$.  Continuity then gives
+$G^{kn+r}(X)\to G^r(p)=p$ for each $r=0,\ldots,k-1$.
+\end{proof}
+
+Thus a rigorous nonconvergent raw orbit inside an invariant compact would
+disprove eventual contraction there.  The historical numerical remarks do not
+yet provide such a mathematical counterexample.
+
+\section{Exact scalar, isotropic, and commuting analysis}
+
+\subsection{Dimension one}
+
+Write the scalar covariances as $\sigma_s>0$ and define
+\begin{equation}\label{eq:scalar-c}
+ c:=\sum_s\lambda_s\sqrt{\sigma_s},\qquad x_\star:=c^2.
+\end{equation}
+Then $\Psi(x)=c\sqrt{x}$.
+
+\begin{theorem}[Exact iterates and exact Euclidean constant]\label{thm:scalar-exact}
+For every $k\geq1$,
+\begin{equation}\label{eq:scalar-iterate}
+ \Psi^k(x)=x_\star^{1-2^{-k}}x^{2^{-k}},
+\end{equation}
+and on $[m,M]\subset(0,\infty)$,
+\begin{equation}\label{eq:scalar-qk}
+ \Lip\bigl(\Psi^k;[m,M]\bigr)
+ =q_k:=2^{-k}
+ \left(\frac{x_\star}{m}\right)^{1-2^{-k}}.
+\end{equation}
+The interval is forward invariant exactly when
+$m\leq x_\star\leq M$.  On every such fixed interval, $q_k\to0$, so
+$\Psi^k$ is a contraction for all sufficiently large $k$.
+\end{theorem}
+
+\begin{proof}
+The identity is true for $k=1$.  If it holds with exponent $p=2^{-k}$, then
+\[
+ \Psi^{k+1}(x)
+ =\sqrt{x_\star}\,
+ \bigl(x_\star^{1-p}x^p\bigr)^{1/2}
+ =x_\star^{1-p/2}x^{p/2}.
+\]
+This proves \eqref{eq:scalar-iterate}.  Its derivative is
+\[
+ (\Psi^k)'(x)=2^{-k}x_\star^{1-2^{-k}}
+ x^{2^{-k}-1}.
+\]
+It is positive and decreasing, so its maximum on $[m,M]$ is attained at $m$,
+which gives \eqref{eq:scalar-qk}.  Since $\Psi$ is increasing, invariance is
+equivalent to $\Psi(m)\geq m$ and $\Psi(M)\leq M$, or
+$m\leq c^2\leq M$.  Finally $2^{-k}\to0$ while
+$(x_\star/m)^{1-2^{-k}}\to x_\star/m$, hence $q_k\to0$.
+\end{proof}
+
+\begin{corollary}[No uniform iterate]\label{cor:no-uniform-k}
+For every prescribed $k$, there is an invariant compact interval on which
+$\Psi^k$ is not a Euclidean contraction.
+\end{corollary}
+
+\begin{proof}
+Fix $x_\star$ and $M\geq x_\star$.  Formula
+\eqref{eq:scalar-qk} exceeds one when $m/x_\star$ is sufficiently small, while
+$m\leq x_\star$ keeps the interval invariant.
+\end{proof}
+
+For $k=1$, the constant is
+\begin{equation}\label{eq:q1-scalar}
+ q_1=\frac12\sqrt{\frac{x_\star}{m}},
+\end{equation}
+so raw Picard expands near the lower end whenever $m<x_\star/4$.
+
+In contrast, the scalar Thompson/log metric gives a global exact contraction:
+\begin{equation}\label{eq:scalar-log-contraction}
+ \abs{\log\Psi(x)-\log\Psi(y)}
+ =\frac12\abs{\log x-\log y}.
+\end{equation}
+This illustrates why the metric cannot be omitted from the claim.
+
+\subsection{Isotropic data in arbitrary dimension}
+
+Suppose $\Sigma_s=\sigma_s\Id$.  Then
+\begin{equation}\label{eq:isotropic-Psi}
+ \Psi(X)=cX^{1/2},\qquad
+ \Psi^k(X)=x_\star^{1-2^{-k}}X^{2^{-k}}.
+\end{equation}
+
+\begin{proposition}[Exact isotropic compact-box constant]
+On $\cK_{m,M}$,
+\begin{equation}\label{eq:isotropic-q}
+ \Lip_F(\Psi^k;\cK_{m,M})
+ =2^{-k}\left(\frac{x_\star}{m}\right)^{1-2^{-k}}.
+\end{equation}
+Thus the scalar conclusions, including nonexistence of a universal $k$, hold
+in every matrix dimension.
+\end{proposition}
+
+\begin{proof}
+For $0<p<1$, the Fr\'echet derivative of $X\mapsto X^p$ in an eigenbasis has
+coefficients equal to divided differences of $t^p$.  On $[m,M]$ their maximum
+is $pm^{p-1}$ by concavity.  This gives the upper bound in
+\eqref{eq:isotropic-q}; the scalar direction at $X=m\Id$ attains it.
+\end{proof}
+
+\subsection{Commuting inputs and commuting iterates}
+
+Suppose all inputs and the initial matrix commute.  In a common orthogonal
+basis, write
+\[
+ \Sigma_s=\diag(\sigma_{s,1},\ldots,\sigma_{s,d}),\qquad
+ X=\diag(x_1,\ldots,x_d),
+\]
+and
+\begin{equation}\label{eq:commuting-cj}
+ c_j:=\sum_s\lambda_s\sqrt{\sigma_{s,j}},
+ \qquad x_{\star,j}=c_j^2.
+\end{equation}
+Then the coordinates decouple:
+\begin{equation}\label{eq:commuting-iterate}
+ (\Psi^k(X))_{jj}=x_{\star,j}^{1-2^{-k}}x_j^{2^{-k}}.
+\end{equation}
+On a diagonal rectangle $m_j\leq x_j\leq M_j$, the exact Frobenius
+Lipschitz constant is
+\begin{equation}\label{eq:commuting-q}
+ \max_j 2^{-k}
+ \left(\frac{x_{\star,j}}{m_j}\right)^{1-2^{-k}}.
+\end{equation}
+It tends to zero on every fixed rectangle bounded away from zero.  In
+coordinatewise log distance the one-step factor is exactly $1/2$.
+
+The preceding argument restricts both points to the commuting algebra.  The
+next result studies arbitrary symmetric perturbations around the commuting
+barycenter and is stronger.
+
+\begin{theorem}[Local derivative for commuting data]\label{thm:commuting-local}
+Assume the $\Sigma_s$ are diagonal in a common basis.  At the barycenter
+$X_\star=\diag(c_1^2,\ldots,c_d^2)$, the derivative
+$J=D\Psi(X_\star)$ is diagonal on the standard symmetric matrix basis.
+For a diagonal direction $E_{ii}$ its eigenvalue is $1/2$.  For an off-diagonal
+direction $E_{ij}+E_{ji}$, let
+$u_s=\sqrt{\sigma_{s,i}}$ and $v_s=\sqrt{\sigma_{s,j}}$.  The eigenvalue is
+\begin{equation}\label{eq:theta-ij}
+ \theta_{ij}=
+ \frac{1}{c_i+c_j}\sum_s\lambda_s
+ \frac{c_i u_s^2+c_jv_s^2}{c_iu_s+c_jv_s}.
+\end{equation}
+It satisfies
+\begin{equation}\label{eq:theta-bounds}
+ \frac12\leq\theta_{ij}<1.
+\end{equation}
+Hence $\norm{D\Psi(X_\star)}_{F\to F}<1$, and $\Psi$ is a Frobenius
+contraction on some full, not merely diagonal, neighborhood of $X_\star$.
+\end{theorem}
+
+\begin{proof}
+The derivative formula established in \cref{thm:frechet-derivative} below
+preserves each coordinate matrix when all matrices at the base point are
+diagonal.  Substitution of
+$X_\star^{1/2}=\diag(c_1,\ldots,c_d)$ gives
+\eqref{eq:theta-ij}; the diagonal coefficient reduces to
+$\sum_s\lambda_su_s/(2c_i)=1/2$.
+
+For the upper bound, pointwise in $s$,
+\[
+ \frac{c_i u_s^2+c_jv_s^2}{c_iu_s+c_jv_s}
+ <u_s+v_s,
+\]
+because the difference after multiplication by the positive denominator is
+$(c_i+c_j)u_sv_s>0$.  Averaging gives a strict upper bound $c_i+c_j$, and
+division by $c_i+c_j$ gives $\theta_{ij}<1$.
+
+For the lower bound, weighted Cauchy--Schwarz gives
+\[
+ c_i u_s^2+c_jv_s^2\geq
+ \frac{(c_iu_s+c_jv_s)^2}{c_i+c_j}.
+\]
+Therefore
+\[
+ \theta_{ij}\geq
+ \frac{c_i^2+c_j^2}{(c_i+c_j)^2}\geq\frac12.
+\]
+The derivative is self-adjoint and diagonal in an orthonormal Frobenius basis,
+so its operator norm is its largest eigenvalue, strictly below one.  Continuity
+of $D\Psi$ yields a neighborhood on which the derivative norm remains below
+one; the mean-value formula then gives a contraction.
+\end{proof}
+
+\begin{example}[Slow off-diagonal modes]
+For a single input $A=\diag(a_1,\ldots,a_d)$, the fixed point is $A$ and
+\begin{equation}\label{eq:single-input-theta}
+ D\Psi(A)[E_{ij}+E_{ji}]
+ =\left(1-\frac{\sqrt{a_ia_j}}{a_i+a_j}\right)(E_{ij}+E_{ji}).
+\end{equation}
+For $i\neq j$, the coefficient equals $1/2$ when $a_i=a_j$ and approaches
+$1$ as $a_i/a_j\to\infty$; diagonal modes separately have eigenvalue $1/2$.
+Thus even local raw Picard convergence can be arbitrarily
+slow with ill-conditioning; no condition-number-free strict factor is
+possible.
+\end{example}
+
+\section{Full noncommutative differential calculus}
+
+\subsection{Derivative through Sylvester equations}
+
+For $Z\succ0$, define the Lyapunov/Sylvester operator
+\begin{equation}\label{eq:lyapunov}
+ \cL_Z(U):=ZU+UZ.
+\end{equation}
+It is invertible on symmetric matrices.  Differentiating $S^2=X$ shows that
+the Fr\'echet derivative of the matrix square root is
+\begin{equation}\label{eq:dsqrt}
+ D(X^{1/2})[H]=\cL_{X^{1/2}}^{-1}(H).
+\end{equation}
+
+\begin{theorem}[Exact derivative of the raw map]\label{thm:frechet-derivative}
+Fix $X\succ0$ and a symmetric perturbation $H$.  Put
+\[
+ S=X^{1/2},\qquad R_s=(S\Sigma_sS)^{1/2}.
+\]
+Let $U$ and $V_s$ be the unique symmetric solutions of
+\begin{align}
+ SU+US&=H,\label{eq:sylvester-U}\\
+ R_sV_s+V_sR_s&=U\Sigma_sS+S\Sigma_sU.
+ \label{eq:sylvester-V}
+\end{align}
+Then
+\begin{equation}\label{eq:Dpsi}
+ \boxed{D\Psi(X)[H]=\sum_s\lambda_sV_s.}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Equation \eqref{eq:sylvester-U} is the derivative of $S^2=X$.  For
+$Y_s=S\Sigma_sS$, the product rule gives
+\[
+ DY_s[H]=U\Sigma_sS+S\Sigma_sU.
+\]
+Differentiating $R_s^2=Y_s$ gives \eqref{eq:sylvester-V}.  Sum with the fixed
+weights.
+\end{proof}
+
+The formula is numerically stable: diagonalize the two positive matrices or
+solve the Sylvester equations directly.  It avoids finite differences and
+allows exact evaluation of the Jacobian on the $d(d+1)/2$-dimensional
+symmetric space.
+
+\subsection{A conservative compact-box Lipschitz bound}
+
+\begin{lemma}[Square-root derivative norm]\label{lem:sqrt-deriv-bound}
+For $Z\succ0$,
+\begin{equation}\label{eq:lyapunov-inverse-bound}
+ \norm{\cL_Z^{-1}}_{F\to F}=\frac{1}{2\lambda_{\min}(Z)}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+In an eigenbasis of $Z=\diag(z_1,\ldots,z_d)$,
+$(\cL_Z^{-1}H)_{ij}=H_{ij}/(z_i+z_j)$.  The largest coefficient is
+$1/(2\min_i z_i)$.
+\end{proof}
+
+\begin{proposition}[One-step analytic bound]\label{prop:one-step-bound}
+Under \eqref{eq:data-bounds}, on $\cK_{m,M}$,
+\begin{equation}\label{eq:LmM}
+ \Lip_F(\Psi;\cK_{m,M})\leq
+ L(m,M):=\frac{\sqrt M}{2m}
+ \sum_s\lambda_s\frac{b_s}{\sqrt{a_s}}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $\norm{H}_F=1$.  From \eqref{eq:sylvester-U},
+\[
+ \norm U_F\leq\frac{1}{2\sqrt m}.
+\]
+Also $\norm S_{\mathrm{op}}\leq\sqrt M$ and
+$\norm{\Sigma_s}_{\mathrm{op}}\leq b_s$, hence
+\[
+ \norm{U\Sigma_sS+S\Sigma_sU}_F
+ \leq b_s\sqrt{\frac{M}{m}}.
+\]
+Since $S\Sigma_sS\succeq a_sm\Id$, we have
+$R_s\succeq\sqrt{a_sm}\Id$.  A second use of
+\cref{lem:sqrt-deriv-bound} gives
+\[
+ \norm{V_s}_F\leq
+ \frac{b_s\sqrt M}{2m\sqrt{a_s}}.
+\]
+After summing, this bounds $\norm{D\Psi(X)}_{F\to F}$ uniformly on the convex
+box.  Integrating the derivative along the segment from $X$ to $Y$ proves
+\eqref{eq:LmM}.
+\end{proof}
+
+This bound is deliberately elementary and can be loose.  Its value is that it
+is explicit and composable.
+
+\subsection{A rigorous sufficient theorem for an iterate}
+
+Starting from $m_0=m$, $M_0=M$, define
+\begin{equation}\label{eq:box-recursion}
+ m_{j+1}=c_-\sqrt{m_j},\qquad
+ M_{j+1}=c_+\sqrt{M_j}.
+\end{equation}
+Equivalently,
+\begin{equation}\label{eq:box-explicit}
+ m_j=c_-^{2(1-2^{-j})}m^{2^{-j}},\qquad
+ M_j=c_+^{2(1-2^{-j})}M^{2^{-j}}.
+\end{equation}
+By \cref{lem:spectral-enclosure},
+$\Psi^j(\cK_{m,M})\subset\cK_{m_j,M_j}$.
+
+\begin{theorem}[Compact-box contraction certificate]\label{thm:compact-certificate}
+Let
+\begin{equation}\label{eq:Qk}
+ Q_k:=\prod_{j=0}^{k-1}L(m_j,M_j),
+\end{equation}
+where $L$ is defined in \eqref{eq:LmM}.  Then
+\begin{equation}\label{eq:iterate-Lip-bound}
+ \Lip_F(\Psi^k;\cK_{m,M})\leq Q_k.
+\end{equation}
+In particular, $Q_k<1$ is a rigorous sufficient certificate that $\Psi^k$ is
+a Frobenius contraction on the box.  If the box is invariant by
+\eqref{eq:invariance-condition}, Banach's theorem applies.
+
+Moreover, put
+\begin{equation}\label{eq:L-infty}
+ L_\infty:=
+ \frac{c_+}{2c_-^2}
+ \sum_s\lambda_s\frac{b_s}{\sqrt{a_s}}.
+\end{equation}
+If $L_\infty<1$, then $Q_k\to0$ and some iterate is a contraction on every
+fixed box $\cK_{m,M}$.
+\end{theorem}
+
+\begin{proof}
+Each factor in the derivative chain for $\Psi^k$ is evaluated in the
+corresponding image box.  Apply \cref{prop:one-step-bound} successively to
+obtain \eqref{eq:iterate-Lip-bound}.  From \eqref{eq:box-explicit},
+$m_j\to c_-^2$ and $M_j\to c_+^2$, so
+$L(m_j,M_j)\to L_\infty$.  If the limit is below one, all sufficiently late
+factors are bounded by some $q<1$, and the finite product of early factors
+times $q^{k-j_0}$ tends to zero.
+\end{proof}
+
+The condition $L_\infty<1$ is sufficient, not necessary.  Failure of this
+test says only that the elementary eigenvalue estimates lost too much
+information.  The exact derivative product may still contract.
+
+\subsection{The sharp local criterion}
+
+Let $X_\star$ be the barycenter and $J=D\Psi(X_\star)$.  Homogeneity gives a
+universal eigenpair:
+\begin{equation}\label{eq:radial-eigenpair}
+ J[X_\star]=\frac12X_\star.
+\end{equation}
+Indeed, differentiate $\Psi(tX_\star)=\sqrt t X_\star$ at $t=1$.
+
+\begin{theorem}[Local eventual contraction criterion]\label{thm:local-criterion}
+Let $G$ be a $C^1$ map on a finite-dimensional normed space with fixed point
+$p$, and let $J=DG(p)$.
+\begin{enumerate}
+  \item If $\norm J<1$ in the chosen induced norm, then $G$ is a contraction
+  on a sufficiently small invariant ball around $p$.
+  \item If the spectral radius $\rhoop(J)<1$, then for every fixed induced
+  norm there is a $k$ such that $G^k$ is a contraction on a sufficiently small
+  invariant ball around $p$.
+  \item If $\rhoop(J)\geq1$, no iterate can be a strict local contraction in
+  any norm.
+\end{enumerate}
+Applied to $G=\Psi$, the best possible local factor is at least $1/2$ because
+of \eqref{eq:radial-eigenpair}.
+\end{theorem}
+
+\begin{proof}
+The first statement follows from continuity of $DG$ and the mean-value
+formula.  If $\rhoop(J)<1$, then $J^k\to0$, hence $\norm{J^k}<1$ for some
+$k$; use the first statement for $G^k$.  Conversely, a local contraction of
+$G^k$ implies $\norm{J^k}<1$, so
+$\rhoop(J)^k=\rhoop(J^k)<1$.
+\end{proof}
+
+\subsection{What remains open for the raw map}
+
+The general noncommuting problem can now be stated without ambiguity.
+
+\begin{quote}
+For fixed positive definite data and a fixed forward-invariant spectral box,
+is there always a finite $k$ for which
+\[
+ \sup_{X\in\cK_{m,M}}
+ \norm{D\Psi(\Psi^{k-1}X)\cdots D\Psi(X)}_{F\to F}<1?
+\]
+\end{quote}
+
+The exact scalar and commuting results support a positive answer in those
+regimes.  The compact-box theorem proves it under an explicit conditioning
+condition.  The literature located for this study does not settle the fully
+noncommuting statement.  A useful first local target is
+\begin{equation}\label{eq:local-open-target}
+ \rhoop(D\Psi(X_\star))<1
+ \quad\text{for arbitrary noncommuting positive definite inputs}.
+\end{equation}
+Even a proof of \eqref{eq:local-open-target} would be local; extending it
+uniformly over a whole spectral box would require control of derivative
+products along every raw orbit.
+
+\section{Practical derivative test and reference algorithms}
+
+For a concrete data set, the following procedure separates provable facts
+from numerical evidence.
+
+\paragraph{Step 1: compute the barycenter reliably.}
+Use the stabilized update
+\[
+ X\leftarrow X^{-1/2}\Psi(X)^2X^{-1/2}
+\]
+until either the fixed residual $\norm{\Psi(X)-X}_F/\norm X_F$ or the Bures
+step is below tolerance.  Symmetrize after floating-point products and compute
+square roots by an eigendecomposition with positive eigenvalue checks.
+
+\paragraph{Step 2: assemble the exact Jacobian.}
+Choose the orthonormal symmetric basis
+\[
+ E_{ii},\qquad (E_{ij}+E_{ji})/\sqrt2\quad(i<j).
+\]
+For each basis element solve \eqref{eq:sylvester-U} and
+\eqref{eq:sylvester-V}; project the result onto the basis.  This forms the
+$d(d+1)/2$ square matrix representing $D\Psi(X_\star)$.
+
+\paragraph{Step 3: distinguish three diagnostics.}
+\begin{itemize}
+  \item $\rhoop(J)<1$ certifies local eventual contraction.
+  \item $\norm J_2<1$ certifies local one-step Frobenius contraction.
+  \item Neither diagnostic certifies contraction on a large compact box.
+  For that, bound the derivative chain along the full reachable set, using
+  \cref{thm:compact-certificate} or sharper interval/spectral estimates.
+\end{itemize}
+
+\paragraph{Step 4: search for a rigorous obstruction if needed.}
+A pair $X,Y$ with
+\[
+ \norm{\Psi^k(X)-\Psi^k(Y)}_F\geq\norm{X-Y}_F
+\]
+disproves $k$-step Frobenius contraction on any domain containing them, but
+does not disprove eventual contraction for a larger iterate.  A verified
+nontrivial periodic orbit inside an invariant compact would disprove every
+eventual-contraction theorem there.
+
+\section{Entropic and Sinkhorn Gaussian barycenters}
+
+\subsection{Three objectives that must not be conflated}
+
+Fix the convention
+\begin{equation}\label{eq:EOT-convention}
+ \mathrm{OT}_\eps(\mu,\nu)
+ :=\inf_{\pi\in\Pi(\mu,\nu)}
+ \left\{\frac12\int\norm{x-y}_2^2\dd\pi
+ +\eps\KL(\pi\mid\mu\otimes\nu)\right\}.
+\end{equation}
+There are at least three common barycenter objectives.
+
+\begin{enumerate}
+  \item The \emph{product-reference raw entropic barycenter} minimizes
+  $\sum_s\lambda_s\mathrm{OT}_\eps(\mu,\nu_s)$.  It has a shrinkage bias and
+  can collapse.
+  \item The \emph{Lebesgue/Brownian-reference Schrodinger barycenter} differs
+  by a marginal entropy term.  With
+  $H(\mu)=\int\rho\log\rho$, the family
+  \[
+    \sum_s\lambda_s\mathrm{OT}_\eps(\mu,\nu_s)+\tau H(\mu)
+  \]
+  has product reference at $\tau=0$ and the Lebesgue/Brownian convention at
+  $\tau=\eps$.  The latter has a blurring bias.
+  \item The \emph{debiased Sinkhorn divergence}
+  \begin{equation}\label{eq:sinkhorn-divergence}
+    S_\eps(\mu,\nu)=\mathrm{OT}_\eps(\mu,\nu)
+    -\frac12\mathrm{OT}_\eps(\mu,\mu)
+    -\frac12\mathrm{OT}_\eps(\nu,\nu)
+  \end{equation}
+  cancels the reference-dependent marginal entropy terms and much of the
+  entropic bias.
+\end{enumerate}
+
+This taxonomy and the doubly regularized interpolation are developed in
+\cite{Chizat2025}.  Pairwise Gaussian entropic OT has a Gaussian optimal
+coupling, but that pairwise statement alone does not prove that a barycenter
+over all probability measures is Gaussian.
+
+\subsection{Gaussian covariance equations}
+
+Let the inputs be $\cN(m_s,A_s)$ and write $\delta=\eps/2$.  The mean is again
+$m=\sum_s\lambda_sm_s$.  Within the Gaussian manifold, the product-reference
+raw covariance equation is
+\begin{equation}\label{eq:entropic-product}
+ B=\sum_s\lambda_s
+ \bigl(B^{1/2}A_sB^{1/2}+\delta^2\Id\bigr)^{1/2}-\delta\Id.
+\end{equation}
+More generally, adding $\tau H(\mu)$ gives the Gaussian stationarity equation
+\begin{equation}\label{eq:doubly-regularized}
+ B=\sum_s\lambda_s
+ \bigl(B^{1/2}A_sB^{1/2}+\delta^2\Id\bigr)^{1/2}
+ +(\tau-\delta)\Id.
+\end{equation}
+Thus the Lebesgue/Brownian choice $\tau=\eps$ changes $-\delta\Id$ into
+$+\delta\Id$.  The product-reference equation and numerical fixed-point
+iteration are derived by Mallasto--Gerolin--Minh
+\cite{MallastoGerolinMinh2022}; their general multivariate barycenter is
+Gaussian-restricted, and they leave convergence of the covariance iteration
+open.
+
+For the debiased Sinkhorn divergence, Janati--Muzellec--Peyre--Cuturi prove a
+stronger arbitrary-dimensional result: minimization over a class of
+sub-Gaussian probability measures has a Gaussian minimizer.  Its covariance
+satisfies
+\begin{equation}\label{eq:sinkhorn-covariance}
+ \sum_s\lambda_s
+ \bigl(B^{1/2}A_sB^{1/2}+\delta^2\Id\bigr)^{1/2}
+ =\bigl(B^2+\delta^2\Id\bigr)^{1/2}.
+\end{equation}
+See \cite[Theorem 2]{JanatiEtAl2020UnbalancedGaussian}.  An associated
+covariance Picard map is
+\begin{equation}\label{eq:sinkhorn-map}
+ \cT_\eps(B):=
+ \left[
+ \left(\sum_s\lambda_s
+ (B^{1/2}A_sB^{1/2}+\delta^2\Id)^{1/2}\right)^2
+ -\delta^2\Id
+ \right]^{1/2}.
+\end{equation}
+The existence proof uses an invariant spectral set and Brouwer, not a
+contraction of \eqref{eq:sinkhorn-map}.  Uniqueness within broad Gaussian
+covariance classes, including infinite-dimensional versions, is studied in
+\cite{Minh2023}.
+
+\subsection{Scalar anti-contraction and eventual-contraction checks}
+
+For scalar variances $a_s,b>0$, define
+\begin{align}
+ F_P(b)&=\sum_s\lambda_s\sqrt{a_sb+\delta^2}-\delta,
+ \label{eq:scalar-entropic-P}\\
+ F_L(b)&=\sum_s\lambda_s\sqrt{a_sb+\delta^2}+\delta,
+ \label{eq:scalar-entropic-L}\\
+ F_S(b)&=\sqrt{\left(\sum_s\lambda_s
+ \sqrt{a_sb+\delta^2}\right)^2-\delta^2}.
+ \label{eq:scalar-entropic-S}
+\end{align}
+The first two derivatives are
+\begin{equation}\label{eq:entropic-derivative}
+ F_P'(b)=F_L'(b)=
+ \sum_s\lambda_s\frac{a_s}{2\sqrt{a_sb+\delta^2}},
+\end{equation}
+which can exceed one near $b=0$ for legitimate parameters.  Thus entropic
+regularization does not automatically produce a Euclidean contraction.
+
+For equal inputs $a_s=a$, the debiased map simplifies exactly to
+\begin{equation}\label{eq:equal-sinkhorn-scalar}
+ F_S(b)=\sqrt{ab},
+\end{equation}
+independently of $\eps$.  It therefore reproduces all the scalar raw-map
+phenomena from \cref{thm:scalar-exact}: non-Lipschitz behavior at the boundary,
+possible one-step expansion on a wide interval, and eventual contraction on
+each fixed invariant interval bounded away from zero.  No contraction theorem
+uniform in the lower spectral bound can hold.
+
+For equal isotropic inputs $a\Id$, the doubly regularized covariance is
+explicit \cite{Chizat2025}:
+\begin{equation}\label{eq:isotropic-double-reg}
+ b=\frac{\left(a+\sqrt{(a-\eps)^2+4a\tau}\right)^2-\eps^2}{4a}.
+\end{equation}
+Hence product reference gives $b=(a-\eps)_+$, while the
+Lebesgue/Brownian choice gives $b=a+\eps$.  The two common raw conventions
+have opposite biases.
+
+\subsection{Algorithms and theorem scopes}
+
+\begin{itemize}
+  \item On a fixed grid, raw entropic barycenters can be solved by matrix
+  scaling/iterative Bregman projections; convergence follows from the KL
+  projection framework \cite{CuturiDoucet2014,BenamouEtAl2015}.
+  \item Debiased fixed-grid Sinkhorn barycenters have efficient scaling
+  algorithms, but empirical linear behavior should not be restated as a
+  proof of contraction of \eqref{eq:sinkhorn-map}
+  \cite{JanatiCuturiGramfort2020}.
+  \item Free-support alternatives include Frank--Wolfe and functional
+  gradient schemes with sublinear objective or stationarity guarantees
+  \cite{LuiseEtAl2019,ShenEtAl2020}.
+  \item A contraction proved for an inner pairwise Gaussian dual-potential
+  iteration is not a contraction of the barycenter covariance maps
+  \eqref{eq:entropic-product}, \eqref{eq:doubly-regularized}, or
+  \eqref{eq:sinkhorn-map}.
+\end{itemize}
+
+The safest preservation statements are therefore:
+\begin{itemize}
+  \item product-reference raw, general $d$: Gaussian-restricted equation;
+  \item Lebesgue raw: full Gaussian closure is known in particular for two
+  multivariate inputs and for multiple inputs in one dimension
+  \cite{CumingsMenonShin2020,JanatiCuturiGramfort2020};
+  \item debiased Sinkhorn: a full sub-Gaussian closure theorem in arbitrary
+  dimension \cite{JanatiEtAl2020UnbalancedGaussian}.
+\end{itemize}
+
+\section{Unbalanced Gaussian barycenters and WFR/HK}
+
+\subsection{Ambient Hellinger--Kantorovich geometry}
+
+The dynamic Wasserstein--Fisher--Rao, also called Hellinger--Kantorovich,
+action combines transport and reaction.  One normalization is
+\begin{equation}\label{eq:wfr-dynamic}
+ \partial_t\rho_t+\nabla\!\cdot(\rho_tv_t)=r_t\rho_t,
+ \qquad
+ \int_0^1\int\left(\frac1\alpha\norm{v_t}^2
+ +\frac1\beta r_t^2\right)\rho_t\dd x\dd t,
+\end{equation}
+with $\alpha,\beta>0$.  Equivalent static entropy-transport formulations use
+a truncated cosine cost; see
+\cite{LieroMielkeSavare2018,ChizatEtAl2018}.
+
+The term ``Gaussian Hellinger--Kantorovich'' is potentially misleading.  In
+one usage, GHK refers to a quadratic-cost KL-unbalanced transport discrepancy;
+``Gaussian'' describes the ground kernel, not closure of Gaussian measures.
+Liero--Mielke--Savare show that, for
+$g(r)=\arccos(e^{-r^2/2})$, this discrepancy is related by
+$\mathrm{GHK}_d=\mathrm{HK}_{g\circ d}$; ordinary HK is the induced length
+metric in the appropriate setting \cite[Section 7.8]{LieroMielkeSavare2018}.
+
+\subsection{An exact negative result at the Hellinger endpoint}
+
+At the pure-reaction endpoint, the square-root embedding linearizes the
+squared Hellinger distance.  For nonnegative densities $\rho_s$, the
+unconstrained-mass barycenter is
+\begin{equation}\label{eq:hellinger-barycenter}
+ \boxed{\rho_H^\star(x)=
+ \left(\sum_s\lambda_s\sqrt{\rho_s(x)}\right)^2.}
+\end{equation}
+
+\begin{proposition}[Gaussian inputs are not preserved by Hellinger barycenters]
+Let $\rho_s=a_sg_s$, where $a_s>0$ and
+$g_s$ is the density of $\cN(m_s,\Sigma_s)$.  Then
+\begin{equation}\label{eq:hellinger-mixture}
+ \rho_H^\star
+ =\sum_{s,t}\lambda_s\lambda_t\sqrt{a_sa_t}\sqrt{g_sg_t}.
+\end{equation}
+Each $\sqrt{g_sg_t}$ is a positive constant times a Gaussian density with
+\begin{align}
+ \overline\Sigma_{st}&=2(\Sigma_s^{-1}+\Sigma_t^{-1})^{-1},
+ \label{eq:cross-cov}\\
+ \overline m_{st}&=(\Sigma_s^{-1}+\Sigma_t^{-1})^{-1}
+ (\Sigma_s^{-1}m_s+\Sigma_t^{-1}m_t).
+ \label{eq:cross-mean}
+\end{align}
+Thus \eqref{eq:hellinger-mixture} is generically a finite Gaussian mixture,
+not a single Gaussian.
+\end{proposition}
+
+\begin{proof}
+Minimizing
+$\sum_s\lambda_s\norm{q-\sqrt{\rho_s}}_{L^2}^2$ over $q\geq0$ gives
+$q=\sum_s\lambda_s\sqrt{\rho_s}$, proving
+\eqref{eq:hellinger-barycenter}.  Expanding the square gives
+\eqref{eq:hellinger-mixture}.  Completing the square in the product of the two
+Gaussian half-densities gives \eqref{eq:cross-cov} and
+\eqref{eq:cross-mean}.  Unless all components coincide in a degenerate way,
+the resulting mixture is not one Gaussian.
+\end{proof}
+
+The normalizing constant of the cross term is the Bhattacharyya affinity
+\begin{equation}\label{eq:bhattacharyya}
+ \int\sqrt{g_sg_t}
+ =\frac{\det(\Sigma_s)^{1/4}\det(\Sigma_t)^{1/4}}
+ {\det((\Sigma_s+\Sigma_t)/2)^{1/2}}
+ \exp\left[-\frac18(m_s-m_t)^\top
+ \left(\frac{\Sigma_s+\Sigma_t}{2}\right)^{-1}(m_s-m_t)\right].
+\end{equation}
+
+\subsection{Why Gelbrich's Gaussianization proof cannot transfer}
+
+The obstruction is stronger than lack of a known moment formula.
+
+\begin{proposition}[Moment Gaussianization is not HK-continuous]\label{prop:HK-counterexample}
+Let $\gamma=\cN(0,1)$ on $\R$ and
+\begin{equation}\label{eq:HK-mixture-counterexample}
+ \mu_\eps=(1-\eps)\gamma+eps\cN(\eps^{-1/2},1).
+\end{equation}
+Then the Hellinger and HK distances from $\mu_\eps$ to $\gamma$ tend to zero,
+but
+\begin{equation}\label{eq:HK-G-counterexample}
+ \cG(\mu_\eps)=\cN(\sqrt\eps,2-\eps)
+ \longrightarrow\cN(0,2)\neq\gamma.
+\end{equation}
+All covariances lie in the compact interval $[1,2]$.  Hence moment
+Gaussianization is not continuous, and therefore not nonexpansive, for HK even
+under a compact covariance bound.
+\end{proposition}
+
+\begin{proof}
+The $L^1$ distance between $\mu_\eps$ and $\gamma$ is at most $2\eps$.  For
+any common dominating measure $\xi$,
+\[
+ \int\left(\sqrt{\frac{\dd\mu_\eps}{\dd\xi}}
+ -\sqrt{\frac{\dd\gamma}{\dd\xi}}\right)^2\dd\xi
+ \leq\norm{\mu_\eps-\gamma}_{L^1}\leq2\eps.
+\]
+HK can realize pure reaction, so it is bounded above, up to normalization, by
+the Hellinger distance.  Thus $\mathrm{HK}(\mu_\eps,\gamma)\to0$.
+
+The mean of \eqref{eq:HK-mixture-counterexample} is $\sqrt\eps$, its second
+moment is $2$, and its variance is $2-\eps$, proving
+\eqref{eq:HK-G-counterexample}.  Since HK is a metric and metrizes the relevant
+narrow topology for bounded masses, the distance from
+$\cN(\sqrt\eps,2-\eps)$ to $\gamma$ tends to the strictly positive distance
+between $\cN(0,2)$ and $\cN(0,1)$.
+\end{proof}
+
+The conceptual difference is that $W_2$ convergence includes convergence of
+second moments, whereas HK allows a vanishing amount of mass to travel far
+away or to be created/destroyed.  Covariance is therefore not controlled by
+the ambient HK topology.
+
+\subsection{A formal geodesic obstruction for positive transport and reaction}
+
+For a smooth HK geodesic, an optimal potential satisfies, after a choice of
+normalization,
+\begin{align}
+ \partial_t\rho&=-\alpha\nabla\!\cdot(\rho\nabla\phi)+\beta\rho\phi,
+ \label{eq:HK-continuity}\\
+ \partial_t\phi+\frac\alpha2\norm{\nabla\phi}^2
+ +\frac\beta2\phi^2&=0.
+ \label{eq:HK-HJ}
+\end{align}
+
+Suppose formally that
+$\rho_t=\kappa_t\cN(m_t,\Sigma_t)$ stays Gaussian on a time interval.  Then
+$(\partial_t\rho_t)/\rho_t$ is a quadratic polynomial in $x$.  The weighted
+elliptic equation \eqref{eq:HK-continuity} has a quadratic finite-energy
+solution $\phi_t$ (this can be read from the Gaussian Hermite decomposition).
+If the quadratic part is nonzero, the term $\phi_t^2$ in
+\eqref{eq:HK-HJ} has a nonzero quartic part, impossible because the other
+terms have degree at most two.  Hence the quadratic part vanishes.  If a
+linear part remains, $\phi_t^2$ has a nonzero quadratic part while
+$\partial_t\phi_t$ is affine and $\norm{\nabla\phi_t}^2$ is constant, again a
+contradiction.  Therefore $\phi_t$ is spatially constant: only mass changes,
+while mean and covariance stay fixed.
+
+This is a smooth/formal total-geodesy obstruction, not a substitute for a full
+weak-geodesic theorem.  It explains structurally why the Wasserstein Gaussian
+closure mechanism disappears as soon as the reaction term $\beta\phi^2$ is
+present.  A particular HK gradient flow may nevertheless preserve Gaussians;
+for example, the HK-Boltzmann flow with a Gaussian target studied in
+\cite{LieroMielkeTseZhu2025}.  Invariance of one vector field does not imply
+that the Gaussian family is geodesically closed or closed under ambient
+barycenters.
+
+\subsection{Three legitimate unbalanced routes}
+
+\paragraph{1. Ambient HK/WFR barycenter.}
+Solve in the full measure space.  Existence, multimarginal formulations, and
+Dirac structure are studied in
+\cite{FrieseckeMatthesSchmitzer2021,ChungPhung2021}.  After discretization,
+generalized Sinkhorn/diagonal-scaling algorithms handle entropy-regularized
+unbalanced transport and barycenters \cite{ChizatEtAl2018}.  The result is an
+unrestricted measure and should not be expected to be Gaussian.
+
+\paragraph{2. Gaussian-restricted BWFR geometry.}
+Constrain paths a priori to
+\begin{equation}\label{eq:scaled-gaussian-family}
+ \rho=\kappa\cN(m,\Sigma).
+\end{equation}
+The projected/reduced Gaussian structure derived in
+\cite{LieroMielkeTseZhu2025} has a co-metric operator which, on a cotangent
+triple $(S,u,k)$, takes the form
+\begin{equation}\label{eq:gaussian-WFR-cometric}
+ K^G_{\alpha,\beta}(\Sigma,m,\kappa)[S,u,k]
+ =\left(
+ \frac{2\alpha}{\kappa}(S\Sigma+\Sigma S)
+ +\frac{2\beta}{\kappa}\Sigma S\Sigma,
+ \frac\alpha\kappa u+\frac\beta\kappa\Sigma u,
+ \beta\kappa k
+ \right).
+\end{equation}
+The induced path distance $d_G$ is obtained by inverting this positive
+operator in the action.  Its mean and mass terms include
+\begin{equation}\label{eq:gaussian-WFR-primal-pieces}
+ \kappa\dot m^\top(\alpha\Id+\beta\Sigma)^{-1}\dot m
+ +\frac{\dot\kappa^2}{\beta\kappa};
+\end{equation}
+the covariance term is the inverse of the Lyapunov/Riccati operator displayed
+in \eqref{eq:gaussian-WFR-cometric}.  Barycenters for $d_G$ are Gaussian by
+construction and can be computed by Riemannian shooting, log-map gradient
+descent, or direct path optimization.  Since the path class is restricted,
+\begin{equation}\label{eq:restricted-upper}
+ \mathrm{WFR}_{\mathrm{ambient}}\leq d_G
+\end{equation}
+for Gaussian endpoints in compatible normalization.  This is a constrained
+surrogate, not an ambient preservation theorem.
+
+\paragraph{3. Quadratic-cost KL-unbalanced and semi-unbalanced models.}
+Entropic quadratic unbalanced OT between scaled Gaussians has a scaled
+Gaussian optimal plan \cite{JanatiEtAl2020UnbalancedGaussian}.  Recent work
+also gives closed Gaussian pairwise formulas without coupling entropy for
+quadratic-cost KL-unbalanced OT \cite{YangZhang2026}; a Gaussian barycenter
+theorem is a separate question.  Semi-unbalanced OT with one hard marginal
+does admit a Gaussian barycenter theorem and Bures-gradient algorithms
+\cite{NguyenEtAl2026}.  It is asymmetric and is not the ambient HK/WFR metric,
+but the hard barycenter marginal restores a moment-projection mechanism and
+can be useful for robust averaging.
+
+\section{A research program for the raw map}
+
+The contraction question is now narrow enough to be attacked directly.
+
+\begin{enumerate}
+  \item \textbf{Settle the local Jacobian.}  Prove or disprove
+  \eqref{eq:local-open-target}.  The Sylvester representation
+  \eqref{eq:Dpsi}, the universal radial eigenvalue $1/2$, and the exact
+  commuting spectrum \eqref{eq:theta-ij} provide strong structure.
+
+  \item \textbf{Find the right inner product.}  The general Jacobian need not
+  be visibly self-adjoint in Frobenius geometry.  A data- or fixed-point-
+  dependent Lyapunov inner product might reveal positivity and an upper
+  spectral bound.  Any adapted norm must then be related quantitatively to the
+  desired metric on the compact domain.
+
+  \item \textbf{Control products, not only factors.}  Individual derivative
+  norms may exceed one far from the solution.  Eventual contraction requires
+  decay of
+  $D\Psi(\Psi^{k-1}X)\cdots D\Psi(X)$ uniformly in $X$.  The scalar proof works
+  precisely because early expansion is followed by exponent halving.
+
+  \item \textbf{Exploit spectral trapping.}  The explicit boxes
+  \eqref{eq:box-explicit} forget orientation but rapidly stabilize the scale.
+  Sharper bounds should propagate eigenvector/alignment information or use
+  the transport maps $T_s(X)$ rather than separate min/max eigenvalues.
+
+  \item \textbf{Separate proof goals.}  Global convergence of raw Picard,
+  local linear convergence, one-step contraction, and eventual contraction
+  on a compact are different statements.  The globally convergent $K$ update
+  already solves the computational problem; a raw-$\Psi$ contraction theorem
+  would mainly clarify the nonlinear matrix equation and provide an alternate
+  solver.
+\end{enumerate}
+
+\section{Final perspective}
+
+The Gaussian barycenter covariance equation is well understood as an
+optimality condition, and the barycenter itself is unique.  What is not
+justified is the inference
+\[
+ \text{unique fixed point}\quad\Longrightarrow\quad
+ \text{raw fixed-point map is a contraction}.
+\]
+The classical algorithmic literature avoids this gap by iterating the average
+optimal transport map, producing $K(X)=X^{-1/2}\Psi(X)^2X^{-1/2}$ and a
+variance descent inequality.
+
+For the raw map, the scalar answer is more positive than the initial suspicion:
+on each fixed compact interval separated from zero, a high enough iterate is a
+strict contraction.  Yet the exact constant proves that no iterate can be
+chosen uniformly as the lower bound approaches the PSD boundary.  The same
+obstruction survives in every dimension through isotropic data.  In the
+commuting case, even arbitrary off-diagonal perturbations are locally
+contracted, with an explicit derivative spectrum in $[1/2,1)$.  The exact
+Sylvester derivative and compact-box certificate reduce the genuinely open
+part to noncommutative uniform control of derivative products.
+
+Entropic regularization does not erase this issue; different entropy
+conventions produce different biases and covariance equations, and scalar
+maps still need not contract in one step.  In the unbalanced setting the
+situation changes more radically: ambient HK/WFR does not control moments,
+moment Gaussianization is not continuous, and Hellinger barycenters of
+Gaussians are generically Gaussian mixtures.  Gaussian-restricted BWFR or
+semi-unbalanced Gaussian models remain useful, provided their restricted or
+asymmetric nature is stated explicitly.
+
+\clearpage
+\small
+\setlength{\parskip}{0.15em}
+\begin{thebibliography}{99}
+
+\bibitem{Gelbrich1990}
+M. Gelbrich,
+``On a Formula for the $L^2$ Wasserstein Metric between Measures on Euclidean
+and Hilbert Spaces,''
+\emph{Mathematische Nachrichten} 147 (1990), 185--203.
+\url{https://doi.org/10.1002/mana.19901470121}
+
+\bibitem{DowsonLandau1982}
+D. C. Dowson and B. V. Landau,
+``The Fr\'echet Distance between Multivariate Normal Distributions,''
+\emph{Journal of Multivariate Analysis} 12(3) (1982), 450--455.
+\url{https://doi.org/10.1016/0047-259X(82)90077-X}
+
+\bibitem{OlkinPukelsheim1982}
+I. Olkin and F. Pukelsheim,
+``The Distance between Two Random Vectors with Given Dispersion Matrices,''
+\emph{Linear Algebra and its Applications} 48 (1982), 257--263.
+\url{https://doi.org/10.1016/0024-3795(82)90112-4}
+
+\bibitem{GivensShortt1984}
+C. R. Givens and R. M. Shortt,
+``A Class of Wasserstein Metrics for Probability Distributions,''
+\emph{Michigan Mathematical Journal} 31(2) (1984), 231--240.
+\url{https://doi.org/10.1307/mmj/1029003026}
+
+\bibitem{AguehCarlier2011}
+M. Agueh and G. Carlier,
+``Barycenters in the Wasserstein Space,''
+\emph{SIAM Journal on Mathematical Analysis} 43(2) (2011), 904--924.
+\url{https://doi.org/10.1137/100805741}
+
+\bibitem{KnottSmith1994}
+M. Knott and C. S. Smith,
+``On a Generalization of Cyclic-Monotonicity and Distances among Random
+Vectors,''
+\emph{Linear Algebra and its Applications} 199 (1994), 363--371.
+\url{https://doi.org/10.1016/0024-3795(94)90359-X}
+
+\bibitem{RuschendorfUckelmann2002}
+L. Ruschendorf and L. Uckelmann,
+``On the $n$-Coupling Problem,''
+\emph{Journal of Multivariate Analysis} 81(2) (2002), 242--258.
+\url{https://doi.org/10.1006/jmva.2001.2005}
+
+\bibitem{AlvarezEsteban2016}
+P. C. Alvarez-Esteban, E. del Barrio, J. A. Cuesta-Albertos, and C. Matran,
+``A Fixed-Point Approach to Barycenters in Wasserstein Space,''
+\emph{Journal of Mathematical Analysis and Applications} 441(2) (2016),
+744--762.
+\url{https://doi.org/10.1016/j.jmaa.2016.04.045}
+
+\bibitem{BhatiaJainLim2019}
+R. Bhatia, T. Jain, and Y. Lim,
+``On the Bures--Wasserstein Distance between Positive Definite Matrices,''
+\emph{Expositiones Mathematicae} 37(2) (2019), 165--191.
+\url{https://doi.org/10.1016/j.exmath.2018.01.002}
+
+\bibitem{ZemelPanaretos2019}
+Y. Zemel and V. M. Panaretos,
+``Fr\'echet Means and Procrustes Analysis in Wasserstein Space,''
+\emph{Bernoulli} 25(2) (2019), 932--976.
+\url{https://doi.org/10.3150/17-BEJ1009}
+
+\bibitem{ChewiEtAl2020}
+S. Chewi, T. Maunu, P. Rigollet, and A. J. Stromme,
+``Gradient Descent Algorithms for Bures--Wasserstein Barycenters,''
+\emph{Proceedings of COLT}, PMLR 125 (2020), 1276--1304.
+\url{https://proceedings.mlr.press/v125/chewi20a.html}
+
+\bibitem{AltschulerEtAl2021}
+J. M. Altschuler, S. Chewi, P. Gerber, and A. J. Stromme,
+``Averaging on the Bures--Wasserstein Manifold: Dimension-Free Convergence of
+Gradient Descent,''
+\emph{Advances in Neural Information Processing Systems} 34 (2021).
+Corrected version: \url{https://arxiv.org/abs/2106.08502}
+
+\bibitem{BrahmachariEtAl2025}
+S. Brahmachari, R. Rubboli, and M. Tomamichel,
+``A Fixed-Point Algorithm for Matrix Projections with Applications in Quantum
+Information,''
+\emph{Mathematical Programming} (2025).
+\url{https://doi.org/10.1007/s10107-025-02318-w}
+
+\bibitem{MallastoGerolinMinh2022}
+A. Mallasto, A. Gerolin, and H. Q. Minh,
+``Entropy-Regularized 2-Wasserstein Distance between Gaussian Measures,''
+\emph{Information Geometry} 5 (2022), 289--323.
+\url{https://doi.org/10.1007/s41884-021-00052-8}
+
+\bibitem{JanatiEtAl2020UnbalancedGaussian}
+H. Janati, B. Muzellec, G. Peyre, and M. Cuturi,
+``Entropic Optimal Transport between Unbalanced Gaussian Measures Has a
+Closed Form,''
+\emph{Advances in Neural Information Processing Systems} 33 (2020).
+\url{https://proceedings.neurips.cc/paper_files/paper/2020/file/766e428d1e232bbdd58664b41346196c-Paper.pdf}
+
+\bibitem{Chizat2025}
+L. Chizat,
+``Doubly Regularized Entropic Wasserstein Barycenters,''
+\emph{Foundations of Computational Mathematics} (2025).
+\url{https://doi.org/10.1007/s10208-025-09724-8}
+
+\bibitem{Minh2023}
+H. Q. Minh,
+``Entropic Regularization of Wasserstein Distance between Infinite-Dimensional
+Gaussian Measures and Gaussian Processes,''
+\emph{Journal of Theoretical Probability} 36 (2023), 201--296.
+\url{https://arxiv.org/abs/2011.07489}
+
+\bibitem{JanatiCuturiGramfort2020}
+H. Janati, M. Cuturi, and A. Gramfort,
+``Debiased Sinkhorn Barycenters,''
+\emph{Proceedings of ICML}, PMLR 119 (2020).
+\url{https://proceedings.mlr.press/v119/janati20a.html}
+
+\bibitem{CumingsMenonShin2020}
+R. Cumings-Menon and M. Shin,
+``Probability Forecast Combination via Entropy Regularized Wasserstein
+Distance,''
+\emph{Entropy} 22(9) (2020), 929.
+\url{https://doi.org/10.3390/e22090929}
+
+\bibitem{CuturiDoucet2014}
+M. Cuturi and A. Doucet,
+``Fast Computation of Wasserstein Barycenters,''
+\emph{Proceedings of ICML}, PMLR 32 (2014).
+\url{https://proceedings.mlr.press/v32/cuturi14.html}
+
+\bibitem{BenamouEtAl2015}
+J.-D. Benamou, G. Carlier, M. Cuturi, L. Nenna, and G. Peyre,
+``Iterative Bregman Projections for Regularized Transportation Problems,''
+\emph{SIAM Journal on Scientific Computing} 37(2) (2015), A1111--A1138.
+\url{https://arxiv.org/abs/1412.5154}
+
+\bibitem{LuiseEtAl2019}
+G. Luise, S. Salzo, M. Pontil, and C. Ciliberto,
+``Sinkhorn Barycenters with Free Support via Frank--Wolfe Algorithm,''
+\emph{Advances in Neural Information Processing Systems} 32 (2019).
+\url{https://arxiv.org/abs/1905.13194}
+
+\bibitem{ShenEtAl2020}
+Z. Shen, Z. Wang, A. Ribeiro, and H. Hassani,
+``Sinkhorn Barycenter via Functional Gradient Descent,''
+\emph{Advances in Neural Information Processing Systems} 33 (2020).
+\url{https://arxiv.org/abs/2007.10449}
+
+\bibitem{LieroMielkeSavare2018}
+M. Liero, A. Mielke, and G. Savare,
+``Optimal Entropy-Transport Problems and a New Hellinger--Kantorovich Distance
+between Positive Measures,''
+\emph{Inventiones Mathematicae} 211 (2018), 969--1117.
+\url{https://doi.org/10.1007/s00222-017-0759-8}
+
+\bibitem{ChizatEtAl2018}
+L. Chizat, G. Peyre, B. Schmitzer, and F.-X. Vialard,
+``Scaling Algorithms for Unbalanced Optimal Transport Problems,''
+\emph{Mathematics of Computation} 87 (2018), 2563--2609.
+\url{https://doi.org/10.1090/mcom/3303}
+
+\bibitem{FrieseckeMatthesSchmitzer2021}
+G. Friesecke, D. Matthes, and B. Schmitzer,
+``Barycenters for the Hellinger--Kantorovich Distance over $\R^d$,''
+\emph{SIAM Journal on Mathematical Analysis} 53 (2021), 62--110.
+\url{https://doi.org/10.1137/20M1315555}
+
+\bibitem{ChungPhung2021}
+N.-P. Chung and H. M. Phung,
+``Barycenters in the Hellinger--Kantorovich Space,''
+\emph{Applied Mathematics and Optimization} 84 (2021), 1791--1820.
+\url{https://doi.org/10.1007/s00245-020-09695-y}
+
+\bibitem{LieroMielkeTseZhu2025}
+M. Liero, A. Mielke, O. Tse, and J.-J. Zhu,
+``Evolution of Gaussians in the Hellinger--Kantorovich--Boltzmann Gradient
+Flow,'' 2025.
+\url{https://doi.org/10.3934/cpaa.2025105}
+
+\bibitem{YangZhang2026}
+J. Yang and Y. Zhang,
+``Closed Forms for Gaussian KL Unbalanced Optimal Transport without Coupling
+Entropy,'' 2026.
+\url{https://arxiv.org/abs/2605.02497}
+
+\bibitem{NguyenEtAl2026}
+N.-H. Nguyen, L. Q. Dung, H.-P. Nguyen, T. Pham, and N. Ho,
+``On Barycenter Computation: Analyzing Semi-Unbalanced Optimal
+Transport-Based Method on the Bures--Wasserstein Manifold,''
+\emph{AISTATS} (2026).
+\url{https://openreview.net/forum?id=EWl46BVj24}
+
+\end{thebibliography}
+
+\end{document}

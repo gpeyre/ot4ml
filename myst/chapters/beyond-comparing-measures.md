@@ -214,6 +214,8 @@ channels move more coherently. The endpoints are two-mode mixtures: at each
 spatial mode the two channels have Gaussian profiles with the same center
 but different amplitudes.
 
+Figure {ref}`fig:vector-valued-measure-geodesics` contrasts the exact diagonal case $\kappa=0$, where each positive channel is transported by its quantile map, with a large-$\kappa$ illustrative common-mode interpolation in which the channels move more coherently.
+
 (fig:vector-valued-measure-geodesics)=
 :::{div}
 :class: ot4ml-book-figure
@@ -377,6 +379,8 @@ related non-commutative geometries appear in
 shows the analogous independent/coupled contrast for positive $2\times2$
 matrix fibers, using two localized matrix modes whose eigenvalue profiles
 share a common center at each mode.
+
+Figure {ref}`fig:matrix-valued-measure-geodesic` shows the analogous independent/coupled contrast for positive $2\times2$ matrix fibers, using two localized matrix modes whose eigenvalue profiles share a common center at each mode.
 
 (fig:matrix-valued-measure-geodesic)=
 :::{div}
@@ -544,7 +548,7 @@ the component-level problem uses the cost
 C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
 ```
 
-If $\Pi^\star$ is an optimal coupling between the weights $a$ and $b$, and if
+If $\P^\star$ is an optimal coupling between the weights $a$ and $b$, and if
 $A_{ij}$ is the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, each active
 pair follows the Gaussian geodesic
 
@@ -561,11 +565,13 @@ Collapsing these component geodesics gives
 
 ```{math}
 \bar\alpha_t=
-\sum_{i,j}\Pi^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
+\sum_{i,j}\P^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
 ```
 
 This component-level interpolation generally differs from the true $\Wass_2$
 interpolation between the collapsed mixture densities.
+
+Figure {ref}`fig:kantorovich-wow-mixtures` contrasts this component-level geodesic with the true one-dimensional Wasserstein interpolation of the collapsed mixtures, making the internal mass splitting absent from the former visible.
 
 (fig:kantorovich-wow-mixtures)=
 :::{div}
@@ -654,7 +660,7 @@ pre-aligned.
 
 ### Discrete Formulation
 
-Optimal transport needs a ground cost $C$ to compare histograms $(a,b)$, and
+Optimal transport needs a ground cost $\C$ to compare histograms $(a,b)$, and
 thus cannot be used directly if the histograms are not defined on the same
 underlying space, or if one cannot pre-register these spaces to define a
 ground cost. Instead, assume that two matrices
@@ -665,23 +671,25 @@ distance matrices. Define the quadratic distortion and its minimum by
 ```{math}
 :label: eq-gw-def
 \begin{aligned}
-\mathcal E_{D,D'}(P)
+\mathcal E_{D,D'}(\P)
 &\eqdef
 \sum_{i,j,i',j'}
-\Delta(D_{i,i'},D'_{j,j'})^pP_{i,j}P_{i',j'},
+\Delta(D_{i,i'},D'_{j,j'})^pP_{i,j}\P_{i',j'},
 \\
 \operatorname{GW}((a,D),(b,D'))^p
 &\eqdef
-\min_{P\in\mathbf U(a,b)}\mathcal E_{D,D'}(P).
+\min_{\P\in\mathbf U(a,b)}\mathcal E_{D,D'}(\P).
 \end{aligned}
 ```
 
 where $p\geq1$ and $\Delta$ is usually $\Delta(u,v)=|u-v|$. This is a
 non-convex quadratic problem over the transport polytope. In the uniform
-case with $m=n$ and $P$ constrained to be a permutation matrix, it becomes a
+case with $m=n$ and $\P$ constrained to be a permutation matrix, it becomes a
 Quadratic Assignment Problem, already NP-hard in full generality
 {cite:p}`loiola-2007`. The relaxed coupling formulation can therefore be
 read as a soft graph-matching model {cite:p}`lyzinski-2015`.
+
+Figure {ref}`fig:gromov-isometry-matching` shows this intrinsic matching principle under progressively stronger deformations: correspondences are selected from within-space distance patterns rather than an ambient cross-space cost.
 
 (fig:gromov-isometry-matching)=
 :::{div}
@@ -943,6 +951,8 @@ inequality to
 $\mathbb X_0,\mathbb X_s,\mathbb X_t,\mathbb X_1$ gives the reverse bound.
 :::
 
+Figure {ref}`fig:gromov-nonisometric-distortion` complements the global GW objective with local diagnostics, displaying where a mildly non-isometric correspondence creates the largest pairwise-distance residuals.
+
 (fig:gromov-nonisometric-distortion)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1018,6 +1028,8 @@ $\mathbb X$ and $\mathbb Y$: sorting each distance profile computes the
 one-dimensional costs, then an outer assignment couples the resulting profile
 laws.
 
+Figure {ref}`fig:gromov-memoli-distance-profiles` makes the two transport levels explicit for the planar shapes $\XX$ and $\YY$: sorting each distance profile computes the one-dimensional costs, then an outer assignment couples the resulting profile laws.
+
 (fig:gromov-memoli-distance-profiles)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1039,7 +1051,7 @@ The resulting outer assignment realizes the Mémoli profile lower bound.
 :::
 
 This lower bound is useful computationally because the profile cost matrix
-$C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between
+$\C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between
 points. Solving this easier OT problem gives a geometry-aware initialization
 for the non-convex GW iterations.
 
@@ -1048,47 +1060,12 @@ for the non-convex GW iterations.
 The profile lower bound is intrinsic. In Euclidean applications, it is naturally
 paired with an extrinsic upper certificate obtained by registering the two
 measures before applying the ordinary Wasserstein distance.
-
-(prop-gw-procrustes-upper-certificate)=
-:::{admonition} Proposition: Wasserstein-Procrustes Upper Certificate
-:class: important
-Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the
-Euclidean distance, and take $\Delta(u,v)=|u-v|$. If
-$\Wass_{p,\mathrm E(d)}$ denotes the quotient Wasserstein distance under the
-Euclidean group, then
-
-```{math}
-:label: eq-gw-procrustes-upper-gw-section
-\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
-\leq
-2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
-```
-:::
-
-:::{dropdown} Proof
-Let $g,h\in\mathrm E(d)$ be rigid motions. They preserve all pairwise
-Euclidean distances, so
-$(\RR^d,\norm{\cdot},\alpha)$ is isometric to
-$(\RR^d,\norm{\cdot},g_\sharp\alpha)$, and similarly for $\beta$ and
-$h_\sharp\beta$. Hence $\operatorname{GW}$ is unchanged by pushing the two
-measures forward by $g$ and $h$. Applying
-{ref}`prop-gw-controlled-by-wasserstein` to $g_\sharp\alpha$ and
-$h_\sharp\beta$ gives
-
-```{math}
-\operatorname{GW}((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
-\leq
-2\,\Wass_p(g_\sharp\alpha,h_\sharp\beta).
-```
-
-Taking the infimum over $g,h\in\mathrm E(d)$ proves the result.
-:::
-
-Wasserstein-Procrustes therefore gives an extrinsic certificate that a Euclidean
-GW distance is small. The converse need not hold, because a small GW value may
-be achieved by an intrinsic correspondence that is not induced by any ambient
-rigid motion. Combining the profile lower bound with the Procrustes upper
-certificate gives the sandwich
+Proposition {ref}`prop-gw-procrustes-upper-certificate`, proved in
+{ref}`sec-quotient-wasserstein-procrustes`, supplies exactly this certificate.
+The converse need not hold, because a small GW value may be achieved by an
+intrinsic correspondence that is not induced by any ambient rigid motion.
+Combining the profile lower bound with the Procrustes upper certificate gives
+the sandwich
 
 ```{math}
 :label: eq-gw-profile-procrustes-sandwich
@@ -1170,6 +1147,8 @@ respectively; intermediate values trade attribute matching against structural
 matching. The first term compares node attributes in the usual OT sense, and
 the second compares intrinsic geometry; this is useful when two spaces have
 both distances and features, and the two sources of information may disagree.
+
+Figure {ref}`fig:fused-gromov-feature-geometry` isolates this tradeoff on a small graph pair by comparing feature-only, structure-only and fused correspondences.
 
 (fig:fused-gromov-feature-geometry)=
 :::{div}
@@ -1766,7 +1745,7 @@ PDEs of {ref}`sec-dynamic-optimal-transport`.
 ### Discrete Variational Problem
 
 Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature
-space $\mathcal Z$, and set $C_{ij}=c(x_i,y_j)$ for a nonnegative cost
+space $\mathcal Z$, and set $\C_{ij}=c(x_i,y_j)$ for a nonnegative cost
 $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
 
 ```{math}
@@ -1799,7 +1778,7 @@ The DTW value associated with the feature cost $c$ is
 \min_{\omega\in\Omega_{n,m}}
 \sum_{\ell=1}^L c(x_{i_\ell},y_{j_\ell})
 =
-\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{C}.
+\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{\C}.
 ```
 :::
 
@@ -1827,7 +1806,7 @@ $1\leq i\leq n$, $1\leq j\leq m$, define
 :label: eq-dtw-recurrence
 D_{ij}
 =
-C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
+\C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
 ```
 
 Then $D_{nm}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every
@@ -1861,13 +1840,13 @@ $D_{0,0}=0$, and allocate predecessors $B$.
 
 > **For** $j=1,\ldots,m$ **do**:
 >
->> **Set** $C_{ij}=c(x_i,y_j)$.
+>> **Set** $\C_{ij}=c(x_i,y_j)$.
 >>
 >> **Choose**
 >> $(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
 >>
 >> **Set** $B_{ij}=(r^\star,s^\star)$ and
->> $D_{ij}=C_{ij}+D_{r^\star,s^\star}$.
+>> $D_{ij}=\C_{ij}+D_{r^\star,s^\star}$.
 
 **Initialize:** Set $(i,j)=(n,m)$ and $\omega^\star=[\,]$.
 
@@ -1941,7 +1920,7 @@ $D_{i0}^\epsilon=D_{0j}^\epsilon=+\infty$ for $i,j>0$, together with
 :label: eq-soft-dtw-recurrence
 D_{ij}^\epsilon
 =
-C_{ij}
+\C_{ij}
 +\operatorname{softmin}_\epsilon
 \bigl(D_{i-1,j}^\epsilon,D_{i,j-1}^\epsilon,D_{i-1,j-1}^\epsilon\bigr),
 \qquad
@@ -1956,7 +1935,7 @@ Equivalently, it is the free energy of all monotone paths,
 =
 -\epsilon\log
 \sum_{\omega\in\Omega_{n,m}}
-\exp\!\left(-\frac{\dotp{A_\omega}{C}}{\epsilon}\right).
+\exp\!\left(-\frac{\dotp{A_\omega}{\C}}{\epsilon}\right).
 ```
 
 To make the regularization explicit, let $\Delta(\Omega_{n,m})$ be the simplex
@@ -1970,7 +1949,7 @@ $0\log0=0$. The Gibbs variational identity gives
 =
 \min_{q\in\Delta(\Omega_{n,m})}
 \left\{
-\sum_{\omega}q_\omega\dotp{A_\omega}{C}
+\sum_{\omega}q_\omega\dotp{A_\omega}{\C}
 -\epsilon H(q)
 \right\}.
 ```
@@ -1981,12 +1960,12 @@ Its unique minimizer is the Gibbs law
 :label: eq-soft-dtw-gibbs-law
 \PP_\epsilon(\omega)
 =
-\frac{\exp(-\dotp{A_\omega}{C}/\epsilon)}
-{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{C}/\epsilon)},
+\frac{\exp(-\dotp{A_\omega}{\C}/\epsilon)}
+{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{\C}/\epsilon)},
 \qquad
 E_\epsilon
 \eqdef
-\nabla_C\mathrm{sDTW}_{c,\epsilon}(x,y),
+\nabla_\C\mathrm{sDTW}_{c,\epsilon}(x,y),
 ```
 
 Indeed, subtracting the value in {eq}`eq-soft-dtw-partition` from the objective
@@ -2082,7 +2061,7 @@ show_book_figure("dynamic-time-warping")
 oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a
 smooth increasing map $\gamma$; thin gray segments mark exact corresponding
 times. Middle: the pairwise squared feature-cost matrix
-$C_{ij}=|x_i-y_j|^2$, with the optimal DTW path shown in red. Right: the same
+$\C_{ij}=|x_i-y_j|^2$, with the optimal DTW path shown in red. Right: the same
 matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from
 {eq}`eq-soft-dtw-expected-alignment` at $\epsilon=.200$; red intensity gives
 cell-visit probability and the dark red curve is its row-wise barycentric

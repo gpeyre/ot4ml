@@ -88,6 +88,8 @@ More complex constructions are possible when sampling from $\pi$ remains simple.
 
 If $\pi = \alpha \otimes \beta$ and $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$, $\beta = \frac{1}{m} \sum_j \delta_{y_j}$, then $\alpha_t$ consists of $n \times m$ Dirac masses $$\alpha_t = \frac{1}{nm} \sum_{i,j} \delta_{P_t(x_i,y_j)}.$$ If $\pi = (\Id, T)_\sharp \alpha$ is a Brenier-type coupling, then $\alpha_t = ((1-t)\Id + tT)_\sharp \alpha$ is the so-called McCann OT interpolation.
 
+Figure {ref}`fig:generative-flow-matching-interpolants` separates the effect of the endpoint coupling from the effect of the path joining each paired endpoint.
+
 (fig:generative-flow-matching-interpolants)=
 :::{div}
 :class: ot4ml-book-figure
@@ -431,6 +433,8 @@ gives the claimed formula.
 :::
 
 
+Figure {ref}`fig:generative-diffusion-1d-forward-backward` shows both directions of this construction: the prescribed interpolation noising the data and the same probability-flow ODE integrated backward for sampling.
+
 (fig:generative-diffusion-1d-forward-backward)=
 :::{div}
 :class: ot4ml-book-figure
@@ -453,6 +457,8 @@ One-dimensional diffusion bridge for a Gaussian-mixture data law. The forward pa
 
 
 The same probability-flow intuition is visible in two dimensions. For a discrete data law, or more generally for a Gaussian mixture, the noising density is a Gaussian mixture whose score can be evaluated explicitly. This makes it possible to draw backward trajectories without training a neural network. In the plots below, the Gaussian endpoint has covariance $\sigma^2\Id$ to keep the geometry visible at the scale of the three atoms. For a scalar noising schedule $Z_t=a_tX+b_tY$, the intermediate law has component centers $a_t c_j$ and covariance $(b_t\sigma)^2\Id$. For the linear bridge, $p_t(z)=\sum_j w_j\Gaussian((1-t)c_j,(t\sigma)^2\Id)$, with $s_t=\nabla\log p_t$, and the scaled Gaussian-endpoint field gives $v_t(z)=-(z+t\sigma^2s_t(z))/(1-t)$.
+
+In Figure {ref}`fig:generative-diffusion-2d-forward-backward`, the Gaussian endpoint has covariance $\sigma^2\Id$ to keep the geometry visible at the scale of the three atoms.
 
 (fig:generative-diffusion-2d-forward-backward)=
 :::{div}
@@ -614,6 +620,8 @@ The finite-time coefficients $a_t=\cos(\pi t/2)$ and $b_t=\sin(\pi t/2)$ are not
     \qquad
     b_t=t,$$ whose data coefficient changes sign before vanishing. This overshooting bridge is mainly a diagnostic example: it keeps the same endpoints, but its intermediate mixture reflects through the origin and produces visibly different reverse trajectories.
 
+This is the noising law used in the left panel of Figure {ref}`fig:generative-diffusion-versus-ot-2d`; the trajectories are more curved than for the linear bridge because the centers and variances evolve according to the OU/Fokker--Planck scaling rather than by affine interpolation.
+
 (fig:generative-diffusion-versus-ot-2d)=
 :::{div}
 :class: ot4ml-book-figure
@@ -634,6 +642,8 @@ Diffusion-style sampling trajectories compared with OT rays in the three-Dirac s
 
 <iframe class="ot4ml-live-frame" title="Diffusion trajectory schedule controls" src="../live/generative-trajectories.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
+
+Figure {ref}`fig:generative-diffusion-schedule-comparison` therefore compares OU with a genuinely different scalar bridge,
 
 (fig:generative-diffusion-schedule-comparison)=
 :::{div}
@@ -1011,6 +1021,8 @@ closed-form RKHS steepest-descent direction of the KL functional.
 
 The figure below contrasts this RKHS flow with a particle closure of the Wasserstein gradient flow of $\KL(\alpha\mid\beta)$. The latter evaluates the current score $\nabla\log\rho_\alpha$ by a Gaussian KDE, while SVGD avoids this density estimate and uses the target score together with a kernel repulsion.
 
+Figure {ref}`fig:generative-w2-vs-svgd-entropy-flow` contrasts this RKHS flow with a particle closure of the Wasserstein gradient flow of $\KL(\alpha|\beta)$.
+
 (fig:generative-w2-vs-svgd-entropy-flow)=
 :::{div}
 :class: ot4ml-book-figure
@@ -1068,6 +1080,8 @@ u_t(x)=B_\epsilon[\beta](x)-B_\epsilon[\alpha_t](x)
 
  The first term pulls samples toward data, while the second term corrects self-attraction and prevents all particles from collapsing onto the same high-density region. For a fixed reference measure, $B_\epsilon[\nu]$ is precisely the Gaussian mean-shift displacement in {eq}`eq-l2-attention-mean-shift`: it moves $x$ toward the local kernel barycenter of $\nu$. Hence self-corrected drifting can be read as the difference between a target mean-shift field and the current model's own mean-shift field. Sinkhorn drifting replaces these one-sided kernel normalizations by two-sided entropic OT couplings, so that the cross and self terms are normalized by Sinkhorn scaling rather than by a single denominator {cite:p}`He2026SinkhornDrifting`.
 
+
+Figure {ref}`fig:generative-drifting-model-trajectories` illustrates why the self term matters: it corrects the collapse created by target attraction alone and improves coverage of separated modes.
 
 (fig:generative-drifting-model-trajectories)=
 :::{div}
@@ -2079,6 +2093,8 @@ Gaussian measures provide a useful testing ground for the preceding dynamics. Th
 
 For constrained gradient flows on this family, the covariance equation is the finite-dimensional Bures--Wasserstein gradient flow on positive definite matrices. Thus Gaussian closure is not just a computational shortcut: it is the restriction of Wasserstein geometry to the Gaussian submanifold, where affine gradient fields encode tangent vectors. The following figure first compares three bridge-type Gaussian closures from a source $\alpha_0$ to a target $\gamma$; the exact gradient-flow closures for specified energies $f(\alpha)$ are catalogued afterwards in {ref}`prop-centered-gaussian-covariance-catalogue`.
 
+Figure {ref}`fig:gradflow-gaussian-closure` first compares three bridge-type Gaussian closures from a source $\alpha_0$ to a target $\gamma$; the exact gradient-flow closures for specified energies $f(\alpha)$ are catalogued afterwards in Proposition {ref}`prop-centered-gaussian-covariance-catalogue`.
+
 (fig:gradflow-gaussian-closure)=
 :::{div}
 :class: ot4ml-book-figure
@@ -2882,6 +2898,10 @@ Expanding $\EE\norm{X-Y}^2$ gives the lower bound
 Taking the infimum over couplings proves the inequality, while equality for Gaussian laws is Proposition {ref}`prop-gaussian-w2-bures`.
 :::
 
+Proposition {ref}`prop-gaussian-barycenter` is an earlier application of this
+contraction: because every Gaussian input is fixed by $\mathcal R$, projecting
+any competitor cannot increase the quadratic Wasserstein barycenter objective.
+
 
 The following preservation criterion is a direct consequence of Gelbrich's theorem and was explained to us by Hugo Lavenant. It says that a functional which does not increase under moment-matched Gaussian projection admits Gaussian minimizing movements from Gaussian initial data.
 
@@ -2915,17 +2935,4 @@ f(\eta)+\frac1{2\tau}\Wass_2^2(\gamma,\eta).
 ```
 
 Applying this to a minimizer $\eta=\nu$ shows that $\mathcal R\nu$ is again a minimizer. Uniqueness forces $\nu=\mathcal R\nu$.
-:::
-
-
-:::{admonition} Remark: Gaussian barycenters from contraction
-:class: ot4ml-remark
-
-The same projection argument also explains why quadratic Wasserstein barycenters of Gaussian measures are Gaussian. If $\be_s$ are Gaussian and
-
-```{math}
-f_{\rm bar}(\al)=\sum_s\la_s\Wass_2^2(\al,\be_s),
-```
-
-then $\mathcal R\be_s=\be_s$, and Theorem {ref}`thm-gelbrich-projection` gives $f_{\rm bar}(\mathcal R\al)\leq f_{\rm bar}(\al)$. Thus the moment-matched Gaussian projection of any barycenter is again a barycenter; when the barycenter is unique, it must itself be Gaussian. This is the contraction viewpoint behind Corollary {ref}`cor-gaussian-discrete-barycenters`.
 :::

@@ -3077,43 +3077,51 @@ function auctionRun(n, epsilon, spread, seed) {
   const x = Array.from({ length: n }, (_, i) => (i + 0.5) / n);
   const y = Array.from({ length: n }, (_, i) => clamp((i + 0.5) / n + spread * 0.018 * randn(random), 0, 1));
   y.sort((a, b) => a - b);
-  const profit = x.map((xi) => y.map((yj) => -((xi - yj) ** 2)));
-  const prices = Array(n).fill(0);
+  const cost = x.map((xi) => y.map((yj) => (xi - yj) ** 2));
+  const dualWeights = Array(n).fill(0);
   const assignment = Array(n).fill(-1);
   const owner = Array(n).fill(-1);
-  const snapshots = [{ assignment: assignment.slice(), prices: prices.slice(), bid: null }];
+  const snapshots = [{ assignment: assignment.slice(), dualWeights: dualWeights.slice(), bid: null }];
   let guard = 0;
   while (assignment.some((j) => j < 0) && guard < 5000) {
     const i = assignment.findIndex((j) => j < 0);
-    const reduced = profit[i].map((z, j) => z - prices[j]);
+    const reduced = cost[i].map((z, j) => z - dualWeights[j]);
     let best = 0;
-    let second = -Infinity;
-    for (let j = 1; j < n; j += 1) if (reduced[j] > reduced[best]) best = j;
-    for (let j = 0; j < n; j += 1) if (j !== best) second = Math.max(second, reduced[j]);
-    const increment = reduced[best] - second + epsilon;
+    let second = Infinity;
+    for (let j = 1; j < n; j += 1) if (reduced[j] < reduced[best]) best = j;
+    for (let j = 0; j < n; j += 1) if (j !== best) second = Math.min(second, reduced[j]);
+    const decrement = second - reduced[best] + epsilon;
     const previous = owner[best];
     if (previous >= 0) assignment[previous] = -1;
     owner[best] = i;
     assignment[i] = best;
-    prices[best] += increment;
-    snapshots.push({ assignment: assignment.slice(), prices: prices.slice(), bid: { i, j: best, increment } });
+    dualWeights[best] -= decrement;
+    snapshots.push({ assignment: assignment.slice(), dualWeights: dualWeights.slice(), bid: { i, j: best, decrement } });
     guard += 1;
   }
   return snapshots;
 }
 
-function drawAuctionPrices(ctx, prices, box, title) {
+function drawAuctionWeights(ctx, dualWeights, box, title) {
   drawFrame(ctx, box, title);
-  const maxPrice = Math.max(...prices, 1e-8);
-  const barW = box.w / prices.length;
-  for (let j = 0; j < prices.length; j += 1) {
-    const bh = (prices[j] / maxPrice) * (box.h - 34);
+  const maxMagnitude = Math.max(...dualWeights.map((z) => Math.abs(z)), 1e-8);
+  const barW = box.w / dualWeights.length;
+  const baseline = box.y + 30;
+  const usableHeight = box.h - 48;
+  ctx.strokeStyle = "rgba(74,85,99,.42)";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(box.x + 4, baseline);
+  ctx.lineTo(box.x + box.w - 4, baseline);
+  ctx.stroke();
+  for (let j = 0; j < dualWeights.length; j += 1) {
+    const bh = (-dualWeights[j] / maxMagnitude) * usableHeight;
     ctx.fillStyle = "rgba(33,102,172,.52)";
-    ctx.fillRect(box.x + j * barW + 2, box.y + box.h - 14 - bh, Math.max(1, barW - 4), bh);
+    ctx.fillRect(box.x + j * barW + 2, baseline, Math.max(1, barW - 4), bh);
   }
   ctx.fillStyle = "#4a5563";
   ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-  ctx.fillText("target prices", box.x + 8, box.y + 18);
+  ctx.fillText("target dual weights g_j", box.x + 8, box.y + 18);
 }
 
 function drawDualAuction() {
@@ -3128,14 +3136,14 @@ function drawDualAuction() {
   const gap = 24;
   const matrixW = Math.min(330, (w - 52 - gap) * 0.48);
   const matrixBox = { x: 22, y: 48, w: matrixW, h: h - 78 };
-  const priceBox = { x: 22 + matrixW + gap, y: 48, w: w - matrixW - gap - 44, h: h - 78 };
+  const weightBox = { x: 22 + matrixW + gap, y: 48, w: w - matrixW - gap - 44, h: h - 78 };
   drawAssignmentMatrix(ctx, snap.assignment, `bid ${index} / ${snapshots.length - 1}`, matrixBox);
-  drawAuctionPrices(ctx, snap.prices, priceBox, "dual prices");
+  drawAuctionWeights(ctx, snap.dualWeights, weightBox, "target dual weights");
   if (snap.bid) {
     ctx.fillStyle = VIOLET;
     ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-    ctx.fillText(`last bid: source ${snap.bid.i + 1} -> target ${snap.bid.j + 1}`, priceBox.x + 8, priceBox.y + priceBox.h - 34);
-    ctx.fillText(`price increment ${snap.bid.increment.toExponential(2)}`, priceBox.x + 8, priceBox.y + priceBox.h - 16);
+    ctx.fillText(`last bid: source ${snap.bid.i + 1} -> target ${snap.bid.j + 1}`, weightBox.x + 8, weightBox.y + weightBox.h - 34);
+    ctx.fillText(`weight decrement ${snap.bid.decrement.toExponential(2)}`, weightBox.x + 8, weightBox.y + weightBox.h - 16);
   }
   setStatus(`bid ${index}/${snapshots.length - 1}; ${snap.assignment.filter((j) => j >= 0).length}/${n} assigned; epsilon = ${epsilon.toExponential(1)}`);
 }

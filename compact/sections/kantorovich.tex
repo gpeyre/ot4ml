@@ -46,13 +46,49 @@ Thus the product plan is mainly a feasibility witness. Except in the degenerate 
 \umin{\P\in\CouplingsD(\a,\b)}
 \sum_{i,j}\C_{i,j}\P_{i,j}.
 }
+\begin{prop}[Joint convexity of discrete OT]\label{prop-discrete-kantorovich-joint-convexity}
+For every fixed cost matrix $\C\in\RR^{n\times m}$, the map
+\((\a,\b)\longmapsto\MKD_{\C}(\a,\b)\)
+is jointly convex on $\simplex_n\times\simplex_m$.
+\end{prop}
+\begin{proof}
+For $r\in\{0,1\}$, let $\P_r$ be optimal between $\a_r$ and $\b_r$. For $t\in[0,1]$, the matrix $\P_t=(1-t)\P_0+t\P_1$ belongs to $\CouplingsD((1-t)\a_0+t\a_1,(1-t)\b_0+t\b_1)$. Therefore
+\(\MKD_{\C}\big((1-t)\a_0+t\a_1,(1-t)\b_0+t\b_1\big) \leq \dotp{\C}{\P_t} = (1-t)\MKD_{\C}(\a_0,\b_0)+t\MKD_{\C}(\a_1,\b_1).\)
+\end{proof}
+\begin{prop}[Rank-controlled sparse minimizers]\label{prop-lp-rank-sparsity}
+Let $\mathcal A:\RR^{n\times m}\to\RR^q$ be linear, let $\mathbf d\in\RR^q$ and $\C\in\RR^{n\times m}$, and consider
+\begin{equation}\label{eq-lp-rank-sparsity}
+\inf_{\P\geq 0,\;\mathcal A(\P)\leq\mathbf d}
+\dotp{\C}{\P},
+\end{equation}
+where the inequality is componentwise. If the feasible set is nonempty and the objective is bounded below on it, then~\eqref{eq-lp-rank-sparsity} admits a minimizer $\P^\star$ satisfying
+\begin{equation}\label{eq-lp-rank-support-bound}
+\#\enscond{(i,j)}{\P^\star_{i,j}>0}
+\leq \operatorname{rank}(\mathcal A).
+\end{equation}
+Here $\operatorname{rank}(\mathcal A)=\dim(\operatorname{Im}\mathcal A)$. The same conclusion holds when $\mathcal A(\P)\leq\mathbf d$ is replaced by $\mathcal A(\P)=\mathbf d$.
+\end{prop}
+\begin{proof}
+The feasible region is a nonempty polyhedron, and the objective is bounded below on it. The attainment theorem for linear programs therefore provides a minimizer. Among all minimizers, choose $\P^\star$ with the smallest number of positive entries, and denote its support by $S$.
+
+Suppose that $\#S>\operatorname{rank}(\mathcal A)$. The restriction of $\mathcal A$ to the $\#S$-dimensional space of matrices supported on $S$ then has a nontrivial kernel. Hence there is a nonzero matrix $H$, supported on $S$, such that $\mathcal A(H)=0$. Since $\P^\star$ is strictly positive on $S$, both $\P^\star+tH$ and $\P^\star-tH$ remain nonnegative for all sufficiently small $t>0$. Moreover,
+\(\mathcal A(\P^\star\pm tH)=\mathcal A(\P^\star),\)
+so both perturbations satisfy exactly the same linear inequalities, or equalities, as $\P^\star$. Optimality forces $\dotp{\C}{H}=0$; otherwise one of the two signs would strictly decrease the objective.
+
+Choose $\sigma\in\{-1,1\}$ such that $\sigma H$ has a negative entry, and set
+\(t_\star \eqdef \min_{(i,j):\,\sigma H_{i,j}<0} \frac{\P^\star_{i,j}}{-\sigma H_{i,j}} >0.\)
+Then $\P^\star+t_\star\sigma H$ is nonnegative, feasible, and has the same cost as $\P^\star$. At least one of its positive entries has become zero, while no new entry has appeared outside $S$. This contradicts the minimality of $S$ and proves~\eqref{eq-lp-rank-support-bound}.
+\end{proof}
 \begin{prop}[Sparse optimal plans]\label{prop-sparse-optimal-plans}
 Assume $\a_i>0$, $\b_j>0$ and $\sum_i \a_i=\sum_j \b_j=1$. The linear program~\eqref{eq-kanto-discr} admits an optimal coupling with at most $n+m-1$ nonzero entries.
 \end{prop}
 \begin{proof}
-The transportation polytope is compact, so a linear objective attains its minimum at an extreme point. The row and column marginal equations have rank $n+m-1$: the only linear redundancy is that both sets of constraints impose the same total mass. The support-graph argument below is the combinatorial form of this basic-feasible-variable count.
-
-Let $\P$ be an extreme point and let $E=\{(i,j):\P_{ij}>0\}$ be its support graph on the bipartite vertex set $\{1,\ldots,n\}\cup\{1,\ldots,m\}$. If this graph contains a cycle, orient the cycle and put alternating signs $+1,-1$ on its edges, obtaining a nonzero matrix $H$ supported on $E$ with zero row and column sums. For sufficiently small $t>0$, both $\P+tH$ and $\P-tH$ are nonnegative couplings, and $\P$ is their midpoint, contradicting extremality. Thus the support graph is a forest. Since a forest on $n+m$ vertices has at most $n+m-1$ edges, the claim follows.
+The transportation polytope is nonempty and compact, so the minimum is finite. Apply the equality case of Proposition~\ref{prop-lp-rank-sparsity} to the marginal operator
+\(\mathcal A_{\mathrm{marg}}(\P) \eqdef \bigl(\P\ones_m,\transp{\P}\ones_n\bigr) \in\RR^{n+m}.\)
+Its rank is $n+m-1$. Indeed, every matrix satisfies
+$\sum_i(\P\ones_m)_i=\sum_j(\transp{\P}\ones_n)_j$, so there is one linear dependence among the $n+m$ marginal coordinates. It is the only one: if $u\in\RR^n$ and $v\in\RR^m$ satisfy
+\(\dotp{u}{\P\ones_m} + \dotp{v}{\transp{\P}\ones_n}=0 \qquad\text{for every }\P,\)
+then testing this identity on each elementary matrix gives $u_i+v_j=0$ for every $(i,j)$. Thus all $u_i$ equal one scalar and all $v_j$ equal its opposite, so the annihilator of $\operatorname{Im}(\mathcal A_{\mathrm{marg}})$ is one-dimensional. It follows that $\operatorname{rank}(\mathcal A_{\mathrm{marg}})=n+m-1$, and Proposition~\ref{prop-lp-rank-sparsity} supplies the claimed optimal coupling.
 \end{proof}
 \begin{prop}[North-west corner feasible plan]\label{prop-northwest-corner}
 Let $\a\in\RR_+^n$ and $\b\in\RR_+^m$ have the same positive total mass. Starting from $(i,j)=(1,1)$ with residual masses $r_i=\a_i$ and $s_j=\b_j$, skip zero residuals, set
@@ -159,6 +195,20 @@ If $m=n$ and $\a=\b=\ones_n/n$, then the discrete Kantorovich problem~\eqref{eq-
 \begin{proof}
 The feasible set is $\mathcal B_n/n$. By Proposition~\ref{prop-linear-program-extreme-minimizer}, the linear objective has an optimal extreme point. Since scaling preserves extreme points and Theorem~\ref{thm-birkhoff-von-neumann} identifies the extreme points of $\mathcal B_n$, this optimizer is $P_\sigma/n$ for some permutation $\sigma$. Its cost is exactly $n^{-1}\sum_i C_{i,\sigma(i)}$, so $\sigma$ is an optimal assignment.
 \end{proof}
+\paragraph{Rational weights.}
+The coupling set $\CouplingsD(\a,\b)$ removes the equal-cardinality and equal-weight restrictions of assignments. For rational weights, it can be represented by a larger uniform matching.
+\begin{proposition}[Rational weights as duplicated uniform matching]\label{prop-rational-weights-duplicated-matching}
+Let
+\(\al=\sum_{i=1}^n \frac{k_i}{N}\delta_{x_i}, \qquad \be=\sum_{j=1}^m \frac{\ell_j}{N}\delta_{y_j}, \qquad \sum_i k_i=\sum_j\ell_j=N,\)
+with positive integers $k_i,\ell_j$. Replace each $x_i$ by $k_i$ identical copies and each $y_j$ by $\ell_j$ identical copies, producing two uniform $N$-point clouds. Then the duplicated assignment problem and the discrete Kantorovich problem between $\al$ and $\be$ have the same optimal value. Moreover, there exists an optimal coupling of the form
+\(\P_{ij}=\frac{n_{ij}}{N}, \qquad n_{ij}\in\NN, \qquad \sum_j n_{ij}=k_i, \quad \sum_i n_{ij}=\ell_j,\)
+and couplings whose scaled entries $N\P_{ij}$ are integral are exactly the collapsed assignments between duplicated clouds. Fractional optimal couplings may nevertheless coexist when the optimum is degenerate.
+\end{proposition}
+\begin{proof}
+Any assignment between the duplicated source and target clouds defines integers $n_{ij}$ counting how many copied particles of type $x_i$ are matched to copied particles of type $y_j$. These counts satisfy $\sum_j n_{ij}=k_i$ and $\sum_i n_{ij}=\ell_j$, and the associated coupling $\P_{ij}=n_{ij}/N$ has marginals $k_i/N$ and $\ell_j/N$. The assignment cost is
+\(\frac1N\sum_{i,j} n_{ij}c(x_i,y_j) = \sum_{i,j}\P_{ij}c(x_i,y_j).\)
+Conversely, any nonnegative integer count matrix with those row and column sums can be realized by allocating the $k_i$ copies of each $x_i$ among the target copies according to $(n_{ij})_j$. Scale a feasible coupling by $N$ and write $\Q=N\P$. The constraints on $\Q$ have integer right-hand sides $(k_1,\ldots,k_n,\ell_1,\ldots,\ell_m)$. After multiplying the target rows by $-1$, their coefficient matrix is the oriented node-edge incidence matrix of a bipartite graph and is therefore totally unimodular. Every vertex of this transportation polytope is integral. Since a linear objective attains its minimum at a vertex, an integral optimal $\Q$ exists, proving equality of the two optimal values. The argument establishes existence, not integrality of every optimizer; convex combinations of distinct integral optima give fractional optima.
+\end{proof}
 \subsection{Linear-Programming Algorithms}
 \label{sec-kantorovich-lp-algorithms}
 \paragraph{Transportation simplex and network simplex.}
@@ -246,6 +296,24 @@ For a nonnegative Borel cost $c:\Xx\times\Yy\to[0,+\infty]$, the discrete Kantor
 \inf_{\pi\in\Couplings(\al,\be)}
 \int_{\Xx\times\Yy} c(x,y)\d\pi(x,y).
 }
+\begin{prop}[Convexity in the marginals and concavity in the cost]\label{prop-kantorovich-value-curvature}
+Fix a nonnegative Borel cost $c$. The extended-valued map
+\((\al,\be)\longmapsto\MK_c(\al,\be)\)
+is jointly convex on pairs of probability measures. Conversely, for fixed marginals $(\al,\be)$, the map $c\mapsto\MK_c(\al,\be)$ is concave on the cone of nonnegative Borel costs: for any such $c_0,c_1$ and $t\in[0,1]$,
+\(\MK_{(1-t)c_0+tc_1}(\al,\be) \geq (1-t)\MK_{c_0}(\al,\be)+t\MK_{c_1}(\al,\be).\)
+The inequality is understood in $[0,+\infty]$; in particular, the map is concave on every convex family of costs on which it is finite.
+\end{prop}
+\begin{proof}
+For joint convexity, let $(\al_0,\be_0)$ and $(\al_1,\be_1)$ be two pairs of probability measures. The claim is immediate at $t\in\{0,1\}$ or if one of the two values on the right-hand side is infinite. Otherwise, for $\eta>0$, choose $\pi_i\in\Couplings(\al_i,\be_i)$ such that
+\(\int c\d\pi_i\leq\MK_c(\al_i,\be_i)+\eta, \qquad i\in\{0,1\}.\)
+Then $(1-t)\pi_0+t\pi_1$ couples $(1-t)\al_0+t\al_1$ and $(1-t)\be_0+t\be_1$, and hence
+\(\MK_c\big((1-t)\al_0+t\al_1,(1-t)\be_0+t\be_1\big) \leq (1-t)\MK_c(\al_0,\be_0)+t\MK_c(\al_1,\be_1)+\eta.\)
+Letting $\eta\to0$ proves joint convexity.
+
+For concavity, the endpoint cases are immediate, so assume $t\in(0,1)$ and fix $\pi\in\Couplings(\al,\be)$. Linearity of integration for nonnegative functions gives
+\(\int\big((1-t)c_0+tc_1\big)\d\pi \geq (1-t)\MK_{c_0}(\al,\be)+t\MK_{c_1}(\al,\be).\)
+Taking the infimum over $\pi$ proves the stated inequality.
+\end{proof}
 \begin{prop}[Existence for lower-semicontinuous costs]\label{prop-kantorovich-existence-compact}
 Assume that $\Xx$ and $\Yy$ are Polish spaces and that $c:\Xx\times\Yy\to[0,+\infty]$ is lower semicontinuous. Then the Kantorovich problem~\eqref{eq-mk-generic} admits at least one minimizer. In particular, this applies to every continuous nonnegative cost on compact metric spaces.
 \end{prop}
@@ -431,6 +499,31 @@ Let $(\X,\dist)$ be a Polish metric space and $p\geq1$. For $\al,\be\in\Pp_p(\X)
 }
 It depends on the ground distance $\dist$.
 \end{defn}
+\begin{prop}[Euclidean mean bound and quadratic decomposition]\label{prop-wasserstein-mean-decomposition}
+Let $p\geq1$ and $\al,\be\in\Pp_p(\RR^d)$, and denote their means by \(m_\al\eqdef\int_{\RR^d}x\,\d\al(x), \qquad m_\be\eqdef\int_{\RR^d}x\,\d\be(x).\)
+Then
+\(\norm{m_\al-m_\be}\leq\Wass_p(\al,\be).\)
+For $p=2$, define the centered translates
+\(\al^0\eqdef(x\mapsto x-m_\al)_\sharp\al, \qquad \be^0\eqdef(y\mapsto y-m_\be)_\sharp\be.\)
+Then the following exact decomposition holds: \(\Wass_2^2(\al,\be) = \norm{m_\al-m_\be}^2+\Wass_2^2(\al^0,\be^0).\)
+\end{prop}
+\begin{proof}
+For every $\pi\in\Couplings(\al,\be)$, \(m_\al-m_\be=\int_{\RR^d\times\RR^d}(x-y)\,\d\pi(x,y).\)
+Jensen's inequality therefore gives
+\[
+\norm{m_\al-m_\be}
+\leq
+\left(\int\norm{x-y}^p\,\d\pi(x,y)\right)^{1/p}.
+\]
+Taking the infimum over $\pi$ proves the first claim.
+
+For $p=2$, set
+\(\pi^0 \eqdef \bigl((x,y)\mapsto(x-m_\al,y-m_\be)\bigr)_\sharp\pi.\)
+This translation defines a bijection from
+$\Couplings(\al,\be)$ onto $\Couplings(\al^0,\be^0)$. Writing
+$u=x-m_\al$ and $v=y-m_\be$, one has \(\int\norm{x-y}^2\,\d\pi = \norm{m_\al-m_\be}^2+\int\norm{u-v}^2\,\d\pi^0(u,v),\)
+because $\int(u-v)\,\d\pi^0(u,v)=0$. Taking the infimum over the corresponding couplings proves the decomposition.
+\end{proof}
 \begin{prop}[Metric property of the Wasserstein distance]\label{prop-metric-measure}
 Definition~\ref{def-wasserstein-distance} defines a distance on $\Pp_p(\X)$: $\Wass_p$ is symmetric and nonnegative, $\Wass_p(\al,\be)=0$ if and only if $\al=\be$, and
 \(\foralls (\al,\be,\ga)\in\Pp_p(\X)^3, \qquad \Wass_p(\al,\ga)\leq\Wass_p(\al,\be)+\Wass_p(\be,\ga).\)
@@ -684,14 +777,9 @@ Wasserstein distances are also used to define ambiguity sets around an empirical
 Thus the robust risk is an empirical risk in which each sample is replaced by its worst penalized perturbation. For $p=1$ and an $L_\theta$-Lipschitz loss, the Kantorovich--Rubinstein dual gives the transparent upper bound
 
 \(\sup_{\be:\,\Wass_1(\be,\widehat{\al}_n)\leq \rho} \int \ell_\theta\d\be \leq \frac1n\sum_i\ell_\theta(z_i)+\rho L_\theta,\)
-\begin{prop}[Convexity of transport costs]\label{prop-wasserstein-cost-convex}
-For any nonnegative lower-semicontinuous cost $c$, the value
-\((\al,\be)\mapsto\MK_c(\al,\be)\)
-is jointly convex. In particular, for a ground metric $d$ and $p\geq1$, the map $(\al,\be)\mapsto\Wass_p(\al,\be)^p$ is jointly convex. The distance $\Wass_1$ is jointly convex, but $\Wass_p$ itself need not be convex for $p>1$.
-\end{prop}
-\begin{proof}
-If either endpoint value is infinite, the convexity inequality is immediate. Otherwise, let $\pi_0\in\Couplings(\al_0,\be_0)$ and $\pi_1\in\Couplings(\al_1,\be_1)$ be $\eta$-optimal. Then $(1-t)\pi_0+t\pi_1$ is a coupling between $(1-t)\al_0+t\al_1$ and $(1-t)\be_0+t\be_1$, and its cost is the corresponding convex combination of the two costs. Letting $\eta\to0$ proves joint convexity of $\MK_c$. Taking $c=d^p$ gives convexity of $\Wass_p^p$. For $p=1$, this is convexity of $\Wass_1$ itself. For $p>1$, the root can destroy convexity: on the real line, $F(t)\eqdef\Wass_p((1-t)\delta_0+t\delta_1,\delta_0)=t^{1/p}$ satisfies $F(1/2)> (F(0)+F(1))/2$.
-\end{proof}
+Applied to $c=d^p$, Proposition~\ref{prop-kantorovich-value-curvature} shows that $(\al,\be)\mapsto\Wass_p(\al,\be)^p$ is jointly convex. Thus $\Wass_1$ itself is jointly convex, but $\Wass_p$ need not be convex for $p>1$: on the real line,
+
+\(\Wass_p\big((1-t)\delta_0+t\delta_1,\delta_0\big)=t^{1/p},\)
 \(\theta\mapsto \sup_{\be:\,\Wass_p(\be,\widehat{\al}_n)\leq\rho} \int \ell_\theta\,\d\be\)
 \paragraph{\texorpdfstring{$\Wass_\infty$}{W-infinity} robustness.}
 \begin{equation}\label{eq-wass-infty}

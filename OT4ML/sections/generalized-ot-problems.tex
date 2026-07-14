@@ -18,12 +18,17 @@ Barycenters ask how to average probability measures rather than points. This sec
 \paragraph{Fr\'echet means.}
 \index{Frechet mean}% strictindex
 
-The natural formulation is a Fr\'echet-mean problem on the space of probability measures: the unknown is the barycenter measure itself, and its support is not prescribed. Given input measures $(\be_s)_{s=1}^S$ on a space $\Xx$ and weights $\la\in\simplex_S$, discard any zero-weight inputs and consider
+The natural formulation is a Fr\'echet-mean problem on the space of probability measures: the unknown is the barycenter measure itself, and its support is not prescribed. It uses the continuous Kantorovich value $\MK_c$ defined in~\eqref{eq-mk-generic}.
+
+\begin{defn}[Optimal-transport barycenter]\label{def-ot-barycenter}
+Given input measures $(\be_s)_{s=1}^S$ on a space $\Xx$ and weights $\la\in\simplex_S$, discard any zero-weight inputs. An \emph{optimal-transport barycenter} of this weighted family is any solution of
 \index{Wasserstein!barycenter}% strictindex
 \eql{\label{eq-barycenter-generic}
 	\umin{\al \in \Mm_+^1(\Xx)} \sum_{s=1}^S \la_s \MK_{\c}(\al,\be_s).
 }
-Any minimizer is a barycenter. Unlike a coupling, it is a new probability measure on $\Xx$.
+\end{defn}
+
+Unlike a coupling, the barycenter is a new probability measure on $\Xx$. Since the weights $\la_s$ are nonnegative, problem~\eqref{eq-barycenter-generic} is convex in $\al$: Proposition~\ref{prop-kantorovich-value-curvature} shows that the continuous Kantorovich value is jointly convex in its two marginals.
 \index{probability measure}% strictindex
 
 This barycenter problem was introduced by Agueh and Carlier~\cite{Carlier_wasserstein_barycenter}, following earlier ideas of Carlier and Ekeland~\cite{carlierekelandmatching}. For the quadratic cost on $\Xx=\RR^d$, a barycenter exists under the usual finite-second-moment assumption. It is unique if at least one positive-weight input is absolutely continuous; more general uniqueness criteria replace absolute continuity by conditions ensuring an essentially unique multi-marginal barycentric map. Discrete existence, consistency and fixed-point constructions are further studied in~\cite{anderes2016discrete,alvarez2016fixed,leGouic2016existence}.
@@ -41,48 +46,123 @@ Choose candidate barycenter sites $(y_i)_{i=1}^n$ and restrict the unknown to $\
 \[
 	(\C_s)_{ij}=c(y_i,x_{s,j}) \in \RR^{n\times n_s}.
 \]
-The resulting fixed-support discrete barycenter problem is
+Thus its value is $\MKD_{\C_s}(\a,\b_s)$, in the notation of the discrete Kantorovich problem~\eqref{eq-kanto-discr}.
+
+\begin{defn}[Fixed-support discrete OT barycenter]\label{def-fixed-support-discrete-barycenter}
+With the candidate sites and cost matrices above, a \emph{fixed-support discrete OT barycenter} is a measure $\al^\star=\sum_i a_i^\star\de_{y_i}$ whose weight vector $\a^\star=(a_i^\star)_{i=1}^n$ solves
 \index{multi-marginal!OT}% strictindex
 \index{discrete!barycenter}% strictindex
 \index{barycenter!support}% strictindex
 \eql{\label{eq-wass-discr}
 	\umin{\a \in \simplex_n} \sum_{s=1}^S \la_s \MKD_{\C_s}(\a,\b_s),
 }
-where $\a=(a_i)_i$ are the weights on the prescribed barycenter support.
+\end{defn}
 \index{histogram}% strictindex
 \index{cost!matrix}% strictindex
 
-This construction is a finite-dimensional restriction, not an exact discrete reduction of the general barycenter problem. In the ordinary two-marginal Kantorovich problem, once both marginals are discrete, the two supports are known and the whole problem is exactly a matrix optimization on their product support. For barycenters, the input supports do not determine the support of the unknown barycenter: a minimizer may place mass outside the chosen sites $(y_i)_i$ and outside the union of the input supports.
+This construction is a finite-dimensional restriction, not an exact discrete reduction of the general barycenter problem. In the ordinary two-marginal Kantorovich problem, once both marginals are discrete, the two supports are known and the whole problem is exactly the matrix optimization~\eqref{eq-kanto-discr} on their product support. For barycenters, the input supports do not determine the support of the unknown barycenter: a minimizer may place mass outside the chosen sites $(y_i)_i$ and outside the union of the input supports. Once the candidate support is fixed, however, the nonnegative weights $\la_s$ and Proposition~\ref{prop-discrete-kantorovich-joint-convexity} show that problem~\eqref{eq-wass-discr} is convex in $\a$: the discrete Kantorovich value is jointly convex in its two histograms.
 
-For quadratic costs, the multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that, for discrete inputs, one may choose a barycenter supported on weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input. This exact candidate set can contain $\prod_s n_s$ points, which is usually too large. Prescribing the support $(y_i)_i$ before solving~\eqref{eq-wass-discr} is therefore a numerical approximation, and choosing this support is itself a significant part of the barycenter problem.
+Instead of fixing the barycenter support in advance, one may optimize simultaneously over its weights and locations. For quadratic costs on $\RR^d$, this gives
+\[
+	\umin{\substack{\a\in\simplex_n\\Y=(y_i)_{i=1}^n\in(\RR^d)^n}}
+	\sum_{s=1}^S\la_s\MKD_{\C_s(Y)}(\a,\b_s),
+	\qquad
+	[\C_s(Y)]_{ij}=\norm{y_i-x_{s,j}}^2.
+\]
+For fixed $Y$, the objective is the convex problem~\eqref{eq-wass-discr} in $\a$; its dependence on $Y$ is generally nonconvex, so the joint problem is nonconvex. Cuturi and Doucet~\cite{CuturiBarycenter} proposed alternating weight updates, obtained from dual OT solutions, and location updates, obtained from primal OT plans. Thus choosing the support is itself a significant computational part of the barycenter problem, rather than a harmless preprocessing step.
+\index{barycenter!free support}% strictindex
+\index{nonconvex!optimization}% strictindex
+
+For quadratic costs, the multi-marginal formulation of Section~\ref{sec-multimarginal-ot} shows that, for discrete inputs, one may choose a barycenter supported on weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input. This exact candidate set can contain $\prod_s n_s$ points, but Corollary~\ref{cor-discrete-barycenters} shows that there exists a barycenter for which at most $\sum_s n_s-S+1$ of them carry positive mass. Prescribing the support $(y_i)_i$ before solving~\eqref{eq-wass-discr} is nevertheless a numerical approximation, because the active weighted averages are not known in advance.
 \index{multi-marginal!OT}% strictindex
 
 \begin{example}[Application to fair score repair]\label{ex-fair-score-repair}
 \index{fairness}% strictindex
+\index{demographic parity}% strictindex
 \index{Wasserstein!barycenter}% strictindex
-	Let \(S\) be a protected group and \(Y=f(X)\) a score. A basic demographic-parity constraint asks that the conditional laws \(\al_s=\mathcal L(Y\mid S=s)\) be independent of \(s\). OT post-processing chooses a common fair law, often a Wasserstein barycenter
+	Let $(X,S)$ be a random pair taking values in $\Xx\times\{1,\ldots,K\}$, where $S$ is the protected attribute and $p_s=\PP(S=s)>0$. Let $f:\Xx\times\{1,\ldots,K\}\to\RR$ be a measurable score such that $\EE\abs{f(X,S)}^2<+\infty$. For each group, denote the conditional score law by
 	\[
-		\bar\al\in\uargmin{\zeta}\sum_s p_s\Wass_2^2(\al_s,\zeta),
+		\be_s
+		\eqdef
+		\operatorname{Law}\bigl(f(X,S)\mid S=s\bigr).
 	\]
-	and transports each group toward it. In one dimension this uses monotone rearrangements; in the quadratic absolutely continuous case it uses Brenier maps \((T_s)_\sharp\al_s=\bar\al\); otherwise one can use the barycentric projection of an optimal plan. The repaired score is \(\widetilde Y=T_S(Y)\) when a map is used. The barycenter is the compromise distribution, while the OT maps give minimal geometric changes to the original scores~\cite{DelBarrioGamboaGordalizaLoubes2018FairOT,ChzhenDenisHebiriOnetoPontil2020FairBarycenters,BuylDeBie2022FairClassifiers,HuRatzCharpentier2023FairBarycenters}. Thus the barycenter is not only an averaging tool: it can define a target distribution used to repair several observed laws simultaneously.
+	Demographic parity asks these laws to be independent of $s$. Let $\al^\star$ be the quadratic Wasserstein barycenter defined by~\eqref{eq-barycenter-generic}, with inputs $(\be_s)_{s=1}^K$ and weights $(p_s)_{s=1}^K$. Assume that every $\be_s$ has a density, and denote by $T_s$ the Brenier map satisfying
+	\[
+		(T_s)_\sharp\be_s=\al^\star.
+	\]
+	Since the scores are one-dimensional, $T_s$ is the monotone rearrangement from $\be_s$ to $\al^\star$. Define the repaired scoring rule by
+	\[
+		\widetilde f(x,s)
+		\eqdef
+		T_s\bigl(f(x,s)\bigr).
+	\]
+	Then, for every group $s$,
+	\[
+		\operatorname{Law}\bigl(\widetilde f(X,S)\mid S=s\bigr)
+		=
+		(T_s)_\sharp\be_s
+		=
+		\al^\star.
+	\]
+	Thus $\widetilde f(X,S)$ is independent of $S$ and satisfies demographic parity. Moreover, among repairs obtained by transporting every group to a common score law, the barycenter and the maps $(T_s)_s$ minimize the expected squared score modification~\cite{DelBarrioGamboaGordalizaLoubes2018FairOT,ChzhenDenisHebiriOnetoPontil2020FairBarycenters,BuylDeBie2022FairClassifiers,HuRatzCharpentier2023FairBarycenters}.
 \end{example}
 
+With only two input measures, the barycenter problem introduces no new averaging operation: it selects an intermediate point of the ambient Wasserstein geometry.
 
-\begin{example}[Two measures recover a Wasserstein geodesic]
+\begin{prop}[Two-measure barycenters are Wasserstein geodesics]\label{prop-two-measure-barycenter-geodesic}
 \index{Wasserstein!geodesic}% strictindex
-	For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the barycenter is the point at time $t$ on a Wasserstein geodesic between $\beta_0$ and $\beta_1$. If $T$ is the Brenier map from $\beta_0$ to $\beta_1$, this barycenter is $((1-t)\Id+tT)_\sharp\beta_0$, the McCann interpolation of Definition~\ref{def-monge-mccann-interpolation}. If no Monge map is available, Definition~\ref{def-w2-geodesic-induced-by-plan} uses an optimal coupling $\pi$ and gives the barycenter as the push-forward of $\pi$ by $(x,y)\mapsto(1-t)x+ty$.
-\index{Monge!problem}% strictindex
-\index{optimal coupling}% strictindex
 \index{McCann!interpolation}% strictindex
-\index{convexity!geodesic}% strictindex
-\index{interpolation map}% strictindex
+	Let $\be_0,\be_1\in\Pp_2(\RR^d)$ and $t\in[0,1]$. For $S=2$, $c(x,y)=\norm{x-y}^2$ and weights $(1-t,t)$, the minimizers of the barycenter problem~\eqref{eq-barycenter-generic} are exactly the time-$t$ points of constant-speed $\Wass_2$ geodesics from $\be_0$ to $\be_1$. The minimum value is
+	\[
+		t(1-t)\Wass_2^2(\be_0,\be_1).
+	\]
+	In particular, if $\pi$ is any optimal coupling between $\be_0$ and $\be_1$, then
+	\[
+		\al_t
+		\eqdef
+		\bigl((x,y)\mapsto(1-t)x+ty\bigr)_\sharp\pi
+	\]
+	is a barycenter. If $\be_0$ has a density, the barycenter is unique and
+	\[
+		\al_t=((1-t)\Id+tT)_\sharp\be_0,
+	\]
+	where $T$ is the Brenier map from $\be_0$ to $\be_1$.
+\index{optimal coupling}% strictindex
 \index{Brenier!map}% strictindex
-\end{example}
+\end{prop}
+\begin{proof}
+	The endpoint cases $t\in\{0,1\}$ are immediate, so assume $0<t<1$. For any candidate $\al\in\Pp_2(\RR^d)$, set
+	\[
+		A=\Wass_2(\be_0,\al),
+		\qquad
+		B=\Wass_2(\al,\be_1),
+		\qquad
+		D=\Wass_2(\be_0,\be_1).
+	\]
+	The identity
+	\[
+		(1-t)A^2+tB^2
+		=
+		t(1-t)(A+B)^2+\bigl((1-t)A-tB\bigr)^2
+	\]
+	and the triangle inequality $A+B\geq D$ give
+	\[
+		(1-t)\Wass_2^2(\al,\be_0)
+		+t\Wass_2^2(\al,\be_1)
+		\geq
+		t(1-t)D^2.
+	\]
+	For the interpolation $\al_t$ induced by an optimal coupling, Proposition~\ref{prop-plan-interpolation-w2-geodesic} gives $A=tD$ and $B=(1-t)D$, so the lower bound is attained.
+
+	Conversely, every minimizer must attain equality in both inequalities above. Hence $A+B=D$ and $(1-t)A=tB$, which imply $A=tD$ and $B=(1-t)D$. Parameterize a constant-speed geodesic from $\be_0$ to $\al$ on $[0,t]$ and one from $\al$ to $\be_1$ on $[t,1]$; both pieces then have speed $D$. Their concatenation is globally geodesic: any shorter path between points on opposite pieces, combined with the remaining subsegments, would contradict $D=\Wass_2(\be_0,\be_1)$. Thus the concatenated geodesic passes through $\al$ at time $t$. Finally, if $\be_0$ has a density, Brenier's theorem (Theorem~\ref{thm-brenier}) gives the unique optimal coupling $(\Id,T)_\sharp\be_0$, and the displayed McCann interpolation follows from Definition~\ref{def-monge-mccann-interpolation}.
+\end{proof}
 \begin{example}[Dirac inputs recover Fr\'echet means]
 	The general barycenter formulation above extends the computation of barycenters of points $(x_s)_{s=1}^S \in \Xx^S$ to arbitrary measures. Indeed, if $\be_s=\de_{x_s}$ is a single Dirac mass, then a solution is $\de_{x^\star}$, where $x^\star$ minimizes $x\mapsto\sum_s\lambda_s c(x,x_s)$.
 \index{Frechet mean}% strictindex
 \index{Dirac mass}% strictindex
 \end{example}
+
+Figure~\ref{fig:barycenters-four-shapes} moves beyond this degenerate case and compares barycenter grids obtained from one-dimensional quantile averaging and two-dimensional entropic transport under the same bilinear corner weights.
 
 \begin{figure}[ht]
 \centering
@@ -101,46 +181,59 @@ For quadratic costs, the multi-marginal formulation of Section~\ref{sec-multimar
 \label{fig:barycenters-four-shapes}
 \end{figure}
 
-\begin{rem}[Mean of a quadratic barycenter]
+Quadratic barycenters inherit both the average translation and a sharp localization property from their inputs.
+
+\begin{prop}[Mean and support of quadratic Wasserstein barycenters]\label{prop-w2-barycenter-mean-support}
 \index{quadratic!barycenter}% strictindex
 \index{barycenter!mean}% strictindex
-	For $c(x,y)=\norm{x-y}^2$, the mean of the barycenter $\al^\star$ is necessarily the barycenter of the means,
-	\eq{
-			\int_\Xx x \d\al^\star(x) = \sum_s \la_s \int_\Xx x \d\be_s(x).
-	}
-	To see this, write $m_\alpha=\int x\d\alpha(x)$ and let $\alpha^0=(x\mapsto x-m_\alpha)_\sharp\alpha$ be the centered translate. Then
+\index{barycenter!support}% strictindex
+\index{convex hull}% strictindex
+	Let $\be_1,\ldots,\be_S\in\Pp_2(\RR^d)$, let $\la\in\simplex_S$, and let $\al^\star$ be a barycenter for the squared Euclidean cost. Define
 	\[
-		\Wass_2^2(\alpha,\beta)
+		K
+		\eqdef
+		\overline{\operatorname{conv}}
+		\left(
+			\bigcup_{\{s:\,\la_s>0\}}\supp(\be_s)
+		\right).
+	\]
+	Then
+	\[
+		\supp(\al^\star)\subset K,
+		\qquad
+		\int_{\RR^d}x\,\d\al^\star(x)
 		=
-		\norm{m_\alpha-m_\beta}^2+\Wass_2^2(\alpha^0,\beta^0).
+		\sum_{s=1}^S\la_s\int_{\RR^d}x\,\d\be_s(x).
 	\]
-	Indeed, the cross term vanishes under every coupling of the centered measures. The barycenter objective therefore separates into a centered term and the strictly convex Euclidean function $m\mapsto\sum_s\lambda_s\norm{m-m_{\beta_s}}^2$, whose minimizer is $\sum_s\lambda_s m_{\beta_s}$. If the input measures have compact support, the multi-marginal construction of Proposition~\ref{prop-multimarginal-barycenter} also gives a barycenter supported in the convex hull of the input supports.
-\index{Wasserstein!distance}% strictindex
-\index{multi-marginal!OT}% strictindex
-\end{rem}
-
-The next elementary proposition explains why the general barycenter formulation is a convex optimization problem over measures. The difficulty is not convexity, but the fact that the unknown is itself a measure whose support is not known in advance.
-
-\begin{prop}[Convexity of the OT cost]\label{prop-barycenter-ot-cost-convexity}
-\index{cost!transport}% strictindex
-	The extended-valued map $(\al,\be)\mapsto\MK_\c(\al,\be)$ is jointly convex on pairs of probability measures.
 \end{prop}
-
 \begin{proof}
-	Let $(\al_0,\be_0)$ and $(\al_1,\be_1)$ be two pairs of probability measures and let $t\in[0,1]$. The endpoint cases $t\in\{0,1\}$ are identities. Assume therefore that $t\in(0,1)$. If either value on the right-hand side of the convexity inequality is infinite, the claim is immediate. Otherwise, for $\eta>0$, choose couplings $\pi_i\in\Couplings(\al_i,\be_i)$ such that
-\index{probability measure}% strictindex
+	Write $m_\al=\int x\,\d\al(x)$ and let $\al^0$ be its centered translate, as in Proposition~\ref{prop-wasserstein-mean-decomposition}. That proposition gives, for every candidate $\al$,
 	\[
-		\int c\d\pi_i\leq\MK_\c(\al_i,\be_i)+\eta
-		\qquad (i=0,1).
+		\sum_{s=1}^S\la_s\Wass_2^2(\al,\be_s)
+		=
+		\sum_{s=1}^S\la_s\norm{m_\al-m_{\be_s}}^2
+		+\sum_{s=1}^S\la_s\Wass_2^2(\al^0,\be_s^0).
 	\]
-	Then $\pi_t=(1-t)\pi_0+t\pi_1$ is a coupling between $(1-t)\al_0+t\al_1$ and $(1-t)\be_0+t\be_1$. Hence
+	For a fixed centered law $\al^0$, the second sum is independent of $m_\al$, whereas the first is uniquely minimized at
+	$m_\al=\sum_s\la_s m_{\be_s}$. Translating $\al^\star$ without changing its centered law therefore proves the mean identity.
+
+	For the support statement, let $P_K$ be the Euclidean metric projection onto the closed convex set $K$. For every $y\in K$, the projection inequality gives
 	\[
-		\MK_\c((1-t)\al_0+t\al_1,(1-t)\be_0+t\be_1)
+		\norm{x-y}^2
+		\geq
+		\norm{P_K(x)-y}^2+\norm{x-P_K(x)}^2.
+	\]
+	For each $s$ with $\la_s>0$, let $\pi_s$ be an optimal coupling between $\al^\star$ and $\be_s$. Since $\be_s(K)=1$, pushing $\pi_s$ forward by $(P_K,\Id)$ and integrating the preceding inequality yields
+	\[
+		\Wass_2^2\bigl((P_K)_\sharp\al^\star,\be_s\bigr)
 		\leq
-		(1-t)\MK_\c(\al_0,\be_0)+t\MK_\c(\al_1,\be_1)+\eta.
+		\Wass_2^2(\al^\star,\be_s)
+		-
+		\int_{\RR^d}\operatorname{dist}(x,K)^2\,\d\al^\star(x).
 	\]
-	Letting $\eta\to0$ gives the claim.
+	After multiplication by $\la_s$ and summation, barycenter optimality forces the last integral to vanish. Hence $\al^\star(K)=1$, and the closedness of $K$ gives $\supp(\al^\star)\subset K$.
 \end{proof}
+If all input supports are compact, their finite union is compact and so is its convex hull; in that case the closure in the definition of $K$ is unnecessary.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \paragraph{One-dimensional case.}
@@ -177,94 +270,246 @@ On the line, barycenters become linear after the quantile change of variables. T
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\paragraph{Sliced and Radon barycenters.}
-\index{sliced barycenter}% strictindex
-\index{Radon barycenter}% strictindex
-\index{Radon sinogram}% strictindex
-\index{sliced Wasserstein!barycenter}% strictindex
-\index{Radon Wasserstein barycenter}% strictindex
-\index{Radon transform}% strictindex
-
-Slicing gives a scalable surrogate for high-dimensional barycenters by applying the preceding one-dimensional quantile formula in every projection direction. For measures on $\RR^d$, define the sliced barycenter by replacing $\Wass_2$ with $\SW_2$, introduced in Definition~\ref{def-sliced-wasserstein} and interpreted through the Radon transform in Section~\ref{sec-sliced-wasserstein}:
-\[
-	\umin{\al\in\Mm_+^1(\RR^d)}
-	\sum_{s=1}^S\la_s\SW_2(\al,\be_s)^2
-	=
-	\umin{\al\in\Mm_+^1(\RR^d)}
-	\int_{\Sphere^{d-1}}
-	\sum_{s=1}^S\la_s
-	\Wass_2\big((P_\theta)_\sharp\al,(P_\theta)_\sharp\be_s\big)^2
-	\d\sigma(\theta).
-\]
-The constraint that all projected measures come from the same $\al$ is the nontrivial part of this problem. A cheaper Radon-domain approximation drops this consistency constraint and minimizes directly over collections $(\gamma_\theta)_{\theta\in\Sphere^{d-1}}$ of one-dimensional probability measures,
-\[
-	\umin{(\gamma_\theta)_\theta}
-	\int_{\Sphere^{d-1}}
-	\sum_{s=1}^S\la_s
-	\Wass_2(\gamma_\theta,\be_{s,\theta})^2
-	\d\sigma(\theta),
-	\qquad
-	\be_{s,\theta}\eqdef(P_\theta)_\sharp\be_s.
-\]
-This problem decouples over directions. For each $\theta$, the minimizer is the one-dimensional barycenter $\gamma_\theta$ with quantile
-\[
-	\cumul{\gamma_\theta}^{-1}(r)
-	=
-	\sum_{s=1}^S\la_s\cumul{\be_{s,\theta}}^{-1}(r),
-	\qquad r\in[0,1].
-\]
-This relaxed value is a lower bound on the sliced barycenter value. If the minimizing family is Radon-consistent, meaning that there exists a probability measure $\bar\al$ on $\RR^d$ such that $\gamma_\theta=(P_\theta)_\sharp\bar\al$ for $\sigma$-almost every $\theta$, then this lower bound is attained and $\bar\al$ is an exact sliced barycenter.
-
-In numerical imaging, one commonly reconstructs an approximate display density by filtered back-projection. Writing $h(\theta,t)$ for a density of $\gamma_\theta$ and $\widehat h(\theta,\omega)$ for the one-dimensional Fourier transform in $t$, the formal pseudo-inverse is
-\[
-	R^\dagger h(x)
-	=
-	c_d\int_{\Sphere^{d-1}}\int_{\RR}
-	e^{\imath\omega\dotp{\theta}{x}}
-	|\omega|^{d-1}
-	\widehat h(\theta,\omega)
-	\d\omega\,\d\sigma(\theta),
-\]
-\index{tomography}% strictindex
-\index{ramp filter}% strictindex
-\index{Radon pseudo-inverse}% strictindex
-with a constant $c_d$ depending only on the Fourier convention and on the normalization of $\sigma$. This is the filtered back-projection formula used in tomography~\cite{HermanTomography}, with the multiplier $|\omega|^{d-1}$ as the ramp filter. In practice one regularizes the ramp filter and projects the reconstruction back to nonnegative densities, since low-amplitude streaks are a numerical artifact of inverting incomplete or slightly inconsistent Radon data. The construction is fast and was introduced for sliced and Radon Wasserstein barycenters in~\cite{2013-Bonneel-barycenter}, but it should not be confused with the exact variational sliced barycenter. In the continuous all-directions setting, the Radon transform is injective by the Cram\'er--Wold theorem; the issue is instead that independently averaged one-dimensional barycenters need not satisfy the range conditions of a genuine Radon transform, such as antipodal symmetry and moment consistency. With finitely many directions, the sampled Radon operator is also non-injective, so the pseudo-inverse reconstruction and the constrained sliced barycenter may differ.
-\index{filtered back-projection}% strictindex
-\index{Radon range condition}% strictindex
-\index{Fourier transform}% strictindex
-\index{Cramer-Wold theorem}% strictindex
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=.98\linewidth]{figures/sliced-radon-barycenter/grid.pdf}
-\caption{\emph{Radon-domain sliced barycentric interpolation between the cat and heart densities.} The columns correspond to $t=0,0.2,\ldots,1$. The first row shows the endpoint densities and the intermediate regularized filtered-back-projection reconstructions $A_t$, with low-amplitude inversion ghosts suppressed in the display. The second row shows the corresponding Radon sinograms $R_t$, obtained for intermediate times by converting the directionwise quantile barycenters back into one-dimensional projected densities. The third row shows the quantile fields $Q_t(\theta,r)=(1-t)Q_0(\theta,r)+tQ_1(\theta,r)$ in Radon space. This illustrates both the simplicity of one-dimensional quantile interpolation and the extra pseudo-inverse reconstruction step needed to return from Radon data to an image density.}
-\label{fig:sliced-radon-barycenter}
-\end{figure}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \paragraph{Gaussian case.}
 
 Gaussian barycenters show that the same separation as in the Gaussian Wasserstein formula~\eqref{eq-dist-gauss} persists: means average linearly, while covariances average according to the Bures--Wasserstein geometry.
 \index{Bures!Wasserstein geometry}% strictindex
 \index{Gaussian!barycenter}% strictindex
 
-\begin{example}[Nondegenerate Gaussian inputs remain Gaussian]
-	Let the positive-weight inputs be $\Gaussian(\mean_s,\cov_s)$, with $\cov_s\succeq0$, and assume that at least one $\cov_s$ is positive definite. The quadratic Wasserstein barycenter is then unique and Gaussian. Its mean is $\mean=\sum_s\lambda_s\mean_s$. In one dimension, its standard deviation is $\sum_s\lambda_s\sqrt{\cov_s}$, so its variance is the square of this average. In higher dimensions, its positive-definite covariance $\cov$ uniquely minimizes the Bures objective
+\begin{prop}[Nondegenerate Gaussian inputs remain Gaussian]\label{prop-gaussian-barycenter}
+	Let the positive-weight inputs be $\be_s=\Gaussian(\mean_s,\cov_s)$, with $\cov_s\succeq0$, and assume that at least one $\cov_s$ is positive definite. The quadratic Wasserstein barycenter is unique and has the form $\al^\star=\Gaussian(\mean,\cov)$, where
+	\[
+		\mean=\sum_s\lambda_s\mean_s.
+	\]
+	Its positive-definite covariance $\cov$ is the unique minimizer of the Bures objective
 \index{Gaussian!measure}% strictindex
-	\[
-		\cov \mapsto \sum_s \la_s \Bb(\cov,\cov_s)^2,
-	\]
-	and equivalently solves the fixed-point equation
-	\[
-		\cov =
-		\sum_s \la_s
-		\pa{\cov^{1/2}\cov_s\cov^{1/2}}^{1/2}.
-	\]
-	This is the covariance analogue of the Euclidean barycenter equation: the mean part averages linearly, while the covariance part averages through the Bures--Wasserstein geometry~\cite{alvarez2016fixed,bhatia2018bures}. If all input covariances are singular, a Gaussian barycenter still exists, but uniqueness can fail and non-Gaussian barycenters may also occur; the unqualified statement that every barycenter is Gaussian is therefore false in that degenerate regime.
+	\eql{\label{eq-gaussian-barycenter-energy}
+		\mathcal E(X)
+		\eqdef
+		\sum_s \la_s \Bb(X,\cov_s)^2.
+	}
+	For $X\in\mathbb S_{++}^d$, define
+	\begin{align}
+		R_s(X)
+		&\eqdef
+		\pa{X^{1/2}\cov_sX^{1/2}}^{1/2},
+		&
+		T_s(X)
+		&\eqdef
+		X^{-1/2}R_s(X)X^{-1/2},
+		\label{eq-gaussian-barycenter-maps}
+		\\
+		\overline T(X)
+		&\eqdef
+		\sum_s\la_sT_s(X),
+		&
+		\Psi_{\lambda}(X)
+		&\eqdef
+		\sum_s\la_sR_s(X).
+		\label{eq-gaussian-barycenter-average-map}
+	\end{align}
+	Here $T_s(X)$ is the positive-semidefinite linear optimal map from $\Gaussian(0,X)$ to $\Gaussian(0,\cov_s)$. The covariance $\cov$ is equivalently characterized by either of the stationarity equations
+	\eql{\label{eq-gaussian-barycenter-fixed-point}
+		\overline T(\cov)=\Id
+		\qquad\Longleftrightarrow\qquad
+		\Psi_{\lambda}(\cov)=\cov.
+	}
+	In dimension one, if $\sigma_s=\sqrt{\cov_s}$ denotes the input standard deviation, then the barycenter standard deviation is $\sigma=\sum_s\lambda_s\sigma_s$.
 \index{Bures!Wasserstein geometry}% strictindex
-\end{example}
+\end{prop}
 
+\begin{proof}
+	Let $\GaussProj(\al)$ denote the Gaussian measure with the same mean and covariance as $\al$. For every competitor $\al\in\Pp_2(\RR^d)$ and every Gaussian input $\be_s$, the Gelbrich contraction of Theorem~\ref{thm-gelbrich-projection} gives
+	\[
+		\Wass_2^2\bigl(\GaussProj(\al),\be_s\bigr)
+		=
+		\Wass_2^2\bigl(\GaussProj(\al),\GaussProj(\be_s)\bigr)
+		\leq
+		\Wass_2^2(\al,\be_s).
+	\]
+	Summing with weights $\lambda_s$ shows that moment-matched Gaussian projection cannot increase the barycenter objective. Since a barycenter exists, projecting any minimizer therefore produces a Gaussian barycenter. The input with positive-definite covariance is absolutely continuous; the uniqueness criterion stated after Definition~\ref{def-ot-barycenter} then implies that the barycenter itself is this Gaussian measure.
+
+	For a Gaussian candidate, formula~\eqref{eq-dist-gauss} separates the objective as
+	\[
+		\sum_s\lambda_s\Wass_2^2\bigl(\Gaussian(\mean,\cov),\Gaussian(\mean_s,\cov_s)\bigr)
+		=
+		\sum_s\lambda_s\norm{\mean-\mean_s}^2
+		+
+		\sum_s\lambda_s\Bb(\cov,\cov_s)^2.
+	\]
+	The first term is uniquely minimized at $\mean=\sum_s\lambda_s\mean_s$. The second is the Bures barycenter problem. Uniqueness of the Wasserstein barycenter makes its covariance minimizer unique, and the presence of a positive-definite input makes this minimizer positive definite~\cite{alvarez2016fixed,bhatia2018bures}.
+
+	It remains to derive the fixed-point equation. First suppose that $\cov_s\succ0$. Cyclicity of the trace gives
+	\[
+		\tr R_s(X)
+		=
+		\tr\pa{\cov_s^{1/2}X\cov_s^{1/2}}^{1/2}.
+	\]
+	For a symmetric perturbation $Z$, differentiation of the trace of the matrix square root yields
+	\[
+		D\!\left[\tr R_s(X)\right][Z]
+		=
+		\frac12\tr\bigl(T_s(X)Z\bigr).
+	\]
+	Consequently,
+	\eql{\label{eq-gaussian-barycenter-first-variation}
+		D\mathcal E(X)[Z]
+		=
+		\tr\bigl((\Id-\overline T(X))Z\bigr).
+	}
+	The same identity for singular $\cov_s$ follows by replacing $\cov_s$ with $\cov_s+\delta\Id$ and letting $\delta\downarrow0$. Since the minimizer lies in $\mathbb S_{++}^d$, first-order optimality is $\overline T(\cov)=\Id$. Finally, definitions~\eqref{eq-gaussian-barycenter-maps}--\eqref{eq-gaussian-barycenter-average-map} give
+	\[
+		\Psi_\lambda(X)
+		=
+		X^{1/2}\overline T(X)X^{1/2},
+	\]
+	so $\overline T(\cov)=\Id$ is equivalent to $\Psi_\lambda(\cov)=\cov$. Conversely, a positive-definite solution of this equation is stationary for the convex objective~\eqref{eq-gaussian-barycenter-energy}, hence is its unique minimizer. In dimension one, $\Bb(\sigma^2,\sigma_s^2)^2=(\sigma-\sigma_s)^2$, whose minimizer is $\sigma=\sum_s\lambda_s\sigma_s$.
+\end{proof}
+
+If all input covariances are singular, the same contraction argument still gives a Gaussian barycenter, but the uniqueness step can fail and non-Gaussian barycenters may coexist. Thus the nondegeneracy assumption is essential when asserting that every barycenter is Gaussian.
+
+\begin{rem}[Forward KL barycenter of Gaussian laws]
+\index{KL barycenter}% strictindex
+\index{Gaussian!barycenter}% strictindex
+	The contrast with Wasserstein averaging is particularly sharp for the forward KL barycenter. Assume now that every \(\cov_s\succ0\), and define
+	\[
+		\al_{\mathrm{KL}}
+		\eqdef
+		\argmin_{\al\in\Pp(\RR^d)}
+		\sum_s\la_s\KL(\al\mid\be_s).
+	\]
+	Then \(\al_{\mathrm{KL}}=\Gaussian(\mean_{\mathrm{KL}},\cov_{\mathrm{KL}})\), with
+	\[
+		\cov_{\mathrm{KL}}
+		=
+		\left(\sum_s\la_s\cov_s^{-1}\right)^{-1},
+		\qquad
+		\mean_{\mathrm{KL}}
+		=
+		\cov_{\mathrm{KL}}
+		\sum_s\la_s\cov_s^{-1}\mean_s.
+	\]
+	Thus \(\cov_{\mathrm{KL}}\) is the weighted harmonic mean of the covariance matrices. Unlike the Wasserstein barycenter in Proposition~\ref{prop-gaussian-barycenter}, its mean is precision-weighted and therefore depends on the input covariances. Indeed, normalizing the geometric mean \(\prod_s(\d\be_s/\d x)^{\la_s}\) gives precisely this Gaussian, and the KL objective differs from \(\KL(\al\mid\al_{\mathrm{KL}})\) only by a constant. This is directional: minimizing \(\sum_s\la_s\KL(\be_s\mid\al)\) over arbitrary \(\al\) instead gives the mixture \(\sum_s\la_s\be_s\), which is generally not Gaussian; see Section~\ref{sec-phi-div}.
+\end{rem}
+
+The equation $\Psi_\lambda(X)=X$ is a characterization, but it does not by itself prescribe the most natural iteration. Its transport meaning leads to a different update. Once the mean has been set to $\mean=\sum_s\lambda_s\mean_s$, the optimal affine map from $\Gaussian(\mean,X)$ to $\Gaussian(\mean_s,\cov_s)$ is
+\[
+	x\longmapsto \mean_s+T_s(X)(x-\mean).
+\]
+Their weighted average is $x\mapsto\mean+\overline T(X)(x-\mean)$. Pushing the current Gaussian forward by this averaged map gives the \emph{transport fixed-point update} of \'Alvarez-Esteban et al.~\cite{alvarez2016fixed}, whose covariance is
+\eql{\label{eq-gaussian-barycenter-transport-update}
+	\mathcal K_1(X)
+	\eqdef
+	\overline T(X)X\overline T(X)
+	=
+	X^{-1/2}\Psi_\lambda(X)^2X^{-1/2}.
+}
+More generally, damping the displacement by $\eta\in(0,1]$ replaces the averaged map by
+\[
+	B_\eta(X)
+	\eqdef
+	(1-\eta)\Id+\eta\overline T(X)
+\]
+and gives
+\eql{\label{eq-gaussian-barycenter-damped-update}
+	\mathcal K_\eta(X)
+	\eqdef
+	B_\eta(X)X B_\eta(X).
+}
+Thus $\eta=1$ is the original \'Alvarez-Esteban et al. iteration~\cite{alvarez2016fixed}, while $0<\eta<1$ moves only a fraction $\eta$ along the Bures geodesic from the current Gaussian to its transport update. Since $B_\eta(X)$ is the unique positive-definite optimal map from $\Gaussian(0,X)$ to $\Gaussian(0,\mathcal K_\eta(X))$, one has $\mathcal K_\eta(X)=X$ if and only if $B_\eta(X)=\Id$, hence if and only if~\eqref{eq-gaussian-barycenter-fixed-point} holds. Every $\mathcal K_\eta$ therefore has the same positive-definite fixed point.
+\index{fixed-point!Gaussian barycenter}% strictindex
+\index{damped iteration}% strictindex
+
+\begin{prop}[Convergence of the Gaussian transport fixed-point iteration]\label{prop-gaussian-barycenter-fixed-point-convergence}
+	Assume that $\lambda_s>0$, $\cov_s\succeq0$, and that at least one $\cov_s$ is positive definite. Fix $\eta\in(0,1]$ and $X_0\succ0$, and iterate
+	\[
+		X_{\ell+1}=\mathcal K_\eta(X_\ell).
+	\]
+	Then every $X_\ell$ is positive definite and $X_\ell\to\cov$, where $\cov$ is the covariance of the Gaussian barycenter in Proposition~\ref{prop-gaussian-barycenter}. More precisely, with
+	\[
+		\mathcal R(X)
+		\eqdef
+		\tr\bigl((\Id-\overline T(X))X(\Id-\overline T(X))\bigr),
+	\]
+	one has
+	\eql{\label{eq-gaussian-barycenter-descent}
+		\mathcal E(X_{\ell+1})
+		\leq
+		\mathcal E(X_\ell)
+		-
+		\eta(2-\eta)\mathcal R(X_\ell),
+	}
+	and therefore $\sum_{\ell\geq0}\mathcal R(X_\ell)<+\infty$. Equivalently,
+	\[
+		\Bb\bigl(X_\ell,X_{\ell+1}\bigr)^2
+		=
+		\eta^2\mathcal R(X_\ell).
+	\]
+\end{prop}
+
+\begin{proof}
+	Fix $X\succ0$, abbreviate $T_s=T_s(X)$, $\overline T=\overline T(X)$ and $B=B_\eta(X)$, and let $Z\sim\Gaussian(0,X)$. Since $T_sZ\sim\Gaussian(0,\cov_s)$, the pair $(BZ,T_sZ)$ is an admissible coupling between $\Gaussian(0,\mathcal K_\eta(X))$ and $\Gaussian(0,\cov_s)$. For every $z\in\RR^d$, the Euclidean variance decomposition around $\overline Tz=\sum_s\lambda_sT_sz$ gives
+	\begin{align*}
+		\sum_s\lambda_s\norm{Bz-T_sz}^2
+		&=
+		\sum_s\lambda_s\norm{\overline Tz-T_sz}^2
+		+(1-\eta)^2\norm{z-\overline Tz}^2,
+		\\
+		\sum_s\lambda_s\norm{z-T_sz}^2
+		&=
+		\sum_s\lambda_s\norm{\overline Tz-T_sz}^2
+		+\norm{z-\overline Tz}^2.
+	\end{align*}
+	Integrating and bounding each Wasserstein cost by the admissible coupling $(BZ,T_sZ)$ proves~\eqref{eq-gaussian-barycenter-descent}. Moreover, $B\succ0$: this is immediate when $\eta<1$, and for $\eta=1$ it follows because the weighted sum $\overline T$ contains at least one positive-definite term. Hence $z\mapsto Bz$ is the optimal map from $\Gaussian(0,X)$ to $\Gaussian(0,\mathcal K_\eta(X))$, which proves the displayed identity for the Bures step length.
+
+	It remains to rule out escape to the boundary of the positive cone. Set
+	\[
+		\delta(X)\eqdef\det(X)^{1/(2d)},
+		\qquad
+		c_0\eqdef\sum_s\lambda_s\det(\cov_s)^{1/(2d)}>0.
+	\]
+	The Minkowski determinant inequality, applied to the positive-semidefinite matrices $\Id$ and $T_s(X)$ with weights $1-\eta$ and $\eta\lambda_s$, gives
+	\begin{align*}
+		\delta\bigl(\mathcal K_\eta(X)\bigr)
+		&=
+		\delta(X)\det(B_\eta(X))^{1/d}
+		\\
+		&\geq
+		(1-\eta)\delta(X)
+		+
+		\eta\sum_s\lambda_s
+		\delta(X)\det(T_s(X))^{1/d}
+		\\
+		&=
+		(1-\eta)\delta(X)+\eta c_0,
+	\end{align*}
+	where the last identity uses $T_s(X)XT_s(X)=\cov_s$. It follows that
+	$\delta(X_\ell)\geq\min\{\delta(X_0),c_0\}>0$ for every $\ell$.
+
+	The decreasing energy also bounds the traces. Indeed, the Schatten Cauchy--Schwarz inequality in the Bures formula gives
+	\[
+		\Bb(X,\cov_s)^2
+		\geq
+		\pa{\sqrt{\tr X}-\sqrt{\tr\cov_s}}^2,
+	\]
+	so~\eqref{eq-gaussian-barycenter-descent} bounds $\tr X_\ell$ uniformly. A uniform trace bound together with the determinant lower bound places all iterates in a compact subset of $\mathbb S_{++}^d$.
+
+	Summing~\eqref{eq-gaussian-barycenter-descent} gives $\mathcal R(X_\ell)\to0$. Every subsequence therefore has a further subsequence converging to some $X_\infty\succ0$. Continuity of the matrix square root and inverse on the preceding compact set yields $\mathcal R(X_\infty)=0$, hence $\overline T(X_\infty)=\Id$. Proposition~\ref{prop-gaussian-barycenter} identifies $X_\infty$ with the unique covariance $\cov$. Since every cluster point is $\cov$, the full sequence converges to $\cov$. The undamped case $\eta=1$ is the Gaussian specialization of Theorem~4.2 of \'Alvarez-Esteban et al.~\cite{alvarez2016fixed}; the argument above also proves the damped extension.
+\end{proof}
+
+\begin{rem}[Raw covariance Picard iteration]
+The transport update~\eqref{eq-gaussian-barycenter-transport-update} should not be confused with the raw Picard iteration $X_{\ell+1}=\Psi_\lambda(X_\ell)$ suggested by the covariance equation. In dimension one, writing $c=\sum_s\lambda_s\sigma_s$ gives
+\[
+	\Psi_\lambda(r)=c\sqrt r,
+	\qquad
+	\mathcal K_\eta(r)
+	=
+	\bigl((1-\eta)\sqrt r+\eta c\bigr)^2.
+\]
+Thus the undamped transport update reaches the barycenter variance $c^2$ in one step, whereas raw Picard generally does not. Proposition~\ref{prop-gaussian-barycenter-fixed-point-convergence} concerns the transport updates $\mathcal K_\eta$, not the raw Picard map; see also~\cite{RuschendorfUckelmann,alvarez2016fixed,bhatia2018bures}.
+\end{rem}
+
+Figure~\ref{fig:barycenters-gaussian-covariances} illustrates the nonlinear covariance interpolation characterized above; increasing anisotropy makes the simultaneous rotation and rescaling of the Bures--Wasserstein barycenter especially visible.
 
 \begin{figure}[ht]
 \centering
@@ -375,6 +620,30 @@ The geometric mean in~\eqref{eq-sinkhorn-bary-3} enforces the fact that all coup
 \textbf{Return} \(\a^{(k)}\) and \(\P_s^{(k)}\).
 \end{alg}
 
+The scaling cycle has an exact dual-optimization interpretation; it is not merely a sequence of marginal normalizations. Write
+\(\uD_s=e^{\fD_s/\epsilon}\) and \(\vD_s=e^{\gD_s/\epsilon}\), with all operations understood componentwise. Proposition~\ref{prop-dual-entropic-barycenters} below shows that the potentials maximize the concave dual~\eqref{eq-dual-bary-entropy}. With $(\fD_s)_s$ fixed, this objective separates over $s$, and its exact maximizer in each $\gD_s$ is
+\[
+	\gD_s^+
+	=
+	\epsilon\log\pa{\frac{\b_s}{\transp{\K_s}e^{\fD_s/\epsilon}}},
+\]
+which is the $\vD_s$-update~\eqref{eq-sinkhorn-bary}. Conversely, with $(\gD_s^+)_s$ fixed, exact maximization over the coupled block $(\fD_s)_s$ under $\sum_s\lambda_s\fD_s=0$ gives
+\[
+	\q_s
+	\eqdef
+	\K_s e^{\gD_s^+/\epsilon},
+	\qquad
+	\a^+
+	=
+	\prod_s\q_s^{\lambda_s},
+	\qquad
+	\fD_s^+
+	=
+	\epsilon\log\pa{\frac{\a^+}{\q_s}}.
+\]
+Thus a complete generalized Sinkhorn cycle is exact two-block coordinate ascent on the dual, or equivalently alternating minimization of its negative. Indeed, the constraint follows from $\log\a^+=\sum_s\lambda_s\log\q_s$, while the first-order conditions require $e^{\fD_s^+/\epsilon}\q_s=\a^+$ for every $s$. These are precisely~\eqref{eq-sinkhorn-bary-2}--\eqref{eq-sinkhorn-bary-3}. In the primal formulation~\eqref{eq-bary-entropy-couplings}, the same cycle alternates weighted KL projections onto the target-column constraints and the common-row-marginal constraint~\cite{2015-benamou-cisc}.
+\index{block-coordinate!ascent}% strictindex
+
 \begin{prop}[Dual of entropic barycenters]\label{prop-dual-entropic-barycenters}
 \index{entropic!barycenter}% strictindex
 	Under the preceding positivity assumptions, the optimal scalings in~\eqref{eq-bary-opt} can be written as $(\uD_s,\vD_s)=(e^{\fD_s/\epsilon},e^{\gD_s/\epsilon})$, where $(\fD_s,\gD_s)_s$ solve the dual problem
@@ -443,7 +712,8 @@ Classical applications include two-dimensional image interpolation, three-dimens
 \index{law over measures}% strictindex
 \index{random probability measure}% strictindex
 \index{nonlinear flattening}% strictindex
-The barycenter formula does not require a finite list of inputs. The Wasserstein-over-Wasserstein viewpoint of Section~\ref{sec-wasserstein-over-wasserstein} makes it possible to replace the discrete family $(\be_s,\la_s)_s$ by a law $\mathfrak A\in\Pp(\Pp(\Omega))$ over probability measures. Assume, for instance, that $c$ is lower semicontinuous and that there exists at least one $\beta_0\in\Pp(\Omega)$ with
+The barycenter formula does not require a finite list of inputs. The Wasserstein-over-Wasserstein viewpoint of Section~\ref{sec-wasserstein-over-wasserstein} makes it possible to replace the discrete family $(\be_s,\la_s)_s$ by a law $\mathfrak A\in\Pp(\Pp(\Omega))$ over probability measures. Such \emph{population Wasserstein barycenters} were studied for random probability measures by Bigot and Klein, in general geodesic settings by Le Gouic and Loubes, and on Riemannian manifolds by Kim and Pass~\cite{bigot2012characterization,leGouic2016existence,KimPass2017WassersteinBarycenters}. Assume, for instance, that $c$ is lower semicontinuous and that there exists at least one $\beta_0\in\Pp(\Omega)$ with
+\index{Wasserstein!barycenter!population}% strictindex
 \[
 \int_{\Pp(\Omega)}\MK_c(\beta_0,\alpha)\d\mathfrak A(\alpha)<+\infty,
 \]
@@ -485,22 +755,24 @@ The next result records the corresponding law of large numbers. It is useful whe
 		\in\Pp(\Pp(\Omega)).
 	\]
 	Then, almost surely,
-	\[
+	\begin{align}
 		\widehat{\mathfrak A}_p \rightharpoonup \mathfrak A
-		\quad\text{in }\Pp(\Pp(\Omega)),
-		\qquad
+		&\quad\text{in }\Pp(\Pp(\Omega)),
+		\label{eq-wow-empirical-law-lln}
+		\\
 		\bar\alpha_{\widehat{\mathfrak A}_p}
 		\rightharpoonup
 		\bar\alpha_{\mathfrak A}
-		\quad\text{in }\Pp(\Omega).
-	\]
+		&\quad\text{in }\Pp(\Omega).
+		\label{eq-wow-collapsed-mixture-lln}
+	\end{align}
 	Moreover, if $\mathcal B_c(\mathfrak A)=\{\widetilde\alpha_{\mathfrak A}\}$ is a singleton and if $\widetilde\alpha_{\widehat{\mathfrak A}_p}\in\mathcal B_c(\widehat{\mathfrak A}_p)$ is any empirical barycenter, then, almost surely,
-	\[
+	\eql{\label{eq-wow-population-barycenter-lln}
 		\widetilde\alpha_{\widehat{\mathfrak A}_p}
 		\rightharpoonup
 		\widetilde\alpha_{\mathfrak A}
 		\quad\text{in }\Pp(\Omega).
-	\]
+	}
 \end{prop}
 
 \begin{proof}
@@ -512,7 +784,7 @@ The next result records the corresponding law of large numbers. It is useful whe
 		\longrightarrow
 		\int \Phi(\alpha)\d\mathfrak A(\alpha)
 	\]
-	This is exactly $\widehat{\mathfrak A}_p\rightharpoonup\mathfrak A$ in $\Pp(K)$.
+	This is exactly~\eqref{eq-wow-empirical-law-lln}.
 
 	For the collapsed mixtures, take $f\in\Cc(\Omega)$ and define $\Phi_f(\alpha)=\int_\Omega f\d\alpha$. This function is continuous on $\Pp(\Omega)$. Hence
 	\[
@@ -524,7 +796,7 @@ The next result records the corresponding law of large numbers. It is useful whe
 		=
 		\int_\Omega f\d\bar\alpha_{\mathfrak A},
 	\]
-	which proves $\bar\alpha_{\widehat{\mathfrak A}_p}\rightharpoonup\bar\alpha_{\mathfrak A}$.
+	which proves~\eqref{eq-wow-collapsed-mixture-lln}.
 
 	It remains to prove the nonlinear barycenter consistency. Since $c$ is continuous on the compact product $\Omega\times\Omega$, the value $(\beta,\alpha)\mapsto\MK_c(\beta,\alpha)$ is continuous on $K^2$. Therefore the map $\beta\mapsto h_\beta$, where $h_\beta(\alpha)=\MK_c(\beta,\alpha)$, is continuous from the compact space $K$ to $\Cc(K)$. Its image
 	\[
@@ -550,10 +822,10 @@ The next result records the corresponding law of large numbers. It is useful whe
 		=
 		F(\gamma),
 	\]
-	so $\beta\in\mathcal B_c(\mathfrak A)$. If this set is the singleton $\{\widetilde\alpha_{\mathfrak A}\}$, every converging subsequence has the same limit, and therefore the whole sequence $\widetilde\alpha_{\widehat{\mathfrak A}_p}$ converges to $\widetilde\alpha_{\mathfrak A}$.
+	so $\beta\in\mathcal B_c(\mathfrak A)$. If this set is the singleton $\{\widetilde\alpha_{\mathfrak A}\}$, every converging subsequence has the same limit, and therefore the whole sequence $\widetilde\alpha_{\widehat{\mathfrak A}_p}$ converges to $\widetilde\alpha_{\mathfrak A}$, proving~\eqref{eq-wow-population-barycenter-lln}.
 \end{proof}
 
-The first convergence above is a classical law of large numbers applied to random elements of the Wasserstein space. The second, for $\bar\alpha_{\widehat{\mathfrak A}_p}$, is still linear after testing against $f\in\Cc(\Omega)$. The third convergence is its nonlinear counterpart: one first forms an empirical law over measures and then solves a Wasserstein barycenter problem. The number $p$ of input measures should not be confused with the number $n$ of samples used to approximate each input measure, studied in Section~\ref{sec-sample-complexity}. In applications one often observes $p$ empirical measures, each made of roughly $n$ atoms, hence about $np$ points in total. Balancing the error due to finitely many input laws against the error due to finitely sampled input laws is a separate statistical and computational tradeoff.
+Thus, \eqref{eq-wow-empirical-law-lln} is the classical law of large numbers on Wasserstein space, and \eqref{eq-wow-collapsed-mixture-lln} is its linear image under the collapse map. By contrast, \eqref{eq-wow-population-barycenter-lln} is nonlinear: it recomputes a Wasserstein barycenter from the empirical law over measures. The number $p$ of input measures should not be confused with the number $n$ of samples used to approximate each input measure, studied in Section~\ref{sec-sample-complexity}. In applications one often observes $p$ empirical measures, each made of roughly $n$ atoms, hence about $np$ points in total. Balancing the error due to finitely many input laws against the error due to finitely sampled input laws is a separate statistical and computational tradeoff.
 \index{sample complexity}% strictindex
 \index{statistical optimal transport}% strictindex
 
@@ -569,6 +841,176 @@ The same hierarchy suggests a central-limit refinement of the preceding law of l
 There are nevertheless important settings where such results can be proved. In one dimension, the quantile representation linearizes $\Wass_2$, so barycenter fluctuations can be studied through empirical averages of quantile functions. Another finite-dimensional case is the family of non-degenerate Gaussian measures in fixed dimension, where $\Wass_2$ reduces to the Bures geometry of means and covariance matrices. Agueh and Carlier~\cite{agueh2017vers} formulate this Wasserstein-barycenter CLT precisely in tangent coordinates and prove it in a few special cases, including the one-dimensional non-atomic setting and finite laws supported on non-degenerate Gaussian measures. Entropic barycenters give a smoother variant for which central-limit theorems for empirical barycenters are also available~\cite{CarlierEichingerKroshnin2020EntropicBarycenterCLT}. These results should be read as nonlinear analogues of the statistical limits discussed in Chapter~\ref{sec-statistical-ot}, not as a generic Hilbert-space CLT valid on all of $\Pp(\Omega)$.
 \index{quantile!function}% strictindex
 \index{Bures!metric}% strictindex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Sliced and Radon barycenters.}
+\index{sliced barycenter}% strictindex
+\index{Radon barycenter}% strictindex
+\index{Radon sinogram}% strictindex
+\index{sliced Wasserstein!barycenter}% strictindex
+\index{Radon Wasserstein barycenter}% strictindex
+\index{Radon transform}% strictindex
+
+Slicing gives a scalable surrogate for high-dimensional barycenters by applying the one-dimensional quantile formula of Proposition~\ref{prop-quantile-barycenters} in every projection direction. For measures on $\RR^d$, define the sliced barycenter by replacing $\Wass_2$ with $\SW_2$, introduced in Definition~\ref{def-sliced-wasserstein} and interpreted through the Radon transform in Section~\ref{sec-sliced-wasserstein}:
+\[
+	\umin{\al\in\Mm_+^1(\RR^d)}
+	\sum_{s=1}^S\la_s\SW_2(\al,\be_s)^2
+	=
+	\umin{\al\in\Mm_+^1(\RR^d)}
+	\int_{\Sphere^{d-1}}
+	\sum_{s=1}^S\la_s
+	\Wass_2\big((P_\theta)_\sharp\al,(P_\theta)_\sharp\be_s\big)^2
+	\d\sigma(\theta).
+\]
+The constraint that all projected measures come from the same $\al$ is the nontrivial part of this problem. A cheaper Radon-domain approximation drops this consistency constraint and minimizes directly over collections $(\gamma_\theta)_{\theta\in\Sphere^{d-1}}$ of one-dimensional probability measures,
+\[
+	\umin{(\gamma_\theta)_\theta}
+	\int_{\Sphere^{d-1}}
+	\sum_{s=1}^S\la_s
+	\Wass_2(\gamma_\theta,\be_{s,\theta})^2
+	\d\sigma(\theta),
+	\qquad
+	\be_{s,\theta}\eqdef(P_\theta)_\sharp\be_s.
+\]
+This problem decouples over directions. For each $\theta$, the minimizer is the one-dimensional barycenter $\gamma_\theta$ with quantile
+\[
+	\cumul{\gamma_\theta}^{-1}(r)
+	=
+	\sum_{s=1}^S\la_s\cumul{\be_{s,\theta}}^{-1}(r),
+	\qquad r\in[0,1].
+\]
+For two inputs $\be_0,\be_1$ and interpolation weight $t\in[0,1]$, it is useful to make this directionwise construction explicit. Define
+\begin{equation}\label{eq-radon-barycenter-quantile-field}
+	Q_i(\theta,r)
+	\eqdef
+	\cumul{\be_{i,\theta}}^{-1}(r),
+	\qquad
+	Q_t(\theta,r)
+	\eqdef
+	(1-t)Q_0(\theta,r)+tQ_1(\theta,r),
+	\qquad
+	\gamma_{t,\theta}
+	\eqdef
+	\bigl(Q_t(\theta,\cdot)\bigr)_\sharp\mathrm{Leb}_{[0,1]}.
+\end{equation}
+Thus $Q_t$ is the quantile field of the independently interpolated projected laws $(\gamma_{t,\theta})_\theta$. When these laws have densities, we denote them by $h_t(\theta,\cdot)$.
+This relaxed value is a lower bound on the sliced barycenter value. If the minimizing family is Radon-consistent, meaning that there exists a probability measure $\bar\al$ on $\RR^d$ such that $\gamma_\theta=(P_\theta)_\sharp\bar\al$ for $\sigma$-almost every $\theta$, then this lower bound is attained and $\bar\al$ is an exact sliced barycenter. In general, however, independently computed one-dimensional barycenters do not satisfy the range conditions of the Radon transform. One therefore reconstructs a density in a least-squares sense, usually through a regularized Radon pseudoinverse, as explained next.
+\index{Radon range condition}% strictindex
+\index{least squares!Radon reconstruction}% strictindex
+
+Let $h(\theta,t)$ denote a density of $\gamma_\theta$. We use the one-dimensional Fourier transform in the variable $t$,
+\begin{equation}\label{eq-radon-sinogram-fourier}
+	\widehat h(\theta,\omega)
+	\eqdef
+	\int_{\RR}e^{-\imath\omega t}h(\theta,t)\d t,
+	\qquad
+	h(\theta,t)
+	=
+	\frac{1}{2\pi}\int_{\RR}e^{\imath\omega t}\widehat h(\theta,\omega)\d\omega,
+\end{equation}
+whenever the inversion formula is valid.
+\index{Fourier transform}% strictindex
+
+\begin{prop}[Radon least-squares pseudoinverse]\label{prop-radon-pseudoinverse}
+\index{Radon pseudo-inverse}% strictindex
+\index{Moore-Penrose pseudo-inverse}% strictindex
+	Let $d\geq2$, let $\sigma$ be the uniform probability measure on $\Sphere^{d-1}$, and let $R$ be the density Radon transform from Remark~\ref{rem-sliced-radon-viewpoint}. Write
+	\[
+		\mathcal D(R)
+		\eqdef
+		\enscond{\rho\in L^2(\RR^d)}{R\rho\in L^2(\Sphere^{d-1}\times\RR,\d\sigma\,\d t)}.
+	\]
+	Let $h\in L^2(\Sphere^{d-1}\times\RR,\d\sigma\,\d t)$ and assume that the Fourier expressions below define an element of $\mathcal D(R)$. Then the unique solution of
+	\begin{equation}\label{eq-radon-least-squares}
+		\umin{\rho\in\mathcal D(R)}
+		\int_{\Sphere^{d-1}}\int_{\RR}
+		\abs{R\rho(\theta,t)-h(\theta,t)}^2
+		\d t\,\d\sigma(\theta)
+	\end{equation}
+	is $\rho^\dagger=R^\dagger h$, where
+	\begin{equation}\label{eq-radon-pseudoinverse}
+		R^\dagger h(x)
+		=
+		\frac{\abs{\Sphere^{d-1}}}{2(2\pi)^d}
+		\int_{\Sphere^{d-1}}\int_{\RR}
+		e^{\imath\omega\dotp{\theta}{x}}
+		|\omega|^{d-1}
+		\widehat h(\theta,\omega)
+		\d\omega\,\d\sigma(\theta).
+	\end{equation}
+	Thus $R^\dagger h$ is the density of the pseudoinverse reconstruction, which is a priori a signed measure. If $h=R\rho$ is Radon-consistent and $\rho$ is sufficiently regular, then $R^\dagger R\rho=\rho$.
+\end{prop}
+
+\begin{proof}
+	For the $d$-dimensional Fourier transform, use the compatible convention
+	\[
+		\widehat\rho(\xi)
+		=
+		\int_{\RR^d}e^{-\imath\dotp{\xi}{x}}\rho(x)\d x,
+		\qquad
+		\rho(x)
+		=
+		\frac{1}{(2\pi)^d}\int_{\RR^d}e^{\imath\dotp{\xi}{x}}\widehat\rho(\xi)\d\xi.
+	\]
+	The Fourier-slice theorem gives
+	\begin{equation}\label{eq-radon-fourier-slice}
+		\widehat{R\rho}(\theta,\omega)=\widehat\rho(\omega\theta).
+	\end{equation}
+\index{Fourier-slice theorem}% strictindex
+	Applying the one-dimensional Plancherel identity in $t$ rewrites the objective in~\eqref{eq-radon-least-squares}, up to the positive factor $1/(2\pi)$, as
+	\[
+		\int_{\Sphere^{d-1}}\int_{\RR}
+		\abs{\widehat\rho(\omega\theta)-\widehat h(\theta,\omega)}^2
+		\d\omega\,\d\sigma(\theta).
+	\]
+	Every $\xi\neq0$ has the two signed-polar representations
+	$(\theta,\omega)=(\xi/\norm{\xi},\norm{\xi})$ and
+	$(-\xi/\norm{\xi},-\norm{\xi})$. The pointwise least-squares minimizer is therefore
+	\begin{equation}\label{eq-radon-pseudoinverse-fourier}
+		\widehat{\rho^\dagger}(\xi)
+		=
+		\frac12\left(
+		\widehat h\left(\frac{\xi}{\norm{\xi}},\norm{\xi}\right)
+		+
+		\widehat h\left(-\frac{\xi}{\norm{\xi}},-\norm{\xi}\right)
+		\right).
+	\end{equation}
+	This also proves uniqueness under the stated existence assumptions. Applying the inverse $d$-dimensional Fourier transform to~\eqref{eq-radon-pseudoinverse-fourier} and using signed polar coordinates yields~\eqref{eq-radon-pseudoinverse}; the factor $\abs{\Sphere^{d-1}}/2$ accounts for the normalization of $\sigma$ and the two signed representations of each nonzero frequency. Finally, if $h=R\rho$, then~\eqref{eq-radon-fourier-slice} makes both terms in~\eqref{eq-radon-pseudoinverse-fourier} equal to $\widehat\rho(\xi)$, proving $R^\dagger R\rho=\rho$.
+\end{proof}
+
+Formula~\eqref{eq-radon-pseudoinverse} is the filtered back-projection representation of the Radon pseudoinverse used in tomography~\cite{HermanTomography}; $|\omega|^{d-1}$ is its ramp multiplier. Because this multiplier amplifies high frequencies, one typically chooses a bandwidth $\Omega>0$ and replaces it by
+\begin{equation}\label{eq-radon-windowed-ramp}
+	m_\Omega(\omega)
+	\eqdef
+	|\omega|^{d-1}\chi(\omega/\Omega),
+	\qquad
+	R_\Omega^\dagger h(x)
+	\eqdef
+	\frac{\abs{\Sphere^{d-1}}}{2(2\pi)^d}
+	\int_{\Sphere^{d-1}}\int_{\RR}
+	e^{\imath\omega\dotp{\theta}{x}}
+	m_\Omega(\omega)\widehat h(\theta,\omega)
+	\d\omega\,\d\sigma(\theta),
+\end{equation}
+where $\chi$ is an even low-pass window with $\chi(0)=1$. For example, the numerical reconstruction in Figure~\ref{fig:sliced-radon-barycenter} uses the super-Gaussian window $\chi(s)=e^{-|s|^4}$. For the two-input path~\eqref{eq-radon-barycenter-quantile-field}, choose $\eta_t\geq0$ so that the positive part below has nonzero mass, and define the nonnegative, unit-mass reconstruction
+\begin{equation}\label{eq-radon-display-reconstruction}
+	A_t(x)
+	\eqdef
+	\frac{\bigl((R_\Omega^\dagger h_t)(x)-\eta_t\bigr)_+}
+	{\displaystyle\int_{\RR^d}\bigl((R_\Omega^\dagger h_t)(z)-\eta_t\bigr)_+\d z}.
+\end{equation}
+For the endpoints, set $A_i=\rho_i$ when $\be_i=\rho_i\d x$, $i\in\{0,1\}$. In Figure~\ref{fig:sliced-radon-barycenter}, the small threshold $\eta_t$ only suppresses finite-angle inversion ghosts. The resulting regularized density is generally only a least-squares approximation to the independently averaged slices. This construction is fast and was introduced for sliced and Radon Wasserstein barycenters in~\cite{2013-Bonneel-barycenter}, but it should not be confused with the exact variational sliced barycenter. In the continuous all-directions setting, $R$ is injective by the Cram\'er--Wold theorem~\cite{CramerWold1936}; inconsistency comes instead from failure of Radon range conditions such as antipodal symmetry and moment consistency. With finitely many directions, the sampled Radon operator is also non-injective, so the pseudoinverse reconstruction and the constrained sliced barycenter may differ.
+\index{tomography}% strictindex
+\index{ramp filter}% strictindex
+\index{filtered back-projection}% strictindex
+\index{Cramer-Wold theorem}% strictindex
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.98\linewidth]{figures/sliced-radon-barycenter/grid.pdf}
+\caption{\emph{Radon-domain sliced barycentric interpolation between the cat and heart densities.} The columns correspond to $t=0,0.2,\ldots,1$. The first row shows the endpoint densities and the intermediate reconstructions $A_t$ defined in~\eqref{eq-radon-display-reconstruction} from the windowed pseudoinverse~\eqref{eq-radon-windowed-ramp}. The second row shows the projected-density fields $h_t$ (labeled $R_t$ in the figure), obtained by converting the directionwise quantile barycenters back into one-dimensional densities. The third row shows the quantile fields $Q_t$ defined in~\eqref{eq-radon-barycenter-quantile-field}. This illustrates both the simplicity of one-dimensional quantile interpolation and the extra pseudoinverse reconstruction step needed to return from Radon data to an image density.}
+\label{fig:sliced-radon-barycenter}
+\end{figure}
 
 \section{Multimarginal OT}
 \index{multi-marginal!OT}% strictindex
@@ -644,6 +1086,25 @@ As in the two-marginal case, one would like to know when the optimal joint law i
 \index{Dirac measure}% strictindex
 \end{proof}
 
+\begin{rem}[Recovery of the two-marginal theory]
+\index{twist condition}% strictindex
+\index{Monge!map}% strictindex
+	When $S=2$, twist on splitting sets is exactly the usual twist condition of Definition~\ref{def-twist-condition}. Indeed, for fixed $x$, the whole target space is a splitting set by taking $u_2(y)=c(x,y)$; hence the condition requires $y\mapsto\nabla_x c(x,y)$ to be injective. At a dual contact point,
+	\[
+		\nabla\varphi_1(x)=\nabla_x c(x,y),
+	\]
+	so this injectivity selects a unique $y=\T(x)$. Provided the Kantorovich problem admits an optimizer, the proposition therefore makes that optimizer equal to $(\Id,\T)_\sharp\al_1$: the relaxation is tight and $\T$ is an optimal Monge map. This is precisely the two-marginal mechanism isolated in Proposition~\ref{prop-twist-prevents-splitting}.
+
+	For the quadratic cost $c(x,y)=\norm{x-y}^2$, one has $\nabla_x c(x,y)=2(x-y)$ and therefore
+	\[
+		\T(x)=x-\frac12\nabla\varphi_1(x)
+		=\nabla\left(\frac12\norm{x}^2-\frac12\varphi_1(x)\right).
+	\]
+	Choosing the usual $c$-concave representative of the quadratic dual potential makes the potential in parentheses convex; it is differentiable $\al_1$-almost everywhere because $\al_1$ is absolutely continuous. Thus the case $S=2$ recovers the convex-gradient map, uniqueness, and tightness conclusions of Brenier's theorem~\ref{thm-brenier} and Corollary~\ref{cor-monge-kantorovich-brenier}. For $S>2$, the splitting-set twist is the stronger requirement that the same first-order identity recover the entire tuple $(x_2,\ldots,x_S)$ at once.
+\index{Brenier!theorem}% strictindex
+\index{Monge-Kantorovich equivalence}% strictindex
+\end{rem}
+
 \paragraph{Coulomb cost and density-functional theory.}
 \index{Coulomb cost}% strictindex
 \index{density-functional theory}% strictindex
@@ -654,7 +1115,15 @@ A second canonical example, besides barycenters, comes from electronic structure
 	\eqdef
 	\sum_{1\leq i<j\leq N}\frac{1}{\norm{x_i-x_j}},
 \]
-with the value $+\infty$ on the collision set. This lower-semicontinuous singularity is not a harmless detail: finite-energy plans avoid electron collisions, and the smooth structure theorem above should be read as a guide rather than as a global theorem for the Coulomb cost. If $\rho$ is an electron density with $\int_{\RR^3}\rho(x)\d x=N$ and $\al=\rho/N$ is the associated probability density, the strictly-correlated-electrons relaxation of density-functional theory is the equal-marginal problem
+with the value $+\infty$ on the collision set. Proposition~\ref{prop-multimarginal-monge-structure} therefore does not apply verbatim: the Coulomb cost is neither finite nor differentiable on the whole product space. Any finite-energy plan gives zero mass to exact collisions, so the cost is smooth at almost every point charged by the plan, but this removes only the singularity; one must still establish differentiability of the dual potential and twist on the relevant splitting sets. Away from collisions,
+\[
+	\nabla_{x_1}c_{\mathrm{Coul}}(x_1,\ldots,x_N)
+	=
+	-\sum_{j=2}^N\frac{x_1-x_j}{\norm{x_1-x_j}^3}.
+\]
+For $N=2$, the map from $x_2$ to this vector is injective, so the ordinary two-marginal twist argument can be recovered under the required existence, duality and differentiability hypotheses. For $N\geq3$, however, the displayed total force does not by itself determine the entire tuple $(x_2,\ldots,x_N)$; twist on splitting sets, and hence a Monge representation, is not automatic. The previous proposition thus supplies a mechanism to verify in special Coulomb models, not a general existence theorem for co-motion maps.
+
+If $\rho$ is an electron density with $\int_{\RR^3}\rho(x)\d x=N$ and $\al=\rho/N$ is the associated probability density, the strictly-correlated-electrons relaxation of density-functional theory is the equal-marginal problem
 \index{Coulomb cost}% strictindex
 \[
 	V_{\mathrm{ee}}^{\mathrm{SCE}}[\rho]
@@ -774,26 +1243,50 @@ Wasserstein barycenters are the central example. For the squared Euclidean cost,
 \index{multi-marginal!OT}% strictindex
 \end{proof}
 
-\begin{cor}[Gaussian and discrete barycenters]\label{cor-gaussian-discrete-barycenters}
-\index{Gaussian!barycenter}% strictindex
+\begin{cor}[Sparse discrete barycenters]\label{cor-discrete-barycenters}
 \index{discrete!barycenter}% strictindex
-	For Gaussian input measures, there exists a Gaussian quadratic Wasserstein barycenter. If at least one positive-weight input has positive-definite covariance, the barycenter is unique and is therefore Gaussian. If the input measures are discrete, then there exists a barycenter supported on the set of weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input; in particular, if the $s$-th input has $n_s$ atoms, a barycenter exists with at most $\prod_s n_s$ atoms.
+	Let
+	\[
+		\be_s=\sum_{i_s=1}^{n_s}b_{s,i_s}\de_{x_{s,i_s}},
+		\qquad s=1,\ldots,S,
+	\]
+	be discrete input measures. There exists a quadratic Wasserstein barycenter $\al^\star$ supported on weighted averages $\sum_s\la_s x_{s,i_s}$ of one support point from each input and satisfying
+	\[
+		\#\supp(\al^\star)
+		\leq
+		\sum_{s=1}^S n_s-S+1.
+	\]
 \index{Wasserstein!barycenter}% strictindex
-\index{Gaussian!measure}% strictindex
+\index{barycenter!support}% strictindex
 \end{cor}
 
 \begin{proof}
-	Let the input Gaussians have means $\mean_s$ and covariances $\cov_s$. For any candidate barycenter $\al$ with mean $\mean$ and covariance $\cov$, Gelbrich's inequality~\cite{gelbrich1990formula}, proved later in Theorem~\ref{thm-gelbrich-projection}, gives
+	Write a discrete multi-marginal plan as a nonnegative tensor
+	$\P=(\P_{i_1,\ldots,i_S})$ and let $\mathcal A_{\mathrm{marg}}$ collect its $S$ marginals:
 	\[
-		\Wass_2^2(\al,\be_s)
-		\geq
-		\norm{\mean-\mean_s}^2+\Bb(\cov,\cov_s)^2,
+		\bigl(\mathcal A_{\mathrm{marg}}\P\bigr)_{s,i_s}
+		=
+		\sum_{(i_r)_{r\neq s}}\P_{i_1,\ldots,i_S}.
 	\]
-		with equality for a Gaussian law with mean $\mean$ and covariance $\cov$. Therefore the barycenter objective is bounded below by a function depending only on $(\mean,\cov)$, and this lower bound is attained by a Gaussian measure with minimizing mean and covariance. This proves existence of a Gaussian barycenter. If one active input covariance is positive definite, that input is absolutely continuous, so the uniqueness criterion stated after~\eqref{eq-barycenter-generic} shows that every barycenter coincides with this Gaussian one. For discrete inputs, any multi-marginal optimizer is supported on the finite product of the input supports, and $B$ maps this product to at most $\prod_s n_s$ points.
-\index{Gaussian!barycenter}% strictindex
-\index{Gaussian!measure}% strictindex
+	After vectorizing $\P$, Proposition~\ref{prop-lp-rank-sparsity} applies to the multi-marginal linear program. Its constraint operator has rank
+	\[
+		\operatorname{rank}(\mathcal A_{\mathrm{marg}})
+		=
+		\sum_{s=1}^S n_s-S+1.
+	\]
+	Indeed, a family of vectors $u_s\in\RR^{n_s}$ belongs to the annihilator of its image precisely when
+	\[
+		\sum_{s=1}^S u_{s,i_s}=0
+		\qquad\text{for every }(i_1,\ldots,i_S).
+	\]
+	Varying one index at a time shows that every $u_s$ is constant, say $u_s=c_s\ones_{n_s}$, and the remaining condition is $\sum_s c_s=0$. The annihilator therefore has dimension $S-1$, which proves the rank formula.
+
+	The rank-controlled sparsity result therefore supplies an optimal multi-marginal tensor $\P^\star$ with at most $\sum_s n_s-S+1$ positive entries. Proposition~\ref{prop-multimarginal-barycenter} gives the barycenter $\al^\star=B_\sharp\P^\star$. Each positive tensor entry produces at most one atom under $B$, and collisions can only reduce the support size. This proves the claim.
 \index{multi-marginal!OT}% strictindex
+\index{basic feasible solution}% strictindex
 \end{proof}
+
+This linear support bound, rather than the cardinality of the full product grid, is the standard sparsity estimate for discrete Wasserstein barycenters~\cite{anderes2016discrete}.
 
 \paragraph{Entropic regularization of multi-marginal OT.}
 \index{entropic!regularization}% strictindex
@@ -814,15 +1307,143 @@ The optimizer has the generalized Gibbs form
 \]
 and generalized Sinkhorn iterations alternately update one potential $f_s$ so that the $s$-th marginal is correct. This formula is direct but, without additional structure, it is mostly a conceptual baseline. In the discrete case, even storing the Gibbs tensor or the coupling requires $\prod_s n_s$ entries, and the unstructured multi-marginal Sinkhorn complexity inherits this exponential dependence on the number of marginals~\cite{LinHoCuturiJordan2022MOTComplexity}.
 
-The important exception is when the cost has a sparse graphical structure. If, for instance,
-\[
-	c(x_1,\ldots,x_S)=\sum_{(r,s)\in E} c_{r,s}(x_r,x_s),
-\]
-then the tensor contractions needed by Sinkhorn can be organized by message passing on the graph $G=(\{1,\ldots,S\},E)$. The complexity is then controlled by the treewidth of $G$ rather than by the full tensor dimension: trees and, more generally, small-treewidth graphs require only clique tensors of bounded order. This viewpoint connects entropic multi-marginal OT with probabilistic graphical models and Schr\"odinger bridge computations~\cite{HaaslerRinghChenKarlsson2021TreeMOT,HaaslerSinghZhangKarlssonChen2020PGMMOT,FanHaaslerKarlssonChen2021GraphCostMOT,AltschulerBoixAdsera2022StructuredMOT}. A representative fluid-mechanics example is the time discretization of Brenier's generalized incompressible Euler problem: the kinetic action couples neighboring time slices and the periodic incompressibility constraint closes the chain into a cycle, a graph of treewidth two. Entropic Bregman/Sinkhorn schemes exploit exactly this circular structure~\cite{2015-benamou-cisc,BenamouCarlierNenna2018GeneralizedIncompressible}.
-\index{Sinkhorn!iteration}% strictindex
-\index{treewidth}% strictindex
+\paragraph{Treewidth and graphical structure.}
 \index{graphical model}% strictindex
+
+The important exception is when the cost factors over a sparse interaction graph. Let $G=(V,E)$ be a finite undirected graph with $V=\{1,\ldots,S\}$ and suppose, for simplicity, that
+\begin{equation}\label{eq-multimarginal-graph-cost}
+	c(x_1,\ldots,x_S)
+	=
+	\sum_{(r,s)\in E}c_{r,s}(x_r,x_s).
+\end{equation}
+The relevant complexity parameter is not merely the number of edges, but the largest intermediate interaction created when variables are summed out.
+
+\begin{defn}[Tree decomposition and treewidth]\label{def-treewidth}
+\index{tree!decomposition}% strictindex
+\index{treewidth}% strictindex
+\index{running-intersection property}% strictindex
+	A \emph{tree decomposition} of a finite graph $G=(V,E)$ is a tree $\mathcal T=(Q,F)$ together with bags $B_q\subseteq V$, $q\in Q$, such that
+	\begin{enumerate}
+		\item $\bigcup_{q\in Q}B_q=V$;
+		\item for every edge $(r,s)\in E$, some bag contains both $r$ and $s$;
+		\item for every vertex $s\in V$, the nodes $\enscond{q\in Q}{s\in B_q}$ form a connected subtree of $\mathcal T$.
+	\end{enumerate}
+	The width of this decomposition is $\max_{q\in Q}|B_q|-1$, and the \emph{treewidth} $\operatorname{tw}(G)$ is the minimum width over all tree decompositions.
+\end{defn}
+
+The last condition is the \emph{running-intersection property}. A tree decomposition equipped with factors assigned to its bags is also called a \emph{junction tree}. Equivalently, choose an order in which to eliminate the vertices of $G$. Just before eliminating a vertex, connect all its remaining neighbors, thereby adding \emph{fill-in edges}; the induced width of the order is the largest number of remaining neighbors encountered. The treewidth is the minimum induced width over all elimination orders, and the corresponding bags consist of each eliminated vertex together with those neighbors. This equivalent viewpoint explains why treewidth controls exact summation.
+\index{variable elimination}% strictindex
+\index{fill-in edge}% strictindex
+\index{induced width}% strictindex
+
+The same construction applies when the cost contains higher-order factors $c_A(x_A)$ indexed by subsets $A\subseteq V$: one first forms the primal interaction graph by connecting every pair of variables that occurs in a common factor. Its treewidth controls the resulting contractions.
+
+\begin{example}[Treewidth of familiar interaction graphs]\label{ex-treewidth-graphs}
+\index{chain graph}% strictindex
+\index{cycle graph}% strictindex
+\index{complete graph}% strictindex
+	A tree, including a chain or a star, has treewidth one. For the chain $1-2-\cdots-S$, the edge bags $B_q=\{q,q+1\}$ form a width-one decomposition. A cycle $C_S$, $S\geq3$, has treewidth two: fixing vertex $1$, the bags $\{1,q,q+1\}$ for $q=2,\ldots,S-1$ form a width-two decomposition. The complete graph $K_S$ has treewidth $S-1$, so it offers no asymptotic time reduction over enumerating all $S$ indices. The star appearing when a barycenter variable is retained as a hub also has treewidth one; in that graphical formulation, the leaf marginals are prescribed while the hub marginal is induced by the optimizer~\cite{FanHaaslerKarlssonChen2021GraphCostMOT}.
+\end{example}
+
+\paragraph{Junction-tree contractions inside Sinkhorn.}
+\index{junction tree}% strictindex
+\index{sum-product algorithm}% strictindex
 \index{message passing}% strictindex
+
+The treewidth reduction is realized by replacing every full tensor contraction in Sinkhorn by exact sum-product messages. In the discrete setting, define the edge Gibbs matrices and the current unary factors
+\[
+	\K^{r,s}_{i_r,i_s}
+	=
+	\exp\!\left(-\frac{\C^{r,s}_{i_r,i_s}}{\epsilon}\right),
+	\qquad
+	h_s(i_s)
+	=
+	(\a_s)_{i_s}(u_s)_{i_s}.
+\]
+Under~\eqref{eq-multimarginal-graph-cost}, the current scaled coupling is represented implicitly as
+\begin{equation}\label{eq-multimarginal-graph-factorization}
+	\P_{i_1,\ldots,i_S}
+	=
+	\prod_{s\in V}h_s(i_s)
+	\prod_{(r,s)\in E}\K^{r,s}_{i_r,i_s}.
+\end{equation}
+When $G$ is a tree, let $N_G(r)$ denote the neighbors of $r$. The directed sum-product messages satisfy
+\begin{equation}\label{eq-multimarginal-tree-message}
+	m_{r\to s}(i_s)
+	=
+	\sum_{i_r=1}^{n_r}
+	\K^{r,s}_{i_r,i_s}h_r(i_r)
+	\prod_{q\in N_G(r)\setminus\{s\}}
+	m_{q\to r}(i_r).
+\end{equation}
+Cutting the edge $(r,s)$ separates the tree into two components: $m_{r\to s}(i_s)$ is precisely the total contribution of the component containing $r$, conditional on the boundary state $i_s$. Conditioning first on $i_r$ gives~\eqref{eq-multimarginal-tree-message}. A leaf-to-root pass followed by a root-to-leaf pass computes every directed message and hence every current marginal,
+\begin{equation}\label{eq-multimarginal-tree-marginal}
+	(\widehat{\a}_s)_{i_s}
+	=
+	h_s(i_s)
+	\prod_{r\in N_G(s)}m_{r\to s}(i_s).
+\end{equation}
+For the block $s$ currently selected by the cyclic scaling algorithm, the exact coordinate update is then
+\[
+	u_s
+	\leftarrow
+	u_s\odot\frac{\a_s}{\widehat{\a}_s},
+\]
+with componentwise products and quotients. This changes only the unary factor $h_s$. Updating all blocks at once would instead define a Jacobi scheme. Thus the expensive denominator of one generalized Sinkhorn block update is evaluated by messages rather than by enumerating all multi-indices.
+
+For a general tree decomposition, choose one host bag for each unary factor, assign each edge factor in~\eqref{eq-multimarginal-graph-factorization} to a bag containing both endpoints, and denote the product assigned to bag $B_q$ by $\psi_q(i_{B_q})$. For adjacent bags $q,q'\in Q$, set $\mathcal S_{q,q'}=B_q\cap B_{q'}$. Junction-tree messages take the form
+\begin{equation}\label{eq-multimarginal-junction-message}
+	M_{q\to q'}(i_{\mathcal S_{q,q'}})
+	=
+	\sum_{i_{B_q\setminus\mathcal S_{q,q'}}}
+	\psi_q(i_{B_q})
+	\prod_{\ell\in N_{\mathcal T}(q)\setminus\{q'\}}
+	M_{\ell\to q}(i_{\mathcal S_{\ell,q}}).
+\end{equation}
+After a collect-distribute pass, the calibrated bag belief is
+\begin{equation}\label{eq-multimarginal-junction-belief}
+	\mathfrak b_q(i_{B_q})
+	=
+	\psi_q(i_{B_q})
+	\prod_{\ell\in N_{\mathcal T}(q)}
+	M_{\ell\to q}(i_{\mathcal S_{\ell,q}}).
+\end{equation}
+For any $s\in B_q$, summing $\mathfrak b_q$ over $B_q\setminus\{s\}$ gives $\widehat{\a}_s$; the running-intersection property ensures that every bag containing $s$ gives the same result.
+
+Redundant adjacent bags may be contracted, so one can assume that the decomposition is reduced. If its width is $w$, every bag contains at most $w+1$ variables and every separator contains at most $w$. Consequently, if $n_s\leq n$, one collect-distribute inference pass for fixed scalings costs
+\[
+	O\!\left(|Q|\,n^{w+1}\right)
+	\quad\text{time},
+	\qquad
+	O\!\left(|Q|\,n^w\right)
+	\quad\text{message memory}.
+\]
+More precisely, the time is bounded by
+\[
+	O\!\left(
+	\sum_{q\in Q}
+	\bigl(1+\deg_{\mathcal T}(q)\bigr)
+	\prod_{s\in B_q}n_s
+	\right),
+\]
+and the stored messages occupy
+\[
+	O\!\left(
+	\sum_{(q,q')\in F}
+	\prod_{s\in\mathcal S_{q,q'}}n_s
+	\right)
+\]
+beyond the original factors and scaling vectors. The message-memory bound assumes that bag contractions are streamed; materializing every dense belief~\eqref{eq-multimarginal-junction-belief} instead requires $O(|Q|n^{w+1})$ working memory.
+
+These are fixed-scaling inference bounds, not the cost of an entire Sinkhorn solve. They also lead to a sharper block implementation. Assign each constrained marginal $s$ to a host bag $q(s)$. After updating $u_s$, only the messages along the unique path from $q(s)$ to the host bag of the next updated marginal must be refreshed. A path of length $\ell$ costs $O(\ell n^{w+1})$, hence at most $O(\operatorname{diam}(\mathcal T)n^{w+1})$ per block update; this is the junction-tree iterative-scaling mechanism analyzed in~\cite{HaaslerSinghZhangKarlssonChen2020PGMMOT,FanHaaslerKarlssonChen2021GraphCostMOT}. For a tree interaction graph, direct edge messages specialize to $O(\sum_{(r,s)\in E}n_rn_s)$ for a full pass, or $O(Sn^2)$ with equal support sizes. A cycle admits $O(Sn^3)$ full junction-tree passes, while the complete graph still costs $O(n^S)$ in time.
+
+The structured implementation therefore never forms $K$ or $\P$ as full tensors. It stores the original local factors and separator messages, evaluates bag products on the fly, replaces the explicit contraction in Algorithm~\ref{alg:multimarginal-sinkhorn} by~\eqref{eq-multimarginal-tree-marginal} or~\eqref{eq-multimarginal-junction-message}, and returns the coupling through its factors and scalings. Materializing every entry of $\P$ would itself require $\prod_s n_s$ operations, so the saving is meaningful when only marginals, costs, samples, or other low-order statistics are needed. For small $\epsilon$, the same recursions are evaluated in the log domain with log-sum-exp operations. This viewpoint connects entropic multi-marginal OT with exact inference in probabilistic graphical models and with Schr\"odinger bridge computations~\cite{HaaslerRinghChenKarlsson2021TreeMOT,HaaslerSinghZhangKarlssonChen2020PGMMOT,FanHaaslerKarlssonChen2021GraphCostMOT,AltschulerBoixAdsera2022StructuredMOT}.
+\index{belief propagation}% strictindex
+\index{separator}% strictindex
+\index{log-sum-exp}% strictindex
+
+A representative fluid-mechanics example is the time discretization of Brenier's generalized incompressible Euler problem: the kinetic action couples neighboring time slices and the periodic incompressibility constraint closes the chain into a cycle, hence a graph of treewidth two. Entropic Bregman/Sinkhorn schemes exploit this circular structure through low-order contractions~\cite{2015-benamou-cisc,BenamouCarlierNenna2018GeneralizedIncompressible}.
+\index{Sinkhorn!iteration}% strictindex
 \index{incompressible Euler}% strictindex
 
 Practical barycenter solvers therefore exploit separability of the cost, low-rank structure, convolutional kernels, or a fixed barycenter support.
@@ -831,12 +1452,12 @@ Practical barycenter solvers therefore exploit separability of the cost, low-ran
 In finite dimension, the direct generalized scaling scheme is the tensor version of Sinkhorn. The explicit algorithm below assumes positive marginals and a finite cost tensor; forbidden configurations with infinite cost can instead be removed from the tensor support, provided the remaining marginal constraints are feasible.
 
 \begin{alg}[Multi-marginal Sinkhorn]\label{alg:multimarginal-sinkhorn}
-\textbf{Input:} Positive marginals $\a_s\in\simplex_{n_s}$, finite tensor cost $C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
+\textbf{Input:} Positive marginals $\a_s\in\simplex_{n_s}$, finite tensor cost $\C$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
-\textbf{Output:} Multi-marginal entropic coupling tensor $P$.
+\textbf{Output:} Multi-marginal entropic coupling tensor $\P$.
 
 \textbf{Build}
-\(K_{i_1,\ldots,i_S} = \exp\!\left(-\frac{C_{i_1,\ldots,i_S}}{\epsilon}\right) \prod_{s=1}^S(\a_s)_{i_s}.\)
+\(K_{i_1,\ldots,i_S} = \exp\!\left(-\frac{\C_{i_1,\ldots,i_S}}{\epsilon}\right) \prod_{s=1}^S(\a_s)_{i_s}.\)
 
 \textbf{Initialize:} Set \(u_s=\ones_{n_s}\) for all $s$, residual \(\eta=+\infty\), and $k=0$.
 
@@ -851,12 +1472,12 @@ In finite dimension, the direct generalized scaling scheme is the tensor version
 \((u_s)_i \leftarrow \frac{(\a_s)_i} { \sum_{i_1,\ldots,i_{s-1},i_{s+1},\ldots,i_S} K_{i_1,\ldots,i_{s-1},i,i_{s+1},\ldots,i_S} \prod_{r\neq s}(u_r)_{i_r}}.\)
 \end{algblock}
 
-\textbf{Set} \(P_{i_1,\ldots,i_S}=K_{i_1,\ldots,i_S}\prod_s (u_s)_{i_s}\).
+\textbf{Set} \(\P_{i_1,\ldots,i_S}=K_{i_1,\ldots,i_S}\prod_s (u_s)_{i_s}\).
 
-\textbf{Set} \(\eta=\max_s\norm{(\mathrm{proj}_s)_\sharp P-\a_s}_1\).
+\textbf{Set} \(\eta=\max_s\norm{(\mathrm{proj}_s)_\sharp \P-\a_s}_1\).
 \end{algblock}
 \algreturnskip
-\textbf{Return} \(P\).
+\textbf{Return} \(\P\).
 \end{alg}
 
 
@@ -872,36 +1493,35 @@ Low-rank OT reduces the size of a transport plan by forcing the coupling itself 
 \index{latent measure}% strictindex
 \index{Sinkhorn!low-rank}% strictindex
 
-\Needspace{18\baselineskip}
 \begin{defn}[Low-rank factored couplings]\label{def-low-rank-couplings}
 \index{low-rank!coupling}% strictindex
 \index{nonnegative rank}% strictindex
-	Let $\a\in\simplex_n$, $\b\in\simplex_m$ and let $r\geq1$. A rank-$r$ factored coupling is a triple $(Q,R,g)$ such that
+	Let $\a\in\simplex_n$, $\b\in\simplex_m$ and let $r\geq1$. A rank-$r$ factored coupling is a triple $(\Q,\R,g)$ such that
 	\[
-		Q\in\RR_+^{n\times r},\qquad
-		R\in\RR_+^{m\times r},
+		\Q\in\RR_+^{n\times r},\qquad
+		\R\in\RR_+^{m\times r},
 		\qquad g\in\simplex_r,
 	\]
 	with
 	\[
-		Q\ones_r=\a,
+		\Q\ones_r=\a,
 		\qquad
-		R\ones_r=\b,
+		\R\ones_r=\b,
 		\qquad
-		\transp Q\ones_n=\transp R\ones_m=g.
+		\transp \Q\ones_n=\transp \R\ones_m=g.
 	\]
 	It induces the coupling
 	\begin{equation}\label{eq-low-rank-coupling-factor}
-		P(Q,R,g)
+		\P(\Q,\R,g)
 		=
-		Q\diag(g)^{-1}\transp R,
+		\Q\diag(g)^{-1}\transp \R,
 		\qquad
-		P_{i,j}=\sum_{k=1}^r \frac{Q_{i,k}R_{j,k}}{g_k},
+		\P_{i,j}=\sum_{k=1}^r \frac{\Q_{i,k}\R_{j,k}}{g_k},
 	\end{equation}
 	where columns with $g_k=0$ are discarded before applying the formula.
 \end{defn}
 
-The latent interpretation is immediate. The vector $g$ is the law of an intermediate variable $Z\in\range{1,r}$; $Q$ is a coupling of the source index $X$ with $Z$; $R$ is a coupling of the target index $Y$ with the same $Z$. Formula~\eqref{eq-low-rank-coupling-factor} is the law of $(X,Y)$ obtained by sampling $Z\sim g$, then sampling $X$ and $Y$ conditionally independently given $Z$. Equivalently, OT is replaced by a succession of two transports through an abstract intermediate measure $\eta=\sum_{k=1}^r g_k\de_{z_k}$ on an $r$-point space. The locations $z_k$ only label the latent atoms and do not enter the original cost.
+The latent interpretation is immediate. The vector $g$ is the law of an intermediate variable $Z\in\range{1,r}$; $\Q$ is a coupling of the source index $X$ with $Z$; $\R$ is a coupling of the target index $Y$ with the same $Z$. Formula~\eqref{eq-low-rank-coupling-factor} is the law of $(X,Y)$ obtained by sampling $Z\sim g$, then sampling $X$ and $Y$ conditionally independently given $Z$. Equivalently, OT is replaced by a succession of two transports through an abstract intermediate measure $\eta=\sum_{k=1}^r g_k\de_{z_k}$ on an $r$-point space. The locations $z_k$ only label the latent atoms and do not enter the original cost.
 \index{intermediate measure}% strictindex
 \index{latent!variable}% strictindex
 \index{latent!atom}% strictindex
@@ -910,83 +1530,85 @@ The latent interpretation is immediate. The vector $g$ is the law of an intermed
 
 \begin{prop}[Factored couplings and nonnegative rank]\label{prop-low-rank-factorization}
 \index{nonnegative rank}% strictindex
-	For every feasible triple $(Q,R,g)$ in Definition~\ref{def-low-rank-couplings}, the matrix $P(Q,R,g)$ belongs to $\CouplingsD(\a,\b)$ and has nonnegative rank at most $r$. Conversely, every coupling $P\in\CouplingsD(\a,\b)$ with nonnegative rank at most $r$ admits a representation of the form~\eqref{eq-low-rank-coupling-factor}, after possibly deleting zero latent components.
+	For every feasible triple $(\Q,\R,g)$ in Definition~\ref{def-low-rank-couplings}, the matrix $\P(\Q,\R,g)$ belongs to $\CouplingsD(\a,\b)$ and has nonnegative rank at most $r$. Conversely, every coupling $\P\in\CouplingsD(\a,\b)$ with nonnegative rank at most $r$ admits a representation of the form~\eqref{eq-low-rank-coupling-factor}, after possibly deleting zero latent components.
 \end{prop}
 
 \begin{proof}
 	The marginal constraints follow by direct summation:
 	\[
-		P\ones_m=Q\diag(g)^{-1}\transp R\ones_m
-		=Q\diag(g)^{-1}g=Q\ones_r=\a,
+		\P\ones_m=\Q\diag(g)^{-1}\transp \R\ones_m
+		=\Q\diag(g)^{-1}g=\Q\ones_r=\a,
 	\]
-	and similarly $\transp P\ones_n=\b$. Since $P$ is a sum of $r$ nonnegative rank-one matrices $Q_{:,k}R_{:,k}^\top/g_k$, its nonnegative rank is at most $r$.
+	and similarly $\transp \P\ones_n=\b$. Since $\P$ is a sum of $r$ nonnegative rank-one matrices $\Q_{:,k}\R_{:,k}^\top/g_k$, its nonnegative rank is at most $r$.
 
-	Conversely, suppose $P=UV^\top$ with $U\in\RR_+^{n\times r}$ and $V\in\RR_+^{m\times r}$. Set $q_k=\sum_i U_{i,k}$ and $s_k=\sum_j V_{j,k}$. Components with $q_ks_k=0$ do not contribute and can be removed. Define $g_k=q_ks_k$, $Q_{i,k}=U_{i,k}s_k$ and $R_{j,k}=V_{j,k}q_k$. Since $P$ has total mass one, $g\in\simplex_r$. Moreover $Q\ones_r=P\ones_m=\a$, $R\ones_r=\transp P\ones_n=\b$, and both column marginals are equal to $g$. Finally,
+	Conversely, suppose $\P=UV^\top$ with $U\in\RR_+^{n\times r}$ and $V\in\RR_+^{m\times r}$. Set $q_k=\sum_i U_{i,k}$ and $s_k=\sum_j V_{j,k}$. Components with $q_ks_k=0$ do not contribute and can be removed. Define $g_k=q_ks_k$, $\Q_{i,k}=U_{i,k}s_k$ and $\R_{j,k}=V_{j,k}q_k$. Since $\P$ has total mass one, $g\in\simplex_r$. Moreover $\Q\ones_r=\P\ones_m=\a$, $\R\ones_r=\transp \P\ones_n=\b$, and both column marginals are equal to $g$. Finally,
 	\[
-		\sum_k\frac{Q_{i,k}R_{j,k}}{g_k}
+		\sum_k\frac{\Q_{i,k}\R_{j,k}}{g_k}
 		=
 		\sum_k\frac{U_{i,k}s_kV_{j,k}q_k}{q_ks_k}
-		=P_{i,j}.
+		=\P_{i,j}.
 	\]
 \end{proof}
 
-For a cost matrix $C\in\RR^{n\times m}$, the low-rank constrained OT value is therefore
+For a cost matrix $\C\in\RR^{n\times m}$, the low-rank constrained OT value is therefore
 \[
-	\min_{(Q,R,g)}
-	\sum_{k=1}^r \frac{\transp{Q_{:,k}} C R_{:,k}}{g_k}
+	\min_{(\Q,\R,g)}
+	\sum_{k=1}^r \frac{\transp{\Q_{:,k}} \C \R_{:,k}}{g_k}
 	\quad\text{subject to Definition~\ref{def-low-rank-couplings}.}
 \]
-This problem is non-convex. Scetbon, Cuturi and Peyr\'e regularize the joint variables $(Q,R,g)$ by the sum of their entropies and optimize them by constrained mirror descent~\cite{scetbon2021lowrank}. To isolate the simpler block mechanism used in Figure~\ref{fig:low-rank-ot-factorization}, fix here a positive latent law $g\in\simplex_r$ and optimize only the two sub-couplings. The resulting pedagogical model is
+This problem is non-convex. Scetbon, Cuturi and Peyr\'e regularize the joint variables $(\Q,\R,g)$ by the sum of their entropies and optimize them by constrained mirror descent~\cite{scetbon2021lowrank}. To isolate the simpler block mechanism used in Figure~\ref{fig:low-rank-ot-factorization}, fix here a positive latent law $g\in\simplex_r$ and optimize only the two sub-couplings. The resulting pedagogical model is
 \index{latent!mass}% strictindex
 \begin{equation}\label{eq-low-rank-entropic-ot}
-	\min_{\substack{Q\ones_r=\a,\ Q^\top\ones_n=g\\
-	R\ones_r=\b,\ R^\top\ones_m=g}}
-	\sum_{k=1}^r \frac{\transp{Q_{:,k}} C R_{:,k}}{g_k}
+	\min_{\substack{\Q\ones_r=\a,\ \Q^\top\ones_n=g\\
+	\R\ones_r=\b,\ \R^\top\ones_m=g}}
+	\sum_{k=1}^r \frac{\transp{\Q_{:,k}} \C \R_{:,k}}{g_k}
 	+
-	\epsilon\KLD(Q|\a\otimes g)
+	\epsilon\KLD(\Q|\a\otimes g)
 	+
-	\epsilon\KLD(R|\b\otimes g),
+	\epsilon\KLD(\R|\b\otimes g),
 \end{equation}
-where $Q,R$ are nonnegative. For fixed $g$, this differs only by constants from adding $-\epsilon(\HD(Q)+\HD(R))$ to the factorized transport cost. Each block subproblem is a strictly convex entropic OT problem with an effective cost, although the joint objective remains non-convex because of its bilinear $Q$--$R$ term.
+where $\Q,\R$ are nonnegative. For fixed $g$, this differs only by constants from adding $-\epsilon(\HD(\Q)+\HD(\R))$ to the factorized transport cost. Each block subproblem is a strictly convex entropic OT problem with an effective cost, although the joint objective remains non-convex because of its bilinear $\Q$--$\R$ term.
 \index{entropic!regularization}% strictindex
 \index{block-coordinate descent}% strictindex
 \index{effective cost}% strictindex
 
 \begin{algH}[Alternating low-rank Sinkhorn with fixed latent mass]\label{alg-low-rank-sinkhorn-fixed-g}
 \index{Sinkhorn!low-rank}% strictindex
-\textbf{Input:} Positive marginals $\a\in\operatorname{int}(\simplex_n)$ and $\b\in\operatorname{int}(\simplex_m)$, cost $C\in\RR^{n\times m}$, rank $r$, positive latent mass $g\in\operatorname{int}(\simplex_r)$, regularization $\epsilon>0$, iteration budget $L\geq1$, tolerance $\mathrm{tol}$.
+\textbf{Input:} Positive marginals $\a\in\operatorname{int}(\simplex_n)$ and $\b\in\operatorname{int}(\simplex_m)$, cost $\C\in\RR^{n\times m}$, rank $r$, positive latent mass $g\in\operatorname{int}(\simplex_r)$, regularization $\epsilon>0$, iteration budget $L\geq1$, tolerance $\mathrm{tol}$.
 
-\textbf{Output:} Factored coupling $P=Q\diag(g)^{-1}R^\top$.
+\textbf{Output:} Factored coupling $\P=\Q\diag(g)^{-1}\R^\top$.
 
-\textbf{Initialize:} Set $Q^{(0)}=\a\otimes g$, $R^{(0)}=\b\otimes g$ and $J^{(0)}=+\infty$.
+\textbf{Initialize:} Set $\Q^{(0)}=\a\otimes g$, $\R^{(0)}=\b\otimes g$ and $J^{(0)}=+\infty$.
 
 \textbf{For} $\ell=0,\ldots,L-1$ \textbf{do}:
 \begin{algblock}
-\textbf{Set} $A^{(\ell)}=C R^{(\ell)}\diag(g)^{-1}$.
+\textbf{Set} $A^{(\ell)}=\C \R^{(\ell)}\diag(g)^{-1}$.
 
-\textbf{Update} $Q^{(\ell+1)}$ by Sinkhorn:
-\(Q^{(\ell+1)}=\argmin_{Q\ones_r=\a,\,Q^\top\ones_n=g}\langle A^{(\ell)},Q\rangle+\epsilon\KLD(Q|\a\otimes g).\)
+\textbf{Update} $\Q^{(\ell+1)}$ by Sinkhorn:
+\(\Q^{(\ell+1)}=\argmin_{\Q\ones_r=\a,\,\Q^\top\ones_n=g}\langle A^{(\ell)},\Q\rangle+\epsilon\KLD(\Q|\a\otimes g).\)
 
-\textbf{Set} $B^{(\ell+1)}=C^\top Q^{(\ell+1)}\diag(g)^{-1}$.
+\textbf{Set} $B^{(\ell+1)}=\C^\top \Q^{(\ell+1)}\diag(g)^{-1}$.
 
-\textbf{Update} $R^{(\ell+1)}$ by Sinkhorn:
-\(R^{(\ell+1)}=\argmin_{R\ones_r=\b,\,R^\top\ones_m=g}\langle B^{(\ell+1)},R\rangle+\epsilon\KLD(R|\b\otimes g).\)
+\textbf{Update} $\R^{(\ell+1)}$ by Sinkhorn:
+\(\R^{(\ell+1)}=\argmin_{\R\ones_r=\b,\,\R^\top\ones_m=g}\langle B^{(\ell+1)},\R\rangle+\epsilon\KLD(\R|\b\otimes g).\)
 
-\textbf{Set} $P^{(\ell+1)}=Q^{(\ell+1)}\diag(g)^{-1}(R^{(\ell+1)})^\top$.
+\textbf{Set} $\P^{(\ell+1)}=\Q^{(\ell+1)}\diag(g)^{-1}(\R^{(\ell+1)})^\top$.
 
-\textbf{Set} $J^{(\ell+1)}$ to the value of~\eqref{eq-low-rank-entropic-ot} at $(Q^{(\ell+1)},R^{(\ell+1)})$.
+\textbf{Set} $J^{(\ell+1)}$ to the value of~\eqref{eq-low-rank-entropic-ot} at $(\Q^{(\ell+1)},\R^{(\ell+1)})$.
 
 \textbf{If} $\ell\geq1$ and $|J^{(\ell+1)}-J^{(\ell)}|\leq \mathrm{tol}\max\{1,|J^{(\ell)}|\}$ \textbf{then}:
 \begin{algblock}
-\textbf{Return} $P^{(\ell+1)}$.
+\textbf{Return} $\P^{(\ell+1)}$.
 \end{algblock}
 \end{algblock}
 
-\textbf{Return} $P^{(L)}$.
+\textbf{Return} $\P^{(L)}$.
 \end{algH}
 
 Each update in Algorithm~\ref{alg-low-rank-sinkhorn-fixed-g} exactly minimizes one factor block while keeping the other fixed. The objective values therefore decrease monotonically. With the positive marginals assumed above, the entropy makes each block minimizer unique and keeps it in the relative interior of its transport polytope. Compactness and the standard convergence argument for exact cyclic block-coordinate descent then imply that every accumulation point is a coordinatewise minimizer, hence a stationary point of the constrained problem. The non-convexity prevents this argument from guaranteeing a globally optimal rank-$r$ coupling.
 \index{block-stationary point}% strictindex
+
+Figure~\ref{fig:low-rank-ot-factorization} visualizes both the intermediate latent measure and the improvement of the factored coupling as the prescribed rank increases.
 
 \begin{figure}[H]
 \centering
@@ -1107,29 +1729,29 @@ Equivalently, up to additive constants, the objective is $\epsilon\KLD(\P|\K)$. 
 
 \textbf{Set} $\K_{i,j}=a_i b_j e^{-\C_{i,j}/\epsilon}$ for $(i,j)\in E$.
 
-\textbf{Initialize:} Set $\P=\K$, correction matrices $R_1=R_2=R_3=\ones_{n\times m}$, residual $r=+\infty$, and $k=0$.
+\textbf{Initialize:} Set $\P=\K$, correction matrices $\R_1=\R_2=\R_3=\ones_{n\times m}$, residual $r=+\infty$, and $k=0$.
 
 \textbf{While} $r>\mathrm{tol}$ and $k<L$ \textbf{do}:
 \begin{algblock}
 \textbf{Set} $k\leftarrow k+1$ and $\P_{\rm old}=\P$.
 
-\textbf{Set} $Z=\P\odot R_1$.
+\textbf{Set} $Z=\P\odot \R_1$.
 
 \textbf{Project rows:} $\P= \diag\!\left(\a/(Z\ones_m)\right) Z$.
 
-\textbf{Update} $R_1=Z\oslash \P$.
+\textbf{Update} $\R_1=Z\oslash \P$.
 
-\textbf{Set} $Z=\P\odot R_2$.
+\textbf{Set} $Z=\P\odot \R_2$.
 
 \textbf{Project columns:} $\P= Z\diag\!\left(\b/(Z^\top\ones_n)\right)$.
 
-\textbf{Update} $R_2=Z\oslash \P$.
+\textbf{Update} $\R_2=Z\oslash \P$.
 
-\textbf{Set} $Z=\P\odot R_3$.
+\textbf{Set} $Z=\P\odot \R_3$.
 
 \textbf{Project capacity:} $\P=\min\{Z,\overline{\P}\}$ entrywise.
 
-\textbf{Update} $R_3=Z\oslash \P$.
+\textbf{Update} $\R_3=Z\oslash \P$.
 
 \textbf{Set} $r$ to the maximum of the three feasibility defects and the fixed-point defect:
 \(r=\max\{\|\P\ones_m-\a\|_\infty,\|\P^\top\ones_n-\b\|_\infty,\|(\P-\overline{\P})_+\|_\infty,\|\P-\P_{\rm old}\|_1\}.\)
@@ -1139,6 +1761,8 @@ Equivalently, up to additive constants, the objective is $\epsilon\KLD(\P|\K)$. 
 \end{algH}
 
 On the active support, all iterates and correction factors are positive, so every division in Algorithm~\ref{alg-capacity-constrained-sinkhorn} is well defined. KL-Dykstra convergence on finite-dimensional affine and box constraints then shows that, when the capped polytope is nonempty, the iterates converge to the unique minimizer of~\eqref{eq-entropic-capacity-constrained-ot}. Deleting zero-capacity edges before the iteration is essential: writing the correction step directly with a zero cap would create undefined products of zero and infinite correction factors.
+
+Figure~\ref{fig:capacity-constrained-ot-1d} shows how lowering the entrywise cap progressively spreads a one-dimensional coupling while preserving both prescribed marginals.
 
 \begin{figure}[ht]
 \centering
@@ -1335,7 +1959,7 @@ Here $\partial_{\C}^{\mathrm{sup}}$ denotes the superdifferential of the concave
 \index{envelope theorem}% strictindex
 \end{proof}
 
-For a finite-dimensional parametrization $c_\theta$ or $C_\theta$, the entropic formula gives the backpropagation rule
+For a finite-dimensional parametrization $c_\theta$ or $\C_\theta$, the entropic formula gives the backpropagation rule
 \[
 	\partial_{\theta}\mathcal V_{c_\theta,\epsilon}
 	=
@@ -1350,6 +1974,8 @@ where $\pi_\epsilon$ is the entropic optimizer. For the unregularized value $\ma
 \]
 so its derivative with respect to $\a$ is represented on the simplex tangent space by $f_\epsilon+\epsilon\log\a$, up to an irrelevant additive constant.
 \index{metric!learning}% strictindex
+
+Figure~\ref{fig:metric-learning-cost-deformation} gives the geometric counterpart of this differentiation rule: changing an anisotropic quadratic cost changes which transport segments are selected.
 
 \begin{figure}[ht]
 \centering
@@ -1396,23 +2022,23 @@ is nonnegative by Fenchel's inequality and vanishes exactly when $\widehat\pi\in
 \index{entropic!regularization}% strictindex
 \index{unbalanced!OT}% strictindex
 
-In the discrete unregularized case, this loss reduces to the optimality gap of the observed coupling. For $\widehat P\in\CouplingsD(\a,\b)$ and a cost matrix $C$, denote it by
+In the discrete unregularized case, this loss reduces to the optimality gap of the observed coupling. For $\widehat \P\in\CouplingsD(\a,\b)$ and a cost matrix $\C$, denote it by
 \[
-	\mathcal L_{\mathrm{iOT}}(C;\widehat P)
+	\mathcal L_{\mathrm{iOT}}(\C;\widehat \P)
 	=
-	\dotp{C}{\widehat P}
+	\dotp{\C}{\widehat \P}
 	-
-	\umin{P\in\CouplingsD(\a,\b)} \dotp{C}{P}.
+	\umin{\P\in\CouplingsD(\a,\b)} \dotp{\C}{\P}.
 \]
-This inverse-OT gap loss is nonnegative and vanishes exactly when $\widehat P$ is optimal for $C$.
+This inverse-OT gap loss is nonnegative and vanishes exactly when $\widehat \P$ is optimal for $\C$.
 \index{inverse OT gap loss}% strictindex
 
 In practice, one restricts the cost to a finite-dimensional model class, often affine:
 \[
-	C_\theta=\sum_{r=1}^R \theta_r C^{(r)},
+	\C_\theta=\sum_{r=1}^R \theta_r \C^{(r)},
 	\qquad \theta\in\Theta,
 \]
-where $\Theta$ is convex and the matrices $C^{(r)}$ encode features, graph distances or a Mahalanobis parameterization. This viewpoint appears in low-rank and sparse inverse OT models~\cite{dupuy2016estimating,andrade2024sparsistency} and in convex formulations for learning OT costs from observed plans~\cite{ma2020learning,peyre2026curvature}.
+where $\Theta$ is convex and the matrices $\C^{(r)}$ encode features, graph distances or a Mahalanobis parameterization. This viewpoint appears in low-rank and sparse inverse OT models~\cite{dupuy2016estimating,andrade2024sparsistency} and in convex formulations for learning OT costs from observed plans~\cite{ma2020learning,peyre2026curvature}.
 
 \index{inverse OT}% strictindex
 A minimal finite-dimensional model is obtained by learning a bilinear cost on $\RR^d$,
@@ -1422,18 +2048,18 @@ A minimal finite-dimensional model is obtained by learning a bilinear cost on $\
 \]
 For empirical measures $\al=\frac1n\sum_i\de_{x_i}$ and $\be=\frac1n\sum_j\de_{y_j}$, this gives the cost matrix
 \[
-	C(A)_{i,j}=\dotp{Ax_i}{y_j},
+	\C(A)_{i,j}=\dotp{Ax_i}{y_j},
 \]
-so both maps $A\mapsto C(A)$ and $A\mapsto c_A$ are linear. Inverse OT within this model asks which matrix $A$ makes an observed matching or coupling look optimal; learning the cost is thus reduced to estimating a linear parameter.
+so both maps $A\mapsto \C(A)$ and $A\mapsto c_A$ are linear. Inverse OT within this model asks which matrix $A$ makes an observed matching or coupling look optimal; learning the cost is thus reduced to estimating a linear parameter.
 \index{bilinear cost}% strictindex
 
 For a fixed matrix $A$, the forward prediction is the optimal face
 \[
 	\mathcal P_A\eqdef
-	\uargmin{P\in\CouplingsD(\ones_n/n,\ones_n/n)}
-	\dotp{C(A)}{P}.
+	\uargmin{\P\in\CouplingsD(\ones_n/n,\ones_n/n)}
+	\dotp{\C(A)}{\P}.
 \]
-When this face is a singleton, write its element as $P_A$; otherwise $P_A$ denotes a deterministic tie-broken selection. Although $A\mapsto C(A)$ is linear, the solution correspondence $A\mapsto\mathcal P_A$ is polyhedral: changing $A$ changes the direction in which the transport polytope is probed, and a tie-broken selection is constant on normal-cone cells. Figure~\ref{fig:inverse-ot-forward-logo} illustrates this correspondence on the OT4ML point clouds. The construction follows the visual idea of the Python Optimal Transport logo~\cite{flamary2021pot}: red source atoms, blue target atoms and straight segments show the selected optimal bijection. With $e=(1,1)^\top$ and $\delta=10^{-3}$, the first two rank-one matrices are $A_h=-e_1e^\top+\delta e_2e^\top$ and $A_v=\delta e_1e^\top-e_2e^\top$. These small transverse terms break the large ties of the pure horizontal or vertical scores while preserving a rank-one cost. The matrix $A=-\Id$ gives the usual quadratic $\Wass_2$ assignment, up to the marginal-only terms discussed below, while $A=+\Id$ reverses the correlation and produces an anti-$\Wass_2$ matching.
+When this face is a singleton, write its element as $\P_A$; otherwise $\P_A$ denotes a deterministic tie-broken selection. Although $A\mapsto \C(A)$ is linear, the solution correspondence $A\mapsto\mathcal P_A$ is polyhedral: changing $A$ changes the direction in which the transport polytope is probed, and a tie-broken selection is constant on normal-cone cells. Figure~\ref{fig:inverse-ot-forward-logo} illustrates this correspondence on the OT4ML point clouds. The construction follows the visual idea of the Python Optimal Transport logo~\cite{flamary2021pot}: red source atoms, blue target atoms and straight segments show the selected optimal bijection. With $e=(1,1)^\top$ and $\delta=10^{-3}$, the first two rank-one matrices are $A_h=-e_1e^\top+\delta e_2e^\top$ and $A_v=\delta e_1e^\top-e_2e^\top$. These small transverse terms break the large ties of the pure horizontal or vertical scores while preserving a rank-one cost. The matrix $A=-\Id$ gives the usual quadratic $\Wass_2$ assignment, up to the marginal-only terms discussed below, while $A=+\Id$ reverses the correlation and produces an anti-$\Wass_2$ matching.
 
 \begin{figure}[ht]
 \centering
@@ -1458,23 +2084,23 @@ This elementary model already contains the quadratic Wasserstein assignment. Add
 \[
 	\norm{x-y}^2=\norm{x}^2+\norm{y}^2-2\dotp{x}{y},
 \]
-the usual quadratic Wasserstein assignment has the same optimizer as the bilinear cost with $A_\star=-\Id$, up to these marginal-only terms and an irrelevant positive factor. The inverse problem goes in the opposite direction: after observing a coupling, one asks which matrices $A$ could have generated it. Figure~\ref{fig:inverse-ot-gap-loss} generates an observed coupling $\widehat P$ from this cost on two empirical mixtures of Gaussians, and then evaluates $\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)$ along the anisotropic path
+the usual quadratic Wasserstein assignment has the same optimizer as the bilinear cost with $A_\star=-\Id$, up to these marginal-only terms and an irrelevant positive factor. The inverse problem goes in the opposite direction: after observing a coupling, one asks which matrices $A$ could have generated it. Figure~\ref{fig:inverse-ot-gap-loss} generates an observed coupling $\widehat \P$ from this cost on two empirical mixtures of Gaussians, and then evaluates $\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)$ along the anisotropic path
 \[
 	A_t=-\diag(1+t,1-t),
 	\qquad -1\leq t\leq 1,
 \]
-so that $t=0$ recovers the matrix that generated the observed coupling. Equivalently, with equal weights, $\widehat P\in\CouplingsD(\ones_n/n,\ones_n/n)=\mathcal B_n/n$ and the plotted loss is the Kantorovich gap
+so that $t=0$ recovers the matrix that generated the observed coupling. Equivalently, with equal weights, $\widehat \P\in\CouplingsD(\ones_n/n,\ones_n/n)=\mathcal B_n/n$ and the plotted loss is the Kantorovich gap
 \[
-	\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)
+	\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)
 	=
-	\dotp{C(A_t)}{\widehat P}
+	\dotp{\C(A_t)}{\widehat \P}
 	-
-	\umin{P\in\CouplingsD(\ones_n/n,\ones_n/n)}
-	\dotp{C(A_t)}{P},
+	\umin{\P\in\CouplingsD(\ones_n/n,\ones_n/n)}
+	\dotp{\C(A_t)}{\P},
 	\qquad
-	C(A_t)_{i,j}=\dotp{A_t x_i}{y_j}.
+	\C(A_t)_{i,j}=\dotp{A_t x_i}{y_j}.
 \]
-Because $t\mapsto C(A_t)$ is affine and the Kantorovich value is a minimum of affine functions over the fixed polytope $\CouplingsD(\ones_n/n,\ones_n/n)$, this one-dimensional gap is convex and piecewise affine. Its zero set can contain an interval for a small sample, reflecting the fact that the same observed coupling remains optimal for a cone of nearby costs.
+Because $t\mapsto \C(A_t)$ is affine and the Kantorovich value is a minimum of affine functions over the fixed polytope $\CouplingsD(\ones_n/n,\ones_n/n)$, this one-dimensional gap is convex and piecewise affine. Its zero set can contain an interval for a small sample, reflecting the fact that the same observed coupling remains optimal for a cone of nearby costs.
 
 \begin{figure}[ht]
 \centering
@@ -1487,7 +2113,7 @@ Because $t\mapsto C(A_t)$ is affine and the Kantorovich value is a minimum of af
 \small loss curve, $n=10$ &
 \small loss curve, $n=100$
 \end{tabular}
-\caption{\emph{Inverse-OT gap loss for a bilinear cost.} Panel (a): two empirical mixtures of two Gaussians are matched with the cost $c_{A_\star}(x,y)=\dotp{A_\star x}{y}$ for $A_\star=-\Id$, which gives the same optimizer as the quadratic $\Wass_2$ cost; red and blue level sets display the two sampling densities. Panels (b,c): the unregularized Fenchel--Young Kantorovich gap $\mathcal L_{\mathrm{iOT}}(C(A_t);\widehat P)$ along $A_t=-\diag(1+t,1-t)$ for $n=10$ and $n=100$, using the same vertical scale. The red dot marks the generating parameter $t=0$; the curves are convex and piecewise affine.}
+\caption{\emph{Inverse-OT gap loss for a bilinear cost.} Panel (a): two empirical mixtures of two Gaussians are matched with the cost $c_{A_\star}(x,y)=\dotp{A_\star x}{y}$ for $A_\star=-\Id$, which gives the same optimizer as the quadratic $\Wass_2$ cost; red and blue level sets display the two sampling densities. Panels (b,c): the unregularized Fenchel--Young Kantorovich gap $\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)$ along $A_t=-\diag(1+t,1-t)$ for $n=10$ and $n=100$, using the same vertical scale. The red dot marks the generating parameter $t=0$; the curves are convex and piecewise affine.}
 \label{fig:inverse-ot-gap-loss}
 \end{figure}
 
@@ -1496,54 +2122,54 @@ The comparison between $n=10$ and $n=100$ illustrates an important statistical e
 \begin{prop}[Convex dual-gap formulation of inverse OT]\label{prop-inverse-ot-convex}
 \index{dual!gap}% strictindex
 \index{inverse OT}% strictindex
-	Let $\widehat P\in\CouplingsD(\a,\b)$ be an observed coupling and let $C_\theta$ depend affinely on $\theta\in\Theta$, where $\Theta$ is convex. The condition that $\widehat P$ is optimal for the cost $C_\theta$ is equivalent to the existence of dual potentials $(f,g)$ such that
+	Let $\widehat \P\in\CouplingsD(\a,\b)$ be an observed coupling and let $\C_\theta$ depend affinely on $\theta\in\Theta$, where $\Theta$ is convex. The condition that $\widehat \P$ is optimal for the cost $\C_\theta$ is equivalent to the existence of dual potentials $(f,g)$ such that
 \index{dual!potential}% strictindex
 	\[
-		f_i+g_j\leq (C_\theta)_{i,j}
+		f_i+g_j\leq (\C_\theta)_{i,j}
 		\qandq
-		\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)=0.
+		\sum_{i,j}\widehat \P_{i,j}\big((\C_\theta)_{i,j}-f_i-g_j\big)=0.
 	\]
 	Consequently, for a convex regularizer $R$ and $\lambda\geq0$, the dual-gap fitting problem
 \index{convex!regularizer}% strictindex
 	\eql{\label{eq-inverse-ot-convex}
 		\umin{\theta\in\Theta,f,g}
 		R(\theta)+\lambda
-		\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
+		\sum_{i,j}\widehat \P_{i,j}\big((\C_\theta)_{i,j}-f_i-g_j\big)
 		\quad\text{subject to}\quad
-		f_i+g_j\leq (C_\theta)_{i,j}\quad\forall i,j.
+		f_i+g_j\leq (\C_\theta)_{i,j}\quad\forall i,j.
 	}
 	is convex. It is nontrivial only if $\Theta$ imposes a cost normalization or otherwise excludes the zero-cost and marginal-gauge degeneracies.
 \end{prop}
 
 \begin{proof}
-	For a fixed cost $C_\theta$, Kantorovich duality gives
+	For a fixed cost $\C_\theta$, Kantorovich duality gives
 \index{Kantorovich!duality}% strictindex
 	\[
-		\min_{P\in\CouplingsD(\a,\b)}\dotp{C_\theta}{P}
+		\min_{\P\in\CouplingsD(\a,\b)}\dotp{\C_\theta}{\P}
 		=
-		\max_{f_i+g_j\leq (C_\theta)_{i,j}}
+		\max_{f_i+g_j\leq (\C_\theta)_{i,j}}
 		\dotp{f}{\a}+\dotp{g}{\b}.
 	\]
-	Since $\widehat P$ has marginals $(\a,\b)$, every dual feasible pair satisfies
+	Since $\widehat \P$ has marginals $(\a,\b)$, every dual feasible pair satisfies
 	\[
-		\dotp{C_\theta}{\widehat P}-\dotp{f}{\a}-\dotp{g}{\b}
+		\dotp{\C_\theta}{\widehat \P}-\dotp{f}{\a}-\dotp{g}{\b}
 		=
-		\sum_{i,j}\widehat P_{i,j}\big((C_\theta)_{i,j}-f_i-g_j\big)
+		\sum_{i,j}\widehat \P_{i,j}\big((\C_\theta)_{i,j}-f_i-g_j\big)
 		\geq0.
 	\]
-	This nonnegative quantity is exactly the primal-dual gap of $\widehat P$. It vanishes if and only if $\widehat P$ reaches the dual value and is therefore optimal. If $C_\theta$ is affine, $\lambda\geq0$, and $\Theta$ and $R$ are convex, the constraints and objective in~\eqref{eq-inverse-ot-convex} are convex. If $C_\theta=0$ is allowed and minimizes $R$, then $(C,f,g)=(0,0,0)$ is a trivial minimizer; this proves the need for the normalization stated above.
+	This nonnegative quantity is exactly the primal-dual gap of $\widehat \P$. It vanishes if and only if $\widehat \P$ reaches the dual value and is therefore optimal. If $\C_\theta$ is affine, $\lambda\geq0$, and $\Theta$ and $R$ are convex, the constraints and objective in~\eqref{eq-inverse-ot-convex} are convex. If $\C_\theta=0$ is allowed and minimizes $R$, then $(\C,f,g)=(0,0,0)$ is a trivial minimizer; this proves the need for the normalization stated above.
 \index{dual!gap}% strictindex
 \end{proof}
 
 
-The formulation~\eqref{eq-inverse-ot-convex} avoids differentiating through a forward OT solver: it learns a normalized cost by making the observed plan nearly satisfy complementary slackness. In statistical settings, $\widehat P$ is only partially observed or noisy, so one adds sparsity, low-rank, smoothness or metric constraints to select a meaningful representative~\cite{dupuy2016estimating,andrade2024sparsistency}. For entropic OT, the optimality condition becomes smoother:
+The formulation~\eqref{eq-inverse-ot-convex} avoids differentiating through a forward OT solver: it learns a normalized cost by making the observed plan nearly satisfy complementary slackness. In statistical settings, $\widehat \P$ is only partially observed or noisy, so one adds sparsity, low-rank, smoothness or metric constraints to select a meaningful representative~\cite{dupuy2016estimating,andrade2024sparsistency}. For entropic OT, the optimality condition becomes smoother:
 \index{entropic!OT}% strictindex
 \index{complementary slackness}% strictindex
 \[
-	\widehat P_{i,j}\approx a_i b_j
-	\exp\pa{\frac{f_i+g_j-(C_\theta)_{i,j}}{\epsilon}},
+	\widehat \P_{i,j}\approx a_i b_j
+	\exp\pa{\frac{f_i+g_j-(\C_\theta)_{i,j}}{\epsilon}},
 \]
-which leads to likelihood-based or KL-based convex objectives when $C_\theta$ is affine, and connects inverse OT with generalized Sinkhorn iterations and transport-regularized inverse problems~\cite{karlsson2016generalized,ma2020learning}. Neural parameterizations of $C_\theta$ are more flexible but reintroduce non-convexity; the convex formulation above is the clean mathematical baseline.
+which leads to likelihood-based or KL-based convex objectives when $\C_\theta$ is affine, and connects inverse OT with generalized Sinkhorn iterations and transport-regularized inverse problems~\cite{karlsson2016generalized,ma2020learning}. Neural parameterizations of $\C_\theta$ are more flexible but reintroduce non-convexity; the convex formulation above is the clean mathematical baseline.
 \index{Sinkhorn!iteration}% strictindex
 
 
@@ -1712,6 +2338,8 @@ The classical Kantorovich problem is recovered when $C(x,\nu)=\int c(x,y)\d\nu(y
 	\]
 	Integrating in $x$ gives $\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x)\leq\int\norm{x-y}^2\d\pi(x,y)$. Taking the infimum over $\pi$ proves the claim.
 \end{proof}
+
+Figure~\ref{fig:weak-ot-barycentric-projection} separates the full conditional coupling from its barycentric projection, making explicit which part of each conditional law is retained by the weak cost.
 
 \begin{figure}[H]
 \centering
@@ -1915,6 +2543,8 @@ Indeed, if $\Sigma_1-\Sigma_0\succeq0$, then $\Gaussian(m,\Sigma_1)$ is obtained
 \index{Gaussian!measure}% strictindex
 \index{covariance!Loewner order}% strictindex
 
+Figure~\ref{fig:martingale-ot-centered-kernels} gives a discrete non-Gaussian counterpart: centered conditional kernels provide a feasible martingale plan, while optimizing the transport cost selects a much sparser plan with the same marginals and barycentric constraint.
+
 \begin{figure}[H]
 \centering
 \begin{tabular}{@{}cccc@{}}
@@ -1925,7 +2555,7 @@ Indeed, if $\Sigma_1-\Sigma_0\succeq0$, then $\Gaussian(m,\Sigma_1)$ is obtained
 \\[-.1em]
 \small marginals & \small generated plan & \small optimal plan & \small centered kernels
 \end{tabular}
-\caption{\emph{A discrete one-dimensional martingale OT example.} The source $\alpha$ is a red Gaussian mixture on a grid. A first feasible plan is generated by centered kernels $K_i(y_j)=\kappa_i(y_j-x_i)$, whose discrete barycenter is $x_i$, so $P_{ij}=a_iK_i(y_j)$ satisfies $\bar T_P(x_i)=x_i$. Keeping the same two marginals, the third panel solves the finite-dimensional martingale OT linear program with objective $\sum_{ij}|x_i-y_j|P_{ij}$, row and column constraints, and martingale constraints $\sum_j(y_j-x_i)P_{ij}=0$. The optimized plan is much sparser, while both plans have the identity barycentric projection.}
+\caption{\emph{A discrete one-dimensional martingale OT example.} The source $\alpha$ is a red Gaussian mixture on a grid. A first feasible plan is generated by centered kernels $K_i(y_j)=\kappa_i(y_j-x_i)$, whose discrete barycenter is $x_i$, so $\P_{ij}=a_iK_i(y_j)$ satisfies $\bar T_\P(x_i)=x_i$. Keeping the same two marginals, the third panel solves the finite-dimensional martingale OT linear program with objective $\sum_{ij}|x_i-y_j|\P_{ij}$, row and column constraints, and martingale constraints $\sum_j(y_j-x_i)\P_{ij}=0$. The optimized plan is much sparser, while both plans have the identity barycentric projection.}
 \index{martingale OT}% strictindex
 \index{convex!order}% strictindex
 \index{barycentric!projection}% strictindex

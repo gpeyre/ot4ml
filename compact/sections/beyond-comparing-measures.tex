@@ -111,10 +111,10 @@ For $p=2$, Gaussian mixtures provide a particularly explicit example with two le
 \(\mathfrak A=\sum_i a_i\delta_{\Gaussian(m_i,\Sigma_i)}\)
 \(\mathfrak A=\sum_i a_i\delta_{\Gaussian(m_i,\Sigma_i)}, \qquad \mathfrak B=\sum_j b_j\delta_{\Gaussian(n_j,\Lambda_j)},\)
 \(C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.\)
-Let $\Pi^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
+Let $\P^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
 
 \(m_{ij,t}=(1-t)m_i+t n_j, \qquad \Sigma_{ij,t} = \big((1-t)\Id+tA_{ij}\big)\Sigma_i \big((1-t)\Id+tA_{ij}\big)^\top,\)
-\(\bar\alpha_t= \sum_{i,j}\Pi^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).\)
+\(\bar\alpha_t= \sum_{i,j}\P^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).\)
 \begin{prop}[Collapsing is non-expansive]\label{prop-wow-collapsed-bound}
 Let $(\X,\dist)$ be Polish, let $1\leq p<\infty$, and let $\mathfrak A,\mathfrak B\in\Pp_p(\Pp_p(\X))$. For the collapsed mixtures defined by~\eqref{eq-wow-barycentric-mixture},
 \(\Wass_p(\bar\alpha_{\mathfrak A},\bar\beta_{\mathfrak B}) \leq \mathbb W_p(\mathfrak A,\mathfrak B).\)
@@ -262,21 +262,6 @@ Integrating in $(x,y)$ gives \(\mathbb W_p\bigl(\mathfrak D_\XX,\mathfrak D_\YY\
 Taking the infimum over $\pi$ and then the $p$-th root proves the claim.
 \end{proof}
 \paragraph{Relation with Wasserstein--Procrustes.}
-\begin{prop}[Wasserstein--Procrustes upper certificate]\label{prop-gw-procrustes-upper-certificate}
-Let $\alpha,\beta$ be probability measures on $\RR^d$, equipped with the Euclidean distance, and take $\De(u,v)=|u-v|$ in~\eqref{eq-gw-generic}. If $\Wass_{p,\mathrm E(d)}$ denotes the quotient Wasserstein distance of Definition~\ref{def-quotient-wasserstein} for the Euclidean group, then
-\begin{equation}\label{eq-gw-procrustes-upper-gw-section}
-\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta))
-\leq
-2\,\Wass_{p,\mathrm E(d)}([\alpha],[\beta]).
-\end{equation}
-\end{prop}
-\begin{proof}
-Let $g,h\in\mathrm E(d)$ be rigid motions. They preserve all pairwise Euclidean distances, so
-\((\RR^d,\norm{\cdot},\alpha) \quad\text{is isometric to}\quad (\RR^d,\norm{\cdot},g_\sharp\alpha),\)
-and similarly for $\beta$ and $h_\sharp\beta$. Hence $\GW$ is unchanged by pushing the two measures forward by $g$ and $h$. Applying Proposition~\ref{prop-gw-controlled-by-wasserstein} to $g_\sharp\alpha$ and $h_\sharp\beta$ gives
-\(\GW((\RR^d,\norm{\cdot},\alpha),(\RR^d,\norm{\cdot},\beta)) \leq 2\,\Wass_p(g_\sharp\alpha,h_\sharp\beta).\)
-Taking the infimum over $g,h\in\mathrm E(d)$ gives~\eqref{eq-gw-procrustes-upper-gw-section}.
-\end{proof}
 \begin{equation}\label{eq-gw-profile-procrustes-sandwich}
 \mathbb W_p(\mathfrak D_\XX,\mathfrak D_\YY)
 \leq
@@ -479,3 +464,113 @@ S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
 \end{aligned}
 \end{equation}
 These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. This is Gurvits/operator scaling with prescribed targets.
+
+\subsection{Dynamic Time Warping}\label{sec-dynamic-time-warping}
+\paragraph{Ordered alignments versus transport couplings.}
+\paragraph{Discrete variational problem.}
+Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature space $\mathcal Z$, and set $C_{ij}=c(x_i,y_j)$ for a nonnegative cost $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
+
+\(\omega=((i_\ell,j_\ell))_{\ell=1}^L\)
+\((i_{\ell+1}-i_\ell,j_{\ell+1}-j_\ell) \in\{(1,0),(0,1),(1,1)\}.\)
+Denote the set of such paths by $\Omega_{n,m}$ and the corresponding incidence matrix by $(A_\omega)_{ij}=\mathbf 1_{\{(i,j)\in\omega\}}$. Its length satisfies $\max\{n,m\}\leq L\leq n+m-1$, its total mass is $\sum_{ij}(A_\omega)_{ij}=L$, and its two marginals are precisely the row and column visit counts.
+
+\begin{defn}[Dynamic time warping]\label{def-dynamic-time-warping}
+The DTW value associated with the feature cost $c$ is
+\begin{equation}\label{eq-dtw-variational}
+\mathrm{DTW}_c(x,y)
+\eqdef
+\min_{\omega\in\Omega_{n,m}}
+\sum_{\ell=1}^L c(x_{i_\ell},y_{j_\ell})
+=
+\min_{\omega\in\Omega_{n,m}}\dotp{A_\omega}{C}.
+\end{equation}
+\end{defn}
+\paragraph{Dynamic programming.}
+\begin{prop}[DTW dynamic-programming recurrence]\label{prop-dtw-dynamic-programming}
+Set $D_{0,0}=0$, $D_{i,0}=D_{0,j}=+\infty$ for $i,j>0$, and, for $1\leq i\leq n$, $1\leq j\leq m$, define
+\begin{equation}\label{eq-dtw-recurrence}
+D_{ij}
+=
+C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
+\end{equation}
+Then $D_{nm}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every cell and backtracking from $(n,m)$ recovers an optimal path. The computation takes $O(nm)$ time and $O(nm)$ memory; if only the value is required, two rows give $O(\min\{n,m\})$ memory.
+\end{prop}
+\begin{proof}
+Every admissible path reaching $(i,j)$ enters it from exactly one of $(i-1,j)$, $(i,j-1)$ or $(i-1,j-1)$. Removing the last cell therefore leaves an admissible path to one of these predecessors, while appending $(i,j)$ to any predecessor path gives an admissible path to $(i,j)$. Minimizing over the three mutually exhaustive last steps proves~\eqref{eq-dtw-recurrence} by induction on $i+j$. The complexity follows because each of the $nm$ cells performs constant work.
+\end{proof}
+\paragraph{Continuous time warping.}
+For simplicity, let $x,y:[0,1]\to\mathcal Z$ use normalized clocks, and let $\Gamma_\uparrow$ contain pairs $(\phi,\psi)$ of absolutely continuous, nondecreasing surjections of $[0,1]$ onto itself. Equivalently, the endpoint conditions are $\phi(0)=\psi(0)=0$ and $\phi(1)=\psi(1)=1$. The continuous DTW functional is
+
+\begin{equation}\label{eq-continuous-dtw}
+\mathrm{CDTW}_c(x,y)
+\eqdef
+\inf_{(\phi,\psi)\in\Gamma_\uparrow}
+\int_0^1
+c\bigl(x(\phi(s)),y(\psi(s))\bigr)
+\bigl(\dot\phi(s)+\dot\psi(s)\bigr)\d s.
+\end{equation}
+\paragraph{Soft-DTW and the Sinkhorn analogy.}
+\begin{equation}\label{eq-dtw-softmin}
+\operatorname{softmin}_\epsilon(r_1,\ldots,r_q)
+=
+-\epsilon\log\!\left(\sum_{k=1}^q e^{-r_k/\epsilon}\right),
+\end{equation}
+\begin{equation}\label{eq-soft-dtw-recurrence}
+D_{ij}^\epsilon
+=
+C_{ij}
++
+\operatorname{softmin}_\epsilon
+\bigl(D_{i-1,j}^\epsilon,D_{i,j-1}^\epsilon,D_{i-1,j-1}^\epsilon\bigr),
+\qquad
+\mathrm{sDTW}_{c,\epsilon}(x,y)=D_{nm}^\epsilon.
+\end{equation}
+\begin{equation}\label{eq-soft-dtw-partition}
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+=
+-\epsilon\log
+\sum_{\omega\in\Omega_{n,m}}
+\exp\!\left(-\frac{\dotp{A_\omega}{C}}{\epsilon}\right).
+\end{equation}
+\begin{equation}\label{eq-soft-dtw-variational}
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+=
+\min_{q\in\Delta(\Omega_{n,m})}
+\left\{
+\sum_{\omega}q_\omega\dotp{A_\omega}{C}
+-\epsilon H(q)
+\right\}.
+\end{equation}
+\begin{equation}\label{eq-soft-dtw-gibbs-law}
+\PP_\epsilon(\omega)
+=
+\frac{\exp(-\dotp{A_\omega}{C}/\epsilon)}
+{\sum_{\omega'}\exp(-\dotp{A_{\omega'}}{C}/\epsilon)},
+\qquad
+E_\epsilon
+\eqdef
+\nabla_C\mathrm{sDTW}_{c,\epsilon}(x,y).
+\end{equation}
+\begin{equation}\label{eq-soft-dtw-zero-temperature-bound}
+\mathrm{DTW}_c(x,y)-\epsilon\log\abs{\Omega_{n,m}}
+\leq
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+\leq
+\mathrm{DTW}_c(x,y),
+\end{equation}
+because the partition sum is bounded below by its largest term and above by $\abs{\Omega_{n,m}}$ times that term. Hence $\mathrm{sDTW}_{c,\epsilon}\to\mathrm{DTW}_c$ as $\epsilon\to0$.
+
+\begin{equation}\label{eq-soft-dtw-expected-alignment}
+E_\epsilon
+=
+\EE_{\omega\sim\PP_\epsilon}[A_\omega].
+\end{equation}
+Thus $(E_\epsilon)_{ij}$ is the probability that a Gibbs path visits cell $(i,j)$. The matrix $E_\epsilon$ is a diffuse expected alignment and converges, when the hard optimum is unique, to its path-incidence matrix.
+
+\begin{equation}\label{eq-soft-dtw-divergence}
+\overline{\mathrm{sDTW}}_{c,\epsilon}(x,y)
+=
+\mathrm{sDTW}_{c,\epsilon}(x,y)
+-\frac12\mathrm{sDTW}_{c,\epsilon}(x,x)
+-\frac12\mathrm{sDTW}_{c,\epsilon}(y,y).
+\end{equation}
