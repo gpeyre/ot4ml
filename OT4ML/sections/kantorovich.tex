@@ -174,13 +174,25 @@ A minimizer $\P$ is an optimal coupling, or optimal transport plan.
 Here $\C_{i,j}$ is the cost of moving one unit of mass from $x_i$ to $y_j$.
 This is a linear program, and its solutions need not be unique.
 
-\begin{prop}[Joint convexity of discrete OT]\label{prop-discrete-kantorovich-joint-convexity}
+The discrete transport value has opposite curvature in its two types of data: mixing marginals gives convexity, whereas minimizing a linear objective over couplings gives concavity in the cost matrix.
+\begin{prop}[Convexity in the marginals and concavity in the cost]\label{prop-discrete-kantorovich-joint-convexity}
 \index{convexity!discrete OT}% strictindex
+\index{concavity!discrete OT}% strictindex
 	For every fixed cost matrix $\C\in\RR^{n\times m}$, the map
 	\[
 		(\a,\b)\longmapsto\MKD_{\C}(\a,\b)
 	\]
-	is jointly convex on $\simplex_n\times\simplex_m$.
+	is jointly convex on $\simplex_n\times\simplex_m$. For every fixed $(\a,\b)\in\simplex_n\times\simplex_m$, the map
+	\[
+		\C\longmapsto\MKD_{\C}(\a,\b)
+	\]
+	is concave on $\RR^{n\times m}$. Equivalently, for $\C_0,\C_1\in\RR^{n\times m}$ and $t\in[0,1]$,
+	\[
+		\MKD_{(1-t)\C_0+t\C_1}(\a,\b)
+		\geq
+		(1-t)\MKD_{\C_0}(\a,\b)
+		+t\MKD_{\C_1}(\a,\b).
+	\]
 \end{prop}
 
 \begin{proof}
@@ -192,6 +204,14 @@ This is a linear program, and its solutions need not be unique.
 		=
 		(1-t)\MKD_{\C}(\a_0,\b_0)+t\MKD_{\C}(\a_1,\b_1).
 	\]
+	For fixed marginals, every $\P\in\CouplingsD(\a,\b)$ satisfies
+	\[
+		\dotp{(1-t)\C_0+t\C_1}{\P}
+		\geq
+		(1-t)\MKD_{\C_0}(\a,\b)
+		+t\MKD_{\C_1}(\a,\b).
+	\]
+	Minimizing the left-hand side over $\P$ proves concavity in $\C$.
 \end{proof}
 
 Figure~\ref{fig:kantorovich-permutation-versus-splitting} contrasts the permutation plans inherited from equal-weight assignments with the genuinely splitting couplings permitted by nonuniform marginals.
@@ -1602,13 +1622,26 @@ The Euclidean quadratic case separates the displacement of the means from the tr
 	where \(e_g\geq0\), \(\sum_g e_g=1\), and \(\varphi(g)\) is a gene embedding or annotation vector. Wasserstein distances then compare cells by moving expression mass between genes. The choice of \(\dist(\varphi(g),\varphi(g'))\) is biologically meaningful: it can come from annotations, pathways or a learned ground metric. This is the idea behind the Gene Mover's Distance and related metric-learning approaches for single-cell data~\cite{BellazziCodegoniGualandiNicoraVercesi2021GeneMover,HuizingCantiniPeyre2021WassersteinSingularVectors}; it is the single-cell analogue of the cost-learning question revisited in Section~\ref{sec-metric-learning-inverse-ot}.
 \end{example}
 
-Single-cell OT also has a complementary population-level interpretation: instead of representing one cell as a measure over genes, one treats every cell as one atom of a time-indexed population law. Figure~\ref{fig:kantorovich-waddington-ot} shows this second viewpoint on consecutive iPSC reprogramming snapshots and the Waddington-OT coupling of Schiebinger et al.~\cite{schiebinger2017reconstruction}. Because single-cell sequencing is destructive, the coupling encodes inferred ancestor--descendant relations between populations rather than tracks of individually observed cells.
+Single-cell OT also has a complementary population-level interpretation: instead of representing one cell as a measure over genes, one treats every cell as one atom of a time-indexed population law. Figure~\ref{fig:kantorovich-waddington-ot} follows the visualization introduced for Waddington-OT by Schiebinger et al.~\cite{schiebinger2017reconstruction}. Because single-cell sequencing is destructive, the coupling encodes inferred ancestor--descendant relations between consecutive populations rather than tracks of individually observed cells.
+
+To make this construction precise, let \(\a_C\) be uniform on the labeled source set \(C\), and let \(\b_A,\b_B\) be uniform on the labeled target regions. For the released transport matrix \(\P\), the displayed descendant and ancestor laws are
+\[
+	\b_C^{\mathrm{desc}}
+	=
+	\frac{\P^\top\a_C}{\langle\P^\top\a_C,\ones\rangle},
+	\qquad
+	\a_R^{\mathrm{anc}}
+	=
+	\frac{\P\b_R}{\langle\P\b_R,\ones\rangle},
+	\quad R\in\{A,B\}.
+\]
+Thus the plan, not the two-dimensional embedding, propagates probabilities. For this compact illustration, \(A\) and \(B\) are separated target regions whose pulled-back laws retain nontrivial overlap, and \(C\) is selected inside their common-ancestor region. Their common part is the componentwise minimum \(\a_{\cap}^{\mathrm{anc}}=\min\{\a_A^{\mathrm{anc}},\a_B^{\mathrm{anc}}\}\).
 \index{Waddington-OT}% strictindex
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=.98\linewidth]{figures/kantorovich-waddington-ot/waddington-ot.pdf}
-\caption{\emph{Waddington-OT between consecutive single-cell snapshots.} The left panel superposes day-10 cells in red and day-10.5 cells in blue in the shared force-layout embedding released with the Waddington-OT tutorial; violet segments show a farthest-point subset of high-mass coupling entries. This embedding is used only for display: the released plan uses the authors' local-PCA transport geometry. The remaining panels move a mass-weighted, farthest-point-thinned sample of plan atoms along their Euclidean display segments, with color interpolated from red to blue; pale endpoints provide a common positional reference. The unbalanced plan is normalized only to sample these representative paths, which illustrate coupling-induced displacement rather than cells observed at intermediate times.}
+\caption{\emph{Waddington-OT between consecutive single-cell snapshots.} Every panel uses the official force-layout embedding, with the complete reprogramming landscape sampled in gray. The first overlays day-10 cells in red and day-10.5 cells in blue. Black rims and labels identify the conditioning sets: the second panel pushes \(C\) forward to its descendants, while the third pulls \(A\) backward to its ancestors. The last compares the ancestors of \(A\) and \(B\): red and blue encode the two exclusive parts, and violet their pointwise common part. Marker intensity and size encode normalized transported mass. The embedding is only a display plane; the released plan uses local 30-dimensional PCA costs.}
 \index{single-cell genomics}% strictindex
 \index{trajectory inference}% strictindex
 \label{fig:kantorovich-waddington-ot}
@@ -1962,9 +1995,13 @@ Convolution describes sums of independent random variables.
 		\iint\varphi(x+y)\,\d\al(x)\d\be(y).
 	\]
 \end{defn}
-Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When the measures have densities $f$ and $g$, the convolution has density
+Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When $\al=\density{\al}\d x$ and $\be=\density{\be}\d x$, their convolution has density
 \[
-	(f*g)(z)=\int_{\RR^d}f(x)g(z-x)\d x.
+	\density{\al*\be}(z)
+	=
+	(\density{\al}*\density{\be})(z)
+	=
+	\int_{\RR^d}\density{\al}(x)\density{\be}(z-x)\d x.
 \]
 
 \begin{rem}[Central limit theorem]\label{rem-clt}
@@ -1985,6 +2022,24 @@ Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\
 \index{measure convolution}% strictindex
 \index{rescaled convolution}% strictindex
 \end{rem}
+
+Figure~\ref{fig:matching-quantitative-clt} makes this qualitative weak convergence visible in the elementary Bernoulli case: every finite-$n$ law is discrete, yet the normalized atom heights approach the Gaussian density.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccccc@{}}
+\small $n=1$ & \small $n=2$ & \small $n=4$ & \small $n=16$ & \small $n=64$ \\[-.15em]
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt/n-001.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt/n-002.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt/n-004.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt/n-016.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt/n-064.pdf}
+\end{tabular}
+\caption{\emph{Central-limit theorem for normalized Bernoulli sums.} Starting from $\al_0=\frac12(\delta_{-1}+\delta_1)$, the law of $Z_n=n^{-1/2}\sum_{i=1}^n X_i$ remains discrete, but its rescaled atom heights approach the standard Gaussian density shown in gray. Proposition~\ref{prop-berry-esseen-w1} later quantifies this weak convergence in $\Wass_1$.}
+\index{central limit theorem}% strictindex
+\index{weak!convergence}% strictindex
+\label{fig:matching-quantitative-clt}
+\end{figure}
 
 \begin{rem}[A quantitative CLT in Wasserstein form]\label{rem-wasserstein-berry-esseen-pointer}
 \index{Berry-Esseen!theorem}% strictindex
@@ -2063,24 +2118,59 @@ As explained in Remark~\ref{rem-weak-conv-disc}, in the special case of Diracs, 
 	\qandq
 	\Wass_p(\de_{x_n},\de_x) = d(x_n,x).
 }
-Thus a moving Dirac sequence can converge in total variation only if it is eventually stationary, whereas it converges in Wasserstein distance whenever its locations converge. More generally, Wasserstein distance metrizes weak convergence on compact spaces.
+Thus a moving Dirac sequence can converge in total variation only if it is eventually stationary, whereas it converges in Wasserstein distance whenever its locations converge. On an unbounded space, weak convergence alone does not prevent a vanishing amount of mass from escaping to infinity. Wasserstein convergence is exactly weak convergence supplemented by control of this moment tail.
 \index{weak!convergence}% strictindex
 
-\begin{prop}[Wasserstein metrizes weak convergence on compact spaces]\label{prop-wass-metrizes-weak-compact}
+\begin{prop}[Wasserstein convergence on Polish spaces]\label{prop-wass-topology-polish}
 \index{Wasserstein!topology}% strictindex
-	If $\Xx$ is compact, $\al_k \rightharpoonup \al$ if and only if $\Wass_p(\al_k,\al) \rightarrow 0$.
+	Let $(\Xx,d)$ be a Polish metric space, let $1\leq p<+\infty$, and let $\al_k,\al\in\Pp_p(\Xx)$. For any reference point $x_0\in\Xx$, the following are equivalent:
+	\begin{enumerate}
+		\item $\Wass_p(\al_k,\al)\to0$;
+		\item $\al_k\rightharpoonup\al$ and the $p$th moments converge,
+		\eq{
+			\int d(x,x_0)^p\d\al_k(x)
+			\longrightarrow
+			\int d(x,x_0)^p\d\al(x);
+		}
+		\item $\al_k\rightharpoonup\al$ and the $p$th moments are uniformly integrable,
+		\eq{
+			\lim_{R\to+\infty}\sup_k
+			\int_{\{d(x,x_0)>R\}}d(x,x_0)^p\d\al_k(x)=0.
+		}
+	\end{enumerate}
+	These conditions do not depend on the choice of $x_0$.
 \end{prop}
 \begin{proof}
-	For $p=1$, this is the Kantorovich--Rubinstein metrization theorem: by duality, $\Wass_1$ is the supremum over $1$-Lipschitz test functions, and on a compact metric space this class is compact modulo constants by Arzel\`a--Ascoli. Thus convergence in $\Wass_1$ is equivalent to weak convergence. Proposition~\ref{prop-comp-wass-p} then shows that all Wasserstein distances $\Wass_p$ induce the same convergent sequences on compact spaces. Hence weak convergence is equivalent to convergence in $\Wass_p$ for every $p\geq1$.
+	Assume first that $\Wass_p(\al_k,\al)\to0$. Since $\Wass_1\leq\Wass_p$, integration against every bounded $1$-Lipschitz function converges; such functions determine weak convergence on Polish spaces. For any coupling $\pi\in\Couplings(\al_k,\al)$, the reverse triangle inequality in $L^p(\pi)$ gives
+	\[
+		\left|
+		\left(\int d(x,x_0)^p\d\al_k(x)\right)^{1/p}
+		-
+		\left(\int d(y,x_0)^p\d\al(y)\right)^{1/p}
+		\right|
+		\leq
+		\left(\int d(x,y)^p\d\pi(x,y)\right)^{1/p}.
+	\]
+	Taking the infimum over $\pi$ proves convergence of the $p$th moments, hence (ii).
+
+	Conversely, assume (ii). By the Skorokhod representation theorem, there exist random variables $X_k\sim\al_k$ and $X\sim\al$ on a common probability space such that $X_k\to X$ almost surely. Consequently $d(X_k,x_0)^p\to d(X,x_0)^p$ almost surely, and the assumed convergence of their expectations implies, by Scheff\'e's lemma, convergence in $L^1$. In particular, the family $(d(X_k,x_0)^p)_k$ is uniformly integrable. Since
+	\[
+		d(X_k,X)^p
+		\leq 2^{p-1}\bigl(d(X_k,x_0)^p+d(X,x_0)^p\bigr),
+	\]
+	the variables $d(X_k,X)^p$ are uniformly integrable and converge almost surely to zero. Vitali's theorem therefore gives $\EE[d(X_k,X)^p]\to0$. The law of $(X_k,X)$ is an admissible coupling, so
+	\[
+		\Wass_p(\al_k,\al)^p\leq\EE[d(X_k,X)^p]\longrightarrow0.
+	\]
+
+	It remains to compare (ii) and (iii). The preceding Skorokhod argument shows that (ii) makes $d(X_k,x_0)^p$ uniformly integrable, which is exactly the tail condition in (iii). Conversely, assume (iii) and define the bounded continuous truncation $h_R(x)=\min\{d(x,x_0)^p,R^p\}$. Weak convergence gives $\int h_R\d\al_k\to\int h_R\d\al$ for every $R$. The uniform tail bound in (iii), together with the integrability of $d(\cdot,x_0)^p$ under $\al$, then lets $R\to+\infty$ and proves convergence of the untruncated moments. This establishes all three equivalences. Since (i) is independent of the reference point, so are (ii) and (iii)~\cite{Villani09,SantambrogioBook,ambrosio2006gradient}.
 \index{Wasserstein!distance}% strictindex
 \index{weak!convergence}% strictindex
+\index{uniform integrability}% strictindex
+\index{moment!convergence}% strictindex
 \end{proof}
 
-On non-compact spaces, one must also impose convergence of the $p$th moments. More precisely, on a Polish metric space, $\Wass_p(\al_k,\al)\to0$ if and only if $\al_k\rightharpoonup\al$ and, for some reference point $x_0$,
-\[
-	\int d(x,x_0)^p\d\al_k(x)\longrightarrow
-	\int d(x,x_0)^p\d\al(x).
-\]
+On a compact metric space, the moment function $d(\cdot,x_0)^p$ is bounded and continuous, so weak convergence automatically implies moment convergence. Proposition~\ref{prop-wass-topology-polish} therefore recovers the familiar fact that $\Wass_p$ metrizes weak convergence on $\Pp(\Xx)$.
 
 On a finite metric space, the strong and weak topologies coincide. The following quantitative comparison explains this equivalence.
 \index{Wasserstein!distance}% strictindex

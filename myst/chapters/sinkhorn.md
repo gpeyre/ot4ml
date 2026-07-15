@@ -1005,8 +1005,16 @@ replaces the hard lower envelope by a log-sum-exp soft minimum.*
 
 ### Continuous Dual and Soft-Transforms
 
-For compact spaces and continuous cost, the KL-regularized problem has the
-concave dual
+The continuous formula follows from the same entropy conjugacy as its matrix
+counterpart; it is not a discretization heuristic.
+
+(prop-continuous-entropic-duality)=
+:::{admonition} Proposition: Continuous Entropic Duality
+:class: important
+Let $\X$ and $\Y$ be compact metric spaces, let
+$\alpha\in\mathcal P(\X)$ and $\beta\in\mathcal P(\Y)$, and let
+$c\in\mathcal C(\X\times\Y)$. For every $\epsilon>0$, the continuous
+KL-regularized problem satisfies
 
 ```{math}
 :label: eq-dual-sinkhorn-cont-web
@@ -1032,6 +1040,61 @@ e^{(f(x)+g(y)-c(x,y))/\epsilon}
 \right)
 \d\alpha(x)\d\beta(y).
 ```
+
+If $\pi^\star$ and $(f^\star,g^\star)$ are primal and dual optimizers, then
+
+```{math}
+:label: eq-continuous-entropic-density-law-web
+\frac{\d\pi^\star}{\d(\alpha\otimes\beta)}(x,y)
+=
+\exp\!\left(
+\frac{f^\star(x)+g^\star(y)-c(x,y)}{\epsilon}
+\right)
+\qquad (\alpha\otimes\beta)\text{-a.e.}
+```
+:::
+
+:::{dropdown} Proof
+Write $\xi=\alpha\otimes\beta$ and
+$\phi(r)=r\log r-r+1$. Every plan with finite objective has a density
+$r=\d\pi/\d\xi$. Its two marginal constraints read
+
+```{math}
+\int_\Y r(x,y)\,\d\beta(y)=1\quad\alpha\text{-a.e.},
+\qquad
+\int_\X r(x,y)\,\d\alpha(x)=1\quad\beta\text{-a.e.}
+```
+
+Introducing potentials $(f,g)$ for these constraints gives the Lagrangian
+
+```{math}
+\int f\,\d\alpha+\int g\,\d\beta
++\int\!\left[
+\epsilon\phi(r)+(c-f-g)r
+\right]\d\xi.
+```
+
+Since $\phi^*(s)=e^s-1$, pointwise minimization over $r\geq0$ yields
+
+```{math}
+\inf_{r\geq0}
+\left\{\epsilon\phi(r)+(c-f-g)r\right\}
+=
+-\epsilon\left(e^{(f+g-c)/\epsilon}-1\right).
+```
+
+After integration, this is exactly $\mathcal D_\epsilon(f,g)$, proving weak
+duality. Fenchel--Rockafellar entropy duality gives equality: the strictly
+positive feasible density $r\equiv1$ supplies the qualification point, and
+$c$ is bounded on the compact product. Continuity of $c$ allows the supremum
+to be restricted to continuous potentials, since the soft transforms turn
+bounded potentials into continuous ones without lowering the dual value.
+
+At primal--dual optimality, equality in the Fenchel inequality forces
+$r^\star$ to be the unique pointwise minimizer. Its first-order condition is
+$\epsilon\log r^\star+c-f^\star-g^\star=0$, which gives the displayed density
+formula after exponentiation.
+:::
 
 This is the smooth counterpart of the hard feasibility constraint
 $f\oplus g\le c$ from the Kantorovich dual.
@@ -1742,37 +1805,62 @@ On $\mathbb R^d$, the heat kernel for $\partial_t u=\Delta u$ is
 h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
 ```
 
-Up to normalization, the quadratic Sinkhorn Gibbs kernel is therefore a Gaussian
-heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct
-construction uses the resolvent of the positive Laplacian. On the line, the kernel of
-$(I-\tau\Delta)^{-1}$ is exactly proportional to
-$\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel
-with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa
-smoothing, while the heat semigroup gives the Gaussian kernel
-$\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or surface $M$,
-Varadhan's formula gives
+For the quadratic cost $c(x,y)=\norm{x-y}^2$, the Sinkhorn Gibbs kernel is
+exactly a heat kernel up to a scalar factor:
 
 ```{math}
--4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
-\qquad (t\downarrow0).
+K_\epsilon(x,y)
+=e^{-\norm{x-y}^2/\epsilon}
+=(\pi\epsilon)^{d/2}h_{\epsilon/4}(x,y).
 ```
 
-This underlies geodesics-in-heat methods {cite:p}`varadhan-1967,Crane2013`.
-Writing $L=-\Delta_M$ for the positive Laplace--Beltrami operator, one has
+The scalar factor is absorbed by the Sinkhorn scalings and does not change the
+coupling. On a Riemannian manifold or surface $M$, write
+$L=-\Delta_M$ and replace the dense Gibbs matrix by the intrinsic heat operator
+$H_\epsilon=e^{-(\epsilon/4)L}$. For two histograms on the same discretized
+domain, Sinkhorn becomes
 
 ```{math}
-e^{-tL}=\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
+u^{(k+1)}=a\oslash(H_\epsilon v^{(k)}),
+\qquad
+v^{(k+1)}=b\oslash(H_\epsilon^\top u^{(k+1)}).
 ```
 
-Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a
-Laplace/Yukawa smoothing, while repeated resolvent steps approximate the
-Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced
-by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than
-dense Gaussian matrices. This is attractive computationally, but the small-scale
-limit is delicate: the smoothing length, of order $\sqrt t$ for heat and
-$\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this
-length is sent to zero faster than the grid spacing, metrication artifacts and
-inconsistent discretizations can dominate the intended geodesic limit.
+Here $H_\epsilon$ includes quadrature weights and $H_\epsilon^\top$ is its
+discrete adjoint; they coincide for a symmetric mass-normalized
+discretization. This fits Sinkhorn because kernel multiplication is its only expensive step.
+Equivalently, the heat kernel defines the effective cost
+$c_\epsilon(x,y)=-\epsilon\log h_{\epsilon/4}(x,y)$. Varadhan's formula gives
+
+```{math}
+c_\epsilon(x,y)\longrightarrow d_M(x,y)^2
+\qquad (\epsilon\downarrow0),
+```
+
+so convolutional Sinkhorn recovers the squared geodesic ground cost at small
+temperature without computing all pairwise geodesic distances
+{cite:p}`varadhan-1967,2015-solomon-siggraph`. This is also the asymptotic
+principle behind geodesics-in-heat distance estimation {cite:p}`Crane2013`.
+
+Computationally, the heat operator admits the resolvent approximation
+
+```{math}
+H_\epsilon
+=\lim_{q\to\infty}
+\left(I+\frac{\epsilon}{4q}L\right)^{-q}.
+```
+
+For a sparse discrete Laplacian $L_h$, factor
+$A_{\epsilon,q}=I+\epsilon L_h/(4q)=RR^\top$ once by sparse Cholesky. Each
+application of $H_\epsilon$ is then approximated by $q$ successive solves with
+$A_{\epsilon,q}$, each reduced to two triangular substitutions. The same
+factorization is reused in every Sinkhorn row and column update, avoiding a
+dense kernel and an all-pairs distance matrix
+{cite:p}`2015-solomon-siggraph`. An $\epsilon$-scaling schedule requires one factorization per
+temperature. The diffusion length is of order $\sqrt\epsilon$, so the
+small-temperature limit must still be resolved by the mesh; taking $\epsilon$
+smaller than the squared grid spacing produces metrication and discretization
+artifacts.
 
 Figure {ref}`fig:sinkhorn-geodesics-in-heat` compares the exact distance to a non-convex source curve with heat-kernel and shifted-Laplacian approximations at several smoothing scales.
 
@@ -1786,14 +1874,15 @@ show_book_figure("sinkhorn-geodesics-in-heat")
 ```
 
 *Geodesics-in-heat approximation of the distance to a dense non-convex source
-curve. One backward-Euler resolvent step with Neumann boundary conditions is
-followed by a normalized-gradient Poisson solve. Larger resolvent scales stabilize
-the linear solve but progressively round the non-convex level-set geometry.*
+curve. The one-step approximation $(I+\epsilon L_h/4)^{-1}$ with Neumann
+boundary conditions is followed by a normalized-gradient Poisson solve. Larger
+Sinkhorn temperatures suppress unresolved grid-scale artifacts but progressively round the
+non-convex level-set geometry.*
 :::
 
 :::{div}
 :class: ot4ml-interactive-note
-**Interactive panel.** Adjust the heat scale and number of sources to see how log-sum-exp heat smoothing rounds Voronoi fronts and approximate distance level sets.
+**Interactive panel.** Adjust the Sinkhorn temperature $\epsilon$ and number of sources to see how heat smoothing rounds Voronoi fronts and approximate distance level sets.
 :::
 
 <iframe class="ot4ml-live-frame" title="Interactive geodesics-in-heat surrogate panel" src="../live/sinkhorn-geodesics-heat.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>

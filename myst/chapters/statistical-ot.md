@@ -172,37 +172,8 @@ Gaussian. Equivalently, if $\alpha$ is the common law of the $X_i$, this law is
 the rescaled convolution $(D_{1/\sqrt n})_\sharp\alpha^{*n}$. Wasserstein
 distances make this qualitative convergence quantitative. The next result is
 a $\Wass_1$ form of the Berry--Esseen theorem: it controls the error uniformly
-over all $1$-Lipschitz test functions.
-
-Figure {ref}`fig:matching-quantitative-clt` illustrates the elementary Bernoulli case.
-
-(fig:matching-quantitative-clt)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("matching-quantitative-clt")
-```
-
-*Central-limit theorem for normalized Bernoulli sums. Starting from
-$\alpha_0=\frac12(\delta_{-1}+\delta_1)$, the law of
-$Z_n=n^{-1/2}\sum_i X_i$ remains discrete, but its rescaled atom heights
-approach the standard Gaussian density shown in gray. The Wasserstein
-Berry--Esseen bound below quantifies this weak convergence by a $\Wass_1$
-distance.*
-:::
-
-The interactive demo varies the number of summands and the Bernoulli skew,
-making the Wasserstein view of weak convergence visible even while the law
-remains discrete.
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Use the number-of-summands and Bernoulli-skew controls to watch the Wasserstein CLT scaling predicted by Lipschitz test functions.
-:::
-
-<iframe class="ot4ml-live-frame" title="Quantitative CLT controls" src="../live/kantorovich-clt.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
+over all $1$-Lipschitz test functions. The qualitative Bernoulli example was
+visualized earlier in Figure {ref}`fig:matching-quantitative-clt`.
 
 (prop-berry-esseen-w1)=
 :::{admonition} Proposition: Berry--Esseen bound in $\Wass_1$
@@ -253,6 +224,42 @@ $C\mathbb E|X_1|^3/\sqrt n$. The Lipschitz bound on $f_h'$ replaces this
 average by $\mathbb E f_h'(S_n)$ at the same order. Stein's identity and the
 duality formula then prove the claim
 {cite:p}`berry1941accuracy,esseen1942liapunoff,chen2011normal,bobkov2018berry,rio2011asymptotic`.
+:::
+
+Figure {ref}`fig:statistical-berry-esseen-w1` confronts the estimate with exact
+one-dimensional computations. For a centered, unit-variance input law
+$\alpha_0$, define
+
+```{math}
+\alpha_n=(D_{1/\sqrt n})_\sharp\alpha_0^{*n},
+\qquad n\geq1,
+```
+
+so that $\alpha_1=\alpha_0$, and set
+$m_3(\alpha_0)=\int |x|^3\,d\alpha_0(x)$. The distance to the standard
+Gaussian is evaluated by the one-dimensional quantile formula, without Monte
+Carlo error. In the distribution panels, each atom mass is divided by the
+current lattice spacing, which puts the discrete laws on the local-density
+scale of the Gaussian curve.
+
+(fig:statistical-berry-esseen-w1)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("statistical-berry-esseen-w1", width=920)
+```
+
+*Numerical Berry--Esseen rates in $\Wass_1$.* The two left panels show
+$\alpha_0$, $\alpha_2$, and $\alpha_6$ for a symmetric Bernoulli law and for
+a standardized law uniform on $101$ equally spaced points; the gray curve is
+the standard Gaussian density. The right panel plots the numerically exact
+values of $\Wass_1(\alpha_n,\gamma)$ as solid curves. The matching-color dashed
+curves are $m_3(\alpha_0)/\sqrt n$, namely the theorem's rate factor with its
+universal constant set to $C=1$. The Bernoulli error follows the predicted
+$n^{-1/2}$ scale, whereas the dense discrete input converges substantially
+faster over the displayed range.
 :::
 
 ### Empirical-Process Fluctuations

@@ -1479,6 +1479,161 @@ The compact reverse estimates in Proposition {ref}`prop-sliced-wasserstein-metri
 :::
 
 
+### Sliced Wasserstein Between Gaussians
+
+Gaussian projections remain Gaussian, so quadratic sliced transport reduces
+to the one-dimensional Gaussian formula in every direction. This gives an
+exact angular representation and makes its relation with the Bures covariance
+geometry explicit.
+
+(prop-sliced-gaussian)=
+:::{admonition} Proposition: Sliced Wasserstein Between Gaussians
+:class: theorem
+Let
+$\alpha=\Gaussian(m_\alpha,\Sigma_\alpha)$ and
+$\beta=\Gaussian(m_\beta,\Sigma_\beta)$ on $\RR^d$, with positive
+semidefinite covariance matrices. Then
+
+```{math}
+:label: eq-sliced-gaussian
+\begin{aligned}
+\SW_2(\alpha,\beta)^2
+&=
+\frac{\norm{m_\alpha-m_\beta}^2}{d}
++\int_{\Sphere^{d-1}}
+\left(
+\sqrt{\theta^\top\Sigma_\alpha\theta}
+-\sqrt{\theta^\top\Sigma_\beta\theta}
+\right)^2\d\sigma(\theta)\\
+&=
+\frac{\norm{m_\alpha-m_\beta}^2
++\operatorname{tr}(\Sigma_\alpha)+\operatorname{tr}(\Sigma_\beta)}{d}
+-2\int_{\Sphere^{d-1}}
+\sqrt{(\theta^\top\Sigma_\alpha\theta)
+(\theta^\top\Sigma_\beta\theta)}\d\sigma(\theta).
+\end{aligned}
+```
+
+Moreover,
+
+```{math}
+:label: eq-sliced-gaussian-fidelity
+\int_{\Sphere^{d-1}}
+\sqrt{(\theta^\top\Sigma_\alpha\theta)
+(\theta^\top\Sigma_\beta\theta)}\d\sigma(\theta)
+\geq
+\frac1d\operatorname{tr}\left[
+\left(\Sigma_\alpha^{1/2}\Sigma_\beta
+\Sigma_\alpha^{1/2}\right)^{1/2}
+\right],
+```
+
+and therefore
+$\SW_2(\alpha,\beta)^2\leq\Wass_2(\alpha,\beta)^2/d$. If both
+covariances are positive definite, equality holds if and only if they are
+proportional. More generally, if
+$\Sigma_\alpha=s^2\Sigma$ and $\Sigma_\beta=t^2\Sigma$ for some
+positive semidefinite $\Sigma$ and $s,t\geq0$, then
+
+```{math}
+:label: eq-sliced-gaussian-proportional
+\SW_2(\alpha,\beta)^2
+=\frac1d\Wass_2(\alpha,\beta)^2
+=\frac{\norm{m_\alpha-m_\beta}^2
++(s-t)^2\operatorname{tr}(\Sigma)}{d}.
+```
+:::
+
+Indeed, $(P_\theta)_\sharp\alpha$ is the one-dimensional Gaussian with mean
+$\theta^\top m_\alpha$ and variance
+$\theta^\top\Sigma_\alpha\theta$. The one-dimensional Gaussian formula,
+followed by the spherical identity
+$\int\theta\theta^\top\d\sigma(\theta)=I_d/d$, proves the displayed
+expressions. For positive-definite covariances, let $A$ be the Bures transport
+matrix, so that $A\Sigma_\alpha A=\Sigma_\beta$. Cauchy--Schwarz for the
+$\Sigma_\alpha$-inner product gives
+
+```{math}
+\theta^\top\Sigma_\alpha A\theta
+\leq
+\sqrt{(\theta^\top\Sigma_\alpha\theta)
+(\theta^\top\Sigma_\beta\theta)}.
+```
+
+Integration yields the fidelity bound above because
+$\operatorname{tr}(\Sigma_\alpha A)
+=\operatorname{tr}[(\Sigma_\alpha^{1/2}\Sigma_\beta
+\Sigma_\alpha^{1/2})^{1/2}]$. The singular case follows by continuity.
+Equality forces $A\theta$ to be collinear with $\theta$ in every direction,
+hence $A=rI_d$ and $\Sigma_\beta=r^2\Sigma_\alpha$.
+
+The spherical formula is exact, but for generic anisotropic covariances it has
+no Bures-like matrix-square-root simplification and is evaluated by angular
+quadrature or Monte Carlo. In dimensions $d>1$, nonidentical measures cannot
+satisfy $\SW_2=\Wass_2$ under normalized spherical averaging; the two
+distances coincide in dimension one.
+
+Two isotropic covariances saturate the normalized upper bound:
+
+```{math}
+\Sigma_\alpha=s^2I_d,\quad\Sigma_\beta=t^2I_d
+\quad\Longrightarrow\quad
+\SW_2^2
+=\frac{\norm{m_\alpha-m_\beta}^2}{d}+(s-t)^2
+=\frac1d\Wass_2^2.
+```
+
+One isotropic covariance alone does not suffice. If
+$\Sigma_\alpha=s^2I_d$ and $(\lambda_i)_i$ are the eigenvalues of
+$\Sigma_\beta$, concavity of the square root gives
+
+```{math}
+\sqrt{\theta^\top\Sigma_\beta\theta}
+=\sqrt{\sum_i\lambda_i\theta_i^2}
+\geq\sum_i\sqrt{\lambda_i}\theta_i^2.
+```
+
+Consequently,
+
+```{math}
+\int_{\Sphere^{d-1}}\sqrt{\theta^\top\Sigma_\beta\theta}
+\d\sigma(\theta)
+\geq \frac1d\operatorname{tr}(\Sigma_\beta^{1/2}),
+```
+
+with equality only when $\Sigma_\beta$ is isotropic. Hence
+$\SW_2^2<\Wass_2^2/d$ for an anisotropic $\Sigma_\beta$.
+
+Rank-one covariances expose the orientation gap explicitly. If
+$\Sigma_\alpha=a^2uu^\top$, $\Sigma_\beta=b^2vv^\top$, and
+$\chi=|\langle u,v\rangle|$, then
+
+```{math}
+\begin{aligned}
+\SW_2(\alpha,\beta)^2
+&=\frac1d\left[
+\norm{m_\alpha-m_\beta}^2+a^2+b^2
+-\frac{4ab}{\pi}\left(\sqrt{1-\chi^2}+\chi\arcsin\chi\right)
+\right],\\
+\Wass_2(\alpha,\beta)^2
+&=\norm{m_\alpha-m_\beta}^2+a^2+b^2-2ab\chi.
+\end{aligned}
+```
+
+To obtain the cross term, rotational invariance allows
+$u=e_1$ and $v=\chi e_1+\sqrt{1-\chi^2}e_2$. Writing
+$(\theta_1,\theta_2)=R(\cos\varphi,\sin\varphi)$, with $\varphi$ uniform and
+$\mathbb E[R^2]=2/d$, reduces the calculation to an elementary angular
+integral.
+
+Aligned rank-one covariances saturate the normalized upper bound, whereas
+centered, orthogonal, equal-scale covariances satisfy
+$\SW_2=\sqrt{1-2/\pi}\,\Wass_2/\sqrt d$. Thus sliced transport retains the
+relative angle but attenuates it through angular averaging rather than the
+linear Bures factor $\chi$. The corresponding Gaussian sliced-Wasserstein
+flow is revisited in the Gaussian closure catalogue.
+
+
 ### $L^q$-Sliced, Max-Sliced and Subspace Variants
 
 The exponent used to aggregate projection directions need not coincide with

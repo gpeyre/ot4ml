@@ -3,8 +3,8 @@
 The official tutorial archives are several gigabytes. This script relies on
 HTTP byte ranges to extract only the official force-layout embedding and one
 consecutive transport map. It then stores the two-dimensional display
-coordinates and deterministic farthest-point display subsets in a small NPZ
-file consumed by the Kantorovich Waddington-OT notebook.
+coordinates and paper-style ancestor/descendant summaries in a small NPZ file
+consumed by the Kantorovich Waddington-OT notebook.
 """
 
 from __future__ import annotations
@@ -55,65 +55,13 @@ def extract_zip_member(url: str, member: str, target: Path) -> None:
                 shutil.copyfileobj(source, destination, length=4 * 2**20)
 
 
-def farthest_point_indices(
-    points: np.ndarray,
-    n_samples: int,
-    *,
-    start_index: int | None = None,
-) -> np.ndarray:
-    """Return a deterministic Euclidean farthest-point subset.
-
-    Args:
-        points: Candidate coordinates with shape ``(n_points, dimension)``.
-        n_samples: Number of distinct indices to select.
-        start_index: Optional first selected index. The default is the point
-            nearest the candidate centroid.
-
-    Returns:
-        Selected integer indices in greedy order.
-
-    Raises:
-        ValueError: If ``points`` or ``n_samples`` is invalid.
-    """
-    points = np.asarray(points, dtype=float)
-    if points.ndim != 2 or len(points) == 0:
-        raise ValueError("points must be a nonempty two-dimensional array")
-    if not 1 <= n_samples <= len(points):
-        raise ValueError("n_samples must lie between one and the point count")
-
-    standardized = (points - points.mean(axis=0)) / (
-        points.std(axis=0) + np.finfo(float).eps
-    )
-    if start_index is None:
-        start_index = int(np.argmin(np.sum(standardized**2, axis=1)))
-    if not 0 <= start_index < len(points):
-        raise ValueError("start_index is outside the candidate array")
-
-    selected = np.empty(n_samples, dtype=np.int64)
-    selected[0] = start_index
-    minimum_squared_distance = np.sum(
-        (standardized - standardized[start_index]) ** 2,
-        axis=1,
-    )
-    for sample_index in range(1, n_samples):
-        selected[sample_index] = int(np.argmax(minimum_squared_distance))
-        squared_distance = np.sum(
-            (standardized - standardized[selected[sample_index]]) ** 2,
-            axis=1,
-        )
-        np.minimum(
-            minimum_squared_distance,
-            squared_distance,
-            out=minimum_squared_distance,
-        )
-    return selected
-
-
 def official_force_layout_coordinates(
     embedding_path: Path,
     source_ids: np.ndarray,
     target_ids: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+    *,
+    n_background: int = 20_000,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load the official two-dimensional force-layout coordinates.
 
     Args:
@@ -122,7 +70,8 @@ def official_force_layout_coordinates(
         target_ids: Cell identifiers for the second snapshot.
 
     Returns:
-        Source and target coordinates in the shared force-layout embedding.
+        Source coordinates, target coordinates, and a density-preserving random
+        subset of the complete force-layout background.
 
     Raises:
         KeyError: If a transport-map cell is absent from the embedding table.
@@ -134,6 +83,7 @@ def official_force_layout_coordinates(
         dtype=None,
         encoding="utf-8",
     )
+    all_coordinates = np.column_stack([table["x"], table["y"]]).astype(np.float32)
     coordinates = {
         cell_id: np.array([x, y], dtype=np.float32)
         for cell_id, x, y in zip(table["id"], table["x"], table["y"])
@@ -150,95 +100,183 @@ def official_force_layout_coordinates(
         )
     source = np.stack([coordinates[cell_id] for cell_id in source_ids])
     target = np.stack([coordinates[cell_id] for cell_id in target_ids])
-    return source, target
-
-
-def sample_representative_plan_atoms(
-    plan: np.ndarray,
-    source: np.ndarray,
-    target: np.ndarray,
-    *,
-    n_candidates: int = 12_000,
-    n_display: int = 650,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Sample plan atoms by mass and thin them in joint endpoint space.
-
-    Args:
-        plan: Nonnegative Waddington-OT transport matrix.
-        source: Source display coordinates.
-        target: Target display coordinates.
-        n_candidates: Number of mass-weighted candidate pairs.
-        n_display: Number of representative trajectories retained by FPS.
-
-    Returns:
-        Source and target indices of the retained plan atoms.
-    """
-    normalized_plan = np.maximum(np.asarray(plan, dtype=float), 0.0)
-    normalized_plan /= normalized_plan.sum()
     random = np.random.default_rng(RANDOM_SEED)
-    flat_samples = random.choice(
-        normalized_plan.size,
-        size=n_candidates,
-        replace=True,
-        p=normalized_plan.ravel(),
+    background_indices = random.choice(
+        len(all_coordinates),
+        size=min(n_background, len(all_coordinates)),
+        replace=False,
     )
-    unique_samples, multiplicities = np.unique(flat_samples, return_counts=True)
-    source_indices, target_indices = np.unravel_index(
-        unique_samples,
-        normalized_plan.shape,
-    )
-    joint_coordinates = np.column_stack(
-        [source[source_indices], target[target_indices]]
-    )
-    retained = farthest_point_indices(
-        joint_coordinates,
-        min(n_display, len(joint_coordinates)),
-        start_index=int(np.argmax(multiplicities)),
-    )
-    return source_indices[retained], target_indices[retained]
+    return source, target, all_coordinates[background_indices]
 
 
-def select_high_mass_segments(
+def farthest_point_indices(points: np.ndarray, n_samples: int) -> np.ndarray:
+    """Return a deterministic farthest-point subset of planar coordinates.
+
+    Args:
+        points: Nonempty coordinate array of shape ``(n_points, 2)``.
+        n_samples: Number of distinct indices to retain.
+
+    Returns:
+        Selected integer indices in greedy order.
+    """
+    if points.ndim != 2 or points.shape[1] != 2 or len(points) == 0:
+        raise ValueError("points must have shape (n_points, 2)")
+    n_samples = min(int(n_samples), len(points))
+    selected = np.empty(n_samples, dtype=np.int64)
+    selected[0] = int(np.argmin(np.sum((points - 0.5) ** 2, axis=1)))
+    minimum_squared_distance = np.sum(
+        (points - points[selected[0]]) ** 2,
+        axis=1,
+    )
+    for sample_index in range(1, n_samples):
+        selected[sample_index] = int(np.argmax(minimum_squared_distance))
+        squared_distance = np.sum(
+            (points - points[selected[sample_index]]) ** 2,
+            axis=1,
+        )
+        np.minimum(minimum_squared_distance, squared_distance, out=minimum_squared_distance)
+    return selected
+
+
+def nearest_indices(
+    points: np.ndarray,
+    candidates: np.ndarray,
+    anchor: np.ndarray,
+    n_samples: int,
+) -> np.ndarray:
+    """Select candidate points nearest a prescribed anchor.
+
+    Args:
+        points: Full coordinate array of shape ``(n_points, 2)``.
+        candidates: Integer indices eligible for selection.
+        anchor: Two-dimensional anchor in the same coordinate system.
+        n_samples: Maximum number of selected points.
+
+    Returns:
+        Selected integer indices ordered by increasing distance to ``anchor``.
+    """
+    squared_distances = np.sum((points[candidates] - anchor) ** 2, axis=1)
+    order = np.argsort(squared_distances)
+    return candidates[order[: min(n_samples, len(candidates))]]
+
+
+def select_target_regions(
+    plan: np.ndarray,
+    target: np.ndarray,
+    *,
+    n_per_region: int = 45,
+    n_candidate_regions: int = 40,
+    minimum_separation: float = 0.10,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Select separated target regions with appreciable shared ancestry.
+
+    Args:
+        plan: Nonnegative source-by-target Waddington-OT matrix.
+        target: Target force-layout coordinates of shape ``(m, 2)``.
+        n_per_region: Number of cells retained around each candidate center.
+        n_candidate_regions: Number of well-spread candidate centers.
+        minimum_separation: Minimum normalized separation between centers.
+
+    Returns:
+        Integer indices of the two regions and their normalized pulled-back
+        ancestor distributions on the source snapshot.
+    """
+    lower = np.quantile(target, 0.02, axis=0)
+    upper = np.quantile(target, 0.98, axis=0)
+    normalized = (target - lower) / np.maximum(upper - lower, 1e-12)
+    interior = np.flatnonzero(np.all((normalized >= 0.0) & (normalized <= 1.0), axis=1))
+    anchor_local = farthest_point_indices(
+        normalized[interior],
+        n_candidate_regions,
+    )
+    anchors = interior[anchor_local]
+
+    regions = []
+    ancestors = []
+    centers = []
+    all_indices = np.arange(len(target))
+    for anchor_index in anchors:
+        region = nearest_indices(
+            normalized,
+            all_indices,
+            normalized[anchor_index],
+            n_per_region,
+        )
+        regions.append(region)
+        ancestors.append(normalize_mass(plan[:, region].sum(axis=1)))
+        centers.append(normalized[region].mean(axis=0))
+
+    best_score = -np.inf
+    best_pair = None
+    for first in range(len(regions)):
+        for second in range(first + 1, len(regions)):
+            separation = float(np.linalg.norm(centers[first] - centers[second]))
+            if separation < minimum_separation:
+                continue
+            affinity = float(np.sum(np.sqrt(ancestors[first] * ancestors[second])))
+            score = affinity * np.sqrt(separation)
+            if score > best_score:
+                best_score = score
+                best_pair = (first, second)
+    if best_pair is None:
+        raise ValueError("no separated target-region pair was found")
+    first, second = best_pair
+    return regions[first], regions[second], ancestors[first], ancestors[second]
+
+
+def normalize_mass(values: np.ndarray) -> np.ndarray:
+    """Normalize a nonnegative mass vector to unit total mass."""
+    values = np.maximum(np.asarray(values, dtype=float), 0.0)
+    total = float(values.sum())
+    if total <= 0.0:
+        raise ValueError("Waddington-OT summary has zero transported mass")
+    return values / total
+
+
+def paper_style_transport_summaries(
     plan: np.ndarray,
     source: np.ndarray,
     target: np.ndarray,
     *,
-    n_candidates: int = 5_000,
-    n_segments: int = 44,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Select well-spread segments among the largest coupling entries.
+    n_source_seed: int = 55,
+) -> dict[str, np.ndarray]:
+    """Compute descendant, ancestor, and shared-ancestry summaries.
+
+    The construction follows the push-forward and pull-back visualizations in
+    Schiebinger et al. rather than drawing line segments in the display plane.
 
     Args:
-        plan: Nonnegative Waddington-OT transport matrix.
-        source: Source display coordinates.
-        target: Target display coordinates.
-        n_candidates: Number of largest plan entries considered.
-        n_segments: Number of segments retained for the coupling panel.
+        plan: Nonnegative source-by-target Waddington-OT matrix.
+        source: Source force-layout coordinates.
+        target: Target force-layout coordinates.
+        n_source_seed: Number of source cells in the descendant seed set.
 
     Returns:
-        Source indices, target indices, and normalized segment masses.
+        Target branch sets, a compact shared-ancestor source set, descendant
+        masses on the target, and ancestor masses on the source.
     """
     plan = np.maximum(np.asarray(plan, dtype=float), 0.0)
-    candidate_count = min(n_candidates, plan.size)
-    flat_candidates = np.argpartition(plan.ravel(), -candidate_count)[
-        -candidate_count:
-    ]
-    source_indices, target_indices = np.unravel_index(
-        flat_candidates,
-        plan.shape,
+    target_a, target_b, ancestor_a, ancestor_b = select_target_regions(plan, target)
+
+    # Cells carrying mass toward both regions form a compact common-ancestor seed.
+    overlap = np.sqrt(ancestor_a * ancestor_b)
+    robust_scale = np.quantile(source, 0.95, axis=0) - np.quantile(
+        source, 0.05, axis=0
     )
-    endpoints = np.column_stack(
-        [source[source_indices], target[target_indices]]
-    )
-    first = int(np.argmax(plan.ravel()[flat_candidates]))
-    retained = farthest_point_indices(
-        endpoints,
-        min(n_segments, candidate_count),
-        start_index=first,
-    )
-    masses = plan[source_indices[retained], target_indices[retained]]
-    masses /= masses.max()
-    return source_indices[retained], target_indices[retained], masses
+    source_scaled = source / np.maximum(robust_scale, 1e-12)
+    overlap_center = np.average(source_scaled, axis=0, weights=overlap)
+    squared_distance = np.sum((source_scaled - overlap_center) ** 2, axis=1)
+    score = overlap / (0.08 + squared_distance)
+    source_seed = np.argsort(score)[-min(n_source_seed, len(source)) :]
+    descendant = normalize_mass(plan[source_seed].sum(axis=0))
+    return {
+        "source_seed": source_seed,
+        "target_a": target_a,
+        "target_b": target_b,
+        "descendant_mass": descendant,
+        "ancestor_a_mass": ancestor_a,
+        "ancestor_b_mass": ancestor_b,
+    }
 
 
 def prepare_asset(cache_dir: Path, output_path: Path) -> None:
@@ -256,38 +294,26 @@ def prepare_asset(cache_dir: Path, output_path: Path) -> None:
     transport = ad.read_h5ad(transport_path)
     source_ids = np.asarray(transport.obs_names)
     target_ids = np.asarray(transport.var_names)
-    source, target = official_force_layout_coordinates(
+    source, target, background = official_force_layout_coordinates(
         embedding_path,
         source_ids,
         target_ids,
     )
     plan = np.asarray(transport.X, dtype=float)
-
-    source_display = farthest_point_indices(source, min(500, len(source)))
-    target_display = farthest_point_indices(target, min(500, len(target)))
-    pair_source, pair_target = sample_representative_plan_atoms(
-        plan,
-        source,
-        target,
-    )
-    segment_source, segment_target, segment_mass = select_high_mass_segments(
-        plan,
-        source,
-        target,
-    )
+    summaries = paper_style_transport_summaries(plan, source, target)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         output_path,
+        background=background.astype(np.float32),
         source=source.astype(np.float32),
         target=target.astype(np.float32),
-        source_display=source_display.astype(np.int32),
-        target_display=target_display.astype(np.int32),
-        pair_source=pair_source.astype(np.int32),
-        pair_target=pair_target.astype(np.int32),
-        segment_source=segment_source.astype(np.int32),
-        segment_target=segment_target.astype(np.int32),
-        segment_mass=segment_mass.astype(np.float32),
+        source_seed=summaries["source_seed"].astype(np.int32),
+        target_a=summaries["target_a"].astype(np.int32),
+        target_b=summaries["target_b"].astype(np.int32),
+        descendant_mass=summaries["descendant_mass"].astype(np.float32),
+        ancestor_a_mass=summaries["ancestor_a_mass"].astype(np.float32),
+        ancestor_b_mass=summaries["ancestor_b_mass"].astype(np.float32),
         source_day=np.float32(10.0),
         target_day=np.float32(10.5),
     )

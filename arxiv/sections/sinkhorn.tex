@@ -947,11 +947,9 @@ The log-sum-exp form is best read as a smoothed minimum. This gives the entropic
 			{\min}_{\b}^\epsilon(h) \eqdef -\epsilon \log \sum_j e^{-h_j/\epsilon} \b_j.
 		\]
 		It converges to $\min_{j:\,b_j>0}h_j$ as $\epsilon\to0$; for positive weights this is $\min_jh_j$. Given a cost matrix $\C$, the discrete soft $c$-transforms are
-	\eql{\label{eq-soft-c-1}
-		\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD )
-	}
-	and
-	\eql{\label{eq-soft-c-2}
+	\eql{\label{eq-discrete-soft-c-transforms}
+		\fD_i = {\min}_{\b}^\epsilon( \C_{i,\cdot} - \gD ),
+		\qquad
 		\gD_j = {\min}_{\a}^\epsilon( \C_{\cdot,j} - \fD ).
 	}
 \end{defn}
@@ -1007,7 +1005,7 @@ Figure~\ref{fig:sinkhorn-soft-c-transform-epsilon} visualizes the corresponding 
 \centering
 \setlength{\tabcolsep}{2pt}
 \begin{tabular}{@{}cccc@{}}
-\small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ & \small hard transform \\[-.15em]
+\small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ & \small $\epsilon=0$ \\[-.15em]
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p55.pdf} &
 \index{soft!c-transform}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon--eps-0p14.pdf} &
@@ -1073,7 +1071,7 @@ The corresponding soft $c$-transforms are the exact block maximizers of this dua
 		\qquad x\in\Xx . \label{eq-soft-c-cont-g}
 	\end{align}
 \end{defn}
-In the case of discrete measures, these formulas reduce to~\eqref{eq-soft-c-1} and~\eqref{eq-soft-c-2}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
+In the case of discrete measures, these formulas reduce to~\eqref{eq-discrete-soft-c-transforms}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
 \index{soft!transform}% strictindex
 \index{semi-discrete!OT}% strictindex
 
@@ -1733,18 +1731,34 @@ On $\RR^d$, the heat kernel for $\partial_t u=\Delta u$ is
 \[
 	h_t(x,y)=(4\pi t)^{-d/2}\exp\!\left(-\frac{\norm{x-y}^2}{4t}\right).
 \]
-Up to normalization, the Sinkhorn Gibbs kernel for the quadratic cost is therefore a Gaussian heat kernel with heat time $t=\epsilon/4$. A neighboring but distinct construction uses the resolvent of the positive Laplacian. On the line, the kernel of $(I-\tau\Delta)^{-1}$ is exactly proportional to $\exp(-|x-y|/\sqrt{\tau})$; in higher dimension it is a Yukawa--Bessel kernel with the same exponential tail. Thus one resolvent step gives a Laplace/Yukawa-type smoothing, while the heat semigroup gives the Gaussian kernel $\exp(-\norm{x-y}^2/(4t))$. On a Riemannian manifold or a surface $M$, the Euclidean distance is replaced by the geodesic distance $d_M$, and Varadhan's formula gives
+For the quadratic cost $c(x,y)=\norm{x-y}^2$, the Gibbs kernel used by Sinkhorn satisfies
 \[
-	-4t\log h_t(x,y)\longrightarrow d_M(x,y)^2
-	\qquad (t\downarrow0).
-\]
-This is the analytical basis of geodesics-in-heat methods~\cite{varadhan-1967,Crane2013}. In operator form, writing $L=-\Delta_M$ for the positive Laplace--Beltrami operator,
-\[
-	e^{-tL}
+	\K_\epsilon(x,y)
+	\eqdef e^{-\norm{x-y}^2/\epsilon}
 	=
-	\lim_{q\to\infty}\left(I+\frac{t}{q}L\right)^{-q}.
+	(\pi\epsilon)^{d/2}h_{\epsilon/4}(x,y).
 \]
-Thus a single inverse shifted Laplacian $(I+\tau L)^{-1}$ gives a Laplace/Yukawa smoothing, while repeated resolvent steps approximate the Gaussian heat kernel. On a triangulated surface or image grid, $L$ is replaced by a discrete Laplacian $L_h$, and one applies sparse linear solves rather than dense Gaussian matrices. This is attractive computationally, but the small-scale limit is delicate: the smoothing length, of order $\sqrt t$ for heat and $\sqrt\tau$ for one resolvent step, must be resolved by the mesh. If this length is sent to zero faster than the grid spacing, metrication artifacts and inconsistent discretizations can dominate the intended geodesic limit.
+The scalar factor is absorbed by the Sinkhorn scalings and therefore does not change the optimal coupling. On a Riemannian manifold or surface $M$, let $L=-\Delta_M$ and replace the dense Gibbs kernel by the intrinsic heat operator $\mathsf H_\epsilon\eqdef e^{-(\epsilon/4)L}$. For histograms on the same discretized domain, the scaling steps become
+\[
+	\uD^{(k+1)}=\a\oslash\bigl(\mathsf H_\epsilon\vD^{(k)}\bigr),
+	\qquad
+	\vD^{(k+1)}=\b\oslash\bigl(\mathsf H_\epsilon^\top\uD^{(k+1)}\bigr).
+\]
+Here $\mathsf H_\epsilon$ includes quadrature weights and $\mathsf H_\epsilon^\top$ is its discrete adjoint; they coincide in a symmetric mass-normalized discretization. Thus heat diffusion fits Sinkhorn at its only expensive operation: multiplication by the Gibbs kernel. Equivalently, it uses the effective cost $c_\epsilon(x,y)\eqdef-\epsilon\log h_{\epsilon/4}(x,y)$, and Varadhan's formula gives
+\[
+	c_\epsilon(x,y)\longrightarrow d_M(x,y)^2
+	\qquad (\epsilon\downarrow0).
+\]
+Hence convolutional Sinkhorn recovers the squared geodesic ground cost at small temperature without computing all pairwise geodesic distances~\cite{varadhan-1967,2015-solomon-siggraph}. The same asymptotic relation underlies geodesics-in-heat distance estimation~\cite{Crane2013}.
+
+The heat operator can be applied through shifted-Laplacian solves,
+\[
+	\mathsf H_\epsilon
+	=
+	\lim_{q\to\infty}
+	\left(I+\frac{\epsilon}{4q}L\right)^{-q}.
+\]
+On a triangulated surface or image grid, replace $L$ by a sparse positive semidefinite Laplacian $L_h$ and set $A_{\epsilon,q}\eqdef I+\epsilon L_h/(4q)$. For fixed $(\epsilon,q)$, a sparse Cholesky factorization $A_{\epsilon,q}=RR^\top$ is computed once. Each application of $\mathsf H_\epsilon$ is then approximated by $q$ successive solves with $A_{\epsilon,q}$, and the same factorization is reused throughout Sinkhorn's iterations~\cite{2015-solomon-siggraph}. This avoids a dense kernel and all-pairs geodesic distances. The diffusion length is of order $\sqrt\epsilon$ and must be resolved by the mesh; taking $\epsilon$ smaller than the squared grid spacing produces metrication and discretization artifacts.
 \index{heat kernel}% strictindex
 \index{mesh size}% strictindex
 \index{discrete!Laplacian}% strictindex
@@ -1758,15 +1772,15 @@ Figure~\ref{fig:sinkhorn-geodesics-in-heat} compares the exact distance to a non
 \setlength{\tabcolsep}{2pt}
 \begin{tabular}{@{}cccc@{}}
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--exact.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--tau-small.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--tau-medium.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--tau-large.pdf} \\[-.1em]
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--epsilon-small.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--epsilon-medium.pdf} &
+\includegraphics[width=.235\linewidth]{figures/sinkhorn-geodesics-in-heat--epsilon-large.pdf} \\[-.1em]
 \small exact distance &
-\small small $\tau$ &
-\small medium $\tau$ &
-\small larger $\tau$
+\small small $\epsilon$ &
+\small medium $\epsilon$ &
+\small larger $\epsilon$
 \end{tabular}
-\caption{\emph{Geodesics-in-heat approximation of the distance to a dense red non-convex source curve on a two-dimensional grid.} The first panel shows the exact Euclidean distance to the curve. The other panels diffuse a narrow band around the same curve by one backward-Euler resolvent step with Neumann boundary conditions, then recover an approximate distance by the normalized-gradient Poisson solve. Each panel is robustly normalized, and the contour values are chosen from quantiles of the displayed field so that level lines are distributed evenly across the image. Increasing the resolvent scale $\tau$ stabilizes the sparse linear solves but progressively rounds the non-convex geometry of the level sets.}
+\caption{\emph{Geodesics-in-heat approximation of the distance to a dense red non-convex source curve on a two-dimensional grid.} The first panel shows the exact Euclidean distance to the curve. The other panels diffuse a narrow band by the one-step approximation $(I+\epsilon L_h/4)^{-1}$ with Neumann boundary conditions, then recover a distance by the normalized-gradient Poisson solve. Increasing the Sinkhorn temperature $\epsilon$ suppresses unresolved grid-scale artifacts but progressively rounds the non-convex level-set geometry.}
 \index{geodesics in heat}% strictindex
 \index{Poisson equation}% strictindex
 \label{fig:sinkhorn-geodesics-in-heat}

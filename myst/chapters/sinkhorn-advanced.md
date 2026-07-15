@@ -1237,7 +1237,7 @@ K^{\ell+1}\simplex_3
 \subseteq K^\ell\simplex_3.
 ```
 
-The three panels use one explicit family:
+The first two panels use the explicit family
 
 ```{math}
 J_3=\frac13\mathbf1_3\mathbf1_3^\top,
@@ -1257,24 +1257,39 @@ $|\delta|<(1-\rho)/3$. We use
 
 ```{math}
 \rho=.90,\qquad \delta=.014,\qquad
-K_1=K_{\rho,0},\quad K_2=K_{\rho,\delta},\quad K_3=K_{\rho,-\delta}.
+K_1=K_{\rho,0},\quad K_2=K_{\rho,\delta}.
 ```
 
 The control $K_1$ acts as $\rho I$ on the zero-sum tangent plane. Since the
 restriction of $A$ has eigenvalues $\pm\mathrm i\sqrt3$, the non-Perron
 eigenvalues of $K_{\rho,\delta}$ are
-$\rho\pm\mathrm i\sqrt3\delta$. Thus $K_2$ and $K_3=K_2^\top$ have the same
-contraction and turn gradually in opposite directions. Writing
+$\rho\pm\mathrm i\sqrt3\delta$. Thus $K_2$ contracts isotropically while
+turning gradually. The third panel instead uses the positive doubly
+stochastic, non-normal kernel
+
+```{math}
+K_3=K_{\mathrm{aniso}}
+=
+\begin{pmatrix}
+.950&.018&.032\\
+.042&.880&.078\\
+.008&.102&.890
+\end{pmatrix}.
+```
+
+Its non-Perron eigenvalues are approximately $.9222$ and $.7978$. Their
+unequal moduli make the images progressively slender, while non-normality adds
+shear and a gradual transient turn. Writing
 
 ```{math}
 r_i=\max\{|z|:z\in\operatorname{spec}(K_i),\ z\ne1\}
 ```
 
-gives $r_1=\rho$ and
-$r_2=r_3=\sqrt{\rho^2+3\delta^2}\simeq.9003$. This Euclidean asymptotic rate
+gives $r_1=\rho$, $r_2=\sqrt{\rho^2+3\delta^2}\simeq.9003$, and
+$r_3\simeq.9222$. This Euclidean asymptotic rate
 is distinct from the global Birkhoff factor $\lambda(K_i)$ in Hilbert's metric.
 
-Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` contrasts the symmetric baseline with two slowly rotating positive kernels from the same parametric family.
+Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` contrasts isotropic contraction, rotation, and anisotropic non-normal contraction.
 
 (fig:sinkhorn-birkhoff-simplex-contraction)=
 :::{div}
@@ -1282,18 +1297,18 @@ Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` contrasts the symmetric 
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-# Parameterized positive kernels with opposite cyclic orientations.
+# Isotropic, rotating, and anisotropic positive kernels.
 show_book_figure("sinkhorn-birkhoff-simplex-contraction")
 ```
 
 *Positive Markov kernels contract the three-state simplex and can
-simultaneously rotate its image.* With $K_{\rho,\delta}$ defined above, the
-headings give $(\rho,\delta)=(.90,0),(.90,.014),(.90,-.014)$. Color progresses
-from red at $\ell=0$ to blue at $\ell=15$, and the star is the common
-stationary vector $\mathbf1_3/3$. The symmetric $K_1$ keeps parallel edges,
-whereas the transposed pair $K_2,K_3$ turns the consecutive triangles in
-opposite directions. The outer boundary is only a geometric reference, since
-the Hilbert metric becomes finite after the first positive image.
+simultaneously rotate its image.* Color progresses from red at $\ell=0$ to
+blue at $\ell=15$, and the star is the common stationary vector
+$\mathbf1_3/3$. The isotropic $K_1$ keeps parallel edges, $K_2$ rotates an
+essentially homothetic triangle, and the non-normal $K_3$ both turns and
+strongly elongates its image because its tangent modes contract at unequal
+rates. The outer boundary is only a geometric reference, since the Hilbert
+metric becomes finite after the first positive image.
 :::
 
 The theorem applies to positive linear maps between proper cones. Related
@@ -1454,8 +1469,8 @@ The figure reuses the three kernels $K_i$ from
 {ref}`fig:sinkhorn-birkhoff-simplex-contraction`, with the same uniform
 Sinkhorn marginals $a=b=\mathbf1_3/3$ in every panel. This isolates the passage from the linear action
 $K_i^\ell$ to the nonlinear balancing map $\widehat F_{u,i}^{\,\ell}$. The
-symmetric control remains aligned, while the cyclic imbalances of $K_2$ and
-$K_3$ gently turn the curved images in opposite directions. The normalized
+symmetric control remains aligned, $K_2$ turns the curved images, and the
+unequal tangent rates of $K_3$ produce a pronounced anisotropic collapse. The normalized
 Sinkhorn fixed ray and stationary Markov vector both equal $\mathbf1_3/3$ in
 this doubly stochastic example, although they need not coincide in general.
 
@@ -1467,7 +1482,7 @@ Figure {ref}`fig:sinkhorn-projective-scaling-simplex` reuses the three kernels $
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-# Parameterized kernels with common uniform Sinkhorn marginals.
+# The same three kernels under complete Sinkhorn cycles.
 show_book_figure("sinkhorn-projective-scaling-simplex")
 ```
 
@@ -1476,8 +1491,9 @@ left scalings.* Panel $i$ reuses $K_i$ from the preceding linear figure and
 the common marginals $a=b=\mathbf1_3/3$. Color is the densely sampled boundary
 of $\widehat F_{u,i}^{\,\ell}(\simplex_3)$, progressing from the red triangle
 at $\ell=0$ to the blue curve at $\ell=15$; the star is
-$\widehat u_i^\star=\mathbf1_3/3$. Reciprocal scaling bends the sixteen
-boundaries, and $K_2,K_3$ turn them through small steps in opposite directions.
+$\widehat u_i^\star=\mathbf1_3/3$. Reciprocal scaling bends all sixteen
+boundaries; $K_2$ adds a gradual turn, whereas the non-normal $K_3$ combines
+turning with a much stronger collapse across one tangent direction.
 For these invertible kernels the curves are the actual boundaries of the
 nested image sets. The Hilbert estimate begins after the first positive cycle.
 :::

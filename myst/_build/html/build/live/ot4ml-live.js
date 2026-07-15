@@ -11727,7 +11727,7 @@ function init() {
     bind(drawSlicedRadon);
   } else if (kind === "sinkhorngeodesicheat") {
     controls.innerHTML = [
-      slider("gihEps", "heat scale", 0.16, 0.035, 0.42, 0.005),
+      slider("gihEps", "Sinkhorn epsilon", 0.16, 0.035, 0.42, 0.005),
       slider("gihPoints", "curve points", 72, 28, 140, 2),
     ].join("");
     bind(drawGeodesicHeat);

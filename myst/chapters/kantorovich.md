@@ -2050,11 +2050,32 @@ where $e_g\geq0$, $\sum_g e_g=1$, and $\varphi(g)$ is a gene embedding or annota
 Single-cell OT also has a complementary population-level interpretation:
 instead of representing one cell as a measure over genes, one treats every cell
 as one atom of a time-indexed population law. Figure
-{ref}`fig:kantorovich-waddington-ot` shows this second viewpoint on consecutive
-iPSC reprogramming snapshots and the Waddington-OT coupling of Schiebinger et
-al. {cite:p}`schiebinger2017reconstruction`. Because single-cell sequencing is
-destructive, the coupling encodes inferred ancestor--descendant relations
-between populations rather than tracks of individually observed cells.
+{ref}`fig:kantorovich-waddington-ot` follows the visualization introduced for
+Waddington-OT by Schiebinger et al. {cite:p}`schiebinger2017reconstruction`.
+Because single-cell sequencing is destructive, the coupling encodes inferred
+ancestor--descendant relations between consecutive populations rather than
+tracks of individually observed cells.
+
+To make this construction precise, let $\a_C$ be uniform on the labeled source
+set $C$, and let $\b_A,\b_B$ be uniform on the labeled target regions. For the
+released transport matrix $\P$, the displayed descendant and ancestor laws are
+
+```{math}
+\b_C^{\mathrm{desc}}
+=
+\frac{\P^\top\a_C}{\langle\P^\top\a_C,\ones\rangle},
+\qquad
+\a_R^{\mathrm{anc}}
+=
+\frac{\P\b_R}{\langle\P\b_R,\ones\rangle},
+\quad R\in\{A,B\}.
+```
+
+Thus the plan, not the two-dimensional embedding, propagates probabilities.
+For this compact illustration, $A$ and $B$ are separated target regions whose
+pulled-back laws retain nontrivial overlap, and $C$ is selected inside their
+common-ancestor region. Their common part is the componentwise minimum
+$\a_{\cap}^{\mathrm{anc}}=\min\{\a_A^{\mathrm{anc}},\a_B^{\mathrm{anc}}\}$.
 
 (fig:kantorovich-waddington-ot)=
 :::{div}
@@ -2062,20 +2083,18 @@ between populations rather than tracks of individually observed cells.
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-show_book_figure("kantorovich-waddington-ot")
+show_book_figure("kantorovich-waddington-ot", width=920)  # Labeled A/B/C regions.
 ```
 
-*Waddington-OT between consecutive single-cell snapshots.* The left panel
-superposes day-10 cells in red and day-10.5 cells in blue in the shared
-force-layout embedding released with the Waddington-OT tutorial; violet
-segments show a farthest-point subset of high-mass coupling entries. This
-embedding is used only for display: the released plan uses the authors'
-local-PCA transport geometry. The remaining panels move a mass-weighted,
-farthest-point-thinned sample of plan atoms along their Euclidean display
-segments, with color interpolated from red to blue; pale endpoints provide a
-common positional reference. The unbalanced plan is normalized only to sample
-these representative paths, which illustrate coupling-induced displacement
-rather than cells observed at intermediate times.
+*Waddington-OT between consecutive single-cell snapshots.* Every panel uses the
+official force-layout embedding, with the complete reprogramming landscape
+sampled in gray. The first overlays day-10 cells in red and day-10.5 cells in
+blue. Black rims and labels identify the conditioning sets: the second panel
+pushes $C$ forward to its descendants, while the third pulls $A$ backward to
+its ancestors. The last compares the ancestors of $A$ and $B$: red and blue
+encode the two exclusive parts, and violet their pointwise common part. Marker
+intensity and size encode normalized transported mass. The embedding is only a
+display plane; the released plan uses local 30-dimensional PCA costs.
 :::
 
 (ex-word-mover-distance)=
@@ -2213,6 +2232,38 @@ If $\al$ is the common law of the variables $X_i$, writing $\al^{*n}$ for the $n
 The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})_\sharp\al^{*n}$ converges weakly to the Gaussian $\Gaussian(0,\Id)$.
 :::
 
+Figure {ref}`fig:matching-quantitative-clt` makes this qualitative weak
+convergence visible in the elementary Bernoulli case: every finite-$n$ law is
+discrete, yet the normalized atom heights approach the Gaussian density.
+
+(fig:matching-quantitative-clt)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("matching-quantitative-clt")
+```
+
+*Central-limit theorem for normalized Bernoulli sums.* Starting from
+$\alpha_0=\frac12(\delta_{-1}+\delta_1)$, the law of
+$Z_n=n^{-1/2}\sum_i X_i$ remains discrete, but its rescaled atom heights
+approach the standard Gaussian density shown in gray. Proposition
+{ref}`prop-berry-esseen-w1` later quantifies this weak convergence in
+$\Wass_1$.
+:::
+
+The interactive version varies the number of summands and the Bernoulli skew,
+making weak convergence visible even while every displayed law remains
+discrete.
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Use the number-of-summands and Bernoulli-skew controls to watch the Wasserstein CLT scaling predicted by Lipschitz test functions.
+:::
+
+<iframe class="ot4ml-live-frame" title="Quantitative CLT controls" src="../live/kantorovich-clt.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
+
 (rem-wasserstein-berry-esseen-pointer)=
 :::{admonition} Remark: A quantitative CLT in Wasserstein form
 :class: ot4ml-remark
@@ -2277,32 +2328,58 @@ For Dirac masses,
 ```
 
 Thus the strong topology never sees Diracs converge unless they are eventually
-equal, while the Wasserstein topology captures their spatial convergence.
+equal, while the Wasserstein topology captures their spatial convergence. On
+an unbounded space, weak convergence alone does not prevent a vanishing amount
+of mass from escaping to infinity; Wasserstein convergence also controls the
+corresponding moment tail.
 
-(prop-wass-metrizes-weak-compact)=
-:::{admonition} Proposition: Wasserstein Metrizes Weak Convergence On Compact Spaces
+(prop-wass-topology-polish)=
+:::{admonition} Proposition: Wasserstein Convergence On Polish Spaces
 :class: important
-If $\Xx$ is compact, then $\al_k\rightharpoonup\al$ if and only if
-$\Wass_p(\al_k,\al)\to0$.
+Let $(\Xx,d)$ be Polish, let $1\leq p<+\infty$, and let
+$\al_k,\al\in\Pp_p(\Xx)$. For any $x_0\in\Xx$, the following are equivalent:
+
+1. $\Wass_p(\al_k,\al)\to0$;
+2. $\al_k\rightharpoonup\al$ and
+
+   ```{math}
+   \int d(x,x_0)^p\d\al_k(x)
+   \longrightarrow
+   \int d(x,x_0)^p\d\al(x);
+   ```
+
+3. $\al_k\rightharpoonup\al$ and
+
+   ```{math}
+   \lim_{R\to+\infty}\sup_k
+   \int_{\{d(x,x_0)>R\}}d(x,x_0)^p\d\al_k(x)=0.
+   ```
+
+These conditions do not depend on the choice of $x_0$.
 :::
 
-:::{dropdown} Proof Sketch
-For $p=1$, this is the Kantorovich--Rubinstein metrization theorem: by duality,
-$\Wass_1$ is the supremum over $1$-Lipschitz test functions, and on a compact
-metric space this class is compact modulo constants by Arzela--Ascoli. The
-comparison between $\Wass_p$ distances on compact spaces then gives the result
-for all $p\geq1$.
-:::
+:::{dropdown} Proof
+If $\Wass_p(\al_k,\al)\to0$, then $\Wass_1\leq\Wass_p$ gives weak convergence.
+For every coupling of $\al_k$ and $\al$, the reverse triangle inequality in
+$L^p$ bounds the difference between the rooted $p$-th moments by the coupling
+cost; minimizing proves moment convergence.
 
-On non-compact spaces, one must also impose convergence of $p$-th moments:
-$\Wass_p(\al_k,\al)\to0$ if and only if
-$\al_k\rightharpoonup\al$ and
+Conversely, the Skorokhod representation theorem gives random variables
+$X_k\sim\al_k$ and $X\sim\al$ such that $X_k\to X$ almost surely. Convergence of
+the $p$-th moments makes $d(X_k,x_0)^p$ uniformly integrable. The estimate
 
 ```{math}
-\int d(x,x_0)^p\d\al_k(x)
-\to
-\int d(x,x_0)^p\d\al(x).
+d(X_k,X)^p\leq 2^{p-1}\bigl(d(X_k,x_0)^p+d(X,x_0)^p\bigr)
 ```
+
+and Vitali's theorem yield $\mathbb E[d(X_k,X)^p]\to0$. The law of $(X_k,X)$ is
+a coupling, hence $\Wass_p(\al_k,\al)\to0$. Finally, truncating the continuous
+moment function by $\min\{d(\cdot,x_0)^p,R^p\}$ proves the equivalence with the
+uniform tail condition.
+:::
+
+On compact spaces the moment function is bounded and continuous, so the moment
+condition is automatic and $\Wass_p$ metrizes weak convergence.
 
 On a finite metric space, weak and strong topologies coincide. If
 $d_{\min}=\min_{x\neq y}d(x,y)$ and
