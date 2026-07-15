@@ -437,6 +437,12 @@ The KL formulation identifies Sinkhorn as a projection method. It also
 prepares the continuous and unbalanced settings, where a reference measure is
 essential.
 
+### Relative Entropy
+
+A convenient tool to reformulate and normalize discrete entropy is relative
+entropy. It turns entropy regularization into a finite-dimensional projection
+problem and admits a direct measure-theoretic extension.
+
 (def-discrete-relative-entropy)=
 :::{admonition} Definition: Discrete Relative Entropy
 :class: important
@@ -469,16 +475,7 @@ For matrices with the same total mass, the affine terms cancel and
 ```
 
 On fixed-mass couplings, taking $Q=\mathbf 1_{n\times m}$ is equivalent to
-subtracting the Shannon--Boltzmann entropy. Taking the tensor-product
-reference gives the normalized formulation
-
-```{math}
-:label: eq-kl-normalized-sinkhorn-web
-\min_{P\in\mathbf U(a,b)}
-\langle P,C\rangle
-+
-\epsilon\operatorname{KL}(P|a\otimes b).
-```
+subtracting the Shannon--Boltzmann entropy.
 
 (prop-kl-distance-like)=
 :::{admonition} Proposition: Non-Negativity and Definiteness of Relative Entropy
@@ -500,6 +497,34 @@ divergence is infinite. Otherwise,
 
 Equality forces equality entrywise, including on the zero set of $Q$.
 :::
+
+### KL Reformulation of Regularized OT
+
+Choosing the tensor product $\a\otimes\b=(\a_i\b_j)_{i,j}$ as reference measure
+leads to the normalized problem
+
+```{math}
+:label: eq-regularized-discr-rescaled
+\min_{\P\in\CouplingsD(\a,\b)}
+\langle \P,\C\rangle
++
+\epsilon\KLD(\P|\a\otimes\b).
+```
+
+For every $\P\in\CouplingsD(\a,\b)$,
+
+```{math}
+\langle \P,\C\rangle+\epsilon\KLD(\P|\a\otimes\b)
+=
+\langle \P,\C\rangle-\epsilon\HD(\P)
++\epsilon\bigl(\HD(\a)+\HD(\b)\bigr).
+```
+
+Hence this problem has exactly the same minimizer as the original entropic OT
+problem, while its optimal value is
+$\MKD_\C^\epsilon(\a,\b)+\epsilon(\HD(\a)+\HD(\b))$.
+The normalization becomes substantive in unbalanced OT, where changing the
+reference measure is no longer merely an additive shift.
 
 (prop-kl-shift)=
 :::{admonition} Proposition: Reference Measure Shift for KL
@@ -710,6 +735,200 @@ Large $\epsilon$ favors nearly independent endpoints, while small $\epsilon$
 suppresses endpoint randomness and recovers an optimal Monge--Kantorovich
 coupling in the limit. When the unregularized quadratic problem has a Brenier
 map, this limiting coupling is deterministic.
+
+### Sinkhorn for General Measures
+
+The multiplicative scaling structure extends from matrices to positive
+functions. Define the Gibbs kernel and its two integral operators by
+
+```{math}
+:label: eq-continuous-sinkhorn-operators
+\begin{aligned}
+k_\epsilon(x,y)&\eqdef\exp\!\left(-\frac{c(x,y)}{\epsilon}\right),\\
+(\mathcal K_\epsilon v)(x)
+&\eqdef\int_\Yy k_\epsilon(x,y)v(y)\d\be(y),
+&
+(\mathcal K_\epsilon^*u)(y)
+&\eqdef\int_\Xx k_\epsilon(x,y)u(x)\d\al(x).
+\end{aligned}
+```
+
+Fubini's theorem gives the adjoint identity
+$\int_\Xx u\mathcal K_\epsilon v\d\al
+=\int_\Yy v\mathcal K_\epsilon^*u\d\be$.
+For compact marginal supports and continuous $c$, Propositions
+{ref}`prop-continuous-entropic-duality` and
+{ref}`prop-entropic-dual-potentials` provide optimal dual potentials
+$(f_\epsilon,g_\epsilon)$. Set $u_\epsilon=e^{f_\epsilon/\epsilon}$ and
+$v_\epsilon=e^{g_\epsilon/\epsilon}$. The continuous density
+law {eq}`eq-continuous-entropic-density-law-web` then becomes
+
+```{math}
+:label: eq-continuous-sinkhorn-scaling
+\frac{\d\pi_\epsilon}{\d(\al\otimes\be)}(x,y)
+=u_\epsilon(x)k_\epsilon(x,y)v_\epsilon(y),
+```
+
+Because $\al\otimes\be$ already contains the prescribed marginals, their
+target densities with respect to $\al$ and $\be$ are both one. Thus
+
+```{math}
+u_\epsilon\mathcal K_\epsilon v_\epsilon=1
+\quad \al\text{-a.e.},
+\qquad
+v_\epsilon\mathcal K_\epsilon^*u_\epsilon=1
+\quad \be\text{-a.e.}
+```
+
+Starting, for instance, from $v^{(0)}=1$, continuous Sinkhorn alternately
+enforces these two identities:
+
+```{math}
+:label: eq-continuous-sinkhorn-iteration
+u^{(\ell+1)}=\frac{1}{\mathcal K_\epsilon v^{(\ell)}},
+\qquad
+v^{(\ell+1)}=\frac{1}{\mathcal K_\epsilon^*u^{(\ell+1)}}.
+```
+
+Equivalently, pointwise,
+
+```{math}
+\begin{aligned}
+u^{(\ell+1)}(x)
+&=\frac{1}{\displaystyle\int_\Yy k_\epsilon(x,y)v^{(\ell)}(y)\d\be(y)},\\
+v^{(\ell+1)}(y)
+&=\frac{1}{\displaystyle\int_\Xx k_\epsilon(x,y)u^{(\ell+1)}(x)\d\al(x)}.
+\end{aligned}
+```
+
+Given $v^{(\ell)}$, the first update produces an intermediate coupling with
+$\Xx$-marginal $\al$; the second produces one with $\Yy$-marginal $\be$, while
+generally perturbing the first marginal again. The scalings retain the gauge
+$(u,v)\mapsto(\lambda u,v/\lambda)$.
+
+There is one useful situation in which no iteration is required: choose the
+target by applying the normalized Gibbs kernel itself to the source.
+
+(prop-sinkhorn-gibbs-pushforward)=
+:::{admonition} Proposition: Closed-Form Gibbs Coupling
+:class: important
+Let $\beta_0$ be a sigma-finite reference measure on $\Y$ and suppose that
+
+```{math}
+Z_\epsilon(x)
+\eqdef
+\int_\Y k_\epsilon(x,y)\d\beta_0(y)
+\in(0,+\infty)
+\qquad\text{for $\alpha$-a.e. }x.
+```
+
+Define the normalized Gibbs transition and its output density by
+
+```{math}
+:label: eq-gibbs-pushforward-target
+p_\epsilon(x,y)
+\eqdef
+\frac{k_\epsilon(x,y)}{Z_\epsilon(x)},
+\qquad
+q_\epsilon(y)
+\eqdef
+\int_\X p_\epsilon(x,y)\d\alpha(x),
+\qquad
+\d\beta_\epsilon=q_\epsilon\d\beta_0.
+```
+
+Assume that $\log Z_\epsilon\in L^1(\alpha)$,
+$\log q_\epsilon\in L^1(\beta_\epsilon)$, and the plan below has finite
+entropic objective. Then the unique solution of the entropic problem between
+$\alpha$ and $\beta_\epsilon$ is
+
+```{math}
+:label: eq-closed-form-gibbs-coupling
+\d\pi_\epsilon(x,y)
+=
+p_\epsilon(x,y)\d\alpha(x)\d\beta_0(y).
+```
+
+Relative to $\alpha\otimes\beta_\epsilon$, its Sinkhorn scalings are
+
+```{math}
+\frac{\d\pi_\epsilon}{\d(\alpha\otimes\beta_\epsilon)}(x,y)
+=
+\frac{k_\epsilon(x,y)}{Z_\epsilon(x)q_\epsilon(y)}
+=
+u_\epsilon(x)k_\epsilon(x,y)v_\epsilon(y),
+\qquad
+u_\epsilon=\frac1{Z_\epsilon},
+\quad
+v_\epsilon=\frac1{q_\epsilon}.
+```
+:::
+
+:::{dropdown} Proof
+By construction, $p_\epsilon(x,\cdot)\d\beta_0$ is a probability measure.
+Fubini's theorem therefore shows that
+{eq}`eq-closed-form-gibbs-coupling` has first marginal $\alpha$ and second
+marginal $\beta_\epsilon$.
+
+Let $\gamma\in\Couplings(\alpha,\beta_\epsilon)$ have finite objective. Since
+$-\epsilon\log k_\epsilon=c$, the displayed density of $\pi_\epsilon$ gives
+
+```{math}
+\epsilon\KL(\gamma|\pi_\epsilon)
+=
+\int c\,\d\gamma
++
+\epsilon\KL(\gamma|\alpha\otimes\beta_\epsilon)
++
+\epsilon\int\log Z_\epsilon\,\d\alpha
++
+\epsilon\int\log q_\epsilon\,\d\beta_\epsilon.
+```
+
+The last two terms depend only on the prescribed marginals. Minimizing the
+entropic objective is therefore equivalent to minimizing
+$\KL(\gamma|\pi_\epsilon)$, whose unique minimizer is
+$\gamma=\pi_\epsilon$.
+:::
+
+If $k_\epsilon(x,\cdot)$ is already normalized with respect to $\beta_0$, then
+$Z_\epsilon=1$ and {eq}`eq-gibbs-pushforward-target` reduces to
+
+```{math}
+\frac{\d\beta_\epsilon}{\d\beta_0}(y)
+=
+\int_\X k_\epsilon(x,y)\d\alpha(x).
+```
+
+For example, let $\X=\Y=\RR^d$, let $\beta_0$ be Lebesgue measure, and take
+$c(x,y)=\norm{x-y}^2$. Then $Z_\epsilon=(\pi\epsilon)^{d/2}$ and
+
+```{math}
+p_\epsilon(x,y)
+=
+(\pi\epsilon)^{-d/2}e^{-\norm{x-y}^2/\epsilon},
+\qquad
+\beta_\epsilon
+=
+\alpha*\Gaussian\!\left(0,\frac{\epsilon}{2}\Id\right).
+```
+
+Equivalently, the closed-form coupling is the law of
+$(X,X+\sqrt{\epsilon/2}\,G)$ for independent $X\sim\alpha$ and
+$G\sim\Gaussian(0,\Id)$. Time-indexed Gaussian blurrings are the forward
+noising mechanism behind diffusion models, with an additional deterministic
+rescaling for variance-preserving Ornstein--Uhlenbeck schedules; see
+{ref}`par-diffusion-model-connection`.
+
+For discrete measures, setting $\uD_i=\a_i u(x_i)$ and
+$\vD_j=\b_jv(y_j)$ gives
+$\P_{i,j}=\a_i\b_j u(x_i)\K_{i,j}v(y_j)=\uD_i\K_{i,j}\vD_j$, so the functional
+iteration reduces exactly to the matrix Sinkhorn iteration
+{eq}`eq-sinkhorn-web`. Its logarithmic interpretation as continuous dual block
+ascent is derived in {ref}`par-continuous-dual-sinkhorn`. Continuous
+convergence is revisited through Fortet monotonicity
+in Section {ref}`sec-sinkhorn-monotone`; the finite-dimensional linear rate is
+studied through Hilbert's metric in Section {ref}`sec-sinkhorn-hilbert`.
 
 ### Convergence with $\epsilon$
 
@@ -1027,6 +1246,7 @@ KL-regularized problem satisfies
 where
 
 ```{math}
+:label: eq-dual-sinkhorn-objective-web
 \mathcal D_\epsilon(f,g)
 =
 \int f\,\d\alpha+\int g\,\d\beta
@@ -1157,6 +1377,55 @@ $(f,g)\mapsto f\oplus g-c$, modulo constants.
 
 The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
 :::
+
+(par-continuous-dual-sinkhorn)=
+### Dual Sinkhorn for General Measures
+
+The soft transforms are not only regularized analogues of hard
+$c$-transforms: they are the exact block-maximization steps of the continuous
+dual objective {eq}`eq-dual-sinkhorn-objective-web`. Indeed, for fixed $g$ and
+$h\in\Cc(\X)$,
+
+```{math}
+\left.\frac{\d}{\d s}\mathcal D_\epsilon(f+s h,g)\right|_{s=0}
+=
+\int_\X h(x)\left[
+1-e^{f(x)/\epsilon}
+\int_\Y e^{(g(y)-c(x,y))/\epsilon}\d\beta(y)
+\right]\d\alpha(x).
+```
+
+Hence exact maximization first over $f$ and then over $g$ gives
+
+```{math}
+:label: eq-continuous-dual-sinkhorn-iteration
+f^{(\ell+1)}=(g^{(\ell)})^{\bar c,\epsilon},
+\qquad
+g^{(\ell+1)}=(f^{(\ell+1)})^{c,\epsilon}.
+```
+
+The transforms are those of Definition
+{ref}`def-continuous-soft-c-transform`. Their decorations record their
+domains: the $\bar c$-transform sends a potential on $\Y$ to one on $\X$,
+whereas the $c$-transform sends a potential on $\X$ to one on $\Y$.
+
+This dual iteration is exactly the logarithmic form of the continuous scaling
+iteration {eq}`eq-continuous-sinkhorn-iteration`. Set
+$u^{(\ell)}=e^{f^{(\ell)}/\epsilon}$ and
+$v^{(\ell)}=e^{g^{(\ell)}/\epsilon}$. Exponentiating the dual updates and using
+the kernel operators {eq}`eq-continuous-sinkhorn-operators` gives
+
+```{math}
+u^{(\ell+1)}=\frac{1}{\mathcal K_\epsilon v^{(\ell)}},
+\qquad
+v^{(\ell+1)}=\frac{1}{\mathcal K_\epsilon^*u^{(\ell+1)}}.
+```
+
+The coupling density reconstructed from the current potentials is therefore
+$u^{(\ell)}(x)k_\epsilon(x,y)v^{(\ell)}(y)$ with respect to
+$\alpha\otimes\beta$, as in {eq}`eq-continuous-sinkhorn-scaling`. At a fixed
+point, its two marginals are $\alpha$ and $\beta$; equivalently, the potentials
+jointly maximize the continuous dual.
 
 
 ### Neural Dual Solvers

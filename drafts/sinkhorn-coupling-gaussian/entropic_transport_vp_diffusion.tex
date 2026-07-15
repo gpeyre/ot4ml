@@ -1,0 +1,646 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,
+  urlcolor=blue!55!black]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Ent}{\operatorname{Ent}}
+\newcommand{\Law}{\operatorname{Law}}
+\newcommand{\Id}{\operatorname{Id}}
+\newcommand{\PiC}{\Pi}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\push}{_{\#}}
+
+\title{Entropic Transport Couplings for Gaussian Smoothing\\
+and Variance-Preserving Diffusions}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note gives a self-contained derivation of an exact entropic optimal
+transport coupling associated with Gaussian smoothing and with the
+variance-preserving Ornstein--Uhlenbeck diffusion used in diffusion models.
+For the quadratic cost $c(x,y)=\frac12\lVert x-y\rVert^2$, an affine Gaussian
+channel
+\[
+  Y=aX+\sqrt q\,Z, \qquad Z\sim\N(0,I_d),
+\]
+is the entropic optimizer between its input and output laws when the entropy
+parameter is $\varepsilon=q/a$.  Gaussian smoothing corresponds to $a=1$,
+while a variance-preserving diffusion has $q=1-a^2$.  We record the Sinkhorn
+potentials, forward and reverse conditional laws, the score/barycentric
+formula, the formulation with an OU-adapted cost, arbitrary two-time
+couplings, and the infinite-time limit.
+\end{abstract}
+
+\tableofcontents
+
+\section{Conventions and problem formulation}
+
+Let $\mu,\nu\in\mathcal P_2(\R^d)$ be probability measures with finite
+second moments.  Their set of couplings is denoted by
+\[
+  \PiC(\mu,\nu)
+  :=\{\pi\in\mathcal P(\R^d\times\R^d):
+       (P_1)\push\pi=\mu,\ (P_2)\push\pi=\nu\}.
+\]
+For $\varepsilon>0$, the entropic optimal transport (EOT) problem considered
+throughout the note is
+\begin{equation}
+  \label{eq:eot}
+  \inf_{\pi\in\PiC(\mu,\nu)}
+  \left\{
+    \int_{\R^d\times\R^d}\frac12\lVert x-y\rVert^2\,\dd\pi(x,y)
+    +\varepsilon\KL(\pi\mid\mu\otimes\nu)
+  \right\}.
+\end{equation}
+Here
+\[
+  \KL(\pi\mid r)
+  =\begin{cases}
+    \displaystyle\int\log\!\left(\frac{\dd\pi}{\dd r}\right)\dd\pi,
+       &\pi\ll r,\\[1ex]
+    +\infty,&\text{otherwise}.
+  \end{cases}
+\]
+The normalization of the cost matters.  With the alternative cost
+$\lVert x-y\rVert^2$, every matching value of $\varepsilon$ below must be
+multiplied by $2$.
+
+Under standard integrability assumptions, the minimizer of
+\eqref{eq:eot} is unique and has the Sinkhorn form
+\begin{equation}
+  \label{eq:sinkhorn-form}
+  \frac{\dd\pi^\star}{\dd(\mu\otimes\nu)}(x,y)
+  =\exp\!\left(
+    \frac{f(x)+g(y)-\frac12\lVert x-y\rVert^2}{\varepsilon}
+  \right),
+\end{equation}
+where $f$ and $g$ are defined up to the gauge transformation
+$(f,g)\mapsto(f+C,g-C)$.
+
+\begin{remark}[Assumptions]
+The formulas below are identities of measures and remain meaningful for a
+singular input law $\mu$ (for instance, an empirical distribution).  To avoid
+inessential qualifications when manipulating objective values, it is enough
+to assume that the input has a finite second moment.  Convolution with a
+nondegenerate Gaussian then gives a positive smooth output density and the
+Gaussian channel has finite mutual information.  The endpoint $q=0$ is
+understood as a weak limit.
+\end{remark}
+
+\section{The affine Gaussian channel theorem}
+
+The following result contains both Gaussian smoothing and the VP diffusion
+as special cases.
+
+\begin{theorem}[Affine Gaussian channel as an EOT optimizer]
+  \label{thm:affine}
+Let $\mu\in\mathcal P_2(\R^d)$, let $a>0$ and $q>0$, and define
+\begin{equation}
+  \label{eq:affine-channel}
+  X\sim\mu,\qquad Z\sim\N(0,I_d)\text{ independent},\qquad
+  Y=aX+\sqrt q\,Z.
+\end{equation}
+Let $\nu=\Law(Y)$ and let $\rho$ be its Lebesgue density.  Then the joint law
+\begin{equation}
+  \label{eq:affine-coupling}
+  \pi_{a,q}(\dd x,\dd y)
+  =\mu(\dd x)\,\N(ax,qI_d)(\dd y)
+\end{equation}
+is the unique minimizer of \eqref{eq:eot} between $\mu$ and $\nu$ for
+\begin{equation}
+  \label{eq:epsilon-aq}
+  \boxed{\ \varepsilon=\frac qa\ }.
+\end{equation}
+One choice of Sinkhorn potentials is
+\begin{align}
+  \label{eq:f-affine}
+  f(x)&=\frac{1-a}{2}\lVert x\rVert^2,\\
+  \label{eq:g-affine}
+  g(y)&=-\frac{1-a}{2a}\lVert y\rVert^2
+        -\varepsilon\log\rho(y)
+        -\frac{d\varepsilon}{2}\log(2\pi q).
+\end{align}
+\end{theorem}
+
+\begin{proof}
+Because the second marginal of \eqref{eq:affine-coupling} has density $\rho$,
+\begin{equation}
+  \label{eq:rn-affine}
+  \frac{\dd\pi_{a,q}}{\dd(\mu\otimes\nu)}(x,y)
+  =\frac{(2\pi q)^{-d/2}}{\rho(y)}
+    \exp\!\left(-\frac{\lVert y-ax\rVert^2}{2q}\right).
+\end{equation}
+The exponent is separated using
+\begin{align}
+  -\frac{\lVert y-ax\rVert^2}{2q}
+  ={}&-\frac{\lVert x-y\rVert^2}{2\varepsilon}
+     +\frac{a(1-a)}{2q}\lVert x\rVert^2
+     -\frac{1-a}{2q}\lVert y\rVert^2,
+  \label{eq:key-algebra}
+\end{align}
+where $\varepsilon=q/a$.  Substitution into \eqref{eq:rn-affine} gives
+the Sinkhorn form \eqref{eq:sinkhorn-form} with
+\eqref{eq:f-affine}--\eqref{eq:g-affine}.
+
+For completeness, the optimality can also be seen directly.  If
+$\pi\in\PiC(\mu,\nu)$, then, whenever the quantities are finite,
+\begin{align}
+ &\frac12\int\lVert x-y\rVert^2\dd\pi
+  +\varepsilon\KL(\pi\mid\mu\otimes\nu) \notag\\
+ &\qquad=\varepsilon\KL(\pi\mid\pi_{a,q})+C_{\mu,\nu,a,q},
+  \label{eq:pythagorean}
+\end{align}
+where the constant is independent of $\pi$.  Indeed, insert
+\eqref{eq:rn-affine}; all remaining terms depend only on the fixed first or
+second marginal.  Relative entropy is nonnegative and vanishes only when
+$\pi=\pi_{a,q}$.  A standard truncation argument extends the conclusion when
+some intermediate terms are infinite.
+\end{proof}
+
+\begin{remark}[Why the matching is forced]
+The cross term in the log-density of the channel is $a\langle x,y\rangle/q$.
+The cross term in $-\lVert x-y\rVert^2/(2\varepsilon)$ is
+$\langle x,y\rangle/\varepsilon$.  Hence the only possible matching for the
+standard quadratic cost is $\varepsilon=q/a$.
+\end{remark}
+
+\subsection{An adapted-cost formulation}
+
+Define
+\begin{equation}
+  \label{eq:adapted-cost-general}
+  c_a(x,y):=\frac12\lVert y-ax\rVert^2.
+\end{equation}
+The same coupling is equivalently characterized by
+\begin{equation}
+  \label{eq:adapted-eot-general}
+  \pi_{a,q}=\mathop{\rm argmin}_{\pi\in\PiC(\mu,\nu)}
+  \left\{\int c_a\,\dd\pi
+  q\KL(\pi\mid\mu\otimes\nu)\right\}.
+\end{equation}
+Indeed, its potentials for this problem can be chosen as
+\begin{equation}
+  \label{eq:adapted-potentials}
+  \widetilde f(x)=0,
+  \qquad
+  \widetilde g(y)=-q\log\rho(y)-\frac{dq}{2}\log(2\pi q).
+\end{equation}
+This formulation makes the reference Gaussian channel completely explicit.
+
+\section{Gaussian smoothing}
+
+Let
+\[
+  \gamma_{\sigma^2}:=\N(0,\sigma^2I_d),
+  \qquad \nu=\mu*\gamma_{\sigma^2}.
+\]
+Taking $a=1$ and $q=\sigma^2$ in Theorem~\ref{thm:affine} gives the following.
+
+\begin{corollary}[Matched Gaussian smoothing]
+  \label{cor:smoothing}
+For the cost $\frac12\lVert x-y\rVert^2$, the EOT parameter matched to a
+Gaussian smoothing of variance $\sigma^2$ is
+\[
+  \boxed{\ \varepsilon=\sigma^2\ }.
+\]
+The optimal coupling is the additive Gaussian coupling
+\begin{equation}
+  \label{eq:smoothing-coupling}
+  \boxed{\quad
+  \pi_\varepsilon(\dd x,\dd y)
+  =\mu(\dd x)\,\gamma_\varepsilon(\dd y-x),
+  \quad}
+\end{equation}
+or, probabilistically, $Y=X+\sqrt\varepsilon Z$.
+\end{corollary}
+
+If $\rho_\varepsilon$ denotes the density of
+$\mu*\gamma_\varepsilon$, then
+\begin{equation}
+  \frac{\dd\pi_\varepsilon}
+       {\dd(\mu\otimes(\mu*\gamma_\varepsilon))}(x,y)
+  =\frac{(2\pi\varepsilon)^{-d/2}}{\rho_\varepsilon(y)}
+   \exp\!\left(-\frac{\lVert x-y\rVert^2}{2\varepsilon}\right).
+\end{equation}
+Thus one may take
+\begin{equation}
+  f(x)=0,
+  \qquad
+  g(y)=-\varepsilon\log\rho_\varepsilon(y)
+       -\frac{d\varepsilon}{2}\log(2\pi\varepsilon).
+\end{equation}
+The forward and reverse kernels are
+\begin{align}
+  Y\mid X=x&\sim\N(x,\varepsilon I_d),\\
+  \pi_\varepsilon(\dd x\mid Y=y)
+  &=\frac{\gamma_\varepsilon(y-x)\mu(\dd x)}
+          {(\mu*\gamma_\varepsilon)(y)}.
+\end{align}
+Differentiating the Gaussian convolution yields Tweedie's identity
+\begin{equation}
+  \label{eq:tweedie-smoothing}
+  \boxed{\quad
+  \E[X\mid Y=y]
+  =y+\varepsilon\nabla\log\rho_\varepsilon(y).
+  \quad}
+\end{equation}
+
+If the heat semigroup is normalized as
+$P_t\mu=\mu*\N(0,2tI_d)$, the matching is $\varepsilon=2t$.  If the cost is
+$\lVert x-y\rVert^2$ instead of half that quantity, the matching becomes
+$\varepsilon=2\sigma^2$.
+
+\begin{remark}[Unmatched parameters]
+For a general non-Gaussian $\mu$, the additive Gaussian coupling is not the
+EOT optimizer when $\varepsilon\ne\sigma^2$ under our cost convention.  The
+cross-term test in the preceding remark already shows the obstruction.  The
+unmatched problem generally requires two nontrivial Sinkhorn potentials.
+When both marginals are Gaussian, the optimizer is itself Gaussian and a
+separate closed-form covariance calculation is possible.
+\end{remark}
+
+\section{Variance-preserving diffusion}
+
+\subsection{The forward SDE and its marginals}
+
+Let $\beta:[0,\infty)\to[0,\infty)$ be locally integrable and consider the
+variance-preserving (VP) SDE
+\begin{equation}
+  \label{eq:vp-sde}
+  \dd X_t=-\frac{\beta(t)}2X_t\,\dd t+\sqrt{\beta(t)}\,\dd W_t,
+  \qquad X_0\sim\mu_0.
+\end{equation}
+Its Fokker--Planck equation is
+\begin{equation}
+  \label{eq:fokker-planck}
+  \partial_t\rho_t
+  =\frac{\beta(t)}2\nabla\!\cdot(x\rho_t)
+   +\frac{\beta(t)}2\Delta\rho_t.
+\end{equation}
+After the time change $\tau(t)=\frac12\int_0^t\beta(r)\dd r$, this is the
+Ornstein--Uhlenbeck equation associated with the quadratic potential
+$V(x)=\frac12\lVert x\rVert^2$.
+
+Define
+\begin{equation}
+  \label{eq:at-qt}
+  B_t:=\int_0^t\beta(r)\dd r,
+  \qquad
+  a_t:=e^{-B_t/2},
+  \qquad
+  q_t:=1-a_t^2.
+\end{equation}
+Solving the linear SDE gives
+\begin{equation}
+  \label{eq:vp-solution}
+  X_t=a_tX_0+\sqrt{q_t}\,Z,
+  \qquad Z\sim\N(0,I_d)\text{ independent of }X_0,
+\end{equation}
+and hence
+\begin{equation}
+  \label{eq:vp-marginal}
+  \mu_t=(a_t\Id)\push\mu_0*\N(0,q_tI_d).
+\end{equation}
+The identity $q_t=1-a_t^2$ is the variance-preserving property: if
+$X_0\sim\N(0,I_d)$, then $X_t\sim\N(0,I_d)$ at every time.
+
+\subsection{The exact finite-time Sinkhorn coupling}
+
+Suppose $t>0$ and $B_t>0$, so $0<a_t<1$ and $q_t>0$.  The pathwise forward
+coupling between $\mu_0$ and $\mu_t$ is
+\begin{equation}
+  \label{eq:vp-coupling}
+  \boxed{\quad
+  \pi_t(\dd x,\dd y)
+  =\mu_0(\dd x)\,\N(a_tx,q_tI_d)(\dd y).
+  \quad}
+\end{equation}
+Theorem~\ref{thm:affine}, with $a=a_t$ and $q=q_t$, shows that this is exactly
+the standard quadratic EOT coupling for
+\begin{equation}
+  \label{eq:epsilon-t}
+  \boxed{\quad
+  \varepsilon_t=\frac{q_t}{a_t}
+  =\frac{1-a_t^2}{a_t}
+  =a_t^{-1}-a_t
+  =2\sinh\!\left(\frac{B_t}{2}\right).
+  \quad}
+\end{equation}
+Writing $\rho_t$ for the density of $\mu_t$, its density ratio is
+\begin{equation}
+  \label{eq:vp-rn}
+  \frac{\dd\pi_t}{\dd(\mu_0\otimes\mu_t)}(x,y)
+  =\frac{(2\pi q_t)^{-d/2}}{\rho_t(y)}
+    \exp\!\left(-\frac{\lVert y-a_tx\rVert^2}{2q_t}\right),
+\end{equation}
+and one may choose the potentials
+\begin{align}
+  \label{eq:vp-f}
+  f_t(x)&=\frac{1-a_t}{2}\lVert x\rVert^2,\\
+  \label{eq:vp-g}
+  g_t(y)&=-\frac{1-a_t}{2a_t}\lVert y\rVert^2
+          -\varepsilon_t\log\rho_t(y)
+          -\frac{d\varepsilon_t}{2}\log(2\pi q_t).
+\end{align}
+
+At $t=0$, $a_0=1$, $q_0=0$, and $\varepsilon_0=0$.  The coupling is the
+diagonal law $(\Id,\Id)\push\mu_0$.  This endpoint is a zero-noise limit, not
+an entropy-regularized problem with positive $\varepsilon$.
+
+\subsection{OU-adapted cost}
+
+For the time-dependent cost
+\begin{equation}
+  \label{eq:ou-cost}
+  c_t^{\mathrm{OU}}(x,y)
+  :=\frac12\lVert y-a_tx\rVert^2,
+\end{equation}
+the same coupling satisfies
+\begin{equation}
+  \label{eq:ou-eot}
+  \boxed{\quad
+  \pi_t=\mathop{\rm argmin}_{\pi\in\PiC(\mu_0,\mu_t)}
+  \left\{
+    \int c_t^{\mathrm{OU}}\dd\pi
+    q_t\KL(\pi\mid\mu_0\otimes\mu_t)
+  \right\}.
+  \quad}
+\end{equation}
+The potentials simplify to
+\begin{equation}
+  \widetilde f_t(x)=0,
+  \qquad
+  \widetilde g_t(y)
+  =-q_t\log\rho_t(y)-\frac{dq_t}{2}\log(2\pi q_t).
+\end{equation}
+This is the most direct one-step Schr\"odinger formulation: the Gibbs kernel
+is precisely the OU transition kernel.  Since that reference process is
+initialized at $\mu_0$, its endpoint law is already $\mu_t$, and its joint
+endpoint law is therefore feasible and minimizes the relative entropy.
+
+\subsection{Reverse kernel and denoising formula}
+
+The forward conditional law is
+\[
+  X_t\mid X_0=x\sim\N(a_tx,q_tI_d).
+\]
+Bayes' formula gives the reverse conditional law
+\begin{equation}
+  \label{eq:reverse-kernel}
+  \boxed{\quad
+  \pi_t(\dd x\mid X_t=y)
+  =\frac{
+    \exp\!\left(-\frac{\lVert y-a_tx\rVert^2}{2q_t}\right)\mu_0(\dd x)
+  }{
+    \displaystyle\int
+    \exp\!\left(-\frac{\lVert y-a_tz\rVert^2}{2q_t}\right)\mu_0(\dd z)
+  }.
+  \quad}
+\end{equation}
+Differentiation under the integral in \eqref{eq:vp-marginal} yields
+\begin{equation}
+  \nabla\log\rho_t(y)
+  =-\frac{1}{q_t}\bigl(y-a_t\E[X_0\mid X_t=y]\bigr).
+\end{equation}
+Consequently, the reverse barycentric projection is
+\begin{equation}
+  \label{eq:vp-tweedie}
+  \boxed{\quad
+  \E[X_0\mid X_t=y]
+  =\frac1{a_t}\left(y+q_t\nabla\log\rho_t(y)\right).
+  \quad}
+\end{equation}
+This is the VP version of Tweedie's formula and is the precise relation
+between the entropic coupling, denoising, and the score of the noised data
+distribution.
+
+\subsection{Any two diffusion times}
+
+The same result holds between arbitrary times $0\le s<t$.  Set
+\begin{equation}
+  \label{eq:ast-qst}
+  a_{s,t}:=\exp\!\left(-\frac12\int_s^t\beta(r)\dd r\right),
+  \qquad
+  q_{s,t}:=1-a_{s,t}^2.
+\end{equation}
+The Markov transition is
+\[
+  X_t=a_{s,t}X_s+\sqrt{q_{s,t}}\,Z_{s,t},
+  \qquad Z_{s,t}\sim\N(0,I_d),\quad Z_{s,t}\perp X_s.
+\]
+Therefore
+\begin{equation}
+  \label{eq:two-time-coupling}
+  \pi_{s,t}(\dd x,\dd y)
+  =\mu_s(\dd x)\,\N(a_{s,t}x,q_{s,t}I_d)(\dd y)
+\end{equation}
+is the exact standard quadratic Sinkhorn coupling between $\mu_s$ and $\mu_t$
+with
+\begin{equation}
+  \label{eq:epsilon-st}
+  \boxed{\quad
+  \varepsilon_{s,t}=\frac{q_{s,t}}{a_{s,t}}
+  =2\sinh\!\left(\frac12\int_s^t\beta(r)\dd r\right).
+  \quad}
+\end{equation}
+All preceding formulas apply after replacing
+$(\mu_0,\mu_t,a_t,q_t)$ with
+$(\mu_s,\mu_t,a_{s,t},q_{s,t})$.
+
+\subsection{Common time normalizations}
+
+If $\beta(t)\equiv\beta$ is constant, then
+\[
+  a_t=e^{-\beta t/2},
+  \qquad q_t=1-e^{-\beta t},
+  \qquad \varepsilon_t=2\sinh(\beta t/2).
+\]
+For the common OU normalization
+\begin{equation}
+  \dd X_t=-X_t\dd t+\sqrt2\,\dd W_t,
+\end{equation}
+one has $\beta=2$ and hence
+\begin{equation}
+  a_t=e^{-t},
+  \qquad q_t=1-e^{-2t},
+  \qquad \boxed{\varepsilon_t=2\sinh t}.
+\end{equation}
+
+\section{The infinite-time limit}
+
+Assume
+\begin{equation}
+  \label{eq:infinite-noise}
+  \int_0^\infty\beta(r)\dd r=+\infty.
+\end{equation}
+Then $a_t\to0$, $q_t\to1$, and
+\begin{equation}
+  \mu_t\Longrightarrow\gamma:=\N(0,I_d).
+\end{equation}
+The forward endpoint coupling converges weakly to
+\begin{equation}
+  \label{eq:infinite-coupling}
+  \boxed{\quad
+  \pi_\infty(\dd x,\dd y)
+  =\mu_0(\dd x)\gamma(\dd y)
+  =\mu_0\otimes\gamma.
+  \quad}
+\end{equation}
+Thus the initial state and the stationary endpoint are independent.
+
+For the standard quadratic cost,
+\begin{equation}
+  \varepsilon_t=\frac{1-a_t^2}{a_t}\longrightarrow+\infty.
+\end{equation}
+Accordingly, \eqref{eq:infinite-coupling} is the infinite-regularization limit
+of the standard quadratic Sinkhorn coupling.  Except in degenerate cases
+(for example, a deterministic first marginal), the product coupling is not
+the optimizer for any finite $\varepsilon$: at finite regularization the
+quadratic Gibbs kernel retains a nonzero $x$--$y$ interaction.
+
+For the OU-adapted formulation,
+\[
+  c_\infty^{\mathrm{OU}}(x,y)=\frac12\lVert y\rVert^2,
+  \qquad q_\infty=1.
+\]
+The cost depends only on the fixed second marginal and is therefore constant
+over $\PiC(\mu_0,\gamma)$.  It follows directly that
+\begin{equation}
+  \pi_\infty
+  =\mathop{\rm argmin}_{\pi\in\PiC(\mu_0,\gamma)}
+    \KL(\pi\mid\mu_0\otimes\gamma)
+  =\mu_0\otimes\gamma.
+\end{equation}
+Unlike the standard-cost parameter, the adapted entropy parameter has the
+finite limit $q_\infty=1$; the interaction instead disappears from the cost
+because $a_t\to0$.
+
+\section{Objective value and mutual information}
+
+The KL term of the forward coupling has a direct information-theoretic
+meaning:
+\begin{equation}
+  \KL(\pi_{a,q}\mid\mu\otimes\nu)=I(X;Y).
+\end{equation}
+Moreover,
+\begin{equation}
+  \E\lVert X-Y\rVert^2
+  =(1-a)^2\E\lVert X\rVert^2+dq.
+\end{equation}
+Hence the minimum value of the standard-cost problem in
+Theorem~\ref{thm:affine} is
+\begin{equation}
+  \label{eq:optimal-value}
+  \frac12\left((1-a)^2\E\lVert X\rVert^2+dq\right)
+  +\frac qa I(X;Y).
+\end{equation}
+When differential entropies are finite,
+\begin{equation}
+  I(X;Y)=h(Y)-h(Y\mid X)
+  =h(\nu)-\frac d2\log(2\pi e q).
+\end{equation}
+For the VP diffusion, substitute $(a,q)=(a_t,q_t)$ in
+\eqref{eq:optimal-value}.  As $t\to\infty$, the mutual information tends to
+zero under standard moment assumptions, consistently with the limiting
+product coupling.
+
+\section{Summary of parameter conventions}
+
+\begin{table}[ht]
+  \centering
+  \small
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Setting & Cost and entropy term & Matching parameter \\
+    \midrule
+    Gaussian smoothing
+      & $\frac12\lVert x-y\rVert^2+\varepsilon\KL$
+      & $\varepsilon=\sigma^2$ \\
+    Gaussian smoothing
+      & $\lVert x-y\rVert^2+\varepsilon\KL$
+      & $\varepsilon=2\sigma^2$ \\
+    VP, finite $t$
+      & $\frac12\lVert x-y\rVert^2+\varepsilon_t\KL$
+      & $\varepsilon_t=(1-a_t^2)/a_t$ \\
+    VP, finite $t$
+      & $\frac12\lVert y-a_tx\rVert^2+q_t\KL$
+      & $q_t=1-a_t^2$ \\
+    VP, $t=\infty$
+      & standard quadratic cost
+      & $\varepsilon_t\to+\infty$ \\
+    VP, $t=\infty$
+      & $\frac12\lVert y\rVert^2+\KL$
+      & product coupling \\
+    \bottomrule
+  \end{tabular}
+  \caption{The entropy coefficient under the cost convention used in this
+  note.  Here $\KL$ abbreviates $\KL(\pi\mid\text{product of marginals})$.}
+  \label{tab:summary}
+\end{table}
+
+The central identities are therefore
+\begin{equation}
+  \boxed{
+  \begin{gathered}
+  X_t=a_tX_0+\sqrt{1-a_t^2}\,Z,\\
+  \pi_t=\Law(X_0,X_t),\\
+  \varepsilon_t=\frac{1-a_t^2}{a_t},\\
+  \E[X_0\mid X_t=y]
+  =a_t^{-1}\bigl(y+(1-a_t^2)\nabla\log\rho_t(y)\bigr),\\
+  \pi_t\Longrightarrow\mu_0\otimes\N(0,I_d)
+  \quad\text{as }t\to\infty.
+  \end{gathered}}
+\end{equation}
+
+\begin{thebibliography}{9}
+\small
+\setlength{\itemsep}{0.35\baselineskip}
+
+\bibitem{peyre-cuturi}
+G. Peyr\'e and M. Cuturi,
+\emph{Computational Optimal Transport},
+Foundations and Trends in Machine Learning, 2019.
+
+\bibitem{leonard}
+C. L\'eonard,
+\emph{A survey of the Schr\"odinger problem and some of its connections with
+optimal transport},
+Discrete and Continuous Dynamical Systems A, 2014.
+
+\bibitem{ho}
+J. Ho, A. Jain, and P. Abbeel,
+\emph{Denoising Diffusion Probabilistic Models},
+Advances in Neural Information Processing Systems, 2020.
+
+\bibitem{song}
+Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole,
+\emph{Score-Based Generative Modeling through Stochastic Differential
+Equations},
+International Conference on Learning Representations, 2021.
+
+\end{thebibliography}
+
+\end{document}

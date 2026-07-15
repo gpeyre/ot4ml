@@ -226,8 +226,127 @@ duality formula then prove the claim
 {cite:p}`berry1941accuracy,esseen1942liapunoff,chen2011normal,bobkov2018berry,rio2011asymptotic`.
 :::
 
-Figure {ref}`fig:statistical-berry-esseen-w1` confronts the estimate with exact
-one-dimensional computations. For a centered, unit-variance input law
+The universal $n^{-1/2}$ bound is sharp over broad classes of input laws, but
+it need not describe the asymptotic behavior of a fixed law. For symmetric
+inputs, the smooth skewness correction vanishes. What replaces it depends on
+whether the law is lattice-valued or has a density.
+
+(prop-sharp-lattice-w1-clt)=
+:::{admonition} Proposition: Sharp Symmetric Lattice Asymptotic
+:class: important
+Let $X$ be centered, symmetric, of unit variance, and supported on a finite
+subset of $a+h\mathbb Z$, where $h>0$ is the maximal lattice span. If
+$\alpha_n$ is the law of $n^{-1/2}\sum_{i=1}^nX_i$ and
+$\gamma=\mathcal N(0,1)$, then
+
+```{math}
+\sqrt n\,\Wass_1(\alpha_n,\gamma)\longrightarrow \frac h4.
+```
+:::
+
+:::{dropdown} Proof
+Write $F_n$ for the CDF of $\alpha_n$, and $\Phi$ and $\varphi$ for the
+standard Gaussian CDF and density. With
+$\psi(u)=\frac12-\{u\}$, the integrated lattice Edgeworth expansion gives
+
+```{math}
+F_n(x)-\Phi(x)
+=
+\frac h{\sqrt n}\,
+\psi\!\left(\frac{\sqrt n\,x-na}{h}\right)\varphi(x)+r_n(x),
+\qquad
+\|r_n\|_{L^1(\mathbb R)}=o(n^{-1/2});
+```
+
+see {cite:p}`Petrov1975,BhattacharyaRao2010,KolassaMcCullagh1990`.
+Vallender's identity {cite:p}`Vallender1974` states that
+$\Wass_1(\alpha_n,\gamma)=\int_{\mathbb R}|F_n-\Phi|$. The inequality
+$\big||u+v|-|u|\big|\leq|v|$ reduces the result to periodic averaging:
+
+```{math}
+\int_{\mathbb R}
+\left|\psi\!\left(\frac{\sqrt n\,x-na}{h}\right)\right|\varphi(x)\,dx
+\longrightarrow
+\int_0^1|\psi(u)|\,du
+=\frac14.
+```
+
+For completeness, prove this first for compactly supported step functions,
+where it is a Riemann sum over periods, and conclude by $L^1$ approximation
+of $\varphi$.
+:::
+
+The absence of a lattice correction reveals the next smooth Edgeworth term.
+A density automatically satisfies Cramér's non-lattice condition because its
+characteristic function vanishes at infinity.
+
+(prop-sharp-density-w1-clt)=
+:::{admonition} Proposition: Sharp Symmetric Density Asymptotic
+:class: important
+Let $X$ be centered, symmetric, of unit variance, with a density and moments
+of every order. Set $\kappa_4=\mathbb E[X^4]-3$ and
+$H_3(x)=x^3-3x$. If $\alpha_n$ is the law of
+$n^{-1/2}\sum_{i=1}^nX_i$ and $\gamma=\mathcal N(0,1)$, then
+
+```{math}
+\Wass_1(\alpha_n,\gamma)
+=
+\frac{|\kappa_4|}{24n}
+\int_{\mathbb R}|H_3(x)|\varphi(x)\,dx
++o(n^{-1}).
+```
+:::
+
+:::{dropdown} Proof
+The non-lattice Edgeworth expansion through order $n^{-1}$ has an
+$n^{-1/2}$ term proportional to the third cumulant, and $n^{-1}$ terms
+proportional to the fourth cumulant and to the square of the third one.
+Symmetry makes the third cumulant vanish and gives
+
+```{math}
+F_n(x)-\Phi(x)
+=-\frac{\kappa_4}{24n}H_3(x)\varphi(x)+r_n(x),
+\qquad
+\|r_n\|_{L^1(\mathbb R)}=o(n^{-1});
+```
+
+see {cite:p}`Petrov1975,BhattacharyaRao2010`. Insert this expansion into
+Vallender's identity and use $\big||u+v|-|u|\big|\leq|v|$.
+:::
+
+These two results explain the different behaviors in Figure
+{ref}`fig:statistical-berry-esseen-w1`. For the symmetric Bernoulli law, the
+maximal span is $h=2$, hence
+$\Wass_1(\alpha_n,\gamma)=1/(2\sqrt n)+o(n^{-1/2})$. The density proposition
+cannot be used: this law has no density and its characteristic function is
+$\mathbb E[e^{itX}]=\cos t$, whose modulus returns to one at arbitrarily large
+frequencies. Thus symmetry removes the smooth skewness term but not the
+lattice sawtooth. Conversely, $X\sim\operatorname{Unif}[-\sqrt3,\sqrt3]$ has
+a density, characteristic function $\sin(\sqrt3t)/(\sqrt3t)\to0$, and
+$\kappa_4=-6/5$. Since
+
+```{math}
+\int_{\mathbb R}|H_3(x)|\varphi(x)\,dx
+=2\varphi(0)+8\varphi(\sqrt3)
+=\frac{2+8e^{-3/2}}{\sqrt{2\pi}},
+```
+
+one obtains
+
+```{math}
+:label: eq-bernoulli-uniform-sharp-w1-clt
+\Wass_1(\alpha_n,\gamma)
+\sim
+\begin{cases}
+\dfrac1{2\sqrt n},
+&X\sim\frac12(\delta_{-1}+\delta_1),\\[2mm]
+\dfrac{1+4e^{-3/2}}{10\sqrt{2\pi}}\dfrac1n,
+&X\sim\operatorname{Unif}[-\sqrt3,\sqrt3].
+\end{cases}
+```
+
+Figure {ref}`fig:statistical-berry-esseen-w1` confronts these equivalents with
+exact one-dimensional computations. For a centered, unit-variance input law
 $\alpha_0$, define
 
 ```{math}
@@ -235,12 +354,12 @@ $\alpha_0$, define
 \qquad n\geq1,
 ```
 
-so that $\alpha_1=\alpha_0$, and set
-$m_3(\alpha_0)=\int |x|^3\,d\alpha_0(x)$. The distance to the standard
-Gaussian is evaluated by the one-dimensional quantile formula, without Monte
-Carlo error. In the distribution panels, each atom mass is divided by the
-current lattice spacing, which puts the discrete laws on the local-density
-scale of the Gaussian curve.
+so that $\alpha_1=\alpha_0$. For Bernoulli input, the distance is evaluated by
+the exact quantile formula and atom masses are divided by the current lattice
+spacing in the density display. For continuous-uniform input, the normalized
+convolution is an affine image of the Irwin--Hall distribution and Vallender's
+CDF formula is integrated numerically. Neither computation uses Monte Carlo
+sampling.
 
 (fig:statistical-berry-esseen-w1)=
 :::{div}
@@ -251,15 +370,14 @@ scale of the Gaussian curve.
 show_book_figure("statistical-berry-esseen-w1", width=920)
 ```
 
-*Numerical Berry--Esseen rates in $\Wass_1$.* The two left panels show
-$\alpha_0$, $\alpha_2$, and $\alpha_6$ for a symmetric Bernoulli law and for
-a standardized law uniform on $101$ equally spaced points; the gray curve is
-the standard Gaussian density. The right panel plots the numerically exact
-values of $\Wass_1(\alpha_n,\gamma)$ as solid curves. The matching-color dashed
-curves are $m_3(\alpha_0)/\sqrt n$, namely the theorem's rate factor with its
-universal constant set to $C=1$. The Bernoulli error follows the predicted
-$n^{-1/2}$ scale, whereas the dense discrete input converges substantially
-faster over the displayed range.
+*Sharp lattice and density central-limit asymptotics in $\Wass_1$.* The two
+left panels show $\alpha_0$, $\alpha_2$, and $\alpha_6$ for symmetric
+Bernoulli and continuous-uniform inputs; the gray curve is the standard
+Gaussian density. The right panel compares the exact numerical distances
+(solid) with the sharp equivalents in {eq}`eq-bernoulli-uniform-sharp-w1-clt`
+(dashed). The Bernoulli curve follows its lattice rate $1/(2\sqrt n)$, while
+the continuous-uniform curve approaches
+$(1+4e^{-3/2})/(10\sqrt{2\pi}\,n)$.
 :::
 
 ### Empirical-Process Fluctuations

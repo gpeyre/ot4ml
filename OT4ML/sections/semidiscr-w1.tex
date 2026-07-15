@@ -56,6 +56,7 @@ Thus the dual problem~\eqref{eq-dual-generic} is $\MK_\c(\al,\be)=\max_{f,g}\Ee_
 Partial maximization of a jointly concave objective preserves concavity, so $\Ee$ is concave. The semi-dual is invariant under $g\mapsto g+s$: indeed, $(g+s)^{\bar c}=g^{\bar c}-s$ and both measures have unit mass. Potentials are therefore determined only up to an additive constant, exactly as in the full dual. The main computational advantage is that the semi-dual is unconstrained.
 
 \paragraph{Discrete semi-dual.}
+\index{semi-dual!discrete}% strictindex
 When both measures are discrete, the same elimination produces a finite-dimensional concave objective whose active affine pieces are selected by the discrete $c$-transform.
 
 Let
@@ -118,6 +119,9 @@ The auction algorithm is derived from coordinate maximization of the semi-dual o
 \index{assignment problem}% strictindex
 
 \paragraph{Coordinate ascent and discrete Laguerre cells.}
+\index{auction algorithm!coordinate ascent}% strictindex
+\index{coordinate ascent}% strictindex
+\index{Laguerre cell!discrete}% strictindex
 Auction dual weights give the discrete semi-dual a geometric partition whose cell cardinalities are its coordinate derivatives.
 
 Write $\gD_j$ for the target Kantorovich potential. Specializing~\eqref{eq-discrete-semi-dual} to uniform weights gives
@@ -535,34 +539,34 @@ Figure~\ref{fig:semidiscrete-weight-gradient-cells} makes the sign of this gradi
 \end{figure}
 
 \begin{alg}[Semi-discrete Laguerre ascent]\label{alg:semidiscrete-laguerre-ascent}
-\textbf{Input:} Source measure $\al$, target atoms $(y_j,\b_j)$, cost $c$, steps $(\tau_k)_{k=0}^{K-1}$, tolerance $\mathrm{tol}$, iteration budget $K\geq1$.
+\textbf{Input:} Source measure $\al$, target atoms $(y_j,\b_j)$, cost $c$, steps $(\tau^{(\ell)})_{\ell=0}^{L-1}$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Semi-discrete dual weights $\gD$ and Laguerre cells.
 \index{Laguerre cell}% strictindex
 
 \textbf{Initialize:} Set $\gD^{(0)}=0$.
 
-\textbf{For} $k=0,\ldots,K-1$ \textbf{do}:
+\textbf{For} $\ell=0,\ldots,L-1$ \textbf{do}:
 \begin{algblock}
 
 \textbf{Compute cells:}
-\(\Laguerre_j(\gD^{(k)}) = \enscond{x}{c(x,y_j)-\gD^{(k)}_j\leq c(x,y_\ell)-\gD^{(k)}_\ell\quad\forall \ell}.\)
+\(\Laguerre_j(\gD^{(\ell)}) = \enscond{x}{c(x,y_j)-\gD^{(\ell)}_j\leq c(x,y_r)-\gD^{(\ell)}_r\quad\forall r}.\)
 
 \textbf{Compute masses:}
-\(m_j^{(k)}=\int_{\Laguerre_j(\gD^{(k)})}\d\al .\)
+\(m_j^{(\ell)}=\int_{\Laguerre_j(\gD^{(\ell)})}\d\al .\)
 
-\textbf{If} $\max_j\abs{m_j^{(k)}-\b_j}\leq\mathrm{tol}$ \textbf{then}:
+\textbf{If} $\max_j\abs{m_j^{(\ell)}-\b_j}\leq\mathrm{tol}$ \textbf{then}:
 \begin{algblock}
-\textbf{Return} $\gD^{(k)}$ and $\bigl(\Laguerre_j(\gD^{(k)})\bigr)_{j=1}^m$.
+\textbf{Return} $\gD^{(\ell)}$ and $\bigl(\Laguerre_j(\gD^{(\ell)})\bigr)_{j=1}^m$.
 \end{algblock}
 
 \textbf{Update}
-\(\gD^{(k+1)} = \gD^{(k)}+\tau_k\bigl(\b-m^{(k)}\bigr).\)
+\(\gD^{(\ell+1)} = \gD^{(\ell)}+\tau^{(\ell)}\bigl(\b-m^{(\ell)}\bigr).\)
 \end{algblock}
 \algreturnskip
-\textbf{Compute} $\bigl(\Laguerre_j(\gD^{(K)})\bigr)_{j=1}^m$.
+\textbf{Compute} $\bigl(\Laguerre_j(\gD^{(L)})\bigr)_{j=1}^m$.
 
-\textbf{Return} $\gD^{(K)}$ and these cells.
+\textbf{Return} $\gD^{(L)}$ and these cells.
 \end{alg}
 
 The quadratic power diagrams of Definition~\ref{def-laguerre-power-cells} have polyhedral cells and can be computed efficiently using computational-geometry algorithms~\cite{aurenhammer1987power,AurenhammerHA98,Merigot11}. Expanding the squared distance shows that the active cell at $x$ minimizes the affine function
@@ -595,16 +599,16 @@ Here $X\sim\al$. Away from cell boundaries, the stochastic gradient of the integ
 \]
 which is an unbiased estimator of $\nabla\Ee(\gD)$ when cell boundaries have $\al$-measure zero. One can therefore maximize~\eqref{eq-semi-disc-energy} without first discretizing $\al$: the measure is used as a black box from which independent samples are drawn, a natural setup in high-dimensional statistics and machine learning.
 
-Starting from $\gD^{(0)}=0$, stochastic gradient ascent draws $x_\ell\sim\al$ and performs
+Starting from $\gD^{(0)}=0$, stochastic gradient ascent draws $x^{(\ell)}\sim\al$ and performs
 \index{stochastic!gradient}% strictindex
 \eql{\label{eq-sgd}
 	\gD^{(\ell+1)}
 	\eqdef
-	\gD^{(\ell)}+\tau_\ell\nabla_{\gD}E(\gD^{(\ell)},x_\ell).
+	\gD^{(\ell)}+\tau^{(\ell)}\nabla_{\gD}E(\gD^{(\ell)},x^{(\ell)}).
 }
 Equivalently, if
 \[
-	j_\ell\in\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr),
+	j^{(\ell)}\in\argmin_j\bigl(c(x^{(\ell)},y_j)-\gD_j^{(\ell)}\bigr),
 \]
 then the coordinate update is
 \[
@@ -612,15 +616,15 @@ then the coordinate update is
 	=
 	\gD_j^{(\ell)}
 	+
-	\tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).
+	\tau^{(\ell)}\bigl(\b_j-\ones_{\{j=j^{(\ell)}\}}\bigr).
 \]
 The stochastic supergradient has zero coordinate sum, so the iterates preserve the gauge $\sum_j\gD_j=0$. For almost-sure stochastic-approximation convergence, one typically chooses
 \eql{\label{eq-step-size-sgd}
-	\sum_{\ell=0}^{+\infty}\tau_\ell=+\infty,
+	\sum_{\ell=0}^{+\infty}\tau^{(\ell)}=+\infty,
 	\qquad
-	\sum_{\ell=0}^{+\infty}\tau_\ell^2<+\infty,
+	\sum_{\ell=0}^{+\infty}(\tau^{(\ell)})^2<+\infty,
 }
-for instance $\tau_\ell=\tau_0(1+\ell/\ell_0)^{-q}$ with $1/2<q\leq1$. A finite-horizon $O(L^{-1/2})$ guarantee instead uses averaging and a horizon-dependent step, as made precise next.
+for instance $\tau^{(\ell)}=\tau^{(0)}(1+\ell/\ell_0)^{-q}$ with $1/2<q\leq1$. A finite-horizon $O(L^{-1/2})$ guarantee instead uses averaging and a horizon-dependent step, as made precise next.
 \index{rate!sublinear}% strictindex
 
 \begin{prop}[Averaged stochastic semi-dual rate]\label{prop-semidiscrete-sgd-rate}
@@ -651,11 +655,11 @@ for instance $\tau_\ell=\tau_0(1+\ell/\ell_0)^{-q}$ with $1/2<q\leq1$. A finite-
 	The stated choice of $\tau$ gives the result.
 \end{proof}
 
-Here one may take $G\leq2$ because each sample supergradient is $\b-e_{j_\ell}$. This stochastic viewpoint is one of the main algorithmic advantages of the semi-discrete formulation~\cite{Merigot11,genevay2016stochastic}.
+Here one may take $G\leq2$ because each sample supergradient is $\b-e_{j^{(\ell)}}$. This stochastic viewpoint is one of the main algorithmic advantages of the semi-discrete formulation~\cite{Merigot11,genevay2016stochastic}.
 \index{semi-discrete!OT}% strictindex
 
 \begin{alg}[Stochastic semi-discrete ascent]\label{alg:semidiscrete-stochastic-ascent}
-\textbf{Input:} Source sampler $x\sim\al$, target atoms $(y_j,\b_j)$, steps $(\tau_\ell)_{\ell=0}^{L-1}$, iteration count $L$.
+\textbf{Input:} Source sampler $x\sim\al$, target atoms $(y_j,\b_j)$, steps $(\tau^{(\ell)})_{\ell=0}^{L-1}$, iteration count $L$.
 
 \textbf{Output:} Stochastic semi-discrete dual weights $\gD$.
 
@@ -664,13 +668,13 @@ Here one may take $G\leq2$ because each sample supergradient is $\b-e_{j_\ell}$.
 \textbf{For} $\ell=0,\ldots,L-1$ \textbf{do}:
 \begin{algblock}
 
-\textbf{Draw} $x_\ell\sim\al$.
+\textbf{Draw} $x^{(\ell)}\sim\al$.
 
-\textbf{Set} \(j_\ell=\min\argmin_j\bigl(c(x_\ell,y_j)-\gD_j^{(\ell)}\bigr)\).
+\textbf{Set} \(j^{(\ell)}=\min\argmin_j\bigl(c(x^{(\ell)},y_j)-\gD_j^{(\ell)}\bigr)\).
 
 \textbf{For} $j=1,\ldots,m$ \textbf{do}:
 \begin{algblock}
-\(\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau_\ell\bigl(\b_j-\ones_{\{j=j_\ell\}}\bigr).\)
+\(\gD_j^{(\ell+1)} = \gD_j^{(\ell)} + \tau^{(\ell)}\bigl(\b_j-\ones_{\{j=j^{(\ell)}\}}\bigr).\)
 \end{algblock}
 \end{algblock}
 \algreturnskip
@@ -813,7 +817,7 @@ There is also an infinitesimal version of Lloyd's fixed point, but it should fir
 \]
 as the cell mass and centroid. Empty cells are singular points of the vector field; one either freezes them, as in the algorithm below, or reseeds them. The relaxed Lloyd step
 \[
-	y_j^{(k+1)}=y_j^{(k)}+\tau\big(b_j(Y^{(k)})-y_j^{(k)}\big),
+	y_j^{(\ell+1)}=y_j^{(\ell)}+\tau\big(b_j(Y^{(\ell)})-y_j^{(\ell)}\big),
 	\qquad 0<\tau\leq 1,
 \]
 is the explicit-Euler discretization of the cell-mass preconditioned gradient flow of the quantization energy \(\Ff\),
@@ -910,10 +914,10 @@ Figure~\ref{fig:semidiscrete-lloyd-flow-mixtures} shows the relaxed Lloyd flow i
 \centering
 \setlength{\tabcolsep}{0.8pt}
 \begin{tabular}{@{}ccccc@{}}
-\scriptsize $k=0$ &
-\scriptsize $k=24$ &
-\scriptsize $k=80$ &
-\scriptsize $k=240$ &
+\scriptsize $\ell=0$ &
+\scriptsize $\ell=24$ &
+\scriptsize $\ell=80$ &
+\scriptsize $\ell=240$ &
 \scriptsize energy decay \\[-.15em]
 \includegraphics[width=.178\linewidth]{figures/semidiscrete-lloyd-flow-mixtures/snapshot-000.pdf} &
 \includegraphics[width=.178\linewidth]{figures/semidiscrete-lloyd-flow-mixtures/snapshot-024.pdf} &
@@ -921,7 +925,7 @@ Figure~\ref{fig:semidiscrete-lloyd-flow-mixtures} shows the relaxed Lloyd flow i
 \includegraphics[width=.178\linewidth]{figures/semidiscrete-lloyd-flow-mixtures/snapshot-240.pdf} &
 \includegraphics[width=.220\linewidth]{figures/semidiscrete-lloyd-flow-mixtures/energy-decay.pdf}
 \end{tabular}
-\caption{\emph{Relaxed Lloyd flow from a source Gaussian-mixture initialization toward a different target Gaussian-mixture density.} The blue contours and shading show the target density \(\al\), while the colored disks are the moving codepoints initialized from the source mixture. The faint curves trace the labelled sites under the explicit-Euler Lloyd ODE. The right panel displays the relative quantization energy \(\Ff(Y^{(k)})/\Ff(Y^{(0)})\), illustrating the monotone decay of the objective along the relaxed iterations.}
+\caption{\emph{Relaxed Lloyd flow from a source Gaussian-mixture initialization toward a different target Gaussian-mixture density.} The blue contours and shading show the target density \(\al\), while the colored disks are the moving codepoints initialized from the source mixture. The faint curves trace the labelled sites under the explicit-Euler Lloyd ODE. The right panel displays the relative quantization energy \(\Ff(Y^{(\ell)})/\Ff(Y^{(0)})\), illustrating the monotone decay of the objective along the relaxed iterations.}
 \index{Lloyd!flow}% strictindex
 \index{quantization!energy}% strictindex
 \index{Gaussian!mixture}% strictindex
@@ -929,35 +933,35 @@ Figure~\ref{fig:semidiscrete-lloyd-flow-mixtures} shows the relaxed Lloyd flow i
 \end{figure}
 
 \begin{alg}[Lloyd quantization]\label{alg:lloyd-quantization}
-\textbf{Input:} Source measure $\al$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost, tolerance $\mathrm{tol}$, iteration budget $K\geq1$.
+\textbf{Input:} Source measure $\al$, initial codepoints $Y^{(0)}=(y_j^{(0)})_{j=1}^m$, squared Euclidean cost, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Codepoints $Y=(y_j)_{j=1}^m$.
 
-\textbf{Initialize:} Set \(d_0=+\infty\) and \(k=0\).
+\textbf{Initialize:} Set \(d^{(0)}=+\infty\) and \(\ell=0\).
 
-\textbf{While} \(d_k>\mathrm{tol}\) and $k<K$ \textbf{do}:
+\textbf{While} \(d^{(\ell)}>\mathrm{tol}\) and $\ell<L$ \textbf{do}:
 \begin{algblock}
 
-\textbf{Set} \(k\leftarrow k+1\).
+\textbf{Set} \(\ell\leftarrow \ell+1\).
 
 \textbf{Compute the tie-broken Voronoi partition:}
-\(\VV_j(Y^{(k-1)}) = \enscond{x}{j=\min\argmin_{1\leq \ell\leq m}\norm{x-y_\ell^{(k-1)}}^2}.\)
+\(\VV_j(Y^{(\ell-1)}) = \enscond{x}{j=\min\argmin_{1\leq r\leq m}\norm{x-y_r^{(\ell-1)}}^2}.\)
 
 \textbf{For} each nonempty cell $\VV_j$ \textbf{do}:
 \begin{algblock}
-\(y_j^{(k)} = \frac{\int_{\VV_j(Y^{(k-1)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(k-1)})}\d\al(x)}.\)
+\(y_j^{(\ell)} = \frac{\int_{\VV_j(Y^{(\ell-1)})}x\,\d\al(x)} {\int_{\VV_j(Y^{(\ell-1)})}\d\al(x)}.\)
 \end{algblock}
 \textbf{For} each empty cell $\VV_j$ \textbf{do}:
 \begin{algblock}
 
-\textbf{Set} $y_j^{(k)}=y_j^{(k-1)}$.
+\textbf{Set} $y_j^{(\ell)}=y_j^{(\ell-1)}$.
 
 \end{algblock}
 
-\textbf{Set} \(d_k=\max_j\norm{y_j^{(k)}-y_j^{(k-1)}}\).
+\textbf{Set} \(d^{(\ell)}=\max_j\norm{y_j^{(\ell)}-y_j^{(\ell-1)}}\).
 \end{algblock}
 \algreturnskip
-\textbf{Return} $Y^{(k)}$.
+\textbf{Return} $Y^{(\ell)}$.
 \end{alg}
 
 Figure~\ref{fig:semidiscrete-lloyd-quantization} follows the associated Voronoi cells and generators through Lloyd iterations, making the decrease of the quantization energy visible.
