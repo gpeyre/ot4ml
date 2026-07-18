@@ -1,0 +1,794 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=30mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[round,authoryear]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,citecolor=red!45!black,urlcolor=blue!55!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\hypersetup{
+  pdftitle={A Soft Procrustes Formula for Gaussian KL-Unbalanced Optimal Transport},
+  pdfauthor={Gabriel Peyr\'e},
+  pdfsubject={Gaussian KL-unbalanced optimal transport, Bures geometry, and soft Procrustes alignment},
+  pdfkeywords={optimal transport, unbalanced optimal transport, Gaussian measures, Bures metric, Procrustes, LogDet divergence}
+}
+
+\definecolor{deepblue}{RGB}{34,72,112}
+\definecolor{warmgray}{RGB}{245,243,239}
+\definecolor{darkred}{RGB}{132,55,45}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Spp}{\mathbb S_{++}^d}
+\newcommand{\Spsd}{\mathbb S_{+}^d}
+\newcommand{\Mplus}{\mathcal M_+}
+\newcommand{\Ptwo}{\mathcal P_2}
+\newcommand{\Id}{\mathrm{Id}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\UOT}{\mathsf U}
+\newcommand{\UB}{\mathsf{UB}}
+\newcommand{\BW}{\mathsf B}
+\newcommand{\cN}{\mathcal N}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+
+\title{\textbf{A Soft Procrustes Formula for Gaussian\\
+KL-Unbalanced Optimal Transport}\\
+\large Relaxed covariance factors, Riccati equations, and the Bures limit}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Quadratic Wasserstein transport between Gaussian measures decomposes into a
+Euclidean cost between means and the Bures cost between covariances. The latter
+is exactly an orthogonal Procrustes problem between matrix square roots. This
+note studies the corresponding question for quadratic unbalanced optimal
+transport with Kullback--Leibler penalties on the two marginals and no entropy
+penalty on the coupling. After separating transported mass, the Gaussian
+problem is an infimal convolution of Wasserstein distance with two Gaussian KL
+divergences. We show that its covariance term has an exact \emph{soft
+Procrustes} formulation: the hard Gram constraints of Bures are relaxed by
+LogDet penalties, or equivalently the orthogonal factors are replaced by
+general linear factors penalized for departing from the orthogonal group. A
+single orthogonal Procrustes alignment remains after fixing two positive
+stretches, but finite KL strength does not reduce to one hard orthogonal
+alignment. We connect this representation to the known Riccati closed form,
+treat unequal marginal penalties, recover ordinary Bures--Procrustes as the
+large-penalty limit, and clarify which convexity properties survive.
+\end{abstract}
+
+\section{Question and answer}
+
+The balanced Gaussian formula suggests asking whether the KL-relaxed problem
+also comes from aligning covariance factors. The answer is positive, with one
+important qualification.
+
+\medskip
+\noindent
+\colorbox{warmgray}{\parbox{0.95\linewidth}{
+\textbf{Executive answer.}
+Gaussian KL-unbalanced quadratic transport admits an exact Procrustes-type
+formula, but it is a \emph{soft} rather than a hard Procrustes problem. If
+$\Sigma_i^{1/2}$ are prescribed covariance roots, the factors
+$\Sigma_i^{1/2}X_i$ are free and the departure of $X_i$ from orthogonality is
+penalized by
+\[
+  \Psi(X_i)=\norm{X_i}_{\mathrm F}^2
+  -\log\det(X_iX_i^\top)-d.
+\]
+This penalty is non-negative and vanishes exactly on the orthogonal group.
+For fixed positive stretches, the remaining rotation is the usual one-SVD
+Procrustes alignment. In general, however, the stretches must also be
+optimized, so there is no reduction to a single hard orthogonal alignment.
+The optimizer is nevertheless explicit through the same Riccati equation as
+the Gaussian KL-UOT closed form.}}
+\medskip
+
+The strictly entropic problem, which adds
+$\epsilon\KL(\pi\mid\alpha\otimes\beta)$ to the coupling objective, is not the
+object considered here. Its Gaussian solution is also explicit
+\citep{JanatiEtAl2020}, but the optimal joint Gaussian is non-degenerate. Here
+there is no coupling entropy: the optimizer is a scaled Wasserstein graph
+coupling between two adjusted Gaussian marginals. The symmetric endpoint can
+be recovered from the Gaussian formulas of \citet{JanatiEtAl2020}; the two
+independent penalties are treated directly by \citet{YangZhang2026}.
+
+\section{KL-unbalanced quadratic transport}
+
+For finite non-negative measures $\rho$ and $\eta$, use the generalized
+relative entropy
+\begin{equation}\label{eq:generalized-kl}
+ \KL(\rho\mid\eta)
+ =\begin{cases}
+   \displaystyle\int(r\log r-r+1)\dd\eta,
+      & \rho=r\eta,\\[1mm]
+   +\infty,&\rho\not\ll\eta.
+  \end{cases}
+\end{equation}
+For a common marginal penalty $\tau>0$, define
+\begin{equation}\label{eq:kl-uot}
+ \UOT_\tau(\alpha_0,\alpha_1)
+ =\inf_{\pi\in\Mplus(\R^d\times\R^d)}
+ \left\{
+   \int\norm{x-y}^2\dd\pi(x,y)
+   +\tau\KL(\pi_0\mid\alpha_0)
+   +\tau\KL(\pi_1\mid\alpha_1)
+ \right\}.
+\end{equation}
+With the normalization in \eqref{eq:kl-uot},
+$\UOT_\tau^{1/2}$ is the Gaussian Hellinger--Kantorovich endpoint metric on
+finite measures over Euclidean space. It is related to, but should not be
+confused with, the intrinsic Wasserstein--Fisher--Rao length metric; see
+\citet{LieroMielkeSavare2018}. This note only studies the static cost
+\eqref{eq:kl-uot}; see also \citet{ChizatEtAl2018} for the broader unbalanced
+transport framework.
+
+\subsection{Mass--shape separation}
+
+Let $\alpha_i=a_i\mu_i$, where $a_i>0$ and $\mu_i$ are probability measures.
+Introduce the normalized shape envelope
+\begin{equation}\label{eq:shape-envelope}
+ \mathcal E_\tau(\mu_0,\mu_1)
+ =\inf_{\rho_0,\rho_1\in\Ptwo(\R^d)}
+ \left\{
+   W_2^2(\rho_0,\rho_1)
+   +\tau\KL(\rho_0\mid\mu_0)
+   +\tau\KL(\rho_1\mid\mu_1)
+ \right\}.
+\end{equation}
+
+\begin{proposition}[Mass--shape decomposition]\label{prop:mass-shape}
+For probability measures $\mu_0,\mu_1$ for which
+$\mathcal E_\tau(\mu_0,\mu_1)<\infty$,
+\begin{equation}\label{eq:mass-shape-value}
+ \UOT_\tau(a_0\mu_0,a_1\mu_1)
+ =\tau\left[
+   a_0+a_1-2\sqrt{a_0a_1}
+   \exp\!\left(-\frac{\mathcal E_\tau(\mu_0,\mu_1)}{2\tau}\right)
+ \right].
+\end{equation}
+If $(\rho_0^*,\rho_1^*)$ minimizes \eqref{eq:shape-envelope}, the optimal
+transported mass is
+\begin{equation}\label{eq:optimal-mass}
+ M^*=\sqrt{a_0a_1}
+ \exp\!\left(-\frac{\mathcal E_\tau(\mu_0,\mu_1)}{2\tau}\right).
+\end{equation}
+The optimal plan is $M^*$ times a $W_2$-optimal probability coupling between
+$\rho_0^*$ and $\rho_1^*$.
+\end{proposition}
+
+\begin{proof}
+Write a nonzero plan as $\pi=M\bar\pi$, where $M$ is its total mass and
+$\bar\pi$ is a probability coupling with marginals $\rho_0,\rho_1$. The
+homogeneity identity
+\[
+ \KL(M\rho_i\mid a_i\mu_i)
+ =M\KL(\rho_i\mid\mu_i)+M\log(M/a_i)-M+a_i
+\]
+reduces the objective, after minimizing $\bar\pi$ at fixed marginals, to
+\begin{align*}
+ M\mathcal A(\rho_0,\rho_1)
+ &+\tau\{M\log(M/a_0)-M+a_0\}\\
+ &+\tau\{M\log(M/a_1)-M+a_1\},
+\end{align*}
+where $\mathcal A$ is the expression minimized in
+\eqref{eq:shape-envelope}. Differentiation in $M$ gives
+$M=\sqrt{a_0a_1}e^{-\mathcal A/(2\tau)}$. Substitution gives
+$\tau(a_0+a_1-2M)$, which is increasing in $\mathcal A$. Minimizing the
+remaining shape variables proves both claims.
+\end{proof}
+
+The nonlinear exponential in \eqref{eq:mass-shape-value} is essential. The
+shape envelope $\mathcal E_\tau$ is not itself the squared unbalanced
+distance; it is the energy whose exponential controls how much mass is worth
+transporting.
+
+\section{Exact Gaussian reduction}
+
+Assume from now on that
+\begin{equation}\label{eq:gaussian-inputs}
+ \mu_i=\cN(m_i,\Sigma_i),
+ \qquad m_i\in\R^d,\quad \Sigma_i\in\Spp.
+\end{equation}
+For $P,\Sigma\in\Spp$, define the LogDet divergence
+\begin{equation}\label{eq:logdet-divergence}
+ D_{\mathrm{ld}}(P\mid\Sigma)
+ =\tr(\Sigma^{-1}P)-\log\det(\Sigma^{-1}P)-d.
+\end{equation}
+The Gaussian KL formula reads
+\begin{equation}\label{eq:gaussian-kl}
+ \KL\bigl(\cN(u,P)\mid\cN(m,\Sigma)\bigr)
+ =\frac12\left(
+   \norm{u-m}_{\Sigma^{-1}}^2+D_{\mathrm{ld}}(P\mid\Sigma)
+ \right).
+\end{equation}
+
+\begin{proposition}[Gaussian reduction]\label{prop:gaussian-reduction}
+The infimum in \eqref{eq:shape-envelope} is attained by Gaussian measures.
+More precisely,
+\begin{align}
+ \mathcal E_\tau(\mu_0,\mu_1)
+ =\min_{\substack{u_0,u_1\in\R^d\\P_0,P_1\in\Spp}}
+ \biggl\{&
+   \norm{u_0-u_1}^2+\BW^2(P_0,P_1)\notag\\
+ &+\frac\tau2\left(
+   \norm{u_0-m_0}_{\Sigma_0^{-1}}^2
+   +D_{\mathrm{ld}}(P_0\mid\Sigma_0)
+ \right)\notag\\
+ &+\frac\tau2\left(
+   \norm{u_1-m_1}_{\Sigma_1^{-1}}^2
+   +D_{\mathrm{ld}}(P_1\mid\Sigma_1)
+ \right)\biggr\},
+ \label{eq:finite-gaussian-envelope}
+\end{align}
+where
+\begin{equation}\label{eq:bures-definition}
+ \BW^2(P_0,P_1)
+ =\tr P_0+\tr P_1
+ -2\tr\!\left(P_0^{1/2}P_1P_0^{1/2}\right)^{1/2}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $\rho_i$ have mean $u_i$ and covariance $P_i$. Gelbrich's inequality
+gives
+\[
+ W_2^2(\rho_0,\rho_1)
+ \geq W_2^2\bigl(\cN(u_0,P_0),\cN(u_1,P_1)\bigr).
+\]
+Moreover, because the logarithm of a ratio of Gaussian densities is quadratic,
+moment matching gives the Pythagorean identity
+\[
+ \KL(\rho_i\mid\mu_i)
+ =\KL\bigl(\rho_i\mid\cN(u_i,P_i)\bigr)
+ +\KL\bigl(\cN(u_i,P_i)\mid\mu_i\bigr).
+\]
+Replacing each $\rho_i$ by its moment-matching Gaussian can therefore only
+decrease the objective. The Gaussian $W_2$ and KL formulas then give
+\eqref{eq:finite-gaussian-envelope}. This argument is the Gaussian reduction
+used in \citet{YangZhang2026}; see also \citet{Gelbrich1990}.
+\end{proof}
+
+The mean and covariance variables in \eqref{eq:finite-gaussian-envelope}
+separate. Writing $\Delta m=m_0-m_1$, direct quadratic minimization gives
+\begin{equation}\label{eq:mean-envelope-value}
+ \mathcal E_{\tau,\mathrm{mean}}
+ =\frac\tau2\,
+ \Delta m^\top
+ \left(\Sigma_0+\Sigma_1+\frac\tau2\Id\right)^{-1}
+ \Delta m.
+\end{equation}
+The nontrivial part is therefore the covariance envelope
+\begin{equation}\label{eq:covariance-envelope}
+ \mathcal C_\tau(\Sigma_0,\Sigma_1)
+ =\min_{P_0,P_1\in\Spp}
+ \left\{
+   \BW^2(P_0,P_1)
+   +\frac\tau2D_{\mathrm{ld}}(P_0\mid\Sigma_0)
+   +\frac\tau2D_{\mathrm{ld}}(P_1\mid\Sigma_1)
+ \right\}.
+\end{equation}
+
+\section{The soft Procrustes representation}
+
+Classical Bures geometry permits two equivalent factor formulations
+\citep{BhatiaJainLim2019,MasarottoPanaretosZemel2019}. For $d'\geq d$,
+\begin{equation}\label{eq:bures-free-factors}
+ \BW^2(P_0,P_1)
+ =\min_{\substack{F_i\in\R^{d\times d'}\\F_iF_i^\top=P_i}}
+ \norm{F_0-F_1}_{\mathrm F}^2.
+\end{equation}
+If fixed factors $A_iA_i^\top=P_i$ are used instead, this is the orthogonal
+Procrustes formula
+\begin{equation}\label{eq:bures-hard-procrustes}
+ \BW^2(P_0,P_1)
+ =\min_{R\in\mathrm O(d')}\norm{A_0-A_1R}_{\mathrm F}^2.
+\end{equation}
+The KL-relaxed problem preserves \eqref{eq:bures-free-factors}, but replaces
+the hard Gram constraints by penalties.
+
+For a full-row-rank matrix $X\in\R^{d\times d'}$, define
+\begin{equation}\label{eq:soft-stiefel-penalty}
+ \Psi(X)
+ =\norm{X}_{\mathrm F}^2-\log\det(XX^\top)-d.
+\end{equation}
+
+\begin{theorem}[Soft Procrustes formula]\label{thm:soft-procrustes}
+Let $S_i=\Sigma_i^{1/2}$ and $d'\geq d$. Then
+\begin{align}
+ \mathcal C_\tau(\Sigma_0,\Sigma_1)
+ =\min_{\substack{X_i\in\R^{d\times d'}\\
+                   \operatorname{rank}X_i=d}}
+ \biggl\{&
+   \norm{S_0X_0-S_1X_1}_{\mathrm F}^2\notag\\
+ &+\frac\tau2\Psi(X_0)+\frac\tau2\Psi(X_1)
+ \biggr\}.
+ \label{eq:soft-procrustes}
+\end{align}
+The penalty $\Psi$ is non-negative and
+\begin{equation}\label{eq:soft-stiefel-zero-set}
+ \Psi(X)=0\quad\Longleftrightarrow\quad XX^\top=\Id.
+\end{equation}
+Thus the hard row-Stiefel constraints of Bures--Procrustes are softened by
+LogDet penalties. For $d'=d$, their zero set is exactly $\mathrm O(d)$.
+\end{theorem}
+
+\begin{proof}
+Insert the free-factor identity \eqref{eq:bures-free-factors} into
+\eqref{eq:covariance-envelope} and minimize jointly over $F_0,F_1$. Every
+full-row-rank factor can be written $F_i=S_iX_i$. Cyclicity of the trace and
+similarity invariance of the determinant give
+\begin{align*}
+ D_{\mathrm{ld}}(F_iF_i^\top\mid\Sigma_i)
+ &=\tr(X_iX_i^\top)-\log\det(X_iX_i^\top)-d\\
+ &=\Psi(X_i),
+\end{align*}
+which proves \eqref{eq:soft-procrustes}. If $s_1,\ldots,s_d$ are the singular
+values of $X$, then
+\[
+ \Psi(X)=\sum_{j=1}^d(s_j^2-2\log s_j-1).
+\]
+Each summand is non-negative and vanishes only at $s_j=1$, proving
+\eqref{eq:soft-stiefel-zero-set}.
+\end{proof}
+
+This identity can also be read directly in the original factor variables:
+\begin{equation}\label{eq:penalized-gram-procrustes}
+ \mathcal C_\tau
+ =\min_{F_0,F_1}
+ \left\{
+   \norm{F_0-F_1}_{\mathrm F}^2
+   +\frac\tau2D_{\mathrm{ld}}(F_0F_0^\top\mid\Sigma_0)
+   +\frac\tau2D_{\mathrm{ld}}(F_1F_1^\top\mid\Sigma_1)
+ \right\}.
+\end{equation}
+Ordinary Bures imposes $F_iF_i^\top=\Sigma_i$ exactly; KL-unbalanced Bures
+penalizes violation of these two Gram constraints.
+
+\subsection{One classical Procrustes step remains}
+
+The soft formula is not a single orthogonal alignment, but it contains one.
+Set $d'=d$ and use the left polar decompositions $X_i=H_iU_i$, with
+$H_i\succ0$ and $U_i\in\mathrm O(d)$. The objective is invariant under
+simultaneous right multiplication of $(X_0,X_1)$ by an orthogonal matrix.
+Gauging out $U_0$ gives the following equivalent form.
+
+\begin{corollary}[Stretched Procrustes formula]\label{cor:stretched-procrustes}
+Define
+\begin{equation}\label{eq:psi-spd}
+ \psi(H)=\tr(H^2)-2\log\det H-d,
+ \qquad H\in\Spp.
+\end{equation}
+Then
+\begin{align}
+ \mathcal C_\tau(\Sigma_0,\Sigma_1)
+ =\min_{\substack{H_0,H_1\in\Spp\\R\in\mathrm O(d)}}
+ \biggl\{&
+   \norm{S_0H_0-S_1H_1R}_{\mathrm F}^2\notag\\
+ &+\frac\tau2\psi(H_0)+\frac\tau2\psi(H_1)
+ \biggr\}.
+ \label{eq:stretched-procrustes}
+\end{align}
+For fixed $H_0,H_1$, the minimizer in $R$ is the ordinary orthogonal
+Procrustes solution. Consequently,
+\begin{align}
+ \mathcal C_\tau
+ =\min_{H_0,H_1\in\Spp}\biggl\{&
+   \tr(\Sigma_0H_0^2)+\tr(\Sigma_1H_1^2)
+   -2\norm{(S_1H_1)^\top(S_0H_0)}_*
+   \notag\\
+ &+\frac\tau2\psi(H_0)+\frac\tau2\psi(H_1)
+ \biggr\},
+ \label{eq:stretched-procrustes-nuclear}
+\end{align}
+where $\norm{\cdot}_*$ is the nuclear norm.
+\end{corollary}
+
+\begin{proof}
+Right-multiply both polar factors by $U_0^\top$. This leaves all Frobenius
+norms and both penalties unchanged, while replacing $(X_0,X_1)$ by
+$(H_0,H_1R)$ with $R=U_1U_0^\top$. The first identity follows. For fixed
+stretches, expanding the squared norm reduces the problem to maximizing a
+trace over $R\in\mathrm O(d)$. The von Neumann trace inequality gives the
+nuclear norm in \eqref{eq:stretched-procrustes-nuclear}; the maximizing
+rotation is obtained from one singular-value decomposition
+\citep{Schonemann1966}.
+\end{proof}
+
+The two positive stretches are the essential new degrees of freedom. Since
+$\psi$ is not quadratic, the orbit argument behind
+\eqref{eq:bures-hard-procrustes} does not eliminate them. Thus
+\eqref{eq:stretched-procrustes} is an exact generalized Procrustes formula,
+but not a one-SVD endpoint formula.
+
+\subsection{Means, covariances, and masses in one formula}
+
+The entire Gaussian problem admits the same interpretation. For
+$\xi_i\in\R^d$ and $X_i\in\mathrm{GL}(d)$, define
+\begin{align}
+ \mathcal J_\tau(\xi_0,\xi_1,X_0,X_1)
+ ={}&\norm{\Delta m+S_0\xi_0-S_1\xi_1}^2
+ +\norm{S_0X_0-S_1X_1}_{\mathrm F}^2\notag\\
+ &+\frac\tau2\left(
+   \norm{\xi_0}^2+\norm{\xi_1}^2
+   +\Psi(X_0)+\Psi(X_1)
+ \right).
+ \label{eq:full-soft-procrustes-energy}
+\end{align}
+
+\begin{corollary}[Gaussian KL-UOT as exponential soft Procrustes]
+\label{cor:full-soft-procrustes}
+For $\alpha_i=a_i\cN(m_i,\Sigma_i)$,
+\begin{align}
+ \UOT_\tau(\alpha_0,\alpha_1)
+ =\min_{\xi_0,\xi_1,X_0,X_1}
+ \tau\biggl[&a_0+a_1
+ -2\sqrt{a_0a_1}\notag\\[-1mm]
+ &\times\exp\!\left(
+   -\frac{\mathcal J_\tau(\xi_0,\xi_1,X_0,X_1)}{2\tau}
+ \right)\biggr].
+ \label{eq:full-soft-procrustes-uot}
+\end{align}
+The minimization is over $\xi_i\in\R^d$ and $X_i\in\mathrm{GL}(d)$.
+\end{corollary}
+
+\begin{proof}
+Write $u_i=m_i+S_i\xi_i$ in
+\eqref{eq:finite-gaussian-envelope}, use
+\cref{thm:soft-procrustes}, and then apply
+\cref{prop:mass-shape}. The scalar function
+$s\mapsto\tau(a_0+a_1-2\sqrt{a_0a_1}e^{-s/(2\tau)})$ is increasing, so the
+minimum can be placed outside as in \eqref{eq:full-soft-procrustes-uot}.
+\end{proof}
+
+For centered unit-mass inputs, the restriction
+\begin{equation}\label{eq:unbalanced-bures-definition}
+ \UB_\tau^2(\Sigma_0,\Sigma_1)
+ =\UOT_\tau\bigl(\cN(0,\Sigma_0),\cN(0,\Sigma_1)\bigr)
+ =2\tau\left(1-e^{-\mathcal C_\tau/(2\tau)}\right)
+\end{equation}
+is the natural KL-unbalanced or Gaussian-Hellinger generalization of the
+Bures metric. Formula \eqref{eq:soft-procrustes} is the requested
+Procrustes-type representation, with the nonlinear conversion
+\eqref{eq:unbalanced-bures-definition} from normalized shape energy to the
+actual squared metric.
+
+\section{Closed-form optimizer and the hidden Bures step}
+
+The soft Procrustes problem is not merely a conceptual reformulation. Its
+optimizer is the adjusted covariance pair appearing in the Gaussian KL-UOT
+closed form. This section records the equal-penalty formula; the asymmetric
+extension is given in \cref{sec:asymmetric}.
+
+Set
+\begin{equation}\label{eq:shifted-precisions}
+ \eta=\frac2\tau,
+ \qquad A_i=\Sigma_i^{-1},
+ \qquad C_i=A_i+\eta\Id.
+\end{equation}
+Define
+\begin{equation}\label{eq:closed-form-L}
+ L_*=C_1^{-1/2}
+ \left(C_1^{1/2}C_0C_1^{1/2}\right)^{1/2}
+ C_1^{-1/2},
+\end{equation}
+and
+\begin{equation}\label{eq:closed-form-PQ}
+ P_*=[A_0+\eta(\Id-L_*)]^{-1},
+ \qquad Q_*=L_*P_*L_*.
+\end{equation}
+For the means, let
+\begin{equation}\label{eq:closed-form-means}
+ h_*=[\Id+\eta(\Sigma_0+\Sigma_1)]^{-1}\Delta m,
+ \quad
+ u_0^*=m_0-\eta\Sigma_0h_*,
+ \quad
+ u_1^*=m_1+\eta\Sigma_1h_*.
+\end{equation}
+
+\begin{proposition}[Riccati solution of soft Procrustes]
+\label{prop:riccati-soft-procrustes}
+The matrices $P_*,Q_*$ in \eqref{eq:closed-form-PQ} are positive definite and
+uniquely minimize \eqref{eq:covariance-envelope}. The normalized shape value is
+\begin{align}
+ \mathcal E_\tau(\mu_0,\mu_1)
+ ={}&\Delta m^\top[\Id+\eta(\Sigma_0+\Sigma_1)]^{-1}\Delta m\notag\\
+ &+\frac\tau2\log
+ \frac{\det\Sigma_0\det\Sigma_1}{\det P_*\det Q_*}.
+ \label{eq:closed-form-shape-value}
+\end{align}
+One minimizing factor pair in \eqref{eq:soft-procrustes} is
+\begin{equation}\label{eq:closed-form-soft-factors}
+ X_0^*=S_0^{-1}P_*^{1/2},
+ \qquad
+ X_1^*=S_1^{-1}L_*P_*^{1/2}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $L\succ0$ be the Gaussian optimal map from $P$ to $Q$, so $Q=LPL$.
+The differential of $\BW^2(P,Q)$ with respect to $P$ is $\Id-L$, and its
+differential with respect to $Q$ is $\Id-L^{-1}$. The first-order equations
+for \eqref{eq:covariance-envelope} are therefore
+\begin{equation}\label{eq:covariance-stationarity-note}
+ P^{-1}=A_0+\eta(\Id-L),
+ \qquad
+ Q^{-1}=A_1+\eta(\Id-L^{-1}).
+\end{equation}
+Using $Q^{-1}=L^{-1}P^{-1}L^{-1}$ gives the Riccati equation
+\begin{equation}\label{eq:riccati-equal}
+ LC_1L=C_0.
+\end{equation}
+Its unique positive-definite solution is \eqref{eq:closed-form-L}, and back
+substitution gives \eqref{eq:closed-form-PQ}. Global optimality and uniqueness
+follow either from the KL-UOT dual certificate in \citet{YangZhang2026}, or
+from joint convexity of the Bures term and strict convexity of the two LogDet
+terms; see \cref{prop:convex-inner-problem} below.
+
+At stationarity, taking traces in \eqref{eq:covariance-stationarity-note}
+cancels the trace part of both Gaussian KL divergences against the Bures term.
+Only the displayed log-determinants remain. Combining them with the quadratic
+mean minimum gives \eqref{eq:closed-form-shape-value}. Finally, setting
+$F_0=P_*^{1/2}$ and $F_1=L_*P_*^{1/2}$ gives
+$F_iF_i^\top=P_i^*$ and
+\[
+ \norm{F_0-F_1}_{\mathrm F}^2=\BW^2(P_*,Q_*).
+\]
+Writing $F_i=S_iX_i^*$ yields \eqref{eq:closed-form-soft-factors}.
+\end{proof}
+
+Equation \eqref{eq:riccati-equal} reveals a second, internal Procrustes
+structure: $L_*$ is exactly the Gaussian optimal map from the shifted precision
+matrix $C_1$ to $C_0$. Hence the finite-penalty solution does use an ordinary
+Bures square root or Procrustes alignment, but it applies to shifted
+precisions and must be followed by the back-substitution
+\eqref{eq:closed-form-PQ}.
+
+\section{What survives from ordinary Bures geometry?}
+
+\subsection{Large marginal penalties}
+
+The soft formulation makes the balanced limit transparent. Since
+$\Psi(X)\geq0$ with equality exactly on the row-Stiefel manifold, increasing
+$\tau$ enforces $X_iX_i^\top\to\Id$ and $\xi_i\to0$. In the square case this
+recovers the hard orthogonal factors of Bures--Procrustes.
+
+\begin{proposition}[Bures--Procrustes limit]\label{prop:bures-limit}
+For Gaussian probability measures $\mu_i=\cN(m_i,\Sigma_i)$,
+\begin{equation}\label{eq:shape-bures-limit}
+ \mathcal E_\tau(\mu_0,\mu_1)
+ \longrightarrow W_2^2(\mu_0,\mu_1)
+ \qquad(\tau\to\infty).
+\end{equation}
+Consequently, if $a_0=a_1=a$,
+\begin{equation}\label{eq:uot-bures-limit}
+ \UOT_\tau(a\mu_0,a\mu_1)
+ \longrightarrow aW_2^2(\mu_0,\mu_1).
+\end{equation}
+If the masses differ, the leading term is
+$\tau(\sqrt{a_0}-\sqrt{a_1})^2$.
+\end{proposition}
+
+\begin{proof}
+The upper bound in \eqref{eq:shape-bures-limit} follows by choosing
+$\rho_i=\mu_i$ in \eqref{eq:shape-envelope}. Bounded shape energy forces the
+two KL terms to vanish as $\tau\to\infty$, hence any limit of minimizers has
+marginals $\mu_0,\mu_1$; lower semicontinuity gives the converse bound. The
+same conclusion follows directly from \eqref{eq:full-soft-procrustes-energy}:
+bounded energy forces $\xi_i\to0$ and $X_iX_i^\top\to\Id$, after which the
+remaining minimization is ordinary Gaussian Bures--Procrustes. Expanding the
+exponential in \eqref{eq:mass-shape-value} proves the last two claims.
+\end{proof}
+
+\subsection{Convexity: inner problem versus endpoint parameters}
+
+The word ``Procrustes'' often suggests a nonconvex matrix factorization. The
+natural covariance variables show that the adjusted-covariance problem is in
+fact convex.
+
+\begin{proposition}[Convexity of the adjusted-covariance problem]
+\label{prop:convex-inner-problem}
+For fixed $\Sigma_0,\Sigma_1\succ0$, the objective in
+\eqref{eq:covariance-envelope} is strictly jointly convex in $(P_0,P_1)$.
+It therefore has a unique minimizer. The factor objective
+\eqref{eq:soft-procrustes} is a redundant, nonconvex parameterization of this
+convex problem and is invariant under simultaneous right orthogonal actions.
+\end{proposition}
+
+\begin{proof}
+The squared Bures function is jointly convex on pairs of positive
+semidefinite matrices \citep{BhatiaJainLim2019}. For fixed $\Sigma$, the map
+$P\mapsto D_{\mathrm{ld}}(P\mid\Sigma)$ is strictly convex because its only
+nonlinear term is $-\log\det P$, whose Hessian is positive definite on
+symmetric directions. The sum is therefore strictly jointly convex. The
+factor invariance follows from
+$(F_0,F_1)\mapsto(F_0R,F_1R)$ for $R\in\mathrm O(d')$.
+\end{proof}
+
+This statement should not be confused with joint convexity in the prescribed
+covariances $(\Sigma_0,\Sigma_1)$. Unlike squared Bures distance, the Gaussian
+restriction of KL-UOT is not jointly convex in these parameters, even in one
+dimension.
+
+\begin{example}[Failure of covariance joint convexity]\label{ex:nonconvex-input-cov}
+Take $d=1$, centered unit-mass Gaussians and $\tau=1$. Write $s_i>0$ for the
+variance. Set
+\[
+ L=\sqrt{\frac{s_0^{-1}+2}{s_1^{-1}+2}},
+ \qquad
+ P=[s_0^{-1}+2(1-L)]^{-1},
+ \qquad Q=L^2P.
+\]
+Then \eqref{eq:unbalanced-bures-definition} becomes
+\begin{equation}\label{eq:scalar-unbalanced-bures}
+ \UB_1^2(s_0,s_1)
+ =2\left[1-\left(\frac{PQ}{s_0s_1}\right)^{1/4}\right].
+\end{equation}
+Direct substitution gives
+\begin{align*}
+ \UB_1^2(0.1,0.02)&=0.027134127639,\\
+ \UB_1^2(0.3,0.04)&=0.089114415591,\\
+ \UB_1^2(0.2,0.03)&=0.060423206395.
+\end{align*}
+The last pair is the midpoint of the first two, but
+\[
+ 0.060423206395>
+ \tfrac12(0.027134127639+0.089114415591)
+ =0.058124271615.
+\]
+Thus covariance joint convexity fails. There is no contradiction with joint
+convexity of KL-UOT in the input measures: a mixture of two Gaussian measures
+is generally not the Gaussian whose covariance is the arithmetic mean.
+\end{example}
+
+\subsection{Why this is not one hard Procrustes problem}
+
+The balanced Bures formula optimizes over a compact gauge orbit while keeping
+the endpoint Gram matrices fixed. At finite $\tau$, the optimal factors in
+\eqref{eq:soft-procrustes} generally satisfy
+$X_iX_i^\top\neq\Id$: their singular values encode the KL-optimal covariance
+relaxation. The nonquadratic LogDet penalty prevents the same orbit argument
+from removing these stretches. One may compute the best rotation by one SVD
+for each pair $(H_0,H_1)$, but the stretches remain coupled through
+\eqref{eq:stretched-procrustes-nuclear}.
+
+This does not constitute a theorem excluding every conceivable
+finite-dimensional lift. It establishes the sharper statement relevant to the
+standard Bures derivation: the natural square-root lift is exact, but it is a
+penalized $\mathrm{GL}(d)$ alignment rather than a quotient by a single
+orthogonal orbit. We did not find this soft-Procrustes identity stated in the
+Gaussian KL-UOT references; it follows directly from their Gaussian reduction
+combined with the classical free-factor Bures formula.
+
+\section{Unequal marginal penalties}\label{sec:asymmetric}
+
+The same representation applies to the asymmetric problem
+\begin{equation}\label{eq:asymmetric-uot}
+ \UOT_{\tau_0,\tau_1}(\alpha_0,\alpha_1)
+ =\inf_\pi\left\{
+   \int\norm{x-y}^2\dd\pi
+   +\tau_0\KL(\pi_0\mid\alpha_0)
+   +\tau_1\KL(\pi_1\mid\alpha_1)
+ \right\}.
+\end{equation}
+This is no longer symmetric when $\tau_0\neq\tau_1$, so it should be called a
+cost rather than a distance. Put $T=\tau_0+\tau_1$ and
+$\theta_i=\tau_i/T$. Define
+\begin{align}
+ \mathcal J_{\tau_0,\tau_1}
+ ={}&\norm{\Delta m+S_0\xi_0-S_1\xi_1}^2
+ +\norm{S_0X_0-S_1X_1}_{\mathrm F}^2\notag\\
+ &+\frac{\tau_0}{2}\{\norm{\xi_0}^2+\Psi(X_0)\}
+ +\frac{\tau_1}{2}\{\norm{\xi_1}^2+\Psi(X_1)\}.
+ \label{eq:asymmetric-soft-energy}
+\end{align}
+The mass calculation in \cref{prop:mass-shape} gives the exact asymmetric
+soft-Procrustes formula
+\begin{align}
+ \UOT_{\tau_0,\tau_1}(a_0\mu_0,a_1\mu_1)
+ =\min_{\xi_i,X_i}\biggl\{&
+ \tau_0a_0+\tau_1a_1\notag\\[-1mm]
+ &-T a_0^{\theta_0}a_1^{\theta_1}
+ \exp\!\left(-\frac{\mathcal J_{\tau_0,\tau_1}}{T}\right)
+ \biggr\}.
+ \label{eq:asymmetric-soft-uot}
+\end{align}
+
+For completeness, the closed form of \citet{YangZhang2026} can be recovered
+from this representation. Set
+\begin{equation}\label{eq:asymmetric-shifts}
+ \eta_i=\frac2{\tau_i},
+ \qquad A_i=\Sigma_i^{-1},
+ \qquad C_i=A_i+\eta_i\Id,
+ \qquad \kappa=\eta_1-\eta_0.
+\end{equation}
+Define
+\begin{align}
+ S_*&=\frac12\left[
+   \kappa\Id+
+   \left(\kappa^2\Id+4C_1^{1/2}C_0C_1^{1/2}\right)^{1/2}
+ \right],\notag\\
+ L_*&=C_1^{-1/2}S_*C_1^{-1/2},
+ \label{eq:asymmetric-L}
+\end{align}
+and
+\begin{equation}\label{eq:asymmetric-PQ}
+ P_*=[A_0+\eta_0(\Id-L_*)]^{-1},
+ \qquad Q_*=L_*P_*L_*.
+\end{equation}
+Then $L_*$ is the unique positive solution of
+\begin{equation}\label{eq:asymmetric-riccati}
+ L_*C_1L_*-\kappa L_*=C_0.
+\end{equation}
+For the means,
+\begin{equation}\label{eq:asymmetric-means}
+ h_*=[\Id+\eta_0\Sigma_0+\eta_1\Sigma_1]^{-1}\Delta m,
+ \quad
+ u_*=m_0-\eta_0\Sigma_0h_*,
+ \quad
+ v_*=m_1+\eta_1\Sigma_1h_*.
+\end{equation}
+The minimum normalized energy is
+\begin{align}
+ \mathcal E_*
+ ={}&\Delta m^\top
+ [\Id+\eta_0\Sigma_0+\eta_1\Sigma_1]^{-1}\Delta m\notag\\
+ &+\frac{\tau_0}{2}\log\frac{\det\Sigma_0}{\det P_*}
+ +\frac{\tau_1}{2}\log\frac{\det\Sigma_1}{\det Q_*}.
+ \label{eq:asymmetric-energy-value}
+\end{align}
+The transported mass and final value are
+\begin{equation}\label{eq:asymmetric-mass-value}
+ M_*=a_0^{\theta_0}a_1^{\theta_1}e^{-\mathcal E_*/T},
+ \qquad
+ \UOT_{\tau_0,\tau_1}=\tau_0a_0+\tau_1a_1-TM_*.
+\end{equation}
+When $\tau_0=\tau_1$, $\kappa=0$ and
+\eqref{eq:asymmetric-riccati} reduces to the internal Bures equation
+\eqref{eq:riccati-equal}. Unequal penalties deform this equation by a linear
+Riccati term.
+
+\section{Conclusion}
+
+The KL-unbalanced Gaussian endpoint cost does have a precise analogue of the
+Bures--Procrustes formula. It is best understood through three nested layers:
+\begin{enumerate}[leftmargin=2em]
+ \item total transported mass is eliminated analytically and produces the
+ exponential conversion \eqref{eq:mass-shape-value};
+ \item the normalized Gaussian problem chooses two adjusted means and
+ covariances by KL penalization; and
+ \item the covariance choice is exactly a soft Procrustes alignment of free
+ square-root factors, with LogDet penalties replacing hard Gram constraints.
+\end{enumerate}
+At finite penalty, the correct symmetry is therefore not a larger hard
+orthogonal group. It is a simultaneous orthogonal gauge acting on two general
+linear factors whose singular values are optimized. One ordinary Procrustes
+step survives for fixed stretches, and the complete optimizer is available
+through a positive-definite Riccati equation. In the large-penalty limit, the
+stretches converge to orthogonal factors and the whole construction collapses
+to the classical Bures formula.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
