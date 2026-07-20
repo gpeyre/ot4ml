@@ -1,0 +1,963 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[authoryear,round]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+  citecolor=red!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\definecolor{otblue}{HTML}{1F4E79}
+\titleformat{\section}{\normalfont\Large\bfseries\color{otblue}}
+  {\thesection}{.7em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{otblue!80!black}}
+  {\thesubsection}{.65em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\bfseries\color{otblue!75!black}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.7ex plus .7ex minus .2ex}{1.1ex}
+\titlespacing*{\subsection}{0pt}{2ex plus .5ex minus .2ex}{.75ex}
+\titlespacing*{\paragraph}{0pt}{1.4ex plus .3ex minus .1ex}{.55em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Pcal}{\mathcal P}
+\newcommand{\Mcal}{\mathcal M}
+\newcommand{\Tcal}{\mathcal T}
+\newcommand{\Qcal}{\mathcal Q}
+\newcommand{\Bcal}{\mathcal B}
+\newcommand{\Piopt}{\Pi}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\ones}{\mathbf 1}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+
+\hypersetup{
+  pdftitle={Conditional Concavity of p-Gromov--Wasserstein Energies},
+  pdfauthor={Gabriel Peyre},
+  pdfsubject={The exceptional quadratic exponent, counterexamples, and submodular ultrametric extensions},
+  pdfkeywords={Gromov--Wasserstein, conditional concavity, negative type, ultrametric, submodularity, layer-cake formula}
+}
+
+\title{\textbf{Conditional Concavity of\\
+\(p\)-Gromov--Wasserstein Energies}\\
+\large Why the quadratic exponent is exceptional, and a valid all-exponent extension}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The usual conditional-concavity theorem for Gromov--Wasserstein transport
+uses the squared distortion
+\(\lvert d_{\mathcal X}-d_{\mathcal Y}\rvert^2\) and same-sign
+conditionally definite base dissimilarities.  It is tempting to replace the
+outer exponent \(2\) by an arbitrary \(p\geq1\).  This note shows that such a
+replacement is false under the original assumptions: for every
+\(p\neq2\), explicit four-point CND metric spaces have a positive feasible
+curvature direction.  Thus \(p=2\) is genuinely exceptional, not a
+technical limitation of the standard proof.
+
+An exponent-uniform theorem nevertheless holds under a stronger geometric
+hypothesis.  If all threshold kernels
+\(\mathbf 1_{\{d\geq r\}}\) of the two dissimilarities are conditionally
+negative definite, then every submodular scalar distortion with a nonnegative
+mixed measure---in particular \(\lvert d_{\mathcal X}-d_{\mathcal Y}\rvert^p\)
+for \(p\geq1\)---has nonpositive curvature on zero-marginal directions.  For
+genuine metrics, this threshold condition is equivalent to ultrametricity.
+A single layer-cake identity unifies this result with the classical quadratic
+theory.  At \(p=2\), its scale weight is constant and integration recovers the
+usual CND tensor factorization; on ultrametric spaces, the same integrand is
+nonnegative at every pair of scales, which covers all \(p\geq1\).  The finite
+result extends to arbitrary probability measures on compact ultrametric
+spaces.  An extended catalogue connects this hypothesis to finite
+hierarchies, symbolic sequences, valued fields, profinite groups, rooted
+graphs and random tree boundaries.  In the finite uniform case, concavity
+also guarantees a permutation optimizer.
+\end{abstract}
+
+\section{Curvature along the coupling constraints}
+\label{sec:setup}
+
+The GW objective is quadratic in the coupling for every fixed distortion
+kernel.  Its convexity or concavity is therefore decided exactly by the sign
+of one quadratic form on directions that preserve both marginals.
+
+Let \(\mathcal X\) and \(\mathcal Y\) be compact spaces, equipped with bounded
+symmetric dissimilarities
+\(d_{\mathcal X}:\mathcal X^2\to\R_+\) and
+\(d_{\mathcal Y}:\mathcal Y^2\to\R_+\).  For \(p\geq1\), define
+\begin{equation}
+  L_p\bigl((x,y),(x',y')\bigr)
+  :=
+  \abs{d_{\mathcal X}(x,x')-d_{\mathcal Y}(y,y')}^p.
+  \label{eq:lp-kernel}
+\end{equation}
+For finite signed measures \(\xi,\eta\) on
+\(\mathcal Z:=\mathcal X\times\mathcal Y\), set
+\begin{equation}
+  \Bcal_p(\xi,\eta)
+  :=\iint_{\mathcal Z^2}L_p(z,z')\dd\xi(z)\dd\eta(z'),
+  \qquad
+  \Qcal_p(\xi):=\Bcal_p(\xi,\xi).
+  \label{eq:quadratic-form}
+\end{equation}
+The \(p\)-GW problem minimizes \(\Qcal_p(\pi)\) over
+\(\pi\in\Piopt(\alpha,\beta)\).  Its feasible direction space is
+\begin{equation}
+  \Tcal_{\mathcal X,\mathcal Y}
+  :=
+  \left\{\xi\in\Mcal(\mathcal X\times\mathcal Y):
+  (P_{\mathcal X})_\#\xi=0,\ (P_{\mathcal Y})_\#\xi=0\right\}.
+  \label{eq:tangent-space}
+\end{equation}
+
+\begin{proposition}[Exact feasible-curvature criterion]
+\label{prop:curvature-criterion}
+For \(\pi_0,\pi_1\in\Piopt(\alpha,\beta)\), write
+\(\xi=\pi_1-\pi_0\).  Then
+\begin{equation}
+  \frac{\mathrm d^2}{\mathrm dt^2}
+  \Qcal_p\bigl((1-t)\pi_0+t\pi_1\bigr)
+  =2\Qcal_p(\xi).
+  \label{eq:segment-curvature}
+\end{equation}
+Consequently, \(\Qcal_p\) is concave on
+\(\Piopt(\alpha,\beta)\) whenever
+\(\Qcal_p(\xi)\leq0\) for every
+\(\xi\in\Tcal_{\mathcal X,\mathcal Y}\).  For finite spaces and strictly
+positive marginals, this condition is also necessary.
+\end{proposition}
+
+\begin{proof}
+Expanding the quadratic form gives
+\[
+  \Qcal_p(\pi_0+t\xi)
+  =\Qcal_p(\pi_0)+2t\Bcal_p(\pi_0,\xi)+t^2\Qcal_p(\xi),
+\]
+which proves \eqref{eq:segment-curvature}.  Every difference of feasible
+couplings has zero marginals, so the sign condition implies concavity on each
+feasible segment.  In the finite positive-marginal case, the product coupling
+lies in the relative interior of the transport polytope.  Hence every
+zero-row- and zero-column-sum matrix is, after multiplication by a sufficiently
+small scalar of either sign, a feasible direction through that coupling.
+Concavity therefore forces its quadratic value to be nonpositive.
+\end{proof}
+
+\section{One multiscale identity, two concavity certificates}
+\label{sec:master-decomposition}
+
+The quadratic and ultrametric theories are two levels of the same multiscale
+argument.  The common object records the curvature contributed by every pair
+of distance thresholds.  The quadratic loss averages those contributions
+with a constant weight, whereas a general power uses a non-flat scale measure
+that is singular on the diagonal when \(p=1\), and therefore requires finer
+control.
+
+For a dissimilarity \(d\) and a threshold \(r>0\), define
+\begin{equation}
+  H_r^d(x,x'):=\mathbf 1_{\{d(x,x')\geq r\}}.
+  \label{eq:threshold-kernel}
+\end{equation}
+For \(\xi\in\Tcal_{\mathcal X,\mathcal Y}\), its two-scale interaction is
+\begin{equation}
+  I_\xi(r,s)
+  :=\iint
+  H_r^{d_{\mathcal X}}(x,x')H_s^{d_{\mathcal Y}}(y,y')
+  \dd\xi(x,y)\dd\xi(x',y').
+  \label{eq:threshold-product}
+\end{equation}
+
+The same decomposition applies beyond power losses.  Let
+\(D_{\mathcal X}\) and \(D_{\mathcal Y}\) bound the two dissimilarities.
+
+\begin{definition}[Submodular mixed-measure distortion]
+\label{def:mixed-measure-distortion}
+A continuous function
+\(\ell:[0,D_{\mathcal X}]\times[0,D_{\mathcal Y}]\to\R\) is a
+\emph{submodular mixed-measure distortion} if there is a finite positive Borel
+measure \(\omega_\ell\) on
+\((0,D_{\mathcal X}]\times(0,D_{\mathcal Y}]\) such that
+\begin{equation}
+  \ell(a,b)
+  =\ell(a,0)+\ell(0,b)-\ell(0,0)
+  -\omega_\ell\bigl((0,a]\times(0,b]\bigr).
+  \label{eq:mixed-measure-representation}
+\end{equation}
+\end{definition}
+
+This is the measure-valued form of submodularity.  If \(\ell\) is twice
+continuously differentiable, the condition
+\(\partial_{ab}^2\ell\leq0\) gives
+\(\dd\omega_\ell(r,s)=-\partial_{ab}^2\ell(r,s)\dd r\dd s\).
+The measure formulation also accommodates nonsmooth distortions concentrated
+on lower-dimensional sets.
+
+\begin{proposition}[Master multiscale curvature identity]
+\label{prop:master-multiscale}
+For a finite signed measure
+\(\xi\in\Tcal_{\mathcal X,\mathcal Y}\), define
+\begin{equation}
+  \Qcal_\ell(\xi)
+  :=\iint
+  \ell\bigl(d_{\mathcal X}(x,x'),d_{\mathcal Y}(y,y')\bigr)
+  \dd\xi(x,y)\dd\xi(x',y').
+  \label{eq:general-distortion-form}
+\end{equation}
+If \(\ell\) satisfies \cref{def:mixed-measure-distortion}, then
+\begin{equation}
+  \Qcal_\ell(\xi)
+  =-\int I_\xi(r,s)\dd\omega_\ell(r,s).
+  \label{eq:mixed-measure-curvature}
+\end{equation}
+In particular, for \(\ell_p(a,b)=\abs{a-b}^p\),
+\begin{align}
+  \Qcal_1(\xi)
+  &=-2\int_0^\infty I_\xi(r,r)\dd r,
+  \label{eq:p1-layer-cake}\\
+  \Qcal_p(\xi)
+  &=-p(p-1)\int_0^\infty\int_0^\infty
+  \abs{r-s}^{p-2}I_\xi(r,s)\dd r\dd s,
+  \qquad p>1.
+  \label{eq:p-layer-cake-curvature}
+\end{align}
+\end{proposition}
+
+\begin{proof}
+Insert \eqref{eq:mixed-measure-representation} into
+\eqref{eq:general-distortion-form}.  Terms depending only on
+\(d_{\mathcal X}\), only on \(d_{\mathcal Y}\), or on neither vanish because
+\(\xi\) has zero marginals.  Moreover,
+\[
+  \omega_\ell((0,a]\times(0,b])
+  =\int\mathbf 1_{\{a\geq r\}}\mathbf 1_{\{b\geq s\}}
+  \dd\omega_\ell(r,s).
+\]
+Fubini's theorem therefore gives \eqref{eq:mixed-measure-curvature}.
+
+For \(p=1\), use
+\(a+b-\abs{a-b}=2\int_0^\infty
+\mathbf 1_{\{a\geq r\}}\mathbf 1_{\{b\geq r\}}\dd r\).
+For \(p>1\), two integrations of the mixed derivative give
+\[
+  a^p+b^p-\abs{a-b}^p
+  =p(p-1)\int_0^a\int_0^b\abs{r-s}^{p-2}\dd r\dd s.
+\]
+The kernel \(\abs{r-s}^{p-2}\) is locally integrable exactly for \(p>1\),
+which proves both power formulas.
+\end{proof}
+
+\paragraph{The quadratic exponent integrates the scales.}
+Setting \(p=2\) in \eqref{eq:p-layer-cake-curvature} makes the scale weight
+equal to one.  Since
+\(\int_0^\infty H_r^d(x,x')\dd r=d(x,x')\), Fubini gives
+\begin{equation}
+  \Qcal_2(\xi)
+  =-2\int_0^\infty\int_0^\infty I_\xi(r,s)\dd r\dd s
+  =-2\iint
+  d_{\mathcal X}(x,x')d_{\mathcal Y}(y,y')
+  \dd\xi(x,y)\dd\xi(x',y').
+  \label{eq:p2-factorization}
+\end{equation}
+Thus the familiar quadratic factorization is not a separate theory: it is the
+flat-weight member of the multiscale identity.
+
+\begin{corollary}[Integrated quadratic certificate]
+\label{cor:quadratic-integrated-certificate}
+If \(d_{\mathcal X}\) and \(d_{\mathcal Y}\) are both conditionally negative
+definite (CND), or both conditionally positive definite (CPD), then
+\(\Qcal_2(\xi)\leq0\) for every
+\(\xi\in\Tcal_{\mathcal X,\mathcal Y}\).  Hence squared GW is concave on each
+transport polytope.
+\end{corollary}
+
+\begin{proof}
+Center each dissimilarity at an arbitrary base point.  Additive one-variable
+terms disappear against the zero marginals of \(\xi\).  In the CND case, the
+negatives of the two centered kernels are positive semidefinite; in the CPD
+case, the centered kernels themselves are positive semidefinite.  Their
+Kronecker-product quadratic form is therefore nonnegative in both cases.
+Equation \eqref{eq:p2-factorization} gives the result.
+\end{proof}
+
+This is the mechanism behind conditional concavity in graph matching and
+squared GW \citep{MaronLipman2018,SejourneVialardPeyre2021}.  Crucially, only
+the \emph{integrated} kernels \(d_{\mathcal X}\) and
+\(d_{\mathcal Y}\) need to have the appropriate sign; the individual
+threshold interactions \(I_\xi(r,s)\) may change sign.
+
+The word \emph{squared} here refers to the outer exponent in
+\eqref{eq:lp-kernel}.  It should not be confused with an inner power in the
+base dissimilarities.  For example, Schoenberg's theorem implies that
+\(\lVert x-x'\rVert^q\) is CND for \(0<q\leq2\)
+\citep{Schoenberg1938}; each such inner exponent is covered by
+\eqref{eq:p2-factorization}, but the outer exponent remains exactly \(2\).
+Recent Hilbert-embedding formulations likewise broaden the base costs while
+retaining a squared outer discrepancy \citep{HouryFeydyVialard2026}.
+
+\paragraph{Ultrametric geometry controls every scale separately.}
+Formula \eqref{eq:mixed-measure-curvature} reveals a stronger sufficient
+condition: if \(I_\xi(r,s)\geq0\) for every feasible direction \(\xi\) and
+every pair of thresholds, then every submodular mixed-measure distortion is
+conditionally concave.  Threshold-CND dissimilarities provide exactly this
+pointwise certificate.  For genuine metrics, the next sections show that this
+condition is equivalent to ultrametricity.  Consequently, the ultrametric
+theory contains the quadratic result as its \(p=2\) member, but strengthens
+its hypothesis in order to cover all the other scale measures as well.
+
+\section{The CND hypothesis does not extend beyond \texorpdfstring{\(p=2\)}{p=2}}
+\label{sec:counterexamples}
+
+The collapse of the multiscale formula to the product factorization
+\eqref{eq:p2-factorization} is specific to its constant \(p=2\) weight.  For
+other exponents, \cref{prop:master-multiscale} retains scale-dependent
+information whose sign is not controlled by ordinary CND.  The failure
+already occurs for four-point path, tree and Hamming metrics, so it persists
+even when the base kernels are genuine CND distances rather than arbitrary
+CND dissimilarities.
+
+\begin{theorem}[The original hypothesis is specific to \(p=2\)]
+\label{thm:no-cnd-extension}
+For every \(p\in[1,\infty)\setminus\{2\}\), there are four-point metric
+spaces \((\mathcal X,d_{\mathcal X})\) and
+\((\mathcal Y,d_{\mathcal Y})\) whose distance kernels are CND, and a
+nonzero matrix \(\Xi\in\Tcal_{\mathcal X,\mathcal Y}\), such that
+\(\Qcal_p(\Xi)>0\).  Hence same-sign conditional definiteness of genuine
+metric distances does not imply conditional concavity for any outer exponent
+other than \(2\).
+\end{theorem}
+
+\begin{proof}
+We use only finite \(\ell^1\) and tree metrics.  They are CND: in one
+dimension,
+\[
+  \abs{s-t}
+  =\int_{\R}
+  \abs{\mathbf 1_{\{s>r\}}-\mathbf 1_{\{t>r\}}}^2\dd r,
+\]
+so, for \(\sum_i a_i=0\), its quadratic form equals
+\(-2\int_{\R}\abs{\sum_i a_i\mathbf 1_{\{s_i>r\}}}^2\dd r\leq0\).
+Finite sums preserve conditional negative definiteness, proving the claim for
+\(\ell^1\); tree metrics are sums of the same cut metrics.
+
+First let \(1\leq p<2\).  Take the line metric on the labeled points
+\((0,3,2,1)\) and the Hamming metric on the labeled square
+\(((0,0),(1,1),(1,0),(0,1))\).  Their distance matrices are
+\begin{equation}
+  \mathrm D_{\mathcal X}
+  =\begin{pmatrix}
+    0&3&2&1\\3&0&1&2\\2&1&0&1\\1&2&1&0
+  \end{pmatrix},
+  \qquad
+  \mathrm D_{\mathcal Y}
+  =\begin{pmatrix}
+    0&2&1&1\\2&0&1&1\\1&1&0&2\\1&1&2&0
+  \end{pmatrix}.
+  \label{eq:small-p-metrics}
+\end{equation}
+Set \(u=(1,-1,-1,1)^\top\), \(v=(1,1,-1,-1)^\top\) and
+\(\Xi_{<}=uv^\top\).  Since both vectors sum to zero, \(\Xi_{<}\) has zero
+row and column sums.  A direct collection of the distance differences in
+\eqref{eq:small-p-metrics} gives
+\begin{equation}
+  \Qcal_p(\Xi_{<})
+  =8\bigl(2^{p+1}-3^p+1\bigr)>0.
+  \label{eq:small-p-counterexample}
+\end{equation}
+Indeed, \(\varphi(p)=(3/2)^p-2^{-p}\) is strictly increasing and
+\(\varphi(2)=2\).  Hence \(p<2\) implies
+\(3^p-1<2^{p+1}\), proving the strict inequality in
+\eqref{eq:small-p-counterexample}.  This includes \(p=1\).
+
+Now let \(p>2\).  Keep \(\mathrm D_{\mathcal Y}\) from
+\eqref{eq:small-p-metrics}, but let \(\mathcal X\) be the unit-edge star with
+three leaves and its center as the fourth point:
+\begin{equation}
+  \mathrm D_{\mathcal X}
+  =\begin{pmatrix}
+    0&2&2&1\\2&0&2&1\\2&2&0&1\\1&1&1&0
+  \end{pmatrix}.
+  \label{eq:large-p-metric}
+\end{equation}
+With \(\widetilde u=(1,0,0,-1)^\top\), use the feasible direction
+\(\Xi_{>}=\widetilde u v^\top\).  Direct summation now yields
+\begin{equation}
+  \Qcal_p(\Xi_{>})=8\bigl(2^p-4\bigr)>0,
+  \label{eq:large-p-counterexample}
+\end{equation}
+which is strictly positive exactly when \(p>2\).
+\end{proof}
+
+\begin{remark}[What the counterexamples rule out]
+The theorem does not say that every \(p\neq2\) GW objective is nonconcave.  It
+says that CND or CPD base dissimilarities alone no longer certify concavity.
+Any valid extension must impose additional structure on the base geometry or
+directly on the distortion kernel.  It also shows why replacing the tensor
+factorization in the \(p=2\) proof by an appeal to Schoenberg's theorem would
+be invalid: Schoenberg controls powers of a single distance kernel, whereas
+\(\abs{d_{\mathcal X}-d_{\mathcal Y}}^p\) couples two distance values through
+a nonlinear difference.
+\end{remark}
+
+\section{Pointwise threshold positivity and ultrametrics}
+\label{sec:thresholds}
+
+The master identity isolates the extra structure needed away from the
+quadratic exponent: positivity must hold before the distance scales are
+averaged.  Requiring conditional negative type at every threshold supplies a
+clean geometric certificate.
+
+\begin{definition}[Threshold negative type]
+\label{def:threshold-cnd}
+A dissimilarity is \emph{threshold-CND} if every kernel \(H_r^d\) defined in
+\eqref{eq:threshold-kernel} is CND.  On an infinite space, this means that the
+CND inequality holds on every finite subset.
+\end{definition}
+
+Threshold-CND implies CND because
+\(d(x,x')=\int_0^\infty H_r^d(x,x')\dd r\).  For genuine metrics, the stronger
+condition has an exact geometric meaning.
+
+\begin{proposition}[Threshold negative type characterizes ultrametrics]
+\label{prop:threshold-ultrametric}
+A metric \(d\) is threshold-CND if and only if it is an ultrametric, namely
+\begin{equation}
+  d(x,z)\leq\max\{d(x,y),d(y,z)\}
+  \qquad\text{for all }x,y,z.
+  \label{eq:ultrametric-inequality}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Suppose first that \(d\) is ultrametric.  For each \(r>0\), the relation
+\(x\sim_r x'\) if \(d(x,x')<r\) is an equivalence relation.  On any finite
+collection \((x_i)_i\), let \(\mathscr P_r\) denote the resulting partition.
+For coefficients satisfying \(\sum_i a_i=0\),
+\[
+  \sum_{i,j}a_i a_jH_r^d(x_i,x_j)
+  =-\sum_{C\in\mathscr P_r}\left(\sum_{i:x_i\in C}a_i\right)^2\leq0.
+\]
+Thus every \(H_r^d\) is CND.
+
+Conversely, if \eqref{eq:ultrametric-inequality} fails, there are
+\(x,y,z\) such that
+\(d(x,z)>\max\{d(x,y),d(y,z)\}\).  Choose \(r\) strictly above the latter
+maximum and no larger than \(d(x,z)\).  The threshold kernel vanishes on
+\((x,y)\) and \((y,z)\), but equals one on \((x,z)\).  Its quadratic form at
+the zero-sum coefficients \((1,-2,1)\) is therefore \(2>0\), contradicting
+conditional negative definiteness.
+\end{proof}
+
+Thus threshold-CND is much stronger than ordinary negative type among metrics:
+it selects precisely ultrametric geometry.  The line and tree metrics used in
+\cref{thm:no-cnd-extension} are CND but not ultrametric.
+
+\begin{theorem}[Submodular distortions under threshold negative type]
+\label{thm:threshold-concavity}
+Let \(\mathcal X\) and \(\mathcal Y\) be finite spaces whose dissimilarities are
+threshold-CND, and let \(\ell\) satisfy
+\cref{def:mixed-measure-distortion}.  Then
+\(\Qcal_\ell(\Xi)\leq0\) for every
+\(\Xi\in\Tcal_{\mathcal X,\mathcal Y}\).  Consequently, the associated
+quadratic transport objective is concave on every transport polytope over the
+two spaces.
+\end{theorem}
+
+\begin{proof}
+Since both threshold kernels are CND, centering their negatives at arbitrary
+base points produces positive semidefinite matrices.  All centering terms
+disappear because \(\Xi\) has zero row and column sums.  Hence
+\(I_\Xi(r,s)\) is the quadratic form of a Kronecker product of two positive
+semidefinite matrices, and is nonnegative; the two minus signs cancel.
+The master identity \eqref{eq:mixed-measure-curvature} now gives
+\(\Qcal_\ell(\Xi)\leq0\).
+\end{proof}
+
+\begin{corollary}[All power distortions]
+\label{cor:power-distortions}
+Under the assumptions of \cref{thm:threshold-concavity}, the choice
+\(\ell_p(a,b)=\abs{a-b}^p\) gives
+\(\Qcal_p(\Xi)\leq0\) for every \(p\geq1\).  In particular, \(p=2\) is
+included as the constant-weight specialization of
+\eqref{eq:p-layer-cake-curvature}.
+\end{corollary}
+
+\begin{proof}
+Apply \cref{thm:threshold-concavity} to the power-loss representations in
+\cref{prop:master-multiscale}.
+\end{proof}
+
+\begin{corollary}[Sparse and permutation minimizers]
+\label{cor:ultrametric-extreme-minimizer}
+Let \(\mathcal X\) and \(\mathcal Y\) be finite ultrametric spaces with
+strictly positive marginals supported on \(n\) and \(m\) points.  For every
+\(p\geq1\), the \(p\)-GW problem admits an optimal coupling supported on at
+most \(n+m-1\) pairs.  If \(n=m\) and both marginals are uniform, it admits a
+permutation coupling as an optimizer.
+\end{corollary}
+
+\begin{proof}
+By \cref{prop:threshold-ultrametric,cor:power-distortions}, the objective is
+concave on the transport polytope.  Write any minimizer as a convex combination
+of extreme points.  Concavity shows that its value is no smaller than the
+corresponding convex combination of their values; optimality forces every
+extreme point used with positive weight to be optimal.  An extreme transport
+plan has at most \(n+m-1\) positive entries.  For equal uniform marginals, the
+Birkhoff--von Neumann theorem identifies the extreme points with scaled
+permutation matrices.
+\end{proof}
+
+\paragraph{Why this is the right strengthening.}
+The two theories are now nested rather than disconnected.  Ordinary CND
+controls the scale average
+\(d=\int H_r^d\dd r\), which suffices when \(p=2\) because the weight in
+\eqref{eq:p-layer-cake-curvature} is constant.  Threshold-CND controls
+\(I_\xi(r,s)\) pointwise, so every nonnegative mixed measure may be used; for
+metrics, this is precisely the ultrametric hypothesis.  The latter therefore
+recovers the quadratic theorem and extends it to all \(p\geq1\).  It is
+sufficient, but not claimed to be necessary for concavity at one fixed
+exponent and one fixed pair of spaces: the exact finite criterion remains
+\cref{prop:curvature-criterion}.
+
+\section{A hierarchy of ultrametric examples}
+\label{sec:ultrametric-examples}
+
+Ultrametrics range from the constant distance on a finite set to spaces of
+infinite trees, valued fields and locally convergent graphs.  Their common
+mechanism is not an exotic triangle inequality but a nested family of
+partitions: two points are close when they remain in the same cluster down to
+a fine scale.  This section builds a catalogue from elementary examples to
+more structural ones and records compactness, because compact ultrametric
+spaces enter directly into \cref{thm:ultrametric-concavity}.
+
+\paragraph{Nested partitions are the basic construction.}
+The finite case already contains the complete geometry.  It also explains
+why dendrograms and ultrametrics are equivalent representations of the same
+hierarchy \citep{CarlssonMemoli2010}.
+
+\begin{proposition}[Finite hierarchies and ultrametrics]
+\label{prop:nested-partition-ultrametric}
+Let \(\mathscr P_0,\ldots,\mathscr P_L\) be partitions of a finite set
+\(\mathcal X\), where \(\mathscr P_0\) is the partition into singletons,
+\(\mathscr P_L=\{\mathcal X\}\), and each \(\mathscr P_\ell\) refines
+\(\mathscr P_{\ell+1}\).  Fix heights
+\(0=h_0<h_1<\cdots<h_L\).  For \(x\neq x'\), set
+\begin{equation}
+  m(x,x'):=\min\{\ell:x,x'\text{ lie in the same block of }
+  \mathscr P_\ell\},
+  \qquad d(x,x'):=h_{m(x,x')},
+  \label{eq:partition-ultrametric}
+\end{equation}
+and set \(d(x,x)=0\).  Then \(d\) is an ultrametric.  Conversely, every
+finite ultrametric is obtained in this way.
+\end{proposition}
+
+\begin{proof}
+If \(x,y\) and \(y,z\) belong to common blocks by level
+\(\ell=\max\{m(x,y),m(y,z)\}\), those blocks intersect at \(y\) and hence are
+the same block.  Thus \(m(x,z)\leq\ell\), which gives
+\(d(x,z)\leq\max\{d(x,y),d(y,z)\}\).
+
+Conversely, let \(0=h_0<h_1<\cdots<h_L\) be the distinct values of a finite
+ultrametric.  At level \(\ell\), declare \(x\sim_\ell x'\) when
+\(d(x,x')\leq h_\ell\).  The strong triangle inequality makes this relation
+transitive, so its classes form a partition \(\mathscr P_\ell\).  These
+partitions are nested, and the first level at which \(x\) and \(x'\) merge
+has height exactly \(d(x,x')\).
+\end{proof}
+
+\begin{example}[The constant discrete ultrametric]
+\label{ex:constant-ultrametric}
+On any set \(\mathcal X\), the metric
+\[
+  d(x,x')=R\,\mathbf 1_{\{x\neq x'\}},\qquad R>0,
+\]
+is ultrametric.  Every triangle is either degenerate or equilateral.  On a
+finite set, this is \eqref{eq:partition-ultrametric} with only the singleton
+partition and the one-block partition.  It is the simplest example, but also
+the least informative one: there is only one nontrivial distance threshold.
+\end{example}
+
+\begin{example}[A two-scale block model]
+\label{ex:two-scale-ultrametric}
+Let \(0<r<R\), split \(\{1,2,3,4\}\) into the two blocks
+\(\{1,2\}\) and \(\{3,4\}\), and use distance \(r\) inside a block and
+\(R\) across blocks.  The distance matrix is
+\[
+  \begin{pmatrix}
+    0&r&R&R\\
+    r&0&R&R\\
+    R&R&0&r\\
+    R&R&r&0
+  \end{pmatrix}.
+\]
+At thresholds up to \(r\), every point is isolated; between \(r\) and \(R\),
+the two prescribed blocks are visible; above \(R\), everything has merged.
+Replacing the two blocks by an arbitrary nested collection gives a finite
+hierarchical block model.
+\end{example}
+
+\begin{example}[Dendrograms and weighted rooted trees]
+\label{ex:dendrogram-ultrametric}
+Let the points be the leaves of a rooted tree.  Give every vertex a height,
+with leaves at height zero and heights strictly increasing toward the root.
+If \(x\wedge x'\) denotes the lowest common ancestor of two leaves, then
+\begin{equation}
+  d(x,x')=h(x\wedge x')
+  \label{eq:dendrogram-ultrametric}
+\end{equation}
+is ultrametric: among three leaves, the two largest merge heights coincide.
+Conversely, \cref{prop:nested-partition-ultrametric} turns every finite
+ultrametric into such a dendrogram.  This is the geometry produced by
+hierarchical clustering and used for taxonomies and phylogenetic
+representations.  It is important not to confuse \eqref{eq:dendrogram-ultrametric}
+with the shortest-path metric on all vertices of a tree; the latter is
+generally a tree metric, but not an ultrametric.
+\end{example}
+
+\paragraph{Prefix spaces turn hierarchy into coordinates.}
+Words and sequences provide the canonical infinite-scale model: distance is
+determined by the first coordinate at which two objects disagree.
+
+\begin{example}[Finite words, Cantor space and Baire space]
+\label{ex:prefix-ultrametric}
+Let \(\mathcal A\) be an alphabet, let \(0<\vartheta<1\), and consider
+sequences \(x=(x_k)_{k\geq1}\) in \(\mathcal A^{\mathbb N}\).  If
+\(x\neq x'\), define the first disagreement
+\(N(x,x')=\min\{k\geq1:x_k\neq x'_k\}\) and
+\begin{equation}
+  d_\vartheta(x,x')=\vartheta^{N(x,x')-1},
+  \qquad d_\vartheta(x,x)=0.
+  \label{eq:prefix-ultrametric}
+\end{equation}
+If two pairs agree through the first \(m\) symbols, then so does the remaining
+pair; hence \eqref{eq:prefix-ultrametric} is ultrametric.  Its balls are
+cylinder sets obtained by fixing an initial word.  Fixed-length words inherit
+finite ultrametrics.  If \(\mathcal A\) is finite, the infinite sequence
+space is compact and is usually called a Cantor space; if
+\(\mathcal A=\mathbb N\), one obtains the complete but noncompact Baire
+space.  Closed subshifts and spaces of admissible symbolic trajectories are
+ultrametric subspaces of the same form.
+\end{example}
+
+\begin{example}[The ternary Cantor set]
+\label{ex:cantor-set-ultrametric}
+The coding map
+\[
+  \iota(\omega)=\sum_{k\geq1}2\omega_k3^{-k},
+  \qquad \omega\in\{0,1\}^{\mathbb N},
+\]
+identifies binary sequences with the middle-third Cantor set.  Transporting
+\eqref{eq:prefix-ultrametric} with \(\vartheta=1/3\) through \(\iota\) gives
+an ultrametric \(d_C\) on that fractal.  If \(N\) is the first differing
+digit, then
+\begin{equation}
+  \frac13 d_C(\omega,\omega')
+  \leq \abs{\iota(\omega)-\iota(\omega')}
+  \leq d_C(\omega,\omega').
+  \label{eq:cantor-euclidean-comparison}
+\end{equation}
+Thus the familiar Euclidean geometry of the Cantor set is bi-Lipschitz
+equivalent to an ultrametric geometry, although the restricted Euclidean
+distance itself is not ultrametric.  This example is a useful warning that
+ultrametricity depends on the chosen distance, not only on the topology.
+\end{example}
+
+\paragraph{Valuations produce arithmetic ultrametrics.}
+The strong triangle inequality is the defining feature of non-Archimedean
+absolute values.  Congruence at increasing precision plays exactly the role
+of agreement along an increasingly long prefix.
+
+\begin{example}[Finite congruence spaces and the \(p\)-adic integers]
+\label{ex:padic-ultrametric}
+Fix a prime \(p\).  For distinct residues
+\(a,b\in\mathbb Z/p^L\mathbb Z\), let
+\[
+  n(a,b)=\max\{0\leq k<L:a\equiv b\pmod {p^k}\},
+  \qquad d_p(a,b)=p^{-n(a,b)},
+\]
+and set \(d_p(a,a)=0\).  Congruence modulo \(p^k\) gives the nested
+partitions, so this is a finite ultrametric.  Passing to the inverse limit
+gives the compact ring of \(p\)-adic integers \(\mathbb Z_p\), with
+\begin{equation}
+  d_p(x,y)=\abs{x-y}_p=p^{-v_p(x-y)}.
+  \label{eq:padic-ultrametric}
+\end{equation}
+The valuation inequality
+\(v_p(x+y)\geq\min\{v_p(x),v_p(y)\}\) is precisely the ultrametric
+inequality.  Balls are congruence classes modulo \(p^k\).  The field
+\(\mathbb Q_p\) has the same local geometry but is not compact; compact
+subsets such as \(\mathbb Z_p\), or probability measures supported on compact
+balls, are therefore the direct setting for the compact GW statement.
+\end{example}
+
+\begin{example}[Formal series and non-Archimedean vector spaces]
+\label{ex:valued-field-ultrametric}
+For a finite field \(\mathbb F_q\), let
+\(\operatorname{ord}_t(f)\) be the lowest nonzero exponent in a Laurent
+series \(f\in\mathbb F_q((t))\).  Then
+\[
+  d(f,g)=q^{-\operatorname{ord}_t(f-g)}
+\]
+is ultrametric, and the unit ball \(\mathbb F_q[[t]]\) is compact.  More
+generally, if \(\mathbb K\) is any non-Archimedean valued field, then
+\(d(x,y)=\lVert x-y\rVert_\infty\) is ultrametric on
+\(\mathbb K^m\), as well as on sequence spaces such as
+\(c_0(\mathbb N,\mathbb K)\).  Hence ultrametric spaces are not confined to
+trees: they also arise as finite- and infinite-dimensional algebraic state
+spaces.
+\end{example}
+
+\paragraph{Closure rules generate more elaborate spaces.}
+Several constructions preserve the strong triangle inequality and can be
+used to build new GW input spaces from the preceding examples.
+
+\begin{proposition}[Elementary closure properties]
+\label{prop:ultrametric-closure}
+Let \((\mathcal X,d)\) and \((\mathcal X_j,d_j)\), \(1\leq j\leq m\), be
+ultrametric spaces.
+\begin{enumerate}
+  \item Every subset of \(\mathcal X\), with the restricted distance, is
+  ultrametric.
+  \item If \(\varphi:\mathbb R_+\to\mathbb R_+\) is nondecreasing,
+  \(\varphi(0)=0\), and \(\varphi(r)>0\) for \(r>0\), then
+  \(\varphi\circ d\) is ultrametric.  In particular, powers, truncations and
+  bounded transforms such as \(d/(1+d)\) preserve ultrametricity.
+  \item The max product
+  \[
+    d_{\max}(x,x')=\max_{1\leq j\leq m}d_j(x_j,x'_j)
+  \]
+  is ultrametric on \(\prod_j\mathcal X_j\).
+  \item On the nonempty compact subsets \(A,B\subset\mathcal X\), the
+  Hausdorff distance
+  \begin{equation}
+    d_H(A,B)=\max\left\{
+      \sup_{x\in A}\inf_{y\in B}d(x,y),
+      \sup_{y\in B}\inf_{x\in A}d(x,y)
+    \right\}
+    \label{eq:ultrametric-hausdorff}
+  \end{equation}
+  is ultrametric.  If \(\mathcal X\) is compact, then its Hausdorff
+  hyperspace is compact as well.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Restriction is immediate.  Monotonicity gives
+\(\varphi(d(x,z))\leq
+\varphi(\max\{d(x,y),d(y,z)\})\), and a nondecreasing function commutes with
+the maximum of two scalars.  Taking the maximum of the componentwise strong
+triangle inequalities proves the product claim.
+
+For the Hausdorff claim, fix
+\(r>\max\{d_H(A,B),d_H(B,C)\}\).  Every \(x\in A\) lies within \(r\) of some
+\(y\in B\), which lies within \(r\) of some \(z\in C\).  Ultrametricity gives
+\(d(x,z)<r\).  The same argument in the reverse direction proves
+\(d_H(A,C)\leq\max\{d_H(A,B),d_H(B,C)\}\).  Compactness of the hyperspace
+follows by approximating compact sets with subsets of a common finite
+\(\varepsilon\)-net and using completeness.
+\end{proof}
+
+\begin{example}[Profinite groups and inverse limits]
+\label{ex:profinite-ultrametric}
+Let \(G=G_0\supset G_1\supset\cdots\) be finite-index normal subgroups with
+\(\bigcap_kG_k=\{e\}\), and consider the inverse-limit completion.  For
+\(0<\vartheta<1\), define
+\[
+  N(g,h)=\sup\{k:g^{-1}h\in G_k\},
+  \qquad d(g,h)=\vartheta^{N(g,h)},
+\]
+with \(\vartheta^\infty=0\).  Two elements are close when they agree in many
+finite quotients.  Since agreement through level \(k\) is an equivalence
+relation, this is a compact ultrametric group; normality makes the distance
+bi-invariant.  The additive group of \(\mathbb Z_p\) is recovered from
+\(G_k=p^k\mathbb Z_p\), while products of finite groups give prefix metrics
+on increasingly refined discrete coordinates.
+\end{example}
+
+\begin{example}[The local topology on rooted graphs]
+\label{ex:rooted-graph-ultrametric}
+Let \(\mathscr G_D\) be the isomorphism classes of connected rooted simple
+graphs with degree at most \(D\).  For rooted graphs \((G,o)\) and
+\((G',o')\), let
+\(R(G,G')\) be the largest radius for which the rooted radius-\(R\)
+neighborhoods are isomorphic, and set
+\begin{equation}
+  d_{\mathrm{loc}}(G,G')=2^{-R(G,G')},
+  \qquad 2^{-\infty}=0.
+  \label{eq:rooted-graph-ultrametric}
+\end{equation}
+Agreement of two rooted balls through radius \(R\) is transitive, so
+\eqref{eq:rooted-graph-ultrametric} is ultrametric.  Bounded degree leaves
+only finitely many rooted ball types at each radius; a diagonal argument then
+shows that \(\mathscr G_D\) is compact.  Weak convergence of probability laws
+on this space is the local weak, or Benjamini--Schramm, convergence used for
+large random graphs \citep{BenjaminiSchramm2001}.
+\end{example}
+
+\begin{example}[Compact-set-valued data]
+\label{ex:hyperspace-ultrametric}
+Starting from any compact example above, one may take its nonempty compact
+subsets and compare them with \eqref{eq:ultrametric-hausdorff}.  Iterating the
+construction gives spaces of hierarchical set-valued objects, all still
+compact and ultrametric.  For a finite dendrogram, a set is observed at
+resolution \(r\) only through the collection of level-\(r\) clusters it
+meets; two sets are within \(r\) exactly when these collections agree.  This
+makes the threshold partition behind the induced Hausdorff ultrametric
+explicit.
+\end{example}
+
+\begin{example}[Random tree boundaries and hierarchical cascades]
+\label{ex:random-cascade-ultrametric}
+Let \(\mathcal T\) be an infinite locally finite rooted tree and let
+\(\partial\mathcal T\) be its infinite rays.  Choose radii
+\(r_0>r_1>\cdots\downarrow0\).  If \(x\wedge y\) is the deepest common vertex
+of two rays, then
+\[
+  d(x,y)=r_{\lvert x\wedge y\rvert}\quad(x\neq y),
+  \qquad d(x,x)=0,
+\]
+is an ultrametric, and \(\partial\mathcal T\) is compact.  Assigning random
+child weights that sum to one at each vertex produces a random probability
+measure whose cylinder mass is the product of the weights along its branch.
+The geometry remains ultrametric while the measure becomes highly
+inhomogeneous.  Such random hierarchical measures are the elementary
+template behind multiplicative cascades and the ultrametric organization of
+states in spin-glass models; Ruelle probability cascades provide a canonical
+infinite-level realization \citep{RammalToulouseVirasoro1986,Ruelle1987}.
+\end{example}
+
+\begin{remark}[Which examples enter the GW theorem]
+Every finite example above satisfies \cref{cor:ultrametric-extreme-minimizer}.
+The finite-alphabet sequence spaces, Cantor set, \(\mathbb Z_p\), compact
+unit balls such as \(\mathbb F_q[[t]]\), profinite groups, bounded-degree
+rooted graph space, compact Hausdorff hyperspaces and locally finite tree
+boundaries all satisfy the hypotheses of \cref{thm:ultrametric-concavity}.
+Noncompact examples such as Baire space, \(\mathbb Q_p\), full Laurent-series
+fields and infinite-dimensional sequence spaces require either compact
+restrictions or an extension with moment and integrability assumptions.
+Ordinary shortest-path tree metrics do not enter this list unless their
+restriction has separately been shown to be ultrametric.
+\end{remark}
+
+\section{Compact ultrametric spaces}
+\label{sec:ultrametric}
+
+Ultrametric geometry supplies a concrete and useful class where distance
+thresholds are automatically conditionally negative.  At each scale, the
+space breaks into disjoint clusters, turning the key product quadratic form
+into a sum of squares.
+
+\begin{theorem}[Conditional concavity on compact ultrametric spaces]
+\label{thm:ultrametric-concavity}
+Let \((\mathcal X,d_{\mathcal X})\) and
+\((\mathcal Y,d_{\mathcal Y})\) be compact ultrametric spaces.  For arbitrary
+probability measures \(\alpha\in\Pcal(\mathcal X)\) and
+\(\beta\in\Pcal(\mathcal Y)\), and every submodular mixed-measure distortion
+\(\ell\), the objective
+\[
+  \pi\longmapsto
+  \iint
+  \ell\bigl(d_{\mathcal X}(x,x'),d_{\mathcal Y}(y,y')\bigr)
+  \dd\pi(x,y)\dd\pi(x',y')
+\]
+is concave on \(\Piopt(\alpha,\beta)\).  In particular, this holds for every
+power distortion \(\ell(a,b)=\abs{a-b}^p\), \(p\geq1\).
+\end{theorem}
+
+\begin{proof}
+Fix \(r>0\).  In an ultrametric space, the relation
+\(x\sim_r x'\) if \(d_{\mathcal X}(x,x')<r\) is an equivalence relation.
+Compactness implies that its partition \(\mathscr P_r^{\mathcal X}\) has
+finitely many classes.  Therefore
+\[
+  H_r^{d_{\mathcal X}}(x,x')
+  =1-\sum_{C\in\mathscr P_r^{\mathcal X}}
+  \mathbf 1_C(x)\mathbf 1_C(x').
+\]
+For every finite signed measure \(\sigma\) of total mass zero,
+\[
+  \iint H_r^{d_{\mathcal X}}(x,x')\dd\sigma(x)\dd\sigma(x')
+  =-\sum_{C\in\mathscr P_r^{\mathcal X}}\sigma(C)^2\leq0.
+\]
+Thus every threshold kernel is CND, in agreement with
+\cref{prop:threshold-ultrametric}, and the same argument applies on
+\(\mathcal Y\).
+
+More directly, if \(\xi\in\Tcal_{\mathcal X,\mathcal Y}\), then the analogue
+of \eqref{eq:threshold-product} is
+\begin{equation}
+  I_\xi(r,s)
+  =
+  \sum_{C\in\mathscr P_r^{\mathcal X}}
+  \sum_{D\in\mathscr P_s^{\mathcal Y}}
+  \xi(C\times D)^2
+  \geq0.
+  \label{eq:ultrametric-squares}
+\end{equation}
+Indeed, the constant term and the terms involving only one partition vanish
+because \(\xi\) has zero total mass and zero marginals.  The same Fubini
+calculation as in \eqref{eq:mixed-measure-curvature} gives
+\[
+  \iint \ell\bigl(d_{\mathcal X}(x,x'),d_{\mathcal Y}(y,y')\bigr)
+  \dd\xi(x,y)\dd\xi(x',y')
+  =-\int I_\xi(r,s)\dd\omega_\ell(r,s)\leq0.
+\]
+The quadratic segment expansion used in \cref{prop:curvature-criterion}
+therefore proves concavity.  The power case follows from
+\cref{cor:power-distortions}.
+\end{proof}
+
+\begin{remark}[The endpoint \(p=\infty\)]
+The usual \(p=\infty\) GW distortion is an essential supremum rather than a
+quadratic functional of the coupling.  The direction-space notion of
+conditional concavity used here therefore does not pass to that endpoint.
+\end{remark}
+
+\section{Conclusion and recommended book statement}
+\label{sec:conclusion}
+
+The clean presentation should begin with the master identity
+\eqref{eq:mixed-measure-curvature}, not with two apparently unrelated proofs.
+For genuine metrics, it yields a hierarchy of certificates:
+\[
+  \text{ultrametric}
+  \quad\Longleftrightarrow\quad
+  \text{threshold-CND}
+  \quad\Longrightarrow\quad
+  \text{CND}.
+\]
+At \(p=2\), the constant scale weight allows one to use only the weakest,
+integrated CND/CPD certificate, as formalized in
+\cref{cor:quadratic-integrated-certificate}.  Under the stronger ultrametric
+certificate, the same formula controls every pair of scales and therefore
+every \(p\geq1\), as well as every submodular mixed-measure distortion.  Thus
+the ultrametric theorem genuinely contains the quadratic case; what is special
+about \(p=2\) is that its hypothesis can be weakened.
+
+The counterexamples in \cref{thm:no-cnd-extension} show that this weakening
+cannot simply be reused for \(p\neq2\).  In finite ultrametric spaces,
+\cref{cor:ultrametric-extreme-minimizer} additionally yields sparse and, for
+uniform marginals, permutation optimizers.  This organization also prevents
+confusing the outer GW exponent with powers used inside the base
+dissimilarities.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

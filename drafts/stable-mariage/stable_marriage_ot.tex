@@ -1,0 +1,604 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=29mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[round,authoryear]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,
+  citecolor=red!45!black,urlcolor=blue!55!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\hypersetup{
+  pdftitle={Stable Marriage, Optimal Transport, and Birkhoff Geometry},
+  pdfauthor={Gabriel Peyre},
+  pdfsubject={Gale--Shapley stability, Kantorovich assignment, and the assignment game},
+  pdfkeywords={stable marriage, Gale--Shapley, optimal transport, Birkhoff polytope, assignment game}
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\Perm}{\mathfrak S}
+\newcommand{\Pmat}{\mathrm P}
+\newcommand{\Cmat}{\mathrm C}
+\newcommand{\Smat}{\mathrm S}
+\newcommand{\fD}{\mathrm f}
+\newcommand{\gD}{\mathrm g}
+\newcommand{\Bcal}{\mathcal B}
+\newcommand{\Scal}{\mathcal S}
+\newcommand{\Ucal}{\mathcal U}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\rank}{\operatorname{rank}}
+
+\title{\textbf{Stable Marriage, Optimal Transport,\\
+and Birkhoff Geometry}\\
+\large Ordinal stability, cardinal efficiency, and transferable utility}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Stable marriage and discrete optimal transport both pair two finite populations,
+but they answer different questions. Gale--Shapley stability is ordinal and
+local: no unmatched pair should prefer one another to their assigned partners.
+Kantorovich transport is cardinal and global: it minimizes an aggregate cost
+over the Birkhoff polytope. This note separates these notions before drawing
+their precise connections. The Birkhoff--von Neumann theorem identifies the
+Birkhoff polytope with the convex hull of all perfect matchings, while the
+Vande Vate--Rothblum theorem identifies a smaller polytope, obtained by adding
+linear no-blocking inequalities, with the convex hull of stable matchings.
+Ordinary stability is not equivalent to minimum total cost, even when both
+sides rank partners using the same cost matrix. The exact optimal-transport
+bridge instead appears in the Shapley--Shubik assignment game: with
+transferable utility, pairwise stability is Kantorovich dual feasibility,
+matched pairs satisfy complementary slackness, and Birkhoff integrality yields
+an integral stable assignment. We also explain what Gale--Shapley optimizes,
+compare its algorithmic invariants with Hungarian primal--dual methods, and
+discuss unequal populations, fractional masses, and continuous matching.
+\end{abstract}
+
+\section{Three questions about the same pairing matrix}
+\label{sec:three-questions}
+
+Let $X=\{1,\ldots,n\}$ and $Y=\{1,\ldots,n\}$ be two populations. A
+perfect matching is a permutation $\sigma\in\Perm_n$: agent $i\in X$ is
+paired with \(\sigma(i)\in Y\). Its permutation matrix is
+\begin{equation}\label{eq:permutation-matrix}
+  (\Pmat_\sigma)_{ij}=\begin{cases}1,&j=\sigma(i),\\0,&\text{otherwise}.
+  \end{cases}
+\end{equation}
+This common representation hides three different mathematical models.
+
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=2.7em]
+  \item \textbf{Optimal assignment.} A cardinal cost $C_{ij}$ measures the
+  loss incurred by matching $i$ to $j$. One minimizes the sum of costs.
+  \item \textbf{Stable marriage.} Each agent only ranks the agents on the
+  opposite side. One asks that no unmatched pair mutually prefer one another
+  to their assigned partners.
+  \item \textbf{Assignment game.} A match produces a cardinal surplus that
+  the two partners can divide through a transfer. One asks that no pair can
+  deviate and split its surplus so as to improve both partners' payoffs.
+\end{enumerate}
+
+The first model is a social planner's optimization problem, the second is a
+no-blocking equilibrium without transfers, and the third is a market
+equilibrium with transferable utility. Confusing them leads to false claims.
+In particular, a stable marriage need not minimize any natural aggregate cost
+on all matchings. The assignment game, not ordinary stable marriage, is the
+setting in which Kantorovich duality becomes an exact stability theorem.
+
+\section{Optimal assignment and the Birkhoff polytope}
+\label{sec:birkhoff}
+
+We first recall the convex geometry underlying discrete transport. The
+Birkhoff polytope is
+\begin{equation}\label{eq:birkhoff-polytope}
+  \Bcal_n
+  =\left\{\Pmat\in\R_+^{n\times n}:
+  \Pmat\one=\one,\ \Pmat^\top\one=\one\right\}.
+\end{equation}
+Its elements are bistochastic matrices. If both empirical measures assign mass
+\(1/n\) to every agent, the corresponding Kantorovich couplings are
+$\Pmat/n$ with $\Pmat\in\Bcal_n$. We retain the unnormalized convention
+\eqref{eq:birkhoff-polytope} because its integral points are exactly the
+permutation matrices.
+
+\begin{definition}[Optimal assignment and its Kantorovich relaxation]
+For a cost matrix $\Cmat=(C_{ij})\in\R^{n\times n}$, define
+\begin{align}
+  \operatorname{Assign}(\Cmat)
+  &=\min_{\sigma\in\Perm_n}\sum_{i=1}^n C_{i,\sigma(i)},
+  \label{eq:assignment}\\
+  \operatorname{Kant}(\Cmat)
+  &=\min_{\Pmat\in\Bcal_n}\ip{\Cmat}{\Pmat}
+  =\min_{\Pmat\in\Bcal_n}\sum_{i,j}C_{ij}P_{ij}.
+  \label{eq:kantorovich-assignment}
+\end{align}
+\end{definition}
+
+\begin{theorem}[Birkhoff--von Neumann]\label{thm:birkhoff}
+The extreme points of $\Bcal_n$ are the permutation matrices. Equivalently,
+every $\Pmat\in\Bcal_n$ admits a decomposition
+\begin{equation}\label{eq:birkhoff-decomposition}
+  \Pmat=\sum_{k=1}^N\lambda_k\Pmat_{\sigma_k},
+  \qquad \lambda_k\geq0,\quad \sum_{k=1}^N\lambda_k=1.
+\end{equation}
+Consequently $\operatorname{Kant}(\Cmat)=\operatorname{Assign}(\Cmat)$,
+and the Kantorovich problem has an integral minimizer.
+\end{theorem}
+
+\begin{proof}
+The support graph of a bistochastic matrix has no degree-one vertex unless its
+incident entry is one. If a nonintegral bistochastic matrix has no such forced
+edge, its bipartite support contains an even cycle. Alternately adding and
+subtracting a sufficiently small amount along that cycle writes the matrix as
+the midpoint of two distinct bistochastic matrices, so it is not extreme.
+Conversely, a permutation matrix cannot be written as a nontrivial convex
+combination of bistochastic matrices because each of its zero entries forces
+the corresponding entries of both matrices to vanish. This proves the
+extreme-point statement and hence \eqref{eq:birkhoff-decomposition}. A linear
+functional reaches its minimum at an extreme point, proving the last claim.
+See \citet{Birkhoff1946,VonNeumann1953}.
+\end{proof}
+
+The linear-programming dual of \eqref{eq:kantorovich-assignment} is
+\begin{equation}\label{eq:kantorovich-dual}
+  \max_{\fD,\gD\in\R^n}
+  \left\{\sum_i f_i+\sum_j g_j:
+  f_i+g_j\leq C_{ij}\ \text{for all }i,j\right\}.
+\end{equation}
+At optimality, complementary slackness gives
+\begin{equation}\label{eq:complementary-slackness-cost}
+  P_{ij}>0\quad\Longrightarrow\quad f_i+g_j=C_{ij}.
+\end{equation}
+The Hungarian algorithm is a primal--dual method built around precisely these
+feasible potentials and equality edges \citep{Kuhn1955}.
+
+\section{Stable marriage and deferred acceptance}
+\label{sec:stable-marriage}
+
+Stable marriage replaces cardinal costs by ordinal preferences. For every
+\(i\in X\), let \(\succ_i^X\) be a strict total order on \(Y\);
+\(j\succ_i^X j'\) means that \(i\) prefers \(j\) to \(j'\). For every
+\(j\in Y\), let \(\succ_j^Y\) be a strict total order on \(X\).
+
+\begin{definition}[Blocking pair and stable matching]\label{def:stable}
+For a matching \(\sigma\in\Perm_n\), an unmatched pair \((i,j)\), with
+\(j\neq\sigma(i)\), is a \emph{blocking pair} when
+\begin{equation}\label{eq:blocking-pair}
+  j\succ_i^X\sigma(i)
+  \qquad\text{and}\qquad
+  i\succ_j^Y\sigma^{-1}(j).
+\end{equation}
+The matching is \emph{stable} if it has no blocking pair.
+\end{definition}
+
+Stability is local and ordinal. It does not sum gains across agents, and a
+large improvement for one pair cannot compensate for a loss to another pair.
+Gale and Shapley's deferred-acceptance algorithm proves that a stable matching
+always exists under strict complete preferences \citep{GaleShapley1962}.
+
+\paragraph{The \(X\)-proposing deferred-acceptance algorithm.}
+Initially all agents are unmatched. While an unmatched \(i\in X\) has not
+proposed to everyone, \(i\) proposes to the most-preferred \(j\in Y\) who has
+not yet rejected him. Each \(j\) tentatively holds her most-preferred proposal
+among her current tentative partner and all new proposals, and rejects the
+others. The tentative matches become final when no further proposal is
+possible.
+
+\begin{theorem}[Gale--Shapley]\label{thm:gale-shapley}
+With strict complete preferences, deferred acceptance terminates after at most
+\(n^2\) proposals and returns a perfect stable matching \(\sigma_X\). Moreover,
+it is \(X\)-optimal among stable matchings: for every stable \(\sigma\) and
+every \(i\in X\),
+\begin{equation}\label{eq:proposer-optimal}
+  \sigma_X(i)\succeq_i^X\sigma(i).
+\end{equation}
+If the roles are reversed, the resulting matching is \(Y\)-optimal.
+\end{theorem}
+
+\begin{proof}
+No ordered pair \((i,j)\) receives more than one proposal, so there are at most
+\(n^2\) proposals. Once a receiver holds a proposal, she always holds one and
+her tentative partner can only improve. At termination every proposer is
+matched. Indeed, if some proposer had exhausted all receivers, every receiver
+would have received and hence would still hold one proposal, accounting for
+all \(n\) proposers.
+
+To prove stability, suppose that \((i,j)\) blocks the output. Since \(i\)
+prefers \(j\) to his final partner, he proposed to \(j\) earlier. Receiver
+\(j\) rejected him while holding someone she preferred, and her tentative
+partner only improved afterward. She therefore prefers her final partner to
+\(i\), contradicting \eqref{eq:blocking-pair}.
+
+For proposer optimality, suppose for contradiction that some proposer is
+rejected by a receiver with whom he is paired in some stable matching. Consider
+the first such rejection: \(j\) rejects \(i\) while holding \(i'\), whom she
+prefers to \(i\). In a stable matching \(\sigma\) with \(\sigma(i)=j\), write
+\(j'=\sigma(i')\). Proposer \(i'\) must prefer \(j\) to \(j'\). Otherwise he
+would already have proposed to, and been rejected by, his stable partner
+\(j'\), contradicting the choice of the first rejection. Thus \(i'\) prefers
+\(j\) to \(j'\), while \(j\) prefers \(i'\) to \(i\), so \((i',j)\) blocks
+\(\sigma\). This contradiction shows that no proposer is ever rejected by a
+possible stable partner. His final partner is therefore his best stable
+partner, proving \eqref{eq:proposer-optimal}. Reversing the sides gives the
+last claim.
+\end{proof}
+
+Stable matchings form a distributive lattice under the order induced by the
+\(X\)-agents' preferences; the two deferred-acceptance outcomes are its
+opposite extrema. This finer structure is developed by
+\citet{GusfieldIrving1989} and \citet{RothSotomayor1990}.
+
+\section{A stable analogue of the Birkhoff polytope}
+\label{sec:stable-polytope}
+
+The parallel with Kantorovich transport becomes geometric once stability is
+written as linear inequalities. For a pair \((i,j)\), set
+\begin{equation}\label{eq:better-sets}
+  B_i(j)=\{j'\in Y:j'\succ_i^X j\},
+  \qquad
+  B_j(i)=\{i'\in X:i'\succ_j^Y i\}.
+\end{equation}
+Define the fractional stable-marriage polytope
+\begin{equation}\label{eq:stable-polytope}
+  \Scal(\succ^X,\succ^Y)
+  =\left\{\Pmat\in\Bcal_n:
+  P_{ij}+\sum_{j'\in B_i(j)}P_{ij'}
+  +\sum_{i'\in B_j(i)}P_{i'j}\geq1
+  \quad\forall(i,j)\right\}.
+\end{equation}
+
+\begin{proposition}[Integral no-blocking inequalities]\label{prop:integral-stability}
+For \(\sigma\in\Perm_n\), its permutation matrix \(\Pmat_\sigma\) belongs to
+\(\Scal(\succ^X,\succ^Y)\) if and only if \(\sigma\) is stable.
+\end{proposition}
+
+\begin{proof}
+For an integral matching, the left-hand side of the inequality indexed by
+\((i,j)\) is positive precisely when at least one of the following holds:
+\(i\) is matched to \(j\); \(i\) is matched to someone preferred to \(j\); or
+\(j\) is matched to someone preferred to \(i\). The inequality therefore fails
+exactly when \(i\) and \(j\) are unmatched and both prefer one another to their
+current partners, which is exactly the blocking condition.
+\end{proof}
+
+The difficult statement is that the inequalities introduce no fractional
+extreme points. This is the stable-marriage counterpart of the
+Birkhoff--von Neumann theorem.
+
+\begin{theorem}[Vande Vate--Rothblum stable-polytope theorem]
+\label{thm:stable-polytope}
+Under strict complete preferences,
+\begin{equation}\label{eq:stable-convex-hull}
+  \Scal(\succ^X,\succ^Y)
+  =\operatorname{conv}\left\{\Pmat_\sigma:
+  \sigma\text{ is stable}\right\}.
+\end{equation}
+In particular, every extreme point of \eqref{eq:stable-polytope} is the
+permutation matrix of a stable matching.
+\end{theorem}
+
+\begin{proof}[Proof structure]
+Proposition~\ref{prop:integral-stability} gives the inclusion from right to
+left. The reverse inclusion is the nontrivial polyhedral theorem of
+\citet{VandeVate1989}, simplified and extended by \citet{Rothblum1992}.
+Rothblum proves that every linear objective over the system
+\eqref{eq:stable-polytope} has an integral optimum. One can formulate the key
+step through the rotation poset of stable matchings: eliminating a closed set
+of rotations moves from the \(X\)-optimal matching to another stable matching,
+and the resulting order-polytope representation is integral. Equivalently, a
+linear image of that integral order polytope gives
+\eqref{eq:stable-polytope}. Later, \citet{KiralPap2008} proved that Rothblum's
+inequality system is totally dual integral.
+
+For completeness, once this integrality result is granted, the convex-hull
+claim follows immediately. If \eqref{eq:stable-polytope} had a fractional
+extreme point \(\Pmat\), choose a linear functional that uniquely exposes it.
+The integrality theorem would supply an integral optimizer for the same
+functional, contradicting uniqueness. Hence every extreme point is integral,
+and Proposition~\ref{prop:integral-stability} identifies it with a stable
+matching. A bounded polytope is the convex hull of its extreme points.
+\end{proof}
+
+\begin{remark}[Two different integrality mechanisms]
+Theorem~\ref{thm:birkhoff} says that every bistochastic matrix is a mixture of
+arbitrary perfect matchings. Theorem~\ref{thm:stable-polytope} says that every
+bistochastic matrix satisfying the fractional no-blocking inequalities is a
+mixture of stable matchings. An arbitrary Birkhoff decomposition of a point in
+\(\Scal\) need not consist of stable permutations; the theorem guarantees that
+at least one stable decomposition exists.
+\end{remark}
+
+\begin{corollary}[Minimum-cost stable marriage]\label{cor:min-cost-stable}
+For every weight matrix \(\Cmat\), the linear program
+\begin{equation}\label{eq:min-cost-stable}
+  \min_{\Pmat\in\Scal(\succ^X,\succ^Y)}\ip{\Cmat}{\Pmat}
+\end{equation}
+has an integral optimum and therefore computes a minimum-cost stable matching.
+\end{corollary}
+
+This looks like Kantorovich transport, but the feasible polytope now depends on
+the two preference profiles. The cost only selects among stable matchings; it
+does not create stability.
+
+\paragraph{What deferred acceptance optimizes.}
+Let \(r^X_{ij}\in\{1,\ldots,n\}\) be the rank of \(j\) in proposer \(i\)'s
+preference list, with rank one best. The pointwise optimality
+\eqref{eq:proposer-optimal} is stronger than minimizing one aggregate score.
+
+\begin{corollary}[A linear-programming characterization of Gale--Shapley]
+\label{cor:gs-lp}
+For any weights \(w_i>0\), the \(X\)-proposing Gale--Shapley output solves
+\begin{equation}\label{eq:gs-rank-objective}
+  \min_{\Pmat\in\Scal(\succ^X,\succ^Y)}
+  \sum_{i,j}w_i r^X_{ij}P_{ij}.
+\end{equation}
+It simultaneously minimizes every proposer's rank among stable matchings.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:stable-polytope}, every feasible \(\Pmat\) is a convex
+combination of stable permutation matrices. For each such matching,
+\eqref{eq:proposer-optimal} gives
+\(r^X_{i,\sigma_X(i)}\leq r^X_{i,\sigma(i)}\) for every \(i\). Multiplication by
+\(w_i>0\), summation, and convex combination prove the claim.
+\end{proof}
+
+This does not imply that the \(X\)-optimal matching minimizes a two-sided rank
+sum or a cardinal transport cost over all matchings.
+
+\section{Why ordinary stability is not optimal transport}
+\label{sec:not-equivalent}
+
+It is tempting to generate both preference profiles from a common cost matrix:
+each agent prefers the partner with smaller cost. Even then, no-blocking
+stability and minimum total cost generally disagree.
+
+\begin{example}[A stable matching can be globally expensive]
+\label{ex:counterexample}
+Consider
+\begin{equation}\label{eq:counterexample-cost}
+  \Cmat=\begin{pmatrix}0&1\\50&100\end{pmatrix},
+\end{equation}
+and let every row and every column rank partners by increasing \(C_{ij}\). The
+diagonal matching has total cost \(100\) and is stable. The pair \((1,2)\) does
+not block because agent \(1\in X\) prefers \(1\in Y\), while \((2,1)\) does not
+block because agent \(1\in Y\) prefers \(1\in X\). The off-diagonal matching
+has the smaller total cost \(1+50=51\), so it is the unique optimal assignment,
+but the pair \((1,1)\) blocks it. Thus the unique stable matching differs from
+the unique Kantorovich optimum.
+\end{example}
+
+There is also a geometric obstruction to encoding all stable matchings as the
+minimizers of a single unconstrained transport cost. The minimizers of a linear
+functional over \(\Bcal_n\) form a face of \(\Bcal_n\). The convex hull of the
+stable matchings is generally a polytope cut out by additional inequalities,
+not a face of \(\Bcal_n\). Hence there need not exist a matrix \(\Cmat\) whose
+entire set of optimal assignments is exactly the set of stable marriages.
+
+The two notions answer different welfare questions:
+\begin{itemize}[leftmargin=2em]
+  \item optimal transport permits losses and gains to compensate across
+  unrelated agents through the sum \(\sum_i C_{i,\sigma(i)}\);
+  \item stable marriage forbids a deviation only when both members of one pair
+  improve, and it allows no monetary compensation between them.
+\end{itemize}
+
+\section{The exact bridge: transferable utility and the assignment game}
+\label{sec:assignment-game}
+
+The connection with Kantorovich duality becomes exact once utility is
+transferable. Let \(S_{ij}\) be the total surplus created by matching \(i\) and
+\(j\). For simplicity assume that all agents are matched and that outside
+options have been normalized to zero. A matched pair may divide \(S_{ij}\)
+arbitrarily: \(u_i\) is the payoff of \(i\in X\), and \(v_j\) that of \(j\in Y\).
+
+\begin{definition}[Core-stable assignment-game outcome]
+An outcome \((\sigma,u,v)\) is core stable when
+\begin{align}
+  u_i+v_{\sigma(i)}&=S_{i,\sigma(i)} &&\text{for every }i,
+  \label{eq:budget-balance}\\
+  u_i+v_j&\geq S_{ij} &&\text{for every }(i,j),
+  \label{eq:no-transfer-blocking}
+\end{align}
+with \(u_i,v_j\geq0\) when individual rationality relative to the outside
+option is required.
+\end{definition}
+
+Indeed, pair \((i,j)\) can make both members strictly better through a transfer
+if and only if its available surplus satisfies \(S_{ij}>u_i+v_j\). Thus
+\eqref{eq:no-transfer-blocking} is exactly the no-blocking condition with
+transfers.
+
+Consider the primal and dual linear programs
+\begin{align}
+  \max_{\Pmat\in\Bcal_n}\ip{\Smat}{\Pmat},
+  \label{eq:surplus-primal}\\
+  \min_{u,v\in\R^n}
+  \left\{\sum_i u_i+\sum_jv_j:
+  u_i+v_j\geq S_{ij}\quad\forall(i,j)\right\}.
+  \label{eq:surplus-dual}
+\end{align}
+
+\begin{theorem}[Shapley--Shubik: core stability is Kantorovich duality]
+\label{thm:assignment-game}
+An outcome \((\sigma,u,v)\) is core stable if and only if
+\(\Pmat_\sigma\) solves \eqref{eq:surplus-primal}, \((u,v)\) solves
+\eqref{eq:surplus-dual}, and the two solutions satisfy complementary slackness.
+Consequently the assignment game has a core-stable outcome.
+\end{theorem}
+
+\begin{proof}
+Suppose first that the outcome is core stable. The inequalities
+\eqref{eq:no-transfer-blocking} make \((u,v)\) dual feasible. Summing
+\eqref{eq:budget-balance} over matched pairs yields
+\begin{equation}\label{eq:core-equal-values}
+  \ip{\Smat}{\Pmat_\sigma}
+  =\sum_i S_{i,\sigma(i)}
+  =\sum_i u_i+\sum_jv_j.
+\end{equation}
+Weak duality says that every primal value is at most every dual value, so
+equality proves that both candidates are optimal. Equality on matched pairs is
+complementary slackness.
+
+Conversely, let \(\Pmat_\sigma\) and \((u,v)\) be optimal primal and dual
+solutions. Strong linear-programming duality equates their objectives.
+Complementary slackness gives
+\(u_i+v_{\sigma(i)}=S_{i,\sigma(i)}\), while dual feasibility gives
+\(u_i+v_j\geq S_{ij}\) for every pair. These are precisely
+\eqref{eq:budget-balance}--\eqref{eq:no-transfer-blocking}.
+
+Finally, linear-programming duality supplies a dual optimizer, and
+Theorem~\ref{thm:birkhoff} supplies an integral primal optimizer. Together they
+form a core-stable outcome. This is the finite assignment-game theorem of
+\citet{ShapleyShubik1971}.
+\end{proof}
+
+To recover the cost convention, set \(S_{ij}=-C_{ij}\), \(f_i=-u_i\), and
+\(g_j=-v_j\). Then \eqref{eq:surplus-primal} becomes the Kantorovich
+minimization \eqref{eq:kantorovich-assignment}, while
+\(u_i+v_j\geq S_{ij}\) becomes the familiar dual inequality
+\(f_i+g_j\leq C_{ij}\) from \eqref{eq:kantorovich-dual}. Equality on matched
+pairs becomes \eqref{eq:complementary-slackness-cost}.
+
+\begin{remark}[Why transfers change the mathematics]
+In ordinary stable marriage, the two comparisons in
+\eqref{eq:blocking-pair} are separate ordinal statements. In the assignment
+game, a transfer lets the pair pool its surplus, replacing two preference
+comparisons by the scalar inequality \(u_i+v_j\geq S_{ij}\). That inequality
+is a Kantorovich dual constraint. This aggregation is the exact reason optimal
+transport enters the transferable-utility model but not the general
+Gale--Shapley model.
+\end{remark}
+
+The continuous counterpart is equally important in economics. Quasilinear
+hedonic equilibria and stable matching with transferable utility can be cast as
+Monge--Kantorovich problems; see \citet{ChiapporiMcCannNesheim2010} for
+existence, purity, and uniqueness questions in continuous type spaces.
+
+\section{Three integrality and duality mechanisms}
+\label{sec:dictionary}
+
+The comparison can be summarized without collapsing the models into one
+another.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.18\textwidth}
+  >{\raggedright\arraybackslash}p{0.24\textwidth}
+  >{\raggedright\arraybackslash}p{0.26\textwidth}
+  >{\raggedright\arraybackslash}X}
+\toprule
+Model & Data and criterion & Convex geometry & Main algorithmic principle \\
+\midrule
+Optimal assignment & Cardinal costs \(C_{ij}\); minimize total cost &
+\(\Bcal_n=\operatorname{conv}\{\Pmat_\sigma\}\) by Birkhoff--von Neumann &
+Hungarian or auction primal--dual optimization \\
+Stable marriage & Two ordinal preference profiles; exclude blocking pairs &
+\(\Scal=\operatorname{conv}\{\Pmat_\sigma:\sigma\text{ stable}\}\) by
+Vande Vate--Rothblum & Deferred acceptance; irreversible rejections and
+one-sided lattice optimum \\
+Assignment game & Cardinal surplus \(S_{ij}\) with transfers; exclude
+profitable pair deviations & Primal Birkhoff polytope plus dual payoff
+inequalities \(u_i+v_j\geq S_{ij}\) & Linear-programming duality,
+complementary slackness, and market-clearing prices \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+The words \emph{primal} and \emph{dual} play different roles here. In the
+stable-marriage polytope, no-blocking is imposed by additional primal
+inequalities on \(\Pmat\). In the assignment game, no-blocking is exactly dual
+feasibility for the payoffs. The latter is why Hungarian potentials can be
+read as equilibrium utilities or prices. Gale--Shapley's tentative partners
+and rejections are not Kantorovich potentials, even though both algorithms
+maintain certificates that monotonically restrict the remaining choices.
+
+\section{Extensions and limits of the analogy}
+\label{sec:extensions}
+
+\paragraph{Unequal populations and outside options.}
+For optimal transport, unequal cardinalities pose no conceptual difficulty:
+one uses rectangular coupling matrices with prescribed marginals. For stable
+marriage, one allows unmatched agents and declares being unmatched an outside
+option, or adds dummy agents. In the assignment game, dummy partners with zero
+surplus produce the same construction and make individual rationality explicit.
+
+\paragraph{Many-to-one matching and capacities.}
+College admissions replaces one-to-one matching by capacities on the receiving
+side. Deferred acceptance still applies under responsive preferences. Its
+feasible incidence matrices resemble a capacitated transportation polytope,
+but stability again adds preference-dependent no-blocking constraints. The
+transportation constraints and the stability constraints should not be
+identified.
+
+\paragraph{Fractional masses.}
+Kantorovich transport naturally splits mass and accommodates arbitrary
+histograms. Stable marriage is instead an indivisible-agent model. Theorem
+\ref{thm:stable-polytope} permits a fractional point only as a lottery over
+integral stable marriages; its integrality is special to bipartite stable
+matching with the stated preference assumptions. With ties, couples,
+nonbipartite roommates, or more general complementarities, existence and
+integrality can fail or require different stability notions.
+
+\paragraph{Randomization.}
+A bistochastic matrix can be interpreted as marginals of a lottery over
+matchings. Birkhoff--von Neumann says every such fractional assignment can be
+implemented by randomizing over deterministic assignments. If the matrix also
+lies in \(\Scal\), Vande Vate--Rothblum says one can randomize using only stable
+assignments. This is stronger than checking expected preference scores: ex
+post every realized matching can be stable.
+
+\paragraph{Continuous matching.}
+In continuous populations, optimal transport retains its measure-theoretic
+meaning. Stable matching without transfers needs a suitable continuum market
+model and is not simply a transport problem. Under transferable utility and
+quasilinear preferences, however, Kantorovich dual potentials become indirect
+utilities or prices, and complementary slackness identifies equilibrium
+matches. This is the robust path from finite assignment games to continuous
+optimal transport.
+
+\section{Takeaway}
+
+The clean connection consists of two parallels and one exact equivalence.
+\begin{enumerate}[label=\arabic*.,leftmargin=2em]
+  \item \textbf{Parallel convex hulls.} Birkhoff--von Neumann convexifies all
+  perfect matchings; Vande Vate--Rothblum convexifies the stable ones after
+  adding linear no-blocking inequalities.
+  \item \textbf{Different objectives.} Ordinary stable marriage is an ordinal
+  equilibrium problem, whereas Kantorovich assignment is a cardinal welfare
+  problem. Neither generally implies the other.
+  \item \textbf{Exact transferable-utility bridge.} In the assignment game,
+  core stability is Kantorovich dual feasibility, matched pairs are contact
+  points of the dual constraint, and complementary slackness plus Birkhoff
+  integrality produces an integral stable allocation.
+\end{enumerate}
+Thus Gale--Shapley and optimal transport belong to the same broad geometry of
+bipartite couplings, but the assignment game is the precise point where their
+notions of stability and optimality coincide.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

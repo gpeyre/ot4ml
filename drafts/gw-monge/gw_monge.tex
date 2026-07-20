@@ -1,0 +1,1884 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[authoryear,round]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+  citecolor=red!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\definecolor{otblue}{HTML}{1F4E79}
+\titleformat{\section}{\normalfont\Large\bfseries\color{otblue}}
+  {\thesection}{.7em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{otblue!80!black}}
+  {\thesubsection}{.65em}{}
+\titleformat{\paragraph}[runin]
+  {\normalfont\bfseries\color{otblue!75!black}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{2.7ex plus .7ex minus .2ex}{1.1ex}
+\titlespacing*{\subsection}{0pt}{2ex plus .5ex minus .2ex}{.75ex}
+\titlespacing*{\paragraph}{0pt}{1.4ex plus .3ex minus .1ex}{.55em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Pcal}{\mathcal P}
+\newcommand{\Hcal}{\mathcal H}
+\newcommand{\Lcal}{\mathcal L}
+\newcommand{\Ecal}{\mathcal E}
+\newcommand{\Ccal}{\mathcal C}
+\newcommand{\Piopt}{\Pi}
+\newcommand{\Id}{\operatorname{Id}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\Ran}{\operatorname{Ran}}
+\newcommand{\card}{\operatorname{card}}
+\newcommand{\HS}{\operatorname{HS}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\GW}{\operatorname{GW}}
+\newcommand{\GM}{\operatorname{GM}}
+
+\hypersetup{
+  pdftitle={Toward a Brenier Theorem for Power-Distance Gromov--Wasserstein Transport},
+  pdfauthor={Gabriel Peyre},
+  pdfsubject={Self-consistent costs, quotient lifting, and Monge maps for Gromov--Wasserstein transport},
+  pdfkeywords={Gromov--Wasserstein, Monge map, Brenier theorem, quotient transport, negative type, RKHS, twist condition}
+}
+
+\title{\textbf{Toward a Brenier Theorem for\\
+Power-Distance Gromov--Wasserstein Transport}\\
+\large Self-consistent costs, quotient lifting, and finite transport branches}
+\author{Gabriel Peyr\'e}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let \(0<p\leq2\), and consider Gromov--Wasserstein transport with distortion
+\(
+ (\norm{x-x'}^p-\norm{y-y'}^p)^2.
+\)
+Schoenberg's theorem realizes each power distance as a squared distance in a
+Hilbert feature space.  After centering these features, the GW objective
+depends on a coupling through one scalar mixed moment and one Hilbert--Schmidt
+cross-covariance operator.  This yields an exact representation as ordinary
+optimal transport with a learned cross-space cost, regularized by the squared
+norm of a tensor-product RKHS.  Every GW minimizer therefore solves a linear
+OT problem for its self-consistent learned cost.
+
+This reduction reveals two distinct routes to a Brenier-type result.  First,
+an \(m\)-twisted self-consistent cost forces every conditional plan to have at
+most \(m\) atoms, hence represents a prescribed GW optimizer as a measurable
+mixture of at most \(m\) maps.  Second, conditional concavity gives a
+replacement principle: every optimizer of the frozen linear problem remains
+GW-optimal.  A twisted transport problem can then be solved on a quotient and
+lifted through nonatomic source fibers, producing a genuine Monge optimizer
+even when the original twist fibers are infinite.  In particular, if the
+learned operator has rank \(R\), absolute continuity of its
+\((R+1)\)-dimensional quotient and atomlessness along its fibers imply
+existence of a GW-optimal map; a coarea criterion makes these hypotheses
+checkable.
+
+We also give differential, multijet-transversality, and analytic-definable
+criteria for finite twist.  Analyticity alone is shown to be insufficient.
+For \(p=2\), the feature spaces are finite dimensional and both mechanisms
+can be analyzed sharply.
+If the source lies in \(\R^n\), the target lies in \(\R^d\), \(n>d\), the source
+has a density, and an optimal cross-covariance has full row rank, then that
+optimizer is induced by a map.  The same conclusion holds without a strict
+dimension gap when the target lies on a centered sphere.  In equal dimensions
+and without this extra geometry, the learned cost is only two-twisted: its
+gradient can have two target preimages.  This recovers the mechanism behind the
+known optimal two-map theorem, while quotient lifting recovers the low-rank
+Monge theorem and yields an additional map regime under a strict source
+dimension gap.  The note separates proved statements, known results, and the
+remaining open step for \(0<p<2\).
+\end{abstract}
+
+\section{Problem, scope, and known results}
+\label{sec:setup}
+
+The goal is to understand when the relaxation from deterministic
+correspondences to couplings is exact \emph{at the level of minimizers}.  The
+distinction matters: graph couplings can approximate general couplings when
+the source is nonatomic, but the approximating maps need not converge to a
+map.
+
+\subsection{Power-distance GW and its Monge restriction}
+
+Let \(\mathcal X\subset\R^n\) and \(\mathcal Y\subset\R^d\) be compact, let
+\(\alpha\in\Pcal(\mathcal X)\) and \(\beta\in\Pcal(\mathcal Y)\), and fix
+\(0<p\leq2\).  Write
+\[
+  d_{p,\mathcal X}(x,x')=\norm{x-x'}^p,
+  \qquad
+  d_{p,\mathcal Y}(y,y')=\norm{y-y'}^p.
+\]
+The inner exponent \(p\) should not be confused with the outer quadratic
+distortion, which remains fixed throughout this note.  Thus \(p=1\) is the
+usual quadratic GW problem built from Euclidean distances, whereas \(p=2\)
+is the squared-Euclidean-dissimilarity model studied in
+\citet{DumontLacombeVialard2025}.
+
+\begin{definition}[Power-distance GW problem]
+\label{def:power-gw}
+For \(\pi\in\Piopt(\alpha,\beta)\), set
+\begin{equation}
+  \Ecal_p(\pi)
+  :=
+  \iint
+  \bigl(d_{p,\mathcal X}(x,x')-d_{p,\mathcal Y}(y,y')\bigr)^2
+  \dd\pi(x,y)\dd\pi(x',y').
+  \label{eq:power-gw-energy}
+\end{equation}
+The Kantorovich and Monge values are
+\begin{align}
+  \GW_{p,2}^2(\alpha,\beta)
+  &:=\min_{\pi\in\Piopt(\alpha,\beta)}\Ecal_p(\pi),
+  \label{eq:power-gw-kantorovich}\\
+  \GM_{p,2}^2(\alpha,\beta)
+  &:=\inf_{T_\sharp\alpha=\beta}
+  \Ecal_p\bigl((\Id,T)_\sharp\alpha\bigr),
+  \label{eq:power-gw-monge}
+\end{align}
+with value \(+\infty\) in \eqref{eq:power-gw-monge} if no admissible map
+exists.
+\end{definition}
+
+Compactness makes existence on the Kantorovich side immediate.
+
+\begin{proposition}[Existence of a coupling minimizer]
+\label{prop:gw-existence}
+The minimum in \eqref{eq:power-gw-kantorovich} is attained.
+\end{proposition}
+
+\begin{proof}
+The set \(\Piopt(\alpha,\beta)\) is narrowly compact.  The integrand in
+\eqref{eq:power-gw-energy} is continuous and bounded on
+\((\mathcal X\times\mathcal Y)^2\).  Hence
+\(\pi\mapsto\Ecal_p(\pi)\) is narrowly continuous.
+\end{proof}
+
+The central question is whether some minimizer in
+\eqref{eq:power-gw-kantorovich} has the form \((\Id,T)_\sharp\alpha\).  This
+is stronger than equality of the two infimum values.  For nonatomic spaces,
+\citet{MemoliNeedham2024} establish broad equality results between
+Gromov--Monge and Gromov--Wasserstein values, but these do not imply that the
+coupling minimum is attained by a graph.
+
+\subsection{What is known at \texorpdfstring{\(p=2\)}{p=2}}
+
+Classical Brenier theory concerns a \emph{linear} transport objective with
+quadratic ground cost: if the source has a density, the unique optimal
+coupling is induced by the gradient of a convex function
+\citep{Brenier1991,Villani2009,Santambrogio2015}.  GW is instead quadratic in
+the unknown coupling, so Brenier's theorem cannot be applied before one has
+identified an appropriate frozen linear cost.
+
+For GW built from inner products, this program succeeds particularly well.
+Vayer proved a transformed-Brenier theorem under a full-rank assumption
+\citep[Theorem~4.2.3]{Vayer2020}, and
+\citet{DumontLacombeVialard2025} subsequently established existence of a
+Monge optimizer without that rank assumption.  Squared Euclidean
+dissimilarities behave differently.  In the notation of
+\cref{def:power-gw}, this is exactly the case \(p=2\).
+
+\begin{definition}[Finite-map coupling]
+\label{def:two-map}
+A coupling \(\pi\in\Piopt(\alpha,\beta)\) is a \emph{\(k\)-map} if there are
+measurable maps \(T_1,\ldots,T_k:\mathcal X\to\mathcal Y\) and measurable
+weights \(\lambda_j:\mathcal X\to[0,1]\), with
+\(\sum_{j=1}^k\lambda_j=1\) \(\alpha\)-almost everywhere, such that
+\[
+  \pi=\sum_{j=1}^k(\Id,T_j)_\sharp(\lambda_j\alpha).
+\]
+Equivalently, the conditional measure \(\pi_x\) is supported on at most \(k\)
+points for \(\alpha\)-almost every \(x\).  A \emph{two-map} is the case
+\(k=2\).
+\end{definition}
+
+The following is the current general structural theorem for squared-distance
+GW.
+
+\begin{theorem}[Known squared-distance structure
+  \citealp{DumontLacombeVialard2025}]
+\label{thm:known-two-map}
+Let \(n\geq d\), let \(\alpha\) and \(\beta\) have compact support, and assume
+\(\alpha\ll\mathrm{Leb}^n\).  For \(p=2\), an optimal two-map exists.  More
+precisely, if
+\[
+  S_\pi:=\int
+  (y-m_\beta)(x-m_\alpha)^\top\dd\pi(x,y)
+  \in\R^{d\times n}
+\]
+is the cross-covariance of an optimal coupling, their theorem gives a
+single-map optimizer when \(\rank S_\pi\leq d-2\), and a two-map in the
+remaining rank regimes.  In the full-rank regime the two-map can also be
+described as a map/anti-map.
+\end{theorem}
+
+The same work gives one-dimensional numerical examples in which the optimum
+appears genuinely two-valued.  This is evidence, rather than a theorem of
+nonexistence, but it makes a universal single-map claim mathematically
+unsafe.  Our objective below is therefore twofold: derive the strongest
+general theorem furnished by the RKHS reduction, and identify concrete
+hypotheses under which either a frozen optimizer has finite twist or a
+twisted quotient problem can be lifted to a Monge optimizer.
+
+\section{Power distances as Hilbert features}
+\label{sec:hilbert-features}
+
+The restriction \(0<p\leq2\) is exactly the range in which Euclidean power
+distances are of negative type.  This converts the nonlinear-looking
+distance product in GW into a squared Hilbert--Schmidt norm.
+
+\subsection{Schoenberg embedding and centered kernels}
+
+\begin{proposition}[Schoenberg feature representation]
+\label{prop:schoenberg-feature}
+For every \(0<p\leq2\) and every Euclidean dimension \(m\), there are a real
+Hilbert space \(\Hcal_{p,m}\) and an injective continuous map
+\(\Phi_{p,m}:\R^m\to\Hcal_{p,m}\) such that
+\begin{equation}
+  \norm{x-x'}^p
+  =\norm{\Phi_{p,m}(x)-\Phi_{p,m}(x')}^2_{\Hcal_{p,m}}.
+  \label{eq:schoenberg-embedding}
+\end{equation}
+For \(p=2\), one can take \(\Hcal_{2,m}=\R^m\) and
+\(\Phi_{2,m}=\Id\).  For \(0<p<2\), one possible realization is the real
+form of
+\begin{equation}
+  \Phi_{p,m}(x)(\omega)
+  =c_{m,p}^{1/2}\bigl(e^{\mathrm i\ip{\omega}{x}}-1\bigr)
+  \quad\text{in}\quad
+  L^2\!\left(\R^m,\frac{\dd\omega}{\norm{\omega}^{m+p}}\right),
+  \label{eq:fourier-schoenberg-feature}
+\end{equation}
+for a normalization constant \(c_{m,p}>0\).
+\end{proposition}
+
+\begin{proof}
+Schoenberg's theorem says that \((x,x')\mapsto\norm{x-x'}^p\) is
+conditionally negative definite precisely in the range \(0<p\leq2\); the
+standard Hilbert embedding of a negative-type semimetric gives
+\eqref{eq:schoenberg-embedding} \citep{Schoenberg1938}.  For \(0<p<2\), the
+identity
+\[
+  \norm{x-x'}^p
+  =c_{m,p}\int_{\R^m}
+  \frac{\abs{e^{\mathrm i\ip{\omega}{x}}
+             -e^{\mathrm i\ip{\omega}{x'}}}^2}
+       {\norm{\omega}^{m+p}}\dd\omega
+\]
+gives \eqref{eq:fourier-schoenberg-feature}.  The integral is finite near
+the origin because \(p<2\), and at infinity because \(p>0\).  The identity
+map proves the endpoint \(p=2\).
+\end{proof}
+
+Apply \cref{prop:schoenberg-feature} separately to \(\mathcal X\) and
+\(\mathcal Y\), writing the feature maps as \(\Phi\) and \(\Psi\).  Center
+them with respect to the marginals:
+\begin{equation}
+  u(x):=\Phi(x)-\int\Phi\dd\alpha,
+  \qquad
+  v(y):=\Psi(y)-\int\Psi\dd\beta.
+  \label{eq:centered-features}
+\end{equation}
+Let \(\Hcal_\alpha\) and \(\Hcal_\beta\) be the closed linear spans of
+\(u(\mathcal X)\) and \(v(\mathcal Y)\).  Their reproducing kernels are
+\begin{align}
+  k_\alpha(x,x')&:=\ip{u(x)}{u(x')}_{\Hcal_\alpha},
+  &
+  k_\beta(y,y')&:=\ip{v(y)}{v(y')}_{\Hcal_\beta}.
+  \label{eq:centered-power-kernels}
+\end{align}
+These kernels can be evaluated without constructing the feature spaces.  Set
+\begin{align}
+  r_\alpha(x)&:=\int d_{p,\mathcal X}(x,z)\dd\alpha(z),
+  &
+  D_\alpha&:=\iint d_{p,\mathcal X}(x,z)\dd\alpha(x)\dd\alpha(z),
+  \label{eq:distance-means-alpha}\\
+  r_\beta(y)&:=\int d_{p,\mathcal Y}(y,z)\dd\beta(z),
+  &
+  D_\beta&:=\iint d_{p,\mathcal Y}(y,z)\dd\beta(y)\dd\beta(z).
+  \label{eq:distance-means-beta}
+\end{align}
+Double centering gives
+\begin{align}
+  k_\alpha(x,x')
+  &=\frac12\bigl(r_\alpha(x)+r_\alpha(x')
+    -d_{p,\mathcal X}(x,x')-D_\alpha\bigr),
+  \label{eq:centered-kernel-alpha-explicit}\\
+  k_\beta(y,y')
+  &=\frac12\bigl(r_\beta(y)+r_\beta(y')
+    -d_{p,\mathcal Y}(y,y')-D_\beta\bigr).
+  \label{eq:centered-kernel-beta-explicit}
+\end{align}
+In particular, define
+\begin{equation}
+  a(x):=k_\alpha(x,x)=\norm{u(x)}^2,
+  \qquad
+  b(y):=k_\beta(y,y)=\norm{v(y)}^2.
+  \label{eq:feature-radii}
+\end{equation}
+Their means are \(\bar a=D_\alpha/2\) and \(\bar b=D_\beta/2\).
+
+\subsection{The cross-covariance decomposition}
+
+For \(\pi\in\Piopt(\alpha,\beta)\), define the Hilbert--Schmidt operator
+\begin{equation}
+  C_\pi
+  :=\int v(y)\otimes u(x)\dd\pi(x,y)
+  \in\HS(\Hcal_\alpha,\Hcal_\beta),
+  \label{eq:hilbert-cross-covariance}
+\end{equation}
+where \((v\otimes u)h=\ip{u}{h}v\).  Compactness makes this Bochner integral
+well defined.
+
+\begin{proposition}[Distance-product decomposition]
+\label{prop:distance-product-decomposition}
+For every \(\pi\in\Piopt(\alpha,\beta)\),
+\begin{equation}
+  \iint d_{p,\mathcal X}(x,x')d_{p,\mathcal Y}(y,y')
+  \dd\pi(x,y)\dd\pi(x',y')
+  =2\int a(x)b(y)\dd\pi(x,y)
+   +2\bar a\bar b+4\norm{C_\pi}_{\HS}^2.
+  \label{eq:distance-product-decomposition}
+\end{equation}
+Consequently,
+\begin{equation}
+  \Ecal_p(\pi)
+  =\mathsf C_p(\alpha,\beta)
+   -4\int a(x)b(y)\dd\pi(x,y)
+   -8\norm{C_\pi}_{\HS}^2,
+  \label{eq:gw-feature-decomposition}
+\end{equation}
+where the marginal-only constant is
+\begin{equation}
+  \mathsf C_p(\alpha,\beta)
+  :=\iint d_{p,\mathcal X}(x,x')^2\dd\alpha(x)\dd\alpha(x')
+    +\iint d_{p,\mathcal Y}(y,y')^2\dd\beta(y)\dd\beta(y')
+    -4\bar a\bar b.
+  \label{eq:gw-marginal-constant}
+\end{equation}
+In particular, \(\pi\mapsto\Ecal_p(\pi)\) is concave on
+\(\Piopt(\alpha,\beta)\).
+\end{proposition}
+
+\begin{proof}
+Let \((X,Y)\) and \((X',Y')\) be independent with law \(\pi\).  By
+\eqref{eq:schoenberg-embedding} and \eqref{eq:centered-features},
+\[
+  d_{p,\mathcal X}(X,X')
+  =a(X)+a(X')-2\ip{u(X)}{u(X')},
+\]
+and similarly on \(\mathcal Y\).  Expand the product.  The product of the
+two radial sums contributes
+\(2\mathbb E[a(X)b(Y)]+2\bar a\bar b\).  Every mixed term containing one
+inner product vanishes because \(\mathbb E[u(X)]=0\) and
+\(\mathbb E[v(Y)]=0\).  Finally,
+\begin{align*}
+  \mathbb E\!\left[
+    \ip{u(X)}{u(X')}\ip{v(Y)}{v(Y')}
+  \right]
+  &=\ip{C_\pi}{C_\pi}_{\HS}
+   =\norm{C_\pi}_{\HS}^2.
+\end{align*}
+This proves \eqref{eq:distance-product-decomposition}.  Expanding the square
+in \eqref{eq:power-gw-energy} then gives
+\eqref{eq:gw-feature-decomposition}.  Its last term is the negative of the
+square of a linear function of \(\pi\), while the preceding coupling term is
+linear; hence the objective is concave.
+\end{proof}
+
+\begin{corollary}[Discrete permutation optimizer]
+\label{cor:finite-permutation-optimizer}
+Suppose
+\[
+ \alpha=N^{-1}\sum_{i=1}^N\delta_{x_i},
+ \qquad
+ \beta=N^{-1}\sum_{j=1}^N\delta_{y_j}.
+\]
+For every \(0<p\leq2\), the problem \eqref{eq:power-gw-kantorovich} has an
+optimal permutation coupling
+\begin{equation}
+  \pi_\sigma=\frac1N\sum_{i=1}^N\delta_{(x_i,y_{\sigma(i)})}
+  \label{eq:finite-permutation-coupling}
+\end{equation}
+for some permutation \(\sigma\) of \(\{1,\ldots,N\}\).
+\end{corollary}
+
+\begin{proof}
+The coupling set is the scaled Birkhoff polytope.  Represent any minimizer as
+a convex combination of its extreme points.  Concavity and minimality imply
+that every extreme point carrying positive weight is also a minimizer.  The
+Birkhoff--von Neumann theorem identifies these extreme points with the
+permutation couplings \eqref{eq:finite-permutation-coupling}.
+\end{proof}
+
+This is a genuine discrete Monge statement, but its proof does not pass to
+continuous measures: extreme couplings over nonatomic spaces need not be
+graphs, and the class of graph couplings is not narrowly closed.  Concavity
+is therefore useful structurally without making the continuous minimization
+easy.  The feature decomposition becomes more informative after dualizing
+the squared Hilbert--Schmidt norm.
+
+\section{An exact RKHS-regularized learned-cost problem}
+\label{sec:learned-cost}
+
+The tensor-product space
+\(
+ \Hcal_\beta\widehat\otimes\Hcal_\alpha
+\)
+is canonically identified with
+\(\HS(\Hcal_\alpha,\Hcal_\beta)\).  Under this identification, an operator
+\(A\) defines the cross-space function
+\begin{equation}
+  h_A(x,y):=\ip{Au(x)}{v(y)}_{\Hcal_\beta}.
+  \label{eq:tensor-rkhs-function}
+\end{equation}
+It belongs to the RKHS with product kernel
+\begin{equation}
+  K_{\alpha,\beta}\bigl((x,y),(x',y')\bigr)
+  =k_\alpha(x,x')k_\beta(y,y'),
+  \qquad
+  \norm{h_A}_{K_{\alpha,\beta}}=\norm{A}_{\HS}.
+  \label{eq:tensor-rkhs-kernel}
+\end{equation}
+The equality of norms uses the definition of \(\Hcal_\alpha\) and
+\(\Hcal_\beta\) as the closed feature spans.
+
+For a continuous cost \(c\) on \(\mathcal X\times\mathcal Y\), write
+\begin{equation}
+  \Lcal_c(\alpha,\beta)
+  :=\min_{\pi\in\Piopt(\alpha,\beta)}\int c(x,y)\dd\pi(x,y).
+  \label{eq:linear-ot-value}
+\end{equation}
+
+\begin{theorem}[Exact RKHS cost learning]
+\label{thm:exact-rkhs-cost-learning}
+For \(A\in\HS(\Hcal_\alpha,\Hcal_\beta)\), define
+\begin{equation}
+  c_A(x,y):=-4a(x)b(y)-4\ip{Au(x)}{v(y)}.
+  \label{eq:learned-cost}
+\end{equation}
+Then, for every coupling \(\pi\),
+\begin{equation}
+  \Ecal_p(\pi)
+  =\mathsf C_p(\alpha,\beta)
+   +\min_A\left\{
+      \frac12\norm{A}_{\HS}^2+
+      \int c_A\dd\pi
+    \right\},
+  \qquad
+  A_\pi=4C_\pi.
+  \label{eq:pointwise-cost-learning}
+\end{equation}
+Consequently,
+\begin{equation}
+  \GW_{p,2}^2(\alpha,\beta)
+  =\mathsf C_p(\alpha,\beta)
+   +\min_{A\in\HS(\Hcal_\alpha,\Hcal_\beta)}
+    \left\{\frac12\norm{A}_{\HS}^2+
+    \Lcal_{c_A}(\alpha,\beta)\right\}.
+  \label{eq:global-cost-learning}
+\end{equation}
+Equivalently, with
+\(
+ r_A(x,y)=4a(x)b(y)+4\ip{Au(x)}{v(y)},
+\)
+\begin{equation}
+  \GW_{p,2}^2(\alpha,\beta)
+  =\mathsf C_p(\alpha,\beta)
+  -\max_{\substack{A\in\HS(\Hcal_\alpha,\Hcal_\beta)\\
+                     \pi\in\Piopt(\alpha,\beta)}}
+   \left\{
+     \int r_A\dd\pi-\frac12\norm{A}_{\HS}^2
+   \right\}.
+  \label{eq:regularized-max-max}
+\end{equation}
+The maximand is strictly concave in \(A\) for fixed \(\pi\) and linear in
+\(\pi\) for fixed \(A\); it is not asserted to be jointly concave.
+\end{theorem}
+
+\begin{proof}
+The Hilbert--Schmidt pairing satisfies
+\[
+  \ip{A}{C_\pi}_{\HS}
+  =\int\ip{Au(x)}{v(y)}\dd\pi(x,y).
+\]
+Completing the square gives
+\[
+  \min_A\left\{
+    \frac12\norm{A}_{\HS}^2-4\ip{A}{C_\pi}_{\HS}
+  \right\}
+  =-8\norm{C_\pi}_{\HS}^2,
+  \qquad A_\pi=4C_\pi.
+\]
+Together with \eqref{eq:gw-feature-decomposition}, this proves
+\eqref{eq:pointwise-cost-learning}.  Taking the joint minimum in \((\pi,A)\)
+and minimizing first in \(\pi\) proves \eqref{eq:global-cost-learning}.
+Changing signs and using \(c_A=-r_A\) gives
+\eqref{eq:regularized-max-max}.
+\end{proof}
+
+This is the promised RKHS regularizer.  The fixed radial product
+\(-4a(x)b(y)\) is not learned; the learned component lies in the
+tensor-product RKHS and is penalized by its squared norm.  The representation
+is closely related to cost-regularized cross-space transport
+\citep{SebbouhCuturiPeyre2024} and to negative-type biconvex GW relaxations
+\citep{Konno1976,SejourneVialardPeyre2021}.
+
+\begin{remark}[A bilinear cost on augmented features]
+\label{rem:augmented-feature-cost}
+Introduce
+\[
+  \widehat u(x):=(a(x),u(x))\in\R\oplus\Hcal_\alpha,
+  \qquad
+  \widehat v(y):=(b(y),v(y))\in\R\oplus\Hcal_\beta,
+\]
+and the block operator
+\(
+ \widehat A(s,h):=(s,Ah).
+\)
+Then the learned cost is the bilinear expression
+\begin{equation}
+  c_A(x,y)=-4\ip{\widehat A\widehat u(x)}{\widehat v(y)}.
+  \label{eq:augmented-bilinear-cost}
+\end{equation}
+Only the block \(A\) is optimized and regularized; the scalar block is fixed.
+Thus the reduction is bilinear after a nonlinear feature lift, not in the
+original variables.  For \(p=2\), these augmented features are
+\(
+ (\norm{x-m_\alpha}^2,x-m_\alpha)
+\)
+and
+\(
+ (\norm{y-m_\beta}^2,y-m_\beta)
+\),
+which lie on paraboloids.  The radial coordinate of the target paraboloid is
+exactly what later creates a possible second branch.
+\end{remark}
+
+\begin{corollary}[Self-consistent frozen OT problem]
+\label{cor:self-consistent-linear-ot}
+A pair \((\pi_\star,A_\star)\) minimizes the joint problem in
+\eqref{eq:global-cost-learning} if and only if \(\pi_\star\) is GW-optimal,
+\begin{equation}
+  A_\star=4C_{\pi_\star},
+  \label{eq:self-consistent-operator}
+\end{equation}
+and \(\pi_\star\) solves ordinary Kantorovich transport for the cost
+\(c_{A_\star}\).  At self-consistency this cost can be evaluated only from
+the centered kernels:
+\begin{equation}
+  c_{\pi_\star}(x,y)
+  =-4a(x)b(y)
+   -16\int k_\alpha(x,x')k_\beta(y,y')
+     \dd\pi_\star(x',y').
+  \label{eq:self-consistent-kernel-cost}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+If \((\pi_\star,A_\star)\) is jointly optimal, minimizing first in \(A\) and
+using \eqref{eq:pointwise-cost-learning} gives
+\(A_\star=4C_{\pi_\star}\) and shows that \(\pi_\star\) is GW-optimal.  With
+\(A_\star\) frozen, replacing \(\pi_\star\) by a better linear-OT coupling
+would decrease the joint objective, so \(\pi_\star\) solves that frozen
+problem.  Conversely, if \(\pi_\star\) is GW-optimal and
+\(A_\star=4C_{\pi_\star}\), then \eqref{eq:pointwise-cost-learning} makes the
+pair jointly optimal; its frozen optimality follows by the preceding
+replacement argument.  Finally,
+\[
+  \ip{C_{\pi_\star}u(x)}{v(y)}
+  =\int k_\alpha(x,x')k_\beta(y,y')\dd\pi_\star(x',y'),
+\]
+which gives \eqref{eq:self-consistent-kernel-cost}.
+\end{proof}
+
+The corollary is the bridge to Monge theory: the nonlinear GW minimizer is a
+linear OT minimizer once its learned cost has been frozen.  The remaining
+question is whether this particular cost forces graph support.
+
+The freezing principle is considerably more general than the negative-type
+feature representation.  Let \(Q\) be any continuous symmetric kernel on
+\((\mathcal X\times\mathcal Y)^2\), and define
+\begin{equation}
+  \Ecal_Q(\pi):=\iint Q(z,z')\dd\pi(z)\dd\pi(z'),
+  \qquad z=(x,y).
+  \label{eq:abstract-quadratic-gw}
+\end{equation}
+This includes a general GW distortion by taking
+\(
+ Q((x,y),(x',y'))=L(d_{\mathcal X}(x,x'),d_{\mathcal Y}(y,y')).
+\)
+
+\begin{proposition}[Universal frozen-cost and replacement principles]
+\label{prop:universal-frozen-gw}
+Let \(\pi_\star\) minimize \(\Ecal_Q\) over \(\Piopt(\alpha,\beta)\), and set
+\begin{equation}
+  c_{\pi_\star}(z)
+  :=2\int Q(z,z')\dd\pi_\star(z').
+  \label{eq:abstract-frozen-gw-cost}
+\end{equation}
+Then \(\pi_\star\) minimizes the linear OT problem with cost
+\(c_{\pi_\star}\).  This conclusion requires no convexity or concavity of
+\(\Ecal_Q\).
+
+More precisely, if \(\widetilde\pi\) is any minimizer of the frozen linear
+problem and \(\eta=\widetilde\pi-\pi_\star\), then
+\begin{equation}
+  \Ecal_Q(\widetilde\pi)-\Ecal_Q(\pi_\star)
+  =\iint Q(z,z')\dd\eta(z)\dd\eta(z')\geq0.
+  \label{eq:frozen-replacement-defect}
+\end{equation}
+Consequently, \(\widetilde\pi\) is GW-optimal if and only if the quadratic
+term in \eqref{eq:frozen-replacement-defect} vanishes.
+
+Suppose, in addition, that
+\begin{equation}
+  \iint Q(z,z')\dd\eta(z)\dd\eta(z')\leq0
+  \quad\text{for }\eta=\pi_1-\pi_0,
+  \quad \pi_0,\pi_1\in\Piopt(\alpha,\beta).
+  \label{eq:conditional-concavity-gw-kernel}
+\end{equation}
+Equivalently, \(\Ecal_Q\) is concave on
+\(\Piopt(\alpha,\beta)\).  Then every minimizer of the frozen linear problem
+for \(c_{\pi_\star}\) is also a global minimizer of \(\Ecal_Q\).
+It is sufficient, but generally stronger, to require the same inequality for
+every finite signed \(\eta\) with zero \(\mathcal X\)- and
+\(\mathcal Y\)-marginals.
+\end{proposition}
+
+\begin{proof}
+For \(\pi\in\Piopt(\alpha,\beta)\), put \(\eta=\pi-\pi_\star\).  Expanding
+along the feasible segment gives
+\begin{equation}
+  \Ecal_Q(\pi_\star+t\eta)
+  =\Ecal_Q(\pi_\star)
+   +t\int c_{\pi_\star}\dd\eta
+   +t^2\iint Q\dd\eta\dd\eta.
+  \label{eq:quadratic-gw-segment-expansion}
+\end{equation}
+Minimality at \(t=0\) forces
+\(\int c_{\pi_\star}\dd\eta\geq0\), proving frozen optimality.  If
+\(\widetilde\pi\) is another frozen minimizer, this linear term vanishes for
+\(\eta=\widetilde\pi-\pi_\star\).  Setting \(t=1\) proves the equality in
+\eqref{eq:frozen-replacement-defect}; its inequality follows from global
+minimality of \(\pi_\star\).  Under
+\eqref{eq:conditional-concavity-gw-kernel}, the expansion at \(t=1\) gives
+\(\Ecal_Q(\widetilde\pi)\leq\Ecal_Q(\pi_\star)\).  The reverse inequality
+follows from global minimality of \(\pi_\star\), hence equality holds.
+\end{proof}
+
+The first assertion is a necessary first-order condition for every quadratic
+GW problem.  The second is stronger: conditional concavity permits replacing
+an optimizer by a more structured optimizer of its frozen problem.  This is
+the mechanism needed below to manufacture a Monge GW optimizer through a
+quotient, rather than merely diagnose whether a prescribed optimizer is a
+map.  For power-distance GW, conditional concavity is exactly
+\eqref{eq:gw-feature-decomposition}.
+
+The same frozen problem admits a direct expression that does not require
+constructing the feature spaces.  It is the first variation of the original
+quadratic GW objective after discarding terms whose integral is fixed by the
+marginals.
+
+\begin{proposition}[Direct first-variation cost]
+\label{prop:direct-first-variation-cost}
+For \(\pi\in\Piopt(\alpha,\beta)\), define
+\begin{equation}
+  \ell_\pi(x,y)
+  :=-4\int
+  d_{p,\mathcal X}(x,x')d_{p,\mathcal Y}(y,y')
+  \dd\pi(x',y').
+  \label{eq:direct-first-variation-cost}
+\end{equation}
+If \(A_\pi=4C_\pi\), then there are continuous functions
+\(\varphi_\pi:\mathcal X\to\R\), \(\psi_\pi:\mathcal Y\to\R\), and a
+constant \(q_\pi\) such that
+\begin{equation}
+  \ell_\pi(x,y)
+  =c_{A_\pi}(x,y)+\varphi_\pi(x)+\psi_\pi(y)+q_\pi.
+  \label{eq:equivalent-frozen-costs}
+\end{equation}
+Consequently, \(\ell_\pi\) and \(c_{A_\pi}\) have the same optimal
+couplings.  Wherever both costs are differentiable in \(x\), their twist maps
+differ by a vector independent of \(y\), and hence have the same injectivity.
+In particular, every GW minimizer \(\pi_\star\) solves linear OT for
+\(\ell_{\pi_\star}\).
+
+If \(1<p\leq2\), differentiation under the integral gives
+\begin{equation}
+  \nabla_x\ell_\pi(x,y)
+  =-4p\int
+  \norm{x-x'}^{p-2}(x-x')\norm{y-y'}^p
+  \dd\pi(x',y'),
+  \label{eq:gradient-direct-first-variation-cost}
+\end{equation}
+where the vector integrand is set to zero at \(x=x'\).
+\end{proposition}
+
+\begin{proof}
+For a feasible signed direction \(\eta\) with zero marginals, the first
+variation is
+\[
+  D\Ecal_p(\pi)[\eta]
+  =2\iint
+  \bigl(d_{p,\mathcal X}(x,x')-d_{p,\mathcal Y}(y,y')\bigr)^2
+  \dd\pi(x',y')\dd\eta(x,y).
+\]
+Thus it is represented on the fixed-marginal affine set by the function
+\[
+  (x,y)\longmapsto
+  2\int
+  \bigl(d_{p,\mathcal X}(x,x')-d_{p,\mathcal Y}(y,y')\bigr)^2
+  \dd\pi(x',y').
+\]
+The two squared terms depend only on \(x\) or only on \(y\); their integrals
+are fixed on \(\Piopt(\alpha,\beta)\).  Removing them leaves
+\eqref{eq:direct-first-variation-cost}.  Alternatively, insert
+\[
+  d_{p,\mathcal X}(x,x')=a(x)+a(x')-2k_\alpha(x,x')
+\]
+and its \(\mathcal Y\)-counterpart into
+\eqref{eq:direct-first-variation-cost}.  The only terms depending jointly on
+\((x,y)\) are
+\[
+  -4a(x)b(y)
+  -16\int k_\alpha(x,x')k_\beta(y,y')\dd\pi(x',y'),
+\]
+which equal \(c_{A_\pi}\) by
+\eqref{eq:self-consistent-kernel-cost}; all remaining terms are separable or
+constant.  This proves \eqref{eq:equivalent-frozen-costs}.  Such additions do
+not change a Kantorovich optimizer, and their \(x\)-gradients do not depend on
+\(y\), so they do not change twist.  The last assertion follows either from
+\cref{cor:self-consistent-linear-ot} or by applying
+\cref{prop:universal-frozen-gw} to the quadratic functional \(\Ecal_p\).
+Formula
+\eqref{eq:gradient-direct-first-variation-cost} follows by differentiating
+\(\norm{x-x'}^p\).
+\end{proof}
+
+\section{The Brenier mechanism: twist of the learned cost}
+\label{sec:rkhs-twist}
+
+For general costs, the appropriate replacement for strict convexity of the
+quadratic cost is control of the twist fibers.  One branch gives a Monge map;
+finitely many branches give a finite mixture of maps.  Since the source is
+absolutely continuous, these conditions are needed only almost everywhere in
+the source variable and only on the dual contact set.
+
+\subsection{Finite twist and finite-map solutions}
+
+For a dual feasible pair \((f,g)\), define its contact set
+\begin{equation}
+  S_{f,g}:=\{(x,y):f(x)+g(y)=c(x,y)\}.
+  \label{eq:dual-contact-set}
+\end{equation}
+Every optimal plan is concentrated on this set when \((f,g)\) is dual
+optimal.  It is therefore unnecessary to control all fibers of the twist
+map; controlling the fibers that meet \(S_{f,g}\) is enough.
+
+\begin{definition}[Finite twist on a contact set]
+\label{def:ae-twist}
+Let \(c\) be differentiable in its first variable and let
+\(S\subset\mathcal X\times\mathcal Y\).  The cost is
+\emph{\(m\)-twisted on \(S\) at \(x\)} if, for every \(q\in\R^n\),
+\begin{equation}
+  \card\{y\in\supp\beta:(x,y)\in S,
+            \ \nabla_xc(x,y)=q\}\leq m.
+  \label{eq:m-twist-contact}
+\end{equation}
+It is \emph{\(\alpha\)-almost-everywhere \(m\)-twisted on \(S\)} if
+\eqref{eq:m-twist-contact} holds for \(\alpha\)-almost every \(x\).  The
+global \(m\)-twist condition is obtained by taking
+\(S=\supp\alpha\times\supp\beta\); ordinary twist is the case \(m=1\).
+\end{definition}
+
+This finite-fiber relaxation of twist is precisely the condition that yields
+a finite mixture of transport maps \citep{MoameniPass2017}.
+
+\begin{proposition}[Finite twist selects finitely many graphs]
+\label{prop:finite-twist-linear-ot}
+Assume \(\alpha\ll\mathrm{Leb}^n\), the supports are compact, and \(c\) is
+continuous and \(C^1\) in its first variable near the supports.  Let
+\((f,g)\) be a dual optimizer for \eqref{eq:linear-ot-value}.  If \(c\) is
+\(\alpha\)-almost-everywhere \(m\)-twisted on \(S_{f,g}\), then every primal
+optimizer \(\pi\) is a \(k\)-map for some \(k\leq m\): there are measurable
+maps \(T_j\) and weights \(\lambda_j\geq0\),
+\(\sum_{j=1}^k\lambda_j=1\), such that
+\begin{equation}
+  \pi=\sum_{j=1}^k(\Id,T_j)_\sharp(\lambda_j\alpha).
+  \label{eq:finite-map-decomposition}
+\end{equation}
+At every differentiability point of \(f\), each active branch satisfies
+\begin{equation}
+  \nabla f(x)=\nabla_xc(x,T_j(x))
+  \qquad\text{whenever }\lambda_j(x)>0.
+  \label{eq:finite-branch-characterization}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The uniform bound on \(\nabla_xc\) makes the \(c\)-concave potential \(f\)
+Lipschitz, hence differentiable \(\alpha\)-almost everywhere.  Disintegrate
+an optimal plan as \(\pi=\int\delta_x\otimes\pi_x\dd\alpha(x)\).  At a
+differentiability point \(x\), every \(y\in\supp\pi_x\) lies in the contact
+set.  Since \(f(z)\leq c(z,y)-g(y)\), with equality at \(z=x\), differentiation
+gives
+\(
+ \nabla f(x)=\nabla_xc(x,y).
+\)
+Condition \eqref{eq:m-twist-contact} therefore implies
+\(\card(\supp\pi_x)\leq m\).  A finite-valued Borel multifunction admits a
+measurable enumeration; enumerating the atoms of \(\pi_x\) and taking their
+masses gives maps \(T_j\) and weights \(\lambda_j\), after adding zero-weight
+branches where necessary.  This proves \eqref{eq:finite-map-decomposition}
+and \eqref{eq:finite-branch-characterization}.
+\end{proof}
+
+\begin{corollary}[Twist selects a unique graph coupling]
+\label{prop:twist-linear-ot}
+Under the assumptions of \cref{prop:finite-twist-linear-ot}, if \(c\) is
+\(\alpha\)-almost-everywhere twisted on \(S_{f,g}\), then
+\eqref{eq:linear-ot-value} has a unique optimizer
+\((\Id,T)_\sharp\alpha\), characterized by
+\begin{equation}
+  \nabla f(x)=\nabla_xc(x,T(x))
+  \qquad\text{for \(\alpha\)-almost every }x.
+  \label{eq:generalized-brenier-characterization}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The preceding proposition gives a graph optimizer.  If two optimal graph
+couplings existed, their average would be optimal and the same argument would
+force its conditional measures to be Dirac masses.  The two maps must
+therefore agree \(\alpha\)-almost everywhere.
+\end{proof}
+
+Combining this linear theorem with the universal freezing principle gives the
+most general direct Brenier statement available for a quadratic GW energy.
+
+\begin{corollary}[Abstract frozen-cost Brenier theorem]
+\label{cor:abstract-frozen-cost-brenier}
+Let \(Q\) be as in \eqref{eq:abstract-quadratic-gw}, assume
+\(\alpha\ll\mathrm{Leb}^n\), and let \(\pi_\star\) minimize
+\(\Ecal_Q\).  Suppose that its frozen cost \(c_{\pi_\star}\) is continuous
+and \(C^1\) in its first variable near the compact supports.  If this cost is
+\(m\)-twisted on a dual contact set for \(\alpha\)-almost every source
+point, then \(\pi_\star\) is a \(k\)-map for some \(k\leq m\).  In
+particular, one-twist implies that \(\pi_\star\) is a Monge coupling and is
+the unique optimizer of its frozen linear problem.  No concavity of
+\(\Ecal_Q\) is needed.
+\end{corollary}
+
+\begin{proof}
+By \cref{prop:universal-frozen-gw}, \(\pi_\star\) minimizes linear OT for
+\(c_{\pi_\star}\).  Apply
+\cref{prop:finite-twist-linear-ot,prop:twist-linear-ot}.
+\end{proof}
+
+\subsection{The finite-branch power-distance theorem}
+
+Freezing a GW optimizer now transfers the preceding linear result without
+loss.  This is the appropriate Brenier statement when the twist map has more
+than one inverse branch.
+
+\begin{theorem}[Self-consistent finite-twist theorem]
+\label{thm:rkhs-finite-twist}
+Let \(0<p\leq2\), assume \(\alpha\ll\mathrm{Leb}^n\), and let
+\(\pi_\star\) minimize \eqref{eq:power-gw-kantorovich}.  Set
+\(A_\star=4C_{\pi_\star}\), let \((f_\star,g_\star)\) be a dual optimizer for
+the frozen cost \(c_{A_\star}\), and suppose that this cost is \(C^1\) in
+\(x\) near the supports.  If \(c_{A_\star}\) is
+\(\alpha\)-almost-everywhere \(m\)-twisted on
+\(S_{f_\star,g_\star}\), then \(\pi_\star\) is a \(k\)-map for some
+\(k\leq m\), with active branches characterized by
+\begin{equation}
+  \nabla f_\star(x)=\nabla_xc_{A_\star}(x,T_j(x)).
+  \label{eq:rkhs-finite-branch-characterization}
+\end{equation}
+If \(m=1\), the frozen linear optimizer is unique and \(\pi_\star\) is a
+Monge coupling.
+\end{theorem}
+
+\begin{proof}
+By \cref{cor:self-consistent-linear-ot}, \(\pi_\star\) solves linear OT for
+\(c_{A_\star}\).  Apply \cref{prop:finite-twist-linear-ot}; the final claim is
+\cref{prop:twist-linear-ot}.
+\end{proof}
+
+\begin{corollary}[RKHS-twist Brenier theorem for power-distance GW]
+\label{thm:rkhs-twist-brenier}
+Under the assumptions of \cref{thm:rkhs-finite-twist}, suppose that
+\(c_{A_\star}\) is \(\alpha\)-almost-everywhere twisted.  Then
+\begin{equation}
+  \pi_\star=(\Id,T_\star)_\sharp\alpha,
+  \label{eq:gw-monge-map}
+\end{equation}
+and it is the unique optimizer of the frozen problem.  Moreover,
+\begin{equation}
+  \nabla f_\star(x)
+  =\nabla_xc_{A_\star}(x,T_\star(x))
+  \quad\text{for \(\alpha\)-almost every }x.
+  \label{eq:rkhs-brenier-characterization}
+\end{equation}
+\end{corollary}
+
+This is a genuine Brenier-type conclusion, but the relevant inverse can be
+multivalued: \eqref{eq:rkhs-finite-branch-characterization} selects the
+branches of \(y\mapsto\nabla_xc_{A_\star}(x,y)\).  Only under one-twist is
+there a single map, and that map need not be the gradient of an ordinary
+convex function.
+
+For \(1<p\leq2\), the twist map can be evaluated without constructing the
+Hilbert features.  Define
+\begin{equation}
+  G_{\pi,x}(y)
+  :=\int
+  \norm{x-x'}^{p-2}(x-x')\norm{y-y'}^p
+  \dd\pi(x',y').
+  \label{eq:power-distance-twist-map}
+\end{equation}
+By \eqref{eq:gradient-direct-first-variation-cost}, the first-variation cost
+has twist map \(-4pG_{\pi,x}\).
+
+\begin{corollary}[Distance-only finite-twist criterion]
+\label{cor:distance-only-twist}
+Assume \(1<p\leq2\), \(\alpha\ll\mathrm{Leb}^n\), and compact supports.  Let
+\(\pi_\star\) be GW-optimal.  If there is \(m<\infty\) such that, for
+\(\alpha\)-almost every \(x\) and every \(q\in\R^n\),
+\begin{equation}
+  \card\{y\in\supp\beta:G_{\pi_\star,x}(y)=q\}\leq m,
+  \label{eq:distance-m-twist}
+\end{equation}
+then \(\pi_\star\) is a \(k\)-map for some \(k\leq m\).  For \(m=1\), it is
+a Monge coupling.  It is enough that \eqref{eq:distance-m-twist} hold after
+intersecting each fiber with a dual contact set of the frozen problem.
+\end{corollary}
+
+\begin{proof}
+For \(p>1\), the derivative of \(x\mapsto\norm{x-x'}^p\) is continuous,
+including at \(x=x'\), and uniformly bounded on compact sets.  Thus
+\(\ell_{\pi_\star}\) is continuously differentiable in \(x\), and
+\eqref{eq:gradient-direct-first-variation-cost} identifies its gradient with
+\(-4pG_{\pi_\star,x}\).  Since
+\cref{prop:direct-first-variation-cost} makes \(\pi_\star\) optimal for this
+frozen cost, \cref{prop:finite-twist-linear-ot} applies.
+\end{proof}
+
+\subsection{Quotient twist and transport inside the fibers}
+
+Finite twist is a theorem about a \emph{given} optimal coupling.  A second
+mechanism can prove existence of \emph{some} Monge optimizer even when every
+twist fiber is infinite.  It separates the variables seen by the cost from
+the directions along which the cost is indifferent.  One first transports
+the visible quotient variables and then uses the invisible source fibers to
+reproduce the target conditional laws.  The measurable lifting result below
+is the abstract mechanism developed by
+\citet[Theorem~2.1]{DumontLacombeVialard2025}.
+
+\begin{theorem}[Quotient-and-fiber lifting for linear OT]
+\label{thm:quotient-fiber-linear-ot}
+Let \(\mathcal X,\mathcal Y,\mathcal U,\mathcal V\) be standard Borel
+spaces, let
+\(
+  \phi:\mathcal X\to\mathcal U
+\)
+and
+\(
+  \psi:\mathcal Y\to\mathcal V
+\)
+be measurable, and suppose that
+\begin{equation}
+  c(x,y)=\widetilde c\bigl(\phi(x),\psi(y)\bigr).
+  \label{eq:quotient-cost-factorization}
+\end{equation}
+Set \(\bar\alpha=\phi_\sharp\alpha\) and
+\(\bar\beta=\psi_\sharp\beta\).  Assume that quotient OT for
+\(\widetilde c\) between \(\bar\alpha\) and \(\bar\beta\) has an optimal
+map \(t:\mathcal U\to\mathcal V\), and let
+\begin{equation}
+  \alpha=\int\alpha_u\dd\bar\alpha(u),
+  \qquad
+  \beta=\int\beta_v\dd\bar\beta(v)
+  \label{eq:quotient-disintegrations}
+\end{equation}
+be disintegrations along \(\phi\) and \(\psi\).  If \(\alpha_u\) is
+nonatomic for \(\bar\alpha\)-almost every \(u\), or more generally if there
+is a jointly measurable family of maps satisfying
+\begin{equation}
+  (T_u)_\sharp\alpha_u=\beta_{t(u)}
+  \quad\text{for \(\bar\alpha\)-almost every \(u\)},
+  \label{eq:fiberwise-transport-maps}
+\end{equation}
+then there exists a
+measurable map \(T:\mathcal X\to\mathcal Y\) such that
+\begin{equation}
+  T_\sharp\alpha=\beta,
+  \qquad
+  \psi\bigl(T(x)\bigr)=t\bigl(\phi(x)\bigr)
+  \quad\text{for \(\alpha\)-almost every \(x\)},
+  \label{eq:quotient-map-lift}
+\end{equation}
+and \((\Id,T)_\sharp\alpha\) is optimal for the original cost \(c\).
+\end{theorem}
+
+\begin{proof}
+When the fiber maps are not given directly, the measurable randomization
+lemma for atomless probability kernels supplies them.  Concretely, one may
+measurably identify every atomless \(\alpha_u\) with
+Lebesgue measure on \([0,1]\), and use a measurable quantile parametrization
+of the kernel \(v\mapsto\beta_v\); the joint measurability is the nontrivial
+part of the lifting theorem.  Set \(T(x)=T_{\phi(x)}(x)\).  Then
+\begin{align*}
+  T_\sharp\alpha
+  &=\int (T_u)_\sharp\alpha_u\dd\bar\alpha(u)
+    =\int\beta_{t(u)}\dd\bar\alpha(u)\\
+  &=\int\beta_v\dd\bar\beta(v)=\beta,
+\end{align*}
+because \(t_\sharp\bar\alpha=\bar\beta\).  This also proves the projection
+identity in \eqref{eq:quotient-map-lift}.
+
+For any \(\pi\in\Piopt(\alpha,\beta)\), the pushforward
+\((\phi,\psi)_\sharp\pi\) belongs to
+\(\Piopt(\bar\alpha,\bar\beta)\), and
+\begin{equation*}
+  \int c\dd\pi
+  =\int\widetilde c\dd\bigl((\phi,\psi)_\sharp\pi\bigr).
+\end{equation*}
+The graph coupling constructed above projects to
+\((\Id,t)_\sharp\bar\alpha\), so it attains the quotient optimum and is
+therefore optimal for \(c\).
+\end{proof}
+
+Atomlessness is therefore a clean sufficient condition, not a logically
+necessary one.  For example, no atomlessness is needed when
+\(\beta_{t(u)}\) is a Dirac mass.  Conversely, if both conditional laws have
+incompatible atoms, quotient optimality need not lift to a map.  This fiber
+compatibility is exactly what distinguishes a quotient argument from a twist
+argument.
+
+The replacement principle in \cref{prop:universal-frozen-gw} now turns this
+linear lifting theorem into an abstract GW Brenier theorem.
+
+\begin{theorem}[Quotient-and-fiber Brenier principle for GW]
+\label{thm:quotient-fiber-gw}
+Let \(Q\) satisfy the conditional concavity condition
+\eqref{eq:conditional-concavity-gw-kernel}, let \(\pi_\star\) minimize
+\eqref{eq:abstract-quadratic-gw}, and let \(c_{\pi_\star}\) be its frozen
+cost \eqref{eq:abstract-frozen-gw-cost}.  Suppose that this cost admits a
+factorization \eqref{eq:quotient-cost-factorization} for which the hypotheses
+of \cref{thm:quotient-fiber-linear-ot} hold.  Then \(\Ecal_Q\) has a Monge
+minimizer \((\Id,T)_\sharp\alpha\).
+
+If \(\mathcal U,\mathcal V\) are compact subsets of \(\R^r\), the quotient
+cost is continuous, continuously differentiable in its first variable near
+the supports, and twisted there, and
+\(\bar\alpha\ll\mathrm{Leb}^r\), then the required quotient map exists and
+is unique.
+\end{theorem}
+
+\begin{proof}
+By \cref{prop:universal-frozen-gw}, \(\pi_\star\) minimizes linear OT for
+\(c_{\pi_\star}\).  The quotient-and-fiber theorem constructs a graph
+coupling \(\widehat\pi=(\Id,T)_\sharp\alpha\) that minimizes the same frozen
+problem.  Conditional concavity and the replacement part of
+\cref{prop:universal-frozen-gw} imply that \(\widehat\pi\) is also a global
+minimizer of \(\Ecal_Q\).  The final assertion is the usual twisted-cost
+Monge theorem applied on the quotient spaces.
+\end{proof}
+
+The concavity hypothesis is essential for this \emph{replacement} argument.
+Without it, the original optimizer \(\pi_\star\) still solves its frozen
+linear problem, but another optimizer of that linear problem need not remain
+GW-optimal.  Thus one-twist of the full frozen cost proves that
+\(\pi_\star\) itself is a map without concavity, whereas quotient lifting
+proves existence of a possibly different map by using concavity.
+For a particular lifted coupling \(\widehat\pi\), global conditional
+concavity can be weakened to the exact directional condition
+\begin{equation}
+  \iint Q(z,z')
+  \dd(\widehat\pi-\pi_\star)(z)
+  \dd(\widehat\pi-\pi_\star)(z')=0,
+  \label{eq:directional-quotient-replacement}
+\end{equation}
+by \eqref{eq:frozen-replacement-defect}.  Condition
+\eqref{eq:conditional-concavity-gw-kernel} is valuable because it enforces
+this identity automatically for every frozen lift.
+Nothing in \cref{thm:quotient-fiber-gw} requires a linear or finite-rank
+factorization: any finite-dimensional sufficient statistic
+\((\phi,\psi)\) for the frozen cost is admissible.  Finite rank is treated
+next because it supplies such statistics canonically for the learned RKHS
+cost.
+
+\subsection{Finite-rank quotient lifting and feature slices}
+
+Condition \eqref{eq:distance-m-twist} is exact but still depends on the
+unknown optimizer.  Finite rank gives two complementary routes.  Its
+quotient variables can produce a Monge optimizer by the preceding lifting
+theorem, while their affine slices control the number of branches of a
+prescribed optimizer.
+
+Suppose first that the learned operator has finite rank \(R\), with singular
+value decomposition
+\begin{equation}
+  A=\sum_{j=1}^R\sigma_j e_j\otimes f_j,
+  \qquad
+  \varphi_j(x):=\ip{u(x)}{f_j},
+  \qquad
+  \psi_j(y):=\ip{v(y)}{e_j}.
+  \label{eq:finite-rank-learned-operator}
+\end{equation}
+Define the visible source and target statistics
+\begin{align}
+  \Phi_A(x)&:=\bigl(a(x),\varphi_1(x),\ldots,\varphi_R(x)\bigr),
+  &
+  \Psi_A(y)&:=\bigl(b(y),\psi_1(y),\ldots,\psi_R(y)\bigr),
+  \label{eq:finite-rank-quotient-features}\\
+  D_A&:=\operatorname{diag}(1,\sigma_1,\ldots,\sigma_R).
+  \label{eq:finite-rank-diagonal-operator}
+\end{align}
+Then the learned cost factors through an \((R+1)\)-dimensional bilinear
+problem:
+\begin{equation}
+  c_A(x,y)=-4\ip{D_A\Phi_A(x)}{\Psi_A(y)}.
+  \label{eq:finite-rank-bilinear-quotient-cost}
+\end{equation}
+
+\begin{theorem}[Finite-rank quotient Brenier theorem]
+\label{thm:finite-rank-quotient-brenier}
+Let \(0<p\leq2\), let \(\pi_\star\) be GW-optimal, and suppose that
+\(A_\star=4C_{\pi_\star}\) has finite rank \(R\).  Assume that
+\begin{equation}
+  (\Phi_{A_\star})_\sharp\alpha\ll\mathrm{Leb}^{R+1}
+  \label{eq:finite-rank-quotient-density}
+\end{equation}
+and that the conditional measures in a disintegration of \(\alpha\) along
+\(\Phi_{A_\star}\) are nonatomic almost everywhere.  Then there exists a
+GW-optimal map \(T_\star:\mathcal X\to\mathcal Y\).  It may be chosen so
+that
+\begin{equation}
+  \Psi_{A_\star}\bigl(T_\star(x)\bigr)
+  =t_\star\bigl(\Phi_{A_\star}(x)\bigr),
+  \label{eq:finite-rank-lifted-map}
+\end{equation}
+where \(t_\star\) is the unique quotient OT map for the bilinear cost in
+\eqref{eq:finite-rank-bilinear-quotient-cost}.  Moreover, the lifted
+optimizer has the same cross-covariance operator as \(\pi_\star\).
+\end{theorem}
+
+\begin{proof}
+All singular values in \eqref{eq:finite-rank-diagonal-operator} are positive,
+so \((D_{A_\star})_\sharp(\Phi_{A_\star})_\sharp\alpha\) has a density.
+Moreover,
+\begin{equation*}
+  -4\ip{D_{A_\star}s}{z}
+  =2\norm{D_{A_\star}s-z}^2
+   -2\norm{D_{A_\star}s}^2-2\norm{z}^2.
+\end{equation*}
+The last two terms are fixed by the quotient marginals, so the classical
+Brenier theorem gives a unique quotient map \(t_\star\); equivalently,
+\(t_\star(s)=\nabla h(D_{A_\star}s)\) for a convex function \(h\).
+The factorization
+\eqref{eq:finite-rank-bilinear-quotient-cost} and
+the concavity established in \eqref{eq:gw-feature-decomposition} allow
+\cref{thm:quotient-fiber-gw} to give a GW-optimal lift.
+
+It remains to verify the last assertion.  Put
+\(
+  \eta=(\Id,T_\star)_\sharp\alpha-\pi_\star.
+\)
+Extend \eqref{eq:hilbert-cross-covariance} linearly to signed measures, so
+that \(C_\eta=C_{(\Id,T_\star)_\sharp\alpha}-C_{\pi_\star}\).
+The two couplings tie for the frozen linear objective and for the GW
+objective.  By \eqref{eq:gw-feature-decomposition}, the quadratic coefficient
+of \(t\mapsto\Ecal_p(\pi_\star+t\eta)\) is
+\(-8\norm{C_\eta}_{\HS}^2\).  The segment expansion
+\eqref{eq:quadratic-gw-segment-expansion} consequently forces
+\(C_\eta=0\), proving
+\(C_{(\Id,T_\star)_\sharp\alpha}=C_{\pi_\star}\).
+\end{proof}
+
+The two measure-theoretic hypotheses have a useful differential sufficient
+condition.
+
+\begin{corollary}[A coarea criterion]
+\label{cor:finite-rank-coarea-brenier}
+In addition to the assumptions of
+\cref{thm:finite-rank-quotient-brenier}, suppose that
+\(\mathcal X\subset\R^n\), \(\alpha\ll\mathrm{Leb}^n\),
+\(\Phi_{A_\star}\) is \(C^1\) near \(\supp\alpha\), and
+\begin{equation}
+  n>R+1,
+  \qquad
+  \rank D\Phi_{A_\star}(x)=R+1
+  \quad\text{for \(\alpha\)-almost every \(x\)}.
+  \label{eq:finite-rank-coarea-condition}
+\end{equation}
+Then a GW-optimal Monge map exists.
+\end{corollary}
+
+\begin{proof}
+The coarea formula implies that
+\((\Phi_{A_\star})_\sharp\alpha\) has a density on \(\R^{R+1}\).
+It also represents the conditional source measures by densities with respect
+to \(\mathcal H^{n-R-1}\) on the regular fibers of
+\(\Phi_{A_\star}\).  Since \(n-R-1\geq1\), these conditional measures are
+nonatomic.  Apply \cref{thm:finite-rank-quotient-brenier}.
+\end{proof}
+
+The coarea criterion is not a finite-twist condition: its regular fibers have
+positive dimension.  Those fibers are precisely the reservoir of randomness
+used to match the target conditional laws deterministically.
+
+Whenever \(a\) and the \(\varphi_j\) are differentiable, define
+\begin{align}
+  Z_A(y)&:=\Psi_A(y)\in\R^{R+1},
+  \label{eq:augmented-target-feature}\\
+  B_{A,x}(s_0,\ldots,s_R)
+    &:=s_0\nabla a(x)+\sum_{j=1}^R
+      s_j\sigma_j\nabla\varphi_j(x)
+      \in\R^n.
+  \label{eq:feature-projection-operator}
+\end{align}
+
+\begin{proposition}[Finite-rank feature-slice criterion]
+\label{prop:finite-rank-feature-slices}
+Under the preceding assumptions, the learned twist map factors as
+\begin{equation}
+  \nabla_xc_A(x,y)=-4B_{A,x}Z_A(y).
+  \label{eq:finite-rank-twist-factorization}
+\end{equation}
+Consequently, \(c_A\) is \(m\)-twisted at \(x\) whenever every affine fiber
+of \(B_{A,x}\) intersects \(Z_A(\mathcal Y)\) in at most \(m\) points after
+pulling the intersection back through \(Z_A\).  If, in addition, \(Z_A\) has
+fibers of cardinality at most \(s\), the complex projective closure of
+\(Z_A(\mathcal Y)\) is an algebraic variety of degree \(D\), and these linear
+sections are zero dimensional, then one may take \(m\leq sD\).
+\end{proposition}
+
+\begin{proof}
+The singular value decomposition gives
+\(
+ \ip{Au(x)}{v(y)}=\sum_j\sigma_j\varphi_j(x)\psi_j(y).
+\)
+Differentiating \eqref{eq:learned-cost} in \(x\) proves
+\eqref{eq:finite-rank-twist-factorization}.  The first conclusion is then
+just a fiber identity.  The algebraic conclusion is the definition of degree:
+a zero-dimensional linear section of a projective variety contains at most
+\(D\) complex points when multiplicities are counted.  Each image point has
+at most \(s\) preimages under \(Z_A\), which gives \(sD\).
+\end{proof}
+
+For \(p=2\) and full row rank, the target feature set is, after an invertible
+linear change of coordinates, the paraboloid
+\begin{equation}
+  Z_A(y)=\bigl(\norm{y-m_\beta}^2,y-m_\beta\bigr),
+  \label{eq:p2-augmented-feature-paraboloid}
+\end{equation}
+whose projective closure has degree two.  The finite-rank criterion therefore
+predicts at most two branches; \cref{lem:p2-rank-geometry} below verifies the
+zero-dimensionality condition and locates exactly where the second branch can
+occur.  For \(0<p<2\), the optimal Hilbert--Schmidt operator need not have
+finite rank, and even a finite-rank truncation does not preserve exact
+optimality.  Thus this argument identifies a genuine rigidity route, but not
+an automatic finite-map theorem.
+
+For quadratic dissimilarities, the coarea criterion recovers the low-rank
+Monge construction and sharpens it when the ambient source has additional
+dimensions.
+
+\begin{corollary}[Quadratic finite-rank quotient regimes]
+\label{cor:p2-finite-rank-quotient}
+Let \(p=2\), let \(n\geq d\), assume
+\(\alpha\ll\mathrm{Leb}^n\), and let \(\pi_\star\) be GW-optimal with
+\begin{equation}
+  h:=\rank S_{\pi_\star}.
+  \label{eq:p2-optimal-rank-h}
+\end{equation}
+If \(n>h+1\), then there exists a GW-optimal Monge map with the same
+cross-covariance as \(\pi_\star\).  Consequently, this conclusion holds
+whenever either
+\begin{equation}
+  h\leq d-2,
+  \qquad\text{or}\qquad
+  h=d-1\ \text{ and }\ n>d.
+  \label{eq:p2-quotient-rank-regimes}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Up to orthogonal coordinates, the source quotient statistics are
+\begin{equation}
+  \Phi_{A_\star}(x)
+  =\bigl(\norm{x-m_\alpha}^2,
+          \ip{x-m_\alpha}{f_1},\ldots,
+          \ip{x-m_\alpha}{f_h}\bigr),
+  \label{eq:p2-source-quotient-map}
+\end{equation}
+where \(f_1,\ldots,f_h\) are orthonormal.  Its differential has rank
+\(h+1\) unless
+\(
+  x-m_\alpha\in\operatorname{span}\{f_1,\ldots,f_h\}.
+\)
+This exceptional affine subspace is \(\alpha\)-null.  If \(n>h+1\),
+\cref{cor:finite-rank-coarea-brenier} applies.  Finally,
+\(h\leq d-2\) and \(n\geq d\) imply \(n>h+1\), while
+\(h=d-1\) and \(n>d\) give the same strict inequality.
+\end{proof}
+
+For \(h\leq d-2\), this is the quotient mechanism behind the map theorem of
+\citet{DumontLacombeVialard2025}.  When \(h=d-1\), equal dimensions leave
+zero-dimensional source and target fibers whose atomic weights need not be
+compatible; the general theorem then gives only two branches.  The strict
+dimension gap turns the source fibers into positive-dimensional spheres, so
+they become nonatomic and a single-map lift exists.  Full row rank
+\(h=d\) is treated more efficiently by the direct twist argument in
+\cref{thm:p2-dimension-gap-monge}, including the borderline case \(n=d+1\).
+
+\subsection{Differential, generic, and definable finite-twist criteria}
+
+\begin{proposition}[Mixed-Hessian immersion gives finite twist]
+\label{prop:mixed-hessian-finite-twist}
+Let \(\mathcal X\subset\R^n\) be compact and let \(\mathcal Y\) be a compact
+\(d\)-dimensional \(C^1\) manifold, possibly with boundary.  Suppose
+\(F(x,y):=\nabla_xc(x,y)\) is continuous and continuously differentiable in
+\(y\), and
+\begin{equation}
+  \rank D_yF(x,y)=d
+  \qquad\text{for every }(x,y)\in\mathcal X\times\mathcal Y.
+  \label{eq:mixed-hessian-full-column-rank}
+\end{equation}
+Then there is an integer \(m<\infty\) such that every fiber of
+\(y\mapsto F(x,y)\) has at most \(m\) points, uniformly in \(x\).  Hence \(c\)
+is globally \(m\)-twisted.
+\end{proposition}
+
+\begin{proof}
+At each \((x_0,y_0)\), choose \(d\) output coordinates for which the
+corresponding \(d\times d\) minor of \(D_yF(x_0,y_0)\) is invertible.  The
+inverse-function theorem with parameters gives product neighborhoods
+\(U\times V\) of \((x_0,y_0)\) on which, for every fixed \(x\in U\), the
+restriction \(F_x|_V\) is injective.  Compactness provides a finite cover by
+such product neighborhoods.  A fiber meets each member of this cover in at
+most one point, so its cardinality is bounded by the number of members in the
+cover.
+\end{proof}
+
+For the power-distance cost, the mixed Hessian has a particularly transparent
+form.  With vectors understood as columns, set
+\begin{equation}
+  M_{\pi,p}(x,y)
+  :=\int
+  \norm{x-x'}^{p-2}\norm{y-y'}^{p-2}
+  (x-x')(y-y')^\top\dd\pi(x',y')
+  \in\R^{n\times d},
+  \label{eq:power-cross-hessian}
+\end{equation}
+using the continuous zero extension of
+\(z\mapsto\norm{z}^{p-2}z\) at \(z=0\).
+
+\begin{corollary}[A cross-Hessian criterion for finite-branch GW]
+\label{cor:power-cross-hessian-finite-map}
+Let \(1<p\leq2\), let \(\alpha\ll\mathrm{Leb}^n\), and suppose the compact
+target support lies in a compact \(d\)-dimensional \(C^1\) manifold.  If a
+GW optimizer \(\pi_\star\) satisfies
+\begin{equation}
+  \rank M_{\pi_\star,p}(x,y)=d
+  \qquad\text{on }\supp\alpha\times\supp\beta,
+  \label{eq:power-cross-hessian-rank-condition}
+\end{equation}
+then \(\pi_\star\) is a \(k\)-map for some finite \(k\).
+\end{corollary}
+
+\begin{proof}
+Differentiating \eqref{eq:power-distance-twist-map} in \(y\) gives
+\begin{equation}
+  D_yG_{\pi,x}(y)=pM_{\pi,p}(x,y),
+  \qquad
+  D_y\nabla_x\ell_\pi(x,y)=-4p^2M_{\pi,p}(x,y).
+  \label{eq:power-mixed-hessian-identity}
+\end{equation}
+The integrand is continuous for \(p>1\), so differentiation under the
+integral is valid on compact sets.  Apply
+\cref{prop:mixed-hessian-finite-twist,cor:distance-only-twist}.
+\end{proof}
+
+Condition \eqref{eq:power-cross-hessian-rank-condition} is strong: it rules
+out folds of the projected feature geometry.  A weaker, generic mechanism
+counts how many sheets a smooth map can have.  For fixed \(x\), write
+\(F_x(y)=\nabla_xc(x,y)\), and for pairwise distinct
+\((y_1,\ldots,y_r)\) define the coincidence map
+\begin{equation}
+  \Delta_rF_x(y_1,\ldots,y_r)
+  :=\bigl(F_x(y_2)-F_x(y_1),\ldots,
+          F_x(y_r)-F_x(y_1)\bigr)
+  \in(\R^n)^{r-1}.
+  \label{eq:multijet-coincidence-map}
+\end{equation}
+
+\begin{proposition}[General-position branch count]
+\label{prop:general-position-branch-count}
+Assume the hypotheses of \cref{prop:finite-twist-linear-ot}, let \(n>d\),
+let \(\mathcal Y\) be a compact smooth \(d\)-manifold, and suppose
+\(F_x(y)=\nabla_xc(x,y)\) is smooth in \(y\).  Set
+\begin{equation}
+  m_{n,d}:=\left\lfloor\frac{n}{n-d}\right\rfloor.
+  \label{eq:generic-branch-number}
+\end{equation}
+If, for \(\alpha\)-almost every \(x\), the map
+\(\Delta_{m_{n,d}+1}F_x\) is transverse to the origin on the set of pairwise
+distinct tuples, then every fiber of \(F_x\) has at most \(m_{n,d}\) points.
+Consequently, a frozen optimal plan for \(c\) is an
+\(m_{n,d}\)-map.  In particular, general position predicts one branch when
+\(n>2d\), at most two when \(n=2d\), and at most three when \((n,d)=(3,2)\).
+\end{proposition}
+
+\begin{proof}
+The domain of \(\Delta_rF_x\) has dimension \(rd\), whereas its target has
+dimension \((r-1)n\).  For \(r=m_{n,d}+1\),
+\[
+  rd-(r-1)n=d-m_{n,d}(n-d)<0.
+\]
+A map from a lower-dimensional manifold cannot be transverse to the origin at
+a preimage of the origin.  Hence no \(r\) distinct points have the same
+image, which is exactly the asserted fiber bound.  The finite-map conclusion
+follows from \cref{prop:finite-twist-linear-ot}.
+\end{proof}
+
+The restriction \(n>d\) is structural for this argument.  If \(n<d\), a
+regular fiber of a smooth map \(\mathcal Y^d\to\R^n\) has dimension
+\(d-n\), so finite twist is nongeneric.  If \(n=d\), regular fibers are
+discrete but their number is a topological or algebraic degree not controlled
+by dimension alone.
+
+Multijet transversality makes the hypothesis of
+\cref{prop:general-position-branch-count} generic for unconstrained smooth
+maps \citep{GolubitskyGuillemin1973}.  It is not automatically generic inside
+the much smaller family of self-consistent GW costs.  Proving transversality
+with respect to perturbations of \((\alpha,\beta)\), while retaining the
+fixed-point relation \(A_\star=4C_{\pi_\star}\), is a concrete route to a
+generic finite-map theorem.  For \(1<p<2\), smoothness of
+\(G_{\pi_\star,x}\) itself requires regularity of the vector-valued measures
+obtained by weighting \(\pi_\star\); smoothness of \(\beta\) alone does not
+automatically provide it.
+
+Analyticity offers a different rigidity mechanism, but only after
+positive-dimensional fibers have been excluded.
+
+\begin{proposition}[Definable analytic rigidity]
+\label{prop:definable-finite-twist}
+Let \(\mathcal X\), \(\mathcal Y\), and
+\(F:\mathcal X\times\mathcal Y\to\R^n\) be definable in a fixed o-minimal
+structure, with \(\mathcal Y\) compact.  Define
+\begin{equation}
+  E:=\{x\in\mathcal X:\text{some fiber }
+       \{y\in\mathcal Y:F(x,y)=q\}\text{ is infinite}\}.
+  \label{eq:infinite-fiber-exceptional-set}
+\end{equation}
+Then \(E\) is definable and there exists \(m<\infty\) such that
+\begin{equation}
+  \card\{y\in\mathcal Y:F(x,y)=q\}\leq m
+  \qquad(x\notin E,\ q\in\R^n).
+  \label{eq:definable-uniform-finiteness}
+\end{equation}
+In particular, if \(F(x,y)=\nabla_xc(x,y)\) and \(\alpha(E)=0\), then \(c\)
+is \(\alpha\)-almost-everywhere \(m\)-twisted.  This applies to a
+real-analytic cost on neighborhoods of compact semianalytic supports,
+provided no gradient fiber has positive dimension outside an
+\(\alpha\)-null set.
+\end{proposition}
+
+\begin{proof}
+In an o-minimal structure, an infinite definable fiber has positive
+dimension, and the locus where the fiber dimension is positive is definable.
+On the complement of this locus all fibers are finite.  The uniform
+finiteness theorem for definable families then supplies a common cardinality
+bound \citep{vandenDries1998}.  Restricted real-analytic functions on compact
+semianalytic sets are globally subanalytic, hence definable in
+\(\R_{\mathrm{an}}\).
+\end{proof}
+
+There are two important qualifications.  First, analyticity alone neither
+excludes infinite fibers nor fixes their number.  On \([-1,1]^2\), the
+analytic costs
+\(
+ c_N(x,y)=xT_N(y)
+\)
+built from Chebyshev polynomials satisfy
+\(\partial_xc_N=T_N(y)\), whose typical fibers have \(N\) points; a cost
+independent of \(y\) has infinite fibers.  Second, when \(0<p<2\), the kernel
+\(\norm{y-y'}^p\) is not analytic on the diagonal, and integration against an
+arbitrary optimal coupling does not preserve definability.  Thus
+\cref{prop:definable-finite-twist} is a conditional rigidity tool, not an
+automatic consequence of the Schoenberg representation.
+
+In algebraic models the branch number can sometimes be made explicit.  If
+the components of \(F_x(y)\) are polynomials of degree at most \(r\) and every
+complexified fiber is zero dimensional, B\'ezout's theorem gives the crude
+uniform bound \(r^d\).  For \(p=2\), the frozen twist map is quadratic in
+\(y\), so this argument gives \(2^d\); the rank-one structure analyzed next
+improves it sharply to two.
+
+\section{The finite-dimensional case \texorpdfstring{\(p=2\)}{p=2}}
+\label{sec:p2}
+
+At \(p=2\), the abstract feature objects become ordinary centered moments.
+This permits an exact analysis of the obstruction.
+
+\subsection{The learned finite-dimensional cost}
+
+Write
+\begin{equation}
+  \widetilde x=x-m_\alpha,
+  \qquad
+  \widetilde y=y-m_\beta.
+  \label{eq:centered-euclidean-variables}
+\end{equation}
+Then
+\[
+  u(x)=\widetilde x,
+  \quad v(y)=\widetilde y,
+  \quad a(x)=\norm{\widetilde x}^2,
+  \quad b(y)=\norm{\widetilde y}^2,
+  \quad C_\pi=S_\pi.
+\]
+The general cross-Hessian \eqref{eq:power-cross-hessian} reduces to
+\begin{equation}
+  M_{\pi,2}(x,y)
+  =\widetilde x\widetilde y^\top+S_\pi^\top.
+  \label{eq:p2-cross-hessian}
+\end{equation}
+The operator \(A\) is a matrix in \(\R^{d\times n}\), the RKHS penalty is
+the Frobenius norm, and
+\begin{equation}
+  c_A(x,y)
+  =-4\norm{\widetilde x}^2\norm{\widetilde y}^2
+   -4\ip{A\widetilde x}{\widetilde y},
+  \qquad
+  A_\star=4S_{\pi_\star}.
+  \label{eq:p2-learned-cost}
+\end{equation}
+The first term is the crucial difference from inner-product GW.  Without it,
+full row rank of \(A\) immediately gives twist.  With it, the gradient is
+\begin{equation}
+  \nabla_xc_A(x,y)
+  =-8\widetilde x\norm{\widetilde y}^2
+   -4A^\top\widetilde y.
+  \label{eq:p2-cost-gradient}
+\end{equation}
+
+\subsection{One branch off the learned row space, two branches on it}
+
+\begin{lemma}[Rank geometry of the squared-distance learned cost]
+\label{lem:p2-rank-geometry}
+Assume \(A\in\R^{d\times n}\) has full row rank.  For every fixed \(x\),
+each fiber of
+\(
+ y\mapsto\nabla_xc_A(x,y)
+\)
+contains at most two points.  If
+\begin{equation}
+  \widetilde x\notin\Ran(A^\top),
+  \label{eq:off-row-space}
+\end{equation}
+then every fiber contains at most one point, so the cost is twisted at
+\(x\).
+\end{lemma}
+
+\begin{proof}
+Suppose two targets \(y_0,y\) have the same gradient.  With
+\(z_0=y_0-m_\beta\), \(z=y-m_\beta\), and
+\(r=\norm{z}^2-\norm{z_0}^2\), \eqref{eq:p2-cost-gradient} gives
+\begin{equation}
+  A^\top(z-z_0)=-2r\widetilde x.
+  \label{eq:p2-gradient-fiber-equation}
+\end{equation}
+If \(\widetilde x\notin\Ran(A^\top)\), the two sides can agree only when
+\(r=0\).  Since full row rank makes \(A^\top\) injective, this forces
+\(z=z_0\).
+
+It remains to count fibers when \(\widetilde x\in\Ran(A^\top)\).  There is a
+unique \(q\in\R^d\) such that \(A^\top q=-2\widetilde x\), and
+\eqref{eq:p2-gradient-fiber-equation} gives \(z=z_0+rq\).  Substitution into
+the definition of \(r\) yields
+\[
+  r=2r\ip{z_0}{q}+r^2\norm{q}^2.
+\]
+Besides \(r=0\), this scalar equation has at most one solution.  Hence the
+gradient fiber has cardinality at most two.
+\end{proof}
+
+Thus the full-row-rank frozen cost is globally two-twisted, and
+\cref{prop:finite-twist-linear-ot} turns any optimizer of that linear problem
+into a two-map.  The following dimension gap strengthens two-twist to
+one-twist at \(\alpha\)-almost every source point.
+
+The exceptional set in \eqref{eq:off-row-space} is a proper affine subspace
+as soon as the source dimension is strictly larger than the target dimension.
+This yields a concrete Monge theorem.
+
+\begin{theorem}[Dimension-gap Brenier theorem for \(p=2\)]
+\label{thm:p2-dimension-gap-monge}
+Let \(n>d\), let \(\alpha\ll\mathrm{Leb}^n\), and assume compact supports.
+Let \(\pi_\star\) be a minimizer of the squared-distance problem
+\eqref{eq:power-gw-kantorovich} with \(p=2\).  If
+\begin{equation}
+  \rank S_{\pi_\star}=d,
+  \label{eq:full-row-rank-cross-covariance}
+\end{equation}
+then \(\pi_\star\) is induced by a map:
+\(
+ \pi_\star=(\Id,T_\star)_\sharp\alpha.
+\)
+More precisely, \(\pi_\star\) is the unique optimizer of linear OT for
+\(c_{A_\star}\), where \(A_\star=4S_{\pi_\star}\).  If \(f_\star\) is the
+corresponding source potential, then
+\begin{equation}
+  \nabla f_\star(x)
+  =-8(x-m_\alpha)\norm{T_\star(x)-m_\beta}^2
+   -16S_{\pi_\star}^\top(T_\star(x)-m_\beta)
+  \label{eq:p2-dimension-gap-map-characterization}
+\end{equation}
+for \(\alpha\)-almost every \(x\).
+\end{theorem}
+
+\begin{proof}
+By \cref{cor:self-consistent-linear-ot}, \(\pi_\star\) solves linear OT for
+the cost \eqref{eq:p2-learned-cost} with
+\(A_\star=4S_{\pi_\star}\).  Assumption
+\eqref{eq:full-row-rank-cross-covariance} makes \(A_\star\) full row rank.
+The subspace \(\Ran(A_\star^\top)\) has dimension \(d<n\), so
+\[
+  \alpha\bigl(m_\alpha+\Ran(A_\star^\top)\bigr)=0.
+\]
+By \cref{lem:p2-rank-geometry}, the frozen cost is therefore
+\(\alpha\)-almost-everywhere twisted.  Apply
+\cref{prop:twist-linear-ot}.  Substituting \(A_\star=4S_{\pi_\star}\) into
+\eqref{eq:p2-cost-gradient} gives
+\eqref{eq:p2-dimension-gap-map-characterization}.
+\end{proof}
+
+This conclusion is stronger than the generic count in
+\cref{prop:general-position-branch-count}.  When \(d<n\leq2d\), that count
+allows several branches, whereas the special rank-one quadratic structure of
+\eqref{eq:p2-cost-gradient} confines all branching to the \(d\)-dimensional
+affine space \(m_\alpha+\Ran(A_\star^\top)\), which is \(\alpha\)-null.
+
+The dimension gap is not the only way to remove the second branch.  If the
+target feature radius is constant, the nonlinear radial term in
+\eqref{eq:p2-learned-cost} becomes marginal-only and the learned cost is
+effectively bilinear.
+
+\begin{corollary}[Centered spherical targets]
+\label{cor:p2-spherical-target}
+Let \(n\geq d\), assume \(\alpha\ll\mathrm{Leb}^n\), and let
+\(\pi_\star\) be a minimizer for \(p=2\) with
+\(\rank S_{\pi_\star}=d\).  If, for some \(R\geq0\),
+\begin{equation}
+  \norm{y-m_\beta}=R
+  \qquad\text{for every }y\in\supp\beta,
+  \label{eq:centered-spherical-target}
+\end{equation}
+then \(\pi_\star=(\Id,T_\star)_\sharp\alpha\), including when \(n=d\).
+\end{corollary}
+
+\begin{proof}
+On \(\supp\beta\), \eqref{eq:p2-cost-gradient} becomes
+\[
+  \nabla_xc_{A_\star}(x,y)
+  =-8R^2(x-m_\alpha)-4A_\star^\top(y-m_\beta).
+\]
+The first term is independent of \(y\), and full row rank makes
+\(A_\star^\top\) injective.  The frozen cost is therefore twisted at every
+\(x\), so \cref{thm:rkhs-twist-brenier} applies.
+\end{proof}
+
+\begin{remark}[What the theorem does and does not assume]
+The rank conditions in \cref{thm:p2-dimension-gap-monge,cor:p2-spherical-target}
+are imposed on an optimal cross-covariance, hence they are not a priori
+conditions on the marginals alone.  Their conclusions nevertheless concern
+the original GW optimizer, not a Gaussian or affine restriction.  Under the
+strict dimension gap of \cref{thm:p2-dimension-gap-monge}, if every optimal
+cross-covariance has full row rank, then every GW optimizer is graph-supported;
+the same statement holds under the spherical-target hypothesis of
+\cref{cor:p2-spherical-target}.  Full row rank alone is not claimed to suffice
+in equal dimensions for a general target.
+\end{remark}
+
+Combining this observation with the known fiber construction gives the
+following rank map.
+
+\begin{corollary}[Known and new single-map regimes at \(p=2\)]
+\label{cor:p2-rank-map}
+Under the assumptions of \cref{thm:known-two-map}, the following regimes are
+available.
+\begin{enumerate}[label=(\roman*)]
+  \item If an optimal cross-covariance has rank at most \(d-2\), the fiber
+  theorem of \citet{DumontLacombeVialard2025}, recovered abstractly by
+  \cref{cor:p2-finite-rank-quotient}, provides an optimal map.
+  \item If \(n>d\) and an optimal cross-covariance has rank \(d-1\),
+  \cref{cor:p2-finite-rank-quotient} also provides an optimal map because
+  the source quotient fibers are nonatomic.
+  \item If \(n>d\) and an optimal cross-covariance has rank \(d\),
+  \cref{thm:p2-dimension-gap-monge} shows that this optimizer is a map.
+  \item If the centered target radius is constant and an optimal
+  cross-covariance has rank \(d\), \cref{cor:p2-spherical-target} gives a map
+  even when \(n=d\).
+  \item When \(n=d\) and the rank is \(d-1\), the explicit fiber analysis of
+  \citet{DumontLacombeVialard2025} gives an optimal two-map, but no general
+  one-map conclusion is known.
+\end{enumerate}
+For \(n=d\), full row rank does not yield a single branch because
+\(\Ran(A^\top)=\R^n\).
+\end{corollary}
+
+\subsection{Why equal dimensions retain two branches}
+
+When \(n=d\) and \(A\) is invertible, the second part of
+\cref{lem:p2-rank-geometry} applies at every source point.  The scalar
+quadratic for \(r\) can have two roots, so the frozen cost is generally only
+two-twisted.  Complementary slackness then restricts each conditional plan to
+at most two targets but does not force it to be a Dirac mass.  This is the
+local mechanism behind \cref{thm:known-two-map}.
+
+The distinction with inner-product GW is now exact.  Its learned cost is
+bilinear, so the gradient equation is linear in \(y\), and full rank gives a
+single inverse.  Squared-distance GW adds the radial statistic
+\(\norm{y-m_\beta}^2\); solving simultaneously for the linear feature and
+that radial statistic produces a quadratic scalar equation.  An RKHS norm
+penalty controls the learned cost but cannot remove this algebraic second
+branch.
+
+\section{What remains for \texorpdfstring{\(0<p<2\)}{0<p<2}}
+\label{sec:open}
+
+The learned-cost theorem is exact for every \(0<p\leq2\), but the sharp
+two-branch algebra used at \(p=2\) does not survive unchanged.  The preceding
+finite-twist and quotient-lifting frameworks narrow the missing step without
+pretending that regularity alone solves it.
+
+\paragraph{The feature lift is not a free Brenier theorem.}
+For \(0<p<2\), the Schoenberg feature space is generally infinite
+dimensional.  Even when \(\alpha\) has a smooth density in \(\R^n\), its
+feature pushforward \(\Phi_\sharp\alpha\) lies on a nonlinear
+finite-dimensional subset of \(\Hcal_{p,n}\).  It is not absolutely
+continuous with respect to an infinite-dimensional analogue of Lebesgue
+measure.  Applying a Hilbert-space version of Brenier's theorem directly to
+the feature measures is therefore unjustified.  The finite-rank quotient
+theorem avoids this mistake by retaining only \(R+1\) visible statistics and
+by explicitly transporting within the discarded fibers.  It does not apply
+automatically when the optimal operator has infinite rank.
+
+\paragraph{There are two targets: finite twist or a liftable quotient.}
+For a given optimizer, \eqref{eq:power-distance-twist-map} is the explicit
+twist object to study.  Uniformly bounding its contact fibers yields a
+finite-map optimizer by \cref{cor:distance-only-twist}; injectivity is only
+the special case that yields a Monge map.  Alternatively, a
+finite-dimensional factorization of the frozen cost can produce a Monge
+optimizer through \cref{thm:quotient-fiber-gw}, even when the full twist
+fibers are positive dimensional.  The cross-Hessian condition
+\eqref{eq:power-cross-hessian-rank-condition} proves such finiteness by local
+immersion and compactness.  More flexibly,
+\cref{prop:general-position-branch-count} gives the candidate generic count
+\(m_{n,d}\) when \(n>d\).  What remains is to derive either finite twist or
+a finite-dimensional liftable quotient from assumptions on the marginals
+while respecting self-consistency of \(\pi_\star\).
+
+\paragraph{Equal dimensions require rigidity beyond dimension counting.}
+When \(n=d\), multijet dimension counting gives no finite universal branch
+number.  Polynomial degree controls the \(p=2\) model, but for
+\(0<p<2\) the frozen cost is generally neither polynomial nor analytic on the
+diagonal.  The definable criterion of
+\cref{prop:definable-finite-twist} becomes effective only after one proves
+that positive-dimensional fibers are absent.  Analyticity by itself cannot
+provide a dimension-only value of \(m\), as the Chebyshev example shows.
+
+\paragraph{The nonsmooth range needs a subdifferential version.}
+For \(1<p<2\), the mixed derivative in
+\eqref{eq:power-mixed-hessian-identity} remains continuous and the finite
+twist program is directly available.  At \(p\leq1\), the power distance is
+nondifferentiable or singular at coincidences.  One must replace
+\(\nabla_xc\) by a suitable subdifferential fiber and control the resulting
+set-valued contact relation; this note does not yet prove that extension.
+
+\paragraph{The endpoint \(p>2\) requires another mechanism.}
+Euclidean \(p\)-powers cease to be conditionally negative definite in
+general when \(p>2\) \citep{Schoenberg1938}.  The Hilbert feature
+representation, the Hilbert--Schmidt cross-covariance, and the quadratic RKHS
+regularizer used here then disappear.  A Monge theorem in that range would
+need a different factorization or a direct analysis of the frozen GW cost.
+
+\subsection*{Conclusion}
+
+The strongest rigorous narrative is therefore not that the RKHS reduction
+automatically proves a universal Brenier theorem.  It proves something more
+precise:
+\begin{enumerate}[label=\arabic*.]
+  \item for \(0<p\leq2\), power-distance GW is exactly regularized learning
+  of a cross-space cost in a tensor-product RKHS;
+  \item every GW optimizer solves ordinary OT for its self-consistent learned
+  cost;
+  \item for every quadratic GW kernel, frozen optimality is a universal
+  first-order condition; conditional concavity upgrades it to a replacement
+  principle for all frozen optimizers;
+  \item an \(m\)-twisted contact relation forces a prescribed optimizer to be a
+  measurable mixture of at most \(m\) maps, while one-twist gives a unique
+  frozen graph coupling;
+  \item a twisted quotient problem together with nonatomic source fibers
+  yields a GW-optimal graph coupling even when the full cost has infinite
+  twist fibers;
+  \item for a rank-\(R\) learned operator, this quotient has only \(R+1\)
+  coordinates, and the coarea criterion \(n>R+1\) makes its liftability
+  explicit;
+  \item full column rank of the power cross-Hessian gives some finite branch
+  number, and fiberwise general position predicts the explicit count
+  \(m_{n,d}=\lfloor n/(n-d)\rfloor\) when \(n>d\);
+  \item for \(p=2\), quotient lifting recovers the low-rank map theorem and
+  gives a map at rank \(d-1\) when \(n>d\), while the special rank-one
+  quadratic structure improves the generic count to two and, with a strict
+  dimension gap and full row rank, to one almost everywhere;
+  \item a centered spherical target removes the radial branch and gives a map
+  under full row rank even in equal dimensions; and
+  \item otherwise, in equal dimensions the radial feature can leave two
+  branches, consistently with the known two-map theorem.
+\end{enumerate}
+The remaining research problem for \(1<p<2\) is therefore concrete: prove
+nondegeneracy, transversality, finite definable fibers, or a finite-rank
+liftable quotient for the self-consistent field \(G_{\pi_\star,x}\).  A
+one-map theorem through twist requires injectivity; quotient lifting instead
+requires sufficient conditional mass inside the invisible fibers.
+
+\begingroup
+\small
+\setlength{\bibsep}{2pt plus 1pt}
+\bibliographystyle{plainnat}
+\bibliography{references}
+\endgroup
+
+\end{document}
