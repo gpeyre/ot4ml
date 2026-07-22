@@ -1,0 +1,1026 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{hidelinks}
+\allowdisplaybreaks
+
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{definition}
+\newtheorem{example}[proposition]{Example}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\al}{\alpha}
+\newcommand{\be}{\beta}
+\newcommand{\Xx}{\mathcal{X}}
+\newcommand{\Yy}{\mathcal{Y}}
+\newcommand{\Couplings}{\mathcal{U}}
+\newcommand{\MK}{\mathcal{L}}
+\newcommand{\Gaussian}{\mathcal{N}}
+\newcommand{\Dd}{\mathcal{D}}
+\newcommand{\Ee}{\mathcal{E}}
+\newcommand{\Ss}{\mathcal{S}}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\opnorm}[1]{\left\lVert #1\right\rVert_{\mathrm{op}}}
+
+\DeclareMathOperator{\KL}{KL}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\essinf}{ess\,inf}
+\DeclareMathOperator{\esssup}{ess\,sup}
+
+\title{Hessian Geometry, Local Rates, and Acceleration of Sinkhorn}
+\author{}
+\date{22 July 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This note isolates one conditional-expectation operator that controls
+three aspects of entropic optimal transport: dual curvature, the local
+convergence of Sinkhorn's algorithm, and semi-dual conditioning. At the
+optimal coupling, the positive full-dual curvature operator is
+$\eps^{-1}\left(\begin{smallmatrix}I&T\\T^\ast&I\end{smallmatrix}\right)$,
+the Jacobian of one complete Sinkhorn cycle is $T^\ast T$, and exact
+elimination of one potential gives the semi-dual Hessian
+$\eps^{-1}(I-T^\ast T)$. This common structure yields the local rate,
+strict-gap criteria, small-$\eps$ asymptotics, and explicit parameters
+for extrapolation and momentum. It also explains why variable
+projection and quasi-Newton methods are natural alternatives to long
+scaling iterations.
+\end{abstract}
+
+\section{Dual Hessian and conditional expectation}
+
+The correct geometry for the dual potentials is not an unweighted
+Euclidean space: it is the product of the two marginal $L^2$ spaces. In
+this geometry, the Hessian has an especially simple block form.
+
+\paragraph{Entropic primal and dual.}
+Let $\Xx$ and $\Yy$ be standard Borel spaces, let
+$\al\in\mathcal P(\Xx)$ and $\be\in\mathcal P(\Yy)$, and let
+$c:\Xx\times\Yy\to\R\cup\{+\infty\}$ be measurable. The
+KL-regularized transport value is
+\begin{equation}
+  \label{eq:primal}
+  \MK_c^\eps(\al,\be)
+  :=
+  \inf_{\pi\in\Couplings(\al,\be)}
+  \left\{
+    \int c\,\dd\pi
+    +
+    \eps\KL(\pi\,\|\,\al\otimes\be)
+  \right\}.
+\end{equation}
+This is the entropy-regularized transport problem introduced
+computationally by Cuturi \cite{Cuturi2013}. Its concave dual objective
+is
+\begin{equation}
+  \label{eq:dual-energy}
+  \Dd_\eps(f,g)
+  :=
+  \int_{\Xx}f\,\dd\al+\int_{\Yy}g\,\dd\be
+  -\eps\int_{\Xx\times\Yy}
+  \left[
+  \exp\left(\frac{f(x)+g(y)-c(x,y)}{\eps}\right)-1
+  \right]
+  \dd\al(x)\dd\be(y)
+\end{equation}
+and $\MK_c^\eps(\al,\be)=\sup_{f,g}\Dd_\eps(f,g)$ under the standard
+duality assumptions. Assume henceforth that an optimal pair
+$(f^\star,g^\star)$ exists and that its Gibbs coupling
+\begin{equation}
+  \label{eq:optimal-gibbs-plan}
+  \dd\pi^\star(x,y)
+  =
+  \exp\left(\frac{f^\star(x)+g^\star(y)-c(x,y)}{\eps}\right)
+  \dd\al(x)\dd\be(y)
+\end{equation}
+has marginals $(\al,\be)$. The gauge transformation
+$(f,g)\mapsto(f+s,g-s)$ leaves \eqref{eq:dual-energy} unchanged. We
+isolate the nonconstant correlation modes through the centered spaces
+\[
+  L_0^2(\al):=\left\{h:\int h\,\dd\al=0\right\},
+  \qquad
+  L_0^2(\be):=\left\{k:\int k\,\dd\be=0\right\},
+\]
+endowed with their usual weighted norms. We write
+\begin{equation}
+  \label{eq:centering-projectors}
+  \operatorname{cent}_{\al}h:=h-\int h\dd\al,
+  \qquad
+  \operatorname{cent}_{\be}k:=k-\int k\dd\be
+\end{equation}
+for the orthogonal centering projectors.
+The full quotient by the gauge also retains the common-constant
+direction $(\one,\one)$; its curvature will be recorded separately.
+
+\paragraph{Conditional expectation.}
+Disintegrating $\pi^\star$ defines
+\begin{align}
+  T:L^2(\be)&\longrightarrow L^2(\al),
+  &Tk(x)&:=\E_{\pi^\star}[k(Y)\mid X=x],
+  \label{eq:T-definition}
+  \\
+  T^\ast:L^2(\al)&\longrightarrow L^2(\be),
+  &T^\ast h(y)&:=\E_{\pi^\star}[h(X)\mid Y=y].
+  \label{eq:Tstar-definition}
+\end{align}
+The notation is literal: $\ip{h}{Tk}_{\al}=\ip{T^\ast h}{k}_{\be}$.
+Conditional Jensen gives $\opnorm{T}\leq1$, while
+$T\one=\one$ and $T^\ast\one=\one$. Hence both operators preserve
+centered functions. We use the same symbols for their restrictions and
+set
+\begin{equation}
+  \label{eq:sigma-gap}
+  \sigma_\eps
+  :=
+  \opnorm{T:L_0^2(\be)\to L_0^2(\al)},
+  \qquad
+  \gamma_\eps:=1-\sigma_\eps^2.
+\end{equation}
+Thus $\sigma_\eps$ is the maximal nonconstant correlation carried by
+$\pi^\star$, while $\gamma_\eps$ is the spectral gap of the Markov
+operator $T^\ast T$ on $L_0^2(\be)$.
+
+\begin{proposition}[Full dual Hessian]
+  \label{prop:full-dual-hessian}
+  In $L^2(\al)\oplus L^2(\be)$, the positive curvature operator of the
+  concave dual at $(f^\star,g^\star)$ is
+  \begin{equation}
+    \label{eq:full-dual-hessian}
+    H_{\mathrm{dual}}
+    =
+    -\nabla^2\Dd_\eps(f^\star,g^\star)
+    =
+    \frac1\eps
+    \begin{pmatrix}
+      I&T\\
+      T^\ast&I
+    \end{pmatrix}.
+  \end{equation}
+  Equivalently,
+  \begin{equation}
+    \label{eq:full-dual-quadratic-form}
+    -\eps\,D^2\Dd_\eps(f^\star,g^\star)[(h,k),(h,k)]
+    =
+    \E_{\pi^\star}\bigl[(h(X)+k(Y))^2\bigr].
+  \end{equation}
+  On $L_0^2(\al)\oplus L_0^2(\be)$,
+  \begin{equation}
+    \label{eq:full-dual-curvature}
+    \frac{1-\sigma_\eps}{\eps}I
+    \preceq H_{\mathrm{dual}}
+    \preceq
+    \frac{1+\sigma_\eps}{\eps}I,
+    \qquad
+    \kappa_{\mathrm{dual},0}
+    =
+    \frac{1+\sigma_\eps}{1-\sigma_\eps}.
+  \end{equation}
+  On the full space modulo the gauge direction $(\one,-\one)$, the
+  additional eigenvalue is $2/\eps$, and hence
+  \begin{equation}
+    \label{eq:full-dual-quotient-condition}
+    \kappa_{\mathrm{dual}}
+    =
+    \frac{2}{1-\sigma_\eps}.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+Twice differentiating $-\Dd_\eps$ gives
+$\eps^{-1}\E_{\pi^\star}[(h(X)+k(Y))^2]$. Expanding the square and using
+\eqref{eq:T-definition} gives \eqref{eq:full-dual-hessian}. On a
+singular pair $Tv=s u$, $T^\ast u=s v$, the two vectors $(u,\pm v)$
+have eigenvalues $(1\pm s)/\eps$. Taking the extremal centered singular
+value $s=\sigma_\eps$ proves \eqref{eq:full-dual-curvature}. The omitted
+constant gauge vector $(\one,-\one)$ has eigenvalue zero, whereas
+$(\one,\one)$ has eigenvalue $2/\eps$. This proves
+\eqref{eq:full-dual-quotient-condition}.
+\end{proof}
+
+For discrete marginals $\al=\sum_i \mathrm a_i\delta_{x_i}$ and
+$\be=\sum_j \mathrm b_j\delta_{y_j}$, with optimal coupling matrix
+$\mathrm P^\star$, the same operators read
+\[
+  Tk=\mathrm D_{\mathrm a}^{-1}\mathrm P^\star k,
+  \qquad
+  T^\ast h=\mathrm D_{\mathrm b}^{-1}
+  (\mathrm P^\star)^{\mathsf T}h,
+\]
+where $\mathrm D_{\mathrm a}=\operatorname{diag}(\mathrm a)$ and
+$\mathrm D_{\mathrm b}=\operatorname{diag}(\mathrm b)$. These formulas
+are adjoint in the $\mathrm a$- and $\mathrm b$-weighted inner products,
+not in the unweighted Euclidean ones.
+
+\section{Sinkhorn Jacobian and local rate}
+
+A full Sinkhorn cycle is a nonlinear map on one potential. Its
+linearization at the fixed point is exactly the two-step conditional
+expectation $T^\ast T$, so the local convergence question reduces to a
+Markov spectral gap.
+
+\paragraph{Soft transforms and the cycle map.}
+Exact block maximization of $\Dd_\eps$ is written with the continuous
+soft $c$-transforms
+\begin{align}
+  g^{\bar c,\eps}(x)
+  &:=-\eps\log\int_{\Yy}
+  \exp\left(\frac{g(y)-c(x,y)}{\eps}\right)\dd\be(y),
+  \label{eq:soft-transform-g}
+  \\
+  f^{c,\eps}(y)
+  &:=-\eps\log\int_{\Xx}
+  \exp\left(\frac{f(x)-c(x,y)}{\eps}\right)\dd\al(x).
+  \label{eq:soft-transform-f}
+\end{align}
+One complete cycle on the target potential is therefore
+\begin{equation}
+  \label{eq:sinkhorn-cycle}
+  \Ss_\eps(g):=(g^{\bar c,\eps})^{c,\eps},
+  \qquad
+  g^{(\ell+1)}=\Ss_\eps(g^{(\ell)}).
+\end{equation}
+The opposite ordering acts on $L^2(\al)$ and has the same nonzero
+spectrum.
+
+\begin{proposition}[Jacobian and exact local Sinkhorn rate]
+  \label{prop:sinkhorn-local-rate}
+  Assume that the two soft transforms are twice differentiable near
+  the optimum. Then
+  \begin{equation}
+    \label{eq:coordinate-jacobians}
+    D[g\mapsto g^{\bar c,\eps}](g^\star)=-T,
+    \qquad
+    D[f\mapsto f^{c,\eps}](f^\star)=-T^\ast,
+    \qquad
+    D\Ss_\eps(g^\star)=T^\ast T.
+  \end{equation}
+  Consequently, for the centered error
+  $e^{(\ell)}=\operatorname{cent}_{\be}(g^{(\ell)}-g^\star)$ of any Sinkhorn sequence
+  converging to $g^\star$ modulo constants,
+  \begin{equation}
+    \label{eq:local-error-recursion}
+    e^{(\ell+1)}
+    =
+    T^\ast T e^{(\ell)}+o(\norm{e^{(\ell)}}_\be),
+    \qquad
+    \limsup_{\ell\to\infty}
+    \frac{\norm{e^{(\ell+1)}}_\be}
+         {\norm{e^{(\ell)}}_\be}
+    \leq \sigma_\eps^2.
+  \end{equation}
+  If $\sigma_\eps^2$ is an isolated eigenvalue and the asymptotic error
+  has a nonzero projection onto its eigenspace, the ratio converges to
+  $\sigma_\eps^2$.
+  Moreover,
+  \begin{equation}
+    \label{eq:conditional-poincare-gap}
+    \gamma_\eps
+    =
+    \inf_{\substack{k\in L_0^2(\be)\\\norm{k}_\be=1}}
+    \E_{\pi^\star}\left[\Var(k(Y)\mid X)\right].
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+Differentiating the log-partition maps
+\eqref{eq:soft-transform-g}--\eqref{eq:soft-transform-f} at the optimal
+Gibbs coupling gives the first two identities in
+\eqref{eq:coordinate-jacobians}; the
+chain rule gives the third. Taylor expansion proves
+\eqref{eq:local-error-recursion}. Finally, for centered $k$,
+\[
+  \ip{k}{(I-T^\ast T)k}_\be
+  =
+  \norm{k}_\be^2-\norm{Tk}_\al^2
+  =
+  \E_{\pi^\star}[\Var(k(Y)\mid X)].
+\]
+Taking the infimum over the unit sphere gives
+\eqref{eq:conditional-poincare-gap}.
+\end{proof}
+
+The reverse cycle $f\mapsto(f^{c,\eps})^{\bar c,\eps}$ has Jacobian
+$TT^\ast$ on
+$L_0^2(\al)$. Since $T^\ast T$ and $TT^\ast$ have the same nonzero
+spectrum, either orientation has the same local rate. In finite
+spaces, this recovers the classical second-singular-value formula for
+matrix scaling \cite{Knight2008,LehmannEtAl2022}.
+
+\paragraph{When is the rate strictly smaller than one?}
+Positivity of the Gibbs kernel is enough in finite dimension but not on
+an arbitrary infinite space: centered approximate modes may retain
+correlation arbitrarily close to one. The following input-level bound
+is simple and explicit.
+
+Define the cost oscillation modulo separable terms by
+\begin{equation}
+  \label{eq:separable-cost-oscillation}
+  \Omega_c
+  :=
+  \inf_{\xi,\zeta}
+  \operatorname{ess\,osc}_{\al\otimes\be}
+  \bigl(c(x,y)-\xi(x)-\zeta(y)\bigr).
+\end{equation}
+Here the infimum is over measurable real-valued functions
+$\xi$ on $\Xx$ and $\zeta$ on $\Yy$.
+For compact supports and continuous $c$, also define the invariant
+four-point oscillation
+\begin{equation}
+  \label{eq:four-point-cost-oscillation}
+  \Delta_c
+  :=
+  \sup_{x,x',y,y'}
+  \bigl[c(x,y')+c(x',y)-c(x,y)-c(x',y')\bigr],
+\end{equation}
+where the supremum is over the product of the two supports.
+
+\begin{proposition}[Explicit strict-gap criteria]
+  \label{prop:strict-gap}
+  If $\Omega_c<\infty$, then
+  \begin{equation}
+    \label{eq:doeblin-rate-bound}
+    \sigma_\eps
+    \leq
+    1-e^{-2\Omega_c/\eps}
+    <1,
+    \qquad
+    \sigma_\eps^2\leq\bigl(1-e^{-2\Omega_c/\eps}\bigr)^2.
+  \end{equation}
+  If the supports are compact and $c$ is continuous, then the
+  projective bound also holds:
+  \begin{equation}
+    \label{eq:birkhoff-local-bound}
+    \sigma_\eps
+    \leq
+    \Lambda_\eps
+    :=
+    \tanh\left(\frac{\Delta_c}{4\eps}\right)
+    <1.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+Adding $\xi(x)+\zeta(y)$ to $c$ only changes the dual potentials. For any
+$\eta>0$, choose such terms so that the resulting cost has essential
+oscillation at most $\Omega_c+\eta$. Write
+$k_\eps=e^{-c/\eps}$, $m=\essinf k_\eps$, $M=\esssup k_\eps$, and
+$\dd\pi^\star=u(x)k_\eps(x,y)v(y)\dd\al\dd\be$. The two marginal equations
+give
+\[
+  \frac1{MV}\leq u\leq\frac1{mV},
+  \qquad
+  \frac1{MU}\leq v\leq\frac1{mU},
+  \qquad
+  \frac1M\leq UV\leq\frac1m,
+\]
+where $U=\int u\dd\al$ and $V=\int v\dd\be$. Hence the density
+$r=\dd\pi^\star/\dd(\al\otimes\be)$ satisfies
+$r\geq(m/M)^2\geq e^{-2(\Omega_c+\eta)/\eps}=: \delta_\eta$. Decomposing
+$r=\delta_\eta+(1-\delta_\eta)\widetilde r$ shows that, on centered
+functions, $T=(1-\delta_\eta)\widetilde T$ with
+$\opnorm{\widetilde T}\leq1$. Letting $\eta\downarrow0$ proves
+\eqref{eq:doeblin-rate-bound}.
+
+Under compactness, the conditional kernel is continuous and $T$ is
+compact. Birkhoff's theorem bounds both half-cycles in Hilbert's
+projective metric by $\Lambda_\eps$ \cite{FranklinLorenz1989}. If
+$\sigma_\eps>0$, compactness provides a continuous centered singular
+pair $Tv=\sigma_\eps u$, $T^\ast u=\sigma_\eps v$. Differentiating the
+two projective bounds gives
+$\sigma_\eps\operatorname{osc}(u)\leq
+\Lambda_\eps\operatorname{osc}(v)$ and the reverse inequality with
+$u,v$ exchanged. Multiplication yields
+$\sigma_\eps^2\leq\Lambda_\eps^2$; the case $\sigma_\eps=0$ is immediate.
+\end{proof}
+
+On unbounded spaces, cost growth must be balanced against marginal
+tails. Conforti, Durmus, and Greco prove quantitative contraction for
+quadratic costs under asymptotically positive log-concavity profiles
+\cite{ConfortiDurmusGreco2026}; Eckstein obtains weighted Hilbert
+contraction under compatible cost-growth and tail assumptions
+\cite{Eckstein2025}. These are useful input-level criteria, but their
+norms should not be identified automatically with the exact $L^2$
+gap \eqref{eq:conditional-poincare-gap}.
+
+\paragraph{Why a linear small-$\eps$ gap is natural.}
+In a smooth connected Monge regime, the conditional law of $Y$ given
+$X=x$ has width $O(\sqrt\eps)$ around the hard transport
+map. The conditional variance in
+\eqref{eq:conditional-poincare-gap} is therefore typically of order
+$\eps$, leading to $\sigma_\eps^2=1-C\eps+o(\eps)$.
+
+A precise conditional statement is as follows. Assume that $\Xx$ and $\Yy$
+are smooth connected $d$-dimensional manifolds, that the marginals have
+positive smooth densities, and that hard transport is induced by a
+smooth diffeomorphism $\mathsf M:\Xx\to\Yy$. Let $g_0^\star$ be the hard
+target potential and set
+\begin{equation}
+  \label{eq:monge-transverse-hessian}
+  H(x)
+  :=
+  D_{yy}^2\bigl(c(x,\cdot)-g_0^\star\bigr)(\mathsf M(x)),
+  \qquad
+  A(y):=H(\mathsf M^{-1}(y))^{-1}.
+\end{equation}
+Suppose that $H$ is uniformly positive and that the uniform Laplace
+expansion of the entropic conditionals permits passage to the first
+nonzero Rayleigh quotient, for instance through Mosco convergence of
+the rescaled forms and compact convergence of their resolvents. Define
+\begin{equation}
+  \label{eq:limiting-poincare-eigenvalue}
+  \lambda_1(A,\be)
+  :=
+  \inf_{\substack{\int k\dd\be=0\\\int k^2\dd\be=1}}
+  \int_{\Yy}\ip{A(y)\nabla k(y)}{\nabla k(y)}\dd\be(y).
+\end{equation}
+Uniform ellipticity and a Poincar\'e inequality for $\be$ ensure that
+$\lambda_1(A,\be)>0$.
+
+\begin{proposition}[Smooth small-regularization law]
+  \label{prop:smooth-small-epsilon}
+  Under the preceding assumptions,
+  \begin{equation}
+    \label{eq:smooth-small-epsilon-rate}
+    \gamma_\eps
+    =
+    \eps\lambda_1(A,\be)+o(\eps),
+    \qquad
+    \sigma_\eps^2
+    =
+    1-\eps\lambda_1(A,\be)+o(\eps),
+    \qquad
+    \sigma_\eps
+    =
+    1-\frac\eps2\lambda_1(A,\be)+o(\eps).
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+Writing $\pi_\eps^\star$ for the optimal coupling at regularization
+$\eps$, the uniform Laplace expansion of $Y\mid X=x$ gives
+$\Cov(Y\mid X=x)=\eps H(x)^{-1}+o(\eps)$. Hence, for smooth $k$,
+\[
+  \frac1\eps
+  \E_{\pi_\eps^\star}[\Var(k(Y)\mid X)]
+  \longrightarrow
+  \int_{\Xx}
+  \ip{H(x)^{-1}\nabla k(\mathsf M(x))}
+     {\nabla k(\mathsf M(x))}\dd\al(x).
+\]
+Since $\mathsf M_\#\al=\be$, the right-hand side is the form in
+\eqref{eq:limiting-poincare-eigenvalue}. Spectral convergence permits
+passage to the first Rayleigh quotient in
+\eqref{eq:conditional-poincare-gap}, giving the first expansion. The
+other two follow from $\gamma_\eps=1-\sigma_\eps^2$.
+\end{proof}
+
+\begin{example}[Exact Gaussian benchmark]
+  \label{ex:gaussian-benchmark}
+  For $\al=\be=\Gaussian(0,1)$ and
+  $c(x,y)=\frac12(x-y)^2$, the optimal coupling is Gaussian with
+  correlation
+  \begin{equation}
+    \label{eq:gaussian-correlation}
+    r_\eps
+    =
+    \frac{\sqrt{\eps^2+4}-\eps}{2}.
+  \end{equation}
+  Hermite polynomials diagonalize $T$, so $\sigma_\eps=r_\eps$.
+  Thus $\sigma_\eps=1-\eps/2+O(\eps^2)$ and
+  $\sigma_\eps^2=1-\eps+O(\eps^2)$. This is
+  Proposition~\ref{prop:smooth-small-epsilon} with
+  $A=1$ and $\lambda_1(A,\be)=1$.
+\end{example}
+
+\paragraph{Local $L^2$ versus global Hilbert contraction.}
+For $\Delta_c>0$,
+\begin{equation}
+  \label{eq:hilbert-small-epsilon}
+  1-\Lambda_\eps^2
+  \sim
+  4e^{-\Delta_c/(2\eps)}
+  \qquad(\eps\downarrow0).
+\end{equation}
+This is exponentially more pessimistic than the smooth local law
+$\gamma_\eps\sim\eps\lambda_1(A,\be)$. There is no contradiction.
+Hilbert's projective metric gives a global guarantee over the full positive cone and uses
+no smoothness of the iterates. The $L^2$ result is local to the optimal
+coupling and exploits the regular diffusive structure of the dominant
+modes. Chizat, Delalande, and Va\v{s}kevi\v{c}ius similarly obtain
+polynomial rather than universal exponential dependences under
+continuous regularity and log-concavity assumptions
+\cite{ChizatDelalandeVaskevicius2026}.
+
+\section{Extrapolation and momentum}
+\label{sec:acceleration}
+
+Once the local spectrum is reduced to
+$\operatorname{spec}(T^\ast T)\subset[0,\sigma_\eps^2]$, standard
+polynomial acceleration applies. This section distinguishes scalar extrapolation,
+which improves the gap by a constant factor, from momentum, which gives
+the characteristic square-root improvement.
+
+\paragraph{Scalar extrapolation.}
+Consider the relaxed full cycle
+\begin{equation}
+  \label{eq:extrapolated-cycle}
+  g^{(\ell+1)}
+  =
+  g^{(\ell)}
+  +
+  \omega\bigl(\Ss_\eps(g^{(\ell)})-g^{(\ell)}\bigr).
+\end{equation}
+Its centered Jacobian is
+$I-\omega(I-T^\ast T)$.
+
+\begin{proposition}[Optimal scalar extrapolation]
+  \label{prop:optimal-extrapolation}
+  If $\gamma_\eps>0$, the choice
+  \begin{equation}
+    \label{eq:optimal-extrapolation-parameter}
+    \omega_{\mathrm{ext}}
+    =
+    \frac{2}{1+\gamma_\eps}
+  \end{equation}
+  minimizes the worst local factor of
+  \eqref{eq:extrapolated-cycle} over the spectral interval
+  $[0,1-\gamma_\eps]$. The resulting factor is
+  \begin{equation}
+    \label{eq:optimal-extrapolation-rate}
+    r_{\mathrm{ext}}
+    =
+    \frac{1-\gamma_\eps}{1+\gamma_\eps}
+    =
+    \frac{\sigma_\eps^2}{2-\sigma_\eps^2},
+  \end{equation}
+  compared with $\sigma_\eps^2=1-\gamma_\eps$ for ordinary Sinkhorn.
+\end{proposition}
+
+\begin{proof}
+On an eigenmode $T^\ast T k=\lambda k$, the factor is
+$1-\omega(1-\lambda)$, with $1-\lambda\in[\gamma_\eps,1]$. The minimax
+choice balances the two endpoint values:
+$1-\omega\gamma_\eps=-(1-\omega)$. Solving gives
+\eqref{eq:optimal-extrapolation-parameter} and
+\eqref{eq:optimal-extrapolation-rate}.
+\end{proof}
+
+For $\gamma_\eps\ll1$, scalar extrapolation changes
+$1-\gamma_\eps$ into
+$1-2\gamma_\eps+O(\gamma_\eps^2)$. It is useful but does not change the
+scaling of the iteration count.
+
+\paragraph{Momentum and square-root acceleration.}
+Add one memory term to the extrapolated cycle:
+\begin{equation}
+  \label{eq:momentum-cycle}
+  g^{(\ell+1)}
+  =
+  g^{(\ell)}
+  +
+  \omega\bigl(\Ss_\eps(g^{(\ell)})-g^{(\ell)}\bigr)
+  +
+  \vartheta\bigl(g^{(\ell)}-g^{(\ell-1)}\bigr).
+\end{equation}
+This is the heavy-ball polynomial applied locally to
+$I-T^\ast T$ \cite{Polyak1964}.
+
+\begin{proposition}[Optimal local momentum parameters]
+  \label{prop:optimal-momentum}
+  For a known gap $\gamma_\eps>0$, choose
+  \begin{equation}
+    \label{eq:optimal-momentum-parameters}
+    \omega_{\mathrm{mom}}
+    =
+    \frac{4}{(1+\sqrt{\gamma_\eps})^2},
+    \qquad
+    \vartheta_{\mathrm{mom}}
+    =
+    \left(\frac{1-\sqrt{\gamma_\eps}}
+    {1+\sqrt{\gamma_\eps}}\right)^2.
+  \end{equation}
+  Then the local asymptotic factor of \eqref{eq:momentum-cycle} is
+  \begin{equation}
+    \label{eq:optimal-momentum-rate}
+    r_{\mathrm{mom}}
+    =
+    \frac{1-\sqrt{\gamma_\eps}}{1+\sqrt{\gamma_\eps}}.
+  \end{equation}
+  Thus the convergence gap improves from order $\gamma_\eps$ to order
+  $\sqrt{\gamma_\eps}$.
+\end{proposition}
+
+\begin{proof}
+For a mode with $a=1-\lambda\in[\gamma_\eps,1]$, the scalar recurrence is
+\[
+  z_{\ell+1}
+  =
+  (1-\omega a+\vartheta)z_\ell-\vartheta z_{\ell-1}.
+\]
+With \eqref{eq:optimal-momentum-parameters}, put
+$r=(1-\sqrt{\gamma_\eps})/(1+\sqrt{\gamma_\eps})$. Then
+$\vartheta=r^2$ and $1-\omega a+\vartheta$ ranges from $2r$ to $-2r$
+as $a$ ranges from $\gamma_\eps$ to $1$. Both characteristic roots
+therefore have modulus at most $r$.
+\end{proof}
+
+Over-relaxing the two block updates separately gives the nonlinear SOR
+variant studied in \cite{ThibaultEtAl2021,LehmannEtAl2022}. Its optimal
+local parameter is
+\[
+  \omega_{\mathrm{SOR}}
+  =
+  \frac{2}{1+\sqrt{\gamma_\eps}},
+\]
+and it has the same factor \eqref{eq:optimal-momentum-rate}. Block SOR
+and the outer momentum step \eqref{eq:momentum-cycle} are different
+algorithms, despite their identical optimal local rate. Their global
+convergence requires safeguards; the displayed parameters are local
+spectral prescriptions, not unconditional global guarantees.
+
+\paragraph{Estimating the gap from iterates.}
+The optimal parameters depend on an unknown local quantity. During an
+ordinary Sinkhorn run, set
+\[
+  d^{(\ell)}
+  :=
+  \operatorname{cent}_{\be}\bigl(g^{(\ell)}-g^{(\ell-1)}\bigr).
+\]
+Near the fixed point,
+$d^{(\ell+1)}=T^\ast T d^{(\ell)}+o(\norm{d^{(\ell)}})$, so the Rayleigh
+quotient
+\begin{equation}
+  \label{eq:rate-estimator}
+  \widehat r_\ell
+  :=
+  \frac{\ip{d^{(\ell)}}{d^{(\ell+1)}}_\be}
+       {\norm{d^{(\ell)}}_\be^2}
+  \end{equation}
+converges generically to $\sigma_\eps^2$ when a dominant mode is
+present. The norm ratio
+$\norm{d^{(\ell+1)}}_\be/\norm{d^{(\ell)}}_\be$ is a simpler,
+slightly noisier alternative. In practice one clips
+$\widehat r_\ell$ to $[0,1)$, sets
+$\widehat\gamma_\ell=1-\widehat r_\ell$, and activates acceleration only
+after the estimate has stabilized. This also explains why extrapolation
+based on early iterates can be unreliable: the asymptotic spectral mode
+has not yet emerged.
+
+\section{Semi-dual variable projection}
+\label{sec:semidual}
+
+Eliminating one potential exactly converts the same operator
+$T^\ast T$ from an iteration Jacobian into a Hessian correction. This
+is the variable-projection mechanism: the poorly conditioned block
+coupling is removed by a Schur complement rather than handled by
+alternating block maximization.
+
+\paragraph{Reduced objective and Hessian.}
+For each $g$, the exact source-potential maximizer is
+$g^{\bar c,\eps}$ from \eqref{eq:soft-transform-g}. The resulting
+concave semi-dual is
+\begin{equation}
+  \label{eq:semidual-definition}
+  \Ee_\eps(g)
+  :=
+  \Dd_\eps(g^{\bar c,\eps},g)
+  =
+  \int_{\Xx}g^{\bar c,\eps}\dd\al
+  +
+  \int_{\Yy}g\dd\be.
+\end{equation}
+Let
+\begin{equation}
+  \label{eq:semidual-coupling}
+  \dd\pi_g(x,y)
+  :=
+  \exp\left(
+    \frac{g^{\bar c,\eps}(x)+g(y)-c(x,y)}{\eps}
+  \right)
+  \dd\al(x)\dd\be(y),
+\end{equation}
+and denote its second marginal by $\be_g$. Its first marginal is
+exactly $\al$.
+
+\begin{proposition}[Semi-dual derivatives and Schur complement]
+  \label{prop:semidual-varpro}
+  For bounded directions $k,k'$ on $\Yy$,
+  \begin{align}
+    D\Ee_\eps(g)[k]
+    &=
+    \int_{\Yy} k\,\dd(\be-\be_g),
+    \label{eq:semidual-gradient}
+    \\
+    D^2\Ee_\eps(g)[k,k']
+    &=
+    -\frac1\eps
+    \int_{\Xx}
+    \Cov_{\pi_g(\cdot\mid x)}(k(Y),k'(Y))\dd\al(x).
+    \label{eq:semidual-hessian-general}
+  \end{align}
+  At $g=g^\star$, the positive Riesz curvature operator on $L^2(\be)$ is
+  \begin{equation}
+    \label{eq:semidual-hessian}
+    H_{\mathrm{sd}}
+    :=
+    -\nabla^2\Ee_\eps(g^\star)
+    =
+    \frac1\eps(I-T^\ast T).
+  \end{equation}
+  The identity extends from bounded directions to $L^2(\be)$ by
+  density.
+  It is exactly the Schur complement of the $f$ block in
+  \eqref{eq:full-dual-hessian}.
+\end{proposition}
+
+\begin{proof}
+The envelope theorem gives \eqref{eq:semidual-gradient}. Differentiating
+the conditional Gibbs law in \eqref{eq:semidual-coupling} gives the
+conditional covariance formula \eqref{eq:semidual-hessian-general}.
+At the optimum,
+\[
+  \int_{\Xx}\Cov(k,k'\mid X)\dd\al
+  =
+  \ip{k}{k'}_\be-\ip{Tk}{Tk'}_\al
+  =
+  \ip{k}{(I-T^\ast T)k'}_\be,
+\]
+which proves \eqref{eq:semidual-hessian}. Finally, the Schur complement
+of $I$ in
+$\left(\begin{smallmatrix}I&T\\T^\ast&I\end{smallmatrix}\right)$ is
+$I-T^\ast T$. This is exact variable projection in the sense of
+Golub and Pereyra \cite{GolubPereyra1973,GolubPereyra2003}.
+\end{proof}
+
+\paragraph{Conditioning and first-order rates.}
+The spectral gap that controls Sinkhorn is exactly the strong concavity
+of $\Ee_\eps$, or equivalently the strong convexity of $-\Ee_\eps$.
+
+\begin{proposition}[Semi-dual conditioning and optimization rates]
+  \label{prop:semidual-conditioning}
+  On $L_0^2(\be)$,
+  \begin{equation}
+    \label{eq:semidual-curvature}
+    \frac{\gamma_\eps}{\eps} I
+    \preceq
+    H_{\mathrm{sd}}
+    \preceq
+    \frac1\eps I,
+    \qquad
+    \kappa_{\mathrm{sd}}
+    \leq
+    \frac1{\gamma_\eps}.
+  \end{equation}
+  Gradient ascent on the local quadratic model of $\Ee_\eps$, with
+  optimal constant step $2\eps/(1+\gamma_\eps)$, has factor
+  \begin{equation}
+    \label{eq:semidual-gradient-rate}
+    r_{\mathrm{GD}}
+    \leq
+    \frac{1-\gamma_\eps}{1+\gamma_\eps}.
+  \end{equation}
+  Heavy-ball or Chebyshev acceleration has factor
+  \begin{equation}
+    \label{eq:semidual-momentum-rate}
+    r_{\mathrm{HB}}
+    \leq
+    \frac{1-\sqrt{\gamma_\eps}}{1+\sqrt{\gamma_\eps}}.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+The spectrum of $T^\ast T$ on centered functions lies in
+$[0,1-\gamma_\eps]$, so
+the spectrum of \eqref{eq:semidual-hessian} lies in
+$[\gamma_\eps/\eps,1/\eps]$. This proves the curvature and condition-number
+bounds. The standard minimax polynomials on an interval give
+\eqref{eq:semidual-gradient-rate} and
+\eqref{eq:semidual-momentum-rate}.
+\end{proof}
+
+Since
+$\gamma_\eps=(1-\sigma_\eps)(1+\sigma_\eps)$, this condition-number
+bound is smaller than the doubly centered full-dual condition number
+in \eqref{eq:full-dual-curvature} by the factor
+$(1+\sigma_\eps)^2$.
+
+The two rates are not merely analogous to those in
+Section~\ref{sec:acceleration}: they are the same formulas. Locally,
+\[
+  \Ss_\eps(g)-g
+  =
+  \eps\nabla\Ee_\eps(g)
+  +o(\norm{g-g^\star}),
+\]
+where the gradient is the $L^2(\be)$ Riesz gradient.
+Thus optimal scalar extrapolation of Sinkhorn is gradient ascent on the
+semi-dual linearization, and \eqref{eq:momentum-cycle} is its heavy-ball
+counterpart. Nesterov acceleration gives the same square-root dependence
+on $\gamma_\eps$ \cite{Nesterov1983}, although its standard worst-case
+constant differs from the
+stationary heavy-ball factor \eqref{eq:semidual-momentum-rate}.
+
+\paragraph{Quasi-Newton methods.}
+In a finite discretization, $-\Ee_\eps$ is a smooth unconstrained
+convex problem after fixing its additive gauge. BFGS attempts to learn
+the inverse of $I-T^\ast T$ from gradient differences, precisely the
+operator responsible for the slow modes. Under the standard local
+smoothness and positive-definiteness assumptions, full BFGS is locally
+superlinear; limited-memory BFGS trades that guarantee for lower memory
+and often strong practical performance \cite{NocedalWright2006}.
+
+This strategy has a substantial OT history. Cuturi and Peyr\'e used
+smooth dual and semi-dual formulations with L-BFGS for variational
+Wasserstein problems and developed the general regularized semi-dual
+viewpoint \cite{CuturiPeyre2016,CuturiPeyre2018}; stochastic
+first-order optimization of semi-duals was developed by Genevay et al.
+\cite{GenevayEtAl2016}. Khamlich, Romor, and
+Rozza use L-BFGS as the optimization core of a modern
+entropy-regularized semi-discrete solver, together with truncation,
+multilevel continuation, and fast geometric queries
+\cite{KhamlichRomorRozza2026}. Qiu, Yin, and Wang also report and analyze
+L-BFGS on the fully discrete entropic dual as an alternative to long
+Sinkhorn runs \cite{QiuYinWang2023}.
+
+These methods do not make the small-$\eps$ conditioning disappear: the
+inverse Hessian still grows like $1/\gamma_\eps$. Their advantage is that
+curvature information is learned and reused. Each quasi-Newton step is
+more expensive than one scaling update, so comparisons should count
+kernel evaluations or matrix-vector products rather than iterations.
+The semi-dual is especially attractive when one block can be eliminated
+analytically or integrated accurately, as in semi-discrete transport.
+
+\paragraph{Operator summary.}
+
+All local statements in the note follow from one contraction:
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Object & Operator at the optimum & Consequence \\
+\midrule
+Full dual Hessian
+& $\eps^{-1}\left(\begin{smallmatrix}I&T\\T^\ast&I\end{smallmatrix}\right)$
+& coupled conditioning \\
+Sinkhorn full-cycle Jacobian
+& $T^\ast T$
+& local factor $\sigma_\eps^2$ \\
+Semi-dual Hessian
+& $\eps^{-1}(I-T^\ast T)$
+& curvature $\gamma_\eps/\eps$ \\
+Accelerated local polynomial
+& $I-T^\ast T$
+& rate governed by $\sqrt{\gamma_\eps}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Thus the slow convergence of Sinkhorn and the ill-conditioning of the
+semi-dual are complementary descriptions of the same near-deterministic
+correlation modes. Variable projection removes one coupled block;
+extrapolation changes the first-order polynomial; momentum and
+quasi-Newton methods approximate the inverse curvature more
+aggressively.
+
+\begin{thebibliography}{99}
+
+\bibitem{ChizatDelalandeVaskevicius2026}
+L. Chizat, A. Delalande, and T. Va\v{s}kevi\v{c}ius,
+\newblock Sharper exponential convergence rates for Sinkhorn's
+algorithm in continuous settings,
+\newblock \emph{Mathematical Programming}, 215:809--858, 2026.
+\newblock DOI: 10.1007/s10107-025-02242-z.
+
+\bibitem{ConfortiDurmusGreco2026}
+G. Conforti, A. Durmus, and G. Greco,
+\newblock Quantitative contraction rates for Sinkhorn's algorithm:
+beyond bounded costs and compact marginals,
+\newblock \emph{Annals of Applied Probability}, to appear, 2026.
+\newblock arXiv:2304.04451.
+
+\bibitem{Cuturi2013}
+M. Cuturi,
+\newblock Sinkhorn distances: Lightspeed computation of optimal
+transport,
+\newblock in \emph{Advances in Neural Information Processing Systems
+26}, pages 2292--2300, 2013.
+
+\bibitem{CuturiPeyre2016}
+M. Cuturi and G. Peyr\'e,
+\newblock A smoothed dual approach for variational Wasserstein
+problems,
+\newblock \emph{SIAM Journal on Imaging Sciences},
+9(1):320--343, 2016.
+\newblock DOI: 10.1137/15M1032600.
+
+\bibitem{CuturiPeyre2018}
+M. Cuturi and G. Peyr\'e,
+\newblock Semidual regularized optimal transport,
+\newblock \emph{SIAM Review}, 60(4):941--965, 2018.
+\newblock DOI: 10.1137/18M1208654.
+
+\bibitem{Eckstein2025}
+S. Eckstein,
+\newblock Hilbert's projective metric for functions of bounded growth
+and exponential convergence of Sinkhorn's algorithm,
+\newblock \emph{Probability Theory and Related Fields},
+193:585--621, 2025.
+\newblock DOI: 10.1007/s00440-025-01366-9.
+
+\bibitem{FranklinLorenz1989}
+J. Franklin and J. Lorenz,
+\newblock On the scaling of multidimensional matrices,
+\newblock \emph{Linear Algebra and its Applications},
+114--115:717--735, 1989.
+
+\bibitem{GolubPereyra1973}
+G. H. Golub and V. Pereyra,
+\newblock The differentiation of pseudo-inverses and nonlinear least
+squares problems whose variables separate,
+\newblock \emph{SIAM Journal on Numerical Analysis},
+10(2):413--432, 1973.
+\newblock DOI: 10.1137/0710036.
+
+\bibitem{GolubPereyra2003}
+G. H. Golub and V. Pereyra,
+\newblock Separable nonlinear least squares: The variable projection
+method and its applications,
+\newblock \emph{Inverse Problems}, 19(2):R1--R26, 2003.
+
+\bibitem{GenevayEtAl2016}
+A. Genevay, M. Cuturi, G. Peyr\'e, and F. Bach,
+\newblock Stochastic optimization for large-scale optimal transport,
+\newblock in \emph{Advances in Neural Information Processing Systems
+29}, 2016.
+
+\bibitem{KhamlichRomorRozza2026}
+M. Khamlich, F. Romor, and G. Rozza,
+\newblock Efficient numerical strategies for entropy-regularized
+semi-discrete optimal transport,
+\newblock \emph{Computer Methods in Applied Mechanics and Engineering},
+453:118821, 2026.
+\newblock DOI: 10.1016/j.cma.2026.118821.
+
+\bibitem{Knight2008}
+P. A. Knight,
+\newblock The Sinkhorn--Knopp algorithm: Convergence and applications,
+\newblock \emph{SIAM Journal on Matrix Analysis and Applications},
+30(1):261--275, 2008.
+\newblock DOI: 10.1137/060659624.
+
+\bibitem{LehmannEtAl2022}
+T. Lehmann, M.-K. von Renesse, A. Sambale, and A. Uschmajew,
+\newblock A note on overrelaxation in the Sinkhorn algorithm,
+\newblock \emph{Optimization Letters}, 16(8):2209--2220, 2022.
+\newblock DOI: 10.1007/s11590-021-01830-0.
+
+\bibitem{NocedalWright2006}
+J. Nocedal and S. J. Wright,
+\newblock \emph{Numerical Optimization}, second edition,
+\newblock Springer, 2006.
+
+\bibitem{Nesterov1983}
+Y. Nesterov,
+\newblock A method for solving the convex programming problem with
+convergence rate $O(1/k^2)$,
+\newblock \emph{Soviet Mathematics Doklady}, 27:372--376, 1983.
+
+\bibitem{Polyak1964}
+B. T. Polyak,
+\newblock Some methods of speeding up the convergence of iteration
+methods,
+\newblock \emph{USSR Computational Mathematics and Mathematical
+Physics}, 4(5):1--17, 1964.
+
+\bibitem{QiuYinWang2023}
+Y. Qiu, H. Yin, and X. Wang,
+\newblock Efficient, stable, and analytic differentiation of the
+Sinkhorn loss,
+\newblock ICLR submission, OpenReview, 2023.
+\newblock OpenReview: uATOkwOZaI.
+
+\bibitem{ThibaultEtAl2021}
+A. Thibault, L. Chizat, C. Dossal, and N. Papadakis,
+\newblock Overrelaxed Sinkhorn--Knopp algorithm for regularized optimal
+transport,
+\newblock \emph{Algorithms}, 14(5):143, 2021.
+\newblock DOI: 10.3390/a14050143.
+
+\end{thebibliography}
+
+\end{document}
