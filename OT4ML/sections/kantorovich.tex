@@ -2368,11 +2368,166 @@ Choosing pairs that attain $d_{\min}$ or $d_{\max}$ gives equality in the corres
 	on a gene-expression or latent cell-state space. Since sequencing is destructive, one observes populations at successive times, not trajectories of identical cells. Couplings \(\pi_k\in\Couplings(\al_{t_k},\al_{t_{k+1}})\) provide soft ancestor--descendant relations; Figure~\ref{fig:kantorovich-waddington-ot} visualizes one such consecutive coupling. After disintegration into Markov kernels, they can be chained to define population-level trajectories. This static sequence of couplings is the discrete-time shadow of the dynamic formulations of Chapter~\ref{sec-dynamic-optimal-transport}; entropic and unbalanced variants account for branching, noise and growth in modern single-cell models~\cite{schiebinger2017reconstruction,TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}.
 \end{example}
 
+\section{Measure-to-Vector Maps on Wasserstein Space}\label{sec-measure-to-vector-maps}
+\index{measure-to-vector map}% strictindex
+\index{functional!on Wasserstein space}% strictindex
+\index{Wasserstein!space}% strictindex
+
+Many losses, statistics and observables depend on a probability law rather than on a single point. This section formalizes such measure-to-vector maps, introduces their natural metric regularity and shows how finite particle samples generate constructive polynomial approximations. Chapter~\ref{sec-wasserstein-gradient-flows} returns to scalar functionals as energies to be minimized over Wasserstein space.
+
+\paragraph{Functionals and Wasserstein--H\"older regularity.}
+\index{Wasserstein!H\"older functional}% strictindex
+
+A scalar functional is a map
+\[
+	f:\Pp_p(\Xx)\longrightarrow\RR.
+\]
+There is no loss of principle in starting with scalar values. If \(F=(f_1,\ldots,f_s):\Pp_p(\Xx)\to\RR^s\), the definitions and constructions below apply coordinatewise, and the resulting bounds combine in any norm on \(\RR^s\). For the quantitative approximation results, assume from now on that \(\Xx\subset\RR^d\) is compact; in particular, \(\Pp_p(\Xx)=\Pp(\Xx)\).
+
+\begin{defn}[Wasserstein--H\"older functional]\label{def-wasserstein-holder-functional}
+	Let \(p\geq1\) and \(0<\eta\leq1\). A functional \(f:\Pp(\Xx)\to\RR\) is \(\eta\)-H\"older for \(\Wass_p\), with constant \(L\), if
+	\begin{equation}\label{eq-wasserstein-holder-functional}
+		|f(\al)-f(\be)|
+		\leq
+		L\Wass_p(\al,\be)^\eta
+		\qquad
+		\text{for all }\al,\be\in\Pp(\Xx).
+	\end{equation}
+\end{defn}
+
+The endpoint \(\eta=1\) is Wasserstein--Lipschitz regularity. It is the natural stability assumption for a functional: perturbing the input law by a small transport cost changes its output by at most a proportional amount. The restriction \(\eta\leq1\) is intrinsic on a geodesic space. Indeed, subdividing a constant-speed geodesic into \(N\) pieces shows that a globally H\"older functional with exponent \(\eta>1\) is constant along that geodesic, hence constant when every pair of points can be joined by one.
+
+\begin{rem}[$\Wass_2$-Lipschitz functionals and bounded gradients]\label{rem-w2-lipschitz-bounded-gradient}
+\index{Wasserstein!Lipschitz functional}% strictindex
+\index{Wasserstein!gradient}% strictindex
+	An \(L\)-Lipschitz functional has descending metric slope at most \(L\). Conversely, on a geodesic metric space, if the slope is a strong upper gradient uniformly bounded by \(L\), integrating it along geodesics shows that the functional is \(L\)-Lipschitz. In the smooth Otto calculus on \(\Pp_2(\RR^d)\), this slope is the \(L^2(\al)\)-norm of the Wasserstein gradient introduced in Proposition~\ref{prop-formal-wass-gradient}:
+	\[
+		|\partial f|_{\Wass_2}(\al)
+		=
+		\norm{\Wgrad f(\al)}_{L^2(\al)} .
+	\]
+	Thus, under the usual chain-rule assumptions, the bound
+	\[
+		\sup_{\al}\norm{\Wgrad f(\al)}_{L^2(\al)}\leq L
+	\]
+	is the differential counterpart of \(\Wass_2\)-Lipschitz regularity. This should not be confused with smoothness in optimization, which controls variation of the gradient itself.
+\end{rem}
+
+\paragraph{Examples and non-examples.}
+\index{relative entropy!regularity}% strictindex
+
+Basic OT quantities already provide useful examples. For a fixed \(\be\in\Pp(\Xx)\), the triangle inequality shows that \(\al\mapsto\Wass_p(\al,\be)\) is \(1\)-Lipschitz. More generally, \(\al\mapsto\Wass_p(\al,\be)^\eta\) is \(\eta\)-H\"older with constant one, since \(|r^\eta-s^\eta|\leq|r-s|^\eta\) for \(r,s\geq0\). If \(V:\Xx\to\RR\) is \(L\)-Lipschitz, then Kantorovich--Rubinstein duality and \(\Wass_1\leq\Wass_p\) give
+\[
+	f(\al)=\int_{\Xx} V\,\d\al,
+	\qquad
+	|f(\al)-f(\be)|\leq L\Wass_p(\al,\be).
+\]
+Pointwise mass is a simple non-example. If \(x_0\) is a non-isolated point of \(\Xx\), choose \(x_n\to x_0\) with \(x_n\neq x_0\). Although \(\de_{x_n}\to\de_{x_0}\) in every \(\Wass_p\), the functional \(\al\mapsto\al(\{x_0\})\) jumps from zero to one. Relative entropy fails even more sharply on the full Wasserstein space. If \(\be\) is nonatomic and \(\widehat\be_n\) is its empirical measure, then \(\widehat\be_n\to\be\) in \(\Wass_p\) almost surely, whereas \(\KL(\widehat\be_n|\be)=+\infty\). Density-based functionals therefore require additional regularity assumptions or smoothing before one can expect Wasserstein--H\"older control.
+
+\paragraph{Interaction polynomials.}
+\index{interaction polynomial}% strictindex
+\index{Wasserstein!polynomial}% strictindex
+
+Finite-body interactions provide the natural polynomial functions of a measure. For a bounded continuous symmetric kernel \(\varphi_m:\Xx^m\to\RR\), define the interaction polynomial of order at most \(m\) by
+\begin{equation}\label{eq-wasserstein-interaction-polynomial}
+	\mathsf P_{\varphi_m}(\al)
+	\eqdef
+	\int_{\Xx^m}\varphi_m(x_1,\ldots,x_m)
+	\,\d\al(x_1)\cdots\d\al(x_m).
+\end{equation}
+Any kernel can be symmetrized without changing this functional. The order counts the number of particles jointly inspected by \(\varphi_m\); it is unrelated to an ordinary spatial polynomial degree. Order one recovers linear observables \(\int V\,\d\al\). Order two includes pairwise interaction energies and, after expansion around a fixed target, the squared MMD of Definition~\ref{def-kernel-mmd-norm}.
+
+\paragraph{Empirical particle approximation.}
+\index{Bernstein--Schnabl operator}% strictindex
+\index{empirical!measure}% strictindex
+
+Sampling turns an arbitrary continuous functional into a canonical polynomial. For \(x_1,\ldots,x_n\in\Xx\), define the symmetric kernel
+\[
+	\varphi_n^f(x_1,\ldots,x_n)
+	=
+	f\left(\frac1n\sum_{i=1}^n\de_{x_i}\right)
+\]
+and the associated particle polynomial
+\begin{equation}\label{eq-empirical-particle-polynomial}
+	\mathsf B_n f(\al)
+	\eqdef
+	\int_{\Xx^n}
+	f\left(\frac1n\sum_{i=1}^n\de_{x_i}\right)
+	\,\d\al^{\otimes n}(x_1,\ldots,x_n)
+	=
+	\EE f(\widehat\al_n),
+\end{equation}
+where \(\widehat\al_n=n^{-1}\sum_i\de_{X_i}\) and the \(X_i\) are i.i.d.\ with law \(\al\).
+The empirical-measure map is continuous because matching particles with the same index gives
+\[
+	\Wass_p\left(
+		\frac1n\sum_i\de_{x_i},
+		\frac1n\sum_i\de_{z_i}
+	\right)^p
+	\leq
+	\frac1n\sum_i\norm{x_i-z_i}^p.
+\]
+Thus \(\varphi_n^f\) is bounded and continuous, and \(\mathsf B_n f\) is an interaction polynomial of order at most \(n\). On a finite \(\Xx\), it is the multivariate Bernstein operator on the probability simplex; on a general compact \(\Xx\), it is the Bernstein--Schnabl construction on \(\Pp(\Xx)\)~\cite{schnabl1969bernstein}.
+
+For a bounded functional \(h\) on \(\Pp(\Xx)\), write
+\[
+	\norm{h}_\infty\eqdef\sup_{\al\in\Pp(\Xx)}|h(\al)|.
+\]
+
+\begin{prop}[Particle-polynomial approximation of H\"older functionals]\label{prop-holder-particle-polynomial}
+	Let \(\Xx\subset\RR^d\) be compact and let \(f:\Pp(\Xx)\to\RR\) be \(\eta\)-H\"older for \(\Wass_p\), with \(p\geq1\), \(0<\eta\leq1\) and constant \(L\). Then, for every \(\al\in\Pp(\Xx)\),
+	\begin{equation}\label{eq-holder-particle-polynomial-general}
+		\left|\mathsf B_n f(\al)-f(\al)\right|
+		\leq
+		L\,\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right].
+	\end{equation}
+	Moreover,
+	\begin{equation}\label{eq-holder-particle-polynomial-rate}
+		\norm{\mathsf B_n f-f}_{\infty}
+		\leq
+		C_{\Xx,p,d,\eta}L\,r_{n,p,d}^{\,\eta},
+		\qquad
+		r_{n,p,d}
+		\eqdef
+		\begin{cases}
+			n^{-1/(2p)}, & d<2p,\\
+			n^{-1/(2p)}(\log(1+n))^{1/p}, & d=2p,\\
+			n^{-1/d}, & d>2p.
+		\end{cases}
+	\end{equation}
+\end{prop}
+\begin{proof}
+	The empirical representation~\eqref{eq-empirical-particle-polynomial} and H\"older regularity give
+	\[
+		|\mathsf B_n f(\al)-f(\al)|
+		\leq
+		\EE|f(\widehat\al_n)-f(\al)|
+		\leq
+		L\,\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right],
+	\]
+	which proves~\eqref{eq-holder-particle-polynomial-general}. To obtain the uniform rate, empirical Wasserstein moment bounds on compact subsets of \(\RR^d\) give~\cite{dereich2013constructive,fournier2015rate}
+	\[
+		\sup_{\al\in\Pp(\Xx)}
+		\EE\!\left[\Wass_p(\widehat\al_n,\al)^p\right]
+		\leq
+		C_{\Xx,p,d}r_{n,p,d}^{\,p}.
+	\]
+	Since \(0<\eta\leq1\leq p\), Lyapunov's inequality yields
+	\[
+		\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right]
+		\leq
+		\EE\!\left[\Wass_p(\widehat\al_n,\al)^p\right]^{\eta/p},
+	\]
+	and taking the supremum over \(\al\) concludes the proof.
+\end{proof}
+
+In particular, \(\mathsf B_n f\to f\) uniformly. The rate cleanly separates the H\"older exponent from the empirical Wasserstein scale. Its ambient-dimensional dependence is inherited from empirical approximation and can improve on finite spaces or on controlled classes of lower-dimensional measures.
+
 \section{Measure-to-Measure Maps on Wasserstein Space}\label{sec-measure-to-measure-maps}
 \index{measure-to-measure map}% strictindex
 \index{Wasserstein!space}% strictindex
 
-Many constructions in modern machine learning act directly on probability laws. This section isolates this viewpoint and records two useful principles: some transformations move particles without splitting them, while others are intrinsically diffusive.
+The preceding section mapped a probability law into a finite-dimensional vector space, where approximation can be performed coordinatewise. A measure-valued output is more demanding: the codomain is itself a Wasserstein space, so there is no analogous coordinatewise reduction. This section distinguishes transformations that move particles without splitting them from transformations that are intrinsically diffusive.
 
 \paragraph{Maps on Wasserstein space.}
 
@@ -2403,6 +2558,21 @@ Then, for every discrete measure,
 	\Phi(\al)=\sum_{i=1}^n a_i\de_{\Gamma[\al](x_i)} .
 \end{equation}
 Thus the weights and the number of particles are preserved, up to possible collisions between images. This is the natural structure behind deterministic particle methods: particles move, but they do not split. Lavenant and Savar\'e~\cite{LavenantSavare2026ContinuousTransformations} study when transformations of measures admit transport representatives of the form~\eqref{eq-measure-map-transport-representation}, the obstructions to choosing representatives continuously, and the additional regularity available when $\Phi$ is Wasserstein-Lipschitz.
+
+When \(\Xx\subset\RR^d\), the family \(\al\mapsto\Gamma[\al]\) can equivalently be written as the jointly defined vector-valued map
+\begin{equation}\label{eq-curried-transport-representative}
+	\Gamma:\Pp_p(\Xx)\times\Xx\to\RR^d,
+	\qquad
+	\Gamma(\al,x)\eqdef\Gamma[\al](x).
+\end{equation}
+Approximating a particle-preserving map \(\Phi\) can therefore be separated into approximating \(\Gamma(\al,x)\) and applying the resulting map to each particle. For each fixed \(x\), the dependence \(\al\mapsto\Gamma(\al,x)\) is a vector-valued functional of the type studied in Section~\ref{sec-measure-to-vector-maps}, so the particle-polynomial construction~\eqref{eq-empirical-particle-polynomial} applies coordinatewise. A useful quantitative hypothesis is the uniform estimate
+\[
+	\sup_{x\in\Xx}
+	\norm{\Gamma(\al,x)-\Gamma(\be,x)}
+	\leq
+	L\Wass_p(\al,\be)^\eta.
+\]
+At the ambient Euclidean level, applying \(\mathsf B_n\) to \(\al\mapsto\Gamma(\al,x)\) then gives an error bounded uniformly in \(x\) by the right-hand side of~\eqref{eq-holder-particle-polynomial-general}. The additional variable \(x\) still requires a spatial approximation; once an \(\Xx\)-valued representative has been constructed, stability of its push-forward is controlled by Proposition~\ref{prop-measure-map-wass-lipschitz}.
 \index{particle method}% strictindex
 \index{atom-preserving map}% strictindex
 
@@ -2438,22 +2608,6 @@ then $\Psi$ is $L$-Lipschitz for $\Wass_p$. Indeed, glue a coupling of input poi
 \index{push-forward!stability}% strictindex
 
 Regularity of $\Phi$ is a stability requirement: small perturbations of the input law should not create large changes of the output law. For transport representations, the following elementary estimate separates the spatial Lipschitz constant of the map from its sensitivity to the input measure.
-
-\begin{rem}[$\Wass_2$-Lipschitz functionals and bounded gradients]\label{rem-w2-lipschitz-bounded-gradient}
-\index{Wasserstein!Lipschitz functional}% strictindex
-\index{Wasserstein!gradient}% strictindex
-	The same word ``Lipschitz'' is also used for scalar functionals \(f:\Pp_2(\RR^d)\to\RR\). In a geodesic metric space, an \(L\)-Lipschitz functional has descending metric slope at most \(L\). Conversely, if the slope is a strong upper gradient and is uniformly bounded by \(L\), then \(f\) is \(L\)-Lipschitz along curves, hence for \(\Wass_2\) on \(\Pp_2(\RR^d)\). In the smooth Otto calculus this slope is the \(L^2(\al)\)-norm of the Wasserstein gradient introduced in Proposition~\ref{prop-formal-wass-gradient}:
-	\[
-		|\partial f|_{\Wass_2}(\al)
-		=
-		\norm{\Wgrad f(\al)}_{L^2(\al)} .
-	\]
-	Thus, under the usual chain-rule assumptions, \(\Wass_2\)-Lipschitz regularity of \(f\) is the metric analogue of imposing a uniform gradient bound,
-	\[
-		\sup_{\al}\norm{\Wgrad f(\al)}_{L^2(\al)}\leq L .
-	\]
-	This first-order boundedness should not be confused with \(L\)-smoothness in optimization, which would instead control how the gradient itself varies.
-\end{rem}
 
 \begin{prop}[Wasserstein stability of transport representations]\label{prop-measure-map-wass-lipschitz}
 \index{Wasserstein!Lipschitz map}% strictindex
