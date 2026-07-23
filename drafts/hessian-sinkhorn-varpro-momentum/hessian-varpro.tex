@@ -394,22 +394,14 @@ matrix scaling \cite{Knight2008,LehmannEtAl2022}.
 \paragraph{When is the rate strictly smaller than one?}
 Positivity of the Gibbs kernel is enough in finite dimension but not on
 an arbitrary infinite space: centered approximate modes may retain
-correlation arbitrarily close to one. The following input-level bound
-is simple and explicit.
+correlation arbitrarily close to one. In the finite or compact
+continuous setting, strictness follows directly from the same
+Birkhoff--Hilbert contraction theorem that gives global linear
+convergence of Sinkhorn. The only additional step is to differentiate
+that global estimate at the fixed point.
 
-Define the cost oscillation modulo separable terms by
-\begin{equation}
-  \label{eq:separable-cost-oscillation}
-  \Omega_c
-  :=
-  \inf_{\xi,\zeta}
-  \operatorname{ess\,osc}_{\al\otimes\be}
-  \bigl(c(x,y)-\xi(x)-\zeta(y)\bigr).
-\end{equation}
-Here the infimum is over measurable real-valued functions
-$\xi$ on $\Xx$ and $\zeta$ on $\Yy$.
-For compact supports and continuous $c$, also define the invariant
-four-point oscillation
+Let $k_\eps(x,y):=e^{-c(x,y)/\eps}$. For compact supports and continuous
+$c$, define the four-point oscillation
 \begin{equation}
   \label{eq:four-point-cost-oscillation}
   \Delta_c
@@ -418,75 +410,83 @@ four-point oscillation
   \bigl[c(x,y')+c(x',y)-c(x,y)-c(x',y')\bigr],
 \end{equation}
 where the supremum is over the product of the two supports.
+This quantity is invariant under $c(x,y)\mapsto
+c(x,y)+\xi(x)+\zeta(y)$ and is exactly the projective diameter of the
+Gibbs operator, up to temperature:
+\begin{equation}
+  \label{eq:gibbs-projective-diameter}
+  \sup_{x,x',y,y'}
+  \log
+  \frac{k_\eps(x,y)k_\eps(x',y')}
+       {k_\eps(x,y')k_\eps(x',y)}
+  =
+  \frac{\Delta_c}{\eps}.
+\end{equation}
 
-\begin{proposition}[Explicit strict-gap criteria]
+\begin{proposition}[Birkhoff--Hilbert bound on the local rate]
   \label{prop:strict-gap}
-  If $\Omega_c<\infty$, then
-  \begin{equation}
-    \label{eq:doeblin-rate-bound}
-    \sigma_\eps
-    \leq
-    1-e^{-2\Omega_c/\eps}
-    <1,
-    \qquad
-    \sigma_\eps^2\leq\bigl(1-e^{-2\Omega_c/\eps}\bigr)^2.
-  \end{equation}
-  If the supports are compact and $c$ is continuous, then the
-  projective bound also holds:
+  Assume either finite spaces with a positive Gibbs kernel, or compact
+  supports with continuous finite $c$. Set
   \begin{equation}
     \label{eq:birkhoff-local-bound}
-    \sigma_\eps
-    \leq
     \Lambda_\eps
     :=
-    \tanh\left(\frac{\Delta_c}{4\eps}\right)
-    <1.
+    \tanh\left(\frac{\Delta_c}{4\eps}\right)<1.
+  \end{equation}
+  Each Gibbs half-step is $\Lambda_\eps$-contractive in Hilbert's
+  projective metric. Consequently, a complete Sinkhorn cycle is globally
+  $\Lambda_\eps^2$-contractive in Hilbert's projective metric, and its
+  local $L^2$ factor satisfies
+  \begin{equation}
+    \label{eq:birkhoff-controls-sigma}
+    \sigma_\eps^2\leq\Lambda_\eps^2,
+    \qquad\text{hence}\qquad
+    \sigma_\eps\leq\Lambda_\eps<1.
   \end{equation}
 \end{proposition}
 
 \begin{proof}
-Adding $\xi(x)+\zeta(y)$ to $c$ only changes the dual potentials. For any
-$\eta>0$, choose such terms so that the resulting cost has essential
-oscillation at most $\Omega_c+\eta$. Write
-$k_\eps=e^{-c/\eps}$, $m=\essinf k_\eps$, $M=\esssup k_\eps$, and
-$\dd\pi_\eps^\star=u(x)k_\eps(x,y)v(y)\dd\al\dd\be$. The two marginal equations
-give
+Equation~\eqref{eq:gibbs-projective-diameter} and the Birkhoff--Hopf
+theorem give the half-step estimate
+\eqref{eq:birkhoff-local-bound}; multiplication and inversion in the
+scaling updates are projective isometries, so a full cycle has factor
+$\Lambda_\eps^2$
+\cite{FranklinLorenz1989}. In logarithmic coordinates, Hilbert's metric
+is the variation seminorm. Differentiating the full-cycle contraction
+at its fixed point and using Proposition~\ref{prop:sinkhorn-local-rate}
+therefore gives
 \[
-  \frac1{MV}\leq u\leq\frac1{mV},
-  \qquad
-  \frac1{MU}\leq v\leq\frac1{mU},
-  \qquad
-  \frac1M\leq UV\leq\frac1m,
+  \operatorname{osc}(T_\eps^\ast T_\eps k)
+  \leq
+  \Lambda_\eps^2\operatorname{osc}(k).
 \]
-where $U=\int u\dd\al$ and $V=\int v\dd\be$. Hence the density
-$r=\dd\pi_\eps^\star/\dd(\al\otimes\be)$ satisfies
-$r\geq(m/M)^2\geq e^{-2(\Omega_c+\eta)/\eps}=: \delta_\eta$. Decomposing
-$r=\delta_\eta+(1-\delta_\eta)\widetilde r$ shows that, on centered
-functions, $T_\eps=(1-\delta_\eta)\widetilde T_\eps$ with
-$\opnorm{\widetilde T_\eps}\leq1$. Letting $\eta\downarrow0$ proves
-\eqref{eq:doeblin-rate-bound}.
-
-Under compactness, the conditional kernel is continuous and $T_\eps$ is
-compact. Birkhoff's theorem bounds both half-cycles in Hilbert's
-projective metric by $\Lambda_\eps$ \cite{FranklinLorenz1989}. If
-$\sigma_\eps>0$, compactness provides a continuous centered singular
-pair $T_\eps v=\sigma_\eps u$, $T_\eps^\ast u=\sigma_\eps v$.
-Differentiating the
-two projective bounds gives
-$\sigma_\eps\operatorname{osc}(u)\leq
-\Lambda_\eps\operatorname{osc}(v)$ and the reverse inequality with
-$u,v$ exchanged. Multiplication yields
-$\sigma_\eps^2\leq\Lambda_\eps^2$; the case $\sigma_\eps=0$ is immediate.
+In finite dimension this applies directly to a top centered
+eigenvector of $T_\eps^\ast T_\eps$. In the compact continuous case,
+the conditional operator is compact and that eigenvector is continuous.
+Its eigenvalue is $\sigma_\eps^2$, which proves
+\eqref{eq:birkhoff-controls-sigma}; the case $\sigma_\eps=0$ is
+immediate.
 \end{proof}
 
-On unbounded spaces, cost growth must be balanced against marginal
-tails. Conforti, Durmus, and Greco prove quantitative contraction for
-quadratic costs under asymptotically positive log-concavity profiles
+A cost-oscillation estimate modulo separable terms is only a coarser
+way to bound the same Birkhoff coefficient: for every $\xi,\zeta$,
+\[
+  \Delta_c
+  \leq
+  2\,\operatorname{ess\,osc}_{\al\otimes\be}
+  \bigl(c(x,y)-\xi(x)-\zeta(y)\bigr).
+\]
+Thus it introduces no distinct contraction mechanism and need not be
+proved separately. On unbounded spaces $\Delta_c$ is generally
+infinite, so the universal Birkhoff estimate becomes vacuous. Cost
+growth must then be balanced against marginal tails. Conforti, Durmus,
+and Greco prove quantitative contraction for quadratic costs under
+asymptotically positive log-concavity profiles
 \cite{ConfortiDurmusGreco2026}; Eckstein obtains weighted Hilbert
 contraction under compatible cost-growth and tail assumptions
 \cite{Eckstein2025}. These are useful input-level criteria, but their
-norms should not be identified automatically with the exact $L^2$
-gap $1-\sigma_\eps^2$.
+norms should not be identified automatically with the exact $L^2$ gap
+$1-\sigma_\eps^2$.
 
 \paragraph{Why a linear small-$\eps$ gap is natural.}
 The conditional-variance identity becomes useful specifically for
