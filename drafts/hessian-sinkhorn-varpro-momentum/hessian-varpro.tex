@@ -63,7 +63,7 @@ the Jacobian of one complete Sinkhorn cycle is $T_\eps^\ast T_\eps$, and exact
 elimination of one potential gives the semi-dual Hessian
 $\eps^{-1}(I-T_\eps^\ast T_\eps)$. This common structure yields the local rate,
 strict-gap criteria, small-$\eps$ asymptotics, and explicit parameters
-for extrapolation and momentum. It also explains why variable
+for blockwise over-relaxation. It also explains why variable
 projection and quasi-Newton methods are natural alternatives to long
 scaling iterations.
 \end{abstract}
@@ -606,189 +606,122 @@ polynomial rather than universal exponential dependences under
 continuous regularity and log-concavity assumptions
 \cite{ChizatDelalandeVaskevicius2026}.
 
-\section{Extrapolation and momentum}
+\section{Blockwise over-relaxation}
 \label{sec:acceleration}
 
-Once the local spectrum is reduced to
-$\operatorname{spec}(T_\eps^\ast T_\eps)\subset[0,\sigma_\eps^2]$, standard
-polynomial acceleration applies. Scalar extrapolation and momentum are
-two instances of the same stationary two-step iteration.
+Sinkhorn alternates two exact block maximizations. A direct acceleration
+is therefore to extrapolate each block separately toward its soft
+$c$-transform. This is the nonlinear successive-over-relaxation (SOR)
+scheme studied in
+\cite{ThibaultEtAl2021,LehmannEtAl2022}.
 
-\paragraph{Two-parameter acceleration.}
-For $\omega>0$ and $\vartheta\geq0$, consider
+\paragraph{Scalar extrapolation of the two block updates.}
+Starting from $(f^{(\ell)},g^{(\ell)})$, and for a relaxation parameter
+$\omega>0$, set
 \begin{equation}
-  \label{eq:accelerated-cycle}
-  g^{(\ell+1)}
-  =
-  g^{(\ell)}
-  +
-  \omega\bigl(\Ss_\eps(g^{(\ell)})-g^{(\ell)}\bigr)
-  +
-  \vartheta\bigl(g^{(\ell)}-g^{(\ell-1)}\bigr).
+  \label{eq:block-sor}
+  \begin{aligned}
+    f^{(\ell+1)}
+    &=
+    (1-\omega)f^{(\ell)}
+    +\omega\bigl(g^{(\ell)}\bigr)^{\bar c,\eps},
+    \\
+    g^{(\ell+1)}
+    &=
+    (1-\omega)g^{(\ell)}
+    +\omega\bigl(f^{(\ell+1)}\bigr)^{c,\eps}.
+  \end{aligned}
 \end{equation}
-The choice $\vartheta=0$ gives scalar extrapolation, while
-$(\omega,\vartheta)=(1,0)$ is ordinary Sinkhorn. Locally,
-\eqref{eq:accelerated-cycle} is the heavy-ball iteration applied to
-$I-T_\eps^\ast T_\eps$ \cite{Polyak1964}. On a mode with
-$T_\eps^\ast T_\eps k=\lambda k$, write
-$a:=1-\lambda\in[1-\sigma_\eps^2,1]$; the scalar error satisfies
-\begin{equation}
-  \label{eq:accelerated-mode-recurrence}
-  z_{\ell+1}
-  =
-  (1-\omega a+\vartheta)z_\ell-\vartheta z_{\ell-1}.
-\end{equation}
+The choice $\omega=1$ recovers ordinary Sinkhorn; $0<\omega<1$
+under-relaxes both updates, while $1<\omega<2$ extrapolates beyond each
+block maximizer. The following result gives the exact local spectral
+factor.
 
-\begin{proposition}[Optimal extrapolation and momentum parameters]
-  \label{prop:optimal-acceleration}
-  Assume $\sigma_\eps<1$.
-  \begin{enumerate}
-  \item Among iterations \eqref{eq:accelerated-cycle} with
-    $\vartheta=0$, the minimax choice and its worst local factor are
-    \begin{equation}
-      \label{eq:optimal-extrapolation}
-      \omega_{\mathrm{ext}}
-      =
-      \frac{2}{2-\sigma_\eps^2},
-      \qquad
-      r_{\mathrm{ext}}
-      =
-      \frac{\sigma_\eps^2}{2-\sigma_\eps^2}.
-    \end{equation}
-  \item Among stationary two-step iterations
-    \eqref{eq:accelerated-cycle} with $\omega>0$ and
-    $\vartheta\geq0$, the minimax parameters are
+\begin{proposition}[Local rate and optimal block relaxation]
+  \label{prop:optimal-overrelaxation}
+  Assume the differentiability hypotheses of
+  Proposition~\ref{prop:sinkhorn-local-rate} and $\sigma_\eps<1$.
+  For $0<\omega<2$, define
   \begin{equation}
-    \label{eq:optimal-momentum-parameters}
-    \omega_{\mathrm{mom}}
-    =
-    \frac{4}{(1+\sqrt{1-\sigma_\eps^2})^2},
+    \label{eq:sor-threshold}
+    \omega_\star
+    :=
+    \frac{2}{1+\sqrt{1-\sigma_\eps^2}},
     \qquad
-    \vartheta_{\mathrm{mom}}
-    =
-    \left(\frac{1-\sqrt{1-\sigma_\eps^2}}
-    {1+\sqrt{1-\sigma_\eps^2}}\right)^2.
+    \tau_\omega
+    :=
+    2(1-\omega)+\omega^2\sigma_\eps^2.
   \end{equation}
-  Their worst local asymptotic factor is
+  The local asymptotic factor of one complete iteration
+  \eqref{eq:block-sor}, modulo the additive gauge, is
   \begin{equation}
-    \label{eq:optimal-momentum-rate}
-    r_{\mathrm{mom}}
+    \label{eq:sor-rate}
+    r_\omega
+    =
+    \begin{cases}
+      \dfrac{\tau_\omega+
+      \sqrt{\tau_\omega^2-4(1-\omega)^2}}{2},
+      & 0<\omega\leq\omega_\star,
+      \\[3mm]
+      \omega-1,
+      & \omega_\star\leq\omega<2.
+    \end{cases}
+  \end{equation}
+  It is minimized by $\omega=\omega_\star$, with optimal factor
+  \begin{equation}
+    \label{eq:optimal-sor-rate}
+    r_\star
+    =
+    \omega_\star-1
     =
     \frac{1-\sqrt{1-\sigma_\eps^2}}
-    {1+\sqrt{1-\sigma_\eps^2}}.
+         {1+\sqrt{1-\sigma_\eps^2}}.
   \end{equation}
-  \end{enumerate}
-  Thus extrapolation doubles the small gap to first order, whereas
-  momentum changes its scale from $1-\sigma_\eps^2$ to
-  $\sqrt{1-\sigma_\eps^2}$.
+  In particular, $\omega=1$ gives $r_1=\sigma_\eps^2$, the ordinary
+  Sinkhorn rate.
 \end{proposition}
 
 \begin{proof}
-If $\vartheta=0$, the mode factor is $1-\omega a$. Balancing its values
-at $a=1-\sigma_\eps^2$ and $a=1$ gives
-\eqref{eq:optimal-extrapolation}.
-
-For the two-step problem, the case $\sigma_\eps=0$ is immediate.
-Assume $0<\sigma_\eps<1$ and suppose that both roots of
-$z^2-(1-\omega a+\vartheta)z+\vartheta$ have modulus at most
-$r<1$ for every $a\in[1-\sigma_\eps^2,1]$. Applying the elementary
-quadratic unit-disk criterion after rescaling the roots by $r$ gives
+On centered functions, use the polar decomposition of $T_\eps$ and the
+spectral theorem for $(T_\eps^\ast T_\eps)^{1/2}$. For each spectral
+singular value $s\in[0,\sigma_\eps]$, linearizing
+\eqref{eq:block-sor} with \eqref{eq:coordinate-jacobians} reduces the
+error evolution to
+\begin{equation}
+  \label{eq:sor-mode-matrix}
+  \mathsf M_\omega(s)
+  :=
+  \begin{pmatrix}
+    1-\omega & -\omega s\\
+    -\omega s(1-\omega) & 1-\omega+\omega^2s^2
+  \end{pmatrix}.
+\end{equation}
+Its characteristic polynomial is
 \[
-  0\leq\vartheta\leq r^2,
-  \qquad
-  -r-\frac{\vartheta}{r}
-  \leq
-  1-\omega a+\vartheta
-  \leq
-  r+\frac{\vartheta}{r}.
+  z^2-\bigl(2(1-\omega)+\omega^2s^2\bigr)z
+  +(1-\omega)^2.
 \]
-Applying the upper inequality at $a=1-\sigma_\eps^2$ and the lower one
-at $a=1$, then using $\vartheta/r\leq r$, yields the necessary condition
-\[
-  (1-r)^2\leq(1-\sigma_\eps^2)(1+r)^2.
-\]
-Hence
-$r\geq(1-\sqrt{1-\sigma_\eps^2})/
-(1+\sqrt{1-\sigma_\eps^2})$. For this lower-bound value,
-\eqref{eq:optimal-momentum-parameters} gives
-$\vartheta=r^2$ and makes $1-\omega a+\vartheta$ range from $2r$ to
-$-2r$. Both roots therefore have modulus at most $r$, proving
-optimality.
+For $0<\omega\leq\omega_\star$, the largest root modulus is attained at
+$s=\sigma_\eps$ and equals the first branch of
+\eqref{eq:sor-rate}. The threshold $\omega_\star$ is the smaller
+solution of
+$\omega^2\sigma_\eps^2=4(\omega-1)$. For
+$\omega_\star\leq\omega<2$, the two roots are conjugate for every
+$0<s\leq\sigma_\eps$ and have modulus $\omega-1$; at $s=0$ the
+repeated root has the same modulus. The nongauge constant mode has factor
+$(1-\omega)^2$ and never dominates. Thus \eqref{eq:sor-rate} is the
+spectral radius of the linearized cycle. Its first branch decreases up
+to $\omega_\star$, whereas its second branch increases, proving
+\eqref{eq:optimal-sor-rate}.
 \end{proof}
 
-\paragraph{A one-parameter momentum curve.}
-For a fixed gap, minimax tuning equioscillates the endpoint modes, which
-imposes the linear relation
-\begin{equation}
-  \label{eq:endpoint-balance-line}
-  2(1+\vartheta)=\omega(2-\sigma_\eps^2),
-  \qquad\text{or equivalently}\qquad
-  \vartheta=\frac{2-\sigma_\eps^2}{2}\omega-1.
-\end{equation}
-At the optimum, a more convenient one-parameter representation is
-\begin{equation}
-  \label{eq:one-parameter-momentum}
-  \vartheta=r^2,
-  \qquad
-  \omega=(1+r)^2,
-  \qquad
-  1-\sigma_\eps^2=\left(\frac{1-r}{1+r}\right)^2,
-  \qquad 0\leq r<1.
-\end{equation}
-Thus selecting $r$ is equivalent to selecting an estimated gap and
-automatically couples the two algorithmic parameters. This reduces
-parameter search to one dimension. It does not remove the need for
-safeguards: an overestimate of $1-\sigma_\eps^2$ can produce
-parameters that are unstable for the true spectral interval.
-
-For $1-\sigma_\eps^2\ll1$, scalar extrapolation changes
-$\sigma_\eps^2$ into
-$1-2(1-\sigma_\eps^2)+O((1-\sigma_\eps^2)^2)$ and therefore preserves
-the scaling of the iteration count. In contrast,
-$r_{\mathrm{mom}}
-=1-2\sqrt{1-\sigma_\eps^2}+O(1-\sigma_\eps^2)$.
-
-Over-relaxing the two block updates separately gives the nonlinear SOR
-variant studied in \cite{ThibaultEtAl2021,LehmannEtAl2022}. Its optimal
-local parameter is
-\[
-  \omega_{\mathrm{SOR}}
-  =
-  \frac{2}{1+\sqrt{1-\sigma_\eps^2}},
-\]
-and it has the same factor \eqref{eq:optimal-momentum-rate}. Block SOR
-and the outer momentum step \eqref{eq:accelerated-cycle} are different
-algorithms, despite their identical optimal local rate. Their global
-convergence requires safeguards; the displayed parameters are local
-spectral prescriptions, not unconditional global guarantees.
-
-\paragraph{Estimating the gap from iterates.}
-The optimal parameters depend on an unknown local quantity. During an
-ordinary Sinkhorn run, set
-\[
-  d^{(\ell)}
-  :=
-  \operatorname{cent}_{\be}\bigl(g^{(\ell)}-g^{(\ell-1)}\bigr).
-\]
-Near the fixed point,
-$d^{(\ell+1)}=T_\eps^\ast T_\eps d^{(\ell)}+o(\norm{d^{(\ell)}})$, so the Rayleigh
-quotient
-\begin{equation}
-  \label{eq:rate-estimator}
-  \widehat r_\ell
-  :=
-  \frac{\ip{d^{(\ell)}}{d^{(\ell+1)}}_\be}
-       {\norm{d^{(\ell)}}_\be^2}
-  \end{equation}
-converges generically to $\sigma_\eps^2$ when a dominant mode is
-present. The norm ratio
-$\norm{d^{(\ell+1)}}_\be/\norm{d^{(\ell)}}_\be$ is a simpler,
-slightly noisier alternative. In practice one clips
-$\widehat r_\ell$ to $[0,1)$, uses
-$1-\widehat r_\ell$ as an estimate of $1-\sigma_\eps^2$ in the formulas
-above, and activates acceleration only after the estimate has
-stabilized. This also explains why extrapolation based on early iterates
-can be unreliable: the asymptotic spectral mode has not yet emerged.
+When $1-\sigma_\eps^2$ is small, the optimal factor satisfies
+$r_\star=1-2\sqrt{1-\sigma_\eps^2}
++O(1-\sigma_\eps^2)$, instead of the ordinary rate
+$\sigma_\eps^2$. This is a local prescription: aggressive
+over-relaxation need not be globally convergent without the additional
+projective bounds or safeguards developed in
+\cite{ThibaultEtAl2021,LehmannEtAl2022}.
 
 \section{Semi-dual variable projection}
 \label{sec:semidual}
@@ -907,7 +840,7 @@ $I-T_\eps^\ast T_\eps$, which is
 The spectral gap that controls Sinkhorn is exactly the strong concavity
 of $\Ee_\eps$, or equivalently the strong convexity of $-\Ee_\eps$.
 
-\begin{proposition}[Semi-dual conditioning and optimization rates]
+\begin{proposition}[Semi-dual conditioning and gradient-ascent rate]
   \label{prop:semidual-conditioning}
   On $L_0^2(\be)$,
   \begin{equation}
@@ -930,14 +863,6 @@ of $\Ee_\eps$, or equivalently the strong convexity of $-\Ee_\eps$.
     \leq
     \frac{\sigma_\eps^2}{2-\sigma_\eps^2}.
   \end{equation}
-  Heavy-ball or Chebyshev acceleration has factor
-  \begin{equation}
-    \label{eq:semidual-momentum-rate}
-    r_{\mathrm{HB}}
-    \leq
-    \frac{1-\sqrt{1-\sigma_\eps^2}}
-         {1+\sqrt{1-\sigma_\eps^2}}.
-  \end{equation}
 \end{proposition}
 
 \begin{proof}
@@ -946,8 +871,7 @@ $[0,\sigma_\eps^2]$, so
 the spectrum of \eqref{eq:semidual-hessian} lies in
 $[(1-\sigma_\eps^2)/\eps,1/\eps]$. This proves the curvature and
 condition-number bounds. The standard minimax polynomials on an interval give
-\eqref{eq:semidual-gradient-rate} and
-\eqref{eq:semidual-momentum-rate}.
+\eqref{eq:semidual-gradient-rate}.
 \end{proof}
 
 Compared with the quotient full-dual condition number
@@ -986,9 +910,10 @@ iterations. The semi-dual is especially attractive when one block can
 be eliminated analytically or integrated accurately, as in
 semi-discrete transport.
 
-\begin{remark}[Extrapolated Sinkhorn versus semi-dual gradient ascent]
+\begin{remark}[Blockwise over-relaxation versus semi-dual gradient ascent]
   \label{rem:sinkhorn-versus-semdual-gradient}
-  These methods are not identical globally. For the coupling
+  Even ordinary Sinkhorn and semi-dual gradient ascent are not identical
+  globally. For the coupling
   $\pi_g$ in \eqref{eq:semidual-coupling}, let
   $r_g:=\dd\be_g/\dd\be$. The scaling identities give
   \begin{equation}
@@ -1011,16 +936,18 @@ semi-discrete transport.
     \eps\nabla\Ee_\eps(g)
     +o(\norm{g-g^\star}).
   \end{equation}
-  Consequently, relaxed Sinkhorn with parameter $\omega$ is locally
-  semi-dual gradient ascent with step $\eps\omega$, and
-  \eqref{eq:accelerated-cycle} is locally its heavy-ball counterpart
-  with momentum $\vartheta$. This explains the agreement between
-  \eqref{eq:optimal-extrapolation}--\eqref{eq:optimal-momentum-rate}
-  and \eqref{eq:semidual-gradient-rate}--\eqref{eq:semidual-momentum-rate},
-  without claiming a global identity. Nesterov acceleration has the
-  same square-root dependence on $1-\sigma_\eps^2$
-  \cite{Nesterov1983}, although its standard worst-case constant differs
-  from the stationary heavy-ball factor.
+  Thus ordinary Sinkhorn is locally semi-dual gradient ascent with step
+  $\eps$. The blockwise scheme \eqref{eq:block-sor} is different: when
+  $\omega\neq1$, the source potential is only partially updated and
+  remains an independent state. It is therefore neither an outer
+  extrapolation of $\Ss_\eps$ nor a semi-dual gradient step with step
+  $\eps\omega$; its local Jacobian is the two-block SOR matrix
+  \eqref{eq:sor-mode-matrix}. Accordingly, its optimal factor
+  \eqref{eq:optimal-sor-rate} has a square-root dependence on
+  $1-\sigma_\eps^2$, whereas optimal fixed-step semi-dual gradient
+  ascent has the factor \eqref{eq:semidual-gradient-rate}. This is a
+  local spectral comparison, not a global equivalence of the nonlinear
+  algorithms.
 \end{remark}
 
 \paragraph{Operator summary.}
@@ -1040,18 +967,17 @@ Sinkhorn full-cycle Jacobian
 Semi-dual Hessian
 & $\eps^{-1}(I-T_\eps^\ast T_\eps)$
 & curvature $(1-\sigma_\eps^2)/\eps$ \\
-Accelerated local polynomial
-& $I-T_\eps^\ast T_\eps$
-& rate governed by $\sqrt{1-\sigma_\eps^2}$ \\
+Blockwise over-relaxation
+& $\mathsf M_\omega(s)$ from \eqref{eq:sor-mode-matrix}
+& optimal factor $r_\star$ in \eqref{eq:optimal-sor-rate} \\
 \bottomrule
 \end{tabular}
 \end{center}
 Thus the slow convergence of Sinkhorn and the ill-conditioning of the
 semi-dual are complementary descriptions of the same near-deterministic
 correlation modes. Variable projection removes one coupled block;
-extrapolation changes the first-order polynomial; momentum and
-quasi-Newton methods approximate the inverse curvature more
-aggressively.
+blockwise over-relaxation modifies the alternating splitting; and
+quasi-Newton methods approximate the inverse semi-dual curvature.
 
 \begin{thebibliography}{99}
 
@@ -1149,19 +1075,6 @@ T. Lehmann, M.-K. von Renesse, A. Sambale, and A. Uschmajew,
 J. Nocedal and S. J. Wright,
 \newblock \emph{Numerical Optimization}, second edition,
 \newblock Springer, 2006.
-
-\bibitem{Nesterov1983}
-Y. Nesterov,
-\newblock A method for solving the convex programming problem with
-convergence rate $O(1/k^2)$,
-\newblock \emph{Soviet Mathematics Doklady}, 27:372--376, 1983.
-
-\bibitem{Polyak1964}
-B. T. Polyak,
-\newblock Some methods of speeding up the convergence of iteration
-methods,
-\newblock \emph{USSR Computational Mathematics and Mathematical
-Physics}, 4(5):1--17, 1964.
 
 \bibitem{QiuYinWang2023}
 Y. Qiu, H. Yin, and X. Wang,
