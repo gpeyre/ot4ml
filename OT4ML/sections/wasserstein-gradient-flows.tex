@@ -55,24 +55,123 @@ Both schemes converge as $\tau \to 0$ to:
 \end{equation}
 
 
-\paragraph{Wasserstein gradient formula.}
-\index{Wasserstein!gradient}% strictindex
+\paragraph{Vertical derivatives (first- and higher-order variations).}
+\index{derivative!vertical}% strictindex
+\index{first variation}% strictindex
+\index{functional!derivative}% strictindex
 
-The implicit Euler scheme has the advantage that it does not require $h$ or $f$ to be smooth. For $f$, this is crucial to handle evolutions over measures that may have densities, atoms or other singular parts.
-\index{implicit Euler scheme}% strictindex
-
-As $\tau \to 0$, under certain conditions on $f$, \eqref{eq:jko-discr} defines a continuous evolution $t \mapsto \alpha_t$. As discussed earlier, this evolution can be described as a Lagrangian evolution \eqref{eq:lagrangian-advection}. Its differential is represented by a scalar first variation.
+Deriving a PDE from the JKO scheme requires distinguishing affine from transport perturbations. The mixture \(\alpha_\vartheta=(1-\vartheta)\alpha+\vartheta\beta\) changes mass without prescribing how particles move and defines the \emph{linear functional}, \emph{flat} or \emph{vertical} derivative. The horizontal derivative introduced below instead follows a transport displacement.
 \index{first variation}% strictindex
 \index{signed!measure}% strictindex
 \begin{defn}[First variation]\label{def-first-variation}
-Assume that $f(\alpha)<+\infty$. A measurable function $\delta f(\alpha)$ is a first variation of $f$ at $\alpha$ if, for every $\beta\in\Pp(\RR^d)$ such that $\delta f(\alpha)$ is integrable with respect to $|\beta-\alpha|$ and $f((1-\tau)\alpha+\tau\beta)<+\infty$ for all sufficiently small $\tau>0$, setting $\eta=\beta-\alpha$ gives
-\begin{equation*}
-    f((1-\tau)\alpha + \tau \beta) = f(\alpha + \tau \eta) = f(\alpha) + \tau \int [\delta f(\alpha)](x) \d \eta(x) + o(\tau)
-    \qquad(\tau\downarrow0).
-\end{equation*}
+	Assume that \(f(\alpha)<+\infty\). A measurable function \(\delta f(\alpha)\) is a first variation of \(f\) at \(\alpha\) if, for every \(\beta\in\Pp(\RR^d)\) such that \(\delta f(\alpha)\) is integrable with respect to \(\lvert\beta-\alpha\rvert\) and the mixture \(\alpha_\vartheta\) remains in the domain of \(f\) for small \(\vartheta>0\),
+	\[
+		f(\alpha_\vartheta)
+		=
+		f(\alpha)
+		+\vartheta\int_{\RR^d}[\delta f(\alpha)](x)
+		\d(\beta-\alpha)(x)
+		+o(\vartheta)
+		\qquad(\vartheta\downarrow0).
+	\]
 \end{defn}
-It is defined only up to an additive constant because $\eta$ has zero total mass.
-The key infinitesimal object is the vector field that represents this differential in the Wasserstein metric.
+Because \(\beta-\alpha\) has zero mass, \(\delta f(\alpha)\) is determined only up to an additive constant. It represents the directional linear form
+\[
+	Df(\alpha)[\eta]
+	\eqdef
+	\int_{\RR^d}[\delta f(\alpha)](x)\d\eta(x)
+\]
+whenever the zero-mass signed perturbation \(\eta\) is admissible. For example, if \(f(\alpha)=\int V\,\d\alpha\), then \(\delta f(\alpha)=V\): the vertical derivative records the value \(V(x)\), whereas the horizontal derivative will record its spatial gradient \(\nabla V(x)\).
+
+Higher derivatives are mostly unnecessary for the first-order flows studied in this chapter, but they provide the appropriate notion of smoothness for functionals of measures. For this brief account, fix a compact set \(\Xx\subset\RR^d\) and denote by \(\Mm_0(\Xx)\) the finite signed Borel measures on \(\Xx\) with zero total mass.
+\begin{defn}[Higher-order vertical derivatives]\label{def-higher-order-vertical-derivatives}
+	Set \(D^0f=f\). The functional \(f\) admits vertical derivatives through order \(r\) if there are symmetric multilinear forms
+	\[
+		D^j f(\alpha):\Mm_0(\Xx)^j\longrightarrow\RR,
+		\qquad 1\leq j\leq r,
+	\]
+	such that, along every mixture segment in \(\Pp(\Xx)\) and for fixed \(\eta_1,\ldots,\eta_{j-1}\in\Mm_0(\Xx)\),
+	\[
+		\frac{\d}{\d\vartheta}
+		D^{j-1}f(\alpha_\vartheta)[\eta_1,\ldots,\eta_{j-1}]
+		=
+		D^j f(\alpha_\vartheta)
+		[\beta-\alpha,\eta_1,\ldots,\eta_{j-1}].
+	\]
+	At the endpoints, derivatives are understood one-sided.
+\end{defn}
+When these multilinear forms have integral kernels, the notation
+\[
+	D^j f(\alpha)[\eta_1,\ldots,\eta_j]
+	=
+	\int_{\Xx^j}
+	\frac{\delta^j f}{\delta\alpha^j}
+	(\alpha,x_1,\ldots,x_j)
+	\d\eta_1(x_1)\cdots\d\eta_j(x_j)
+\]
+is customary. Because the \(\eta_i\) have zero mass, these kernels have additive gauge freedoms; one can fix them by requiring zero mean in each spatial variable. This calculus and its relation to differential calculus on Wasserstein space are developed in~\cite{CarmonaDelarue2018,ChassagneuxSzpruchTse2022}.
+
+\begin{rem}[Higher smoothness and faster particle-polynomial approximation]\label{rem-higher-order-particle-polynomial}
+\index{particle polynomial}% strictindex
+\index{Wasserstein!Taylor regularity}% strictindex
+\index{Richardson--Romberg extrapolation}% strictindex
+	Section~\ref{sec-measure-to-vector-maps} approximates \(f\) by the particle polynomial \(\mathsf B_n f(\alpha)=\EE f(\widehat\alpha_n)\) from~\eqref{eq-empirical-particle-polynomial}. Proposition~\ref{prop-holder-particle-polynomial} uses only metric H\"older regularity of order \(0<\eta\leq1\). On a geodesic Wasserstein space, a global metric H\"older exponent larger than one would force \(f\) to be constant, so higher smoothness must instead be measured after subtracting a Taylor polynomial.
+
+	Let \(s>1\), set \(r=\lceil s\rceil-1\), and define
+	\[
+		\operatorname{Tay}_\alpha^r f(\beta)
+		\eqdef
+		f(\alpha)
+		+\sum_{j=1}^r\frac1{j!}
+		D^j f(\alpha)[(\beta-\alpha)^{\otimes j}].
+	\]
+	We say that \(f\) has Wasserstein--Taylor regularity of order \(s\) when its vertical derivatives exist through order \(r\) and
+	\begin{equation}\label{eq-higher-order-wasserstein-holder}
+		\left|f(\beta)-\operatorname{Tay}_\alpha^r f(\beta)\right|
+		\leq
+		L\Wass_p(\alpha,\beta)^s.
+	\end{equation}
+	The convention \(r=\lceil s\rceil-1\) treats an integer \(s\) as the Lipschitz endpoint \(C^{s-1,1}\).
+
+	Combining the weak empirical expansion of~\cite{ChassagneuxSzpruchTse2022} with~\eqref{eq-higher-order-wasserstein-holder} gives, when the centered derivative kernels are uniformly bounded and with \(r_{n,p,d}\) from~\eqref{eq-holder-particle-polynomial-rate},
+	\[
+		\norm{\mathsf B_n f-f}_\infty
+		\lesssim
+		\begin{cases}
+			r_{n,p,d}^{\,s}, & 1<s\leq2,\\
+			n^{-1}+r_{n,p,d}^{\,s}, & s>2.
+		\end{cases}
+	\]
+	The reason is simple: \(\EE(\widehat\alpha_n-\alpha)=0\), so the linear Taylor term vanishes in expectation, while the quadratic term generally produces a bias of order \(n^{-1}\).
+
+	A signed Richardson--Romberg combination
+	\[
+		\mathsf B_n^{[J]}f
+		=
+		\sum_{j=1}^J a_j\mathsf B_{m_jn}f,
+		\qquad
+		\sum_{j=1}^J a_j=1,
+		\qquad
+		\sum_{j=1}^J a_jm_j^{-k}=0
+		\quad (1\leq k<J),
+	\]
+	for distinct positive integers \(m_j\), cancels the first \(J-1\) bias coefficients. If \(s>2J-2\) and the derivative kernels through order \(2J-2\) are uniformly bounded, then
+	\[
+		\norm{\mathsf B_n^{[J]}f-f}_\infty
+		\lesssim
+		n^{-J}+r_{n,p,d}^{\,s}.
+	\]
+	Thus higher vertical smoothness can be converted into faster polynomial approximation, although none of this machinery is needed for the first-order PDEs below.
+\end{rem}
+
+
+\paragraph{Horizontal derivative (Wasserstein gradient).}
+\index{derivative!horizontal}% strictindex
+\index{Wasserstein!gradient}% strictindex
+
+The vertical derivative asks how \(f\) reacts when mass is reweighted. Wasserstein geometry asks how it reacts when mass is moved through a Lagrangian displacement \((\Id+\vartheta v)_\sharp\alpha\). When the first variation is differentiable in \(x\), its spatial gradient represents this horizontal differential.
+
+As \(\tau\to0\), under suitable conditions on \(f\), \eqref{eq:jko-discr} defines a continuous evolution \(t\mapsto\alpha_t\). As discussed earlier, this evolution can be described by the Lagrangian advection formula~\eqref{eq:lagrangian-advection}. The key infinitesimal object is the vector field representing the differential in the Wasserstein metric.
 
 \begin{defn}[Wasserstein gradient]\label{def-wasserstein-gradient}
 \index{Wasserstein!gradient}% strictindex
