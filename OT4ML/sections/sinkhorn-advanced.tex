@@ -1275,6 +1275,379 @@ An important limitation of this analysis is that it requires a uniformly bounded
 \index{quadratic!cost}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Local Convergence Analysis and Acceleration}
+\label{sec-sinkhorn-local-acceleration}
+\index{Sinkhorn!local convergence}% strictindex
+\index{Sinkhorn!acceleration}% strictindex
+
+The projective analysis of Section~\ref{sec-sinkhorn-hilbert} gives an initialization-independent global rate from the kernel alone, but this robust bound can be pessimistic near the solution. Linearization reveals a more precise structure: the dual Hessian, the Jacobian of a complete Sinkhorn cycle and the curvature of the entropic semi-dual are all controlled by the same conditional-expectation operator. This operator gives the sharp local factor and motivates two accelerations: over-relaxing the alternating soft transforms, or optimizing the semi-dual after eliminating one potential.
+
+\paragraph{Conditional operator and maximal correlation.}
+\index{conditional!expectation}% strictindex
+\index{maximal correlation}% strictindex
+
+The local geometry is intrinsic to the coupling and does not depend on whether it is parameterized by potentials or scalings. Let
+\(
+	L_0^2(\al)\eqdef\enscond{h\in L^2(\al)}{\int h\d\al=0}
+\)
+and define \(L_0^2(\be)\) similarly.
+
+\begin{defn}[Conditional coupling operator]\label{def-sinkhorn-conditional-operator}
+	For a coupling $\pi\in\Couplings(\al,\be)$, let
+	\(
+		\pi(\d x,\d y)=\al(\d x)\pi_x(\d y)
+		=\be(\d y)\pi^y(\d x)
+	\)
+	be its two disintegrations. Define
+	\(
+		T_\pi:L^2(\be)\to L^2(\al)
+	\)
+	and
+	\(
+		T_\pi^*:L^2(\al)\to L^2(\be)
+	\)
+	by
+	\eql{\label{eq-sinkhorn-conditional-operator}
+		(T_\pi k)(x)\eqdef\int_\Yy k(y)\d\pi_x(y),
+		\qquad
+		(T_\pi^*h)(y)\eqdef\int_\Xx h(x)\d\pi^y(x).
+	}
+	The centered maximal correlation of $\pi$ is
+	\eql{\label{eq-sinkhorn-maximal-correlation}
+		\sigma(\pi)
+		\eqdef
+		\sup_{\substack{k\in L_0^2(\be)\\\norm{k}_{L^2(\be)}=1}}
+		\norm{T_\pi k}_{L^2(\al)}
+		=
+		\sup_{\substack{h\in L_0^2(\al),\,k\in L_0^2(\be)\\
+		\norm{h}_{L^2(\al)}=\norm{k}_{L^2(\be)}=1}}
+		\int h(x)k(y)\d\pi(x,y).
+	}
+	For the optimal entropic coupling $\pi_\epsilon$ of~\eqref{eq-entropic-generic}, set
+	\(
+		T_\epsilon\eqdef T_{\pi_\epsilon}
+	\)
+	and
+	\(
+		\sigma_\epsilon\eqdef\sigma(\pi_\epsilon).
+	\)
+\end{defn}
+
+The notation $T_\pi^*$ is literal: the two operators are adjoint for the $L^2(\al)$ and $L^2(\be)$ inner products. Conditional Jensen's inequality gives $\norm{T_\pi}\leq1$, while $T_\pi1=T_\pi^*1=1$, so both operators preserve centered functions and $0\leq\sigma(\pi)\leq1$. In the discrete setting of~\eqref{eq-regularized-discr}, assuming the weights are positive, the optimizer $\P_\epsilon$ gives
+\eql{\label{eq-sinkhorn-conditional-operator-discrete}
+	T_\epsilon=\diag(\a)^{-1}\P_\epsilon,
+	\qquad
+	T_\epsilon^*=\diag(\b)^{-1}\P_\epsilon^\top,
+}
+where adjointness is understood in the $\a$- and $\b$-weighted Euclidean inner products. Thus $\sigma_\epsilon$ is the largest nonconstant singular value of the normalized optimal coupling.
+Equivalently, it is the second singular value of
+\(
+	\diag(\a)^{-1/2}\P_\epsilon\diag(\b)^{-1/2}
+\),
+whose first singular value is one.
+
+\paragraph{Dual Hessian and exact local rate.}
+\index{dual!Hessian}% strictindex
+\index{Sinkhorn!Jacobian}% strictindex
+
+Recall that $\mathcal D_\epsilon$ is the continuous dual objective~\eqref{eq-dual-sinkhorn-objective}, its optimizers $(f_\epsilon,g_\epsilon)$ are unique up to the gauge $(f,g)\mapsto(f+s,g-s)$ by Proposition~\ref{prop-entropic-dual-potentials}, and Sinkhorn alternates the soft transforms~\eqref{eq-continuous-dual-sinkhorn-iteration}. The following proposition identifies the linearization of all these objects without redefining them.
+
+\begin{prop}[Dual Hessian and local Sinkhorn rate]\label{prop-sinkhorn-local-rate}
+	Assume the setting of Proposition~\ref{prop-continuous-entropic-duality}, and that differentiation under the Gibbs integrals and the stated $L^2$ Taylor expansions are valid. These requirements are automatic in finite spaces and form the local regularity hypothesis in continuous settings. For bounded directions $(h,k)$ and $(h',k')$,
+	\eql{\label{eq-sinkhorn-dual-hessian-form}
+		-\epsilon D^2\mathcal D_\epsilon(f_\epsilon,g_\epsilon)
+		[(h,k),(h',k')]
+		=
+		\int_{\Xx\times\Yy}
+		(h(x)+k(y))(h'(x)+k'(y))\d\pi_\epsilon(x,y).
+	}
+	Hence the Hessian form extends continuously to
+	\(L^2(\al)\oplus L^2(\be)\), where the positive dual curvature operator is
+	\eql{\label{eq-sinkhorn-dual-hessian-operator}
+		-\nabla^2\mathcal D_\epsilon(f_\epsilon,g_\epsilon)
+		=
+		\frac1\epsilon
+		\begin{pmatrix}
+			\Id&T_\epsilon\\
+			T_\epsilon^*&\Id
+		\end{pmatrix}.
+	}
+	After quotienting by the gauge direction $(1,-1)$ and using the product-$L^2$ quotient norm, its spectrum is contained in
+	\[
+		\left[\frac{1-\sigma_\epsilon}{\epsilon},
+		\frac{2}{\epsilon}\right].
+	\]
+	Both endpoints belong to the spectrum, although the lower one need not be an eigenvalue.
+	In particular, when $\sigma_\epsilon<1$, the spectral condition number of the full dual is \(2/(1-\sigma_\epsilon)\).
+
+	The derivatives of the two soft-transform updates~\eqref{eq-soft-c-cont-f}--\eqref{eq-soft-c-cont-g} at the optimum are
+	\eql{\label{eq-sinkhorn-soft-transform-jacobians}
+		D[g\mapsto g^{\bar c,\epsilon}](g_\epsilon)=-T_\epsilon,
+		\qquad
+		D[f\mapsto f^{c,\epsilon}](f_\epsilon)=-T_\epsilon^*.
+	}
+	Consequently, the Jacobian of a complete cycle
+	\(g\mapsto(g^{\bar c,\epsilon})^{c,\epsilon}\)
+	is $T_\epsilon^*T_\epsilon$. If the gauges are fixed so that
+	\(e^{(\ell)}\eqdef g^{(\ell)}-g_\epsilon\in L_0^2(\be)\), then
+	\eql{\label{eq-sinkhorn-local-error}
+		e^{(\ell+1)}
+		=
+		T_\epsilon^*T_\epsilon e^{(\ell)}
+		+
+		o\!\left(\norm{e^{(\ell)}}_{L^2(\be)}\right),
+		\qquad
+		\limsup_{\ell\to\infty}
+		\frac{\norm{e^{(\ell+1)}}_{L^2(\be)}}
+		{\norm{e^{(\ell)}}_{L^2(\be)}}
+		\leq\sigma_\epsilon^2.
+	}
+	If $\sigma_\epsilon^2$ is an isolated eigenvalue and the asymptotic error has a nonzero projection onto its eigenspace, the ratio in~\eqref{eq-sinkhorn-local-error} converges to $\sigma_\epsilon^2$.
+\end{prop}
+
+\begin{proof}
+	Twice differentiating the exponential term in~\eqref{eq-dual-sinkhorn-objective} gives~\eqref{eq-sinkhorn-dual-hessian-form}; the density law~\eqref{eq-continuous-entropic-density-law} identifies its reference measure with $\pi_\epsilon$. Its two diagonal terms are the $L^2$ inner products of the marginals, and its cross term is represented by $T_\epsilon$, which proves~\eqref{eq-sinkhorn-dual-hessian-operator}.
+
+	Each quotient class has a unique representative orthogonal to the gauge direction, hence of the form
+	\(
+		(h_0+m,k_0+m)
+	\)
+	with $h_0\in L_0^2(\al)$ and $k_0\in L_0^2(\be)$. On the centered component, Cauchy--Schwarz and~\eqref{eq-sinkhorn-maximal-correlation} give
+	\[
+		(1-\sigma_\epsilon)
+		\bigl(\norm{h_0}_{L^2(\al)}^2+\norm{k_0}_{L^2(\be)}^2\bigr)
+		\leq
+		\norm{h_0}_{L^2(\al)}^2+\norm{k_0}_{L^2(\be)}^2
+		+2\langle h_0,T_\epsilon k_0\rangle_{L^2(\al)}
+		\leq
+		(1+\sigma_\epsilon)
+		\bigl(\norm{h_0}_{L^2(\al)}^2+\norm{k_0}_{L^2(\be)}^2\bigr).
+	\]
+	The common-constant direction $(1,1)$ has eigenvalue $2/\epsilon$, whereas $(1,-1)$ is the gauge kernel. Approximate maximizers in~\eqref{eq-sinkhorn-maximal-correlation} show that the lower spectral endpoint is $(1-\sigma_\epsilon)/\epsilon$, while the constant direction gives the upper endpoint $2/\epsilon$. This proves the condition-number formula without requiring a singular-vector basis.
+
+	Differentiating either log-partition formula in Definition~\ref{def-continuous-soft-c-transform} produces minus the corresponding conditional expectation under $\pi_\epsilon$, proving~\eqref{eq-sinkhorn-soft-transform-jacobians}. The chain rule and a Taylor expansion then give~\eqref{eq-sinkhorn-local-error}. Since
+	\(\norm{T_\epsilon^*T_\epsilon}_{L_0^2(\be)\to L_0^2(\be)}
+	=\sigma_\epsilon^2\),
+	the rate follows.
+\end{proof}
+
+In finite spaces, this recovers the second-singular-value description of the asymptotic matrix-scaling rate~\cite{knight2008sinkhorn,lehmann2022overrelaxation}.
+
+The same spectral gap has a direct probabilistic interpretation. The law of total variance gives
+\eql{\label{eq-sinkhorn-conditional-variance-gap}
+	1-\sigma_\epsilon^2
+	=
+	\inf_{\substack{k\in L_0^2(\be)\\\norm{k}_{L^2(\be)}=1}}
+	\int_\Xx
+	\operatorname{Var}_{\pi_{\epsilon,x}}\!\bigl(k(Y)\bigr)
+	\d\al(x).
+}
+Thus Sinkhorn slows down when the optimal conditional laws $Y|X=x$ become nearly deterministic. This is exactly what happens as $\epsilon\to0$ in a smooth Monge regime.
+
+\begin{prop}[The global Hilbert factor controls the local rate]\label{prop-sinkhorn-hilbert-controls-local}
+	In the discrete positive-kernel setting of Theorem~\ref{thm-sinkhorn-hilbert-linear},
+	\eql{\label{eq-sinkhorn-hilbert-controls-local}
+		\sigma_\epsilon\leq\la(\K)<1,
+		\qquad
+		\sigma_\epsilon^2\leq\la(\K)^2.
+	}
+\end{prop}
+\begin{proof}
+	The complete scaling cycle contracts Hilbert's metric by $\la(\K)^2$ according to~\eqref{eq-convlin-sinkh}. In logarithmic coordinates, that metric is the variation norm~\eqref{eq-hilbert-metric}. Differentiate the contraction at the fixed point and use Proposition~\ref{prop-sinkhorn-local-rate}: the derivative is $T_\epsilon^*T_\epsilon$. Applying the resulting variation-norm bound to a leading eigenvector of this finite-dimensional self-adjoint operator gives~\eqref{eq-sinkhorn-hilbert-controls-local}.
+\end{proof}
+
+The same argument applies when the Gibbs kernel is continuous and strictly positive on compact marginal supports: the corresponding optimal coupling has a density relative to $\al\otimes\be$ that is bounded above and below, the conditional operator is compact, and the continuous Birkhoff--Hopf coefficient bounds $\sigma_\epsilon$ strictly below one.
+
+The proposition makes the relation with the preceding section precise: maximal correlation is the sharp local quantity, whereas Birkhoff contraction supplies an input-level global upper bound. The latter can become exponentially close to one as $\epsilon\to0$. In a smooth nondegenerate Monge regime, the conditional laws have width $O(\sqrt\epsilon)$. If a uniform Laplace expansion turns the conditional-variance form in~\eqref{eq-sinkhorn-conditional-variance-gap} into $\epsilon$ times a coercive weighted Dirichlet form, then
+\(
+	1-\sigma_\epsilon^2\asymp\epsilon.
+\)
+This explains why observed local rates can be polynomially better than the universal Hilbert estimate. Related non-asymptotic continuous bounds with polynomial dependence on $\epsilon$ are proved under regularity and log-concavity hypotheses in~\cite{chizat2024sharper}; Proposition~\ref{prop-gaussian-sinkhorn-1d-rate} gives an explicit Gaussian instance of the local calculation.
+
+\paragraph{Blockwise over-relaxation.}
+\index{Sinkhorn!over-relaxation}% strictindex
+\index{successive over-relaxation}% strictindex
+
+Sinkhorn performs exact maximization in one dual block after the other. A minimal acceleration extrapolates each block toward its soft-transform maximizer~\cite{thibault2021overrelaxed,lehmann2022overrelaxation}: for $\omega>0$,
+\eql{\label{eq-sinkhorn-block-overrelaxation}
+	\begin{aligned}
+		f^{(\ell+1)}
+		&=(1-\omega)f^{(\ell)}
+		+\omega(g^{(\ell)})^{\bar c,\epsilon},\\
+		g^{(\ell+1)}
+		&=(1-\omega)g^{(\ell)}
+		+\omega(f^{(\ell+1)})^{c,\epsilon}.
+	\end{aligned}
+}
+The choice $\omega=1$ is the original iteration~\eqref{eq-continuous-dual-sinkhorn-iteration}; $0<\omega<1$ damps the updates, while $1<\omega<2$ over-relaxes them.
+
+\begin{prop}[Optimal local block relaxation]\label{prop-sinkhorn-optimal-overrelaxation}
+	Assume the hypotheses of Proposition~\ref{prop-sinkhorn-local-rate} and $\sigma_\epsilon<1$. For every $0<\omega<2$, the iteration~\eqref{eq-sinkhorn-block-overrelaxation} is locally linearly convergent modulo the additive gauge. Its optimal relaxation parameter and corresponding asymptotic factor are
+	\eql{\label{eq-sinkhorn-optimal-overrelaxation}
+		\omega_\star
+		=
+		\frac{2}{1+\sqrt{1-\sigma_\epsilon^2}},
+		\qquad
+		r_\star
+		=
+		\omega_\star-1
+		=
+		\frac{1-\sqrt{1-\sigma_\epsilon^2}}
+		{1+\sqrt{1-\sigma_\epsilon^2}}.
+	}
+	For $\omega=1$, the factor is $\sigma_\epsilon^2$, as in Proposition~\ref{prop-sinkhorn-local-rate}.
+\end{prop}
+
+\begin{proof}
+	Use~\eqref{eq-sinkhorn-soft-transform-jacobians}. The polar decomposition of $T_\epsilon$ and the spectral theorem for $(T_\epsilon^*T_\epsilon)^{1/2}$ reduce the centered linearized iteration to scalar spectral values $s\in[0,\sigma_\epsilon]$; in finite dimensions these are the usual singular values. On the corresponding two-dimensional mode, one relaxed cycle has matrix
+	\[
+		\mathsf M_\omega(s)
+		=
+		\begin{pmatrix}
+			1-\omega&-\omega s\\
+			-\omega s(1-\omega)&1-\omega+\omega^2s^2
+		\end{pmatrix},
+	\]
+	whose characteristic polynomial is
+	\[
+		z^2-\left(2(1-\omega)+\omega^2s^2\right)z+(1-\omega)^2.
+	\]
+	The supremum of the root moduli is reached, or approached, as $s\to\sigma_\epsilon$. The two roots of this limiting mode have equal modulus precisely when
+	\(\omega^2\sigma_\epsilon^2=4(\omega-1)\).
+	The smaller solution is $\omega_\star$ in~\eqref{eq-sinkhorn-optimal-overrelaxation}; at this value both root moduli equal $\omega_\star-1$. Below this threshold the dominant real root decreases with $\omega$, while above it the conjugate-root modulus $\omega-1$ increases. This proves optimality and local convergence for $0<\omega<2$.
+	The nongauge constant mode has factor $(1-\omega)^2$ and never dominates these centered modes.
+\end{proof}
+
+When $1-\sigma_\epsilon^2$ is small, the accelerated factor is
+\(
+	r_\star
+	=
+	1-2\sqrt{1-\sigma_\epsilon^2}
+	+
+	O(1-\sigma_\epsilon^2)
+\),
+instead of $\sigma_\epsilon^2$ for ordinary Sinkhorn. This is a local prescription. In the finite positive-kernel setting, the Hilbert estimate used in Theorem~\ref{thm-sinkhorn-hilbert-linear} yields global convergence of the relaxed iteration for the conservative range~\cite{lehmann2022overrelaxation}
+\(
+	0<\omega<2/(1+\la(\K))
+\);
+larger choices require the adaptive safeguards analyzed in~\cite{thibault2021overrelaxed,lehmann2022overrelaxation}.
+
+\paragraph{Entropic semi-dual and variable projection.}
+\index{semi-dual!entropic}% strictindex
+\index{variable projection}% strictindex
+
+The semi-dual~\eqref{eq-semi-dual} eliminates one potential exactly. Applying the same construction to the smooth dual~\eqref{eq-dual-sinkhorn-objective} gives
+\eql{\label{eq-entropic-semidual-local}
+	\Ee_\epsilon(g)
+	\eqdef
+	\mathcal D_\epsilon(g^{\bar c,\epsilon},g)
+	=
+	\int_\Xx g^{\bar c,\epsilon}\d\al
+	+
+	\int_\Yy g\d\be.
+}
+The exponential term disappears in the last equality because the first marginal is normalized by the soft transform. This exact block elimination is an instance of variable projection~\cite{golub1973variableprojection,golub2003variableprojection}.
+
+For a potential $g$, let $\pi_g$ be the Gibbs measure obtained from the density law~\eqref{eq-continuous-entropic-density-law} by replacing $(f_\epsilon,g_\epsilon)$ with $(g^{\bar c,\epsilon},g)$. Write
+\(
+	\pi_g(\d x,\d y)=\al(\d x)\pi_{g,x}(\d y)
+\)
+and denote its second marginal by $\be_g$. The first marginal is exactly $\al$ by construction.
+
+\begin{prop}[Semi-dual curvature and conditioning]\label{prop-sinkhorn-semidual-curvature}
+	For bounded directions $k,k'$,
+	\eql{\label{eq-entropic-semidual-derivatives}
+		D\Ee_\epsilon(g)[k]
+		=
+		\int_\Yy k\d(\be-\be_g),
+		\qquad
+		D^2\Ee_\epsilon(g)[k,k']
+		=
+		-\frac1\epsilon
+		\int_\Xx
+		\operatorname{Cov}_{\pi_{g,x}}\!\bigl(k(Y),k'(Y)\bigr)
+		\d\al(x).
+	}
+	At $g=g_\epsilon$, its positive curvature on $L_0^2(\be)$ is
+	\eql{\label{eq-entropic-semidual-hessian}
+		-\nabla^2\Ee_\epsilon(g_\epsilon)
+		=
+		\frac1\epsilon(\Id-T_\epsilon^*T_\epsilon),
+		\qquad
+		\frac{1-\sigma_\epsilon^2}{\epsilon}\Id
+		\preceq
+		-\nabla^2\Ee_\epsilon(g_\epsilon)
+		\preceq
+		\frac1\epsilon\Id.
+	}
+	Hence its spectral condition number is at most
+	\(
+		1/(1-\sigma_\epsilon^2)
+	\).
+	Gradient ascent on the local quadratic model, with the minimax constant step based only on these spectral bounds,
+	\(
+		2\epsilon/(2-\sigma_\epsilon^2)
+	\),
+	has factor
+	\eql{\label{eq-entropic-semidual-gradient-rate}
+		r_{\rm grad}
+		\leq
+		\frac{\sigma_\epsilon^2}{2-\sigma_\epsilon^2}.
+	}
+\end{prop}
+
+\begin{proof}
+	The envelope theorem gives the first derivative in~\eqref{eq-entropic-semidual-derivatives}. Differentiating the normalized conditional Gibbs law gives the covariance formula. At the optimum, total covariance yields
+	\[
+		\int_\Xx
+		\operatorname{Cov}_{\pi_{\epsilon,x}}(k(Y),k'(Y))
+		\d\al(x)
+		=
+		\int_\Yy kk'\d\be
+		-
+		\int_\Xx(T_\epsilon k)(T_\epsilon k')\d\al,
+	\]
+	which is~\eqref{eq-entropic-semidual-hessian}. Equivalently, this operator is the Schur complement of the first identity block in~\eqref{eq-sinkhorn-dual-hessian-operator}. Its spectrum on centered functions lies in
+	\(
+		[(1-\sigma_\epsilon^2)/\epsilon,1/\epsilon]
+	\).
+	The standard optimal-step formula for a quadratic with spectral interval $[\alpha,L]$ gives factor $(L-\alpha)/(L+\alpha)$, which here is~\eqref{eq-entropic-semidual-gradient-rate}.
+\end{proof}
+
+Variable projection cannot worsen local spectral conditioning: the Schur-complement quadratic form is the minimum of the full quadratic form over the eliminated block, so its smallest eigenvalue cannot decrease and its largest eigenvalue cannot increase. Here the gain has a simple explicit bound. The full-dual condition number from Proposition~\ref{prop-sinkhorn-local-rate} is $2/(1-\sigma_\epsilon)$, whereas the semi-dual condition number is at most $1/(1-\sigma_\epsilon^2)$; this upper bound is smaller by the factor $2(1+\sigma_\epsilon)$. This comparison is available because both diagonal blocks in~\eqref{eq-sinkhorn-dual-hessian-operator} are identities.
+
+There is also a useful algorithmic comparison. Writing
+\(
+	r_g\eqdef\d\be_g/\d\be
+\)
+and using the two soft transforms gives
+\eql{\label{eq-sinkhorn-semidual-gradient-comparison}
+	r_g
+	=
+	\exp\!\left(
+		\frac{g-(g^{\bar c,\epsilon})^{c,\epsilon}}{\epsilon}
+	\right),
+	\qquad
+	\nabla\Ee_\epsilon(g)=1-r_g.
+}
+Here the gradient is the Riesz gradient for the $L^2(\be)$ inner product.
+Therefore one ordinary Sinkhorn cycle satisfies
+\[
+	(g^{\bar c,\epsilon})^{c,\epsilon}-g
+	=
+	-\epsilon\log r_g
+	=
+	\epsilon\nabla\Ee_\epsilon(g)
+	+
+	o\!\left(\norm{g-g_\epsilon}_{L^2(\be)}\right).
+\]
+Sinkhorn is thus locally semi-dual gradient ascent with step $\epsilon$, although the two nonlinear algorithms are not globally identical. Quasi-Newton methods instead learn an approximation of
+\(
+	\epsilon(\Id-T_\epsilon^*T_\epsilon)^{-1}
+\)
+from successive gradients. This explains the effectiveness of BFGS and L-BFGS on regularized semi-duals~\cite{2016-Cuturi-siims,cuturi2018semidual,nocedal}: they reuse curvature information, at the cost of storing curvature pairs and, typically, extra evaluations during line search. Stochastic first-order methods instead exploit the same semi-dual gradient formula using sampled marginals~\cite{genevay2016stochastic}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Entropic Optimal Transport between Gaussians}
 \index{Gaussian!Sinkhorn}% strictindex
 \label{sec-gaussian-sinkhorn}
@@ -1476,12 +1849,12 @@ Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's be
 \index{dual!potential}% strictindex
 \index{soft!transform}% strictindex
 	\[
-		T_\epsilon(q)
+		\mathsf Q_\epsilon(q)
 		=
 		1-\frac{1}{1-q+\epsilon/2},
 		\qquad q<1+\epsilon/2,
 	\]
-	and one full Sinkhorn cycle acts as $q\mapsto T_\epsilon(T_\epsilon(q))$. The fixed point $q_\star=T_\epsilon(q_\star)$ is determined by
+	and one full Sinkhorn cycle acts as $q\mapsto \mathsf Q_\epsilon(\mathsf Q_\epsilon(q))$. The fixed point $q_\star=\mathsf Q_\epsilon(q_\star)$ is determined by
 	\[
 		A_\star^2-\frac{\epsilon}{2}A_\star-1=0,
 		\qquad
@@ -1489,7 +1862,11 @@ Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's be
 		=
 		\frac{\epsilon+\sqrt{\epsilon^2+16}}{4}.
 	\]
-	Consequently the local asymptotic contraction factor of one full Sinkhorn cycle on the quadratic coefficient is
+	The optimal Gaussian coupling of Proposition~\ref{prop-gaussian-sinkhorn-closed-form} has correlation
+	\(
+		s_\epsilon=A_\star^{-1}
+	\).
+	Hence the maximal correlation in Definition~\ref{def-sinkhorn-conditional-operator} is $\sigma_\epsilon=s_\epsilon$, and the exact local $L^2$ factor is $A_\star^{-2}$. The quadratic-potential mode contracts faster, with factor
 	\[
 		\rho_\epsilon=A_\star^{-4}
 		=
@@ -1504,14 +1881,14 @@ Gaussian marginals provide an explicit finite-dimensional model of Sinkhorn's be
 		\exp\!\left(\frac{q y^2-(x-y)^2}{\epsilon}\right)
 		\d\Gaussian(0,1)(y)
 	\]
-	gives the coefficient $T_\epsilon(q)$. The fixed-point equation $q_\star=1-1/A_\star$, together with $q_\star=1+\epsilon/2-A_\star$, gives
+	gives the coefficient $\mathsf Q_\epsilon(q)$. The fixed-point equation $q_\star=1-1/A_\star$, together with $q_\star=1+\epsilon/2-A_\star$, gives
 	\(A_\star^2-\frac{\epsilon}{2}A_\star-1=0\).
 	The positive solution is the displayed $A_\star$. Since
-	\(T_\epsilon'(q)=-\frac{1}{(1-q+\epsilon/2)^2}\),
-	the derivative of the full-cycle map at the fixed point is $T_\epsilon'(q_\star)^2=A_\star^{-4}$. This gives the local asymptotic rate.
+	\(\mathsf Q_\epsilon'(q)=-\frac{1}{(1-q+\epsilon/2)^2}\),
+	the derivative of the full-cycle map at the fixed point is $\mathsf Q_\epsilon'(q_\star)^2=A_\star^{-4}$. The correlation formula is the one-dimensional specialization of Proposition~\ref{prop-gaussian-sinkhorn-closed-form}. Conditional expectation under a correlated Gaussian diagonalizes in the Hermite basis, with largest nonconstant singular value $s_\epsilon$; Proposition~\ref{prop-sinkhorn-local-rate} then gives the full factor $s_\epsilon^2=A_\star^{-2}$.
 \end{proof}
 
-This scalar calculation illustrates the general Gaussian convergence picture of Chizat, Delalande and Va\v{s}kevi\v{c}ius~\cite{chizat2024sharper}: the rate improves when $\epsilon$ is large or the covariance scales overlap well, and deteriorates in the small-temperature limit where the entropic coupling approaches a deterministic Brenier map.
+This calculation illustrates the general Gaussian convergence picture of Chizat, Delalande and Va\v{s}kevi\v{c}ius~\cite{chizat2024sharper}: the rate improves when $\epsilon$ is large or the covariance scales overlap well, and deteriorates in the small-temperature limit where the entropic coupling approaches a deterministic Brenier map.
 \index{Brenier!map}% strictindex
 
 
