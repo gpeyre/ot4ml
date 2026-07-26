@@ -309,21 +309,21 @@ on the Bures-Wasserstein space of Gaussian components. Given two component laws
 \]
 the discrete problem induced by~\eqref{eq-wow-distance} uses the component cost
 \[
-	\C_{ij}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
+	\C_{i,j}=\norm{m_i-n_j}^2+\Bb(\Sigma_i,\Lambda_j)^2.
 \]
-Let $\P^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{ij}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
+Let $\P^\star$ be an optimal coupling between the weights $a$ and $b$. If $A_{i,j}$ denotes the Brenier linear part from $\Sigma_i$ to $\Lambda_j$, then each active component pair is interpolated by
 \[
 	m_{ij,t}=(1-t)m_i+t n_j,
 	\qquad
 	\Sigma_{ij,t}
 	=
-	\big((1-t)\Id+tA_{ij}\big)\Sigma_i
-	\big((1-t)\Id+tA_{ij}\big)^\top,
+	\big((1-t)\Id+tA_{i,j}\big)\Sigma_i
+	\big((1-t)\Id+tA_{i,j}\big)^\top,
 \]
 and collapsing these component geodesics gives
 \[
 	\bar\alpha_t=
-	\sum_{i,j}\P^\star_{ij}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
+	\sum_{i,j}\P^\star_{i,j}\Gaussian(m_{ij,t},\Sigma_{ij,t}).
 \]
 This component-level interpolation transports Gaussian components as atoms of the Wasserstein space before returning to measures on~$\X$. It is generally not the same as the true $\Wass_2$ interpolation between the collapsed mixture densities, which can split and recombine mass inside and across components.
 \index{Bures!Wasserstein geometry}% strictindex
@@ -449,7 +449,7 @@ The relaxed coupling formulation used in GW can therefore be read as a soft grap
 \begin{example}[Application to structured objects]\label{ex-structured-objects-gw}
 \index{structured data}% strictindex
 \index{graph!matching}% strictindex
-	Graphs, molecules, meshes and point clouds often do not come with a common coordinate system or a reliable node-to-node correspondence. GW compares them through their internal distances, so the coupling \(\P_{ij}\) becomes a soft structural correspondence rather than a spatial displacement. This is useful for graph matching, node embedding, shape comparison and molecule or mesh alignment~\cite{peyre2016gromov,vayer2019optimaltransportstructured}. When node attributes are also available, fused GW below adds a feature transport term to the intrinsic distortion, separating what should be preserved as structure from what should be matched as signal.
+	Graphs, molecules, meshes and point clouds often do not come with a common coordinate system or a reliable node-to-node correspondence. GW compares them through their internal distances, so the coupling \(\P_{i,j}\) becomes a soft structural correspondence rather than a spatial displacement. This is useful for graph matching, node embedding, shape comparison and molecule or mesh alignment~\cite{peyre2016gromov,vayer2019optimaltransportstructured}. When node attributes are also available, fused GW below adds a feature transport term to the intrinsic distortion, separating what should be preserved as structure from what should be matched as signal.
 \end{example}
 
 Figure~\ref{fig:gromov-isometry-matching} shows this intrinsic matching principle under progressively stronger deformations: correspondences are selected from within-space distance patterns rather than an ambient cross-space cost.
@@ -512,6 +512,59 @@ The distortion between two metric-measure spaces is minimized over couplings of 
 			 \d\pi(x,y)\d\pi(x',y').
 		\end{align}
 \end{defn}
+\begin{defn}[Infinite-order Gromov--Wasserstein distance]\label{def-gromov-wasserstein-infinity}
+	For a distance $\De$ on $[0,+\infty)$, the infinite-order Gromov--Wasserstein distance is
+	\begin{equation}\label{eq-gw-infinity}
+		\GW_\infty(\XX,\YY)
+		\eqdef
+		\inf_{\pi\in\Couplings(\al,\be)}
+		\operatorname*{ess\,sup}_{\pi\otimes\pi}
+		\De\bigl(\dist_\X(x,x'),\dist_\Y(y,y')\bigr).
+	\end{equation}
+\end{defn}
+On compact spaces, the infinite-order value is the genuine endpoint of the finite-order family. The support formula below will also be useful when comparing GW with Gromov--Hausdorff distance.
+\begin{prop}[Infinite-order limit of Gromov--Wasserstein]\label{prop-gw-infinite-order-limit}
+	Let $\XX$ and $\YY$ be compact metric-measure spaces, and assume that $\De$ is continuous. Then
+	\begin{equation}\label{eq-gw-infinity-support}
+		\GW_\infty(\XX,\YY)
+		=
+		\inf_{\pi\in\Couplings(\alpha,\beta)}
+		\sup_{\bigl((x,y),(x',y')\bigr)\in\supp(\pi)^2}
+		\De\bigl(\dist_\X(x,x'),\dist_\Y(y,y')\bigr).
+	\end{equation}
+	Moreover, $\GW_p(\XX,\YY)$ is nondecreasing in $p$ and
+	\begin{equation}\label{eq-gw-p-to-infinity}
+		\lim_{p\to\infty}\GW_p(\XX,\YY)
+		=
+		\GW_\infty(\XX,\YY).
+	\end{equation}
+\end{prop}
+\begin{proof}
+	For each coupling $\pi$, continuity of the distortion integrand identifies its essential supremum under $\pi\otimes\pi$ with its supremum over $\supp(\pi)^2$, which proves~\eqref{eq-gw-infinity-support}. Monotonicity follows from monotonicity of probability-space $L^p$ norms, and gives a limit $L\leq\GW_\infty(\XX,\YY)$.
+
+	Let $p_k\to\infty$ and let $\pi_k$ minimize the order-$p_k$ problem. Compactness of $\Couplings(\alpha,\beta)$ gives, after extraction, $\pi_k\rightharpoonup\pi_\star$. If the distortion vanishes on $\supp(\pi_\star)^2$, the result is immediate. Otherwise, fix $(x,y),(x',y')\in\supp(\pi_\star)$ with positive distortion and a number
+	\[
+		0<r<\De\bigl(\dist_\X(x,x'),\dist_\Y(y,y')\bigr).
+	\]
+	By continuity, there are neighborhoods $U$ and $V$ of these points on whose product the distortion exceeds $r$. The Portmanteau theorem gives $\liminf_k\pi_k(U)>0$ and $\liminf_k\pi_k(V)>0$. Hence, for some $c>0$ and all sufficiently large $k$,
+	\[
+		\GW_{p_k}(\XX,\YY)
+		\geq
+		r\bigl(\pi_k(U)\pi_k(V)\bigr)^{1/p_k}
+		\geq
+		rc^{1/p_k}.
+	\]
+	Letting first $k\to\infty$ and then $r$ increase to the distortion of the selected pair shows that $L$ dominates every distortion on $\supp(\pi_\star)^2$. Therefore
+	\[
+		L
+		\geq
+		\sup_{\bigl((x,y),(x',y')\bigr)\in\supp(\pi_\star)^2}
+		\De\bigl(\dist_\X(x,x'),\dist_\Y(y,y')\bigr)
+		\geq
+		\GW_\infty(\XX,\YY),
+	\]
+	which proves~\eqref{eq-gw-p-to-infinity}.
+\end{proof}
 Taking $\X=\{1,\ldots,m\}$, $\Y=\{1,\ldots,n\}$, $\al=\sum_i \a_i\delta_i$ and $\be=\sum_j \b_j\delta_j$ reduces~\eqref{eq-gw-generic} exactly to the discrete problem~\eqref{eq-gw-def}, since every coupling is represented by a matrix $\P\in\CouplingsD(\a,\b)$. Thus the construction above is precisely the finite-space, or equivalently finitely supported, specialization of the metric-measure formulation.
 
 \paragraph{Comparison with Wasserstein and Wasserstein--Procrustes.}
@@ -579,7 +632,7 @@ The next theorem explains why the averaged distortion above is not merely a matc
 \index{Gromov-Wasserstein@Gromov--Wasserstein}% strictindex
 \index{Gromov-Wasserstein@Gromov--Wasserstein!metric}% strictindex
 \index{modulo isometry}% strictindex
-	For compact metric-measure spaces, $p\geq1$ and $\De(u,v)=|u-v|$, $\GW$ defines a distance up to measure-preserving isometries.
+	For compact metric-measure spaces, $p\geq1$ and $\De(u,v)=|u-v|$, $\GW$ defines a distance up to measure-preserving isometries~\cite{memoli-2011}.
 \end{thm}
 
 \begin{proof}
@@ -634,6 +687,19 @@ The next theorem explains why the averaged distortion above is not merely a matc
 	where the second inequality uses the pointwise triangle inequality followed by Minkowski's inequality. This proves the triangle inequality and completes the metric proof.
 \index{Minkowski inequality}% strictindex
 \end{proof}
+
+\begin{rem}[Completeness and compactness]\label{rem-gw-not-complete}
+\index{Gromov-Wasserstein@Gromov--Wasserstein!completeness}% strictindex
+\index{Gromov-Wasserstein@Gromov--Wasserstein!compactness}% strictindex
+	The metric conclusion of Theorem~\ref{thm-gw-metric} does not make the full moduli space of compact metric-measure spaces complete or compact. A standard counterexample is the uniform measure on the $n$-point equilateral space $\Delta_n$, whose distinct points are all at distance one. Under the normalization~\eqref{eq-gw-generic},
+	\[
+		\GW(\Delta_n,\Delta_m)
+		\leq n^{-1/p}+m^{-1/p},
+	\]
+	so $(\Delta_n)_n$ is GW-Cauchy. Indeed, couple $\Delta_{nm}$ to $\Delta_n$ by the block projection: the two pairwise distances disagree with probability at most $1/n$, and similarly for $\Delta_m$, after which the triangle inequality applies. The formal limit would be an atomless probability space in which two independent points are at distance one almost surely. Such a limit has no realization by a compact, or even separable, metric support. Thus the class of compact metric-measure spaces is not complete for $\GW$, and consequently is not compact; its completion requires generalized pseudo-metric or gauged measure spaces~\cite{memoli-2014,SturmGW}.
+
+	This contrasts with Wasserstein geometry over one \emph{fixed} compact ground space $\Omega$. There, $\Pp(\Omega)$ is weakly compact by Prokhorov's theorem, and Proposition~\ref{prop-wass-topology-polish} identifies weak convergence with $\Wass_p$ convergence; hence $(\Pp(\Omega),\Wass_p)$ is compact. For GW the ground space itself varies, and compactness of every individual space gives no uniform control of the family. GW precompactness requires additional uniform geometric hypotheses, such as diameter and covering-number bounds.
+\end{rem}
 
 \begin{rem}[Distance hierarchy and topology]\label{rem-gw-wp-topologies}
 The comparison~\eqref{eq-gw-wp-wasserstein-comparison} immediately gives
@@ -818,14 +884,14 @@ Figure~\ref{fig:gromov-memoli-distance-profiles} makes the two transport levels 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.99\linewidth]{figures/gromov-memoli-distance-profiles/profiles.pdf}
-\caption{\emph{M\'emoli distance profiles expose a computable lower bound for intrinsic GW comparison.} The planar shapes $\XX$ and $\YY$ are represented by cat and bunny silhouettes, centered and normalized to unit diameter. Matching colors identify representative anchor pairs selected by the optimal assignment for the profile cost $\C_{ij}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$, their connecting segments, and the corresponding distance-profile histograms in the side columns. The histograms are display summaries only: the profile costs are computed by sorting the complete distance profiles. The resulting outer assignment realizes the M\'emoli profile lower bound.}
+\caption{\emph{M\'emoli distance profiles expose a computable lower bound for intrinsic GW comparison.} The planar shapes $\XX$ and $\YY$ are represented by cat and bunny silhouettes, centered and normalized to unit diameter. Matching colors identify representative anchor pairs selected by the optimal assignment for the profile cost $\C_{i,j}=\Wass_2^2(\alpha_{x_i},\beta_{y_j})$, their connecting segments, and the corresponding distance-profile histograms in the side columns. The histograms are display summaries only: the profile costs are computed by sorting the complete distance profiles. The resulting outer assignment realizes the M\'emoli profile lower bound.}
 \label{fig:gromov-memoli-distance-profiles}
 \index{Memoli profile@M\'emoli profile}% strictindex
 \index{distance profile}% strictindex
 \index{Wasserstein!over Wasserstein}% strictindex
 \end{figure}
 
-This lower bound is useful computationally because the profile cost matrix $\C_{ij}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
+This lower bound is useful computationally because the profile cost matrix $\C_{i,j}=\Wass_p(\alpha_{x_i},\beta_{y_j})^p$ is an ordinary OT cost between points. Solving this easier OT problem gives a geometry-aware initialization for the non-convex GW iterations below, before the full pairwise-distance distortion is optimized.
 
 The profile lower bound is intrinsic. In Euclidean applications, Proposition~\ref{prop-gw-wasserstein-procrustes-comparison} pairs it with an extrinsic upper certificate obtained by registering the measures before applying ordinary Wasserstein transport. Combining the two propositions gives the extended Euclidean sandwich
 \index{Wasserstein!Procrustes}% strictindex
@@ -843,7 +909,7 @@ where $\XX=(\RR^d,\norm{\cdot},\alpha)$ and $\YY=(\RR^d,\norm{\cdot},\beta)$. Th
 \index{cost!matrix}% strictindex
 \index{Wasserstein!Procrustes}% strictindex
 
-\paragraph{GW as a concave minimization problem.}
+\paragraph{First-order optimality condition as self-consistent OT.}
 Unlike linear OT, GW minimizes a quadratic functional over the convex set of couplings. Its first-order linearization is nevertheless an ordinary OT problem, which provides the basic stationarity condition used by essentially all GW solvers. The limitation is fundamental: solving this self-consistent linearized problem is necessary at a local minimum, but does not by itself certify either local or global optimality.
 \index{Gromov-Wasserstein@Gromov--Wasserstein!conditional concavity}% strictindex
 \index{quadratic!form}% strictindex
@@ -902,42 +968,32 @@ This is stationarity for constrained minimization, not the unconstrained equatio
 	The variational inequality~\eqref{eq-gw-stationary-variational-inequality} is exactly the assertion that $\pi$ minimizes the linear functional $\widehat\pi\mapsto\int c_\pi\d\widehat\pi$, proving the equivalence. If $\pi$ is a local minimizer and $\widehat\pi$ is arbitrary, the segment $\pi_t=(1-t)\pi+t\widehat\pi$ remains feasible. The right derivative at $t=0$ in~\eqref{eq-gw-exact-linearization} must be nonnegative, which gives~\eqref{eq-gw-stationary-variational-inequality}.
 \end{proof}
 
-The converse is false: frozen-OT self-consistency is only a first-order condition. Even the concave quadratic $q(s)=-s^2$ on $[-1,1]$ has the stationary point $s=0$, which is a strict maximum rather than a minimum. Conditional concavity therefore does not turn arbitrary stationary couplings into global minimizers. What it does provide is a global upper model for the objective, a monotone linearization step, and a replacement principle for the frozen problem at a global minimizer. These are substantially stronger conclusions than are available for a generic non-convex quadratic program.
+The converse of the last implication in Proposition~\ref{prop-gw-frozen-ot-stationarity} is false: a coupling that solves its own frozen OT problem need not be a local, let alone global, minimizer of the quadratic GW objective. Frozen-OT self-consistency is exactly first-order stationarity. Even the concave quadratic $q(s)=-s^2$ on $[-1,1]$ has the stationary point $s=0$, which minimizes its constant linearization but is a strict maximum of $q$.
 
-To formulate this additional structure, introduce the linear marginalization operator and its kernel
+\paragraph{Conditional concavity of GW in Euclidean spaces.}
+Self-consistency alone gives only a first-order condition. For several important Euclidean dissimilarities, however, the GW quadratic functional is concave on $\Couplings(\alpha,\beta)$. This does not make its minimization convex: the problem remains non-convex and generally difficult. Concavity nevertheless turns the tangent model into a global majorizer. As formalized in Proposition~\ref{prop-gw-frozen-ot-replacement}, an exact frozen-OT step cannot increase the GW objective, and every optimizer of the frozen problem at a global GW solution is itself globally optimal. The same structure yields the learned-cost representation of Proposition~\ref{prop-concave-coupling-cost-regularized-ot}: GW becomes an infimum of ordinary Kantorovich transport values plus a convex penalty on the ground cost. This is closely related to ground-cost robust Wasserstein transport, although the optimization over costs is here an infimum rather than an adversarial supremum. We first formulate the required sign condition abstractly on compact metric spaces and then verify it for Euclidean distance powers.
+
+To make these statements precise, define the space of signed zero-marginal directions
 \begin{equation}\label{eq-gw-zero-marginal-space}
-	\begin{aligned}
-	\operatorname{Marg}_{\X,\Y}:\Mm(\X\times\Y)
-	&\longrightarrow\Mm(\X)\times\Mm(\Y),\\
-	\xi
-	&\longmapsto\bigl((P_\X)_\sharp\xi,(P_\Y)_\sharp\xi\bigr),\\
 	\mathcal T_{\X,\Y}
-	&\eqdef
-	\ker\bigl(\operatorname{Marg}_{\X,\Y}\bigr)
-	=
+	\eqdef
 	\enscond{\xi\in\Mm(\X\times\Y)}{(P_\X)_\sharp\xi=0,\ (P_\Y)_\sharp\xi=0}.
-	\end{aligned}
 \end{equation}
-The space $\mathcal T_{\X,\Y}$ depends only on the two ambient spaces, not on the values of $\alpha$ and $\beta$: it is the direction space parallel to the affine marginal constraints. Every difference of two feasible couplings belongs to it. For finite spaces, identifying $\xi$ with an $m\times n$ matrix $\Xi$ gives
+The space $\mathcal T_{\X,\Y}$ depends only on the two ambient spaces, not on the values of $\alpha$ and $\beta$: it is the direction space parallel to the affine marginal constraints. Every difference of two feasible couplings belongs to it. For finite spaces, identifying $\xi$ with an $n\times m$ matrix $\Xi$ gives
 \[
 	\mathcal T_{\X,\Y}
 	=
-	\enscond{\Xi\in\RR^{m\times n}}{\Xi\ones_n=0,\ \transp{\Xi}\ones_m=0},
+	\enscond{\Xi\in\RR^{n\times m}}{\Xi\ones_m=0,\ \transp{\Xi}\ones_n=0},
 	\qquad
 	\dim\mathcal T_{\X,\Y}=(m-1)(n-1).
 \]
-When the marginals are positive, this is exactly the translation space of the affine hull of the transport polytope. Along any segment $\pi_t=\pi+t\xi$ that remains feasible on an interval, one has
+Curvature of $\mathcal Q_L$ on the coupling set is determined entirely by its restriction to this space. Indeed, for any $\pi_0,\pi_1\in\Couplings(\alpha,\beta)$, the chord direction $\xi=\pi_1-\pi_0$ belongs to $\mathcal T_{\X,\Y}$, and along $\pi_t=(1-t)\pi_0+t\pi_1$ one has
 \[
 	\frac{\mathrm d^2}{\mathrm dt^2}\mathcal Q_L(\pi_t)=2\mathcal Q_L(\xi).
 \]
-Thus positivity of the ambient kernel $L$ is not the right question. Along a feasible segment, convexity is controlled by the sign of $\mathcal Q_L$ on its zero-marginal direction. In finite spaces with positive marginals, every element of $\mathcal T_{\X,\Y}$ generates a sufficiently short feasible segment, so convexity on the transport polytope is equivalent to $\mathcal Q_L(\xi)\geq0$ for every $\xi\in\mathcal T_{\X,\Y}$. No such sign can be expected for a general GW loss.
-
-The regime studied next has the opposite sign, $\mathcal Q_L(\xi)\leq0$ on zero-marginal directions, and hence makes $\mathcal Q_L$ concave on the coupling set. Minimizing a concave function remains a genuinely non-convex problem and tends to push solutions toward the combinatorial boundary of the transport polytope. Concave quadratic minimization over polytopes is NP-hard in general: on the Birkhoff polytope, one may subtract a sufficiently large multiple of $\norm{\P}_{\mathrm F}^2$ from a QAP objective to make it concave; this term is constant on permutation matrices, and a concave minimum is attained at an extreme point~\cite{loiola-2007}. Concavity should therefore be read as exploitable structure rather than tractability.
-
-This generic hardness statement must not be over-specialized: it does not prove that relaxed GW between finite metric spaces is NP-hard. The revised analysis in~\cite{Kravtsova2024GWComplexity} proves that the ambient quadratic coefficient matrix is not positive semidefinite for nontrivial finite metric instances, but explicitly notes that no reduction from a known NP-hard problem is currently available for the relaxed metric problem. Conversely, no general polynomial-time exact algorithm is known. Exact relaxed metric GW should therefore be described, in general, as a non-convex quadratic problem of unresolved worst-case complexity, rather than as a problem with an established NP-hardness theorem; practical algorithms typically target stationary points.
-\index{Gromov-Monge@Gromov--Monge}% strictindex
-\index{quadratic!assignment problem}% strictindex
-\index{computational complexity}% strictindex
+The GW objective is generally highly non-convex, so one should not expect $\mathcal Q_L$ to be positive on $\mathcal T_{\X,\Y}$. Perhaps surprisingly, in several cases of practical importance it has the opposite sign,
+$\mathcal Q_L(\xi)\leq0$ for every $\xi\in\mathcal T_{\X,\Y}$,
+and is therefore concave along every feasible chord. We refer to this property as \emph{conditional concavity}.
 
 The next result identifies a broad regime in which the sign of the quadratic form is known on the only directions that matter. Recall the conditionally positive and conditionally negative kernels of Definition~\ref{def-positive-kernels}.
 
@@ -973,32 +1029,7 @@ The next result identifies a broad regime in which the sign of the quadratic for
 	This proves~\eqref{eq-gw-conditional-negative-form}; the second-derivative identity above then proves concavity on every feasible segment.
 \end{proof}
 
-The sign condition partially closes the gap between a quadratic GW problem and its frozen linearization. It does not make stationarity sufficient, but it makes the tangent model a global majorizer and allows any frozen optimizer at a known global solution to replace that solution without changing the GW value.
-
-\begin{prop}[Tangent majorization and frozen-OT replacement]\label{prop-gw-frozen-ot-replacement}
-	Assume that $\mathcal Q_L$ is concave on $\Couplings(\alpha,\beta)$. Then, for every $\pi,\widehat\pi\in\Couplings(\alpha,\beta)$,
-	\begin{equation}\label{eq-gw-tangent-majorization}
-		\mathcal Q_L(\widehat\pi)
-		\leq
-		\mathcal Q_L(\pi)
-		+
-		\int_{\mathcal Z}c_\pi\d(\widehat\pi-\pi)
-		=
-		2\mathcal B_L(\pi,\widehat\pi)-\mathcal Q_L(\pi).
-	\end{equation}
-	Consequently:
-	\begin{enumerate}
-		\item if $\pi^+\in\argmin_{\eta\in\Couplings(\alpha,\beta)}\int c_\pi\d\eta$, then $\mathcal Q_L(\pi^+)\leq\mathcal Q_L(\pi)$;
-		\item if $\pi_\star$ is globally GW-optimal, then every minimizer of the frozen OT problem with cost $c_{\pi_\star}$ is also globally GW-optimal.
-	\end{enumerate}
-\end{prop}
-\begin{proof}
-	Apply~\eqref{eq-gw-exact-linearization} at $t=1$ with $\xi=\widehat\pi-\pi$. Concavity gives $\mathcal Q_L(\xi)\leq0$, which proves~\eqref{eq-gw-tangent-majorization}. For the first conclusion, frozen optimality gives $\int c_\pi\d(\pi^+-\pi)\leq0$. For the second, Proposition~\ref{prop-gw-frozen-ot-stationarity} shows that $\pi_\star$ itself minimizes its frozen objective. Hence any other frozen minimizer $\widehat\pi$ satisfies $\int c_{\pi_\star}\d(\widehat\pi-\pi_\star)=0$, and~\eqref{eq-gw-tangent-majorization} gives $\mathcal Q_L(\widehat\pi)\leq\mathcal Q_L(\pi_\star)$. Global minimality gives the reverse inequality.
-\end{proof}
-
-Thus freezing one occurrence of the coupling produces a global upper bound, not merely a formal linearization. The second conclusion is a replacement theorem, not a characterization of global minimizers: a generic stationary point can still be a maximum or a non-global local minimum.
-
-Schoenberg's theorem gives the principal Euclidean example: on compact subsets of Euclidean spaces, $\dist_\X(x,x')=\norm{x-x'}^q$ and $\dist_\Y(y,y')=\norm{y-y'}^q$ are conditionally negative definite for $0<q\leq2$~\cite{schoenberg38}. Proposition~\ref{prop-gw-conditional-concavity} therefore covers the usual squared GW distortion between Euclidean distances when $q=1$. Although $q>1$ no longer defines a metric, the proof only uses conditional definiteness and applies unchanged to these dissimilarities, including squared Euclidean dissimilarities when $q=2$. The conditional-concavity mechanism and its graph-matching and GW consequences are developed in~\cite{MaronLipman2018,SejourneVialardPeyre2021,Vayer2026GWSparsity}.
+Conditional concavity has an immediate structural consequence: although minimizing a concave functional is not a convex problem, at least one minimizer lies at an extreme point of the feasible set. For GW this yields sparse couplings, and permutation couplings in the uniform square case.
 
 \begin{prop}[Extreme-point and permutation optimizers in the concave regime]\label{prop-gw-extreme-optimal-coupling}
 	Assume the hypotheses of Proposition~\ref{prop-gw-conditional-concavity}. Then the squared GW problem has an optimal coupling that is an extreme point of the convex set $\Couplings(\alpha,\beta)$. If, in addition, $\alpha$ and $\beta$ are supported on respectively $n$ and $m$ points, such an optimizer can be chosen with at most $n+m-1$ nonzero entries. If $n=m$ and both measures are uniform, it can be chosen as a permutation coupling $\P_\sigma/n$.
@@ -1017,6 +1048,49 @@ Schoenberg's theorem gives the principal Euclidean example: on compact subsets o
 	For finitely supported measures, the coupling set is a transport polytope. Its marginal operator has rank $n+m-1$, as computed in the proof of Proposition~\ref{prop-sparse-optimal-plans}. If an extreme coupling had more than $n+m-1$ positive entries, the restriction of this operator to its support would have a nonzero kernel direction $H$; for sufficiently small $t>0$, both $\P+tH$ and $\P-tH$ would be distinct feasible couplings with midpoint $\P$, contradicting extremality. This proves the support bound. In the equal-size uniform case, Theorem~\ref{thm-birkhoff-von-neumann} identifies the extreme points of the scaled Birkhoff polytope as $\P_\sigma/n$.
 \end{proof}
 
+Conditional concavity strengthens the consequences of Proposition~\ref{prop-gw-frozen-ot-stationarity}, but not its characterization: frozen-OT self-consistency is still only a first-order condition and need not imply local minimality. What concavity adds is a global tangent majorizer. It therefore gives descent after an exact frozen step and shows that, at a local minimizer, all frozen minimizers are flat replacements with the same GW value.
+
+\begin{prop}[Tangent majorization and frozen-OT replacement]\label{prop-gw-frozen-ot-replacement}
+	Assume that $\mathcal Q_L$ is concave on $\Couplings(\alpha,\beta)$. Then, for every $\pi,\widehat\pi\in\Couplings(\alpha,\beta)$,
+	\begin{equation}\label{eq-gw-tangent-majorization}
+		\mathcal Q_L(\widehat\pi)
+		\leq
+		\mathcal Q_L(\pi)
+		+
+		\int_{\mathcal Z}c_\pi\d(\widehat\pi-\pi)
+		=
+		2\mathcal B_L(\pi,\widehat\pi)-\mathcal Q_L(\pi).
+	\end{equation}
+	Consequently:
+	\begin{enumerate}
+		\item if $\pi^+\in\argmin_{\eta\in\Couplings(\alpha,\beta)}\int c_\pi\d\eta$, then $\mathcal Q_L(\pi^+)\leq\mathcal Q_L(\pi)$;
+		\item if $\pi$ is a local minimizer of $\mathcal Q_L$ and $\pi^+$ minimizes its frozen OT problem, then
+		\[
+			\mathcal Q_L\bigl((1-t)\pi+t\pi^+\bigr)
+			=
+			\mathcal Q_L(\pi)
+			\qquad\text{for every }t\in[0,1];
+		\]
+		\item if $\pi_\star$ is globally GW-optimal, then every minimizer of the frozen OT problem with cost $c_{\pi_\star}$ is also globally GW-optimal.
+	\end{enumerate}
+\end{prop}
+\begin{proof}
+	Apply~\eqref{eq-gw-exact-linearization} at $t=1$ with $\xi=\widehat\pi-\pi$. Concavity gives $\mathcal Q_L(\xi)\leq0$, which proves~\eqref{eq-gw-tangent-majorization}. For the first conclusion, frozen optimality gives $\int c_\pi\d(\pi^+-\pi)\leq0$.
+
+	Now assume that $\pi$ is a local minimizer. Proposition~\ref{prop-gw-frozen-ot-stationarity} shows that $\pi$ itself minimizes its frozen objective. Hence every other frozen minimizer $\pi^+$ satisfies
+	$\int c_\pi\d(\pi^+-\pi)=0$. With $\xi=\pi^+-\pi$, the exact expansion~\eqref{eq-gw-exact-linearization} becomes
+	\[
+		\mathcal Q_L(\pi+t\xi)
+		=
+		\mathcal Q_L(\pi)+t^2\mathcal Q_L(\xi).
+	\]
+	Local minimality for sufficiently small $t>0$ gives $\mathcal Q_L(\xi)\geq0$, while concavity gives the reverse inequality. Thus $\mathcal Q_L(\xi)=0$, proving the second conclusion for every $t\in[0,1]$. If $\pi=\pi_\star$ is globally optimal, the common value is the global minimum, which proves the third conclusion.
+\end{proof}
+
+Thus freezing one occurrence of the coupling produces a global upper bound, not merely a formal linearization. The second conclusion is a flat-replacement theorem for a coupling already known to be locally minimizing; it is not a converse to Proposition~\ref{prop-gw-frozen-ot-stationarity}. A generic stationary point can still be a maximum or a non-global local minimum.
+
+Schoenberg's theorem gives the principal Euclidean example: on compact subsets of Euclidean spaces, $\dist_\X(x,x')=\norm{x-x'}^q$ and $\dist_\Y(y,y')=\norm{y-y'}^q$ are conditionally negative definite for $0<q\leq2$~\cite{schoenberg38}. Proposition~\ref{prop-gw-conditional-concavity} therefore covers the usual squared GW distortion between Euclidean distances when $q=1$. Although $q>1$ no longer defines a metric, the proof only uses conditional definiteness and applies unchanged to these dissimilarities, including squared Euclidean dissimilarities when $q=2$. The conditional-concavity mechanism and its graph-matching and GW consequences are developed in~\cite{MaronLipman2018,SejourneVialardPeyre2021,Vayer2026GWSparsity}.
+
 \paragraph{GW as cost-regularized robust Wasserstein transport.}
 Conditional concavity also turns GW into an ordinary Kantorovich problem with a learned ground cost. The cost is not chosen freely: a convex penalty records the original quadratic distortion. This viewpoint, introduced for ground-cost adversarial transport in~\cite{PatyCuturi2020GroundCost} and developed for cross-space structured transforms in~\cite{SebbouhCuturiPeyre2024}, separates the linear transport step from the nonlinear choice of geometry.
 \index{cost!regularized optimal transport}% strictindex
@@ -1026,21 +1100,21 @@ Conditional concavity also turns GW into an ordinary Kantorovich problem with a 
 For this paragraph, extend $\MK_c(\alpha,\beta)$ by the same formula as~\eqref{eq-mk-generic} to bounded continuous costs of arbitrary sign. On compact spaces this is harmless: adding a constant to $c$ makes it nonnegative and only adds that constant to the transport value.
 
 \begin{prop}[Concave coupling energies as cost-regularized OT]\label{prop-concave-coupling-cost-regularized-ot}
-	Let $\X$ and $\Y$ be compact, set $\mathcal Z=\X\times\Y$, and let $Q:\Couplings(\alpha,\beta)\to\RR\cup\{-\infty\}$ be proper, upper semicontinuous and concave. Extend
+	Let $\X$ and $\Y$ be compact, set $\mathcal Z=\X\times\Y$, and let $Q:\Couplings(\alpha,\beta)\to\RR\cup\{-\infty\}$ be proper, upper semicontinuous and concave. Let $\mathfrak F_Q$ be any proper convex weak-* lower-semicontinuous extension of $-Q$ from $\Couplings(\alpha,\beta)$ to finite signed measures on $\mathcal Z$. Such an extension always exists: one possible choice is the canonical constrained extension
 	\[
-		\mathfrak F_Q(\xi)
+		\mathfrak F_Q^{\mathrm{can}}(\xi)
 		\eqdef
 		\begin{cases}
 			-Q(\xi), & \xi\in\Couplings(\alpha,\beta),\\
 			+\infty, & \text{otherwise},
-		\end{cases}
+		\end{cases}.
 	\]
-	to finite signed measures on $\mathcal Z$, and define its convex conjugate by
+	Define the convex conjugate of the chosen extension by
 	\[
 		\mathfrak F_Q^*(h)
 		\eqdef
-		\sup_{\pi\in\Couplings(\alpha,\beta)}
-		\left\{\int_{\mathcal Z}h\d\pi+Q(\pi)\right\},
+		\sup_{\xi\in\Mm(\mathcal Z)}
+		\left\{\int_{\mathcal Z}h\d\xi-\mathfrak F_Q(\xi)\right\},
 		\qquad h\in\Cc(\mathcal Z).
 	\]
 	Then the convex cost penalty $\mathfrak R_Q(c)\eqdef\mathfrak F_Q^*(-c)$ satisfies
@@ -1052,7 +1126,7 @@ For this paragraph, extend $\MK_c(\alpha,\beta)$ by the same formula as~\eqref{e
 	\end{equation}
 \end{prop}
 \begin{proof}
-	The functional $\mathfrak F_Q$ is proper, convex and weak-* lower semicontinuous because $Q$ is concave and upper semicontinuous and $\Couplings(\alpha,\beta)$ is weak-* compact and convex. Fenchel--Moreau therefore gives, for every feasible $\pi$,
+	Fenchel--Moreau gives, for every feasible $\pi$,
 	\[
 		Q(\pi)
 		=
@@ -1062,78 +1136,129 @@ For this paragraph, extend $\MK_c(\alpha,\beta)$ by the same formula as~\eqref{e
 	Taking the infimum in $\pi$ and exchanging the two infima yields~\eqref{eq-concave-coupling-cost-regularized-ot}; the inner infimum in $\pi$ is exactly $\MK_c(\alpha,\beta)$.
 \end{proof}
 
-Applied to $Q=\mathcal Q_L|_{\Couplings(\alpha,\beta)}$, Proposition~\ref{prop-concave-coupling-cost-regularized-ot} is an exact representation of GW whenever the conditional-concavity hypothesis of Proposition~\ref{prop-gw-conditional-concavity} holds. Without concavity, the same conjugation replaces $Q$ by its upper-semicontinuous concave envelope, so it generally changes both the value and the minimizers. The penalized infimum over Wasserstein costs in~\eqref{eq-concave-coupling-cost-regularized-ot} should be contrasted with the robust representation of Section~\ref{sec-spectral-subspace-wasserstein}, especially Proposition~\ref{prop-spectral-wasserstein-robust}, which takes a supremum of Wasserstein distances.
+\begin{rem}[Toland duality and DC algorithms]\label{rem-gw-toland-dca}
+\index{Toland duality}% strictindex
+\index{difference-of-convex programming}% strictindex
+\index{DCA algorithm}% strictindex
+	When $Q$ is finite on the coupling set, as for the bounded continuous GW kernels considered here, Proposition~\ref{prop-concave-coupling-cost-regularized-ot} is exactly Toland--Singer duality specialized to measures. Write $\mathcal K=\Couplings(\alpha,\beta)$, and let $\iota_{\mathcal K}$ be its convex indicator. Since $\mathfrak F_Q=-Q$ on $\mathcal K$, the original problem is the difference of the two convex functionals $\iota_{\mathcal K}$ and $\mathfrak F_Q$. Evaluating this difference on the effective domain of $\iota_{\mathcal K}$, Toland duality reads
+	\begin{equation}\label{eq-gw-toland-duality}
+		\inf_{\xi\in\mathcal K}Q(\xi)
+		=
+		\inf_{\xi\in\mathcal K}
+		\bigl\{\iota_{\mathcal K}(\xi)-\mathfrak F_Q(\xi)\bigr\}
+		=
+		\inf_{h\in\Cc(\mathcal Z)}
+		\bigl\{\mathfrak F_Q^*(h)-\iota_{\mathcal K}^*(h)\bigr\}.
+	\end{equation}
+	Setting $h=-c$ and observing that
+	$\iota_{\mathcal K}^*(-c)
+	=\sup_{\pi\in\mathcal K}(-\int c\d\pi)
+	=-\MK_c(\alpha,\beta)$
+	turns the last problem into~\eqref{eq-concave-coupling-cost-regularized-ot}. Toland introduced this non-convex conjugate duality in~\cite{Toland1978NonconvexDuality}; Carlier developed its relation to convexity constraints and optimal transport in~\cite{Carlier2008TolandOT}.
 
-For Euclidean data, the learned cost family is finite dimensional. This reduction already appears in Vayer's analysis of GW on incomparable Euclidean spaces~\cite[Chapter~4]{Vayer2020IncomparableSpaces}; its cost-regularized interpretation is developed systematically in~\cite{SebbouhCuturiPeyre2024}. The next normalization gives equality of objective values; formulations that only seek the same coupling minimizers may absorb positive factors and marginal-only constants into the objective.
+	The same decomposition identifies the associated algorithm. For $Q=\mathcal Q_L$, choosing $\mathfrak F_Q=\mathfrak F_Q^{\mathrm{can}}$ ensures that the linearized cost~\eqref{eq-gw-linearized-cost} satisfies
+	$-c_{\pi^{(\ell)}}\in\partial\mathfrak F_Q^{\mathrm{can}}(\pi^{(\ell)})$.
+	Applying the classical difference-of-convex algorithm (DCA) to
+	$(\iota_{\mathcal K}+\mathcal R_\epsilon)-\mathfrak F_Q$
+	therefore gives the successive-linearization step
+	\begin{equation}\label{eq-gw-dca-step}
+		\pi^{(\ell+1)}
+		\in
+		\argmin_{\pi\in\mathcal K}
+		\left\{
+			\int c_{\pi^{(\ell)}}\d\pi+\mathcal R_\epsilon(\pi)
+		\right\}.
+	\end{equation}
+	For $\epsilon=0$, this is exactly the frozen-OT step of Proposition~\ref{prop-gw-frozen-ot-replacement}, whose descent inequality is the corresponding DCA descent property. More generally, in the conditionally concave regime, interleaving the two block updates in~\eqref{eq-gw-biconvex-alternating-general} produces~\eqref{eq-gw-dca-step}; the displayed two-block algorithm merely groups two consecutive DCA steps. This classical method and its variants are developed in~\cite{PhamDinhLeThi1997DCProgramming,LeThiPhamDinh2005DCA}. Outside the conditionally concave regime, $\mathfrak F_Q$ need not be convex. The same block updates remain valid alternating-minimization steps for the biconvex lift, but they are no longer DCA steps for the diagonal GW objective and need not decrease it.
+\end{rem}
+
+Applied to $Q=\mathcal Q_L|_{\Couplings(\alpha,\beta)}$, Proposition~\ref{prop-concave-coupling-cost-regularized-ot} is an exact representation of GW whenever the conditional-concavity hypothesis of Proposition~\ref{prop-gw-conditional-concavity} holds. Without concavity, a convex extension of $-Q$ need not exist. Biconjugating the canonical constrained functional instead replaces $Q$ by its upper-semicontinuous concave envelope, so it generally changes both the value and the minimizers. The penalized infimum over Wasserstein costs in~\eqref{eq-concave-coupling-cost-regularized-ot} should be contrasted with the robust representation of Section~\ref{sec-spectral-subspace-wasserstein}, especially Proposition~\ref{prop-spectral-wasserstein-robust}, which takes a supremum of Wasserstein distances.
+
+In the squared-GW setting of Proposition~\ref{prop-gw-conditional-concavity}, the quadratic structure gives this cost penalty a Hilbertian interpretation. Its proof constructs a tensor-product feature map
+\index{RKHS!cost regularization}% strictindex
+\index{Sobolev space!learned cost}% strictindex
+$\Phi(x,y)=\Phi_\X(x)\otimes\Phi_\Y(y)$
+in a Hilbert space $\RKHS_{\mathcal Z}$. After collecting the terms affine in $\pi$ into a fixed cost $c_0$, one can write
+\[
+	\mathcal Q_L(\pi)
+	=
+	C(\alpha,\beta)
+	+
+	\int_{\mathcal Z}c_0\d\pi
+	-
+	2\norm{m_\pi}_{\RKHS_{\mathcal Z}}^2,
+	\qquad
+	m_\pi\eqdef\int_{\mathcal Z}\Phi(z)\d\pi(z).
+\]
+Completing the square therefore gives the equivalent learned-cost representation
+\begin{equation}\label{eq-gw-rkhs-cost-regularization}
+	\mathcal Q_L(\pi)
+	=
+	C(\alpha,\beta)
+	+
+	\inf_{c\in c_0+\RKHS_{\mathcal Z}}
+	\left\{
+		\int_{\mathcal Z}c\d\pi
+		+
+		\frac18\norm{c-c_0}_{\RKHS_{\mathcal Z}}^2
+	\right\}.
+\end{equation}
+Thus, after quotienting out separable costs that integrate to constants on $\Couplings(\alpha,\beta)$, the quadratic extension in Proposition~\ref{prop-concave-coupling-cost-regularized-ot} makes $\mathfrak R_Q$, up to the additive marginal constant, a squared RKHS norm, with value $+\infty$ outside the admissible affine cost space. This is the cost-side counterpart of the kernel norms and mean embeddings of Section~\ref{sec-rkhs-mmd}~\cite{berlinet03reproducing,SebbouhCuturiPeyre2024}. On Euclidean domains, Riesz and Mat\'ern constructions identify such RKHSs with homogeneous Sobolev or Bessel-potential spaces, so the penalty imposes smoothness on the learned ground cost~\cite{berg84harmonic,wendland2005scattered}.
+
+For the bilinear and squared-distance Euclidean dissimilarities considered next, this RKHS is finite dimensional: its features are low-degree polynomials, and the map $\pi\mapsto c_\pi$ remains in a fixed finite-dimensional affine family. This is a finite-rank, hence comparatively degenerate, instance of the preceding construction because the learned cost loses the expressivity of a generic infinite-dimensional RKHS. Its advantage is that both the theory and the numerical optimization reduce to matrix algebra. This reduction appears in Vayer's analysis of GW on incomparable Euclidean spaces~\cite[Chapter~4]{Vayer2020IncomparableSpaces}; its cost-regularized interpretation is developed systematically in~\cite{SebbouhCuturiPeyre2024}. The next normalization gives equality of objective values; formulations that only seek the same coupling minimizers may absorb positive factors and marginal-only constants into the objective.
 
 \begin{prop}[Finite-dimensional cost learning for Euclidean GW]\label{prop-gw-euclidean-cost-regularization}
-	Let $\X\subset\RR^{d_x}$ and $\Y\subset\RR^{d_y}$ be compact, and use $p=2$ and $\De(u,v)=|u-v|$ throughout. Define the cross-moment matrix
-	\begin{equation}\label{eq-gw-cross-moment}
-		S_\pi\eqdef\int_{\X\times\Y}yx^\top\d\pi(x,y)
-		\in\RR^{d_y\times d_x}.
-	\end{equation}
-	Retain the notation $\GW$ of~\eqref{eq-gw-generic} when the within-space functions are symmetric dissimilarities rather than metrics.
+	Let $\X\subset\RR^{d_x}$ and $\Y\subset\RR^{d_y}$ be compact, and use $p=2$ and $\De(u,v)=|u-v|$ throughout. Retain the notation $\GW$ of~\eqref{eq-gw-generic} when the within-space functions are symmetric dissimilarities rather than metrics.
 
-	For the inner-product dissimilarities
-	\begin{equation}\label{eq-gw-inner-product-dissimilarities}
-		\dist_\X(x,x')=-\dotp{x}{x'},
-		\qquad
-		\dist_\Y(y,y')=-\dotp{y}{y'},
-	\end{equation}
-	set $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$. Then
-	\begin{equation}\label{eq-gw-inner-product-cost-regularization}
-	\begin{aligned}
+	For each of the two choices below, set $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$. There is a constant $C(\alpha,\beta)$, depending only on the marginals and on the chosen dissimilarities, such that
+	\begin{equation}\label{eq-gw-euclidean-cost-learning}
 		\GW(\XX,\YY)^2
-		={}&
-		\iint_{\X^2}\dotp{x}{x'}^2\d\alpha(x)\d\alpha(x')
-		+
-		\iint_{\Y^2}\dotp{y}{y'}^2\d\beta(y)\d\beta(y')\\
-		&+
-		\inf_{M\in\RR^{d_y\times d_x}}
-		\left\{\MK_{c_M}(\alpha,\beta)+\frac12\norm{M}_{\mathrm F}^2\right\}.
-	\end{aligned}
-	\end{equation}
-	Here the learned costs form the linear family $c_M(x,y)=-2\dotp{Mx}{y}$.
-
-	For the squared-distance dissimilarities
-	\begin{equation}\label{eq-gw-squared-distance-dissimilarities}
-		\dist_\X(x,x')=\norm{x-x'}^2,
-		\qquad
-		\dist_\Y(y,y')=\norm{y-y'}^2,
-	\end{equation}
-	translate $\alpha$ and $\beta$ independently so that both have zero mean, which leaves $\GW$ unchanged, and again set $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$. Then
-	\begin{equation}\label{eq-gw-squared-distance-learned-cost}
-	\begin{aligned}
-		\GW(\XX,\YY)^2
-		={}&
-		\iint_{\X^2}\norm{x-x'}^4\d\alpha(x)\d\alpha(x')
-		+
-		\iint_{\Y^2}\norm{y-y'}^4\d\beta(y)\d\beta(y')\\
-		&-4
-		\left(\int_\X\norm{x}^2\d\alpha(x)\right)
-		\left(\int_\Y\norm{y}^2\d\beta(y)\right)
+		=
+		C(\alpha,\beta)
 		+
 		\inf_{M\in\RR^{d_y\times d_x}}
 		\left\{\MK_{c_M}(\alpha,\beta)+\frac12\norm{M}_{\mathrm F}^2\right\}.
-	\end{aligned}
 	\end{equation}
-	Here the learned costs form the affine family $c_M(x,y)=-4\norm{x}^2\norm{y}^2-4\dotp{Mx}{y}$. Thus the two cases differ only by this fixed cross-space term; both carry the penalty $\norm{M}_{\mathrm F}^2/2$.
+	The constant $C(\alpha,\beta)$ is different in the two cases, while the learned cost is as follows.
+	\begin{enumerate}
+		\item For the inner-product dissimilarities
+		\begin{equation}\label{eq-gw-inner-product-dissimilarities}
+			\dist_\X(x,x')=-\dotp{x}{x'},
+			\qquad
+			\dist_\Y(y,y')=-\dotp{y}{y'},
+		\end{equation}
+		the learned costs form the linear family
+		\[
+			c_M(x,y)=-2\dotp{Mx}{y}.
+		\]
+		\item For the squared-distance dissimilarities
+		\begin{equation}\label{eq-gw-squared-distance-dissimilarities}
+			\dist_\X(x,x')=\norm{x-x'}^2,
+			\qquad
+			\dist_\Y(y,y')=\norm{y-y'}^2,
+		\end{equation}
+		translate $\alpha$ and $\beta$ independently so that both have zero mean, which leaves $\GW$ unchanged. The learned costs then form the affine family
+		\[
+			c_M(x,y)=-4\norm{x}^2\norm{y}^2-4\dotp{Mx}{y}.
+		\]
+	\end{enumerate}
 \end{prop}
 \begin{proof}
+	For $\pi\in\Couplings(\alpha,\beta)$, write $S_\pi\eqdef\int yx^\top\d\pi(x,y)$.
 	For two independent pairs $(x,y),(x',y')\sim\pi$,
 	\[
 		\iint\dotp{x}{x'}\dotp{y}{y'}\d\pi\d\pi
 		=
 		\norm{S_\pi}_{\mathrm F}^2.
 	\]
-	Expanding the square shows that the plan objective $\mathcal Q_L(\pi)$ is the sum of the two marginal-only terms in~\eqref{eq-gw-inner-product-cost-regularization} minus $2\norm{S_\pi}_{\mathrm F}^2$. For fixed $\pi$, completing the square gives
+	For~\eqref{eq-gw-inner-product-dissimilarities}, expanding the square therefore gives $\mathcal Q_L(\pi)=C(\alpha,\beta)-2\norm{S_\pi}_{\mathrm F}^2$. For fixed $\pi$, completing the square gives
 	\[
 		\inf_M
 		\left\{-2\dotp{M}{S_\pi}_{\mathrm F}+\frac12\norm{M}_{\mathrm F}^2\right\}
 		=-2\norm{S_\pi}_{\mathrm F}^2,
 		\qquad M=2S_\pi,
 	\]
-	which proves~\eqref{eq-gw-inner-product-cost-regularization} after minimizing over $\pi$.
+	which proves~\eqref{eq-gw-euclidean-cost-learning} in the first case after minimizing over $\pi$.
 
 	For centered marginals, direct expansion yields
 	\[
@@ -1147,18 +1272,11 @@ For Euclidean data, the learned cost family is finite dimensional. This reductio
 	\]
 	Substitution into the squared-distance plan objective gives
 	\begin{equation}\label{eq-gw-squared-distance-cost-regularization}
-	\begin{aligned}
 		\mathcal Q_L(\pi)
-		={}&
-		\iint_{\X^2}\norm{x-x'}^4\d\alpha(x)\d\alpha(x')
-		+
-		\iint_{\Y^2}\norm{y-y'}^4\d\beta(y)\d\beta(y')\\
-		&-4
-		\left(\int_\X\norm{x}^2\d\alpha(x)\right)
-		\left(\int_\Y\norm{y}^2\d\beta(y)\right)
+		=
+		C(\alpha,\beta)
 		-4\int\norm{x}^2\norm{y}^2\d\pi(x,y)
 		-8\norm{S_\pi}_{\mathrm F}^2.
-	\end{aligned}
 	\end{equation}
 	Finally,
 	\[
@@ -1167,10 +1285,12 @@ For Euclidean data, the learned cost family is finite dimensional. This reductio
 		=-8\norm{S_\pi}_{\mathrm F}^2,
 		\qquad M=4S_\pi,
 	\]
-	which gives~\eqref{eq-gw-squared-distance-learned-cost}.
+	which proves~\eqref{eq-gw-euclidean-cost-learning} in the second case.
 \end{proof}
 
-The sign of both dissimilarities in~\eqref{eq-gw-inner-product-dissimilarities} is immaterial because their difference is squared. Unlike the squared-distance dissimilarities~\eqref{eq-gw-squared-distance-dissimilarities}, however, inner products depend on the chosen origins: translating either cloud changes $\GW$. Equations~\eqref{eq-gw-inner-product-cost-regularization} and~\eqref{eq-gw-squared-distance-learned-cost} show that only the matrix $M$ must be learned; the latter model merely adds the fixed cross-space feature $\norm{x}^2\norm{y}^2$.
+In both Euclidean models, Formula~\eqref{eq-gw-euclidean-cost-learning} shows that the GW loss can be understood as learning the finite-dimensional cost parameter $M$ while solving an ordinary OT problem with ground cost $c_M$. The alternating algorithm developed below follows exactly this interpretation: it alternates between updating the transport coupling and updating $M$ from that coupling. Eliminating the coupling leaves the objective
+$M\mapsto\MK_{c_M}(\alpha,\beta)+\frac12\norm{M}_{\mathrm F}^2$.
+It is generally non-convex---indeed, the first term is concave in $M$, whereas the second is convex---so the finite-dimensional reduction simplifies each block without removing non-global stationary points.
 \index{cross-moment}% strictindex
 \index{inner product!Gromov--Wasserstein}% strictindex
 
@@ -1221,7 +1341,8 @@ For each dissimilarity below, write $\XX=(\RR^{d_x},\dist_\X,\alpha)$ and $\YY=(
 	\]
 	Its block covariance is positive semidefinite,
 	$\left(\begin{smallmatrix}\Sigma_\alpha&K_\pi^\top\\K_\pi&\Sigma_\beta\end{smallmatrix}\right)\succeq0$.
-	Conversely, every matrix $K$ satisfying this constraint is the cross-covariance of a jointly Gaussian coupling. The cross-moment expansion in the proof of Proposition~\ref{prop-gw-euclidean-cost-regularization} shows that the inner-product objective $\mathcal Q_L(\pi)$ depends on $\pi$ only through $S_\pi=m_\beta m_\alpha^\top+K_\pi$. Replacing any coupling by this Gaussian coupling therefore leaves the objective unchanged. This proves Gaussian optimality, including for nonzero means.
+	Conversely, every matrix $K$ satisfying this constraint is the cross-covariance of a jointly Gaussian coupling. The expansion in the proof of Proposition~\ref{prop-gw-euclidean-cost-regularization} shows that the inner-product objective $\mathcal Q_L(\pi)$ depends on $\pi$ only through the cross-moment
+	$\int yx^\top\d\pi=m_\beta m_\alpha^\top+K_\pi$. Replacing any coupling by this Gaussian coupling therefore leaves the objective unchanged. This proves Gaussian optimality, including for nonzero means.
 
 	When the means vanish, the positive-semidefinite block constraint is equivalent to the exact factorization
 	$K=\Sigma_\beta^{1/2}R^\top\Sigma_\alpha^{1/2}$ with
@@ -1231,7 +1352,7 @@ For each dissimilarity below, write $\XX=(\RR^{d_x},\dist_\X,\alpha)$ and $\YY=(
 		=
 		\sum_{i=1}^{\min(d_x,d_y)}\lambda_i\eta_i.
 	\]
-	Substitution into~\eqref{eq-gw-inner-product-cost-regularization} yields~\eqref{eq-centered-gaussian-inner-product-gw}.
+	Substitution into the inner-product instance of~\eqref{eq-gw-euclidean-cost-learning} yields~\eqref{eq-centered-gaussian-inner-product-gw}.
 
 	For a centered jointly Gaussian pair $(X,Y)$ with cross-covariance $K$, Isserlis' formula gives
 	\[
@@ -1255,21 +1376,142 @@ For each dissimilarity below, write $\XX=(\RR^{d_x},\dist_\X,\alpha)$ and $\YY=(
 	pushes $\alpha$ to $\beta$ and attains the maximizing cross-covariance. This is the claimed principal-component alignment.
 \end{proof}
 
-For the squared-distance dissimilarities~\eqref{eq-gw-squared-distance-dissimilarities}, the unrestricted problem is subtler because~\eqref{eq-gw-squared-distance-cost-regularization} also contains the mixed fourth moment $\int\norm{x}^2\norm{y}^2\d\pi$, which is not fixed by $K_\pi$ outside the Gaussian class. Hence
-$\GW(\XX,\YY)^2\leq\GW^{\mathrm{Gau}}(\XX,\YY)^2$, and Gaussian replacement no longer proves equality. Salmona, Delon and Desolneux derive explicit lower and upper bounds. They prove equality when $d_x=d_y$, $\Sigma_\alpha\succ0$, and the ordered covariance spectra are proportional, $\eta_i=s\lambda_i$ for some $s\geq0$; this includes all nondegenerate one-dimensional Gaussian pairs, for which the exact value is $12(\lambda_1-\eta_1)^2$. Beyond such cases, Gaussian optimality remains conjectural rather than established~\cite[Theorem~4.1, Proposition~5.2 and Corollary~5.1]{SalmonaDelonDesolneux2022GaussianGW}. Their Gaussian-constrained affine optimizer is exactly the PCA alignment in Proposition~\ref{prop-gw-between-gaussians} and extends Vayer's linear Gromov--Monge calculation~\cite[Theorem~4.2.6]{Vayer2020IncomparableSpaces}. For centered Gaussian inputs, the entropy-regularized problem with~\eqref{eq-gw-inner-product-dissimilarities} also has a jointly Gaussian optimizer and a closed form; the KL-unbalanced extension remains Gaussian and reduces to scalar polynomial equations~\cite{LeEtAl2022EntropicGaussianGW}.
+For the squared-distance dissimilarities~\eqref{eq-gw-squared-distance-dissimilarities}, the unrestricted problem is subtler because~\eqref{eq-gw-squared-distance-cost-regularization} also contains the mixed fourth moment $\int\norm{x}^2\norm{y}^2\d\pi$, which is not fixed by the cross-moment $\int yx^\top\d\pi$ outside the Gaussian class. Equivalently, the frozen cost contains the non-quadratic radial product $-\norm{x}^2\norm{y}^2$. Hence
+$\GW(\XX,\YY)^2\leq\GW^{\mathrm{Gau}}(\XX,\YY)^2$, and the next proposition shows that this inequality can be strict.
+
+\begin{prop}[Failure of Gaussian closure for squared-distance GW]\label{prop-gw-gaussian-closure-fails}
+	For all sufficiently large integers $n$, consider
+	\[
+		\alpha=\Gaussian(0,1)\quad\text{on }\RR,
+		\qquad
+		\beta_n=\Gaussian(0,\Id_n)\quad\text{on }\RR^n,
+	\]
+	with the squared-distance dissimilarities~\eqref{eq-gw-squared-distance-dissimilarities}, and write $\XX_n=(\RR,\dist_\X,\alpha)$ and $\YY_n=(\RR^n,\dist_\Y,\beta_n)$. No jointly Gaussian coupling is optimal for the unrestricted GW problem between $\alpha$ and $\beta_n$. In particular,
+	\[
+		\GW(\XX_n,\YY_n)^2<\GW^{\mathrm{Gau}}(\XX_n,\YY_n)^2.
+	\]
+\end{prop}
+\begin{proof}
+	For $(X,Y)\sim\pi$, equation~\eqref{eq-gw-squared-distance-cost-regularization} shows that minimizing the GW objective is equivalent to maximizing
+	\[
+		\mathcal G(\pi)
+		\eqdef
+		\EE[X^2\norm{Y}^2]
+		+
+		2\norm{\EE[YX]}^2.
+	\]
+	If $(X,Y)$ is jointly Gaussian, write $k=\EE[YX]\in\RR^n$. Positivity of its block covariance gives $\norm{k}^2\leq1$, while Isserlis' formula gives
+	\[
+		\EE[X^2\norm{Y}^2]=n+2\norm{k}^2.
+	\]
+	Consequently, every jointly Gaussian coupling satisfies $\mathcal G(\pi)=n+4\norm{k}^2\leq n+4$.
+
+	We construct a better non-Gaussian coupling. Let $Y\sim\Gaussian(0,\Id_n)$, set $R=\norm{Y}^2$, and denote by $G_j$ the cumulative distribution function of a $\chi_j^2$ variable. Then $U=G_n(R)$ is uniform on $(0,1)$ and $A=G_1^{-1}(U)$ has law $\chi_1^2$. If $\varepsilon$ is an independent Rademacher variable and $X=\varepsilon\sqrt A$, then $X\sim\Gaussian(0,1)$ and $\EE[YX]=0$. This coupling therefore satisfies
+	\[
+		\mathcal G(\pi)
+		=
+		\EE[AR]
+		=
+		\int_0^1G_1^{-1}(u)G_n^{-1}(u)\d u.
+	\]
+	The central limit theorem gives weak convergence of the standardized $\chi_n^2$ variable to a standard Gaussian. Since their second moments also converge, this convergence holds in $\Wass_2$; the quantile formula of Proposition~\ref{prop-wass-quantile-1d} therefore gives
+	\[
+		\frac{G_n^{-1}(u)-n}{\sqrt{2n}}
+		\longrightarrow
+		\Phi^{-1}(u)
+		\qquad\text{in }L^2(0,1),
+	\]
+	where $\Phi$ is the standard Gaussian cumulative distribution function. Since $G_1^{-1}\in L^2(0,1)$,
+	\[
+		\mathcal G(\pi)
+		=
+		n+\sqrt{2n}\bigl(c+o(1)\bigr),
+		\qquad
+		c\eqdef\int_0^1G_1^{-1}(u)\Phi^{-1}(u)\d u>0.
+	\]
+	Here $c$ is the covariance of the two strictly increasing, nonconstant functions $G_1^{-1}$ and $\Phi^{-1}$ of a uniform random variable, so $c>0$. Thus $\mathcal G(\pi)>n+4$ for all sufficiently large $n$, which is strictly better than every jointly Gaussian coupling.
+\end{proof}
+
+Salmona, Delon and Desolneux derive explicit lower and upper bounds for the unrestricted squared-distance problem. They prove equality with the Gaussian-constrained value when $d_x=d_y$, $\Sigma_\alpha\succ0$, and the ordered covariance spectra are proportional, $\eta_i=s\lambda_i$ for some $s\geq0$; this includes all nondegenerate one-dimensional Gaussian pairs, for which the exact value is $12(\lambda_1-\eta_1)^2$~\cite[Theorem~4.1, Proposition~5.2 and Corollary~5.1]{SalmonaDelonDesolneux2022GaussianGW}. Proposition~\ref{prop-gw-gaussian-closure-fails} disproves their general Gaussian-optimality conjecture~\cite[Section~6]{SalmonaDelonDesolneux2022GaussianGW}: the non-quadratic radial term can favor dependence that is invisible to covariance optimization. Their Gaussian-constrained affine optimizer is nevertheless the exact PCA alignment in Proposition~\ref{prop-gw-between-gaussians} and extends Vayer's linear Gromov--Monge calculation~\cite[Theorem~4.2.6]{Vayer2020IncomparableSpaces}. For centered Gaussian inputs, the entropy-regularized problem with~\eqref{eq-gw-inner-product-dissimilarities} also has a jointly Gaussian optimizer and a closed form; the KL-unbalanced extension remains Gaussian and reduces to scalar polynomial equations~\cite{LeEtAl2022EntropicGaussianGW}.
 
 \paragraph{Monge--GW maps.}
-A GW optimizer need not generally be induced by a map. For the inner-product dissimilarities~\eqref{eq-gw-inner-product-dissimilarities}, however, the learned-cost representation yields a Monge optimizer; the stronger transformed-Brenier description obtained from the twist condition has a precise rank limitation. Vayer first proved this description under surjectivity of the optimal cross-moment matrix~\cite[Theorem~4.2.3]{Vayer2020IncomparableSpaces}. Dumont, Lacombe and Vialard subsequently removed the rank assumption for existence of a Monge optimizer~\cite{DumontLacombeVialard2025}.
+A GW optimizer need not generally be induced by a map. Restricting the admissible couplings to graphs gives the Gromov--Monge problem.
+\begin{defn}[Gromov--Monge problem]\label{def-gromov-monge}
+	Fix $p\geq1$ and the discrepancy $\De$ used in Definition~\ref{def-gromov-wasserstein}. The directed Gromov--Monge value is
+	\begin{equation}\label{eq-gromov-monge-p}
+		\GW_p^{\mathrm M}(\XX,\YY)
+		\eqdef
+		\inf_{\substack{T:\X\to\Y\ \mathrm{measurable}\\T_\sharp\alpha=\beta}}
+		\left(
+			\iint_{\X^2}
+			\De\bigl(\dist_\X(x,x'),\dist_\Y(T(x),T(x'))\bigr)^p
+			\d\alpha(x)\d\alpha(x')
+		\right)^{1/p},
+	\end{equation}
+	with value $+\infty$ when no such measure-preserving map exists.
+\end{defn}
+Its infinite-order extension is
+\begin{equation}\label{eq-gromov-monge-infinity}
+	\GW_\infty^{\mathrm M}(\XX,\YY)
+	\eqdef
+	\inf_{\substack{T:\X\to\Y\ \mathrm{measurable}\\T_\sharp\alpha=\beta}}
+	\operatorname*{ess\,sup}_{\alpha\otimes\alpha}
+	\De\bigl(\dist_\X(x,x'),\dist_\Y(T(x),T(x'))\bigr).
+\end{equation}
+These quantities are directed and can be infinite because a measure-preserving map need not exist. For $1\leq p\leq q<\infty$, monotonicity of $L^p$ norms and the restriction from couplings to graph couplings give
+\begin{equation}\label{eq-gromov-monge-basic-comparisons}
+	\begin{aligned}
+		\GW_p^{\mathrm M}(\XX,\YY)
+		&\leq
+		\GW_q^{\mathrm M}(\XX,\YY)
+		\leq
+		\GW_\infty^{\mathrm M}(\XX,\YY),\\
+		\GW_p(\XX,\YY)
+		&\leq
+		\GW_p^{\mathrm M}(\XX,\YY),
+		\qquad
+		\GW_\infty(\XX,\YY)\leq\GW_\infty^{\mathrm M}(\XX,\YY).
+	\end{aligned}
+\end{equation}
+Unlike its coupling counterpart in Proposition~\ref{prop-gw-infinite-order-limit}, the limit of $\GW_p^{\mathrm M}$ need not commute with the infimum over maps without additional compactness. It does commute in the basic finite uniform setting.
+\begin{prop}[Finite uniform Gromov--Monge limits]\label{prop-finite-uniform-gromov-monge-limit}
+	Let $\X=\{x_i\}_{i=1}^n$ and $\Y=\{y_j\}_{j=1}^n$ carry uniform measures. Then
+	\begin{align}
+		\GW_p^{\mathrm M}(\XX,\YY)
+		&=
+		\min_{\sigma\in\mathfrak S_n}
+		\left(
+			\frac1{n^2}\sum_{i,i'=1}^n
+			\De\bigl(\dist_\X(x_i,x_{i'}),\dist_\Y(y_{\sigma(i)},y_{\sigma(i')})\bigr)^p
+		\right)^{1/p},
+		\label{eq-finite-gromov-monge-p}\\
+		\lim_{p\to\infty}\GW_p^{\mathrm M}(\XX,\YY)
+		&=
+		\GW_\infty^{\mathrm M}(\XX,\YY)
+		=
+		\GW_\infty(\XX,\YY).
+		\label{eq-finite-gw-gm-infinity-limit}
+	\end{align}
+\end{prop}
+\begin{proof}
+	A measure-preserving map between equal-size uniform spaces is a permutation; this proves~\eqref{eq-finite-gromov-monge-p}. Since $\mathfrak S_n$ is finite, the minimum commutes with $p\to\infty$. This gives the first equality in~\eqref{eq-finite-gw-gm-infinity-limit}.
+
+	For the last equality, let $\P_\infty$ minimize $\GW_\infty$. The scaled matrix $n\P_\infty$ is doubly stochastic, so Theorem~\ref{thm-birkhoff-von-neumann} provides a permutation whose graph is contained in $\supp(\P_\infty)$. Its distortion cannot exceed the maximal distortion on $\supp(\P_\infty)^2$, and hence $\GW_\infty^{\mathrm M}\leq\GW_\infty$. The reverse inequality is~\eqref{eq-gromov-monge-basic-comparisons}.
+\end{proof}
+
+For the inner-product dissimilarities~\eqref{eq-gw-inner-product-dissimilarities}, the learned-cost representation yields a Monge optimizer; the stronger transformed-Brenier description obtained from the twist condition has a precise rank limitation. Vayer first proved this description under surjectivity of the optimal cross-moment matrix~\cite[Theorem~4.2.3]{Vayer2020IncomparableSpaces}. Dumont, Lacombe and Vialard subsequently removed the rank assumption for existence of a Monge optimizer~\cite{DumontLacombeVialard2025}.
+\index{Gromov-Monge@Gromov--Monge}% strictindex
+\index{measure-preserving!map}% strictindex
 
 \begin{prop}[Monge--GW map for inner-product dissimilarities]\label{prop-gw-inner-product-monge-map}
-	Let $\X\subset\RR^{d_x}$ and $\Y\subset\RR^{d_y}$ be compact, assume $d_x\geq d_y$, and let $\alpha$ be absolutely continuous with respect to Lebesgue measure. Then the GW problem with dissimilarities~\eqref{eq-gw-inner-product-dissimilarities} admits an optimal coupling of the form $(\Id,T)_\sharp\alpha$. In the representation~\eqref{eq-gw-inner-product-cost-regularization}, let $M^\star$ be an optimal learned matrix. If $\rank(M^\star)=d_y$, then $c_{M^\star}$ satisfies the twist condition of Definition~\ref{def-twist-condition}; the optimal coupling for this fixed cost is unique and
+	Let $\X\subset\RR^{d_x}$ and $\Y\subset\RR^{d_y}$ be compact, assume $d_x\geq d_y$, and let $\alpha$ be absolutely continuous with respect to Lebesgue measure. Then the GW problem with dissimilarities~\eqref{eq-gw-inner-product-dissimilarities} admits an optimal coupling of the form $(\Id,T)_\sharp\alpha$. In the inner-product instance of~\eqref{eq-gw-euclidean-cost-learning}, let $M^\star$ be an optimal learned matrix. If $\rank(M^\star)=d_y$, then $c_{M^\star}$ satisfies the twist condition of Definition~\ref{def-twist-condition}; the optimal coupling for this fixed cost is unique and
 	\begin{equation}\label{eq-gw-inner-product-transformed-brenier-map}
 		T(x)=\nabla\phi(M^\star x)
 	\end{equation}
 	for the Brenier potential $\phi$ transporting $(M^\star)_\sharp\alpha$ to $\beta$.
 \end{prop}
 \begin{proof}
-		Compactness of the coupling set and coercivity of the quadratic penalty in $M$ give an optimal pair $(\pi^\star,M^\star)$ in~\eqref{eq-gw-inner-product-cost-regularization}. With $M^\star$ frozen, $\pi^\star$ solves linear OT for $c_{M^\star}$. The linear-cost Monge-existence theorem of Dumont, Lacombe and Vialard~\cite{DumontLacombeVialard2025}, also used in the cost-regularized setting in~\cite{SebbouhCuturiPeyre2024}, gives a graph-supported optimizer for every matrix $M^\star$ under the stated dimension and absolute-continuity assumptions. Its rank-deficient case combines transport on the image of $M^\star$ with measurable transport along its fibers. Replacing $\pi^\star$ by this optimizer leaves the joint objective unchanged.
+		Compactness of the coupling set and coercivity of the quadratic penalty in $M$ give an optimal pair $(\pi^\star,M^\star)$ in the inner-product instance of~\eqref{eq-gw-euclidean-cost-learning}. With $M^\star$ frozen, $\pi^\star$ solves linear OT for $c_{M^\star}$. The linear-cost Monge-existence theorem of Dumont, Lacombe and Vialard~\cite{DumontLacombeVialard2025}, also used in the cost-regularized setting in~\cite{SebbouhCuturiPeyre2024}, gives a graph-supported optimizer for every matrix $M^\star$ under the stated dimension and absolute-continuity assumptions. Its rank-deficient case combines transport on the image of $M^\star$ with measurable transport along its fibers. Replacing $\pi^\star$ by this optimizer leaves the joint objective unchanged.
 
 	If $M^\star$ has full row rank, then
 	\[
@@ -1289,7 +1531,7 @@ GW with the squared-distance dissimilarities~\eqref{eq-gw-squared-distance-dissi
 \index{entropic!regularization}% strictindex
 \index{biconvex!relaxation}% strictindex
 
-Entropy smooths each transport subproblem, but it does not remove the quadratic coupling of GW~\cite{peyre2016gromov}. A useful way to separate these two effects is to duplicate the coupling: the diagonal problem remains the entropic GW objective, whereas the lifted two-coupling problem is convex in either block separately and provides a computable lower bound.
+The frozen-OT characterization of Proposition~\ref{prop-gw-frozen-ot-stationarity} suggests a natural fixed-point iteration: given a coupling $\pi^{(\ell)}$, form its linearized cost $c_{\pi^{(\ell)}}$, then replace $\pi^{(\ell)}$ by an optimal coupling for this cost. Rather than viewing this procedure only as an ad hoc successive linearization, we now derive it from a symmetric biconvex relaxation obtained by duplicating the coupling. Before regularization, the diagonal of this lift recovers the original GW objective, optimization in either block is an ordinary OT problem, and minimizing over both blocks gives a computable lower bound~\cite{peyre2016gromov}. Adding entropy symmetrically preserves this structure: the diagonal becomes the entropic GW objective and each block becomes an entropic OT problem. Entropy does not make the joint problem convex, but it allows every coupling update to be computed efficiently by Sinkhorn's algorithm.
 
 Assume in this paragraph that $\X$ and $\Y$ are compact metric spaces, that $L$ in~\eqref{eq-gw-quadratic-form} is continuous, and set $\mathfrak m=\alpha\otimes\beta$. With the relative entropy of Definition~\ref{def-measure-relative-entropy}, define
 \[
@@ -1301,6 +1543,7 @@ Assume in this paragraph that $\X$ and $\Y$ are compact metric spaces, that $L$ 
 	\end{cases}
 \]
 The separate convention at $\epsilon=0$ avoids the ambiguous product $0\cdot(+\infty)$.
+The KL penalty is convenient but not essential to the lifted construction: it can be replaced by any proper convex lower-semicontinuous regularizer on couplings. Diagonal consistency, the lower bound and the polarization argument below continue to hold after splitting that regularizer equally between the two blocks. Strict convexity is needed when concluding that the two optimal blocks coincide. KL is singled out because it makes each block an entropic OT problem amenable to Sinkhorn scaling.
 
 \Needspace{7\baselineskip}
 \begin{defn}[Entropic GW and its biconvex relaxation]\label{def-entropic-gw-biconvex}
@@ -1334,25 +1577,19 @@ Diagonal consistency also gives the lower bound
 \end{equation}
 Without an additional curvature hypothesis, this lower bound can be strict. Even the scalar analogue already shows the obstruction: on $[-1,1]$, the diagonal minimum of $x\mapsto x^2$ is $0$, whereas the lifted bilinear minimum of $(x,y)\mapsto xy$ is $-1$.
 
-Block optimality explains both the usefulness and the limitation of the relaxation. If $(\pi_\star,\xi_\star)$ minimizes~\eqref{eq-gw-biconvex-relaxation}, then each component minimizes an OT problem with the other component frozen. More precisely, with
-\begin{equation}\label{eq-gw-frozen-measure-cost}
-	c_\xi(z)
-	\eqdef
-	\int_{\mathcal Z}L(z,z')\d\xi(z'),
-\end{equation}
-one has
+Block optimality explains both the usefulness and the limitation of the relaxation. If $(\pi_\star,\xi_\star)$ minimizes~\eqref{eq-gw-biconvex-relaxation}, then each component minimizes an OT problem with the other component frozen. Indeed, for the linearized cost $c_\xi$ defined in~\eqref{eq-gw-linearized-cost}, one has $\mathcal B_L(\pi,\xi)=\frac12\int c_\xi\d\pi$ and therefore
 \[
 	\pi_\star\in\uargmin{\pi\in\Couplings(\alpha,\beta)}
-	\left\{\int c_{\xi_\star}\d\pi+\frac12\mathcal R_\epsilon(\pi)\right\},
+	\left\{\int c_{\xi_\star}\d\pi+\mathcal R_\epsilon(\pi)\right\},
 \]
 and symmetrically for $\xi_\star$. Thus the relaxation replaces the quadratic problem by two OT problems, but their ground costs are themselves unknown.
 
-In the unregularized discrete case, these block problems are linear programs. If $\alpha$ and $\beta$ are both uniform on $n$ points, the lifted problem admits an optimum of the form $(\P_\sigma/n,\P_\tau/n)$. To see this, start from any optimal pair, freeze its second block and replace the first by an extreme minimizer of the resulting linear program; then freeze this new first block and do the same for the second. Neither replacement changes the global optimal value, and the Birkhoff--von Neumann theorem identifies both selected extreme points as permutation couplings. Hence a unique lifted optimum must be a pair of permutation couplings. Without uniqueness, however, an optimal face may also contain fractional couplings. Moreover, this extreme-point argument does not establish tightness, because $\sigma$ and $\tau$ need not coincide. No analogous permutation conclusion holds for general nonuniform marginals or for $\epsilon>0$, when positive weights and finite costs yield dense entropic block minimizers.
+In the unregularized discrete case, these block problems are linear programs. If $\alpha$ and $\beta$ are both uniform on $n$ points, at least one \emph{global minimizer of the lifted problem} has the form $(\P_\sigma/n,\P_\tau/n)$. This conclusion does not use joint convexity. Start from a global minimizer $(\P,\Q)$. With $\Q$ frozen, $\P$ must minimize the first block problem; replacing it by an extreme minimizer preserves the global value. With this new first block frozen, the same global-minimality argument shows that the second block can also be replaced by an extreme minimizer without decreasing the value below the global minimum. The Birkhoff--von Neumann theorem identifies both extreme blocks as permutation couplings. Hence a unique global minimizer must be a pair of permutation couplings, although a nonunique optimal face may also contain fractional couplings. This result neither proves tightness, because $\sigma$ and $\tau$ need not coincide, nor guarantees that alternating minimization reaches such a global pair. The algorithm only enforces blockwise optimality and can become trapped at a non-global pair of mutually optimal permutations. Thus the abundance of permutation-valued blockwise fixed points is a potential obstruction to global convergence, rather than a global-optimality certificate for the iterates. No analogous permutation conclusion holds for general nonuniform marginals or for $\epsilon>0$, when positive weights and finite costs yield dense entropic block minimizers.
 
 The following polarization result extends Konno's unregularized equivalence between quadratic and bilinear programs~\cite{Konno1976}; its entropic GW specialization appears in~\cite{SejourneVialardPeyre2021}. It identifies the regime in which the lower bound is exact.
 
 \begin{prop}[Tightness of the biconvex GW relaxation]\label{prop-gw-biconvex-tightness}
-	Assume that the GW quadratic form is conditionally negative on feasible differences,
+	Assume that $\mathcal Q_L$ is concave on $\Couplings(\alpha,\beta)$. Since $\mathcal Q_L$ is quadratic, this is equivalent to
 	\begin{equation}\label{eq-gw-biconvex-negative-condition}
 		\mathcal Q_L(\pi-\xi)\leq0
 		\qquad
@@ -1391,35 +1628,84 @@ Starting from $(\pi^{(0)},\xi^{(0)})\in\Couplings(\alpha,\beta)^2$, exact altern
 	\pi^{(\ell+1)}
 	&\in
 	\uargmin{\pi\in\Couplings(\alpha,\beta)}
-	\left\{\int c_{\xi^{(\ell)}}\d\pi+\frac12\mathcal R_\epsilon(\pi)\right\},
+	\left\{\int c_{\xi^{(\ell)}}\d\pi+\mathcal R_\epsilon(\pi)\right\},
 	\\[-.2em]
 	\xi^{(\ell+1)}
 	&\in
 	\uargmin{\xi\in\Couplings(\alpha,\beta)}
-	\left\{\int c_{\pi^{(\ell+1)}}\d\xi+\frac12\mathcal R_\epsilon(\xi)\right\}.
+	\left\{\int c_{\pi^{(\ell+1)}}\d\xi+\mathcal R_\epsilon(\xi)\right\}.
 \end{align}
-Each block is an ordinary Kantorovich problem when $\epsilon=0$ and an entropic OT problem with regularization $\epsilon/2$ when $\epsilon>0$.
+Each block is an ordinary Kantorovich problem when $\epsilon=0$ and an entropic OT problem with regularization $\epsilon$ when $\epsilon>0$. Equivalently, dividing both the cost and regularization by two gives the half-gradient normalization used in the discrete formulation below.
 
-For discrete measures and squared distortion, let $\HD$ denote the discrete Shannon--Boltzmann entropy of Definition~\ref{def-discrete-shannon-boltzmann-entropy}. Then Definition~\ref{def-entropic-gw-biconvex} reduces, up to the fixed constant $\epsilon(\HD(\a)+\HD(\b))$, to
+For discrete measures, let $\HD$ denote the discrete Shannon--Boltzmann entropy of Definition~\ref{def-discrete-shannon-boltzmann-entropy}. Given $\P\in\CouplingsD(\a,\b)$, define its contracted GW cost by
+\index{linear!linearization}% strictindex
+\begin{equation}\label{eq-gw-contracted-cost}
+	\C(\P)_{i,j}
+	\eqdef
+	\sum_{i'=1}^{n}\sum_{j'=1}^{m}
+	\De\bigl(\distD_{i,i'},\distD'_{j,j'}\bigr)^p
+	\P_{i',j'}.
+\end{equation}
+Symmetry of the distortion kernel gives
+$\mathcal B_L(\P,\Q)=\dotp{\C(\P)}{\Q}
+=\dotp{\C(\Q)}{\P}$, while
+$\Ee_{\distD,\distD'}(\P)=\dotp{\C(\P)}{\P}$.
+The KL identity on $\CouplingsD(\a,\b)$ shows that, after removing the fixed additive constant $\epsilon(\HD(\a)+\HD(\b))$, the discrete biconvex problem is
+\begin{equation}\label{eq-gw-biconvex-discrete}
+	\umin{\P,\Q\in\CouplingsD(\a,\b)}
+	\dotp{\C(\P)}{\Q}
+	-
+	\frac{\epsilon}{2}\bigl(\HD(\P)+\HD(\Q)\bigr),
+\end{equation}
+and the original lifted optimal value is obtained by adding this constant back. There is no factor $1/2$ in front of the bilinear term under the convention~\eqref{eq-gw-contracted-cost}: $\C(\P)$ is half of the full linearized cost in~\eqref{eq-gw-linearized-cost}. Equivalently, if the full cost $2\C(\P)$ is used instead, the same term reads $\frac12\dotp{2\C(\P)}{\Q}$. Restricting~\eqref{eq-gw-biconvex-discrete} to the diagonal $\P=\Q$ recovers the usual entropic GW problem
 \index{stationarity}% strictindex
 \begin{equation}\label{eq-gw-entropy}
 	\umin{\P\in\CouplingsD(\a,\b)}
 	\Ee_{\distD,\distD'}(\P)-\epsilon\HD(\P).
 \end{equation}
-For symmetric distance matrices, its half-gradient is
-\index{linear!linearization}% strictindex
-\begin{equation}\label{eq-gw-sinkh}
-	\C(\P)
-	\eqdef
-	\distD^{\odot2}\a\,\ones_m^\top
-	+
-	\ones_n(\distD'^{\odot2}\b)^\top
-	-
-	2\distD\,\P\,\transp{\distD'},
-	\qquad
-	\nabla\Ee_{\distD,\distD'}(\P)=2\C(\P).
-\end{equation}
-For $\P,\Q\in\CouplingsD(\a,\b)$, one also has $\mathcal B_L(\P,\Q)=\dotp{\C(\Q)}{\P}$. Exact alternating minimization of~\eqref{eq-gw-biconvex-relaxation} therefore consists of ordinary entropic OT solves with regularization $\epsilon/2$.
+
+For an unstructured distortion kernel, evaluating one entry of~\eqref{eq-gw-contracted-cost} requires $nm$ terms. Forming all $nm$ entries therefore costs $O(n^2m^2)$ dense arithmetic operations; explicitly storing the kernel would likewise require $O(n^2m^2)$ memory. The squared loss admits a substantially cheaper contraction without forming this four-index tensor.
+
+\begin{prop}[Fast contracted cost for squared GW]\label{prop-gw-squared-cost-update}
+	Assume that
+	\[
+		\De\bigl(\distD_{i,i'},\distD'_{j,j'}\bigr)^p
+		=
+		\bigl(\distD_{i,i'}-\distD'_{j,j'}\bigr)^2.
+	\]
+	Then, for every $\P\in\CouplingsD(\a,\b)$,
+	\begin{equation}\label{eq-gw-sinkh}
+		\C(\P)
+		=
+		\distD^{\odot2}\a\,\ones_m^\top
+		+
+		\ones_n(\distD'^{\odot2}\b)^\top
+		-
+		2\distD\,\P\,\transp{\distD'}.
+	\end{equation}
+	Its ambient Frobenius gradient satisfies
+	$\nabla\Ee_{\distD,\distD'}(\P)=2\C(\P)$.
+	Consequently, $\C(\P)$ can be computed in $O(n^2m+nm^2)$ dense arithmetic operations and $O(nm)$ working memory beyond the input distance matrices.
+\end{prop}
+\begin{proof}
+	Expanding the square in~\eqref{eq-gw-contracted-cost} gives
+	\[
+		\C(\P)_{i,j}
+		=
+		\sum_{i',j'}\distD_{i,i'}^2\P_{i',j'}
+		+
+		\sum_{i',j'}(\distD'_{j,j'})^2\P_{i',j'}
+		-
+		2\sum_{i',j'}\distD_{i,i'}\distD'_{j,j'}\P_{i',j'}.
+	\]
+	The marginal identities $\P\ones_m=\a$ and $\transp{\P}\ones_n=\b$ turn the first two sums into $(\distD^{\odot2}\a)_i$ and $(\distD'^{\odot2}\b)_j$, while the last sum is $(\distD\P\transp{\distD'})_{i,j}$. This proves~\eqref{eq-gw-sinkh}. The underlying four-index kernel is symmetric, so differentiating
+	$\Ee_{\distD,\distD'}(\P)=\dotp{\C(\P)}{\P}$
+	gives the factor two in the gradient. Finally, computing $\distD\P$ and then $(\distD\P)\transp{\distD'}$ costs respectively $O(n^2m)$ and $O(nm^2)$ operations; the marginal terms are cheaper.
+\end{proof}
+
+Exact alternating minimization of~\eqref{eq-gw-biconvex-discrete} therefore consists of ordinary entropic OT solves with regularization $\epsilon/2$. Even with~\eqref{eq-gw-sinkh}, however, refreshing the cost costs $O(N^3)$ when $n=m=N$, whereas one dense Sinkhorn scaling step with a fixed cost costs $O(N^2)$. The GW cost update can thus become the dominant bottleneck. If $\P=U\transp{V}$ has rank $r$, then
+$\distD\P\transp{\distD'}=(\distD U)\transp{(\distD'V)}$,
+which lowers this contraction to $O(n^2r+m^2r+nmr)$. This is the mechanism behind the factored-coupling construction of Definition~\ref{def-low-rank-couplings}. Scetbon, Peyr\'e and Cuturi additionally exploit low-rank distance matrices to obtain a complexity linear in $n+m$ when all approximation ranks are fixed~\cite{ScetbonPeyreCuturi2022LinearTimeGW}.
 \index{Sinkhorn!iteration}% strictindex
 \index{entropic!OT}% strictindex
 \index{alternating minimization}% strictindex
@@ -1428,10 +1714,10 @@ Each half-step decreases the lifted objective $\mathcal F_\epsilon^{\mathrm{bi}}
 \[
 	\Q^{(0)},\ \P^{(1)},\ \Q^{(1)},\ \P^{(2)},\ldots
 \]
-recovers the usual one-sequence GW linearization; the algorithm below merely groups two successive half-steps into one cycle. In finite dimensions, standard block-coordinate theory applies under its additional regularity hypotheses. In particular, for $\epsilon>0$, positive weights and finite costs make each entropic block minimizer unique; together with compactness, this places the iteration in the setting of the stationary-point results of Tseng~\cite{Tseng2001}. For $\epsilon=0$, block minimizers can be nonunique and an appropriate convergence theorem requires further assumptions or a selection rule. In either case, block-coordinate results are local statements, not certificates of global optimality or of tightness of the relaxation.
+recovers the usual one-sequence GW linearization; the algorithm below merely groups two successive half-steps into one cycle. In the conditionally concave regime, Remark~\ref{rem-gw-toland-dca} identifies this interleaved sequence with the classical DC algorithm. In finite dimensions, standard block-coordinate theory applies under its additional regularity hypotheses. In particular, for $\epsilon>0$, positive weights and finite costs make each entropic block minimizer unique; together with compactness, this places the iteration in the setting of the stationary-point results of Tseng~\cite{Tseng2001}. For $\epsilon=0$, block minimizers can be nonunique and an appropriate convergence theorem requires further assumptions or a selection rule. In either case, block-coordinate results are local statements, not certificates of global optimality or of tightness of the relaxation.
 
-\begin{alg}[Alternating minimization of the biconvex GW relaxation]\label{alg:entropic-gromov-wasserstein}
-\textbf{Input:} Symmetric metric matrices $\distD,\distD'$, weights $\a,\b$, regularization $\epsilon\geq0$, tolerance $\mathrm{tol}$, iteration budget $\ell_{\max}\geq1$.
+\begin{algH}[Alternating minimization of the biconvex GW relaxation]\label{alg:entropic-gromov-wasserstein}
+\textbf{Input:} Symmetric metric matrices $\distD,\distD'$, weights $\a,\b$, exponent $p\geq1$, distortion $\De$, regularization $\epsilon\geq0$, tolerance $\mathrm{tol}$, iteration budget $\ell_{\max}\geq1$.
 
 \textbf{Output:} Approximate relaxed pair $(\P,\Q)\in\CouplingsD(\a,\b)^2$.
 
@@ -1453,39 +1739,106 @@ recovers the usual one-sequence GW linearization; the algorithm below merely gro
 \end{algblock}
 \algreturnskip
 \textbf{Return} $(\P^{(\ell_{\max})},\Q^{(\ell_{\max})})$.
-\end{alg}
+\end{algH}
 
-\paragraph{Adding features.}
+\paragraph{Fused GW: adding features.}
 \index{feature cost}% strictindex
-Fused Gromov--Wasserstein augments the structural term with a feature transport cost~\cite{vayer2019optimaltransportstructured}. In the discrete case, given a cross-feature cost $M\in\RR^{n\times m}$ and a parameter $\lambda\in[0,1]$, one minimizes
 \index{Gromov-Wasserstein@Gromov--Wasserstein}% strictindex
 \index{fused Gromov-Wasserstein}% strictindex
-\begin{defn}[Fused Gromov--Wasserstein problem]\label{def-fused-gromov-wasserstein}
-Let $p\geq1$, let $\a\in\simplex_n$ and $\b\in\simplex_m$, let $\distD\in\RR_+^{n\times n}$ and $\distD'\in\RR_+^{m\times m}$ be distance matrices, let $M\in\RR_+^{n\times m}$ be a feature-cost matrix, and let $\De$ be a distance on $\RR$. For $0\leq\lambda\leq1$, define
+Pure GW deliberately ignores any direct comparison between $x\in\X$ and $y\in\Y$: it only compares the two within-space geometries. Fused Gromov--Wasserstein (FGW) retains this intrinsic term while adding a cross-space feature cost~\cite{vayer2019optimaltransportstructured}. In machine-learning applications, points in the two spaces often carry features in a common metric space $(\mathcal Z_{\mathrm f},\dist_{\mathcal Z_{\mathrm f}})$ through embeddings
 \[
-	\operatorname{FGW}_{\lambda,p}((\a,\distD),(\b,\distD'))^p
-	\eqdef
-	\umin{\P\in\CouplingsD(\a,\b)}
-	(1-\lambda)\sum_{i,j}M_{ij}\P_{ij}
-	+\lambda
-	\sum_{i,j,i',j'}\De(\distD_{ii'},\distD'_{jj'})^p\P_{ij}\P_{i'j'}.
+	\phi_\X:\X\to\mathcal Z_{\mathrm f},
+	\qquad
+	\phi_\Y:\Y\to\mathcal Z_{\mathrm f},
 \]
-\end{defn}
-The first term compares node attributes in the usual OT sense, while the second compares the intrinsic geometry. The endpoints $\lambda=0$ and $\lambda=1$ recover feature-only OT and pure GW respectively; intermediate values trade attribute matching against structural matching. This is useful when the two spaces have both distances and features, and these two sources of information may disagree.
+in which case a standard choice is
+$c_{\X,\Y}(x,y)=\dist_{\mathcal Z_{\mathrm f}}(\phi_\X(x),\phi_\Y(y))^p$.
 
-Figure~\ref{fig:fused-gromov-feature-geometry} isolates this tradeoff on a small graph pair by comparing feature-only, structure-only and fused correspondences.
+\Needspace{10\baselineskip}
+\begin{defn}[Fused Gromov--Wasserstein problem]\label{def-fused-gromov-wasserstein}
+	Under the notation of~\eqref{eq-gw-quadratic-form}, let
+	$c_{\X,\Y}:\X\times\Y\to\RR_+$ be a measurable cross-space cost and let $0\leq\lambda\leq1$. The fused GW value is
+	\begin{equation}\label{eq-fused-gromov-wasserstein}
+		\operatorname{FGW}_{\lambda,p}(\XX,\YY;c_{\X,\Y})^p
+		\eqdef
+		\umin{\pi\in\Couplings(\alpha,\beta)}
+		(1-\lambda)\int_{\X\times\Y}c_{\X,\Y}\d\pi
+		+
+		\lambda\mathcal Q_L(\pi).
+	\end{equation}
+\end{defn}
+The first term compares features by ordinary Kantorovich transport, while the second compares intrinsic geometry. Thus $\lambda=0$ gives feature-only OT and $\lambda=1$ gives pure GW; intermediate values balance pointwise feature fidelity against pairwise geometric fidelity. This balance is meaningful only after calibrating the scales of $c_{\X,\Y}$ and $L$, since rescaling either term changes the interpretation of $\lambda$.
+
+For discrete measures, setting
+$M_{i,j}=c_{\X,\Y}(x_i,y_j)$
+reduces~\eqref{eq-fused-gromov-wasserstein} to
+\[
+	\umin{\P\in\CouplingsD(\a,\b)}
+	(1-\lambda)\dotp{M}{\P}
+	+
+	\lambda\Ee_{\distD,\distD'}(\P),
+\]
+which is the usual discrete fused-GW problem.
+
+The algorithms above extend by the same linearization principle. With the coupling regularizer $\mathcal R_\epsilon$ defined before~\eqref{eq-gw-entropic-general}, the regularized fused objective is
+\[
+	\mathcal F_{\epsilon,\lambda}^{\mathrm{FGW}}(\pi)
+	\eqdef
+	(1-\lambda)\int_{\X\times\Y}c_{\X,\Y}\d\pi
+	+
+	\lambda\mathcal Q_L(\pi)
+	+
+	\mathcal R_\epsilon(\pi).
+\]
+Its first variation is an ordinary OT objective with ground cost
+\begin{equation}\label{eq-fused-gw-linearized-cost}
+	c_{\pi,\lambda}^{\mathrm{FGW}}(x,y)
+	\eqdef
+	(1-\lambda)c_{\X,\Y}(x,y)
+	+
+	2\lambda
+	\int_{\X\times\Y}
+	L\bigl((x,y),(x',y')\bigr)\d\pi(x',y').
+\end{equation}
+Indeed, the feature term is linear in $\pi$, whereas differentiating $\mathcal Q_L$ produces the factor two already present in~\eqref{eq-gw-linearized-cost}.
+
+Equivalently, diagonal consistency gives the symmetric biconvex lift
+\[
+	\mathcal F_{\epsilon,\lambda}^{\mathrm{FGW,bi}}(\pi,\xi)
+	\eqdef
+	\frac{1-\lambda}{2}
+	\int_{\X\times\Y}c_{\X,\Y}\d(\pi+\xi)
+	+
+	\lambda\mathcal B_L(\pi,\xi)
+	+
+	\frac12\mathcal R_\epsilon(\pi)
+	+
+	\frac12\mathcal R_\epsilon(\xi).
+\]
+Multiplying a block objective by two shows that, with $\xi$ fixed, its $\pi$-update is precisely
+\[
+	\uargmin{\pi\in\Couplings(\alpha,\beta)}
+	\left\{
+		\int_{\X\times\Y}c_{\xi,\lambda}^{\mathrm{FGW}}\d\pi
+		+
+		\mathcal R_\epsilon(\pi)
+	\right\}.
+\]
+Every block is therefore an ordinary OT problem, or an entropic OT problem solvable by Sinkhorn when $\mathcal R_\epsilon$ is the KL penalty. Moreover, the added feature term is affine in each coupling, so the tightness result of Proposition~\ref{prop-gw-biconvex-tightness} remains valid whenever $\mathcal Q_L$ is concave on $\Couplings(\alpha,\beta)$.
+
+Figure~\ref{fig:fused-gromov-feature-geometry} isolates the resulting tradeoff on two Euclidean point clouds.
 
 \begin{figure}[ht]
 \centering
 \begin{tabular}{@{}ccc@{}}
-\small feature-only OT &
-\small fused GW &
-\small pure GW \\[-.15em]
+\small $\lambda=0$ &
+\small $\lambda=0.5$ &
+\small $\lambda=1$ \\[-.15em]
 \includegraphics[width=.30\linewidth]{figures/fused-gromov-feature-geometry/feature-ot.pdf} &
 \includegraphics[width=.30\linewidth]{figures/fused-gromov-feature-geometry/fused-gw.pdf} &
 \includegraphics[width=.30\linewidth]{figures/fused-gromov-feature-geometry/pure-gw.pdf}
 \end{tabular}
-\caption{\emph{Feature information and intrinsic geometry in fused Gromov--Wasserstein.} Small inner disks encode binary node features. Feature-only OT follows the attributes even when this crosses the shape structure, pure GW follows the intrinsic ordering, and fused GW balances the feature term with the pairwise-distance distortion.}
+\caption{\emph{Feature information and intrinsic geometry in fused Gromov--Wasserstein.} Here $\X=\Y=\RR^2$, $c_{\X,\Y}(x,y)=\norm{x-y}^2$, and both intrinsic distances are Euclidean. The target is a rotated and translated, slightly perturbed copy of the source; the additional horizontal separation in the drawing is only for readability and is not included in the cost. Thus $\lambda=0$ follows ambient proximity, $\lambda=1$ follows intrinsic geometry, and $\lambda=0.5$ balances the two criteria.}
 \index{feature term}% strictindex
 \index{node feature}% strictindex
 \index{distortion}% strictindex
@@ -1496,7 +1849,7 @@ Figure~\ref{fig:fused-gromov-feature-geometry} isolates this tradeoff on a small
 \begin{example}[Application to multi-omics alignment]\label{ex-multi-omics-alignment}
 \index{multi-omics}% strictindex
 \index{single-cell genomics}% strictindex
-	Multi-omics experiments can produce unmatched point clouds in different feature spaces, for instance RNA and ATAC profiles measured on different cells. If direct feature comparison is unavailable or incomplete, the relational term in GW preserves neighborhood structure; if partial cross-feature information exists, fused GW uses it through \(M_{ij}\). Unbalanced and co-optimal variants further allow the number and relative importance of cells or features to differ across modalities. The mathematical template is therefore precise: preserve within-modality geometry while learning a cross-modality coupling~\cite{TranJanatiCourtyFlamaryRedkoDemetciSingh2022UCOOT,RyuBunnePinelloRegevLopez2024LabeledGW,StanojevicLiGarmire2022MultiOmicsReview}.
+	Multi-omics experiments can produce unmatched point clouds in different feature spaces, for instance RNA and ATAC profiles measured on different cells. The GW term preserves within-modality neighborhood structure, while any available cross-modality information enters FGW through $c_{\X,\Y}$, or through the matrix $M$ after discretization. Unbalanced and co-optimal variants further allow the number and relative importance of cells or features to differ across modalities. The resulting template is precise: preserve relational geometry within each modality while learning a coupling across modalities~\cite{TranJanatiCourtyFlamaryRedkoDemetciSingh2022UCOOT,RyuBunnePinelloRegevLopez2024LabeledGW,StanojevicLiGarmire2022MultiOmicsReview}.
 \end{example}
 
 \Needspace{7\baselineskip}
@@ -1504,91 +1857,60 @@ Figure~\ref{fig:fused-gromov-feature-geometry} isolates this tradeoff on a small
 \index{Hausdorff distance}% strictindex
 \index{Gromov-Hausdorff distance}% strictindex
 
-Gromov--Hausdorff comparison is the measure-free, worst-case endpoint of intrinsic matching. To make this precise, one must distinguish three feasible objects: arbitrary correspondences for Gromov--Hausdorff, measure-preserving maps for Gromov--Monge, and probability couplings for Gromov--Wasserstein.
-\begin{defn}[Hausdorff and Gromov--Hausdorff distances]\label{def-hausdorff-gromov-hausdorff}
-If $A,B$ are compact subsets of a metric space $(\Z,\dist_\Z)$, their Hausdorff distance is
+In geometry, one often wants to study a sequence of metric spaces without first embedding them into a common ambient space: the object of interest is then convergence of the spaces themselves, rather than convergence of distinguished points or measures carried by them. This requires a metric on a ``space of spaces.'' The Gromov--Hausdorff distance was designed for precisely this purpose~\cite{gromov-2001,burago2001course}, and its use for intrinsic shape and object comparison was developed notably by M\'emoli~\cite{memoli-2007}. Within the matching hierarchy developed here, it is the measure-free, worst-case counterpart of Gromov--Monge and Gromov--Wasserstein comparison. To make this relation precise, one must distinguish three feasible objects: arbitrary correspondences for Gromov--Hausdorff, measure-preserving maps for Gromov--Monge, and probability couplings for Gromov--Wasserstein.
+
+\begin{defn}[Hausdorff distance]\label{def-hausdorff-distance}
+If $A,B$ are nonempty compact subsets of a metric space $(\Z,\dist_\Z)$, their Hausdorff distance is
 \[
 	d_{\mathrm H}^{\Z}(A,B)
-	=
+	\eqdef
 	\max\left\{
 		\sup_{a\in A}\inf_{b\in B}\dist_\Z(a,b),
 		\sup_{b\in B}\inf_{a\in A}\dist_\Z(a,b)
 	\right\}.
 \]
-The Gromov--Hausdorff distance removes the common ambient space by minimizing this quantity over all isometric embeddings into a third space:
+\end{defn}
+Writing $\mathcal K(\Z)$ for the set of nonempty compact subsets of $\Z$, $d_{\mathrm H}^{\Z}$ is a metric on $\mathcal K(\Z)$. If $\Z$ is complete, then $\mathcal K(\Z)$ is complete; if $\Z$ is compact, then $\mathcal K(\Z)$ is itself compact. Hausdorff distance is therefore the natural tool for studying convergence of compact sets inside one fixed ambient space~\cite[Section~7.3]{burago2001course}.
+
+\Needspace{8\baselineskip}
+Gromov--Hausdorff distance removes the need to prescribe this ambient space.
+\begin{defn}[Gromov--Hausdorff distance]\label{def-gromov-hausdorff-distance}
+For compact metric spaces $(\X,\dist_\X)$ and $(\Y,\dist_\Y)$, their Gromov--Hausdorff distance is
 \index{isometric embedding}% strictindex
 \index{Hausdorff distance}% strictindex
 \index{Gromov-Hausdorff distance}% strictindex
 \[
 d_{\mathrm{GH}}(\X,\Y)
-=
+\eqdef
 \inf_{\Z,\phi,\psi}
 d_{\mathrm H}^{\Z}(\phi(\X),\psi(\Y)).
 \]
-A correspondence is a set $R\subset\X\times\Y$ whose two coordinate projections are surjective. Its distortion is
+\end{defn}
+One has $d_{\mathrm{GH}}(\X,\Y)=0$ exactly when $\X$ and $\Y$ are isometric. Hence $d_{\mathrm{GH}}$ is a genuine metric on isometry classes of compact metric spaces. This metric space is complete and separable, but it is \emph{not} compact: for example, two-point spaces with diverging diameters have no convergent subsequence. Gromov's compactness theorem gives the precise replacement. A family is relatively compact for $d_{\mathrm{GH}}$ if and only if its diameters are uniformly bounded and, for every $\epsilon>0$, all its members can be covered by at most $N(\epsilon)<+\infty$ balls of radius $\epsilon$~\cite[Section~7.4]{burago2001course}; see also~\cite{gromov-2001,petersen1993gromov}.
+
+Now equip $\X$ and $\Y$ with full-support probability measures $\alpha$ and $\beta$, and write $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$. Proposition~\ref{prop-gw-infinite-order-limit} already identifies $\GW_\infty$ as the endpoint of finite-order GW. The remaining question is how this measure-dependent comparison relates to the measure-free distance $d_{\mathrm{GH}}$.
+
+Specialize from now on to $\De(r,s)=|r-s|$. A correspondence is a set $R\subset\X\times\Y$ whose two coordinate projections are surjective, and its distortion is
 \[
 	\operatorname{dis}(R)
 	\eqdef
 	\sup_{(x,y),(x',y')\in R}
 	\abs{\dist_\X(x,x')-\dist_\Y(y,y')}.
 \]
-For compact metric spaces, the equivalent correspondence formula is
+Writing $\mathfrak R(\X,\Y)$ for the set of correspondences, compact metric spaces satisfy the classical identity~\cite{gromov-2001,burago2001course,memoli-2007}
 \begin{equation}\label{eq-gh-correspondence-distortion}
 	2d_{\mathrm{GH}}(\X,\Y)
 	=
-	\inf_{R\in\mathfrak R(\X,\Y)}\operatorname{dis}(R),
+	\inf_{R\in\mathfrak R(\X,\Y)}\operatorname{dis}(R).
 \end{equation}
-where $\mathfrak R(\X,\Y)$ denotes the set of correspondences~\cite{gromov-2001,memoli-2007,memoli-2011}.
-\end{defn}
-
-Now equip $\X$ and $\Y$ with full-support probability measures $\alpha$ and $\beta$, and write $\XX=(\X,\dist_\X,\alpha)$ and $\YY=(\Y,\dist_\Y,\beta)$. In this paragraph, $\GW_p$ denotes~\eqref{eq-gw-generic} with $\De(r,s)=|r-s|$. Its Gromov--Monge counterpart restricts the coupling to the graph of a measurable, measure-preserving map:
-\begin{equation}\label{eq-gromov-monge-p}
-	\GW_p^{\mathrm M}(\XX,\YY)
-	\eqdef
-	\inf_{T_\sharp\alpha=\beta}
-	\left(
-		\iint_{\X^2}
-		\abs{\dist_\X(x,x')-\dist_\Y(T(x),T(x'))}^p
-		\d\alpha(x)\d\alpha(x')
-	\right)^{1/p},
-\end{equation}
-with value $+\infty$ when no such map exists~\cite{MemoliNeedham2024}. Thus Gromov--Monge is directed and may be infinite. For $p=\infty$, the $L^p$ norm is replaced by the essential supremum. Monotonicity of probability-space $L^p$ norms gives, for $1\leq p\leq q<\infty$,
-\[
-	\GW_p^{\mathrm M}(\XX,\YY)
-	\leq
-	\GW_q^{\mathrm M}(\XX,\YY)
-	\leq
-	\GW_\infty^{\mathrm M}(\XX,\YY).
-\]
-Consequently, $\lim_{p\to\infty}\GW_p^{\mathrm M}$ always exists, but interchanging this limit with the infimum over maps requires additional compactness. The finite case below is one setting where this interchange is immediate. By contrast, weak compactness of the set of couplings makes the Kantorovich limit exact on compact metric-measure spaces.
-
-The Kantorovich counterpart at $p=\infty$ is
-\begin{equation}\label{eq-gw-infinity-support}
-	\GW_\infty(\XX,\YY)
-	\eqdef
-	\inf_{\pi\in\Couplings(\alpha,\beta)}
-	\operatorname*{ess\,sup}_{\pi\otimes\pi}
-	\abs{\dist_\X(x,x')-\dist_\Y(y,y')}
-	=
-	\inf_{\pi\in\Couplings(\alpha,\beta)}
-	\operatorname{dis}(\supp(\pi)).
-\end{equation}
-The second identity follows from continuity of the distortion integrand. It exposes the exact hierarchy between the three constructions. The factor $2$ below reflects the convention~\eqref{eq-gw-generic}; references that insert a factor $1/2$ in GW do not display it.
+Together with the support representation~\eqref{eq-gw-infinity-support}, this identity gives the exact connection between Gromov--Hausdorff and infinite-order GW. The factor $2$ below reflects the convention~\eqref{eq-gw-generic}; references that insert a factor $1/2$ in GW do not display it.
 
 \begin{prop}[Gromov--Hausdorff as an infinite-order intrinsic matching]\label{prop-gh-gm-gw-infinity}
 	Let $\X$ and $\Y$ be compact metric spaces and let $\alpha,\beta$ have full support. Then
-	\begin{equation}\label{eq-gw-p-to-infinity}
-		\lim_{p\to\infty}\GW_p(\XX,\YY)
-		=
-		\GW_\infty(\XX,\YY),
-	\end{equation}
-	and
 	\begin{equation}\label{eq-gh-gw-gm-infinity-chain}
 		2d_{\mathrm{GH}}(\X,\Y)
 		\leq
-		\GW_\infty(\XX,\YY)
-		\leq
-		\GW_\infty^{\mathrm M}(\XX,\YY).
+		\GW_\infty(\XX,\YY).
 	\end{equation}
 	Moreover, removing the prescribed weights recovers Gromov--Hausdorff exactly:
 	\begin{equation}\label{eq-gh-as-weight-envelope-gw-infinity}
@@ -1598,61 +1920,14 @@ The second identity follows from continuity of the distortion integrand. It expo
 		                       \beta\in\Mm_+^1(\Y),\ \supp(\beta)=\Y}}
 		\GW_\infty\bigl((\X,\dist_\X,\alpha),(\Y,\dist_\Y,\beta)\bigr).
 	\end{equation}
-	If $\X=\{x_i\}_{i=1}^n$ and $\Y=\{y_j\}_{j=1}^n$ carry uniform measures, then
-	\begin{align}
-		\GW_p^{\mathrm M}(\XX,\YY)
-		&=
-		\min_{\sigma\in\mathfrak S_n}
-		\left(
-			\frac1{n^2}\sum_{i,i'=1}^n
-			\abs{\dist_\X(x_i,x_{i'})-\dist_\Y(y_{\sigma(i)},y_{\sigma(i')})}^p
-		\right)^{1/p},
-		\label{eq-finite-gromov-monge-p}\\
-		\lim_{p\to\infty}\GW_p^{\mathrm M}(\XX,\YY)
-		&=
-		\GW_\infty^{\mathrm M}(\XX,\YY)
-		=
-		\GW_\infty(\XX,\YY).
-		\label{eq-finite-gw-gm-infinity-limit}
-	\end{align}
 \end{prop}
 \begin{proof}
-	The support of any $\pi\in\Couplings(\alpha,\beta)$ is compact. The support of each marginal is the closure of the corresponding coordinate projection of $\supp(\pi)$. These projections are compact, hence already closed; because $\alpha$ and $\beta$ have full support, they are therefore equal to $\X$ and $\Y$. Thus $\supp(\pi)$ is a correspondence, and~\eqref{eq-gh-correspondence-distortion} gives the first inequality in~\eqref{eq-gh-gw-gm-infinity-chain}. Every measure-preserving map generates the graph coupling $(\Id,T)_\sharp\alpha$, which proves the second inequality.
-
-	We next prove~\eqref{eq-gw-p-to-infinity}. The quantities $\GW_p(\XX,\YY)$ are nondecreasing in $p$ and bounded above by $\GW_\infty(\XX,\YY)$, so they converge to some $L\leq\GW_\infty(\XX,\YY)$. Let $p_k\to\infty$. Compactness of $\Couplings(\alpha,\beta)$ and continuity of the bounded distortion integrand ensure the existence of an optimal coupling $\pi_k$ for each finite $p_k$. After extraction, $\pi_k\rightharpoonup\pi_\star$ for some $\pi_\star\in\Couplings(\alpha,\beta)$. Fix $(x,y),(x',y')\in\supp(\pi_\star)$ whose distortion is positive, and choose
-	\[
-		0<r<\abs{\dist_\X(x,x')-\dist_\Y(y,y')}.
-	\]
-	By continuity, there are neighborhoods $U$ and $V$ of $(x,y)$ and $(x',y')$ on whose product the distortion exceeds $r$. Since both points belong to $\supp(\pi_\star)$, the Portmanteau theorem gives $\liminf_k\pi_k(U)>0$ and $\liminf_k\pi_k(V)>0$. Hence, for some $c>0$ and all sufficiently large $k$,
-	\[
-		\GW_{p_k}(\XX,\YY)
-		\geq
-		r\bigl(\pi_k(U)\pi_k(V)\bigr)^{1/p_k}
-		\geq
-		rc^{1/p_k}.
-	\]
-	Letting first $k\to\infty$ and then $r\uparrow\abs{\dist_\X(x,x')-\dist_\Y(y,y')}$ shows that $L$ dominates the distortion of the selected pair. The claim is immediate for pairs of zero distortion. Taking the supremum over $\supp(\pi_\star)^2$ yields
-	\[
-		L
-		\geq
-		\operatorname{dis}(\supp(\pi_\star))
-		\geq
-		\GW_\infty(\XX,\YY),
-	\]
-	and proves~\eqref{eq-gw-p-to-infinity}.
+	The support of any $\pi\in\Couplings(\alpha,\beta)$ is compact. The support of each marginal is the closure of the corresponding coordinate projection of $\supp(\pi)$. These projections are compact, hence already closed; because $\alpha$ and $\beta$ have full support, they are therefore equal to $\X$ and $\Y$. Thus $\supp(\pi)$ is a correspondence, and~\eqref{eq-gh-correspondence-distortion} gives~\eqref{eq-gh-gw-gm-infinity-chain}.
 
 	For~\eqref{eq-gh-as-weight-envelope-gw-infinity}, the preceding lower bound applies to every pair of full-support weights. Conversely, choose a correspondence $R$ with distortion arbitrarily close to the right-hand side of~\eqref{eq-gh-correspondence-distortion}. Replacing $R$ by its closure preserves both the correspondence property and its distortion, so $R$ may be assumed compact. It then carries a probability $\pi$ with support exactly $R$. Let $\alpha$ and $\beta$ be its marginals. They have full support, while~\eqref{eq-gw-infinity-support} gives $\GW_\infty(\XX,\YY)\leq\operatorname{dis}(R)$. Taking the infimum over $R$ proves the identity.
-
-	For equal-size uniform finite spaces, a measure-preserving map is a permutation, which gives~\eqref{eq-finite-gromov-monge-p}. Since $\mathfrak S_n$ is finite, its minimum commutes with $p\to\infty$. It remains to compare the two infinite-order problems. Let $\P_\infty$ minimize $\GW_\infty$. The scaled matrix $n\P_\infty$ is doubly stochastic, so Theorem~\ref{thm-birkhoff-von-neumann} provides a permutation whose graph is contained in $\supp(\P_\infty)$. Its distortion cannot exceed $\operatorname{dis}(\supp(\P_\infty))=\GW_\infty(\XX,\YY)$. Hence $\GW_\infty^{\mathrm M}\leq\GW_\infty$, while the reverse inequality follows from~\eqref{eq-gh-gw-gm-infinity-chain}. This proves~\eqref{eq-finite-gw-gm-infinity-limit}.
 \end{proof}
 
-This makes the relation precise. Gromov--Monge is the hard-map version of GW, and its $p=\infty$ endpoint minimizes the worst distortion induced almost everywhere by a measure-preserving map. In particular, for equal-size uniform finite spaces,
-\[
-	2d_{\mathrm{GH}}(\X,\Y)
-	\leq
-	\lim_{p\to\infty}\GW_p^{\mathrm M}(\XX,\YY),
-\]
-with equality whenever an optimal Gromov--Hausdorff correspondence contains the graph of a bijection. In general, Gromov--Hausdorff allows arbitrary correspondences and ignores prescribed weights, so it can be smaller. Finite-$p$ GW instead averages distortion according to the coupling and can discount low-mass regions; this robustness disappears at $p=\infty$, where every pair in the coupling support contributes to the worst case. The finite-$p$ equality of Gromov--Monge and Gromov--Wasserstein values for nonatomic spaces~\cite{MemoliNeedham2024} does not by itself identify their $p=\infty$ endpoints: approximation of a coupling by graph couplings controls integral distortion, but not necessarily the worst distortion of their supports.
+Thus Gromov--Hausdorff is the mass-free, hard-support counterpart of GW: it minimizes worst-case distortion over correspondences between the two supports. By contrast, finite-$p$ GW fixes the masses and averages distortion under a coupling; optimizing these masses and taking $p=\infty$ recovers $2d_{\mathrm{GH}}$ through~\eqref{eq-gh-as-weight-envelope-gw-infinity}.
 \index{distortion}% strictindex
 \index{correspondence}% strictindex
 \index{Gromov-Wasserstein@Gromov--Wasserstein}% strictindex
@@ -2031,7 +2306,7 @@ For two empirical measures, Kantorovich OT minimizes a linear cost over the conv
 \index{monotone!alignment}% strictindex
 
 \paragraph{Discrete variational problem.}
-Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature space $\mathcal Z$, and set $\C_{ij}=c(x_i,y_j)$ for a nonnegative cost $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
+Let $x=(x_i)_{i=1}^n$ and $y=(y_j)_{j=1}^m$ be two sequences in a feature space $\mathcal Z$, and set $\C_{i,j}=c(x_i,y_j)$ for a nonnegative cost $c:\mathcal Z\times\mathcal Z\to\RR_+$. A warping path is a sequence
 \[
 	\omega=((i_\ell,j_\ell))_{\ell=1}^L
 \]
@@ -2040,7 +2315,7 @@ that starts at $(1,1)$, ends at $(n,m)$, and has increments
 	(i_{\ell+1}-i_\ell,j_{\ell+1}-j_\ell)
 	\in\{(1,0),(0,1),(1,1)\}.
 \]
-Denote the set of such paths by $\Omega_{n,m}$ and the corresponding incidence matrix by $(A_\omega)_{ij}=\mathbf 1_{\{(i,j)\in\omega\}}$. Its length satisfies $\max\{n,m\}\leq L\leq n+m-1$, its total mass is $\sum_{ij}(A_\omega)_{ij}=L$, and its two marginals are precisely the row and column visit counts.
+Denote the set of such paths by $\Omega_{n,m}$ and the corresponding incidence matrix by $(A_\omega)_{i,j}=\mathbf 1_{\{(i,j)\in\omega\}}$. Its length satisfies $\max\{n,m\}\leq L\leq n+m-1$, its total mass is $\sum_{i,j}(A_\omega)_{i,j}=L$, and its two marginals are precisely the row and column visit counts.
 
 \begin{defn}[Dynamic time warping]\label{def-dynamic-time-warping}
 \index{warping path}% strictindex
@@ -2064,11 +2339,11 @@ The monotone path structure converts the exponentially large variational problem
 \index{dynamic programming}% strictindex
 	Set $D_{0,0}=0$, $D_{i,0}=D_{0,j}=+\infty$ for $i,j>0$, and, for $1\leq i\leq n$, $1\leq j\leq m$, define
 	\begin{equation}\label{eq-dtw-recurrence}
-		D_{ij}
+		D_{i,j}
 		=
-		\C_{ij}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
+		\C_{i,j}+\min\{D_{i-1,j},D_{i,j-1},D_{i-1,j-1}\}.
 	\end{equation}
-	Then $D_{nm}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every cell and backtracking from $(n,m)$ recovers an optimal path. The computation takes $O(nm)$ time and $O(nm)$ memory; if only the value is required, two rows give $O(\min\{n,m\})$ memory.
+	Then $D_{n,m}=\mathrm{DTW}_c(x,y)$. Storing one minimizing predecessor at every cell and backtracking from $(n,m)$ recovers an optimal path. The computation takes $O(nm)$ time and $O(nm)$ memory; if only the value is required, two rows give $O(\min\{n,m\})$ memory.
 \end{prop}
 
 \begin{proof}
@@ -2081,7 +2356,7 @@ Algorithm~\ref{alg-dtw-dynamic-programming} makes the value computation and path
 \index{dynamic time warping!algorithm}% strictindex
 \textbf{Input:} Sequences $x=(x_i)_{i=1}^n$, $y=(y_j)_{j=1}^m$, local cost $c$.
 
-\textbf{Output:} DTW value $D_{nm}$ and an optimal warping path $\omega^\star$.
+\textbf{Output:} DTW value $D_{n,m}$ and an optimal warping path $\omega^\star$.
 
 \textbf{Initialize:} Set $D\in(\RR\cup\{+\infty\})^{(n+1)\times(m+1)}$ to $+\infty$, $D_{0,0}=0$, and allocate predecessors $B$.
 
@@ -2089,12 +2364,12 @@ Algorithm~\ref{alg-dtw-dynamic-programming} makes the value computation and path
 \begin{algblock}
 \textbf{For} $j=1,\ldots,m$ \textbf{do}:
 \begin{algblock}
-\textbf{Set} $\C_{ij}=c(x_i,y_j)$.
+\textbf{Set} $\C_{i,j}=c(x_i,y_j)$.
 
 \textbf{Choose} the lexicographically first
-$(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
+$(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{r,s}$.
 
-\textbf{Set} $B_{ij}=(r^\star,s^\star)$ and $D_{ij}=\C_{ij}+D_{r^\star,s^\star}$.
+\textbf{Set} $B_{i,j}=(r^\star,s^\star)$ and $D_{i,j}=\C_{i,j}+D_{r^\star,s^\star}$.
 \end{algblock}
 \end{algblock}
 \textbf{Initialize:} Set $(i,j)=(n,m)$ and $\omega^\star=[\,]$.
@@ -2103,10 +2378,10 @@ $(r^\star,s^\star)\in\argmin_{(r,s)\in\{(i-1,j),(i,j-1),(i-1,j-1)\}}D_{rs}$.
 \begin{algblock}
 \textbf{Prepend} $(i,j)$ to $\omega^\star$.
 
-\textbf{Set} $(i,j)\leftarrow B_{ij}$.
+\textbf{Set} $(i,j)\leftarrow B_{i,j}$.
 \end{algblock}
 \algreturnskip
-\textbf{Return} $D_{nm}$ and $\omega^\star$.
+\textbf{Return} $D_{n,m}$ and $\omega^\star$.
 \end{alg}
 
 \paragraph{Continuous time warping.}
@@ -2134,16 +2409,16 @@ The hard minimum in~\eqref{eq-dtw-recurrence} is nonsmooth when several paths ti
 	=
 	-\epsilon\log\!\left(\sum_{k=1}^q e^{-r_k/\epsilon}\right),
 \end{equation}
-and defines $D_{00}^\epsilon=0$, $D_{i0}^\epsilon=D_{0j}^\epsilon=+\infty$ for $i,j>0$, together with
+and defines $D_{0,0}^\epsilon=0$, $D_{i,0}^\epsilon=D_{0,j}^\epsilon=+\infty$ for $i,j>0$, together with
 \begin{equation}\label{eq-soft-dtw-recurrence}
-	D_{ij}^\epsilon
+	D_{i,j}^\epsilon
 	=
-	\C_{ij}
+	\C_{i,j}
 	+
 	\operatorname{softmin}_\epsilon
 	\bigl(D_{i-1,j}^\epsilon,D_{i,j-1}^\epsilon,D_{i-1,j-1}^\epsilon\bigr),
 	\qquad
-	\mathrm{sDTW}_{c,\epsilon}(x,y)=D_{nm}^\epsilon.
+	\mathrm{sDTW}_{c,\epsilon}(x,y)=D_{n,m}^\epsilon.
 \end{equation}
 \index{soft-DTW}% strictindex
 Equivalently, it is the free energy of all monotone paths,
@@ -2191,7 +2466,7 @@ because the partition sum is bounded below by its largest term and above by $\ab
 	=
 	\EE_{\omega\sim\PP_\epsilon}[A_\omega].
 \end{equation}
-Thus $(E_\epsilon)_{ij}$ is the probability that a Gibbs path visits cell $(i,j)$. The matrix $E_\epsilon$ is a diffuse expected alignment and converges, when the hard optimum is unique, to its path-incidence matrix.
+Thus $(E_\epsilon)_{i,j}$ is the probability that a Gibbs path visits cell $(i,j)$. The matrix $E_\epsilon$ is a diffuse expected alignment and converges, when the hard optimum is unique, to its path-incidence matrix.
 
 The analogy with entropic OT is now exact at the level of free energies, but not at the level of feasible variables. Sinkhorn regularizes a coupling with prescribed marginals, whereas soft-DTW regularizes the path law $q$ in~\eqref{eq-soft-dtw-variational}. Its mean $E_\epsilon$ generally has neither prescribed row sums nor prescribed column sums, and the path entropy $H(q)$ cannot in general be recovered from $E_\epsilon$ alone. Algorithmically, Sinkhorn uses alternating matrix scaling, while soft-DTW uses forward--backward dynamic programming on an acyclic grid. Global-alignment kernels sum the same Gibbs weights over all paths~\cite{CuturiVertBirkenesMatsui2007GlobalAlignment,Cuturi2011GlobalAlignment}.
 
@@ -2220,7 +2495,7 @@ Figure~\ref{fig:dynamic-time-warping} contrasts the hard minimizing path with th
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.98\linewidth]{figures/dynamic-time-warping/dtw-alignment.pdf}
-\caption{\emph{Hard and soft monotone alignments recover a nonlinear time warp.} Left: an oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a smooth increasing map $\gamma$; thin gray segments mark exact corresponding times. Middle: the pairwise squared feature-cost matrix $\C_{ij}=\abs{x_i-y_j}^2$, with the optimal DTW path shown in red. Right: the same matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from~\eqref{eq-soft-dtw-expected-alignment} at $\epsilon=.200$; red intensity gives cell-visit probability and the dark red curve is its row-wise barycentric summary.}
+\caption{\emph{Hard and soft monotone alignments recover a nonlinear time warp.} Left: an oscillatory signal $x$ and the warped observation $y(t)=x(\gamma(t))$ for a smooth increasing map $\gamma$; thin gray segments mark exact corresponding times. Middle: the pairwise squared feature-cost matrix $\C_{i,j}=\abs{x_i-y_j}^2$, with the optimal DTW path shown in red. Right: the same matrix overlaid with the soft-DTW expected alignment $E_\epsilon$ from~\eqref{eq-soft-dtw-expected-alignment} at $\epsilon=.200$; red intensity gives cell-visit probability and the dark red curve is its row-wise barycentric summary.}
 \label{fig:dynamic-time-warping}
 \index{dynamic time warping!numerics}% strictindex
 \index{soft-DTW!expected alignment}% strictindex

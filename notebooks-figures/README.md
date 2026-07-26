@@ -600,6 +600,15 @@ cells separate the main numerical steps.
 </td>
 
 </tr>
+<tr>
+
+<td width="33%" align="center" valign="top">
+  <a href="sinkhorn-overrelaxation.ipynb"><img src="thumbnails/sinkhorn-overrelaxation.png" alt="Blockwise over-relaxation of Sinkhorn iterations" width="210"></a><br>
+  <strong>Sinkhorn over-relaxation</strong><br>
+  <a href="sinkhorn-overrelaxation.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/sinkhorn-overrelaxation.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
+</tr>
 </table>
 
 ## Generalized Wasserstein Distances

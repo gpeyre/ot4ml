@@ -64,7 +64,7 @@ def show_book_figure(name, width=760):
 ```
 
 (sec-convergence-init)=
-## Sinkhorn Convergence: Bregman View
+## Sinkhorn Convergence: Bregman Point of View
 
 Sinkhorn can be read as alternating Bregman projections. The main geometric
 message is simple: each row or column rescaling is the KL projection onto one
@@ -698,279 +698,6 @@ density-ratio penalties. What remains special to KL is the strict
 Hilbert-metric contraction below; nonexpansiveness alone does not imply a
 linear rate.
 
-
-(sec-mfunction-scaling)=
-## Monotone Clearing Beyond Variational Sinkhorn
-
-The preceding convergence mechanisms mostly used variational structure:
-Sinkhorn is alternating KL projection, coordinate ascent on a dual objective, or
-a contraction in a projective metric. There is another, more algebraic,
-convergence mechanism which keeps the scaling form but discards the existence
-of an objective. In Galichon's equilibrium-flow viewpoint, and in related work
-on substitutability and inverse isotonicity, one studies nonlinear
-market-clearing equations whose Jacobian has a substitute sign structure
-{cite:p}`GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone`.
-This is the nonlinear analogue of the classical theory of nonsingular
-M-matrices and M-functions
-{cite:p}`MoreRheinboldt1973PSFunctions,Plemmons1977MMatrix`. The relevance for
-OT is that Sinkhorn is the canonical scaling example, but the same monotone
-clearing proof also covers fixed-point equations that are not first-order
-conditions of any convex regularized transport problem.
-
-### Two-block clearing maps
-
-Write the unknowns as two blocks $z=(u,v)\in\RR^n\times\RR^m$, where $u$ and
-$v$ will be signed log-scalings, and let
-
-```{math}
-Q(z)=(Q^\alpha(u,v),Q^\beta(u,v))\in\RR^n\times\RR^m.
-```
-
-The parallel coordinate-clearing map $T$ is defined by solving, for each
-coordinate,
-
-```{math}
-Q_\ell(T_\ell(z),z_{-\ell})=0,
-\qquad 1\leq \ell\leq n+m.
-```
-
-This is the Jacobi version: all coordinates are cleared against the old values
-of the other coordinates. In two-block scaling problems, all coordinates in
-$u$ decouple when $v$ is fixed, and all coordinates in $v$ decouple when $u$ is
-fixed. The more common alternating Sinkhorn sweep is the Gauss--Seidel
-composition of these two block clearings; the order argument below is stated
-for the parallel map to keep the notation short. The same construction extends
-to any finite number of blocks.
-
-(def-mfunctions)=
-:::{admonition} Definition: Z-functions and M-functions
-:class: important
-Let $D\subset\RR^N$ be an order interval. A map $Q:D\to\RR^N$ is diagonally
-isotone if $Q_\ell(z_\ell,z_{-\ell})$ is nondecreasing in $z_\ell$ for every
-$\ell$. It is a Z-function if increasing the other coordinates cannot increase
-the $\ell$-th component:
-
-```{math}
-z_{-\ell}\leq z'_{-\ell}
-\quad\Longrightarrow\quad
-Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).
-```
-
-For a $C^1$ map this means $\partial Q_\ell/\partial z_k\leq0$ for
-$k\neq\ell$. An M-function is a Z-function that is inverse isotone:
-
-```{math}
-Q(z)\leq Q(z')\quad\Longrightarrow\quad z\leq z'.
-```
-
-A vector $z$ is a subsolution if $Q(z)\leq0$, and a supersolution if
-$Q(z)\geq0$.
-:::
-
-The M-function assumption says that cross-effects have the sign of substitutes,
-and that own effects dominate them strongly enough to prevent a global reversal
-of order. Galichon, Samuelson and Vernet formulate this idea through
-nonreversingness and unified gross substitutes; for single-valued maps this is
-the inverse-isotone structure used below. A degenerate $M_0$-function keeps the
-same order structure but allows a null gauge direction, which is exactly what
-happens for balanced Sinkhorn before a potential normalization is imposed.
-
-(thm-mfunction-jacobi-convergence)=
-:::{admonition} Theorem: Monotone convergence of coordinate clearing
-:class: important
-Let $D=[\underline z,\overline z]\subset\RR^N$ be a closed order interval,
-with $\underline z$ a subsolution and $\overline z$ a supersolution. Assume
-that $Q:D\to\RR^N$ is continuous, diagonally isotone and an M-function. Assume
-also that, for every $z\in D$ and every $\ell$, the scalar clearing equation
-$Q_\ell(\xi,z_{-\ell})=0$ has a unique solution
-$\xi\in[\underline z_\ell,\overline z_\ell]$. Then $Q(z)=0$ has a unique
-solution $z^\star\in D$. The Jacobi coordinate-clearing iterates starting from
-any subsolution in $D$ increase monotonically to $z^\star$, while those
-starting from any supersolution in $D$ decrease monotonically to $z^\star$.
-:::
-
-:::{dropdown} Proof
-Let $T$ be the coordinate-clearing map. If $z\in D$ is a subsolution, then
-$Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})$. Diagonal
-isotonicity and uniqueness of the scalar zero give $z_\ell\leq T_\ell(z)$ for
-every $\ell$, hence $z\leq T(z)$. Since $Q$ is a Z-function,
-
-```{math}
-Q_\ell(T(z))\leq Q_\ell(T_\ell(z),z_{-\ell})=0,
-```
-
-so $T(z)$ is again a subsolution. Since every subsolution lies below every
-supersolution by inverse isotonicity, $T(z)\leq\overline z$, and therefore
-$T(z)\in D$. The supersolution argument is the same with all inequalities
-reversed. The lower and upper iterates are thus monotone and trapped in the
-compact interval $D$. Their limits exist, and passing to the limit in
-$Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0$ gives $Q(z^\star)=0$. If $z$ and $z'$ were
-two zeros in $D$, inverse isotonicity applied in both directions gives $z=z'$.
-:::
-
-(prop-smooth-mfunction-certificate)=
-:::{admonition} Proposition: Smooth M-matrix certificate
-:class: important
-Let $D\subset\RR^N$ be a convex order interval and let $Q:D\to\RR^N$ be $C^1$.
-Assume that $DQ(z)$ has nonpositive off-diagonal entries for every $z\in D$.
-If there exists $\lambda\gg0$ such that
-
-```{math}
-\lambda^\top DQ(z)\gg0
-\qquad\text{for all }z\in D,
-```
-
-or equivalently
-
-```{math}
-\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
->
-\sum_{k\neq \ell}\lambda_k
-\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
-\qquad 1\leq \ell\leq N,
-```
-
-then $Q$ is an M-function on $D$.
-:::
-
-:::{dropdown} Proof
-The off-diagonal sign gives the Z-property by integrating the partial
-derivatives along coordinatewise increasing segments. The displayed inequalities
-imply that each $DQ(z)$ is a strictly weighted column diagonally dominant
-Z-matrix, hence a nonsingular M-matrix; in particular its inverse is nonnegative
-for each fixed $z$ {cite:p}`Plemmons1977MMatrix`. For two points
-$z,z'\in D$, set
-
-```{math}
-A=\int_0^1 DQ\big(z'+t(z-z')\big)\,dt .
-```
-
-The matrix $A$ has the same Z-sign pattern and the same strict weighted
-diagonal dominance, so it is again a nonsingular M-matrix and $A^{-1}\geq0$.
-Since $Q(z)-Q(z')=A(z-z')$, the implication $Q(z)\leq Q(z')$ gives
-$z-z'=A^{-1}(Q(z)-Q(z'))\leq0$. This is inverse isotonicity. The positive
-diagonal entries also give diagonal isotonicity.
-:::
-
-### Sinkhorn as the canonical $M_0$-system
-
-Let $K=\exp(-C/\epsilon)>0$ and write
-
-```{math}
-\P_{ij}=r_iK_{ij}s_j,
-\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-```
-
-The signed convention $v=-\log s$ makes the clearing equations
-
-```{math}
-Q_i^\alpha(u,v)=\sum_jK_{ij}e^{u_i-v_j}-a_i,
-\qquad
-Q_j^\beta(u,v)=b_j-\sum_iK_{ij}e^{u_i-v_j}.
-```
-
-Then $Q=0$ is exactly $\P\mathbf 1=a$ and $\P^\top\mathbf 1=b$, and coordinate
-clearing gives the usual Sinkhorn scalings
-
-```{math}
-r_i^+=\frac{a_i}{\sum_jK_{ij}s_j},
-\qquad
-s_j^+=\frac{b_j}{\sum_iK_{ij}r_i}.
-```
-
-The Jacobian has positive diagonal entries and nonpositive off-diagonal
-entries. Its column sums vanish, reflecting the gauge invariance
-$(u,v)\mapsto(u+c\mathbf 1,v+c\mathbf 1)$. Thus balanced Sinkhorn is naturally
-an $M_0$-system. Fixing one log-scaling coordinate turns the reduced Jacobian
-into a principal minor of the weighted bipartite graph Laplacian. Under
-connected support, automatic here because $K>0$, it is a nonsingular M-matrix. This complements
-the variational and Hilbert-metric proofs above, and also connects Sinkhorn
-scaling with choice models {cite:p}`QuGalichonUgander2023SinkhornChoice`.
-
-(ex-lossy-sinkhorn-clearing)=
-:::{admonition} Example: Lossy Sinkhorn clearing with outside options
-:class: ot4ml-example
-
-The following OT-shaped clearing model is deliberately minimal. It keeps a positive transport kernel and multiplicative scalings, but introduces outside options and lossy arrivals. It should be read as a toy absorptive matching model rather than as a new transport distance. Let $0<\eta_{ij}\leq1$, $\sigma_i>0$, $\tau_j>0$, and set
-
-```{math}
-\P_{ij}=r_i\K_{ij}s_j,\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-```
-
-The clearing equations are
-
-```{math}
-\sigma_i r_i+\sum_jP_{ij}=a_i,
-\qquad
-\tau_j s_j+\sum_i\eta_{ij}\P_{ij}=b_j.
-```
-
-They say that source mass can exit through an outside sink, while target demand can be met either by effective arrivals or by a local outside source. The coordinate-clearing update is still Sinkhorn-like:
-
-```{math}
-r_i^+=\frac{a_i}{\sigma_i+\sum_j\K_{ij}s_j},
-\qquad
-s_j^+=\frac{b_j}{\tau_j+\sum_i\eta_{ij}\K_{ij}r_i}.
-```
-
-In the variables $(u,v)$, the off-diagonal derivatives again have the Z-sign. On the invariant domain $r_i\leq a_i/\sigma_i$, the simple sufficient condition
-
-```{math}
-\tau_j>\sum_i(1-\eta_{ij})\K_{ij}\frac{a_i}{\sigma_i},
-\qquad 1\leq j\leq m,
-```
-
-implies the weighted diagonal-dominance certificate $\ones^\top DQ\gg0$, hence Proposition {ref}`prop-smooth-mfunction-certificate` shows that the system is an M-function on that domain. Indeed, for the clearing map $Q_i^\alpha=\sigma_i r_i+\sum_jP_{ij}-a_i$ and $Q_j^\beta=b_j-\tau_j s_j-\sum_i\eta_{ij}\P_{ij}$, the column sums of the Jacobian are
-
-```{math}
-\sigma_i r_i+\sum_j(1-\eta_{ij})\P_{ij}>0,
-\qquad
-\tau_j s_j-\sum_i(1-\eta_{ij})\P_{ij}
-=
-s_j\left(\tau_j-\sum_i(1-\eta_{ij})\K_{ij}r_i\right)>0.
-```
-
-The model is generally non-variational. If $Q=\nabla\mathcal E$ for a $C^2$ potential, the cross-partials would satisfy
-
-```{math}
-\frac{\partial Q_i^\alpha}{\partial v_j}
-=
-\frac{\partial Q_j^\beta}{\partial u_i}.
-```
-
-Here this would force $-\P_{ij}=-\eta_{ij}\P_{ij}$ on every active arc, hence $\eta_{ij}=1$. Lossy arrivals therefore destroy exactness of the one-form $\sum_\ell Q_\ell\,\d z_\ell$, while preserving the monotone clearing structure.
-:::
-
-
-Figure {ref}`fig:sinkhorn-mfunctions-nonvariational-scaling` shows this mechanism on two empirical Gaussian mixtures in $\RR^2$.
-
-(fig:sinkhorn-mfunctions-nonvariational-scaling)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-mfunctions-nonvariational-scaling")
-```
-
-*Non-variational lossy Sinkhorn scaling on two Gaussian-mixture point clouds.*
-The outside coefficients are $\sigma_i=\rho\bar\sigma_i$ and
-$\tau_j=\rho\bar\tau_j$, and columns increase the common scale $\rho$.
-Colors show centered log-scalings, $\log r-\langle\log r\rangle$
-on the source row and $\log s-\langle\log s\rangle$ on the target row; faint
-violet links mark the largest entries of the induced effective plan. The first displayed case
-uses uniform outside coefficients, while the second uses spatially varying outside
-coefficients and directional loss factors. The updates are
-Sinkhorn-like row and column clearings, but $\eta_{ij}\neq1$ breaks the
-cross-partial symmetry required by a convex potential.
-:::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Change the two monotone update temperatures to watch the source and target logarithmic scalings stabilize under a non-variational Sinkhorn-like iteration.
-:::
-
-<iframe class="ot4ml-live-frame" title="Interactive M-functions scaling panel" src="../live/sinkhorn-mfunctions-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
 ## Sinkhorn Convergence: Sublinear Robust Rate
 
@@ -2076,3 +1803,277 @@ in blue.*
 :::
 
 <iframe class="ot4ml-live-frame" title="Continuous ε-Sinkhorn flow controls" src="../live/sinkhorn-continuous-epsilon.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
+
+
+(sec-mfunction-scaling)=
+## Monotone Clearing Beyond Variational Sinkhorn
+
+The preceding convergence mechanisms mostly used variational structure:
+Sinkhorn is alternating KL projection, coordinate ascent on a dual objective, or
+a contraction in a projective metric. There is another, more algebraic,
+convergence mechanism which keeps the scaling form but discards the existence
+of an objective. In Galichon's equilibrium-flow viewpoint, and in related work
+on substitutability and inverse isotonicity, one studies nonlinear
+market-clearing equations whose Jacobian has a substitute sign structure
+{cite:p}`GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone`.
+This is the nonlinear analogue of the classical theory of nonsingular
+M-matrices and M-functions
+{cite:p}`MoreRheinboldt1973PSFunctions,Plemmons1977MMatrix`. The relevance for
+OT is that Sinkhorn is the canonical scaling example, but the same monotone
+clearing proof also covers fixed-point equations that are not first-order
+conditions of any convex regularized transport problem.
+
+### Two-block clearing maps
+
+Write the unknowns as two blocks $z=(u,v)\in\RR^n\times\RR^m$, where $u$ and
+$v$ will be signed log-scalings, and let
+
+```{math}
+Q(z)=(Q^\alpha(u,v),Q^\beta(u,v))\in\RR^n\times\RR^m.
+```
+
+The parallel coordinate-clearing map $T$ is defined by solving, for each
+coordinate,
+
+```{math}
+Q_\ell(T_\ell(z),z_{-\ell})=0,
+\qquad 1\leq \ell\leq n+m.
+```
+
+This is the Jacobi version: all coordinates are cleared against the old values
+of the other coordinates. In two-block scaling problems, all coordinates in
+$u$ decouple when $v$ is fixed, and all coordinates in $v$ decouple when $u$ is
+fixed. The more common alternating Sinkhorn sweep is the Gauss--Seidel
+composition of these two block clearings; the order argument below is stated
+for the parallel map to keep the notation short. The same construction extends
+to any finite number of blocks.
+
+(def-mfunctions)=
+:::{admonition} Definition: Z-functions and M-functions
+:class: important
+Let $D\subset\RR^N$ be an order interval. A map $Q:D\to\RR^N$ is diagonally
+isotone if $Q_\ell(z_\ell,z_{-\ell})$ is nondecreasing in $z_\ell$ for every
+$\ell$. It is a Z-function if increasing the other coordinates cannot increase
+the $\ell$-th component:
+
+```{math}
+z_{-\ell}\leq z'_{-\ell}
+\quad\Longrightarrow\quad
+Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).
+```
+
+For a $C^1$ map this means $\partial Q_\ell/\partial z_k\leq0$ for
+$k\neq\ell$. An M-function is a Z-function that is inverse isotone:
+
+```{math}
+Q(z)\leq Q(z')\quad\Longrightarrow\quad z\leq z'.
+```
+
+A vector $z$ is a subsolution if $Q(z)\leq0$, and a supersolution if
+$Q(z)\geq0$.
+:::
+
+The M-function assumption says that cross-effects have the sign of substitutes,
+and that own effects dominate them strongly enough to prevent a global reversal
+of order. Galichon, Samuelson and Vernet formulate this idea through
+nonreversingness and unified gross substitutes; for single-valued maps this is
+the inverse-isotone structure used below. A degenerate $M_0$-function keeps the
+same order structure but allows a null gauge direction, which is exactly what
+happens for balanced Sinkhorn before a potential normalization is imposed.
+
+(thm-mfunction-jacobi-convergence)=
+:::{admonition} Theorem: Monotone convergence of coordinate clearing
+:class: important
+Let $D=[\underline z,\overline z]\subset\RR^N$ be a closed order interval,
+with $\underline z$ a subsolution and $\overline z$ a supersolution. Assume
+that $Q:D\to\RR^N$ is continuous, diagonally isotone and an M-function. Assume
+also that, for every $z\in D$ and every $\ell$, the scalar clearing equation
+$Q_\ell(\xi,z_{-\ell})=0$ has a unique solution
+$\xi\in[\underline z_\ell,\overline z_\ell]$. Then $Q(z)=0$ has a unique
+solution $z^\star\in D$. The Jacobi coordinate-clearing iterates starting from
+any subsolution in $D$ increase monotonically to $z^\star$, while those
+starting from any supersolution in $D$ decrease monotonically to $z^\star$.
+:::
+
+:::{dropdown} Proof
+Let $T$ be the coordinate-clearing map. If $z\in D$ is a subsolution, then
+$Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})$. Diagonal
+isotonicity and uniqueness of the scalar zero give $z_\ell\leq T_\ell(z)$ for
+every $\ell$, hence $z\leq T(z)$. Since $Q$ is a Z-function,
+
+```{math}
+Q_\ell(T(z))\leq Q_\ell(T_\ell(z),z_{-\ell})=0,
+```
+
+so $T(z)$ is again a subsolution. Since every subsolution lies below every
+supersolution by inverse isotonicity, $T(z)\leq\overline z$, and therefore
+$T(z)\in D$. The supersolution argument is the same with all inequalities
+reversed. The lower and upper iterates are thus monotone and trapped in the
+compact interval $D$. Their limits exist, and passing to the limit in
+$Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0$ gives $Q(z^\star)=0$. If $z$ and $z'$ were
+two zeros in $D$, inverse isotonicity applied in both directions gives $z=z'$.
+:::
+
+(prop-smooth-mfunction-certificate)=
+:::{admonition} Proposition: Smooth M-matrix certificate
+:class: important
+Let $D\subset\RR^N$ be a convex order interval and let $Q:D\to\RR^N$ be $C^1$.
+Assume that $DQ(z)$ has nonpositive off-diagonal entries for every $z\in D$.
+If there exists $\lambda\gg0$ such that
+
+```{math}
+\lambda^\top DQ(z)\gg0
+\qquad\text{for all }z\in D,
+```
+
+or equivalently
+
+```{math}
+\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
+>
+\sum_{k\neq \ell}\lambda_k
+\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
+\qquad 1\leq \ell\leq N,
+```
+
+then $Q$ is an M-function on $D$.
+:::
+
+:::{dropdown} Proof
+The off-diagonal sign gives the Z-property by integrating the partial
+derivatives along coordinatewise increasing segments. The displayed inequalities
+imply that each $DQ(z)$ is a strictly weighted column diagonally dominant
+Z-matrix, hence a nonsingular M-matrix; in particular its inverse is nonnegative
+for each fixed $z$ {cite:p}`Plemmons1977MMatrix`. For two points
+$z,z'\in D$, set
+
+```{math}
+A=\int_0^1 DQ\big(z'+t(z-z')\big)\,dt .
+```
+
+The matrix $A$ has the same Z-sign pattern and the same strict weighted
+diagonal dominance, so it is again a nonsingular M-matrix and $A^{-1}\geq0$.
+Since $Q(z)-Q(z')=A(z-z')$, the implication $Q(z)\leq Q(z')$ gives
+$z-z'=A^{-1}(Q(z)-Q(z'))\leq0$. This is inverse isotonicity. The positive
+diagonal entries also give diagonal isotonicity.
+:::
+
+### Sinkhorn as the canonical $M_0$-system
+
+Let $K=\exp(-C/\epsilon)>0$ and write
+
+```{math}
+\P_{ij}=r_iK_{ij}s_j,
+\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
+```
+
+The signed convention $v=-\log s$ makes the clearing equations
+
+```{math}
+Q_i^\alpha(u,v)=\sum_jK_{ij}e^{u_i-v_j}-a_i,
+\qquad
+Q_j^\beta(u,v)=b_j-\sum_iK_{ij}e^{u_i-v_j}.
+```
+
+Then $Q=0$ is exactly $\P\mathbf 1=a$ and $\P^\top\mathbf 1=b$, and coordinate
+clearing gives the usual Sinkhorn scalings
+
+```{math}
+r_i^+=\frac{a_i}{\sum_jK_{ij}s_j},
+\qquad
+s_j^+=\frac{b_j}{\sum_iK_{ij}r_i}.
+```
+
+The Jacobian has positive diagonal entries and nonpositive off-diagonal
+entries. Its column sums vanish, reflecting the gauge invariance
+$(u,v)\mapsto(u+c\mathbf 1,v+c\mathbf 1)$. Thus balanced Sinkhorn is naturally
+an $M_0$-system. Fixing one log-scaling coordinate turns the reduced Jacobian
+into a principal minor of the weighted bipartite graph Laplacian. Under
+connected support, automatic here because $K>0$, it is a nonsingular M-matrix. This complements
+the variational and Hilbert-metric proofs above, and also connects Sinkhorn
+scaling with choice models {cite:p}`QuGalichonUgander2023SinkhornChoice`.
+
+(ex-lossy-sinkhorn-clearing)=
+:::{admonition} Example: Lossy Sinkhorn clearing with outside options
+:class: ot4ml-example
+
+The following OT-shaped clearing model is deliberately minimal. It keeps a positive transport kernel and multiplicative scalings, but introduces outside options and lossy arrivals. It should be read as a toy absorptive matching model rather than as a new transport distance. Let $0<\eta_{ij}\leq1$, $\sigma_i>0$, $\tau_j>0$, and set
+
+```{math}
+\P_{ij}=r_i\K_{ij}s_j,\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
+```
+
+The clearing equations are
+
+```{math}
+\sigma_i r_i+\sum_jP_{ij}=a_i,
+\qquad
+\tau_j s_j+\sum_i\eta_{ij}\P_{ij}=b_j.
+```
+
+They say that source mass can exit through an outside sink, while target demand can be met either by effective arrivals or by a local outside source. The coordinate-clearing update is still Sinkhorn-like:
+
+```{math}
+r_i^+=\frac{a_i}{\sigma_i+\sum_j\K_{ij}s_j},
+\qquad
+s_j^+=\frac{b_j}{\tau_j+\sum_i\eta_{ij}\K_{ij}r_i}.
+```
+
+In the variables $(u,v)$, the off-diagonal derivatives again have the Z-sign. On the invariant domain $r_i\leq a_i/\sigma_i$, the simple sufficient condition
+
+```{math}
+\tau_j>\sum_i(1-\eta_{ij})\K_{ij}\frac{a_i}{\sigma_i},
+\qquad 1\leq j\leq m,
+```
+
+implies the weighted diagonal-dominance certificate $\ones^\top DQ\gg0$, hence Proposition {ref}`prop-smooth-mfunction-certificate` shows that the system is an M-function on that domain. Indeed, for the clearing map $Q_i^\alpha=\sigma_i r_i+\sum_jP_{ij}-a_i$ and $Q_j^\beta=b_j-\tau_j s_j-\sum_i\eta_{ij}\P_{ij}$, the column sums of the Jacobian are
+
+```{math}
+\sigma_i r_i+\sum_j(1-\eta_{ij})\P_{ij}>0,
+\qquad
+\tau_j s_j-\sum_i(1-\eta_{ij})\P_{ij}
+=
+s_j\left(\tau_j-\sum_i(1-\eta_{ij})\K_{ij}r_i\right)>0.
+```
+
+The model is generally non-variational. If $Q=\nabla\mathcal E$ for a $C^2$ potential, the cross-partials would satisfy
+
+```{math}
+\frac{\partial Q_i^\alpha}{\partial v_j}
+=
+\frac{\partial Q_j^\beta}{\partial u_i}.
+```
+
+Here this would force $-\P_{ij}=-\eta_{ij}\P_{ij}$ on every active arc, hence $\eta_{ij}=1$. Lossy arrivals therefore destroy exactness of the one-form $\sum_\ell Q_\ell\,\d z_\ell$, while preserving the monotone clearing structure.
+:::
+
+
+Figure {ref}`fig:sinkhorn-mfunctions-nonvariational-scaling` shows this mechanism on two empirical Gaussian mixtures in $\RR^2$.
+
+(fig:sinkhorn-mfunctions-nonvariational-scaling)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-mfunctions-nonvariational-scaling")
+```
+
+*Non-variational lossy Sinkhorn scaling on two Gaussian-mixture point clouds.*
+The outside coefficients are $\sigma_i=\rho\bar\sigma_i$ and
+$\tau_j=\rho\bar\tau_j$, and columns increase the common scale $\rho$.
+Colors show centered log-scalings, $\log r-\langle\log r\rangle$
+on the source row and $\log s-\langle\log s\rangle$ on the target row; faint
+violet links mark the largest entries of the induced effective plan. The first displayed case
+uses uniform outside coefficients, while the second uses spatially varying outside
+coefficients and directional loss factors. The updates are
+Sinkhorn-like row and column clearings, but $\eta_{ij}\neq1$ breaks the
+cross-partial symmetry required by a convex potential.
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Change the two monotone update temperatures to watch the source and target logarithmic scalings stabilize under a non-variational Sinkhorn-like iteration.
+:::
+
+<iframe class="ot4ml-live-frame" title="Interactive M-functions scaling panel" src="../live/sinkhorn-mfunctions-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>

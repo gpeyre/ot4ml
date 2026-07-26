@@ -646,6 +646,59 @@ Figure~\ref{fig:matching-rational-duplication} makes this reduction explicit by 
 \label{fig:matching-rational-duplication}
 \end{figure}
 
+\paragraph{Applications of discrete transport.}
+
+Discrete Kantorovich transport applies whenever weighted data points or histograms must be compared through a geometry-aware correspondence. The following examples illustrate information transfer between datasets, comparison of visual distributions, and inference of temporal relations between cell populations.
+
+\begin{example}[Application to domain adaptation]\label{ex-domain-adaptation}
+\index{domain adaptation}% strictindex
+\index{transfer learning}% strictindex
+	In unsupervised domain adaptation, labeled source samples \((x_i^s,y_i^s)_i\) and unlabeled target samples \((x_j^t)_j\) define empirical laws $\al_s=\sum_i a_i\de_{x_i^s}$ and $\al_t=\sum_j b_j\de_{x_j^t}$.
+	Writing \(\a=(a_i)_i\) and \(\b=(b_j)_j\), a Kantorovich coupling \(\P\in\CouplingsD(\a,\b)\) gives soft correspondences between the two clouds. For $b_j>0$, disintegrating $\P$ with respect to its target marginal and averaging the source labels gives the backward barycentric rule $\widetilde y_j=b_j^{-1}\sum_i \P_{i,j}y_i^s$, for either real-valued labels or one-hot class vectors. This is the label-space analogue of the barycentric projection introduced later in Definition~\ref{def-barycentric-projection}. Alternatively, the transport can be optimized jointly with a classifier by adding label-prediction terms to the feature cost. This is the mechanism behind OT domain adaptation and JDOT: the plan is not only a distance certificate, but an explicit cross-domain alignment~\cite{courty2017optimal,courty2017joint}. Learning or adapting the ground cost is the inverse viewpoint developed later in Section~\ref{sec-metric-learning-inverse-ot}.
+\end{example}
+
+\begin{example}[Application to visual distributions]\label{ex-visual-distributions}
+\index{computer vision}% strictindex
+\index{earth mover's distance}% strictindex
+	Images, color histograms, texture descriptors and shape samples can all be represented as discrete measures. The ground cost then encodes color differences, image-plane displacements or surface distances. This viewpoint underlies the Earth Mover's Distance for image retrieval~\cite{RubTomGui00}, regularized transport for imaging~\cite{2014-xia-siims}, convolutional transport on geometric domains~\cite{2015-solomon-siggraph}, and Wasserstein barycenters for texture mixing or Radon-domain image processing~\cite{2013-Bonneel-barycenter,bonneel2023survey}. The practical gain is that the discrepancy respects geometry: moving a small amount of mass to a nearby color or pixel is cheaper than moving it far away.
+\end{example}
+
+\begin{example}[Application to single-cell population dynamics]\label{ex-cell-population-distance}\label{ex-single-cell-trajectory-inference}
+\index{single-cell genomics}% strictindex
+\index{trajectory inference}% strictindex
+\index{Waddington-OT}% strictindex
+	Single-cell sequencing observes different cells at each collection time. If \(x_i^{[k]}\in\Xx\) denotes the state of cell \(i\) at time \(t_k\), write
+	\[
+		\al_{t_k}=\sum_{i=1}^{n_k}a_i^{[k]}\de_{x_i^{[k]}}
+		\qandq
+		\a^{[k]}=(a_i^{[k]})_{i=1}^{n_k}\in\simplex_{n_k}.
+	\]
+	Thus a cell is one atom of an empirical population measure, rather than itself a measure over genes as in Example~\ref{ex-gene-expression-distance}. A balanced transport between two consecutive snapshots is represented by a matrix \(\P^{[k]}\in\RR_+^{n_k\times n_{k+1}}\) satisfying
+	\[
+		\P^{[k]}\ones_{n_{k+1}}=\a^{[k]}
+		\qandq
+		(\P^{[k]})^\top\ones_{n_k}=\a^{[k+1]}.
+	\]
+	Its entry \(\P^{[k]}_{i,j}\) is a soft ancestor--descendant mass, not evidence that the same cell was observed twice. For every row with positive sum, the normalization
+	\[
+		\K^{[k]}_{i,j}
+		\eqdef
+		\frac{\P^{[k]}_{i,j}}{\sum_{j'=1}^{n_{k+1}}\P^{[k]}_{i,j'}}
+	\]
+	defines a conditional transition probability; multiplying successive matrices \(\K^{[k]}\) yields population-level lineage probabilities across several collection times.
+
+	Waddington-OT modifies this balanced baseline by incorporating growth estimates and relaxing the marginal constraints through unbalanced transport, as discussed in Example~\ref{ex-unbalanced-single-cell}~\cite{schiebinger2017reconstruction}. Related continuous and entropic constructions include trajectory inference and generative transport models~\cite{TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}. Figure~\ref{fig:kantorovich-waddington-ot} displays three observed population snapshots in the common force-layout embedding used by Waddington-OT; this visualization need not coincide with the ground geometry used to compute \(\P^{[k]}\).
+\end{example}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.98\linewidth]{figures/kantorovich-waddington-ot--waddington-ot.pdf}
+\caption{\emph{Three snapshots of the Waddington-OT single-cell reprogramming time course.} The first panel aggregates a representative sample from all collection times and colors cells from red to blue according to time. The remaining panels highlight the populations observed at days \(0\), \(9\), and \(18\), while cells from other times remain in gray. Every panel uses the same official force-layout embedding and viewport; no transport coupling or interpolated trajectory is displayed.}
+\index{single-cell genomics}% strictindex
+\index{trajectory inference}% strictindex
+\label{fig:kantorovich-waddington-ot}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Linear-Programming Algorithms}
 \index{linear!programming}% strictindex
@@ -913,29 +966,6 @@ This is an infinite-dimensional linear program over a space of measures.
 \index{random variable}% strictindex
 \index{joint!law}% strictindex
 \end{rem}
-
-\begin{example}[Application to domain adaptation]\label{ex-domain-adaptation}
-\index{domain adaptation}% strictindex
-\index{transfer learning}% strictindex
-	In unsupervised domain adaptation, labeled source samples \((x_i^s,y_i^s)_i\) and unlabeled target samples \((x_j^t)_j\) define empirical laws
-	\[
-		\al_s=\sum_i a_i\de_{x_i^s}
-		\qandq
-		\al_t=\sum_j b_j\de_{x_j^t}.
-	\]
-	Writing \(\a=(a_i)_i\) and \(\b=(b_j)_j\), a Kantorovich coupling \(\P\in\CouplingsD(\a,\b)\) gives soft correspondences between the two clouds. Labels can be transferred by the barycentric rule
-	\[
-		\widetilde y_j=\frac1{b_j}\sum_i \P_{ij}y_i^s
-		\qquad (b_j>0),
-	\]
-	for real-valued labels or one-hot class vectors. Alternatively, the transport can be optimized jointly with a classifier by adding label-prediction terms to the feature cost. This is the mechanism behind OT domain adaptation and JDOT: the plan is not only a distance certificate, but an explicit cross-domain alignment~\cite{courty2017optimal,courty2017joint}. Learning or adapting the ground cost is the inverse viewpoint developed later in Section~\ref{sec-metric-learning-inverse-ot}.
-\end{example}
-
-\begin{example}[Application to visual distributions]\label{ex-visual-distributions}
-\index{computer vision}% strictindex
-\index{earth mover's distance}% strictindex
-	Images, color histograms, texture descriptors and shape samples can all be represented as measures. The ground cost then encodes color differences, image-plane displacements or surface distances. This viewpoint underlies the Earth Mover's Distance for image retrieval~\cite{RubTomGui00}, regularized transport for imaging~\cite{2014-xia-siims}, convolutional transport on geometric domains~\cite{2015-solomon-siggraph}, and Wasserstein barycenters for texture mixing or Radon-domain image processing~\cite{2013-Bonneel-barycenter,bonneel2023survey}. The practical gain is that the discrepancy respects geometry: moving a small amount of mass to a nearby color or pixel is cheaper than moving it far away.
-\end{example}
 
 \begin{prop}[Existence for lower-semicontinuous costs]\label{prop-kantorovich-existence-compact}
 \index{lower semicontinuity}% strictindex
@@ -1462,7 +1492,11 @@ The Euclidean quadratic case separates the displacement of the means from the tr
 	because $\int(u-v)\,\d\pi^0(u,v)=0$. Taking the infimum over the corresponding couplings proves the decomposition.
 \end{proof}
 
-\begin{example}[Application to gene-expression distances]\label{ex-gene-expression-distance}
+\paragraph{Applications of Wasserstein distance.}
+
+Representing structured data as probability measures turns the Wasserstein distance into a geometry-aware comparison tool. The following are two representative application domains: single-cell biology and natural-language processing.
+
+\begin{example}[Application to gene-expression distances between two cells]\label{ex-gene-expression-distance}
 \index{single-cell genomics}% strictindex
 \index{ground metric learning}% strictindex
 	A single cell can be encoded as a measure over genes,
@@ -1471,18 +1505,6 @@ The Euclidean quadratic case separates the displacement of the means from the tr
 	\]
 	where \(e_g\geq0\), \(\sum_g e_g=1\), and \(\varphi(g)\) is a gene embedding or annotation vector. Wasserstein distances then compare cells by moving expression mass between genes. The choice of \(\dist(\varphi(g),\varphi(g'))\) is biologically meaningful: it can come from annotations, pathways or a learned ground metric. This is the idea behind the Gene Mover's Distance and related metric-learning approaches for single-cell data~\cite{BellazziCodegoniGualandiNicoraVercesi2021GeneMover,HuizingCantiniPeyre2021WassersteinSingularVectors}; it is the single-cell analogue of the cost-learning question revisited in Section~\ref{sec-metric-learning-inverse-ot}.
 \end{example}
-
-Single-cell OT also has a complementary population-level interpretation: instead of representing one cell as a measure over genes, one treats every cell as one atom of a time-indexed population law. Figure~\ref{fig:kantorovich-waddington-ot} shows this second viewpoint on consecutive iPSC reprogramming snapshots and the Waddington-OT coupling of Schiebinger et al.~\cite{schiebinger2017reconstruction}. Because single-cell sequencing is destructive, the coupling encodes inferred ancestor--descendant relations between populations rather than tracks of individually observed cells.
-\index{Waddington-OT}% strictindex
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=.98\linewidth]{figures/kantorovich-waddington-ot--waddington-ot.pdf}
-\caption{\emph{Waddington-OT between consecutive single-cell snapshots.} The left panel superposes day-10 cells in red and day-10.5 cells in blue in the shared force-layout embedding released with the Waddington-OT tutorial; violet segments show a farthest-point subset of high-mass coupling entries. This embedding is used only for display: the released plan uses the authors' local-PCA transport geometry. The remaining panels move a mass-weighted, farthest-point-thinned sample of plan atoms along their Euclidean display segments, with color interpolated from red to blue; pale endpoints provide a common positional reference. The unbalanced plan is normalized only to sample these representative paths, which illustrate coupling-induced displacement rather than cells observed at intermediate times.}
-\index{single-cell genomics}% strictindex
-\index{trajectory inference}% strictindex
-\label{fig:kantorovich-waddington-ot}
-\end{figure}
 
 \begin{example}[Application to word embeddings and documents]\label{ex-word-mover-distance}
 \index{word mover's distance}% strictindex
@@ -1619,7 +1641,7 @@ Figure~\ref{fig:kantorovich-plan-interpolation} visualizes the construction when
 \label{fig:kantorovich-plan-interpolation}
 \end{figure}
 
-\paragraph{General geodesic spaces.}
+\begin{rem}[Interpolation on a general geodesic space]
 \index{geodesic!space}% strictindex
 For Dirac masses in Euclidean space, the $\Wass_2$ geodesic from $\de_x$ to $\de_y$ is $t\mapsto\de_{(1-t)x+t y}$. The same idea extends to any geodesic metric space $(\X,\dist)$, meaning that each pair of points can be joined by a constant-speed metric geodesic. For each pair $(x,y)$, one replaces the Euclidean segment by a curve $\gamma^{x,y}:[0,1]\to\X$ such that $\gamma^{x,y}_0=x$, $\gamma^{x,y}_1=y$, and
 \[
@@ -1629,7 +1651,7 @@ If this geodesic is unique and depends measurably on $(x,y)$, one defines $e_t(x
 \index{Dirac mass}% strictindex
 \index{path space}% strictindex
 \index{dynamical optimal plan}% strictindex
-
+\end{rem}
 
 \paragraph{Comparison with Monge.}
 \index{Monge!problem}% strictindex
@@ -1649,12 +1671,10 @@ The next proposition makes precise one important sense in which Kantorovich is t
 \index{measure!atomless}% strictindex
 	Let $(\Xx,\dist)$ be a compact metric space, let $p\geq1$, and let $\al,\be\in\Pp(\Xx)$ with $\al$ atomless. Then
 	\[
-		\Wass_p(\al,\be)^p
-		=
-		\inf_{T_\sharp\al=\be}\int_\Xx \dist(x,T(x))^p\d\al(x).
+		\tilde\Wass_p(\al,\be)=\Wass_p(\al,\be).
 	\]
-	The infimum on the Monge side need not be attained.
 \end{prop}
+This is an equality of infimal values: the Kantorovich minimum is attained, whereas the infimum defining $\tilde\Wass_p$ in~\eqref{eq-monge-distance} need not be attained by a transport map.
 \begin{proof}
 	Let $\pi\in\Couplings(\al,\be)$. Choose finite Borel partitions $(A_i)_i$ and $(B_j)_j$ of $\Xx$ whose cells have diameter at most $\varepsilon$. Set $m_{ij}=\pi(A_i\times B_j)$. Since $\al$ is atomless and $\sum_j m_{ij}=\al(A_i)$, each $A_i$ can be partitioned into Borel sets $A_{ij}$ with $\al(A_{ij})=m_{ij}$. If $m_{ij}>0$, then $\be(B_j)>0$, and Proposition~\ref{prop-existence-transport-map-atomless} gives a measurable map
 	\[
@@ -1798,83 +1818,6 @@ The Wasserstein distance $\Wass_p$ is a weak distance: it compares singular dist
 \index{empirical!measure}% strictindex
 \end{rem}
 
-In terms of random vectors, if $X_n \sim \al_n$ and $X \sim \al$ (not necessarily defined on the same probability space), weak convergence corresponds to convergence in law of $X_n$ toward $X$.
-\index{convergence!in law}% strictindex
-\index{weak!convergence}% strictindex
-
-\begin{rem}[Modes of convergence for random variables]\label{rem-random-variable-convergences}
-\index{random variable}% strictindex
-\index{convergence!mode}% strictindex
-	Convergence of laws should be distinguished from stronger notions of convergence for random variables. If $X_n$ and $X$ are defined on a common probability space, then $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
-\index{convergence!in probability}% strictindex
-	\[
-		\foralls \epsilon>0,\qquad
-		\PP(\norm{X_n-X}>\epsilon)\to0.
-	\]
-	Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak, or narrow, convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
-\index{convergence!in law}% strictindex
-\index{probability measure}% strictindex
-\index{weak!convergence}% strictindex
-\index{total variation}% strictindex
-\end{rem}
-
-\begin{rem}[Central limit theorem]\label{rem-clt}
-\index{central limit theorem}% strictindex
-	The central limit theorem states that if $(X_i)_{i\geq1}$ are i.i.d. random vectors with finite second moments, $\EE(X_i)=0$, and $\EE(X_i X_i^\top)=\Id$, then the normalized sum
-	\[
-		Z_n \eqdef \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i
-	\]
-	converges in law toward the standard Gaussian $\Gaussian(0,\Id)$. In the terminology recalled above, this means that the measure $\al_n$ representing the law of $Z_n$ converges weakly toward the centered Gaussian measure $\al=\Gaussian(0,\Id)$.
-
-		Equivalently, this is a statement about rescaled convolutions of measures. If $\al$ and $\be$ are probability measures on $\RR^d$, their convolution is
-\index{measure convolution}% strictindex
-	\[
-			\al*\be \eqdef \operatorname{add}_\sharp(\al\otimes\be),
-		\qquad
-			\int \varphi\,\d(\al*\be)
-		=
-			\iint \varphi(x+y)\,\d\al(x)\d\be(y)
-	\]
-		for every bounded continuous $\varphi$, where $\operatorname{add}(x,y)=x+y$. Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When $\al$ and $\be$ have densities $f$ and $g$, the convolution has density
-	\[
-		(f*g)(z)=\int_{\RR^d} f(x)g(z-x)\d x.
-	\]
-	If $\al$ is the common law of the variables $X_i$, writing $\al^{*n}$ for the $n$-fold convolution of $\al$ with itself, and denoting by $D_a(x)=a x$ the dilation map, the law of $Z_n$ is
-	\[
-		\al_n=(D_{1/\sqrt n})_\sharp\al^{*n}.
-	\]
-	The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})_\sharp\al^{*n}$ converges weakly to the Gaussian $\Gaussian(0,\Id)$.
-\index{measure convolution}% strictindex
-\index{rescaled convolution}% strictindex
-\end{rem}
-
-Figure~\ref{fig:matching-quantitative-clt} makes this qualitative weak convergence visible in the elementary Bernoulli case: every finite-$n$ law is discrete, yet the normalized atom heights approach the Gaussian density.
-
-\begin{figure}[H]
-\centering
-\begin{tabular}{@{}ccccc@{}}
-\small $n=1$ & \small $n=2$ & \small $n=4$ & \small $n=16$ & \small $n=64$ \\[-.15em]
-\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-001.pdf} &
-\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-002.pdf} &
-\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-004.pdf} &
-\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-016.pdf} &
-\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-064.pdf}
-\end{tabular}
-\caption{\emph{Central-limit theorem for normalized Bernoulli sums.} Starting from $\al_0=\frac12(\delta_{-1}+\delta_1)$, the law of $Z_n=n^{-1/2}\sum_{i=1}^nX_i$ remains discrete, but its rescaled atom heights approach the standard Gaussian density shown in gray. Proposition~\ref{prop-berry-esseen-w1} later quantifies this weak convergence in $\Wass_1$.}
-\index{central limit theorem}% strictindex
-\index{weak!convergence}% strictindex
-\label{fig:matching-quantitative-clt}
-\end{figure}
-
-\begin{rem}[A quantitative CLT in Wasserstein form]\label{rem-wasserstein-berry-esseen-pointer}
-\index{Berry-Esseen!theorem}% strictindex
-\index{quantitative central limit theorem}% strictindex
-\index{Wasserstein!distance}% strictindex
-		The metric viewpoint on weak convergence is not only topological. It also turns some classical limit theorems into quantitative metric estimates. For instance, the Berry--Esseen theorem can be stated as a bound on the \(\Wass_1\) distance between the law of the normalized sum \(n^{-1/2}\sum_i X_i\) and the limiting Gaussian. By Kantorovich--Rubinstein duality, this is exactly a uniform control of the CLT error over all \(1\)-Lipschitz test functions. This application is developed below in Section~\ref{sec-quantitative-clt}, see in particular Proposition~\ref{prop-berry-esseen-w1}.
-\index{Kantorovich-Rubinstein@Kantorovich--Rubinstein!duality}% strictindex
-\index{Lipschitz!test function}% strictindex
-	\end{rem}
-
 \paragraph{Strong versus weak topology.}
 \index{topology!strong}% strictindex
 \index{topology!weak}% strictindex
@@ -1934,6 +1877,93 @@ The following proposition shows that the TV norm can be seen as a Wasserstein di
 		This is a coupling of $\al$ and $\be$. Since $\al'\perp\be'$, the product term is concentrated off the diagonal, so its $0/1$ cost is exactly its total mass $r$. Thus $\pi^\star$ attains the lower bound.
 \end{proof}
 
+
+\paragraph{Probabilistic interpretation.}
+
+Probability theory gives weak convergence its most direct interpretation: it compares distributions rather than samplewise realizations. In terms of random vectors, if $X_n \sim \al_n$ and $X \sim \al$ (not necessarily defined on the same probability space), then $\al_n\rightharpoonup\al$ means precisely that $X_n$ converges in law to $X$.
+\index{convergence!in law}% strictindex
+\index{weak!convergence}% strictindex
+
+\index{random variable}% strictindex
+\index{convergence!mode}% strictindex
+Convergence in law should be distinguished from stronger notions that compare random variables on a common probability space. In that setting, $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
+\index{convergence!in probability}% strictindex
+\[
+	\foralls \epsilon>0,\qquad
+	\PP(\norm{X_n-X}>\epsilon)\to0.
+\]
+Almost-sure convergence implies convergence in probability, which in turn implies convergence in law. The last notion depends only on the marginal laws, since it is exactly the weak convergence $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and therefore does not require a common probability space.
+
+Convergence in law should also be distinguished from strong convergence of measures. Total variation convergence controls the mass assigned to every measurable set, not only averages against continuous test functions, and therefore implies weak convergence. The converse fails, notably for empirical approximations of continuous laws.
+\index{convergence!in law}% strictindex
+\index{probability measure}% strictindex
+\index{weak!convergence}% strictindex
+\index{total variation}% strictindex
+
+\paragraph{Central limit theorem and OT.}
+
+Limit theorems produce canonical convergent sequences of probability measures, and Wasserstein distances turn their qualitative conclusions into metric error bounds. The central limit theorem concerns sums of independent random variables; because sums of independent variables correspond to convolutions of their laws, the following statement introduces convolution before expressing the theorem in transport language.
+\begin{rem}[Central limit theorem]\label{rem-clt}
+\index{central limit theorem}% strictindex
+	The central limit theorem states that if $(X_i)_{i\geq1}$ are i.i.d. random vectors with finite second moments, $\EE(X_i)=0$, and $\EE(X_i X_i^\top)=\Id$, then the normalized sum
+	\[
+		Z_n \eqdef \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i
+	\]
+	converges in law toward the standard Gaussian $\Gaussian(0,\Id)$. In the terminology recalled above, this means that the measure $\al_n$ representing the law of $Z_n$ converges weakly toward the centered Gaussian measure $\al=\Gaussian(0,\Id)$.
+
+		Equivalently, this is a statement about rescaled convolutions of measures. If $\al$ and $\be$ are probability measures on $\RR^d$, their convolution is
+\index{measure convolution}% strictindex
+	\[
+			\al*\be \eqdef \operatorname{add}_\sharp(\al\otimes\be),
+		\qquad
+			\int \varphi\,\d(\al*\be)
+		=
+			\iint \varphi(x+y)\,\d\al(x)\d\be(y)
+	\]
+		for every bounded continuous $\varphi$, where $\operatorname{add}(x,y)=x+y$. Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When $\al$ and $\be$ have densities $f$ and $g$, the convolution has density
+	\[
+		(f*g)(z)=\int_{\RR^d} f(x)g(z-x)\d x.
+	\]
+	If $\al$ is the common law of the variables $X_i$, writing $\al^{*n}$ for the $n$-fold convolution of $\al$ with itself, and denoting by $D_a(x)=a x$ the dilation map, the law of $Z_n$ is
+	\[
+		\al_n=(D_{1/\sqrt n})_\sharp\al^{*n}.
+	\]
+	The CLT therefore says that the normalized $n$-fold convolution $(D_{1/\sqrt n})_\sharp\al^{*n}$ converges weakly to the Gaussian $\Gaussian(0,\Id)$.
+\index{measure convolution}% strictindex
+\index{rescaled convolution}% strictindex
+\end{rem}
+
+Figure~\ref{fig:matching-quantitative-clt} makes this qualitative weak convergence visible in the elementary Bernoulli case: every finite-$n$ law is discrete, yet the normalized atom heights approach the Gaussian density.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccccc@{}}
+\small $n=1$ & \small $n=2$ & \small $n=4$ & \small $n=16$ & \small $n=64$ \\[-.15em]
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-001.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-002.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-004.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-016.pdf} &
+\includegraphics[width=.17\linewidth]{figures/matching-quantitative-clt--n-064.pdf}
+\end{tabular}
+\caption{\emph{Central-limit theorem for normalized Bernoulli sums.} Starting from $\al_0=\frac12(\delta_{-1}+\delta_1)$, the law of $Z_n=n^{-1/2}\sum_{i=1}^nX_i$ remains discrete, but its rescaled atom heights approach the standard Gaussian density shown in gray. Proposition~\ref{prop-berry-esseen-w1} later quantifies this weak convergence in $\Wass_1$.}
+\index{central limit theorem}% strictindex
+\index{weak!convergence}% strictindex
+\label{fig:matching-quantitative-clt}
+\end{figure}
+
+\begin{rem}[A quantitative CLT in Wasserstein form]\label{rem-wasserstein-berry-esseen-pointer}
+\index{Berry-Esseen!theorem}% strictindex
+\index{quantitative central limit theorem}% strictindex
+\index{Wasserstein!distance}% strictindex
+		The metric viewpoint on weak convergence is not only topological. It also turns some classical limit theorems into quantitative metric estimates. For instance, the Berry--Esseen theorem can be stated as a bound on the \(\Wass_1\) distance between the law of the normalized sum \(n^{-1/2}\sum_i X_i\) and the limiting Gaussian. By Kantorovich--Rubinstein duality, this is exactly a uniform control of the CLT error over all \(1\)-Lipschitz test functions. This application is developed below in Section~\ref{sec-quantitative-clt}, see in particular Proposition~\ref{prop-berry-esseen-w1}.
+\index{Kantorovich-Rubinstein@Kantorovich--Rubinstein!duality}% strictindex
+\index{Lipschitz!test function}% strictindex
+	\end{rem}
+
+
+
+\paragraph{Wasserstein metrizes weak convergence.}
+\index{Wasserstein!topology}% strictindex
 
 As explained in Remark~\ref{rem-weak-conv-disc}, in the special case of Diracs, $\de_{x_n} \rightharpoonup \de_x$  is equivalent to $x_n \rightarrow x$. One can then contrast the strong topology with the Wasserstein distance if $x_n \neq x$,
 \index{topology!strong}% strictindex
@@ -1998,16 +2028,6 @@ The constants are optimal: for $\al=\de_x$ and $\be=\de_y$ with $x\neq y$, the c
 %
 Choosing pairs that attain $d_{\min}$ or $d_{\max}$ gives equality in the corresponding bound. The comparison deteriorates as $d_{\max}/d_{\min}$ grows. On spaces with arbitrarily close distinct points, $d_{\min}=0$ and no such two-sided equivalence is possible, consistently with the difference between strong and weak convergence.
 \index{topology!weak}% strictindex
-
-\begin{example}[Application to single-cell trajectory inference]\label{ex-single-cell-trajectory-inference}
-\index{single-cell genomics}% strictindex
-\index{trajectory inference}% strictindex
-	A single-cell time course gives empirical laws
-	\[
-		\al_{t_k}=\frac1{n_k}\sum_{i=1}^{n_k}\de_{x_i^{(k)}}
-	\]
-	on a gene-expression or latent cell-state space. Since sequencing is destructive, one observes populations at successive times, not trajectories of identical cells. Couplings \(\pi_k\in\Couplings(\al_{t_k},\al_{t_{k+1}})\) provide soft ancestor--descendant relations; Figure~\ref{fig:kantorovich-waddington-ot} visualizes one such consecutive coupling. After disintegration into Markov kernels, they can be chained to define population-level trajectories. This static sequence of couplings is the discrete-time shadow of the dynamic formulations of Chapter~\ref{sec-dynamic-optimal-transport}; entropic and unbalanced variants account for branching, noise and growth in modern single-cell models~\cite{schiebinger2017reconstruction,TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}.
-\end{example}
 
 \section{Measure-to-Measure Maps on Wasserstein Space}\label{sec-measure-to-measure-maps}
 \index{measure-to-measure map}% strictindex

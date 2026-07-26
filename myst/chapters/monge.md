@@ -2584,11 +2584,12 @@ show_book_figure("monge-gaussian-fr-mean-geodesic")
 ```
 
 *Wasserstein and Fisher--Rao geodesics in the one-dimensional Gaussian family.
-The left panel shows the straight Wasserstein chord with neutral gray samples
-and the Fisher--Rao geodesic as a colored hyperbolic arc in the rescaled
-upper-half-plane geometry. The two density panels use the same endpoint
-Gaussians and the same time samples; the Fisher--Rao path expands the standard
-deviation along the hyperbolic arc before returning to the target scale.*
+The warm red-to-orange curves encode the Wasserstein interpolation, while the
+cool violet-to-blue curves encode the Fisher--Rao interpolation; the same
+palettes identify both geodesics in the left parameter-space panel. The two
+density panels use the same endpoint Gaussians and time samples, but the
+Fisher--Rao path expands the standard deviation along its hyperbolic arc before
+returning to the target scale.*
 :::
 
 :::{div}

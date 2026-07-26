@@ -950,6 +950,123 @@ integer count matrix of the proposition.*
 
 <iframe class="ot4ml-live-frame" title="Rational duplication controls" src="../live/duplication.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
+### Applications of discrete transport
+
+Discrete Kantorovich transport applies whenever weighted data points or
+histograms must be compared through a geometry-aware correspondence. The
+following examples illustrate information transfer between datasets,
+comparison of visual distributions, and inference of temporal relations
+between cell populations.
+
+(ex-domain-adaptation)=
+:::{admonition} Example: Application to domain adaptation
+:class: ot4ml-example
+
+In unsupervised domain adaptation, labeled source samples $(x_i^s,y_i^s)_i$
+and unlabeled target samples $(x_j^t)_j$ define empirical laws
+$\al_s=\sum_i a_i\de_{x_i^s}$ and
+$\al_t=\sum_j b_j\de_{x_j^t}$. Writing $\a=(a_i)_i$ and
+$\b=(b_j)_j$, a Kantorovich coupling
+$\P\in\CouplingsD(\a,\b)$ gives soft correspondences between the two clouds.
+For $b_j>0$, disintegrating $\P$ with respect to its target marginal and
+averaging the source labels gives the backward barycentric rule
+$\widetilde y_j=b_j^{-1}\sum_i\P_{i,j}y_i^s$, for either real-valued labels or
+one-hot class vectors. This is the label-space analogue of the barycentric
+projection introduced later in Definition {ref}`def-barycentric-projection`.
+Alternatively, transport can be optimized jointly with a classifier by adding
+label-prediction terms to the feature cost. This is the mechanism behind OT
+domain adaptation and JDOT: the plan is not only a distance certificate, but an
+explicit cross-domain alignment {cite:p}`courty2017optimal,courty2017joint`.
+Learning or adapting the ground cost is the inverse viewpoint developed later
+in Section {ref}`sec-metric-learning-inverse-ot`.
+:::
+
+(ex-visual-distributions)=
+:::{admonition} Example: Application to visual distributions
+:class: ot4ml-example
+
+Images, color histograms, texture descriptors and shape samples can all be
+represented as discrete measures. The ground cost then encodes color
+differences, image-plane displacements or surface distances. This viewpoint
+underlies the Earth Mover's Distance for image retrieval
+{cite:p}`RubTomGui00`, regularized transport for imaging
+{cite:p}`2014-xia-siims`, convolutional transport on geometric domains
+{cite:p}`2015-solomon-siggraph`, and Wasserstein barycenters for texture mixing
+or Radon-domain image processing
+{cite:p}`2013-Bonneel-barycenter,bonneel2023survey`. The practical gain is that
+the discrepancy respects geometry: moving a small amount of mass to a nearby
+color or pixel is cheaper than moving it far away.
+:::
+
+(ex-cell-population-distance)=
+:::{admonition} Example: Application to single-cell population dynamics
+:class: ot4ml-example
+
+Single-cell sequencing observes different cells at each collection time. If
+$x_i^{[k]}\in\Xx$ denotes the state of cell $i$ at time $t_k$, write
+
+```{math}
+\al_{t_k}=\sum_{i=1}^{n_k}a_i^{[k]}\de_{x_i^{[k]}}
+\qquad\text{and}\qquad
+\a^{[k]}=(a_i^{[k]})_{i=1}^{n_k}\in\simplex_{n_k}.
+```
+
+Thus a cell is one atom of an empirical population measure, rather than itself
+a measure over genes as in Example {ref}`ex-gene-expression-distance`. A
+balanced transport between two consecutive snapshots is represented by a
+matrix $\P^{[k]}\in\RR_+^{n_k\times n_{k+1}}$ satisfying
+
+```{math}
+\P^{[k]}\ones_{n_{k+1}}=\a^{[k]}
+\qquad\text{and}\qquad
+(\P^{[k]})^\top\ones_{n_k}=\a^{[k+1]}.
+```
+
+Its entry $\P^{[k]}_{i,j}$ is a soft ancestor--descendant mass, not evidence
+that the same cell was observed twice. For every row with positive sum, the
+normalization
+
+```{math}
+\K^{[k]}_{i,j}
+\coloneqq
+\frac{\P^{[k]}_{i,j}}
+{\sum_{j'=1}^{n_{k+1}}\P^{[k]}_{i,j'}}
+```
+
+defines a conditional transition probability; multiplying successive matrices
+$\K^{[k]}$ yields population-level lineage probabilities across several
+collection times.
+
+Waddington-OT modifies this balanced baseline by incorporating growth estimates
+and relaxing the marginal constraints through unbalanced transport, as
+discussed in Example {ref}`ex-unbalanced-single-cell`
+{cite:p}`schiebinger2017reconstruction`. Related continuous and entropic
+constructions include trajectory inference and generative transport models
+{cite:p}`TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT`.
+Figure {ref}`fig:kantorovich-waddington-ot` displays three observed population
+snapshots in the common force-layout embedding used by Waddington-OT; this
+visualization need not coincide with the ground geometry used to compute
+$\P^{[k]}$.
+:::
+
+(fig:kantorovich-waddington-ot)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("kantorovich-waddington-ot", width=920)
+```
+
+*Three snapshots of the Waddington-OT single-cell reprogramming time course.*
+The first panel aggregates a representative sample from all collection times
+and colors cells from red to blue according to time. The remaining panels
+highlight the populations observed at days $0$, $9$, and $18$, while cells from
+other times remain in gray. Every panel uses the same official force-layout
+embedding and viewport; no transport coupling or interpolated trajectory is
+displayed.
+:::
+
 (sec-kantorovich-lp-algorithms)=
 ## Linear-Programming Algorithms
 
@@ -1462,36 +1579,6 @@ quantile interval associated with the atom can be coupled with a nontrivial
 portion of $\be$. The one-dimensional Kantorovich solution therefore handles
 mass splitting without changing the monotone geometry.
 
-(ex-domain-adaptation)=
-:::{admonition} Example: Application to domain adaptation
-:class: ot4ml-example
-
-In unsupervised domain adaptation, labeled source samples $(x_i^s,y_i^s)_i$ and unlabeled target samples $(x_j^t)_j$ define empirical laws
-
-```{math}
-\al_s=\sum_i a_i\de_{x_i^s}
-\qquad\text{and}\qquad
-\al_t=\sum_j b_j\de_{x_j^t}.
-```
-
-Writing $\a=(a_i)_i$ and $\b=(b_j)_j$, a Kantorovich coupling $\P\in\CouplingsD(\a,\b)$ gives soft correspondences between the two clouds. Labels can be transferred by the barycentric rule
-
-```{math}
-\widetilde y_j=\frac1{b_j}\sum_i \P_{ij}y_i^s
-\qquad (b_j>0),
-```
-
-for real-valued labels or one-hot class vectors. Alternatively, the transport can be optimized jointly with a classifier by adding label-prediction terms to the feature cost. This is the mechanism behind OT domain adaptation and JDOT: the plan is not only a distance certificate, but an explicit cross-domain alignment {cite:p}`courty2017optimal,courty2017joint`. Learning or adapting the ground cost is the inverse viewpoint developed later in Section {ref}`sec-metric-learning-inverse-ot`.
-:::
-
-(ex-visual-distributions)=
-:::{admonition} Example: Application to visual distributions
-:class: ot4ml-example
-
-Images, color histograms, texture descriptors and shape samples can all be represented as measures. The ground cost then encodes color differences, image-plane displacements or surface distances. This viewpoint underlies the Earth Mover's Distance for image retrieval {cite:p}`RubTomGui00`, regularized transport for imaging {cite:p}`2014-xia-siims`, convolutional transport on geometric domains {cite:p}`2015-solomon-siggraph`, and Wasserstein barycenters for texture mixing or Radon-domain image processing {cite:p}`2013-Bonneel-barycenter,bonneel2023survey`. The practical gain is that the discrepancy respects geometry: moving a small amount of mass to a nearby color or pixel is cheaper than moving it far away.
-:::
-
-
 ## Cyclical Monotonicity
 
 Cyclical monotonicity is the local geometric fingerprint of optimality for a
@@ -1881,7 +1968,8 @@ entropy slider to contrast sparse and diffuse plans.
 
 <iframe class="ot4ml-live-frame" title="Plan interpolation controls" src="../live/kantorovich-plan.html" loading="lazy" style="width:100%;height:470px;border:0;display:block;"></iframe>
 
-### General Geodesic Spaces
+:::{admonition} Remark: Interpolation on a general geodesic space
+:class: ot4ml-remark
 
 For Dirac masses in Euclidean space, the $\Wass_2$ geodesic from $\delta_x$ to
 $\delta_y$ is $t\mapsto\delta_{(1-t)x+t y}$. The same idea extends to any
@@ -1908,6 +1996,7 @@ conditional distributions over geodesics with the same endpoints, can give
 different $\Wass_2$ geodesics; the constant-speed identity remains the same.
 This path-space viewpoint is standard in the general theory of Wasserstein
 spaces {cite:p}`ambrosio2006gradient,Villani09,SantambrogioBook`.
+:::
 
 ### Comparison With Monge
 
@@ -1953,15 +2042,13 @@ $\Couplings(\al,\be)$ of the functional that equals $F_p$ on graph couplings
 and $+\infty$ outside them. In particular,
 
 ```{math}
-\Wass_p(\al,\be)^p
-=
-\inf_{T_\sharp\al=\be}\int_\Xx d(x,T(x))^p\d\al(x)
-=
-\widetilde{\Wass}_p(\al,\be)^p,
+\tilde\Wass_p(\al,\be)=\Wass_p(\al,\be).
 ```
-
-as an equality of infimum values. The Monge infimum need not be attained.
 :::
+
+This is an equality of infimal values: the Kantorovich minimum is attained,
+whereas the infimum defining $\tilde\Wass_p$ need not be attained by a
+transport map.
 
 :::{dropdown} Proof
 Let $\pi\in\Couplings(\al,\be)$. Choose finite Borel partitions
@@ -2034,8 +2121,15 @@ discrete and this obstruction cannot be removed by closure. In such cases the
 Kantorovich formulation is not merely a closure of existing maps with the same
 marginals; it genuinely adds the possibility of splitting atomic mass.
 
+### Applications of Wasserstein distance
+
+Representing structured data as probability measures turns the Wasserstein
+distance into a geometry-aware comparison tool. The following are two
+representative application domains: single-cell biology and natural-language
+processing.
+
 (ex-gene-expression-distance)=
-:::{admonition} Example: Application to gene-expression distances
+:::{admonition} Example: Application to gene-expression distances between two cells
 :class: ot4ml-example
 
 A single cell can be encoded as a measure over genes,
@@ -2045,56 +2139,6 @@ A single cell can be encoded as a measure over genes,
 ```
 
 where $e_g\geq0$, $\sum_g e_g=1$, and $\varphi(g)$ is a gene embedding or annotation vector. Wasserstein distances then compare cells by moving expression mass between genes. The choice of $\dist(\varphi(g),\varphi(g'))$ is biologically meaningful: it can come from annotations, pathways or a learned ground metric. This is the idea behind the Gene Mover's Distance and related metric-learning approaches for single-cell data {cite:p}`BellazziCodegoniGualandiNicoraVercesi2021GeneMover,HuizingCantiniPeyre2021WassersteinSingularVectors`; it is the single-cell analogue of the cost-learning question revisited in Section {ref}`sec-metric-learning-inverse-ot`.
-:::
-
-Single-cell OT also has a complementary population-level interpretation:
-instead of representing one cell as a measure over genes, one treats every cell
-as one atom of a time-indexed population law. Figure
-{ref}`fig:kantorovich-waddington-ot` follows the visualization introduced for
-Waddington-OT by Schiebinger et al. {cite:p}`schiebinger2017reconstruction`.
-Because single-cell sequencing is destructive, the coupling encodes inferred
-ancestor--descendant relations between consecutive populations rather than
-tracks of individually observed cells.
-
-To make this construction precise, let $\a_C$ be uniform on the labeled source
-set $C$, and let $\b_A,\b_B$ be uniform on the labeled target regions. For the
-released transport matrix $\P$, the displayed descendant and ancestor laws are
-
-```{math}
-\b_C^{\mathrm{desc}}
-=
-\frac{\P^\top\a_C}{\langle\P^\top\a_C,\ones\rangle},
-\qquad
-\a_R^{\mathrm{anc}}
-=
-\frac{\P\b_R}{\langle\P\b_R,\ones\rangle},
-\quad R\in\{A,B\}.
-```
-
-Thus the plan, not the two-dimensional embedding, propagates probabilities.
-For this compact illustration, $A$ and $B$ are separated target regions whose
-pulled-back laws retain nontrivial overlap, and $C$ is selected inside their
-common-ancestor region. Their common part is the componentwise minimum
-$\a_{\cap}^{\mathrm{anc}}=\min\{\a_A^{\mathrm{anc}},\a_B^{\mathrm{anc}}\}$.
-
-(fig:kantorovich-waddington-ot)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("kantorovich-waddington-ot", width=920)  # Labeled A/B/C regions.
-```
-
-*Waddington-OT between consecutive single-cell snapshots.* Every panel uses the
-official force-layout embedding, with the complete reprogramming landscape
-sampled in gray. The first overlays day-10 cells in red and day-10.5 cells in
-blue. Black rims and labels identify the conditioning sets: the second panel
-pushes $C$ forward to its descendants, while the third pulls $A$ backward to
-its ancestors. The last compares the ancestors of $A$ and $B$: red and blue
-encode the two exclusive parts, and violet their pointwise common part. Marker
-intensity and size encode normalized transported mass. The embedding is only a
-display plane; the released plan uses local 30-dimensional PCA costs.
 :::
 
 (ex-word-mover-distance)=
@@ -2181,19 +2225,99 @@ In the special case of a single Dirac, $\de_{x^{(n)}} \rightharpoonup \de_x$ is 
 For a fixed number of atoms, if $\al_n=\sum_{i=1}^N a_i^{(n)}\de_{x_i^{(n)}}$ and, after extracting a subsequence and relabeling, $a_i^{(n)}\to a_i$ and $x_i^{(n)}\to x_i$, then $\al_n$ converges weakly to $\sum_i a_i\de_{x_i}$, with atoms at identical limits merged. Without a uniform bound on the number of atoms, weak limits of discrete measures can be non-discrete; empirical measures are the standard example.
 :::
 
-(rem-random-variable-convergences)=
-:::{admonition} Remark: Modes of convergence for random variables
-:class: ot4ml-remark
+### Strong Versus Weak Topology
 
-Convergence of laws should be distinguished from stronger notions of convergence for random variables. If $X_n$ and $X$ are defined on a common probability space, then $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
+The total variation norm induces the strong topology on measures. For a signed
+difference, $\norm{\al-\be}_{\TV}=|\al-\be|(\Xx)$; this is an $L^1$ norm for
+densities and an $\ell^1$ norm for discrete weights. The following proposition
+shows that total variation is itself a transport cost for the degenerate $0/1$
+ground metric.
+
+(prop-rel-wass-tv)=
+:::{admonition} Proposition: Total Variation As Wasserstein For The Discrete Metric
+:class: important
+Let $\Xx$ be a standard Borel space, let $\al$ and $\be$ be probability
+measures on $\Xx$, and let $d_0$ be the $0/1$ cost, with $d_0(x,x)=0$ and
+$d_0(x,y)=1$ for $x\neq y$.
+Then
+
+```{math}
+\inf_{\pi\in\Couplings(\al,\be)}
+\int d_0(x,y)^p\d\pi(x,y)
+=
+\frac12\|\al-\be\|_{\TV}.
+```
+
+Whenever the $0/1$ metric is an admissible ground metric, the left-hand side
+is $\Wass_p(\al,\be)^p$.
+:::
+
+:::{dropdown} Proof
+Let $\lambda=\al+\be$, write $a=\d\al/\d\lambda$ and
+$b=\d\be/\d\lambda$, and define the common part $\eta$ by
+$\d\eta/\d\lambda=\min(a,b)$. The residual measures
+$\al'=\al-\eta$ and $\be'=\be-\eta$ are mutually singular and have common
+mass
+
+```{math}
+r=1-\eta(\Xx)
+=\frac12\int|a-b|\d\lambda
+=\frac12\|\al-\be\|_{\TV}.
+```
+
+The diagonal submeasure of any coupling is bounded by both marginals, hence by
+$\eta$. Every coupling therefore has off-diagonal mass, and thus $0/1$ cost,
+at least $r$. If $r=0$, the diagonal coupling is optimal. If $r>0$, the
+coupling
+
+```{math}
+\pi^\star
+=\Delta_\sharp\eta+\frac1r\al'\otimes\be',
+\qquad \Delta(x)=(x,x),
+```
+
+has the prescribed marginals. Since $\al'\perp\be'$, its product term is
+concentrated off the diagonal and has cost $r$. This attains the lower bound.
+:::
+
+### Probabilistic Interpretation
+
+Probability theory gives weak convergence its most direct interpretation: it
+compares distributions rather than samplewise realizations. In terms of random
+vectors, if $X_n\sim\al_n$ and $X\sim\al$ (not necessarily defined on the same
+probability space), then $\al_n\rightharpoonup\al$ means precisely that $X_n$
+converges in law to $X$.
+
+Convergence in law should be distinguished from stronger notions that compare
+random variables on a common probability space. In that setting, $X_n\to X$
+almost surely means pointwise convergence outside a null set, while convergence
+in probability means
 
 ```{math}
 \foralls \epsilon>0,\qquad
 \PP(\norm{X_n-X}>\epsilon)\to0.
 ```
 
-Almost-sure convergence implies convergence in probability, and convergence in probability implies convergence in law. Convergence in law is exactly weak, or narrow, convergence of the probability measures $(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and does not require all variables to live on the same probability space. Strong convergence of measures, for instance convergence in total variation, is different and usually much stronger: it controls the mass assigned to all measurable sets, not only averages against continuous test functions. In particular, total variation convergence implies weak convergence, but the converse fails for empirical approximations of continuous laws.
-:::
+Almost-sure convergence implies convergence in probability, which in turn
+implies convergence in law. The last notion depends only on the marginal laws,
+since it is exactly the weak convergence
+$(X_n)_\sharp\PP\rightharpoonup X_\sharp\PP$, and therefore does not require a
+common probability space.
+
+Convergence in law should also be distinguished from strong convergence of
+measures. Total variation convergence controls the mass assigned to every
+measurable set, not only averages against continuous test functions, and
+therefore implies weak convergence. The converse fails, notably for empirical
+approximations of continuous laws.
+
+### Central Limit Theorem and OT
+
+Limit theorems produce canonical convergent sequences of probability measures,
+and Wasserstein distances turn their qualitative conclusions into metric error
+bounds. The central limit theorem concerns sums of independent random
+variables; because sums of independent variables correspond to convolutions of
+their laws, the following statement introduces convolution before expressing
+the theorem in transport language.
 
 (rem-clt)=
 :::{admonition} Remark: Central limit theorem
@@ -2272,54 +2396,11 @@ The metric viewpoint on weak convergence is not only topological. It also turns 
 :::
 
 
-(prop-rel-wass-tv)=
-:::{admonition} Proposition: Total Variation As Wasserstein For The Discrete Metric
-:class: important
-Let $\Xx$ be a standard Borel space, let $\al$ and $\be$ be probability
-measures on $\Xx$, and let $d_0$ be the $0/1$ cost, with $d_0(x,x)=0$ and
-$d_0(x,y)=1$ for $x\neq y$.
-Then
 
-```{math}
-\inf_{\pi\in\Couplings(\al,\be)}
-\int d_0(x,y)^p\d\pi(x,y)
-=
-\frac12\|\al-\be\|_{\TV}.
-```
 
-Whenever the $0/1$ metric is an admissible ground metric, the left-hand side
-is $\Wass_p(\al,\be)^p$.
-:::
+### Wasserstein Metrizes Weak Convergence
 
-:::{dropdown} Proof
-Let $\lambda=\al+\be$, write $a=\d\al/\d\lambda$ and
-$b=\d\be/\d\lambda$, and define the common part $\eta$ by
-$\d\eta/\d\lambda=\min(a,b)$. The residual measures
-$\al'=\al-\eta$ and $\be'=\be-\eta$ are mutually singular and have common
-mass
-
-```{math}
-r=1-\eta(\Xx)
-=\frac12\int|a-b|\d\lambda
-=\frac12\|\al-\be\|_{\TV}.
-```
-
-The diagonal submeasure of any coupling is bounded by both marginals, hence by
-$\eta$. Every coupling therefore has off-diagonal mass, and thus $0/1$ cost,
-at least $r$. If $r=0$, the diagonal coupling is optimal. If $r>0$, the
-coupling
-
-```{math}
-\pi^\star
-=\Delta_\sharp\eta+\frac1r\al'\otimes\be',
-\qquad \Delta(x)=(x,x),
-```
-
-has the prescribed marginals. Since $\al'\perp\be'$, its product term is
-concentrated off the diagonal and has cost $r$. This attains the lower bound.
-:::
-
-For Dirac masses,
+As explained in Remark {ref}`rem-weak-conv-disc`, for Dirac masses,
 
 ```{math}
 \|\delta_{x_n}-\delta_x\|_{\TV}=2,
@@ -2392,20 +2473,6 @@ $d_{\max}=\max_{x,y}d(x,y)$, then
 \leq
 \frac{d_{\max}}{2}\|\al-\be\|_{\TV}.
 ```
-
-(ex-single-cell-trajectory-inference)=
-:::{admonition} Example: Application to single-cell trajectory inference
-:class: ot4ml-example
-
-A single-cell time course gives empirical laws
-
-```{math}
-\al_{t_k}=\frac1{n_k}\sum_{i=1}^{n_k}\de_{x_i^{(k)}}
-```
-
-on a gene-expression or latent cell-state space. Since sequencing is destructive, one observes populations at successive times, not trajectories of identical cells. Couplings $\pi_k\in\Couplings(\al_{t_k},\al_{t_{k+1}})$ provide soft ancestor--descendant relations; Figure {ref}`fig:kantorovich-waddington-ot` visualizes one such consecutive coupling. After disintegration into Markov kernels, they can be chained to define population-level trajectories. This static sequence of couplings is the discrete-time shadow of the dynamic formulations of Chapter {ref}`sec-dynamic-optimal-transport`; entropic and unbalanced variants account for branching, noise and growth in modern single-cell models {cite:p}`schiebinger2017reconstruction,TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT`.
-:::
-
 
 (sec-measure-to-measure-maps)=
 ## Measure-to-Measure Maps on Wasserstein Space

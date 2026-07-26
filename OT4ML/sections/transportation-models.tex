@@ -276,7 +276,7 @@ Then, for smooth test functions $\varphi$,
 or, in distributional form,
 \begin{equation}\label{eq:noisy-interpolant-fokker-planck}
     \partial_t\alpha_t + \diverg(\alpha_t v_t)
-    = \frac12\sum_{i,j}\partial_{ij}^2\bigl((D_t)_{ij}\alpha_t\bigr).
+    = \frac12\sum_{i,j}\partial_{i,j}^2\bigl((D_t)_{i,j}\alpha_t\bigr).
 \end{equation}
 Thus the natural noisy analogue of~\eqref{eq:flow-matching} regresses the instantaneous drift,
 \[
@@ -1271,11 +1271,7 @@ Deep residual architectures can be read as time discretizations of ODEs or PDEs.
 \index{attention}% strictindex
 \index{token measure}% strictindex
 
-Transformers were introduced as sequence-to-sequence architectures driven by self-attention~\cite{Vaswani2017Attention} and have since become a central architecture for language and vision models~\cite{Brown2020LanguageModels,Dosovitskiy2021Image}. Their distinctive feature is that each token is updated by a data-dependent average of all other tokens. This makes an attention layer permutation-equivariant before positional encoding, context dependent after conditioning on the input sequence, and naturally compatible with a measure viewpoint in which a prompt is regarded as an empirical distribution of tokens.
-\index{empirical!distribution}% strictindex
-\index{attention!self-attention}% strictindex
-
-The mathematical limit used below concerns depth rather than model scale: one lets the number of residual attention layers grow while each layer makes a small update, as in continuous-depth neural networks~\cite{Chen2018NeuralODE}. For attention, the resulting velocity is nonlinear in the current token law because it is normalized by the whole context. This measure-theoretic view appears in the analysis of attention as a Lipschitz or interacting-particle operator~\cite{Vuckovic2020MathematicalAttention,Geshkovski2023MathematicalPerspective}, in the Sinkhorn-normalized dynamics of Sinkformers~\cite{Sander2022Sinkformers}, and in recent well-posedness and mean-field-limit results for several attention mechanisms~\cite{Castin2025DynamicsTransformers}. It also separates the infinite-depth limit studied here from the token-limit question, where one controls how a finite empirical context approximates its limiting attention operator~\cite{Bohbot2025TokenSampleComplexity}.
+Discrete self-attention, its permutation equivariance and its mean-field extension were introduced in the paragraph ``Mean-field attention'' of Section~\ref{sec-measure-to-measure-maps}; see Definition~\ref{def-mean-field-attention-map}. Here the number of tokens is fixed in the discrete model and the limit concerns depth: the number \(T\) of residual attention layers grows while each layer makes an update of size \(1/T\), as in continuous-depth neural networks~\cite{Chen2018NeuralODE}. This is distinct from the many-token limit discussed around Definition~\ref{def-mean-field-attention-map}. Since the attention weights are normalized using the whole current token law, the resulting velocity is nonlinear and context dependent. Related continuous-depth and Sinkhorn-normalized dynamics are studied in~\cite{Sander2022Sinkformers,Castin2025DynamicsTransformers}.
 \index{continuous-depth neural network}% strictindex
 \index{empirical!context}% strictindex
 \index{attention!operator}% strictindex
@@ -1283,10 +1279,9 @@ The mathematical limit used below concerns depth rather than model scale: one le
 \index{token limit}% strictindex
 \index{transformer}% strictindex
 \index{mean-field limit}% strictindex
-\index{attention!mechanism}% strictindex
 \index{continuous!depth}% strictindex
 
-We now consider very deep transformers, focusing on a single-head attention mechanism for simplicity while ignoring MLP layers, layer normalization, causality, and masking. This stripped-down framework is best suited to modeling encoders and vision transformers; the references above indicate which parts of this simplified picture extend to richer attention mechanisms.
+We focus on the non-causal single-head mechanism of~\eqref{eq-discrete-self-attention}, ignoring MLP layers, layer normalization and masking. This stripped-down framework isolates the transport structure of a residual attention block.
 \index{attention!single-head}% strictindex
 \index{layer normalization}% strictindex
 \index{causality}% strictindex
@@ -1297,42 +1292,47 @@ We now consider very deep transformers, focusing on a single-head attention mech
 \index{attention}% strictindex
 \index{velocity field}% strictindex
 
-After tokenization, embedding, and positional encoding, each input is represented as a point cloud $(x_i)_{i=1}^n$ of $n$ vectorized tokens. An attention layer with a skip connection and residual scale $1/T$, where $T$ is the depth, transforms the tokens according to
-\begin{equation*}
-    x_i \mapsto x_i + \frac{1}{T} \sum_j \frac{e^{\langle Q x_i, K x_j \rangle} V x_j}{\sum_{\ell} e^{\langle Q x_i, K x_\ell \rangle}},
-\end{equation*}
-where $\theta=(K,Q,V)$ denotes the three parameter matrices. The conventional factor $1/\sqrt r$, with $r$ the query/key dimension, can be absorbed into $Q$ or $K$ and is omitted here.
+We retain the notation \(\theta=(Q,K,V)\) and \(\Gamma_\theta\) of Definition~\ref{def-mean-field-attention-map}. Whereas~\eqref{eq-discrete-self-attention} replaces a token by its attention output, a residual block adds this output through a skip connection. With residual scale \(1/T\), it acts as
+\begin{equation}\label{eq-transformer-residual-attention-step}
+	x_i
+	\longmapsto
+	x_i+\frac1T\operatorname{Att}^{(n)}_\theta(x_1,\ldots,x_n)_i
+	=
+	x_i+\frac1T
+	\sum_{j=1}^n
+	\frac{e^{\dotp{Qx_i}{Kx_j}}Vx_j}
+	{\sum_{\ell=1}^n e^{\dotp{Qx_i}{Kx_\ell}}}.
+\end{equation}
+The attention output is therefore interpreted as a context-dependent velocity, and the skip connection performs one explicit Euler step along this field.
+\index{skip connection}% strictindex
+\index{explicit Euler scheme}% strictindex
 
 \paragraph{Token measure evolution.}
 \index{residual attention}% strictindex
 \index{in-context map}% strictindex
 \index{token measure}% strictindex
 
-To handle an arbitrary number of tokens, we define $\alpha = \frac{1}{n} \sum_i \delta_{x_i}$ as the empirical measure of tokens. The resulting context-dependent map is the basic mean-field attention operator.
+Let \(x_i^{(\ell)}\) be token \(i\) after layer \(\ell\), and let \(\al^{(\ell)}=n^{-1}\sum_i\de_{x_i^{(\ell)}}\) be the corresponding empirical law. With \(\tau=1/T\), equation~\eqref{eq-transformer-residual-attention-step} is exactly
+\begin{equation}\label{eq-transformer-residual-measure-step}
+	\al^{(\ell+1)}
+	=
+	\left(
+		\Id+\tau\Gamma_{\theta^{(\ell)}}[\al^{(\ell)}]
+	\right)_\sharp
+	\al^{(\ell)},
+	\qquad
+	\ell=0,\ldots,T-1.
+\end{equation}
+Unlike the non-residual map \(\operatorname{Att}_\theta\) of Definition~\ref{def-mean-field-attention-map}, this update keeps each current token and adds a small attention displacement.
 \index{empirical!measure}% strictindex
 \index{transformer}% strictindex
-\begin{defn}[Mean-field attention map]\label{def-mean-field-attention-map}
-For \(\theta=(K,Q,V)\), define
+Set \(t_\ell=\ell/T\) and suppose that \(\theta^{(\ell)}\) samples a sufficiently regular depth-dependent path \(t\mapsto\theta_t\). As \(T\to+\infty\), a time interpolation of~\eqref{eq-transformer-residual-measure-step} converges formally to the conservation equation
 \begin{equation*}
-    \Gamma_\theta[\alpha](x) :=
-    \frac{\int e^{\langle Q x, K y \rangle} V y \, \d \alpha(y)}
-    {\int e^{\langle Q x, K y \rangle} \, \d \alpha(y)}.
-\end{equation*}
-One residual attention step of size \(\tau\) is the measure map
-\[
-    \mathcal A_{\theta,\tau}(\alpha)
-    \eqdef
-    (\Id+\tau\Gamma_\theta[\alpha])_\sharp\alpha.
-\]
-\end{defn}
-For the empirical token measure, this sends each token to \(x_i+\tau\Gamma_\theta[\alpha](x_i)\).
-At the level of the token distribution, the layer uses the context-dependent velocity $\Gamma_{\theta_t}[\alpha]$ and pushes $\alpha$ forward by $\Id+\tau\Gamma_{\theta_t}[\alpha]$. This map depends on the whole context $\alpha$ as well as on the depth-dependent parameters $\theta_t$. Denoting normalized depth by $t\in[0,1]$ and setting $\tau=1/T$ gives
-\begin{equation*}
-    \alpha_{t+\tau} = (\Id + \tau \Gamma_{\theta_t}[\alpha_t])_\sharp \alpha_t.
-\end{equation*}
-As $\tau \to 0$, this converges formally to the conservation equation
-\begin{equation*}
-    \partial_t \alpha_t + \diverg(\alpha_t \Gamma_{\theta_t}[\alpha_t]) = 0.
+	\partial_t\al_t
+	+
+	\diverg\!\left(\al_t\Gamma_{\theta_t}[\al_t]\right)
+	=
+	0.
 \end{equation*}
 
 
@@ -1407,7 +1407,7 @@ To isolate this mechanism, replace $K_\epsilon$ by a positive kernel $K$ and wri
 \end{equation}
 For an empirical law $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$, where $a_i>0$ and $\sum_i a_i=1$, let $X\in\RR^{n\times d}$ have rows $x_i^\top$, set $\a=(a_i)_i$, and define
 \begin{equation}\label{eq-mean-shift-markov-matrix}
-	(\K_X)_{ij}=K(x_i,x_j),
+	(\K_X)_{i,j}=K(x_i,x_j),
 	\qquad
 	\mathsf P_X
 	\eqdef
@@ -1440,9 +1440,9 @@ A row-stochastic matrix $\mathsf P$ is order preserving and satisfies $\mathsf P
 	\begin{equation}\label{eq-dobrushin-coefficient}
 		\delta(\mathsf P)
 		\eqdef
-		\frac12\max_{i,\ell}\sum_j\abs{\mathsf P_{ij}-\mathsf P_{\ell j}}
+		\frac12\max_{i,\ell}\sum_j\abs{\mathsf P_{i,j}-\mathsf P_{\ell,j}}
 		=
-		1-\min_{i,\ell}\sum_j\min\{\mathsf P_{ij},\mathsf P_{\ell j}\}.
+		1-\min_{i,\ell}\sum_j\min\{\mathsf P_{i,j},\mathsf P_{\ell,j}\}.
 	\end{equation}
 	It is the exact operator norm induced by $\norm{\cdot}_V$ on $\RR^n/\Span(\ones_n)$:
 	\begin{equation}\label{eq-dobrushin-exact-quotient-norm}
@@ -1464,7 +1464,7 @@ A row-stochastic matrix $\mathsf P$ is order preserving and satisfies $\mathsf P
 \end{prop}
 
 \begin{proof}
-	Fix two rows $p=(\mathsf P_{ij})_j$ and $p'=(\mathsf P_{\ell j})_j$, and remove their common mass $r_j=\min\{p_j,p'_j\}$. The two residual nonnegative measures have the same mass
+	Fix two rows $p=(\mathsf P_{i,j})_j$ and $p'=(\mathsf P_{\ell,j})_j$, and remove their common mass $r_j=\min\{p_j,p'_j\}$. The two residual nonnegative measures have the same mass
 	\(1-\sum_jr_j = \frac12\sum_j\abs{p_j-p'_j}\).
 	Their averages of $z$ can differ by at most this mass times $\norm{z}_V$. Maximizing over the two output rows proves the upper bound in~\eqref{eq-dobrushin-exact-quotient-norm}. Conversely, for a pair of rows attaining the maximum, choose $z_j=1$ when $p_j\geq p'_j$ and $z_j=0$ otherwise. Then $\norm{z}_V=1$ and $(\mathsf Pz)_i-(\mathsf Pz)_\ell=\frac12\sum_j\abs{p_j-p'_j}$, proving equality and hence~\eqref{eq-dobrushin-variation-contraction}.
 
@@ -1527,8 +1527,8 @@ To obtain a uniform computable bound, set
 \end{equation}
 Row normalization does not change projective cross-ratios. In the discrete case, for instance,
 \begin{equation}\label{eq-mean-shift-cross-ratio}
-	\frac{(\mathsf P_X)_{ij}(\mathsf P_X)_{\ell r}}
-	     {(\mathsf P_X)_{ir}(\mathsf P_X)_{\ell j}}
+	\frac{(\mathsf P_X)_{i,j}(\mathsf P_X)_{\ell,r}}
+	     {(\mathsf P_X)_{i,r}(\mathsf P_X)_{\ell,j}}
 	=
 	\frac{K(x_i,x_j)K(x_\ell,x_r)}
 	     {K(x_i,x_r)K(x_\ell,x_j)}.
@@ -2218,17 +2218,17 @@ We now instantiate the affine-gradient viewpoint by tracking functionals whose f
 		\qquad
 		\Sigma_\alpha=
 		\begin{pmatrix}
-			\Sigma_{uu}(\alpha) & \Sigma_{uv}(\alpha)\\
-			\Sigma_{vu}(\alpha) & \Sigma_{vv}(\alpha)
+			\Sigma_{u,u}(\alpha) & \Sigma_{u,v}(\alpha)\\
+			\Sigma_{v,u}(\alpha) & \Sigma_{v,v}(\alpha)
 		\end{pmatrix},
 	\]
 	and use the lower-left cross-covariance block
 	\[
-		\Sigma_{vu}(\alpha)=\int v u^\top\d\alpha(u,v)\in\RR^{d'\times d}.
+		\Sigma_{v,u}(\alpha)=\int v u^\top\d\alpha(u,v)\in\RR^{d'\times d}.
 	\]
 	The predictor is therefore the linear map
 	\[
-		G_{\alpha_t}(z)=\Sigma_{vu}(\alpha_t)z.
+		G_{\alpha_t}(z)=\Sigma_{v,u}(\alpha_t)z.
 	\]
 	For the squared Euclidean loss, set
 \index{second moment}% strictindex
@@ -2244,13 +2244,13 @@ We now instantiate the affine-gradient viewpoint by tracking functionals whose f
 		\qquad
 		g(\Sigma)
 		=
-		\frac12\tr\!\big(\Sigma_{vu}S\Sigma_{uv}\big)
-		-\tr\!\big(R\Sigma_{uv}\big)
+		\frac12\tr\!\big(\Sigma_{v,u}S\Sigma_{u,v}\big)
+		-\tr\!\big(R\Sigma_{u,v}\big)
 		+\frac12\int\norm{y}^2\d\rho(z,y).
 	\]
 	This puts the model exactly in the centered moment-functional row of Proposition~\ref{prop-centered-gaussian-covariance-catalogue}. To see that it recovers the usual particle equation, write
 	\[
-		E_\alpha\eqdef \Sigma_{vu}(\alpha)S-R.
+		E_\alpha\eqdef \Sigma_{v,u}(\alpha)S-R.
 	\]
 	The first variation is
 \index{first variation}% strictindex
@@ -2288,7 +2288,7 @@ We now instantiate the affine-gradient viewpoint by tracking functionals whose f
 			E_t & 0
 		\end{pmatrix},
 		\qquad
-		E_t=\Sigma_{vu}(\alpha_t)S-R.
+		E_t=\Sigma_{v,u}(\alpha_t)S-R.
 	\]
 	Thus a centered Gaussian law of neurons remains centered Gaussian, and the dynamics is driven by the cross-covariance block alone. This exact closure is special to the linear activation; for nonlinear activations, Gaussian closures are usually projections rather than invariant families.
 \index{covariance!subblock}% strictindex

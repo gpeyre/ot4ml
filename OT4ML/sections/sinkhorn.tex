@@ -124,9 +124,9 @@ Figure~\ref{fig:sinkhorn-entropy-lp-geometry} visualizes this entropic path on a
 \small entropic path
 \end{tabular}
 \index{entropic!path}% strictindex
-\caption{\emph{Entropic regularization and slack barriers.} The first row shows the penalized objective $\dotp{c}{p}+\epsilon\sum_i p_i(\log p_i-1)$ on a triangular face of the transport polytope; color and level sets represent the regularized functional itself, not only the linear part. The second row shows the analogous entropy-on-slacks objective $\ell^\top z+\epsilon H(b-Az)$ on a two-dimensional polyhedron $Az\leq b$, with $H(s)=\sum_i s_i(\log s_i-1)$. Large $\epsilon$ selects an interior reference point, while small $\epsilon$ moves the minimizer toward a low-cost face.}
+\caption{\emph{Entropic regularization and slack barriers.} The first row shows the penalized objective $\dotp{c}{p}+\epsilon\sum_i p_i(\log p_i-1)$ on the three-state probability simplex $\{p\in\RR_+^3:\sum_{i=1}^3p_i=1\}$, embedded in $\RR^3$ and visualized as a triangle; color and level sets represent the regularized functional itself, not only the linear part. The second row shows the analogous entropy-on-slacks objective $\ell^\top z+\epsilon H(b-Az)$ on a two-dimensional polyhedron $Az\leq b$, with $H(s)=\sum_i s_i(\log s_i-1)$. Large $\epsilon$ selects an interior reference point, while small $\epsilon$ moves the minimizer toward a low-cost face.}
 \index{entropic!regularization}% strictindex
-\index{transportation polytope}% strictindex
+\index{probability simplex}% strictindex
 \label{fig:sinkhorn-entropy-lp-geometry}
 \end{figure}
 
@@ -239,7 +239,7 @@ The alternating normalization can be read directly on the coupling matrix: a row
 
 \textbf{Output:} Entropic coupling $\P$.
 
-\textbf{Initialize:} Set $\K_{ij}=e^{-\C_{ij}/\epsilon}$, $\vD^{(0)}=\ones_m$, \(r^{(0)}=+\infty\), and \(\ell=0\).
+\textbf{Initialize:} Set $\K_{i,j}=e^{-\C_{i,j}/\epsilon}$, $\vD^{(0)}=\ones_m$, \(r^{(0)}=+\infty\), and \(\ell=0\).
 
 \textbf{While} \(r^{(\ell)}>\mathrm{tol}\) and $\ell<L$ \textbf{do}:
 \begin{algblock}
@@ -1130,22 +1130,22 @@ and to replace the computation of ${\min}_{\b}^\epsilon(h)$ by its stabilized ve
 
 \textbf{For} $i=1,\ldots,n$ \textbf{do}:
 \begin{algblock}
-\textbf{Set} $M_i=\max_j\{\gD_j^{(\ell-1)}-\C_{ij}\}$.
+\textbf{Set} $M_i=\max_j\{\gD_j^{(\ell-1)}-\C_{i,j}\}$.
 
 \textbf{Set} $\fD_i^{(\ell)}=-M_i-\epsilon\log\sum_j\b_j
-\exp((\gD_j^{(\ell-1)}-\C_{ij}-M_i)/\epsilon)$.
+\exp((\gD_j^{(\ell-1)}-\C_{i,j}-M_i)/\epsilon)$.
 \end{algblock}
 
 \textbf{For} $j=1,\ldots,m$ \textbf{do}:
 \begin{algblock}
-\textbf{Set} $N_j=\max_i\{\fD_i^{(\ell)}-\C_{ij}\}$.
+\textbf{Set} $N_j=\max_i\{\fD_i^{(\ell)}-\C_{i,j}\}$.
 
 \textbf{Set} $\gD_j^{(\ell)}=-N_j-\epsilon\log\sum_i\a_i
-\exp((\fD_i^{(\ell)}-\C_{ij}-N_j)/\epsilon)$.
+\exp((\fD_i^{(\ell)}-\C_{i,j}-N_j)/\epsilon)$.
 \end{algblock}
 
-\textbf{Set} $\P_{ij}^{(\ell)}=\a_i\b_j
-\exp((\fD_i^{(\ell)}+\gD_j^{(\ell)}-\C_{ij})/\epsilon)$.
+\textbf{Set} $\P_{i,j}^{(\ell)}=\a_i\b_j
+\exp((\fD_i^{(\ell)}+\gD_j^{(\ell)}-\C_{i,j})/\epsilon)$.
 
 \textbf{Set} \(\eta^{(\ell)}=\max\{\norm{\P^{(\ell)}\ones_m-\a}_1,
 \norm{(\P^{(\ell)})^\top\ones_n-\b}_1\}\).
@@ -1188,11 +1188,11 @@ The continuous dual formula is not a discretization heuristic: it follows from t
 		\MK_\c^\epsilon(\al,\be)
 		=
 		\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
-		\mathcal D_\epsilon(f,g),
+		\Dd_\epsilon(f,g),
 	}
 	where the concave dual objective is
 	\eql{\label{eq-dual-sinkhorn-objective}
-		\mathcal D_\epsilon(f,g)
+		\Dd_\epsilon(f,g)
 		\eqdef
 		\int_{\Xx} f(x)\d\al(x)
 		+
@@ -1242,7 +1242,7 @@ The continuous dual formula is not a discretization heuristic: it follows from t
 		=
 		-\epsilon\left(e^{(f+g-c)/\epsilon}-1\right).
 	\]
-	Integrating this identity yields $\mathcal D_\epsilon(f,g)$ and proves weak duality. Strong duality follows from Fenchel--Rockafellar entropy duality in the exponential Orlicz pair~\cite{leonard2012schrodinger,2017-carlier-SIMA}: the feasible density $r\equiv1$, corresponding to the product coupling $\xi$, is strictly positive and supplies the qualification point, while the boundedness of $c$ makes its objective finite. Because $c$ is continuous on the compact product, the dual supremum can be restricted to continuous potentials; equivalently, alternating soft $c$-transforms regularize bounded potentials into continuous ones without decreasing the dual value. This proves~\eqref{eq-dual-sinkh-cont}.
+	Integrating this identity yields $\Dd_\epsilon(f,g)$ and proves weak duality. Strong duality follows from Fenchel--Rockafellar entropy duality in the exponential Orlicz pair~\cite{leonard2012schrodinger,2017-carlier-SIMA}: the feasible density $r\equiv1$, corresponding to the product coupling $\xi$, is strictly positive and supplies the qualification point, while the boundedness of $c$ makes its objective finite. Because $c$ is continuous on the compact product, the dual supremum can be restricted to continuous potentials; equivalently, alternating soft $c$-transforms regularize bounded potentials into continuous ones without decreasing the dual value. This proves~\eqref{eq-dual-sinkh-cont}.
 
 	Finally, equality in the pointwise Fenchel inequality forces $r^\star(x,y)$ to be the unique minimizer of the scalar problem above. Its first-order condition is
 	\[
@@ -1324,7 +1324,7 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-discrete-so
 
 The soft transforms are not only regularized analogues of hard $c$-transforms: they are the exact block-maximization steps of the continuous dual objective~\eqref{eq-dual-sinkhorn-objective}. Indeed, for fixed $g$ and a perturbation $h\in\Cc(\Xx)$,
 \eq{
-	\left.\frac{\d}{\d s}\mathcal D_\epsilon(f+s h,g)\right|_{s=0}
+	\left.\frac{\d}{\d s}\Dd_\epsilon(f+s h,g)\right|_{s=0}
 	=
 	\int_\Xx h(x)\left[
 		1-e^{f(x)/\epsilon}
@@ -1611,9 +1611,9 @@ The reduction to endpoint couplings follows from disintegration. We write
 	\Rr^\epsilon(\d\omega)
 	=
 	\int \Rr^{\epsilon,x,y}(\d\omega)\,
-		\Rr^\epsilon_{01}(\d x,\d y),
+		\Rr^\epsilon_{0,1}(\d x,\d y),
 	\qquad
-	\Rr^\epsilon_{01}\eqdef(e_0,e_1)_\sharp\Rr^\epsilon,
+	\Rr^\epsilon_{0,1}\eqdef(e_0,e_1)_\sharp\Rr^\epsilon,
 \]
 where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,y)$. Similarly, for any feasible $M$, write
 \[
@@ -1634,9 +1634,9 @@ where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,
 		\mathrm{SB}_\epsilon(\al,\be)
 		=
 		\inf_{\pi\in\Couplings(\al,\be)}
-		\epsilon\KL(\pi|\Rr^\epsilon_{01}).
+		\epsilon\KL(\pi|\Rr^\epsilon_{0,1}).
 	\end{equation}
-	For a fixed endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{01})$, the minimizing path law is the mixture of reference bridges
+	For a fixed endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{0,1})$, the minimizing path law is the mixture of reference bridges
 \index{endpoint coupling}% strictindex
 	\begin{equation}\label{eq-schrodinger-bridge-mixture}
 		M^\pi
@@ -1649,18 +1649,18 @@ where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,
 \end{prop}
 
 \begin{proof}
-	If $M$ has finite relative entropy with respect to $\Rr^\epsilon$, then $\pi=(e_0,e_1)_\sharp M$ is necessarily absolutely continuous with respect to $\Rr^\epsilon_{01}$. The chain rule for relative entropy gives
+	If $M$ has finite relative entropy with respect to $\Rr^\epsilon$, then $\pi=(e_0,e_1)_\sharp M$ is necessarily absolutely continuous with respect to $\Rr^\epsilon_{0,1}$. The chain rule for relative entropy gives
 \index{relative!entropy}% strictindex
 	\begin{equation}\label{eq-kl-chain-rule-path}
 		\KL(M|\Rr^\epsilon)
 		=
-		\KL(\pi|\Rr^\epsilon_{01})
+		\KL(\pi|\Rr^\epsilon_{0,1})
 		+
 		\int_{\X\times\X}
 			\KL(M^{x,y}|\Rr^{\epsilon,x,y})
 			\,\d\pi(x,y).
 	\end{equation}
-	The second term is nonnegative and vanishes exactly when $M^{x,y}=\Rr^{\epsilon,x,y}$ for $\pi$-almost every $(x,y)$. Thus, once an endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{01})$ is fixed, the best path law is~\eqref{eq-schrodinger-bridge-mixture}, and the remaining minimization is precisely~\eqref{eq-schrodinger-static-endpoint}. If no such endpoint coupling exists, both sides are $+\infty$.
+	The second term is nonnegative and vanishes exactly when $M^{x,y}=\Rr^{\epsilon,x,y}$ for $\pi$-almost every $(x,y)$. Thus, once an endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{0,1})$ is fixed, the best path law is~\eqref{eq-schrodinger-bridge-mixture}, and the remaining minimization is precisely~\eqref{eq-schrodinger-static-endpoint}. If no such endpoint coupling exists, both sides are $+\infty$.
 \index{Schrodinger@Schr\"odinger!bridge}% strictindex
 \index{endpoint coupling}% strictindex
 \end{proof}
@@ -1682,7 +1682,7 @@ For $\X=\RR^d$, take $\Rr^\epsilon$ to be a Brownian reference dynamics. With th
 \]
 More generally, suppose that the endpoint prior can be written, up to a normalization constant independent of $\pi$, as
 \[
-	\Rr^\epsilon_{01}(\d x,\d y)
+	\Rr^\epsilon_{0,1}(\d x,\d y)
 	\propto
 	\exp\!\left(-\frac{c(x,y)}{\epsilon}\right)
 	\al(\d x)\be(\d y).
@@ -1691,7 +1691,7 @@ This includes the usual heat-kernel reference after rewriting it with respect to
 \index{marginal!constraint}% strictindex
 Then, for every $\pi\in\Couplings(\al,\be)$,
 \[
-	\epsilon\KL(\pi|\Rr^\epsilon_{01})
+	\epsilon\KL(\pi|\Rr^\epsilon_{0,1})
 	=
 	\int c(x,y)\,\d\pi(x,y)
 	+
@@ -1729,7 +1729,7 @@ Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path l
 \small $\epsilon=0.10$ &
 \small $\epsilon=0.28$
 \end{tabular}
-\caption{\emph{Endpoint couplings lifted to Brownian bridges.} Each panel transports six equally weighted red atoms concentrated near the center to six blue atoms distributed around them. For the displayed value of $\epsilon$, the endpoint coupling is either the exact quadratic OT plan ($\epsilon=0$) or the entropic Sinkhorn plan ($\epsilon>0$). A total of 60 paths is sampled by a multinomial allocation with probabilities $\pi_{ij}$, and each selected pair $(x_i,y_j)$ is filled by a Brownian bridge with covariance proportional to $\epsilon t(1-t)$. Colors encode time from red to blue.}
+\caption{\emph{Endpoint couplings lifted to Brownian bridges.} Each panel transports six equally weighted red atoms concentrated near the center to six blue atoms distributed around them. For the displayed value of $\epsilon$, the endpoint coupling is either the exact quadratic OT plan ($\epsilon=0$) or the entropic Sinkhorn plan ($\epsilon>0$). A total of 60 paths is sampled by a multinomial allocation with probabilities $\pi_{i,j}$, and each selected pair $(x_i,y_j)$ is filled by a Brownian bridge with covariance proportional to $\epsilon t(1-t)$. Colors encode time from red to blue.}
 \index{endpoint coupling}% strictindex
 \index{bridge!Brownian}% strictindex
 \label{fig:sinkhorn-path-space-bridges}
@@ -1802,7 +1802,7 @@ Several standard constructions fit this template. Balanced OT is recovered by ta
 \index{Wasserstein!barycenter}% strictindex
 
 In finite dimension, the second part of Definition~\ref{def-marginal-dependent-entropic-transport} gives the corresponding matrix problem, with reference weights satisfying $a_i,b_j>0$.
-Equivalently, if $\K_{ij}=a_i b_j e^{-\C_{ij}/\epsilon}$, the terms involving $\C$ can be absorbed into the Gibbs reference and the problem is, up to the additive constant $\epsilon\sum_{i,j}(a_i b_j-\K_{ij})$,
+Equivalently, if $\K_{i,j}=a_i b_j e^{-\C_{i,j}/\epsilon}$, the terms involving $\C$ can be absorbed into the Gibbs reference and the problem is, up to the additive constant $\epsilon\sum_{i,j}(a_i b_j-\K_{i,j})$,
 \[
 	\inf_{\P\geq0}
 	\mathsf F(\P\ones_m)
@@ -1826,13 +1826,13 @@ Assume $a_i,b_j>0$, $\epsilon>0$, and a Fenchel qualification condition, for ins
 	-
 	\epsilon\sum_{i,j}a_i b_j
 	\left[
-		\exp\left(\frac{\fD_i+\gD_j-\C_{ij}}{\epsilon}\right)-1
+		\exp\left(\frac{\fD_i+\gD_j-\C_{i,j}}{\epsilon}\right)-1
 	\right].
 \end{equation}
 Equivalently, up to the additive constant $\epsilon\sum_{i,j}a_i b_j$, the last term is
 \[
 	-
-	\epsilon\sum_{i,j}\K_{ij}
+	\epsilon\sum_{i,j}\K_{i,j}
 	\exp\left(\frac{\fD_i+\gD_j}{\epsilon}\right).
 \]
 If $\uD=e^{\fD/\epsilon}$ and $\vD=e^{\gD/\epsilon}$, exact block ascent in the two dual variables is the generalized Sinkhorn cycle
@@ -1870,7 +1870,7 @@ Introduce independent variables $r$ and $s$ for the two marginals and use dual v
 	-
 	\dotp{\fD\oplus\gD}{\P}.
 \]
-Minimizing over $r$ and $s$ gives $-\mathsf F^*(-\fD)$ and $-\mathsf G^*(-\gD)$. For each scalar entry, the convex conjugate of $p\mapsto \C_{ij}p+\epsilon(p\log(p/(a_i b_j))-p+a_i b_j)$ is $q\mapsto \epsilon a_i b_j(e^{(q-\C_{ij})/\epsilon}-1)$. Minimizing over $\P$ with $q=\fD_i+\gD_j$ gives~\eqref{eq-marginal-dependent-dual}.
+Minimizing over $r$ and $s$ gives $-\mathsf F^*(-\fD)$ and $-\mathsf G^*(-\gD)$. For each scalar entry, the convex conjugate of $p\mapsto \C_{i,j}p+\epsilon(p\log(p/(a_i b_j))-p+a_i b_j)$ is $q\mapsto \epsilon a_i b_j(e^{(q-\C_{i,j})/\epsilon}-1)$. Minimizing over $\P$ with $q=\fD_i+\gD_j$ gives~\eqref{eq-marginal-dependent-dual}.
 \index{marginal-dependent problem}% strictindex
 
 For the scaling form, fix $\vD>0$, set $\widetilde{\K}=\K\diag(\vD)$ and $z=\widetilde{\K}\ones_m=\K\vD$. Updating the row scaling means looking for $\P=\diag(\uD)\widetilde{\K}$, so its row marginal is $r=\P\ones_m=\uD\odot z$. The row-wise chain rule gives
@@ -1897,7 +1897,7 @@ When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two du
 
 \textbf{Output:} Coupling $\P$ and optimized marginals $r=\P\ones_m$, $s=\transp{\P}\ones_n$.
 
-\textbf{Set} $\K_{ij}=a_i b_j e^{-\C_{ij}/\epsilon}$.
+\textbf{Set} $\K_{i,j}=a_i b_j e^{-\C_{i,j}/\epsilon}$.
 
 \textbf{Initialize:} $\uD=\ones_n$, $\vD=\ones_m$, $\eta=+\infty$, and $\ell=0$.
 
@@ -2858,20 +2858,20 @@ For real positive $\epsilon$, this is the usual Sinkhorn fixed point. For comple
 \index{histogram}% strictindex
 \index{matrix!scaling}% strictindex
 
-If $\al=\sum_i \a_i\delta_{x_i}$ and $\be=\sum_j \b_j\delta_{y_j}$, set $\C_{ij}=c(x_i,y_j)$ and define the complex Gibbs matrix
+If $\al=\sum_i \a_i\delta_{x_i}$ and $\be=\sum_j \b_j\delta_{y_j}$, set $\C_{i,j}=c(x_i,y_j)$ and define the complex Gibbs matrix
 \index{complex!Gibbs kernel}% strictindex
 \[
-	\K_\epsilon(\C)_{ij}\eqdef \exp(-\C_{ij}/\epsilon).
+	\K_\epsilon(\C)_{i,j}\eqdef \exp(-\C_{i,j}/\epsilon).
 \]
 The direct discretization of~\eqref{eq-complex-measure-coupling} is
 \[
-	\P_{\epsilon,ij}=\a_i\b_j u_i\K_\epsilon(\C)_{ij}v_j,
+	\P_{\epsilon,ij}=\a_i\b_j u_i\K_\epsilon(\C)_{i,j}v_j,
 \]
 with fixed-point equations
 \[
-	u_i\sum_j \b_j\K_\epsilon(\C)_{ij}v_j=1,
+	u_i\sum_j \b_j\K_\epsilon(\C)_{i,j}v_j=1,
 	\qquad
-	v_j\sum_i \a_i\K_\epsilon(\C)_{ij}u_i=1 .
+	v_j\sum_i \a_i\K_\epsilon(\C)_{i,j}u_i=1 .
 \]
 Equivalently, absorbing the fixed marginal weights into the scalings by setting
 $\uD_i\eqdef \a_i u_i$ and $\vD_j\eqdef \b_j v_j$ gives the matrix-scaling convention used in Sinkhorn's algorithm:
@@ -2917,7 +2917,7 @@ so that the marginal factors $a_i b_j$ are incorporated into the exponential cou
 	\[
 		\P_{\epsilon,ij}
 		=
-		\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-\C_{ij}}{\epsilon}\right),
+		\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-\C_{i,j}}{\epsilon}\right),
 		\qquad
 		\P_\epsilon\ones_m=\a,
 		\qquad
@@ -2930,31 +2930,31 @@ so that the marginal factors $a_i b_j$ are incorporated into the exponential cou
 	Consider the holomorphic map which sends $(\fD,\gD,\epsilon,\a,\b,\C)$ to the $n$ row residuals, the first $m-1$ column residuals, and the gauge condition,
 	\[
 		R_i=\sum_j
-		\exp\!\left(\frac{f_i+g_j-\C_{ij}}{\epsilon}\right)-\a_i,
+		\exp\!\left(\frac{f_i+g_j-\C_{i,j}}{\epsilon}\right)-\a_i,
 		\qquad
 		S_j=\sum_i
-		\exp\!\left(\frac{f_i+g_j-\C_{ij}}{\epsilon}\right)-\b_j,
+		\exp\!\left(\frac{f_i+g_j-\C_{i,j}}{\epsilon}\right)-\b_j,
 		\qquad
 		G=\sum_i \a_i^0 f_i ,
 	\]
 	where $1\leq i\leq n$ and $1\leq j\leq m-1$. At the real base point the associated coupling $\P^0$ is strictly positive. We show that the derivative with respect to $(\fD,\gD)$ is injective as a complex-linear map. Let $(\delta\fD,\delta\gD)$ belong to its kernel and set
 	\[
-		\delta \P_{ij}
+		\delta \P_{i,j}
 		=
-		\frac{1}{\epsilon_0}\P^0_{ij}(\delta f_i+\delta g_j).
+		\frac{1}{\epsilon_0}\P^0_{i,j}(\delta f_i+\delta g_j).
 	\]
 	The linearized row sums vanish. The first $m-1$ linearized column sums vanish by definition of the residuals, and the last one vanishes because the total row sum equals the total column sum. Therefore
 	\[
 		0
 		=
-		\sum_i \overline{\delta f_i}\sum_j\delta \P_{ij}
+		\sum_i \overline{\delta f_i}\sum_j\delta \P_{i,j}
 		+
-		\sum_j \overline{\delta g_j}\sum_i\delta \P_{ij}
+		\sum_j \overline{\delta g_j}\sum_i\delta \P_{i,j}
 		=
 		\frac{1}{\epsilon_0}
-		\sum_{i,j}\P^0_{ij}\abs{\delta f_i+\delta g_j}^2 .
+		\sum_{i,j}\P^0_{i,j}\abs{\delta f_i+\delta g_j}^2 .
 	\]
-	Since $\P^0_{ij}>0$, one has $\delta f_i+\delta g_j=0$ for all $i,j$. Hence $\delta\fD$ is constant and $\delta\gD$ is the opposite constant. The gauge derivative $\sum_i \a_i^0\delta f_i=0$ forces this constant to vanish. The derivative is thus invertible, and the holomorphic implicit-function theorem gives the local holomorphic potentials. The formulas for $\uD_\epsilon$, $\vD_\epsilon$ and $\P_\epsilon$ are holomorphic compositions of these potentials.
+	Since $\P^0_{i,j}>0$, one has $\delta f_i+\delta g_j=0$ for all $i,j$. Hence $\delta\fD$ is constant and $\delta\gD$ is the opposite constant. The gauge derivative $\sum_i \a_i^0\delta f_i=0$ forces this constant to vanish. The derivative is thus invertible, and the holomorphic implicit-function theorem gives the local holomorphic potentials. The formulas for $\uD_\epsilon$, $\vD_\epsilon$ and $\P_\epsilon$ are holomorphic compositions of these potentials.
 \end{proof}
 
 \begin{rem}[Local, not global, complex scaling]

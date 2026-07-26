@@ -1182,7 +1182,7 @@ Instead of only coupling successive snapshots, one may posit that a latent popul
 v_t=-\Wgrad f(\al_t)=-\nabla\delta f(\al_t).
 ```
 
-Here $\delta f(\al_t)$ is the first variation, with the convention introduced above. For example, if $\al=\rho\,\d x$, the energy $f(\al)=\int V\d\al+\tau\int\rho\log\rho\,\d x$ gives a drift toward a potential landscape $V$ together with diffusion. In single-cell modeling, $V$, interaction terms or a neural approximation of $v_t$ can be fitted from unpaired population snapshots. This links Waddington-landscape intuition to the mathematical language of dynamic OT, Fokker--Planck equations and flow matching {cite:p}`TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT`.
+Here $\delta f(\al_t)$ is the first variation, with the convention introduced above. For example, if $\al=\rho\,\d x$, the energy $f(\al)=\int V\d\al+\sigma^2\int\rho\log\rho\,\d x$ gives a drift toward a potential landscape $V$ together with diffusion of strength $\sigma^2$. In single-cell modeling, $V$, interaction terms or a neural approximation of $v_t$ can be fitted from unpaired population snapshots. This links Waddington-landscape intuition to the mathematical language of dynamic OT, Fokker--Planck equations and flow matching {cite:p}`TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT`.
 :::
 
 

@@ -321,6 +321,25 @@ Exact Wasserstein distances are geometrically sharp, but this sharpness is stati
 \index{manifold support}% strictindex
 \index{covering number}% strictindex
 
+For compactly supported measures, it is convenient to record the worst-case empirical Wasserstein scale once and reuse it throughout the book. For \(n\geq2\), \(p\geq1\), and \(d\geq1\), define
+\begin{equation}\label{eq-empirical-wasserstein-scale}
+	r_{n,p,d}
+	\eqdef
+	\begin{cases}
+		n^{-1/(2p)}, & d<2p,\\
+		n^{-1/(2p)}(\log(1+n))^{1/p}, & d=2p,\\
+		n^{-1/d}, & d>2p.
+	\end{cases}
+\end{equation}
+Indeed, if \(\widehat\alpha_n=n^{-1}\sum_{i=1}^n\de_{X_i}\) for i.i.d.\ samples \(X_i\sim\alpha\) and \(\Xx\subset\RR^d\) is compact, then
+\begin{equation}\label{eq-empirical-wasserstein-moment-scale}
+	\sup_{\alpha\in\Pp(\Xx)}
+	\EE\!\left[\Wass_p(\widehat\alpha_n,\alpha)^p\right]^{1/p}
+	\leq
+	C_{\Xx,p,d}\,r_{n,p,d}.
+\end{equation}
+These worst-case rates follow from empirical Wasserstein moment estimates~\cite{dereich2013constructive,fournier2015rate}. They can improve under additional regularity or lower-dimensional support assumptions, as discussed below.
+
 The elementary mechanism behind this phenomenon is a multiscale coupling. One compares the two measures first at a coarse resolution, then corrects the residual imbalance inside smaller and smaller cells. The next proposition gives a convenient version of this idea for \(\Wass_1\) on the unit cube.
 
 Figure~\ref{fig:sinkhorn-bias-variance-tradeoff} first gives a numerical overview of the statistical regimes compared in this section: exact OT exhibits dimension-dependent empirical fluctuations, whereas MMD and fixed-temperature Sinkhorn divergences are much closer to the parametric $n^{-1/2}$ scale.
@@ -432,20 +451,9 @@ Figure~\ref{fig:sinkhorn-bias-variance-tradeoff} first gives a numerical overvie
 	\[
 		\EE\abs{\Wass_1(\hat\alpha_n,\hat\beta_m)-\Wass_1(\alpha,\beta)}
 		\lesssim_d
-		r_d(n)+r_d(m),
+		r_{n,1,d}+r_{m,1,d},
 	\]
-	where, for \(N\geq2\),
-	\[
-		r_d(N)
-		=
-		\begin{cases}
-		N^{-1/2}, & d=1,\\
-		(\log N)N^{-1/2}, & d=2,\\
-		N^{-1/d}, & d\geq3.
-		\end{cases}
-	\]
-	For \(N=1\), the value of \(r_d(1)\) is absorbed in the implicit constant.
-	In particular, for \(d\geq3\), the worst-case one-sample empirical error for exact \(\Wass_1\) has the characteristic high-dimensional scale \(N^{-1/d}\). More generally, for \(\Wass_p\) on regular \(d'\)-dimensional supports, the corresponding high-dimensional rate is \(N^{-1/d'}\) when \(d'>2p\), under the usual volume-growth and moment assumptions. Thus the relevant dimension is the intrinsic dimension of the support rather than necessarily the ambient dimension.
+	In particular, for \(d\geq3\), the worst-case one-sample empirical error for exact \(\Wass_1\) has the characteristic high-dimensional scale \(n^{-1/d}\). More generally, for \(\Wass_p\) on regular \(d'\)-dimensional supports, the corresponding high-dimensional rate is \(n^{-1/d'}\) when \(d'>2p\), under the usual volume-growth and moment assumptions. Thus the relevant dimension is the intrinsic dimension of the support rather than necessarily the ambient dimension.
 \index{exact OT}% strictindex
 \index{intrinsic dimension}% strictindex
 \index{manifold support}% strictindex
@@ -726,7 +734,7 @@ Entropic regularization keeps the transport geometry but smooths the dual potent
 
 	For probability measures \(\alpha_0,\beta_0\), write the dual objective, following~\eqref{eq-dual-sinkhorn-objective}, as
 	\[
-	\mathcal A_\epsilon^{\alpha_0,\beta_0}(u,v)
+	\Dd_\epsilon^{\alpha_0,\beta_0}(u,v)
 	\eqdef
 	\int u\d\alpha_0+\int v\d\beta_0
 	-\epsilon\iint
@@ -746,19 +754,19 @@ Entropic regularization keeps the transport geometry but smooths the dual potent
 	Equivalently, the potentials are fixed points of the soft \(c\)-transform, but only the dual normalization is needed below.
 	Let \((u,v)\) and \((u_n,v_n)\) be optimal dual potentials for \((\alpha_0,\beta_0)\) and \((\alpha_n,\beta_0)\). By optimality,
 	\[
-	\mathcal A_\epsilon^{\alpha_0,\beta_0}(u_n,v_n)
+	\Dd_\epsilon^{\alpha_0,\beta_0}(u_n,v_n)
 	\leq
-	\mathcal A_\epsilon^{\alpha_0,\beta_0}(u,v),
+	\Dd_\epsilon^{\alpha_0,\beta_0}(u,v),
 	\qquad
-	\mathcal A_\epsilon^{\alpha_n,\beta_0}(u,v)
+	\Dd_\epsilon^{\alpha_n,\beta_0}(u,v)
 	\leq
-	\mathcal A_\epsilon^{\alpha_n,\beta_0}(u_n,v_n).
+	\Dd_\epsilon^{\alpha_n,\beta_0}(u_n,v_n).
 	\]
 	Hence the difference of the two optimal values is bounded by evaluating the two objectives at either pair of potentials. For the pair \((u,v)\) associated with \((\alpha_0,\beta_0)\), the preceding Sinkhorn equation cancels the exponential term in the change of the first marginal:
 	\[
-	\mathcal A_\epsilon^{\alpha_0,\beta_0}(u,v)
+	\Dd_\epsilon^{\alpha_0,\beta_0}(u,v)
 	-
-	\mathcal A_\epsilon^{\alpha_n,\beta_0}(u,v)
+	\Dd_\epsilon^{\alpha_n,\beta_0}(u,v)
 	=
 	\int u\d(\alpha_0-\alpha_n).
 	\]
@@ -856,7 +864,7 @@ Entropic regularization keeps the transport geometry but smooths the dual potent
 \index{barycentric!projection}% strictindex
 The preceding estimates concern transport values. In many learning tasks, however, one wants the map itself. The standard sample-based principle is to solve an empirical dual problem for potentials \((\fD_{n,m}^\epsilon,\gD_{n,m}^\epsilon)\in\RR^n\times\RR^m\), where \(\epsilon>0\) denotes the entropic temperature and \(\epsilon=0\) denotes the unregularized Kantorovich problem. The soft \(c\)-transform of Definition~\ref{def-continuous-soft-c-transform} then acts as an extrapolator from the samples to the full ambient space.
 
-For the quadratic cost \(c_2(x,y)=\norm{x-y}^2/2\), let \(X_i\sim\alpha\), \(Y_j\sim\beta\), \(\hat\alpha_n=\sum_i a_i\delta_{X_i}\), \(\hat\beta_m=\sum_j b_j\delta_{Y_j}\), and let \(\P_{n,m}^\epsilon=(\P_{ij}^\epsilon)\) be the optimal empirical entropic coupling. If \(\gD_{n,m}^\epsilon\) is the target-side dual potential, and if \(\bar c(y,x)\eqdef c_2(x,y)\), define
+For the quadratic cost \(c_2(x,y)=\norm{x-y}^2/2\), let \(X_i\sim\alpha\), \(Y_j\sim\beta\), \(\hat\alpha_n=\sum_i a_i\delta_{X_i}\), \(\hat\beta_m=\sum_j b_j\delta_{Y_j}\), and let \(\P_{n,m}^\epsilon=(\P_{i,j}^\epsilon)\) be the optimal empirical entropic coupling. If \(\gD_{n,m}^\epsilon\) is the target-side dual potential, and if \(\bar c(y,x)\eqdef c_2(x,y)\), define
 \[
 	u_{n,m}^\epsilon(x)
 	\eqdef
@@ -898,11 +906,11 @@ This is the precise form of the informal statement that empirical dual potential
 \end{equation}
 At a sampled source point \(X_i\), the Sinkhorn normalization gives
 \[
-	\omega_j^\epsilon(X_i)=\frac{\P_{ij}^\epsilon}{a_i},
+	\omega_j^\epsilon(X_i)=\frac{\P_{i,j}^\epsilon}{a_i},
 	\qquad
 	T_{n,m}^\epsilon(X_i)
 	=
-	\frac1{a_i}\sum_j \P_{ij}^\epsilon Y_j .
+	\frac1{a_i}\sum_j \P_{i,j}^\epsilon Y_j .
 \]
 Thus the extrapolated soft-transform map coincides on the empirical support with the barycentric projection~\eqref{eq-barycentric-projection} of the optimal entropic plan. At \(\epsilon=0\), the hard \(c\)-transform is generally nondifferentiable: away from Laguerre boundaries its gradient selects one target site, whereas on a boundary its subdifferential contains several sites. The barycentric projection of an unregularized optimal plan is still well defined on the empirical support, but it need not coincide with a single gradient selection when a row of the plan splits. The following consistency result is therefore stated directly for barycentric projections. It uses uniform empirical weights, as in the usual statistical setting; deterministic nonuniform weights are handled by replacing the grid-entropy estimate in the proof.
 
@@ -919,7 +927,7 @@ Thus the extrapolated soft-transform map coincides on the empirical support with
 	\[
 		\bar T_{n,m}^{\epsilon}(X_i)
 		\eqdef
-		n\sum_j \P_{ij}^{\epsilon}Y_j,
+		n\sum_j \P_{i,j}^{\epsilon}Y_j,
 	\]
 	satisfies
 	\[
@@ -1158,7 +1166,7 @@ is elementary, but in OT it is genuinely diagnostic because the two terms may li
 	\[
 		\mathcal D^\star(\a,\b)
 		\eqdef
-		\argmax_{f_i+g_j\leq \C_{ij}}
+		\argmax_{f_i+g_j\leq \C_{i,j}}
 		\dotp{\fD}{\a}+\dotp{\gD}{\b}
 	\]
 	the set of optimal dual vectors, modulo the gauge \((\fD,\gD)\mapsto(\fD+\lambda\ones,\gD-\lambda\ones)\). If \(G_{\a}\) is a centered Gaussian vector with covariance
@@ -1198,7 +1206,7 @@ is elementary, but in OT it is genuinely diagnostic because the two terms may li
 		\qquad
 		G_{\a}\in\{\xi:\dotp{\ones}{\xi}=0\}.
 	\]
-	The dual formulation writes the map \(\a'\mapsto\MKD_\C(\a',\b)\) as the supremum, over the feasible polyhedron \(f_i+g_j\leq \C_{ij}\), of the affine functions \(\a'\mapsto \dotp{\fD}{\a'}+\dotp{\gD}{\b}\). Its directional derivative at \(\a\), in any tangent direction \(h\) with \(\dotp{\ones}{h}=0\), is therefore
+	The dual formulation writes the map \(\a'\mapsto\MKD_\C(\a',\b)\) as the supremum, over the feasible polyhedron \(f_i+g_j\leq \C_{i,j}\), of the affine functions \(\a'\mapsto \dotp{\fD}{\a'}+\dotp{\gD}{\b}\). Its directional derivative at \(\a\), in any tangent direction \(h\) with \(\dotp{\ones}{h}=0\), is therefore
 	\[
 		D_{\a}\MKD_\C(\a,\b)[h]
 		=
@@ -1351,7 +1359,7 @@ The statistical results above explain why entropic OT is attractive at fixed tem
 \index{positive!semidefinite kernel}% strictindex
 \index{random features}% strictindex
 \index{Fourier features}% strictindex
-The RKHS/MMD section, Section~\ref{sec-rkhs-mmd}, already used positive semidefinite kernels to define Hilbertian discrepancies between measures. Recall that a symmetric kernel \(k:\Xx\times\Xx\to\RR\) is positive semidefinite if, for every finite family \((x_i)_{i=1}^n\), the Gram matrix \((k(x_i,x_j))_{ij}\) is positive semidefinite. Many scalable kernel methods start from an integral feature representation
+The RKHS/MMD section, Section~\ref{sec-rkhs-mmd}, already used positive semidefinite kernels to define Hilbertian discrepancies between measures. Recall that a symmetric kernel \(k:\Xx\times\Xx\to\RR\) is positive semidefinite if, for every finite family \((x_i)_{i=1}^n\), the Gram matrix \((k(x_i,x_j))_{i,j}\) is positive semidefinite. Many scalable kernel methods start from an integral feature representation
 \[
 	k(x,y)=\int_Z \dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\xi(z),
 	\qquad
@@ -1364,7 +1372,7 @@ where \(\xi\) is a latent probability measure. Drawing \(z_1,\ldots,z_r\sim\xi\)
 	\frac1r\sum_{\ell=1}^r
 	\dotp{\phi(x,z_\ell)}{\phi(y,z_\ell)}_{\RR^p}.
 \]
-This is the classical random-feature principle. For data points \((x_i)_{i=1}^n\), the dense Gram matrix \(K=(k(x_i,x_j))_{ij}\) is replaced by \(\widetilde K=\Phi\Phi^\top\), where \(\Phi\in\RR^{n\times rp}\) is the sampled feature matrix with entries \(\Phi_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell)\), \(1\leq \ell\leq r\), \(1\leq q\leq p\). The number \(r\) of sampled latent variables is thus a second sample size, distinct from the number of data points. At this stage no positivity of \(\phi\) is assumed; signed or oscillatory features are exactly what make Fourier sketches useful.
+This is the classical random-feature principle. For data points \((x_i)_{i=1}^n\), the dense Gram matrix \(K=(k(x_i,x_j))_{i,j}\) is replaced by \(\widetilde K=\Phi\Phi^\top\), where \(\Phi\in\RR^{n\times rp}\) is the sampled feature matrix with entries \(\Phi_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell)\), \(1\leq \ell\leq r\), \(1\leq q\leq p\). The number \(r\) of sampled latent variables is thus a second sample size, distinct from the number of data points. At this stage no positivity of \(\phi\) is assumed; signed or oscillatory features are exactly what make Fourier sketches useful.
 \index{positive!semidefinite kernel}% strictindex
 \index{random features}% strictindex
 \index{kernel!ridge regression}% strictindex
@@ -1382,9 +1390,9 @@ Let
 	\qquad
 	\beta=\sum_{j=1}^m b_j\delta_{y_j},
 	\qquad
-	K_{ij}=k_\epsilon(x_i,y_j)\eqdef e^{-c(x_i,y_j)/\epsilon}.
+	K_{i,j}=k_\epsilon(x_i,y_j)\eqdef e^{-c(x_i,y_j)/\epsilon}.
 \]
-Assume here that the weights are positive and that \(K_{ij}>0\). The Sinkhorn scaling equations are
+Assume here that the weights are positive and that \(K_{i,j}>0\). The Sinkhorn scaling equations are
 \[
 	u=\frac{a}{Kv},
 	\qquad
@@ -1398,13 +1406,13 @@ where divisions are componentwise. The factorization used by Sinkhorn is rectang
 \]
 Then \(\Phi_X\in\RR^{n\times R}\), \(\Phi_Y\in\RR^{m\times R}\), and
 \[
-	\widetilde K_{ij}
+	\widetilde K_{i,j}
 	=
-	(\Phi_X\Phi_Y^\top)_{ij}
+	(\Phi_X\Phi_Y^\top)_{i,j}
 	=
 	\frac1r\sum_{\ell=1}^r
 	\dotp{\phi(x_i,z_\ell)}{\phi(y_j,z_\ell)}_{\RR^p}
-	\simeq K_{ij}.
+	\simeq K_{i,j}.
 \]
 When the two supports are the same, one has \(\Phi_X=\Phi_Y=\Phi\) and this reduces to the symmetric Gram approximation \(\widetilde K=\Phi\Phi^\top\). In the rectangular case, if \(K\) is replaced by the rank-\(R\) factorization \(\widetilde K=\Phi_X\Phi_Y^\top\), the two matrix-vector products are evaluated as
 \[
@@ -1412,7 +1420,7 @@ When the two supports are the same, one has \(\Phi_X=\Phi_Y=\Phi\) and this redu
 	\qquad
 	\widetilde K^\top u=\Phi_Y(\Phi_X^\top u),
 \]
-so each scaling sweep costs \(O((n+m)R)\) operations and stores only \(O((n+m)R)\) numbers. The difficulty is that Sinkhorn is not a generic kernel method: it divides by \(\widetilde K v\) and, in dual variables, applies logarithms. Thus one needs \(\widetilde K_{ij}>0\), preferably with a relative error on the entries, because \(-\epsilon\log K_{ij}\) is the effective cost. This is a more stringent requirement than the usual spectral or Frobenius approximation of a PSD Gram matrix.
+so each scaling sweep costs \(O((n+m)R)\) operations and stores only \(O((n+m)R)\) numbers. The difficulty is that Sinkhorn is not a generic kernel method: it divides by \(\widetilde K v\) and, in dual variables, applies logarithms. Thus one needs \(\widetilde K_{i,j}>0\), preferably with a relative error on the entries, because \(-\epsilon\log K_{i,j}\) is the effective cost. This is a more stringent requirement than the usual spectral or Frobenius approximation of a PSD Gram matrix.
 \index{Gibbs!kernel}% strictindex
 \index{matrix-vector product}% strictindex
 
@@ -1422,36 +1430,36 @@ The next proposition is not a substitute for the sharp low-rank Sinkhorn theory.
 \label{prop-sinkhorn-sketch-positive-guarantee}
 \index{kernel!logarithmic accuracy}% strictindex
 \index{kernel!positivity}% strictindex
-Let \(\epsilon>0\) and \(K_{ij}=\EE h_{ij}(Z)>0\) for \(1\leq i\leq n\), \(1\leq j\leq m\), where \(Z\) has law \(\xi\) and \(|h_{ij}(Z)|\leq M\) almost surely. Set \(c_{ij}=-\epsilon\log K_{ij}\), and let
+Let \(\epsilon>0\) and \(K_{i,j}=\EE h_{i,j}(Z)>0\) for \(1\leq i\leq n\), \(1\leq j\leq m\), where \(Z\) has law \(\xi\) and \(|h_{i,j}(Z)|\leq M\) almost surely. Set \(c_{i,j}=-\epsilon\log K_{i,j}\), and let
 \[
-	\widetilde K_{ij}=\frac1r\sum_{\ell=1}^r h_{ij}(Z_\ell),
+	\widetilde K_{i,j}=\frac1r\sum_{\ell=1}^r h_{i,j}(Z_\ell),
 	\qquad
 	Z_1,\ldots,Z_r\sim\xi.
 \]
 Then, for every \(\eta>0\),
 \[
-	\PP\pa{\max_{i,j}\abs{\widetilde K_{ij}-K_{ij}}>\eta}
+	\PP\pa{\max_{i,j}\abs{\widetilde K_{i,j}-K_{i,j}}>\eta}
 	\leq
 	2nm\exp\pa{-\frac{r\eta^2}{2M^2}}.
 \]
-In particular, if \(\kappa\eqdef\min_{i,j}K_{ij}>0\), \(\eta<\kappa\), and the event above does not occur, then \(\widetilde K\) is entrywise positive. If moreover \(\eta\leq\kappa/2\), then the sketched cost \(\widetilde c_{ij}=-\epsilon\log \widetilde K_{ij}\) satisfies
+In particular, if \(\kappa\eqdef\min_{i,j}K_{i,j}>0\), \(\eta<\kappa\), and the event above does not occur, then \(\widetilde K\) is entrywise positive. If moreover \(\eta\leq\kappa/2\), then the sketched cost \(\widetilde c_{i,j}=-\epsilon\log \widetilde K_{i,j}\) satisfies
 \[
-	\max_{i,j}\abs{\widetilde c_{ij}-c_{ij}}
+	\max_{i,j}\abs{\widetilde c_{i,j}-c_{i,j}}
 	\leq
 	\frac{2\epsilon\eta}{\kappa}.
 \]
-If, more sharply, the relative variables \(\zeta_{ij}(Z)\eqdef h_{ij}(Z)/K_{ij}\) satisfy \(|\zeta_{ij}(Z)|\leq\psi\) almost surely, then for every \(0<\delta\leq1/2\),
+If, more sharply, the relative variables \(\zeta_{i,j}(Z)\eqdef h_{i,j}(Z)/K_{i,j}\) satisfy \(|\zeta_{i,j}(Z)|\leq\psi\) almost surely, then for every \(0<\delta\leq1/2\),
 \[
 	\PP\pa{
-	\max_{i,j}\abs{\frac{\widetilde K_{ij}}{K_{ij}}-1}>\delta}
+	\max_{i,j}\abs{\frac{\widetilde K_{i,j}}{K_{i,j}}-1}>\delta}
 	\leq
 	2nm\exp\pa{-\frac{r\delta^2}{2\psi^2}}.
 \]
 On the complementary event,
 \[
-	\widetilde K_{ij}>0
+	\widetilde K_{i,j}>0
 	\quad\hbox{and}\quad
-	\max_{i,j}\abs{\widetilde c_{ij}-c_{ij}}
+	\max_{i,j}\abs{\widetilde c_{i,j}-c_{i,j}}
 	\leq
 	2\epsilon\delta .
 \]
@@ -1460,22 +1468,22 @@ On the complementary event,
 \begin{proof}
 For a fixed pair \((i,j)\), Hoeffding's inequality applied to bounded variables in \([-M,M]\) gives
 \[
-	\PP\pa{\abs{\widetilde K_{ij}-K_{ij}}>\eta}
+	\PP\pa{\abs{\widetilde K_{i,j}-K_{i,j}}>\eta}
 	\leq 2\exp\pa{-\frac{r\eta^2}{2M^2}}.
 \]
-A union bound over the \(nm\) entries gives the first claim. If \(\max_{ij}\abs{\widetilde K_{ij}-K_{ij}}\leq\eta<\kappa\), then \(\widetilde K_{ij}\geq\kappa-\eta>0\). Writing \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\), one has \(|s_{ij}|\leq\eta/\kappa\leq1/2\), hence \(|\log(1+s_{ij})|\leq2|s_{ij}|\), which proves the absolute logarithmic bound. Applying the same Hoeffding argument to \(\zeta_{ij}(Z)\), whose expectation is \(1\), gives the relative estimate. On the corresponding event, \(\widetilde K_{ij}=K_{ij}(1+s_{ij})\) with \(|s_{ij}|\leq\delta\leq1/2\), so positivity and the bound \(\epsilon|\log(1+s_{ij})|\leq2\epsilon\delta\) follow.
+A union bound over the \(nm\) entries gives the first claim. If \(\max_{i,j}\abs{\widetilde K_{i,j}-K_{i,j}}\leq\eta<\kappa\), then \(\widetilde K_{i,j}\geq\kappa-\eta>0\). Writing \(\widetilde K_{i,j}=K_{i,j}(1+s_{i,j})\), one has \(|s_{i,j}|\leq\eta/\kappa\leq1/2\), hence \(|\log(1+s_{i,j})|\leq2|s_{i,j}|\), which proves the absolute logarithmic bound. Applying the same Hoeffding argument to \(\zeta_{i,j}(Z)\), whose expectation is \(1\), gives the relative estimate. On the corresponding event, \(\widetilde K_{i,j}=K_{i,j}(1+s_{i,j})\) with \(|s_{i,j}|\leq\delta\leq1/2\), so positivity and the bound \(\epsilon|\log(1+s_{i,j})|\leq2\epsilon\delta\) follow.
 \end{proof}
 
 \index{kernel!positivity}% strictindex
 \index{logarithmic kernel approximation}% strictindex
-This proposition is deliberately elementary, but it pinpoints the obstruction. When \(\epsilon\) is small or the data diameter is large, \(\kappa=\min K_{ij}\) can be exponentially small, so an ordinary signed sketch may need a very large \(r\) just to keep all entries positive. What Sinkhorn really needs is relative control of the kernel, equivalently additive control of the sketched costs. Positive features remove the most basic failure mode, negative entries in \(\widetilde K\), but they do not by themselves provide relative concentration. In particular, the log-normal features introduced below are unbounded, so this Hoeffding proposition does not apply to them without truncation or a different concentration argument.
+This proposition is deliberately elementary, but it pinpoints the obstruction. When \(\epsilon\) is small or the data diameter is large, \(\kappa=\min K_{i,j}\) can be exponentially small, so an ordinary signed sketch may need a very large \(r\) just to keep all entries positive. What Sinkhorn really needs is relative control of the kernel, equivalently additive control of the sketched costs. Positive features remove the most basic failure mode, negative entries in \(\widetilde K\), but they do not by themselves provide relative concentration. In particular, the log-normal features introduced below are unbounded, so this Hoeffding proposition does not apply to them without truncation or a different concentration argument.
 \index{Hoeffding inequality}% strictindex
 \index{relative!error}% strictindex
 \index{logarithmic error}% strictindex
 
 \index{effective rank}% strictindex
 \index{near-linear Sinkhorn}% strictindex
-The available worst-case bounds retain an explicit dimension dependence. For the quadratic cost on points contained in a radius-\(R\) ball of \(\RR^d\), the Nystr\"om analysis of Altschuler, Bach, Rudi and Niles-Weed~\cite{AltschulerBachRudiNilesWeed2019NystromSinkhorn} studies \(K_{ij}=\exp(-\eta\norm{x_i-x_j}^2)\) and bounds the effective rank by a quantity of the form
+The available worst-case bounds retain an explicit dimension dependence. For the quadratic cost on points contained in a radius-\(R\) ball of \(\RR^d\), the Nystr\"om analysis of Altschuler, Bach, Rudi and Niles-Weed~\cite{AltschulerBachRudiNilesWeed2019NystromSinkhorn} studies \(K_{i,j}=\exp(-\eta\norm{x_i-x_j}^2)\) and bounds the effective rank by a quantity of the form
 \[
 	r_\ast(X,\eta,\epsilon_0)
 	\lesssim
@@ -1494,7 +1502,7 @@ A positive feature sketch asks for more than positive semidefiniteness. The rele
 \begin{defn}[Doubly nonnegative and completely positive matrices and kernels]\label{def-dnn-cp-kernels}
 In finite dimension, set
 \[
-	\mathrm{DNN}_n=\enscond{A\in\RR^{n\times n}}{A\succeq0,\ A_{ij}\geq0},
+	\mathrm{DNN}_n=\enscond{A\in\RR^{n\times n}}{A\succeq0,\ A_{i,j}\geq0},
 	\qquad
 	\mathrm{CP}_n=\enscond{BB^\top}{B\in\RR_+^{n\times q}\hbox{ for some }q\geq1}.
 \]
@@ -1696,7 +1704,7 @@ They satisfy
 	\qquad
 	\EE[\widetilde k_{p,\epsilon}(x,y)]=k_{p,\epsilon}(x,y).
 \]
-The corresponding matrices \((\Phi_X)_{i\ell}=\varphi_\ell(x_i)\) and \((\Phi_Y)_{j\ell}=\varphi_\ell(y_j)\) give a positive factorization \(\widetilde K=\Phi_X\Phi_Y^\top\). Sinkhorn can therefore be run safely on the sketched kernel, and the resulting plan is represented as
+The corresponding matrices \((\Phi_X)_{i,\ell}=\varphi_\ell(x_i)\) and \((\Phi_Y)_{j,\ell}=\varphi_\ell(y_j)\) give a positive factorization \(\widetilde K=\Phi_X\Phi_Y^\top\). Sinkhorn can therefore be run safely on the sketched kernel, and the resulting plan is represented as
 \[
 	\widetilde P
 	=
