@@ -5456,7 +5456,7 @@ For numerical stability, the numerical illustration below uses the smoothed
 distance $\sqrt{\norm{x-y}^2+\delta^2}$ with a small $\delta$ in the
 energy-distance kernel $k(x,y)=-\norm{x-y}$. It compares the first-order flow
 with the undamped Newton lift
-$\ddot x=v_{\alpha_t}(x)=-\nabla_W f(\alpha_t)(x)$, initialized with zero velocity.
+$\ddot x=v_{\alpha_t}(x)=-\Wgrad f(\alpha_t)(x)$, initialized with zero velocity.
 The initial measure is a single Gaussian located to the left of a
 two-Gaussian target mixture. Both the transported measure and the target are
 discretized by large empirical clouds, and the smooth density views are KDE
@@ -5477,7 +5477,7 @@ show_book_figure("gradflow-second-order-momentum-mmd")
 *First-order and Newton Wasserstein particle flows for the squared MMD with
 the energy-distance kernel $k(x,y)=-\norm{x-y}$. The first row follows the
 overdamped Wasserstein gradient flow. The second row follows the
-infinite-momentum Newton dynamics $\ddot x=-\nabla_W f(\alpha_t)(x)$, so the same
+infinite-momentum Newton dynamics $\ddot x=-\Wgrad f(\alpha_t)(x)$, so the same
 Wasserstein force is read as an acceleration rather than a velocity. Both rows
 use the same large empirical source cloud and the same empirical two-Gaussian
 target cloud. Dashed gray contours show a KDE of the target particles, colored

@@ -2510,7 +2510,10 @@ show_book_figure("monge-gaussian-w2-geodesic")
 
 *One- and two-dimensional Gaussian $\Wass_2$ geodesics. In one dimension, the
 coordinates $(m,\sigma)$ turn geodesics into Euclidean segments in the upper
-half-plane. In two dimensions, means move linearly while covariance ellipses
+half-plane. Both paths share red and blue endpoint colors; the first
+interpolates directly between them, whereas the second passes through green at
+mid-time. In two dimensions, means move linearly
+while covariance ellipses
 follow the Bures--Wasserstein interpolation. The cone panel displays the same
 two covariance paths inside the $2\times2$ positive-semidefinite cone, with
 $u$ and $v$ horizontal, $t$ vertical, and faint gray chords showing the ambient
@@ -2584,9 +2587,10 @@ show_book_figure("monge-gaussian-fr-mean-geodesic")
 ```
 
 *Wasserstein and Fisher--Rao geodesics in the one-dimensional Gaussian family.
-The warm red-to-orange curves encode the Wasserstein interpolation, while the
-cool violet-to-blue curves encode the Fisher--Rao interpolation; the same
-palettes identify both geodesics in the left parameter-space panel. The two
+Both interpolations share red and blue endpoint colors. The Wasserstein curves
+interpolate directly between them, whereas the Fisher--Rao curves pass through
+green at mid-time; the same palettes identify both geodesics in the left
+parameter-space panel. The two
 density panels use the same endpoint Gaussians and time samples, but the
 Fisher--Rao path expands the standard deviation along its hyperbolic arc before
 returning to the target scale.*
@@ -2606,7 +2610,9 @@ The cone panel in Figure {ref}`fig:monge-gaussian-w2-geodesic-2d` illustrates th
 (fig:monge-gaussian-w2-geodesic-2d)=
 The two-dimensional Gaussian panels in the boxed figure show covariance
 ellipses evolving along the Bures--Wasserstein interpolation, together with the
-same covariance paths drawn in cone coordinates. The interactive panel above
+same covariance paths drawn in cone coordinates. The first path uses a direct
+red-to-blue palette, whereas the second shares these endpoints but passes
+through green. The interactive panel above
 varies the same Gaussian ingredients in real time.
 
 (rem-fisher-rao-bures-gaussian)=
@@ -2674,12 +2680,12 @@ show_book_figure("monge-gaussian-fr-vs-bures-cone")
 ```
 
 *Bures--Wasserstein and Fisher--Rao covariance geodesics in the $2\times2$
-positive-semidefinite cone. The colored curve is the intrinsic geodesic and the
-faint gray chord is the ambient Euclidean segment. The Bures path reaches a
-rank-one covariance on the cone boundary. The Fisher--Rao path uses a
-positive-definite regularization with the same dominant direction; the open
-circle marks the limiting rank-one covariance, which is not at finite
-Fisher--Rao distance.*
+positive-semidefinite cone. The three trajectories use distinct red-to-blue,
+orange-to-violet, and teal-to-gold palettes, repeated identically in both
+panels, while faint gray chords show the ambient Euclidean segments. The Bures
+paths reach rank-one covariances on the cone boundary. The Fisher--Rao paths use
+positive-definite regularizations with the same dominant directions because
+the limiting rank-one covariances are not at finite Fisher--Rao distance.*
 :::
 
 :::{div}
