@@ -757,6 +757,61 @@ If $\al$ has a density $\density{\al}$ on $\X=\RR^\dim$, then the TV norm is the
 If $\al$ is discrete as in {eq}`eq-div-disc-meas`, then the TV norm is the $\ell^1$ norm of vectors in $\RR^n$, $\norm{\al}_{\TV}=\sum_i |\a_i| = \norm{\a}_{\ell^1}$.
 :::
 
+KL and total variation are two very different $\phi$-divergences: the former
+is smooth and sensitive to density ratios, whereas the latter is a nonsmooth
+norm. Pinsker's fundamental inequality nevertheless controls the square of the
+latter by the former {cite:p}`pinsker1964information`.
+
+(thm-pinsker)=
+:::{admonition} Theorem: Pinsker Inequality
+:class: important
+Let $\alpha,\beta\in\Mm_+^1(\X)$ be probability measures on a measurable
+space. With the full-variation convention of {eq}`eq-defn-tv`,
+
+```{math}
+\TV(\alpha\mid\beta)^2
+=
+\norm{\alpha-\beta}_{\TV}^2
+\leq
+2\KL(\alpha\mid\beta).
+```
+
+On a finite space, for $a,b\in\simplex_n$, this becomes
+
+```{math}
+\norm{a-b}_{\ell^1}^2
+\leq
+2\operatorname{KL}(a\mid b).
+```
+:::
+
+:::{dropdown} Proof
+The result is immediate when $\KL(\alpha\mid\beta)=+\infty$, so assume
+$\alpha\ll\beta$. Let $A$ be a positive Hahn set for the signed measure
+$\alpha-\beta$, and set $a=\alpha(A)$ and $b=\beta(A)$. Since
+$(\alpha-\beta)(\X)=0$,
+
+```{math}
+a-b=\frac12\norm{\alpha-\beta}_{\TV}.
+```
+
+Applying Jensen's inequality separately on $A$ and $A^c$, equivalently
+coarse-graining onto the partition $(A,A^c)$, gives
+
+```{math}
+\KL(\alpha\mid\beta)
+\geq
+a\log\frac ab+(1-a)\log\frac{1-a}{1-b}.
+```
+
+For fixed $b\in(0,1)$, subtract $2(a-b)^2$ from the binary relative entropy.
+The resulting function has value and first derivative zero at $a=b$, while
+its second derivative is $1/a+1/(1-a)-4\geq0$. The binary divergence is thus
+at least $2(a-b)^2=\frac12\norm{\alpha-\beta}_{\TV}^2$. Boundary cases follow
+by lower semicontinuity, and the finite-space statement uses
+$\norm{\alpha-\beta}_{\TV}=\norm{a-b}_{\ell^1}$.
+:::
+
 
 :::{admonition} Remark: Strong vs. weak topology
 :class: ot4ml-remark
@@ -876,6 +931,7 @@ Assume that $\X$ is compact. Since $\phi$ is extended by $+\infty$ on
 negative arguments, define its Legendre transform by
 
 ```{math}
+:label: eq-legendre-web
 \phi^*(s)
 \eqdef
 \sup_{r\ge0}\{sr-\phi(r)\}.

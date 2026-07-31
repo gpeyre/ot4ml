@@ -5139,70 +5139,158 @@ function clog(z) {
   return [Math.log(Math.max(Math.hypot(z[0], z[1]), 1e-300)), Math.atan2(z[1], z[0])];
 }
 
-function complexSinkhornPotential(cost, a, b, eps0, eta, iterations) {
+function complexSinkhornPlan(cost, a, b, eps0, eta, iterations) {
   const n = a.length;
   const m = b.length;
-  const eps = [eps0, eta];
-  const K = Array.from({ length: n }, () => Array(m));
+  let u = Array.from({ length: n }, () => [1, 0]);
+  let v = Array.from({ length: m }, () => [1, 0]);
+  let K = null;
+
+  // Continue in short imaginary-temperature steps. This is more stable than
+  // launching the complex fixed point directly at the requested value.
+  const continuationSteps = Math.max(1, Math.ceil(Math.abs(eta) / 0.04));
+  for (let step = 0; step <= continuationSteps; step += 1) {
+    const etaStep = eta * step / continuationSteps;
+    const eps = [eps0, etaStep];
+    K = Array.from({ length: n }, () => Array(m));
+    for (let i = 0; i < n; i += 1) {
+      for (let j = 0; j < m; j += 1) {
+        K[i][j] = cexp(cdiv([-cost[i][j], 0], eps));
+      }
+    }
+
+    const localIterations = step === 0 ? iterations : Math.max(36, Math.floor(iterations / 2));
+    const relaxation = 0.58;
+    for (let it = 0; it < localIterations; it += 1) {
+      for (let i = 0; i < n; i += 1) {
+        let sum = [0, 0];
+        for (let j = 0; j < m; j += 1) sum = cadd(sum, cmul(K[i][j], v[j]));
+        const update = cdiv([a[i], 0], sum);
+        u[i] = [
+          (1 - relaxation) * u[i][0] + relaxation * update[0],
+          (1 - relaxation) * u[i][1] + relaxation * update[1],
+        ];
+      }
+      for (let j = 0; j < m; j += 1) {
+        let sum = [0, 0];
+        for (let i = 0; i < n; i += 1) sum = cadd(sum, cmul(K[i][j], u[i]));
+        const update = cdiv([b[j], 0], sum);
+        v[j] = [
+          (1 - relaxation) * v[j][0] + relaxation * update[0],
+          (1 - relaxation) * v[j][1] + relaxation * update[1],
+        ];
+      }
+
+      // Fix the multiplicative gauge to prevent numerical overflow.
+      const gauge = u[0];
+      if (Math.hypot(gauge[0], gauge[1]) > 1e-14) {
+        for (let i = 0; i < n; i += 1) u[i] = cdiv(u[i], gauge);
+        for (let j = 0; j < m; j += 1) v[j] = cmul(v[j], gauge);
+      }
+    }
+  }
+
+  const plan = Array.from({ length: n }, () => Array(m));
+  const row = Array.from({ length: n }, () => [0, 0]);
+  const col = Array.from({ length: m }, () => [0, 0]);
+  let absoluteMass = 0;
   for (let i = 0; i < n; i += 1) {
     for (let j = 0; j < m; j += 1) {
-      K[i][j] = cexp(cdiv([-cost[i][j], 0], eps));
+      const value = cmul(cmul(u[i], K[i][j]), v[j]);
+      plan[i][j] = value;
+      row[i] = cadd(row[i], value);
+      col[j] = cadd(col[j], value);
+      absoluteMass += Math.hypot(value[0], value[1]);
     }
   }
-  const u = Array.from({ length: n }, () => [1, 0]);
-  const v = Array.from({ length: m }, () => [1, 0]);
-  for (let it = 0; it < iterations; it += 1) {
-    for (let i = 0; i < n; i += 1) {
-      let s = [0, 0];
-      for (let j = 0; j < m; j += 1) s = cadd(s, cmul(K[i][j], v[j]));
-      u[i] = cdiv([a[i], 0], s);
-    }
+  let residual = 0;
+  for (let i = 0; i < n; i += 1) residual = Math.max(residual, Math.hypot(row[i][0] - a[i], row[i][1]));
+  for (let j = 0; j < m; j += 1) residual = Math.max(residual, Math.hypot(col[j][0] - b[j], col[j][1]));
+  return { plan, residual, absoluteMass };
+}
+
+function drawComplexMagnitudeMatrix(ctx, state, a, b, box) {
+  const n = state.plan.length;
+  const m = state.plan[0].length;
+  const strip = Math.min(66, Math.max(34, 0.17 * Math.min(box.w, box.h)));
+  const side = Math.min(box.w - strip - 10, box.h - strip - 10);
+  const mx = box.x + strip + (box.w - strip - side) / 2;
+  const my = box.y + strip + (box.h - strip - side) / 2;
+  const magnitude = state.plan.map((row) => row.map((z) => Math.hypot(z[0], z[1])));
+  const rowMagnitude = magnitude.map((row) => row.reduce((sum, value) => sum + value, 0));
+  const colMagnitude = Array(m).fill(0);
+  for (let i = 0; i < n; i += 1) for (let j = 0; j < m; j += 1) colMagnitude[j] += magnitude[i][j];
+  const matrixMax = Math.max(...magnitude.flat(), 1e-15);
+  const marginalMax = Math.max(...a, ...b, ...rowMagnitude, ...colMagnitude, 1e-15);
+
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  for (let i = 0; i < n; i += 1) {
     for (let j = 0; j < m; j += 1) {
-      let s = [0, 0];
-      for (let i = 0; i < n; i += 1) s = cadd(s, cmul(K[i][j], u[i]));
-      v[j] = cdiv([b[j], 0], s);
+      const intensity = Math.sqrt(magnitude[i][j] / matrixMax);
+      const gray = Math.round(255 - 238 * intensity);
+      ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+      ctx.fillRect(
+        mx + j * side / m,
+        my + side - (i + 1) * side / n,
+        Math.ceil(side / m),
+        Math.ceil(side / n),
+      );
     }
   }
-  const f = u.map((z) => cmul(eps, clog(z)));
-  const mean = f.reduce((s, z, i) => cadd(s, [a[i] * z[0], a[i] * z[1]]), [0, 0]);
-  return f.map((z) => [z[0] - mean[0], z[1] - mean[1]]);
+  ctx.strokeStyle = "#20252b";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mx, my, side, side);
+
+  const profileWidth = strip - 13;
+  const profileHeight = strip - 13;
+  const drawLeftProfile = (values, color, width) => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i += 1) {
+      const px = mx - 5 - profileWidth * values[i] / marginalMax;
+      const py = my + side - (i + 0.5) * side / n;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  };
+  const drawTopProfile = (values, color, width) => {
+    ctx.beginPath();
+    for (let j = 0; j < m; j += 1) {
+      const px = mx + (j + 0.5) * side / m;
+      const py = my - 5 - profileHeight * values[j] / marginalMax;
+      if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  };
+  drawLeftProfile(a, RED, 2.2);
+  drawLeftProfile(rowMagnitude, VIOLET, 1.6);
+  drawTopProfile(b, BLUE, 2.2);
+  drawTopProfile(colMagnitude, VIOLET, 1.6);
+
+  ctx.fillStyle = "#26333f";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("entrywise magnitude |P_epsilon|", box.x + box.w / 2, box.y - 8);
+  ctx.textAlign = "left";
 }
 
 function drawComplexSinkhorn() {
   const n = Math.round(val("cxBins"));
   const eps0 = val("cxEps0");
-  const etaMax = val("cxEta");
+  const eta = val("cxEta");
   const iterations = Math.round(val("cxIter"));
   const data = sinkhornGrid(n, "wide_two", "three");
-  const etas = [-1, -0.5, 0, 0.5, 1].map((z) => z * etaMax);
-  const potentials = etas.map((eta) => complexSinkhornPotential(data.cost, data.a, data.b, eps0, eta, iterations));
-  const real0 = potentials[2].map((z) => z[0]);
-  const realCurves = potentials.map((curve) => curve.map((z, i) => z[0] - real0[i]));
-  const imagCurves = potentials.map((curve) => curve.map((z) => z[1]));
-  const yRMin = Math.min(...realCurves.flat()) - 0.02;
-  const yRMax = Math.max(...realCurves.flat()) + 0.02;
-  const yIMin = Math.min(...imagCurves.flat()) - 0.02;
-  const yIMax = Math.max(...imagCurves.flat()) + 0.02;
-  const { ctx, w, h } = resizeCanvas(390);
-  const gap = 24;
-  const boxes = [
-    { x: 22, y: 46, w: (w - 68) / 2, h: h - 82 },
-    { x: 22 + (w - 68) / 2 + gap, y: 46, w: (w - 68) / 2, h: h - 82 },
-  ];
-  drawFrame(ctx, boxes[0], "real perturbation");
-  drawFrame(ctx, boxes[1], "imaginary potential");
-  for (let k = 0; k < etas.length; k += 1) {
-    const color = k === 2 ? "#111827" : mixColor((etas[k] / etaMax + 1) / 2, BLUE, RED, 0.82);
-    const width = k === 2 ? 2.4 : 1.7;
-    drawCurve(ctx, data.xs, realCurves[k], boxes[0], data.xs[0], data.xs[data.xs.length - 1], yRMin, yRMax, color, width);
-    drawCurve(ctx, data.xs, imagCurves[k], boxes[1], data.xs[0], data.xs[data.xs.length - 1], yIMin, yIMax, color, width);
-  }
-  const yMax = Math.max(...data.a, ...data.b);
-  drawCurve(ctx, data.xs, data.a.map((z) => z * 0.12 * (yRMax - yRMin) / yMax + yRMin), boxes[0], data.xs[0], data.xs[data.xs.length - 1], yRMin, yRMax, "rgba(215,48,39,.22)", 1);
-  drawCurve(ctx, data.xs, data.b.map((z) => z * 0.12 * (yIMax - yIMin) / yMax + yIMin), boxes[1], data.xs[0], data.xs[data.xs.length - 1], yIMin, yIMax, "rgba(33,102,172,.22)", 1);
-  ctx.fillStyle = "#111827";
-  ctx.fillText("bold: eta = 0", boxes[0].x + 12, boxes[0].y + 20);
-  setStatus(`epsilon = ${eps0.toFixed(2)} + i eta, |eta| <= ${etaMax.toFixed(2)}; ${iterations} complex scaling iterations`);
+  const state = complexSinkhornPlan(data.cost, data.a, data.b, eps0, eta, iterations);
+  const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
+  const { ctx, w, h } = resizeCanvas(frameWidth < 620 ? 520 : 430);
+  const side = Math.min(w - 70, h - 78);
+  const box = { x: (w - side) / 2, y: 48, w: side, h: side };
+  drawComplexMagnitudeMatrix(ctx, state, data.a, data.b, box);
+  setStatus(`epsilon = ${eps0.toFixed(2)} + ${eta.toFixed(2)} i; marginal residual ${state.residual.toExponential(2)}; total mass of |P| ${state.absoluteMass.toFixed(4)}`);
 }
 
 function sinkhornTrace(cost, a, b, epsilon, maxHalfSteps) {
@@ -11321,7 +11409,7 @@ function init() {
   } else if (kind === "sinkhorncomplex") {
     controls.innerHTML = [
       slider("cxEps0", "real epsilon", 0.55, 0.22, 1.1, 0.01),
-      slider("cxEta", "imag radius", 0.18, 0.02, 0.48, 0.01),
+      slider("cxEta", "imaginary part", 0.40, 0, 0.8, 0.01),
       slider("cxBins", "bins", 32, 18, 52, 2),
       slider("cxIter", "iterations", 180, 60, 340, 10),
     ].join("");

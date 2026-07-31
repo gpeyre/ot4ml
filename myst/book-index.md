@@ -1324,7 +1324,7 @@ The page numbers follow Appendix B of the PDF and link to the corresponding web 
 - phi-divergence: [107](dual-norms#sec-divergences-dual-norms), [111](dual-norms#sec-rkhs-mmd)–[115](dual-norms#divergence-based-adversarial-losses), [123](sinkhorn#relative-entropy), [145](sinkhorn#sec-sinkhorn-other-regularizers), [146](sinkhorn#sec-sinkhorn-other-regularizers), [148](sinkhorn#sec-sinkhorn-other-regularizers), [329](wasserstein-gradient-flows#geodesics-and-convexity), [341](wasserstein-gradient-flows#poincar-as-a-linearized-wasserstein-pl-inequality)
 - phi-divergence regularized OT: [145](sinkhorn#sec-sinkhorn-other-regularizers)–[149](sinkhorn#sec-sinkhorn-other-regularizers), [159](sinkhorn-advanced#extension-beyond-kl), [160](sinkhorn-advanced#nonexpansiveness-beyond-kl)
 - piecewise affine map: [190](statistical-ot#literature-map)
-- Pinsker inequality: [163](sinkhorn-advanced#sinkhorn-convergence-sublinear-robust-rate), [165](sinkhorn-advanced#sinkhorn-convergence-sublinear-robust-rate)
+- Pinsker inequality: [116](dual-norms#thm-pinsker), [164](sinkhorn-advanced#sinkhorn-convergence-sublinear-robust-rate)
 - PL convergence: [333](wasserstein-gradient-flows#convergence-the-wasserstein-pl-viewpoint)
 - plan
   - interpolation: [68](kantorovich#metric-properties-wasserstein-distances)

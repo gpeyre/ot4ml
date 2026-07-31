@@ -1309,10 +1309,9 @@ $\MK_c^\epsilon$, three errors should be kept separate:
 =
 \underbrace{\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)}_{\text{regularization bias}}
 +
-\underbrace{\mathbb E\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)-\MK_c^\epsilon(\alpha,\beta)}_{\text{statistical bias}}
+\underbrace{B_{n,m}(\MK_c^\epsilon)}_{\text{statistical bias}}
 +
-\underbrace{\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)
--\mathbb E\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)}_{\text{centered fluctuation}} .
+\underbrace{Z_{n,m}(\MK_c^\epsilon)}_{\text{centered fluctuation}}.
 ```
 
 Although algebraic, this identity is important statistically. It is

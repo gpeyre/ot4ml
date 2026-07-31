@@ -355,7 +355,7 @@ Chapter~\ref{sec-entropic-convergence} gives the formal convergence analysis. Be
 
 Complexity bounds for Sinkhorn and comparisons with accelerated first-order methods are discussed in~\cite{altschuler2017near,pmlr-v80-dvurechensky18a,knight2008sinkhorn}.
 %
-A chief computational advantage of Sinkhorn's algorithm, besides its simplicity, is that the only expensive operation is multiplication by the Gibbs kernel. With a dense $n\times m$ kernel, $N_{\rm it}$ iterations therefore cost $O(N_{\rm it}nm)$. Chapter~\ref{sec-convergence-dual} gives a more precise convergence statement: for fixed $\epsilon$, the entropic dual gap has an $O(1/k)$ bound with a constant proportional to $1/\epsilon$, while Hilbert-metric arguments give linear convergence when the Gibbs kernel is uniformly positive. Approximating unregularized OT also requires balancing optimization error against entropic bias. In finite dimension, choosing $\epsilon$ of order $\delta$ and solving the regularized problem to accuracy of order $\delta$ leads to an iteration bound of order $1/\delta^2$, up to logarithmic and cost-range factors~\cite{altschuler2017near,pmlr-v80-dvurechensky18a}.
+A chief computational advantage of Sinkhorn's algorithm, besides its simplicity, is that the only expensive operation is multiplication by the Gibbs kernel. With a dense $n\times m$ kernel, $N_{\rm it}$ iterations therefore cost $O(N_{\rm it}nm)$. Chapter~\ref{sec-convergence-dual} gives a more precise convergence statement: for fixed $\epsilon$, the entropic dual gap has an $O(1/\ell)$ bound with a constant proportional to $1/\epsilon$, while Hilbert-metric arguments give linear convergence when the Gibbs kernel is uniformly positive. Approximating unregularized OT also requires balancing optimization error against entropic bias. In finite dimension, choosing $\epsilon$ of order $\delta$ and solving the regularized problem to accuracy of order $\delta$ leads to an iteration bound of order $1/\delta^2$, up to logarithmic and cost-range factors~\cite{altschuler2017near,pmlr-v80-dvurechensky18a}.
 \index{dual!gap}% strictindex
 \index{Sinkhorn!iteration}% strictindex
 \index{Sinkhorn!algorithm}% strictindex
@@ -703,14 +703,9 @@ Starting, for instance, from $v^{(0)}=1$, continuous Sinkhorn alternately enforc
 }
 Equivalently, the updates read pointwise
 \eq{
-	\begin{aligned}
-		u^{(\ell+1)}(x)
-		&=
-		\frac{1}{\displaystyle\int_\Yy k_\epsilon(x,y)v^{(\ell)}(y)\d\be(y)},\\
-		v^{(\ell+1)}(y)
-		&=
-		\frac{1}{\displaystyle\int_\Xx k_\epsilon(x,y)u^{(\ell+1)}(x)\d\al(x)}.
-	\end{aligned}
+	u^{(\ell+1)}(x)=\frac{1}{\displaystyle\int_\Yy k_\epsilon(x,y)v^{(\ell)}(y)\d\be(y)},
+	\qquad
+	v^{(\ell+1)}(y)=\frac{1}{\displaystyle\int_\Xx k_\epsilon(x,y)u^{(\ell+1)}(x)\d\al(x)}.
 }
 Given $v^{(\ell)}$, the first update produces an intermediate coupling with $\Xx$-marginal $\al$; the second produces one with $\Yy$-marginal $\be$, while generally perturbing the first marginal again. As in the discrete case, $(u,v)$ is defined only up to the gauge $(u,v)\mapsto(\lambda u,v/\lambda)$.
 
@@ -796,7 +791,7 @@ For discrete measures, setting $\uD_i=\a_i u(x_i)$ and $\vD_j=\b_j v(y_j)$ gives
 \(
 	\P_{i,j}=\a_i\b_j u(x_i)\K_{i,j}v(y_j)=\uD_i\K_{i,j}\vD_j
 \),
-so~\eqref{eq-continuous-sinkhorn-iteration} reduces exactly to the matrix iteration~\eqref{eq-sinkhorn}. Its logarithmic interpretation as continuous dual block ascent is derived in the \hyperref[par-continuous-dual-sinkhorn]{dual Sinkhorn paragraph}. Continuous convergence is revisited through Fortet monotonicity in Section~\ref{sec-sinkhorn-monotone}; the finite-dimensional linear rate is studied through Hilbert's metric in Section~\ref{sec-sinkhorn-hilbert}.
+so~\eqref{eq-continuous-sinkhorn-iteration} reduces exactly to the matrix iteration~\eqref{eq-sinkhorn}. Its logarithmic interpretation as continuous dual block ascent is derived in the \hyperref[par-continuous-dual-sinkhorn]{dual Sinkhorn paragraph}. Continuous convergence is revisited through the generalized Fortet-type monotonicity argument of Section~\ref{sec-sinkhorn-monotone}; the finite-dimensional linear rate is studied through Hilbert's metric in Section~\ref{sec-sinkhorn-hilbert}.
 
 \paragraph{Convergence with \texorpdfstring{$\epsilon$}{epsilon}.}
 
@@ -841,7 +836,7 @@ The continuous problem has the same qualitative temperature limits as Propositio
 		\leq
 		\int c\,\d\al\d\be .
 	\]
-	Hence $\KL(\pi_\epsilon|\al\otimes\be)\leq \epsilon^{-1}\int c\,\d\al\d\be$. Pinsker's inequality gives total-variation convergence to $\al\otimes\be$, and the convergence of the values follows by continuity of $c$.
+	Hence $\KL(\pi_\epsilon|\al\otimes\be)\leq \epsilon^{-1}\int c\,\d\al\d\be$. Pinsker's inequality from Theorem~\ref{thm-pinsker} gives total-variation convergence to $\al\otimes\be$, and the convergence of the values follows by continuity of $c$.
 \end{proof}
 
 \paragraph{Large-temperature expansion.}
@@ -2209,7 +2204,7 @@ KL regularization is the case that leads to multiplicative Sinkhorn scalings. Re
 \index{dual!potential}% strictindex
 \index{density!ratio}% strictindex
 
-\paragraph{Density-ratio regularization.}
+\paragraph{$\phi$-divergence regularization.}
 
 The primal and dual problems retain the same transport constraints, but the exponential Gibbs law is replaced by the derivative of a general convex conjugate.
 
@@ -2246,13 +2241,13 @@ Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, 
 	}
 	If an optimal plan is absolutely continuous, with density $r^\star=\frac{\d\pi^\star}{\d(\al\otimes\be)}$, and $(f^\star,g^\star)$ are optimal potentials, then
 \index{optimal plan}% strictindex
-	\[
+	\eql{\label{eq-phi-regularized-ot-density-law}
 		\frac{f^\star(x)+g^\star(y)-c(x,y)}{\epsilon}
 		\in
 		\partial\phi(r^\star(x,y))
 		\qquad
 		\al\otimes\be\text{-a.e.}
-	\]
+	}
 	In the smooth interior this reads
 	\[
 		r^\star(x,y)
@@ -2307,72 +2302,7 @@ For the KL entropy $\phi(r)=r\log r-r+1$, one has $\phi^*(s)=e^s-1$, and~\eqref{
 s\eqdef\frac{f^\star\oplus g^\star-c}{\epsilon}.
 \]
 
-\paragraph{Generalized soft $c$-transforms.}
-\index{soft!c-transform}% strictindex
-\index{phi-divergence regularized OT}% strictindex
-The same dual formula yields block-coordinate ascent updates. For fixed $g$, maximizing~\eqref{eq-phi-regularized-ot-dual} with respect to the scalar value $f(x)$ gives the generalized soft transform
-\eql{\label{eq-phi-soft-c-transform}
-	g^{\bar c,\epsilon,\phi}(x)
-	\in
-	\uargmin{u\in\RR}
-	\left\{
-		\epsilon
-		\int_{\Yy}
-		\phi^*\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
-		\d\be(y)
-		-u
-	\right\}.
-}
-Equivalently, when $\phi^*$ is differentiable, $u=g^{\bar c,\epsilon,\phi}(x)$ is characterized by
-\[
-	\int_{\Yy}
-	(\phi^*)'\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)
-	\d\be(y)
-	=1.
-\]
-This equation says that the conditional density induced by the current dual score has unit $\be$-mass, hence it is exactly the row-normalization step in dual variables. The update $f^{c,\epsilon,\phi}$ on $\Yy$ is defined symmetrically by exchanging $(x,\al,f)$ and $(y,\be,g)$. For KL,~\eqref{eq-phi-soft-c-transform} reduces to the log-integral soft transform~\eqref{eq-soft-c-cont-g}; for Burg or quadratic penalties, the update is still one-dimensional and monotone but no longer a log-sum-exp.
-\index{dual!ascent}% strictindex
-\index{soft!transform}% strictindex
-
-Figure~\ref{fig:sinkhorn-phi-soft-c-transforms} shows how changing $\phi$ modifies the smoothing of the dual envelope.
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}ccc@{}}
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/kl.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/burg.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/quadratic.pdf} \\[-.1em]
-\small KL &
-\small Burg &
-\small quadratic
-\end{tabular}
-\caption{\emph{Generalized soft double transforms for $c(x,y)=-xy$.} Each panel starts from the same dashed non-concave potential $f$. The dark curve is the hard double $c$-transform, i.e. the concave envelope associated with the zero-temperature limit, after centering by an additive constant. Colored curves show the centered double transform $(f^{c,\epsilon,\phi})^{\bar c,\epsilon,\phi}$ from a near-zero red regularization to larger blue regularization. The numerical $\epsilon$ scale is chosen separately for each generator because KL, Burg, and quadratic density-ratio penalties have different stiffness; in each panel the red curve matches the hard concave envelope. Changing $\phi$ changes the scalar soft-normalization law and hence the way the dual ascent step smooths the envelope.}
-\index{soft!c-transform}% strictindex
-\index{concave envelope}% strictindex
-\label{fig:sinkhorn-phi-soft-c-transforms}
-\end{figure}
-
-Figure~\ref{fig:sinkhorn-entropic-versus-quadratic-regularization} shows the corresponding change in the concentration and support of the primal coupling.
-
-\begin{figure}[ht]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}ccc@{}}
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/kl-plan.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/burg-plan.pdf} &
-\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/quadratic-plan.pdf} \\[-.1em]
-\small $\phi(r)=r\log r-r+1$ &
-\small $\phi(r)=r-\log r-1$ &
-\small $\phi(r)=\frac12(r-1)^2$
-\end{tabular}
-\caption{\emph{Density-ratio regularizers and coupling support.} The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. Dense violet level sets display the square root of the coupling density on a common scale, using the smaller regularization strength $\epsilon=.06$. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and the quadratic density penalty can set entries exactly to zero through its positive-part law.}
-\index{Gaussian!mixture}% strictindex
-\index{density!ratio}% strictindex
-\label{fig:sinkhorn-entropic-versus-quadratic-regularization}
-\end{figure}
-
-\paragraph{Bregman vs. $\phi$-divergence regularization.}
+\paragraph{Bregman-divergence regularization.}
 \index{Bregman!regularization}% strictindex
 \index{phi-divergence}% strictindex
 
@@ -2411,7 +2341,7 @@ Fix $\xi=\al\otimes\be$. For $\epsilon>0$, define
 \]
 \end{defn}
 
-\begin{prop}[Dual comparison: Bregman vs. density-ratio penalties]\label{prop-bregman-phi-dual-comparison}
+\begin{prop}[Dual and density law for Bregman-regularized OT]\label{prop-bregman-regularized-ot-dual}
 	Fix the marginals $\al,\be$ and set $\xi\eqdef\al\otimes\be$. Let $\Phi$ be a convex G\^ateaux-differentiable functional on nonnegative measures on $\Xx\times\Yy$. Its convex conjugate is, for a continuous test function $u$,
 \index{nonnegative measure}% strictindex
 \index{convex!conjugate}% strictindex
@@ -2441,21 +2371,11 @@ Fix $\xi=\al\otimes\be$. For $\epsilon>0$, define
 		\right].
 	}
 	If $(f^\star,g^\star)$ and $\pi^\star$ are optimal and the solution is interior, then
-	\[
+	\eql{\label{eq-bregman-regularized-ot-density-law}
 		\delta\Phi(\pi^\star)
 		=
 		\delta\Phi(\xi)+\frac{f^\star\oplus g^\star-c}{\epsilon}.
-	\]
-	By contrast, the density-ratio formulation~\eqref{eq-phi-regularized-ot} has the scalar-integral dual~\eqref{eq-phi-regularized-ot-dual} and the pointwise density law
-\index{phi-divergence regularized OT}% strictindex
-\index{density!ratio}% strictindex
-	\[
-		\frac{f^\star\oplus g^\star-c}{\epsilon}
-		\in
-		\partial\phi\!\left(
-			\frac{\d\pi^\star}{\d(\al\otimes\be)}
-		\right).
-	\]
+	}
 \end{prop}
 
 \begin{proof}
@@ -2492,12 +2412,14 @@ Fix $\xi=\al\otimes\be$. For $\epsilon>0$, define
 		=
 		\Phi^*(\delta\Phi(\xi)),
 	\]
-	which yields~\eqref{eq-bregman-regularized-ot-dual}. Equality in Fenchel's inequality gives the optimality condition for $\pi^\star$. The density-ratio dual and density law are exactly those of Proposition~\ref{prop-phi-regularized-ot-dual}. Placing the two formulas side by side shows the structural difference: Bregman regularization translates the reference measure in the dual coordinate $\delta\Phi$, whereas $\phi$-regularization applies a scalar nonlinearity to the density with respect to the moving product reference $\al\otimes\be$.
-\index{phi-divergence regularized OT}% strictindex
+	which yields~\eqref{eq-bregman-regularized-ot-dual}. Equality in Fenchel's inequality gives the primal--dual relation~\eqref{eq-bregman-regularized-ot-density-law}.
 \index{Bregman!regularization}% strictindex
 \index{reference!measure}% strictindex
-\index{density!ratio}% strictindex
 \end{proof}
+
+The primal--dual relations~\eqref{eq-bregman-regularized-ot-density-law} and~\eqref{eq-phi-regularized-ot-density-law} make the distinction precise. Bregman regularization translates the reference measure in the functional dual coordinate $\delta\Phi$, whereas $\phi$-divergence regularization applies the scalar subgradient $\partial\phi$ pointwise to the density relative to $\al\otimes\be$. For KL these two laws coincide: the logarithmic dual coordinate converts additive potential shifts into multiplicative density scalings.
+\index{phi-divergence regularized OT}% strictindex
+\index{density!ratio}% strictindex
 
 When $\Phi$ is separable with respect to a fixed dominating measure $\xi_0$, say $\Phi(\pi)=\int h(\d\pi/\d\xi_0)\d\xi_0$ with $\xi\ll\xi_0$, the Bregman optimality condition becomes
 \[
@@ -2544,13 +2466,128 @@ This is an additive update in entropy coordinates. The density-ratio formulation
 \index{phi-divergence}% strictindex
 \end{proof}
 
-Thus the two generalizations lead to different duals and different algorithms. Bregman regularization by $B_\Phi(\pi|\xi)$ keeps the projection geometry of Section~\ref{sec-convergence-init}: linear costs tilt the reference in dual coordinates and alternating marginal updates are Bregman projections. A density-ratio penalty $\Divergm_\phi(\pi|\al\otimes\be)$ instead gives the Fenchel dual~\eqref{eq-phi-regularized-ot-dual} and, for interior solutions, the pointwise law $r^\star=(\phi')^{-1}((f\oplus g-c)/\epsilon)$. Proposition~\ref{prop-bregman-phi-dual-comparison} makes the distinction explicit at the dual level. The Bregman dual contains the global conjugate $\Phi^*$ and the product reference $\al\otimes\be$, whereas the $\phi$-dual integrates a scalar conjugate against the moving product measure $\al\otimes\be$. Only for KL do these two viewpoints coincide and reduce to multiplicative Sinkhorn scalings.
+Thus the two generalizations lead to different duals and different algorithms. Bregman regularization by $B_\Phi(\pi|\xi)$ keeps the projection geometry of Section~\ref{sec-convergence-init}: linear costs tilt the reference in dual coordinates and alternating marginal updates are Bregman projections. A density-ratio penalty $\Divergm_\phi(\pi|\al\otimes\be)$ instead gives the Fenchel dual~\eqref{eq-phi-regularized-ot-dual} and, for interior solutions, the pointwise law $r^\star=(\phi')^{-1}((f\oplus g-c)/\epsilon)$. Proposition~\ref{prop-bregman-regularized-ot-dual} makes the distinction explicit at the dual level. The Bregman dual contains the global conjugate $\Phi^*$ and the product reference $\al\otimes\be$, whereas the $\phi$-dual integrates a scalar conjugate against the moving product measure $\al\otimes\be$. Only for KL do these two viewpoints coincide and reduce to multiplicative Sinkhorn scalings.
 \index{Sinkhorn!scaling}% strictindex
 \index{phi-divergence regularized OT}% strictindex
 \index{Bregman!regularization}% strictindex
 \index{Bregman!projection}% strictindex
 \index{product!measure}% strictindex
 \index{density!ratio}% strictindex
+
+\paragraph{Generalized soft $c$-transforms and alternate dual maximization method.}
+\index{soft!c-transform}% strictindex
+\index{dual!alternate maximization}% strictindex
+\index{phi-divergence regularized OT}% strictindex
+
+The two dual formulations above lead to the same algorithmic principle: maximize exactly over one potential while the other is fixed, then exchange their roles. For the $\phi$-divergence dual~\eqref{eq-phi-regularized-ot-dual}, separability with respect to $\al\otimes\be$ makes each block update pointwise. The two $\phi$-soft $c$-transforms are
+\eql{\label{eq-phi-soft-c-transform}
+\begin{aligned}
+	g^{\bar c,\epsilon,\phi}(x)
+	&\in
+	\uargmin{u\in\RR}
+	\left\{
+	\epsilon\int_{\Yy}
+	\phi^*\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)\d\be(y)-u
+	\right\},\\
+	f^{c,\epsilon,\phi}(y)
+	&\in
+	\uargmin{v\in\RR}
+	\left\{
+	\epsilon\int_{\Xx}
+	\phi^*\!\left(\frac{f(x)+v-c(x,y)}{\epsilon}\right)\d\al(x)-v
+	\right\}.
+\end{aligned}
+}
+When $\phi^*$ is differentiable, the first scalar minimizer is characterized by
+\[
+	\int_{\Yy}
+	(\phi^*)'\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)\d\be(y)=1,
+\]
+and the second satisfies the symmetric equation. Thus each update normalizes one conditional density. For Burg or quadratic penalties, it remains a one-dimensional monotone solve, although it is no longer a log-sum-exp.
+
+The Bregman dual~\eqref{eq-bregman-regularized-ot-dual} has analogous block transforms, but the global conjugate $\Phi^*$ prevents a pointwise definition in general. With $\xi=\al\otimes\be$, define
+\eql{\label{eq-bregman-soft-c-transform}
+\begin{aligned}
+	g^{\bar c,\epsilon,\Phi}
+	&\in\uargmin{u\in\Cc(\Xx)}
+	\left\{
+	\epsilon\Phi^*\!\left(\delta\Phi(\xi)+\frac{u\oplus g-c}{\epsilon}\right)
+	-\int u\d\al
+	\right\},\\
+	f^{c,\epsilon,\Phi}
+	&\in\uargmin{v\in\Cc(\Yy)}
+	\left\{
+	\epsilon\Phi^*\!\left(\delta\Phi(\xi)+\frac{f\oplus v-c}{\epsilon}\right)
+	-\int v\d\be
+	\right\}.
+\end{aligned}
+}
+These are exact function-space block minimizers; when $\Phi$ is separable, they reduce after disintegration to independent scalar problems of the same type as~\eqref{eq-phi-soft-c-transform}.
+
+Alternate dual maximization therefore reads
+\eql{\label{eq-generalized-soft-c-alternate-maximization}
+\begin{aligned}
+	f^{(\ell+1)}&=\big(g^{(\ell)}\big)^{\bar c,\epsilon,\phi},
+	&g^{(\ell+1)}&=\big(f^{(\ell+1)}\big)^{c,\epsilon,\phi},\\
+	f^{(\ell+1)}&=\big(g^{(\ell)}\big)^{\bar c,\epsilon,\Phi},
+	&g^{(\ell+1)}&=\big(f^{(\ell+1)}\big)^{c,\epsilon,\Phi},
+\end{aligned}
+}
+for the $\phi$ and Bregman models, respectively. For KL, which admits both descriptions, the two lines coincide with the usual soft $c$-transform iteration~\eqref{eq-continuous-dual-sinkhorn-iteration}, hence recover Sinkhorn's algorithm.
+
+Quadratic regularizers replace the exponential law by positive-part thresholding and can therefore produce sparse plans, as advocated by Blondel, Seguy, and Rolet~\cite{blondel2018smooth}. In the discrete setting, the quadratic choices $\phi(r)=\frac12(r-1)^2$ and $\Phi(\P)=\frac12\norm{\P}_{\mathrm F}^2$ give, respectively,
+\eql{\label{eq-quadratic-regularized-density-laws}
+	\P^\star_{i,j}
+	=
+	a_i b_j\left(1+\frac{f_i^\star+g_j^\star-\C_{i,j}}{\epsilon}\right)_+,
+	\qquad
+	\P^\star_{i,j}
+	=
+	\left(a_i b_j+\frac{f_i^\star+g_j^\star-\C_{i,j}}{\epsilon}\right)_+.
+}
+For example, the first row transform finds the unique threshold $u$ satisfying
+\[
+	\sum_j b_j\left(1+\frac{u+g_j-\C_{i,j}}{\epsilon}\right)_+=1.
+\]
+This left-hand side is continuous, nondecreasing, and piecewise affine. Sorting its breakpoints computes the update in $O(m\log m)$ operations for a row with $m$ entries; equivalently, it is a weighted simplex projection. The unweighted quadratic Bregman update is an ordinary Euclidean simplex projection, computable in the same worst-case complexity and in expected linear time by selection methods~\cite{blondel2018smooth}.
+
+Figure~\ref{fig:sinkhorn-phi-soft-c-transforms} shows how the $\phi$-transform changes the smoothing of the dual envelope.
+
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/kl.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/burg.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-phi-soft-c-transforms/quadratic.pdf} \\[-.1em]
+\small KL &
+\small Burg &
+\small quadratic
+\end{tabular}
+\caption{\emph{Generalized soft double transforms for $c(x,y)=-xy$.} Each panel starts from the same dashed non-concave potential $f$. The dark curve is the hard double $c$-transform, i.e. the concave envelope associated with the zero-temperature limit, after centering by an additive constant. Colored curves show the centered double transform $(f^{c,\epsilon,\phi})^{\bar c,\epsilon,\phi}$ from a near-zero red regularization to larger blue regularization. The numerical $\epsilon$ scale is chosen separately for each generator because KL, Burg, and quadratic density-ratio penalties have different stiffness; in each panel the red curve matches the hard concave envelope. Changing $\phi$ changes the scalar soft-normalization law and hence the way the dual ascent step smooths the envelope.}
+\index{soft!c-transform}% strictindex
+\index{concave envelope}% strictindex
+\label{fig:sinkhorn-phi-soft-c-transforms}
+\end{figure}
+
+Figure~\ref{fig:sinkhorn-entropic-versus-quadratic-regularization} shows the corresponding change in the concentration and support of the primal coupling; its right panel is the sparse quadratic plan computed by the alternating threshold transforms above.
+
+\begin{figure}[ht]
+\centering
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/kl-plan.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/burg-plan.pdf} &
+\includegraphics[width=.31\linewidth]{figures/sinkhorn-entropic-versus-quadratic-regularization/quadratic-plan.pdf} \\[-.1em]
+\small $\phi(r)=r\log r-r+1$ &
+\small $\phi(r)=r-\log r-1$ &
+\small $\phi(r)=\frac12(r-1)^2$
+\end{tabular}
+\caption{\emph{Density-ratio regularizers and coupling support.} The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. Dense violet level sets display the square root of the coupling density on a common scale, using the smaller regularization strength $\epsilon=.06$. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and alternate dual maximization with the quadratic soft $c$-transform produces the sparse rightmost plan through its positive-part law.}
+\index{Gaussian!mixture}% strictindex
+\index{density!ratio}% strictindex
+\label{fig:sinkhorn-entropic-versus-quadratic-regularization}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2608,9 +2645,9 @@ need not equal $\al$ for $\epsilon>0$. The following proposition identifies the 
 	This proves the limit.
 \end{proof}
 
-Thus, at large $\epsilon$, the raw entropic cost approaches the bilinear cross-energy $(\al,\be)\mapsto\iint c\,\d\al\d\be$, not a distance. The following special case makes the resulting attraction explicit.
+Thus, at large $\epsilon$, the raw entropic cost approaches the bilinear cross-energy $(\al,\be)\mapsto\iint c\,\d\al\d\be$, not a distance. The following example makes the resulting collapse mechanism explicit and then specializes it to quadratic costs.
 
-\begin{example}[Large-temperature collapse for quadratic costs]
+\begin{example}[Large temperature collapse]
 \index{large-temperature collapse}% strictindex
 	Suppose that minimizers $\be_\epsilon$ are tight and that the large-temperature convergence is uniform enough to pass to their cluster points. The limiting functional is linear in the second argument:
 	\[
@@ -2619,7 +2656,7 @@ Thus, at large $\epsilon$, the raw entropic cost approaches the bilinear cross-e
 		V_\al(y)\eqdef\int c(x,y)\d\al(x).
 	\]
 	Thus every cluster point is supported on $\argmin V_\al$. When this set is the singleton $\{y^\star(\al)\}$,
-	\[
+	\[%%%
 		\be_\epsilon \rightharpoonup \delta_{y^\star(\al)},
 		\qquad
 		y^\star(\al)=\uargmin{y} V_\al(y).
@@ -2681,7 +2718,7 @@ We first record a fundamental lemma: at an optimal dual pair, the exponential re
 \end{lem}
 \begin{proof}
 	We first notice that at optimality, the relation
-	\eq{
+	\eq{%%%
 		f_{\al,\be} = -\epsilon\log\int_\Yy e^{\frac{g_{\al,\be}(y)-c(x,y)}{\epsilon}} \d\be(y)
 	}
 	after taking the exponential, equivalently reads
@@ -2707,9 +2744,9 @@ The next proposition records the two limiting regimes of this debiased quantity.
 	}
 \end{prop}
 \begin{proof}
-	The discrete convergence result above already gives the correct intuition; we now use the standard continuous argument.
+	The discrete convergence result above gives the finite-dimensional analogue; we now pass to continuous measures.
 	\textbf{Case $\epsilon \rightarrow 0$.}
-	The first limit follows from the standard $\Gamma$-convergence argument for entropic optimal transport: the entropy term is lower semicontinuous along weakly converging couplings, while any finite-cost coupling can be approximated by couplings with finite entropy. Since $c(x,x)=0$, the two self-costs in the debiased expression converge to zero, and the cross term converges to $\MK_\c(\al,\be)$.
+	The first limit is the $\Gamma$-convergence of entropic OT to the Kantorovich problem~\cite{leonard2012schrodinger,2017-carlier-SIMA}. Non-negativity of the relative entropy and continuity of $c$ give the liminf inequality. For the matching limsup, one approximates an optimal coupling by finite-entropy couplings and chooses the approximation scale so that its entropy multiplied by $\epsilon$ tends to zero. Since $c(x,x)=0$, the two self-costs in the debiased expression converge to zero, while the cross term converges to $\MK_\c(\al,\be)$.
 \index{lower semicontinuity}% strictindex
 
 	\textbf{Case $\epsilon \rightarrow +\infty$.} We denote by $(f_\epsilon,g_\epsilon)$ optimal dual potentials. After normalizing them and using boundedness of $c$, their oscillations stay uniformly bounded, so the following expansion is uniform. The optimality condition on $f_\epsilon$ (equivalently the Sinkhorn fixed point on $f_\epsilon$) reads
@@ -2752,8 +2789,15 @@ The next proposition records the two limiting regimes of this debiased quantity.
 
 We now show that this debiased Sinkhorn divergence is positive.
 
-\begin{prop}[Non-negativity of Sinkhorn divergences]\label{prop-sinkhorn-positive}
-	Assume that the entropic dual admits optimal potentials and that the symmetric kernel $k_\epsilon(x,y)=e^{-c(x,y)/\epsilon}$ is positive semidefinite. Then $\bar\MK_\c^\epsilon(\al,\be)\geq0$.
+\begin{prop}[Positivity of Sinkhorn divergences]\label{prop-sinkhorn-positive}
+	Assume that the entropic dual admits optimal potentials and that the symmetric kernel $k_\epsilon(x,y)=e^{-c(x,y)/\epsilon}$ is positive semidefinite in the sense of Definition~\ref{def-positive-kernels}. Then $\bar\MK_\c^\epsilon(\al,\be)\geq0$.
+	If, in addition, the common state space is compact, $c$ is continuous, and $k_\epsilon$ is universal in the sense of Definition~\ref{def-universal-kernel}, then
+	\[
+		\bar\MK_\c^\epsilon(\al,\be)=0
+		\quad\Longleftrightarrow\quad
+		\al=\be,
+	\]
+	and $\bar\MK_\c^\epsilon(\al_n,\al)\to0$ is equivalent to $\al_n\rightharpoonup\al$.
 \end{prop}
 
 \begin{proof}
@@ -2779,7 +2823,7 @@ We now show that this debiased Sinkhorn divergence is positive.
 		$\dotp{\tilde\al}{\tilde\be}_{k_\epsilon} \eqdef \int k_\epsilon(x,y) \d\tilde\al(x) \d\tilde\be(y)$.
 	The self Sinkhorn fixed point equation, once exponentiated, reads pointwise
 \index{self Sinkhorn}% strictindex
-	\[
+	\[%%%
 			e^{f_{\al,\al}(x)/\epsilon}\int k_\epsilon(x,y)\d\tilde\al(y)=1
 		\qquad \text{for }\al\text{-a.e. }x,
 	\]
@@ -2792,14 +2836,19 @@ We now show that this debiased Sinkhorn divergence is positive.
 	}
 		and similarly $\norm{\tilde \be}_{k_\epsilon}^2=1$. Therefore, by Cauchy--Schwarz, one has
 		$1 - \dotp{\tilde\al}{\tilde\be}_{k_\epsilon} \geq 0$.
-\end{proof}
 
-\begin{rem}[Strict positivity]
+	Suppose now that $k_\epsilon$ is universal and $\bar\MK_\c^\epsilon(\al,\be)=0$. Both inequalities above are then equalities. Equality in Cauchy--Schwarz, together with the unit norms, implies that $\tilde\al$ and $\tilde\be$ have the same kernel mean embedding; universality gives $\tilde\al=\tilde\be\eqdef\tilde\mu$. The two self-consistency equations yield
+	\[
+		\d\al=(k_\epsilon\tilde\mu)\,\d\tilde\mu=\d\be,
+		\qquad
+		(k_\epsilon\tilde\mu)(x)\eqdef\int k_\epsilon(x,y)\d\tilde\mu(y),
+	\]
+	so $\al=\be$. The converse follows directly from the definition. Finally, on a compact space, continuity of the entropic value under weak convergence and compactness of $\Pp(\Xx)$ turn this definiteness into the stated equivalence of convergences; see~\cite{feydy2018interpolating}.
+\end{proof}
+Positive semidefiniteness alone therefore guarantees only non-negativity and may leave a nontrivial null space.
 \index{strict!positivity}% strictindex
-		If, in addition, $k_\epsilon$ is universal on a compact space, then $\bar\MK_\c^\epsilon(\al,\be)=0$ implies $\al=\be$, and the Sinkhorn divergence metrizes weak convergence~\cite{feydy2018interpolating}. Positive semidefiniteness alone proves only non-negativity and may leave a nontrivial null space.
 \index{kernel!universal}% strictindex
 \index{convergence!in law}% strictindex
-\end{rem}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2817,164 +2866,74 @@ The Sinkhorn temperature is usually a positive real number: positivity makes the
 \index{Sinkhorn!fixed point}% strictindex
 \index{complex!measure}% strictindex
 
-Let $\al\in\Pp(\Xx)$ and $\be\in\Pp(\Yy)$. Whenever the following integral operators are well defined, set, for $\epsilon\in\CC\setminus\{0\}$,
-\[
-	K_\epsilon(x,y)\eqdef \exp(-c(x,y)/\epsilon).
-\]
-The measure-theoretic scaling equations are the infinite-dimensional counterpart of matrix scaling. They are best written for the density of the complex coupling with respect to $\al\otimes\be$:
-\begin{equation}\label{eq-complex-measure-coupling}
-	\d\pi_\epsilon(x,y)
-	=
-	u(x)K_\epsilon(x,y)v(y)\,\d\al(x)\d\be(y).
-\end{equation}
-Prescribing the two marginals gives the fixed-point equations
-\begin{equation}\label{eq-complex-measure-fixed-point}
-	u(x)\int_\Yy K_\epsilon(x,y)v(y)\,\d\be(y)=1
-	\quad \text{for }\al\text{-a.e. }x,
-	\qquad
-	v(y)\int_\Xx K_\epsilon(x,y)u(x)\,\d\al(x)=1
-	\quad \text{for }\be\text{-a.e. }y .
-\end{equation}
-Formally, Sinkhorn alternation becomes
+Let $\al\in\Pp(\Xx)$ and $\be\in\Pp(\Yy)$. For $\epsilon\in\CC\setminus\{0\}$, reuse the Gibbs kernel and integral operators of~\eqref{eq-continuous-sinkhorn-operators} whenever the defining integrals exist. The density factorization~\eqref{eq-continuous-sinkhorn-scaling}, the marginal equations that follow it, and the scaling updates~\eqref{eq-continuous-sinkhorn-iteration} then remain valid verbatim for complex-valued $u$ and $v$, provided that the divisions are well defined. For real $\epsilon>0$ these are the usual Sinkhorn equations. For complex $\epsilon$ they are only local analytic identities: they assert neither positivity of $\pi_\epsilon$ nor convergence of the alternating iteration.
 \index{complex!Sinkhorn iteration}% strictindex
-\begin{equation}\label{eq-complex-measure-iteration}
-	u^{(\ell+1)}(x)=
-	\left(\int_\Yy K_\epsilon(x,y)v^{(\ell)}(y)\,\d\be(y)\right)^{-1},
-	\qquad
-	v^{(\ell+1)}(y)=
-	\left(\int_\Xx K_\epsilon(x,y)u^{(\ell+1)}(x)\,\d\al(x)\right)^{-1},
-\end{equation}
-whenever the denominators do not vanish. If a branch of the logarithm is fixed along the local continuation and $u=e^{f/\epsilon}$, $v=e^{g/\epsilon}$, this is equivalently the pair of soft-transform equations
-\index{complex!potential}% strictindex
-\index{soft!transform}% strictindex
-\[
-	f(x)=-\epsilon\log\!\int_\Yy \exp\!\left(\frac{g(y)-c(x,y)}{\epsilon}\right)\d\be(y),
-	\qquad
-	g(y)=-\epsilon\log\!\int_\Xx \exp\!\left(\frac{f(x)-c(x,y)}{\epsilon}\right)\d\al(x).
-\]
-For real positive $\epsilon$, this is the usual Sinkhorn fixed point. For complex $\epsilon$, the same formulas should be read as local analytic identities, not as a positivity statement.
 
 \paragraph{Discrete histograms.}
 \index{histogram}% strictindex
 \index{matrix!scaling}% strictindex
 
-If $\al=\sum_i \a_i\delta_{x_i}$ and $\be=\sum_j \b_j\delta_{y_j}$, set $\C_{i,j}=c(x_i,y_j)$ and define the complex Gibbs matrix
+For discrete histograms, evaluate the Gibbs kernel entrywise at $(x_i,y_j)$. The scaling factorization~\eqref{eq-scaling-form} and Sinkhorn updates~\eqref{eq-sinkhorn} are then used verbatim over $\CC$, with the same marginal constraints and multiplicative gauge, whenever $\epsilon\neq0$ and all divisions are defined. This complexified iteration is again a local parametrization of the scaling equations, not a globally convergent algorithm.
 \index{complex!Gibbs kernel}% strictindex
-\[
-	\K_\epsilon(\C)_{i,j}\eqdef \exp(-\C_{i,j}/\epsilon).
-\]
-The direct discretization of~\eqref{eq-complex-measure-coupling} is
-\[
-	\P_{\epsilon,ij}=\a_i\b_j u_i\K_\epsilon(\C)_{i,j}v_j,
-\]
-with fixed-point equations
-\[
-	u_i\sum_j \b_j\K_\epsilon(\C)_{i,j}v_j=1,
-	\qquad
-	v_j\sum_i \a_i\K_\epsilon(\C)_{i,j}u_i=1 .
-\]
-Equivalently, absorbing the fixed marginal weights into the scalings by setting
-$\uD_i\eqdef \a_i u_i$ and $\vD_j\eqdef \b_j v_j$ gives the matrix-scaling convention used in Sinkhorn's algorithm:
 \index{complex!matrix scaling}% strictindex
-\[
-	\P_\epsilon
-	=
-	\diag(\uD)\K_\epsilon(\C)\diag(\vD),
-	\qquad
-	\P_\epsilon\ones_m=\a,
-	\qquad
-	\P_\epsilon^\top\ones_n=\b .
-\]
-The corresponding formal complex Sinkhorn iteration is
-\begin{equation}\label{eq-complex-sinkhorn-iteration}
-	\uD^{(\ell+1)}
-	=
-	\a \oslash \bigl(\K_\epsilon(\C)\vD^{(\ell)}\bigr),
-	\qquad
-	\vD^{(\ell+1)}
-	=
-	\b \oslash \bigl(\K_\epsilon(\C)^\top\uD^{(\ell+1)}\bigr),
-\end{equation}
-where $\oslash$ denotes entrywise division. For complex $\epsilon$, this iteration should be read as a local analytic parametrization of the fixed point, not as a globally convergent algorithm.
 
-The following finite-dimensional result was communicated by Guillaume Carlier. It uses absorbed log-scalings: if $(\widehat\fD,\widehat\gD)$ are the KL-normalized dual potentials of~\eqref{eq-dual-formulation}, then
-\index{absorbed log-scaling}% strictindex
-\[
-	\fD=\widehat\fD+\epsilon\log\a,
-	\qquad
-	\gD=\widehat\gD+\epsilon\log\b,
-\]
-so that the marginal factors $a_i b_j$ are incorporated into the exponential coupling formula.
+The following finite-dimensional result is the scaling-variable counterpart of the analytic-dependence theorem of Carlier, Pegon and Tamanini~\cite[Theorem~2.1 and Remark~2.2]{CarlierPegonTamanini2023EntropicRates}. For compactly supported marginals and a continuous cost, their proof shows that normalized Schr\"odinger potentials, and hence the entropic cost, depend analytically on every real $\epsilon>0$; their Remark~2.2 explicitly records the resulting local extension to complex temperatures. We state the discrete version directly in $(\uD,\vD)$ and also allow the marginals and cost matrix to vary.
 
-\begin{thm}[Carlier's holomorphic continuation of Sinkhorn]\label{thm-carlier-complex-sinkhorn}
+\begin{thm}[Local holomorphic continuation of Sinkhorn scalings]\label{thm-carlier-complex-sinkhorn}
 \index{Sinkhorn!holomorphic continuation}% strictindex
 \index{holomorphic implicit function theorem}% strictindex
-	Fix positive histograms $\a^0\in\simplex_n$, $\b^0\in\simplex_m$, a finite real cost matrix $\C^0$, and a real temperature $\epsilon_0>0$. Let $(\fD^0,\gD^0)$ be the absorbed log-scalings at this point, normalized by $\sum_i \a_i^0 f_i^0=0$. Then there are complex neighborhoods of $(\epsilon_0,\a^0,\b^0,\C^0)$, inside the affine constraint $\sum_i \a_i=\sum_j \b_j$, and a unique holomorphic map
+	Fix positive histograms $\a^0\in\simplex_n$, $\b^0\in\simplex_m$, a finite real cost matrix $\C^0$, and a real temperature $\epsilon_0>0$. Choose positive scalings $(\uD^0,\vD^0)$ of the corresponding Sinkhorn coupling. Then there are complex neighborhoods of $(\epsilon_0,\a^0,\b^0,\C^0)$, inside the affine constraint $\sum_i \a_i=\sum_j \b_j$, and a unique holomorphic map
 	\[
-		(\epsilon,\a,\b,\C)\mapsto(\fD_\epsilon,\gD_\epsilon)\in\CC^n\times\CC^m
+		(\epsilon,\a,\b,\C)\mapsto(\uD_\epsilon,\vD_\epsilon)\in\CC^n\times\CC^m
 	\]
-	satisfying the fixed gauge $\sum_i \a_i^0 f_{\epsilon,i}=0$ and solving
-	\[
-		\P_{\epsilon,ij}
-		=
-		\exp\!\left(\frac{f_{\epsilon,i}+g_{\epsilon,j}-\C_{i,j}}{\epsilon}\right),
-		\qquad
-		\P_\epsilon\ones_m=\a,
-		\qquad
-		\P_\epsilon^\top\ones_n=\b .
-	\]
-	Consequently the gauge-fixed scalings $\uD_\epsilon=e^{\fD_\epsilon/\epsilon}$, $\vD_\epsilon=e^{\gD_\epsilon/\epsilon}$ and the coupling $\P_\epsilon$ are holomorphic in $(\epsilon,\a,\b,\C)$ near the base point.
+	satisfying the linear gauge $\sum_i\a_i^0u_{\epsilon,i}=\sum_i\a_i^0u_i^0$, such that
+	$\P_\epsilon=\diag(\uD_\epsilon)\K_\epsilon(\C)\diag(\vD_\epsilon)$ has marginals $(\a,\b)$. In particular, the gauge-fixed scalings and $\P_\epsilon$ are holomorphic in all four arguments near the base point.
 \end{thm}
 
 \begin{proof}
-	Consider the holomorphic map which sends $(\fD,\gD,\epsilon,\a,\b,\C)$ to the $n$ row residuals, the first $m-1$ column residuals, and the gauge condition,
+	Apply the holomorphic implicit-function theorem to the $n$ row residuals, the first $m-1$ column residuals, and the gauge residual $G(\uD)=\sum_i\a_i^0(u_i-u_i^0)$. There are $n+m$ equations for the $n+m$ scaling coordinates. It remains to prove that their derivative with respect to $(\uD,\vD)$ is invertible at the base point.
+
+	Let $(\delta\uD,\delta\vD)$ belong to its kernel and write
 	\[
-		R_i=\sum_j
-		\exp\!\left(\frac{f_i+g_j-\C_{i,j}}{\epsilon}\right)-\a_i,
+		r_i\eqdef\frac{\delta u_i}{u_i^0},
 		\qquad
-		S_j=\sum_i
-		\exp\!\left(\frac{f_i+g_j-\C_{i,j}}{\epsilon}\right)-\b_j,
-		\qquad
-		G=\sum_i \a_i^0 f_i ,
+		s_j\eqdef\frac{\delta v_j}{v_j^0}.
 	\]
-	where $1\leq i\leq n$ and $1\leq j\leq m-1$. At the real base point the associated coupling $\P^0$ is strictly positive. We show that the derivative with respect to $(\fD,\gD)$ is injective as a complex-linear map. Let $(\delta\fD,\delta\gD)$ belong to its kernel and set
-	\[
-		\delta \P_{i,j}
-		=
-		\frac{1}{\epsilon_0}\P^0_{i,j}(\delta f_i+\delta g_j).
-	\]
+	Since $\P^0=\diag(\uD^0)\K_{\epsilon_0}(\C^0)\diag(\vD^0)$, the induced perturbation is $\delta\P_{i,j}=\P^0_{i,j}(r_i+s_j)$.
 	The linearized row sums vanish. The first $m-1$ linearized column sums vanish by definition of the residuals, and the last one vanishes because the total row sum equals the total column sum. Therefore
 	\[
 		0
 		=
-		\sum_i \overline{\delta f_i}\sum_j\delta \P_{i,j}
+		\sum_i \overline{r_i}\sum_j\delta \P_{i,j}
 		+
-		\sum_j \overline{\delta g_j}\sum_i\delta \P_{i,j}
+		\sum_j \overline{s_j}\sum_i\delta \P_{i,j}
 		=
-		\frac{1}{\epsilon_0}
-		\sum_{i,j}\P^0_{i,j}\abs{\delta f_i+\delta g_j}^2 .
+		\sum_{i,j}\P^0_{i,j}\abs{r_i+s_j}^2 .
 	\]
-	Since $\P^0_{i,j}>0$, one has $\delta f_i+\delta g_j=0$ for all $i,j$. Hence $\delta\fD$ is constant and $\delta\gD$ is the opposite constant. The gauge derivative $\sum_i \a_i^0\delta f_i=0$ forces this constant to vanish. The derivative is thus invertible, and the holomorphic implicit-function theorem gives the local holomorphic potentials. The formulas for $\uD_\epsilon$, $\vD_\epsilon$ and $\P_\epsilon$ are holomorphic compositions of these potentials.
+	Strict positivity of $\P^0$ gives $r_i=\theta$ and $s_j=-\theta$ for some $\theta\in\CC$. The linearized gauge is $0=\sum_i\a_i^0\delta u_i=\theta\sum_i\a_i^0u_i^0$; its last factor is positive, hence $\theta=0$. The derivative is injective and therefore invertible. The implicit-function theorem now gives the asserted holomorphic scalings, and their matrix product gives the holomorphic coupling.
 \end{proof}
+
+After shrinking the neighborhoods if necessary, the scaling coordinates remain nonzero. Choosing their local logarithms defines the holomorphic log-scalings $\fD_\epsilon\eqdef\epsilon\log\uD_\epsilon$ and $\gD_\epsilon\eqdef\epsilon\log\vD_\epsilon$. These derived quantities are convenient for visualization but are not needed in the theorem.
 
 \begin{rem}[Local, not global, complex scaling]
 \index{complex!Sinkhorn scaling}% strictindex
-	The theorem is local around a positive real point. It does not rule out complex singularities, branch changes, or zeros of the denominators in~\eqref{eq-complex-sinkhorn-iteration} farther away. Along a compact interval $[\epsilon_{\min},\epsilon_{\max}]\subset(0,+\infty)$, uniqueness lets the local branches agree on overlaps and therefore cover some neighborhood of that interval. This still gives no global single-valued continuation on $\CC\setminus\{0\}$.
+	The theorem is local around a positive real point. It does not rule out complex singularities, changes of logarithm branch, or zeros in the denominators of the complexified updates~\eqref{eq-sinkhorn} farther away. Along a compact interval $[\epsilon_{\min},\epsilon_{\max}]\subset(0,+\infty)$, uniqueness lets the local branches agree on overlaps and therefore cover some neighborhood of that interval. This still gives no global single-valued continuation on $\CC\setminus\{0\}$.
 \end{rem}
 
-Figure~\ref{fig:sinkhorn-complex-epsilon-continuation} shows this local continuation on a one-dimensional finite histogram problem. The real part changes only at second order in the imaginary perturbation, so the left panel displays the centered quantity $\Re(\fD_{\epsilon_0+i\eta}-\fD_{\epsilon_0})$. Since the potentials enter only through exponentials, the complex logarithm has to be followed on a continuous local branch; this is a display convention, while the coupling itself is defined by the exponential formula.
+Figure~\ref{fig:sinkhorn-complex-epsilon-continuation} visualizes the continuation at the level of the coupling, without choosing logarithm branches. For a fixed real part $\epsilon_0$, it displays $\abs{\P_{\epsilon_0+i\eta}}$ at four increasing imaginary parts. The complex matrix $\P_{\epsilon_0+i\eta}$ always has marginals $(\a,\b)$, but taking its entrywise modulus destroys these linear identities. The red and blue side profiles therefore show the prescribed marginals, while the violet profiles show the row and column sums of $\abs{\P_{\epsilon_0+i\eta}}$ and reveal the cancellations hidden by the modulus.
 
 \begin{figure}[ht]
 \centering
 \setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}cc@{}}
-\includegraphics[width=.48\linewidth]{figures/sinkhorn-complex-epsilon-continuation/real-potential.pdf} &
-\includegraphics[width=.48\linewidth]{figures/sinkhorn-complex-epsilon-continuation/imag-potential.pdf} \\[-.1em]
-\small centered real perturbation &
-\small imaginary part of $f_{\epsilon_0+i\eta}$
+\begin{tabular}{@{}cccc@{}}
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p00.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p20.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p40.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p60.pdf} \\[-.1em]
+\small $\eta=0$ & \small $\eta=0.20$ & \small $\eta=0.40$ & \small $\eta=0.60$
 \end{tabular}
-\caption{\emph{Complex Sinkhorn continuation of a one-dimensional absorbed source log-scaling.} Two Gaussian-mixture histograms are fixed, $\epsilon_0=0.55$, and $\epsilon=\epsilon_0+i\eta$ is varied for $\eta$ near zero. The left panel shows the centered real perturbation $\Re(\fD_{\epsilon_0+i\eta}-\fD_{\epsilon_0})$, while the right panel shows $\Im\fD_{\epsilon_0+i\eta}$. The bold black curve is the real-temperature branch $\eta=0$; colored curves follow the local branch for negative $\eta$ in blue, positive $\eta$ in red, and intermediate values in violet. The faint red and blue silhouettes show the source and target histograms.}
-\index{complex!Sinkhorn potential}% strictindex
+\caption{\emph{The magnitude of a complex Sinkhorn coupling exposes the oscillations created by an imaginary temperature.} Two Gaussian-mixture histograms and $\epsilon_0=0.55$ are fixed, while $\epsilon=\epsilon_0+i\eta$ is continued through four nonnegative values of $\eta$. Every panel uses the same intensity scale. The attached red and blue profiles are the prescribed marginals $(\a,\b)$ of the complex coupling; the violet profiles are the marginals of its entrywise modulus and separate from them as cancellation increases.}
+\index{complex!Sinkhorn coupling}% strictindex
 \index{Sinkhorn!holomorphic continuation}% strictindex
 \label{fig:sinkhorn-complex-epsilon-continuation}
 \end{figure}
@@ -2982,75 +2941,18 @@ Figure~\ref{fig:sinkhorn-complex-epsilon-continuation} shows this local continua
 \begin{example}[Centered one-dimensional Gaussians]
 \index{Gaussian!complex Sinkhorn}% strictindex
 \index{quadratic!scaling}% strictindex
-	Let $\al=\Gaussian(0,s)$ and $\be=\Gaussian(0,t)$ on $\RR$, where $s,t>0$ are variances, and take $c(x,y)=(x-y)^2$. For complex $\epsilon$ near the positive real axis, the continuous scaling equations relative to $\al\otimes\be$ read
-	\[
-		u(x)\int e^{-(x-y)^2/\epsilon}v(y)\d\be(y)=1,
-		\qquad
-		v(y)\int e^{-(x-y)^2/\epsilon}u(x)\d\al(x)=1 .
-	\]
-	Quadratic scalings are preserved. If
-	\[
-		v^{(\ell)}(y)=\exp(\eta^{(\ell)}+q^{(\ell)} y^2),
-		\qquad
-		u^{(\ell+1)}(x)=\exp(\gamma^{(\ell+1)}+p^{(\ell+1)}x^2),
-	\]
-	then, with
-	\[
-		A_r(q)\eqdef \frac1\epsilon+\frac1{2r}-q,
-		\qquad
-		T_r(q)\eqdef \frac1\epsilon-\frac{1}{\epsilon^2 A_r(q)},
-	\]
-	Gaussian integration gives the closed Sinkhorn recurrence
-	\[
-		p^{(\ell+1)}=T_t(q^{(\ell)}),
-		\qquad
-		\gamma^{(\ell+1)}=-\eta^{(\ell)}+\frac12\log\bigl(2tA_t(q^{(\ell)})\bigr),
-	\]
-	and
-	\[
-		q^{(\ell+1)}=T_s(p^{(\ell+1)}),
-		\qquad
-		\eta^{(\ell+1)}=-\gamma^{(\ell+1)}+\frac12\log\bigl(2sA_s(p^{(\ell+1)})\bigr),
-	\]
-	with the logarithm branch chosen from the positive real solution. Thus the infinite-dimensional fixed point has been reduced to a two-dimensional rational iteration for $(p^{(\ell)},q^{(\ell)})$ plus scalar gauge constants.
-
-	The fixed point can be written explicitly. Let
+	Let $\al=\Gaussian(0,\sigma_\al^2)$ and $\be=\Gaussian(0,\sigma_\be^2)$ on $\RR$, with $\sigma_\al,\sigma_\be>0$, and take $c(x,y)=(x-y)^2$. Proposition~\ref{prop-gaussian-sinkhorn-closed-form} shows that, for real $\epsilon>0$, the Sinkhorn coupling is Gaussian. Its analytic continuation is obtained by using the same formula: for $\Re(\epsilon)>0$, set
 	\[
 		k_\epsilon
 		\eqdef
-		\frac{\sqrt{\epsilon^2+16st}-\epsilon}{4},
+		\frac{\sqrt{\epsilon^2+16\sigma_\al^2\sigma_\be^2}-\epsilon}{4},
 	\]
-	where the square-root branch is the positive one when $\epsilon>0$. Then
-	\[
-		p_\epsilon=\frac{s-k_\epsilon}{s\,\epsilon},
-		\qquad
-		q_\epsilon=\frac{t-k_\epsilon}{t\,\epsilon},
-		\qquad
-		\gamma_\epsilon+\eta_\epsilon
-		=
-		\frac12\log\!\left(\frac{st}{st-k_\epsilon^2}\right).
-	\]
-	Equivalently, the fixed complex coupling is the Gaussian analytic continuation
-	\[
-		\frac{\d\pi_\epsilon}{\d(\al\otimes\be)}(x,y)
-		=
-		\sqrt{\frac{st}{st-k_\epsilon^2}}\,
-		\exp\!\left(
-			p_\epsilon x^2+q_\epsilon y^2-\frac{(x-y)^2}{\epsilon}
-		\right).
-	\]
-	For real $\epsilon>0$, this is the centered Gaussian coupling with covariance matrix
+	where the square root is the holomorphic branch on the right half-plane that is positive for $\epsilon>0$. The continued coupling $\pi_\epsilon$ is a centered complex Gaussian, with covariance parameter
 	\[
 		\begin{pmatrix}
-		s & k_\epsilon\\
-		k_\epsilon & t
+		\sigma_\al^2 & k_\epsilon\\
+		k_\epsilon & \sigma_\be^2
 		\end{pmatrix}.
 	\]
-	Writing $D_\epsilon=st-k_\epsilon^2$, the density ratio of this Gaussian coupling with respect to $\al\otimes\be$ has exponent
-	\[
-		-\frac{k_\epsilon^2}{2sD_\epsilon}x^2
-		-\frac{k_\epsilon^2}{2tD_\epsilon}y^2
-		+\frac{k_\epsilon}{D_\epsilon}xy .
-	\]
-	Comparing exponents gives $k_\epsilon/D_\epsilon=2/\epsilon$, hence $D_\epsilon=k_\epsilon\epsilon/2$ and the displayed formulas for $p_\epsilon,q_\epsilon$. The scalings need not decay because $e^{-(x-y)^2/\epsilon}$ already belongs to the coupling density. Nonzero means add affine terms but leave the quadratic recurrence and cross-covariance unchanged.
+	Thus no new Gaussian computation is required: one simply analytically continues the real-temperature expression. This formula is guaranteed to define the finite complex Gaussian coupling throughout $\Re(\epsilon)>0$. It can be continued farther along paths on which the Gaussian integral converges and which avoid $\epsilon=0$ and the square-root branch points $\epsilon=\pm4i\sigma_\al\sigma_\be$.
 \end{example}
