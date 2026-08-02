@@ -16,25 +16,24 @@ this is the topic of {ref}`sec-statistical-ot`.
 
 The chapter revisits Sinkhorn convergence through several complementary
 lenses. Bregman projections explain the alternating-projection geometry,
-Fortet's order argument gives qualitative fixed-point convergence, and an
-order-theoretic M-function viewpoint explains why Sinkhorn-like scaling can
-still converge even when the equations are no longer the gradient of a convex
-potential. Robust Bregman estimates then give a non-asymptotic dual-gap bound,
-while Hilbert's metric gives a clean linear contraction when the kernel is
-uniformly positive. The last sections discuss Gaussian closed forms and
-continuous $\varepsilon$-Sinkhorn flows as model cases where the fixed-point
-structure becomes explicit.
+while Fortet's order argument gives qualitative fixed-point convergence.
+Robust Bregman estimates then give a non-asymptotic $O(1/\ell)$ dual-gap bound,
+and Hilbert's metric gives a global linear contraction when the kernel is
+uniformly positive. A local spectral analysis sharpens this factor and
+motivates over-relaxation and variable projection. The last sections discuss
+Gaussian closed forms and continuous $\varepsilon$-Sinkhorn flows as model
+cases where the fixed-point structure becomes explicit.
 
 :::{admonition} Guiding Comparison
 :class: tip
-There are three useful convergence stories for Sinkhorn. Bregman projections
+There are three complementary global convergence stories for Sinkhorn. Bregman projections
 explain the geometry of alternating row and column corrections; Fortet's
 monotone argument explains qualitative fixed-point convergence of soft
 transforms; Hilbert's projective metric gives a linear contraction when the
-kernel is uniformly positive. A fourth, more algebraic story views Sinkhorn as
-a monotone coordinate-clearing system, which survives beyond variational OT.
-The statistical behavior of empirical OT and empirical Sinkhorn losses is
-treated separately in the next chapter.
+kernel is uniformly positive. The local analysis later in this chapter
+identifies the sharp asymptotic factor and explains how to accelerate it. The
+statistical behavior of empirical OT and empirical Sinkhorn losses is treated
+separately in the next chapter.
 :::
 
 ```{code-cell} ipython3
@@ -728,6 +727,16 @@ The proposition therefore isolates the genuinely order-theoretic convergence
 mechanism; unrestricted initialization requires an additional compactness,
 ascent, or contraction argument.
 
+:::{admonition} Beyond Variational Transport
+:class: note
+The preceding argument uses order, additive homogeneity, and barriers rather
+than a dual objective. Parts of it therefore extend to non-variational
+market-clearing and equilibrium maps with substitute-type Jacobians
+{cite:p}`GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone`.
+Sinkhorn is the canonical variational example, but this order mechanism can
+survive after the underlying convex transport functional has disappeared.
+:::
+
 ## Sinkhorn Convergence: Sublinear Robust Rate
 
 The preceding projection and monotonicity arguments establish convergence but
@@ -741,18 +750,14 @@ grows only as $1/\epsilon$
 {cite:p}`peyre2026robust,altschuler2017near,pmlr-v80-dvurechensky18a`. This
 robust dependence is crucial when Sinkhorn approximates unregularized discrete
 OT: Corollary {ref}`cor-sinkhorn-dual-complexity` chooses
-$\epsilon=\delta/(2\log(nm))$, so the temperature decreases with the requested
+$\epsilon=\delta/\log(nm)$, so the temperature decreases with the requested
 accuracy and with the number of support points.
 
 (prop-sinkhorn-dual-rate)=
 :::{admonition} Proposition: Robust $O(1/\ell)$ Dual Rate for Discrete Sinkhorn
 :class: important
 Let $a\in\simplex_n$ and $b\in\simplex_m$ be positive histograms, let
-$C\in\RR^{n\times m}$ be finite, and set
-
-```{math}
-R\eqdef\max_{i,j}C_{ij}-\min_{i,j}C_{ij}.
-```
+$C\in\RR_+^{n\times m}$ be finite.
 
 Initialize $g^{(0)}=0$, perform complete Sinkhorn dual cycles, and denote the
 resulting potentials by $(f^{(\ell)},g^{(\ell)})$ for $\ell\geq1$. If
@@ -768,122 +773,201 @@ resulting potentials by $(f^{(\ell)},g^{(\ell)})$ for $\ell\geq1$. If
 then
 
 ```{math}
-0\leq\Delta^{(\ell)}\leq\frac{8R^2}{\epsilon\ell},
+0\leq\Delta^{(\ell)}\leq\frac{2\norm{C}_\infty^2}{\epsilon\ell},
 \qquad \ell\geq1.
 ```
 :::
 
 :::{dropdown} Proof
-Subtracting $\min C$ does not change the dual gaps or the Sinkhorn orbit up to
-gauge, so assume $0\leq C_{ij}\leq R$. For a vector $h$, define the quotient
-norm
+Write $M\eqdef\norm{C}_\infty$. If $M=0$, one complete cycle produces
+$a\otimes b$. We first prove the oscillation estimate. If $f$ is the soft
+transform of $g$, as in Definition {ref}`def-discrete-soft-c-transform`, set
 
 ```{math}
-|h|_{\mathrm q}
-\eqdef
-\inf_{\lambda\in\RR}\norm{h+\lambda\mathbf 1}_\infty
-=
-\frac12\norm h_V.
+Z_i\eqdef\sum_j b_j\exp\!\left(\frac{g_j-C_{ij}}{\epsilon}\right),
+\qquad f_i=-\epsilon\log Z_i.
 ```
 
-Every soft transform, including an optimal one, has oscillation at most $R$.
-Thus both dual blocks have quotient radius at most $U=R/2$. Vectorizing the
-coupling gives the constraint operator
-$A(P)=(P\mathbf1_m,P^\top\mathbf1_n)$, for which
-$\norm A_{1\to1}=2$. Every exact half-step has total mass one, so the primal
-mass bound is $X=1$. The robust cyclic-projection theorem
-{cite:p}`peyre2026robust` therefore gives
+Since $0\leq C_{ij}\leq M$, one has
+$e^{-M/\epsilon}Z_{i'}\leq Z_i\leq e^{M/\epsilon}Z_{i'}$ for every $i,i'$.
+Hence $|f_i-f_{i'}|\leq M$ and $\norm f_V\leq M$. The same argument applies
+to the other soft transform. Every Sinkhorn potential is produced by one of
+these transforms, and the block optimality equations give the same property
+at an optimum. Therefore
+
+```{math}
+\norm{f^{(\ell)}}_V,\ \norm{g^{(\ell)}}_V,
+\ \norm{f^\star}_V,\ \norm{g^\star}_V
+\leq M.
+```
+
+For any potentials, write
+
+```{math}
+P(f,g)
+\eqdef
+(a\otimes b)\odot
+\exp\!\left(\frac{f\oplus g-C}{\epsilon}\right).
+```
+
+At the end of cycle $\ell$, $P^{(\ell)}\eqdef P(f^{(\ell)},g^{(\ell)})$ has
+column marginal $b$. Let $r^{(\ell)}\eqdef P^{(\ell)}\mathbf1_m$ and
+$\delta_\ell\eqdef\norm{a-r^{(\ell)}}_1$. The dual gradient is then
+$(a-r^{(\ell)},0)$, so concavity gives
 
 ```{math}
 \Delta^{(\ell)}
 \leq
-\frac{8XU^2\norm A_{1\to1}^2}{\epsilon\ell}
-=
-\frac{8R^2}{\epsilon\ell}.
+\left\langle f^\star-f^{(\ell)},a-r^{(\ell)}\right\rangle.
 ```
 
-The underlying mechanism is the KL Pythagorean identity. The full-step plan
-$P^{(\ell)}$ has exact target marginal and hence mass one, so
+For a vector $h$ and a zero-sum vector $z$, subtracting
+$(\max h+\min h)/2$ from $h$ proves
 
 ```{math}
-\Delta^{(\ell)}
-=
-\epsilon\operatorname{KL}(P^\star\mid P^{(\ell)}).
+|\langle h,z\rangle|
+\leq
+\frac12\norm h_V\norm z_1.
 ```
 
-Pinsker's inequality from Theorem {ref}`thm-pinsker` controls the marginal
-residual by the KL ascent, while the quotient-radius bound controls the dual
-gap by the same residual. Their combination yields
+The oscillation estimate therefore yields
+
+```{math}
+:label: eq-sinkhorn-gap-residual
+\Delta^{(\ell)}\leq M\delta_\ell.
+```
+
+The next row update satisfies
+
+```{math}
+f_i^{(\ell+1)}-f_i^{(\ell)}
+=
+\epsilon\log\!\left(\frac{a_i}{r_i^{(\ell)}}\right).
+```
+
+The matrices before and after this update both have total mass one. Direct
+substitution in the dual objective therefore gives the exact gain
+$\epsilon\operatorname{KL}(a\mid r^{(\ell)})$. The subsequent column update
+can only increase the objective. Pinsker's inequality, Theorem
+{ref}`thm-pinsker`, and {eq}`eq-sinkhorn-gap-residual` give
 
 ```{math}
 \Delta^{(\ell)}-\Delta^{(\ell+1)}
 \geq
-\frac{\epsilon}{8R^2}(\Delta^{(\ell)})^2,
+\epsilon\operatorname{KL}(a\mid r^{(\ell)})
+\geq
+\frac{\epsilon}{2}\delta_\ell^2
+\geq
+\frac{\epsilon}{2M^2}(\Delta^{(\ell)})^2.
 ```
 
-and telescoping reciprocal gaps gives the result. If $R=0$, one complete cycle
-is already optimal.
+It remains to initialize this recursion uniformly in $\epsilon$. Set
+$x=M/\epsilon$, and let $\widehat P^{(1)}$ be the matrix after the first row
+update from $g^{(0)}=0$. The update formula gives
+
+```{math}
+e^{-x}
+\leq
+\frac{\widehat P^{(1)}_{ij}}{a_i b_j}
+\leq
+e^x.
+```
+
+Its column marginal $\widehat s$ satisfies
+$e^{-x}\leq\widehat s_j/b_j\leq e^x$. The first column update is
+$P^{(1)}_{ij}=\widehat P^{(1)}_{ij}b_j/\widehat s_j$, whence
+
+```{math}
+\frac{r_i^{(1)}}{a_i}
+=
+\sum_j\frac{\widehat P^{(1)}_{ij}}{a_i}
+\frac{b_j}{\widehat s_j}
+\in[e^{-x},e^x],
+```
+
+because $(\widehat P^{(1)}_{ij}/a_i)_j$ is a probability vector. Thus
+$\delta_1\leq\min\{2,e^x-1\}\leq2\min\{1,x\}$, where
+$e^x-1\leq2x$ for $0\leq x\leq1$. It follows from
+{eq}`eq-sinkhorn-gap-residual` that $\Delta^{(1)}\leq2M^2/\epsilon$.
+
+Finally, whenever $\Delta^{(\ell+1)}>0$,
+
+```{math}
+\frac1{\Delta^{(\ell+1)}}-\frac1{\Delta^{(\ell)}}
+=
+\frac{\Delta^{(\ell)}-\Delta^{(\ell+1)}}
+{\Delta^{(\ell)}\Delta^{(\ell+1)}}
+\geq
+\frac{\epsilon}{2M^2}.
+```
+
+Together with the initial bound, telescoping proves
+$\Delta^{(\ell)}\leq2M^2/(\epsilon\ell)$. If a gap vanishes, all subsequent
+gaps vanish and the result is immediate.
 :::
+
+The assumption $C\geq0$ is harmless for transport costs. For a signed matrix,
+subtracting $\min_{i,j}C_{ij}$ leaves Sinkhorn iterates and dual gaps unchanged
+up to gauge; the proposition then applies to the normalized nonnegative cost.
+
+The preceding rate becomes useful when Sinkhorn serves as an approximate solver
+for exact OT. With the KL-normalized dual, the iterate itself can be compared
+with the unregularized cost, without any additive entropy correction.
 
 (cor-sinkhorn-dual-complexity)=
 :::{admonition} Corollary: Approximating Unregularized OT by Regularized Dual Costs
 :class: important
-Under the preceding assumptions, suppose $nm>1$. Let
-$\mathcal D_{\epsilon,\ell}$ be the KL-normalized entropic dual value after
-$\ell\geq1$ complete cycles and define
+Under the preceding assumptions, suppose $nm>1$ and define the unregularized
+cost $L_0\eqdef\MKD_\C(\a,\b)$. For any $\delta>0$, choose
+$\epsilon=\delta/\log(nm)$. Then
 
 ```{math}
-L_{\epsilon,\ell}
-\eqdef
-\mathcal D_{\epsilon,\ell}
--
-\epsilon H(a)-\epsilon H(b),
-\qquad
-H(a)=-\sum_i a_i\log a_i.
+\ell\geq\frac{2\norm{C}_\infty^2\log(nm)}{\delta^2}
+\quad\Longrightarrow\quad
+\left|L_0-\mathcal D_\epsilon(f^{(\ell)},g^{(\ell)})\right|\leq\delta.
 ```
-
-Then
-
-```{math}
-0\leq
-\operatorname{OT}_C(a,b)-L_{\epsilon,\ell}
-\leq
-\epsilon\log(nm)+\frac{8R^2}{\epsilon\ell}.
-```
-
-Consequently,
-
-```{math}
-\epsilon=\frac{\delta}{2\log(nm)},
-\qquad
-\ell\geq\frac{32R^2\log(nm)}{\delta^2}
-```
-
-produce a lower bound with error at most $\delta$.
 :::
 
 :::{dropdown} Proof
-On the transport polytope,
-$\operatorname{KL}(P\mid a\otimes b)=-H(P)+H(a)+H(b)$. If $E_\epsilon$ is
-the optimum of $\langle P,C\rangle-\epsilon H(P)$, then
+Let $L_\epsilon\eqdef\max_{f,g}\mathcal D_\epsilon(f,g)$ and let $P^0$ solve
+the unregularized problem. The KL-normalized primal formulation gives
 
 ```{math}
-\operatorname{OT}_C(a,b)-\epsilon\log(nm)
-\leq E_\epsilon\leq\operatorname{OT}_C(a,b).
+0\leq L_\epsilon-L_0
+\leq\epsilon\operatorname{KL}(P^0\mid a\otimes b)
+\leq\epsilon\log(nm).
 ```
 
-Moreover $L_{\epsilon,\ell}=E_\epsilon-\Delta^{(\ell)}$. Apply the preceding
-proposition and allocate $\delta/2$ to each of the regularization and
-optimization errors.
+The last inequality follows from
+$\operatorname{KL}(P^0\mid a\otimes b)=H(a)+H(b)-H(P^0)\leq\log(nm)$.
+Proposition {ref}`prop-sinkhorn-dual-rate` gives
+$0\leq L_\epsilon-\mathcal D_\epsilon(f^{(\ell)},g^{(\ell)})
+\leq2\norm{C}_\infty^2/(\epsilon\ell)$. The computed error is the difference
+of these two nonnegative quantities, so its absolute value is bounded by their
+maximum. Both are at most $\delta$ under the stated choices.
 :::
 
-The same identities give computable diagnostics. If $r=P\mathbf1_m$, the KL
-projection onto the row constraint satisfies
-$\operatorname{KL}(\operatorname{Proj}(P)\mid P)=\operatorname{KL}(a\mid r)$;
-the column identity is analogous. Each observed dual ascent is therefore a
-marginal KL defect, and Theorem {ref}`thm-pinsker` turns it into an
-$\ell^1$ residual. The residual is not itself the remaining dual gap: a
-certificate also needs the quotient-radius estimate used above.
+For a dense $n\times n$ problem, one Sinkhorn cycle costs $O(n^2)$ operations.
+The corollary therefore gives
+
+```{math}
+O\!\left(\frac{n^2\norm C_\infty^2\log n}{\delta^2}\right)
+```
+
+arithmetic complexity for additive accuracy $\delta$. At fixed accuracy and
+normalized cost scale, this is nearly quadratic in $n$, compared with the
+exact $O(n^3)$ Hungarian method of Proposition
+{ref}`prop-hungarian-correct` and the $O(n^3)$ work per scaling phase of
+auction in Proposition {ref}`prop-auction-epsilon-scaling`. The accuracy
+comparison is reversed: Sinkhorn's present guarantee is
+polynomial in $1/\delta$, whereas Hungarian is exact, scaled auction is exact
+for integer costs once its tolerance is below $1/n$, and self-concordant
+interior-point analysis in Section {ref}`sec-kantorovich-lp-algorithms` has
+logarithmic dependence on $1/\delta$ but requires costly Newton solves. These
+assignment comparisons concern uniform square
+problems. They show why Sinkhorn is especially effective for large-scale
+problems requiring low or moderate precision rather than highly accurate exact
+solutions.
 
 
 (sec-sinkhorn-hilbert)=
@@ -898,135 +982,93 @@ linear rate for Sinkhorn scaling rays.
 (def-hilbert-metric)=
 :::{admonition} Definition: Hilbert Metric
 :class: important
-For $u,u'\in\RR_{+,*}^n$, define
+For $u,u'\in\mathbb R_{+,*}^n$, define
 
+(eq-hilbert-metric)=
 ```{math}
-\mathsf H(u,u')
-\eqdef
-\norm{\log u-\log u'}_V.
+\mathsf H(u,u')=\|\log u-\log u'\|_V.
 ```
 
-Here, $\norm{\cdot}_V$ is the variation seminorm of Definition
-{ref}`def-variation-seminorm`, specialized to functions on the finite space
-$\{1,\ldots,n\}$: $\norm z_V=\max_i z_i-\min_i z_i$.
+Here $\|z\|_V=\max_i z_i-\min_i z_i$ is the variation seminorm of
+{ref}`def-variation-seminorm` on the finite space $\{1,\ldots,n\}$.
 :::
 
-Multiplying either vector by a positive scalar leaves $\mathsf H$ unchanged.
-It is therefore a metric only on projective classes.
+Multiplying either vector by a positive scalar leaves $\mathsf H$ unchanged,
+so it is a metric on projective classes.
 
 :::{admonition} Proposition: Hilbert Metric on the Projective Cone
 :class: important
 The function $\mathsf H$ defines a complete metric on
-$\RR_{+,*}^n/\!\sim$, where $u\sim u'$ when $u=su'$ for some $s>0$.
+$\mathbb R_{+,*}^n/\!\sim$, where $u\sim u'$ when $u=su'$ for some $s>0$.
 :::
 
 :::{dropdown} Proof
 The logarithm identifies the projective cone with
-$\RR^n/\operatorname{span}(\mathbf1_n)$. The variation seminorm vanishes
-exactly on constant vectors, hence induces a norm on this quotient. Completeness
-follows from finite dimensionality.
+$\mathbb R^n/\operatorname{span}(\mathbf1_n)$. The variation seminorm vanishes
+exactly on constants and induces a norm on this finite-dimensional quotient.
 :::
 
 (thm-birkhoff)=
 :::{admonition} Theorem: Birkhoff Contraction Theorem
 :class: important
-Let $K\in\RR_{+,*}^{n\times m}$. Then
+Let $K\in\mathbb R_{+,*}^{n\times m}$. Then
 
 ```{math}
-\mathsf H(Kv,Kv')
-\leq
-\lambda(K)\mathsf H(v,v'),
+\mathsf H(Kv,Kv')\leq\lambda(K)\mathsf H(v,v'),
 ```
 
 where
 
 ```{math}
-\lambda(K)
-\eqdef
-\frac{\sqrt{\eta(K)}-1}{\sqrt{\eta(K)}+1}<1,
+\lambda(K)=\frac{\sqrt{\eta(K)}-1}{\sqrt{\eta(K)}+1}<1,
 \qquad
-\eta(K)
-\eqdef
-\max_{i,j,k,\ell}
-\frac{K_{i,k}K_{j,\ell}}{K_{j,k}K_{i,\ell}}.
+\eta(K)=\max_{i,j,k,l}
+\frac{K_{i,k}K_{j,l}}{K_{j,k}K_{i,l}}.
 ```
 :::
 
 :::{dropdown} Proof
-The Birkhoff--Hopf theorem contracts Hilbert's metric by
-$\tanh(\Delta(A)/4)$, where
-$\Delta(A)=\sup_{u,v>0}\mathsf H(Au,Av)$ is the projective diameter. For a
-positive matrix, output cross-ratios give
-$\Delta(K)=\log\eta(K)$. Hence
-$\tanh(\Delta(K)/4)=(\sqrt{\eta(K)}-1)/(\sqrt{\eta(K)}+1)$
-{cite:p}`birkhoff1957extensions`.
+Set $F(z)=\log(Ke^z)$. Its Jacobian is the row-stochastic matrix
+
+```{math}
+P_{i,k}(z)=\frac{K_{i,k}e^{z_k}}{\sum_l K_{i,l}e^{z_l}}.
+```
+
+For a row-stochastic matrix $P$, the Dobrushin estimate gives
+$\|Ph\|_V\leq\delta(P)\|h\|_V$, with
+$\delta(P)=\frac12\max_{i,j}\sum_k|P_{i,k}-P_{j,k}|$. For two rows $p,q$,
+let $a=\min_k p_k/q_k$, $b=\max_k p_k/q_k$. Since
+$a\leq1\leq b$ and $b/a\leq\eta(K)$, splitting where $p_k\geq q_k$ and
+optimizing under these bounds gives
+
+```{math}
+\frac12\sum_k|p_k-q_k|
+\leq\frac{\sqrt{b/a}-1}{\sqrt{b/a}+1}
+\leq\lambda(K).
+```
+
+Thus $\|DF(z)h\|_V\leq\lambda(K)\|h\|_V$. Integrating the derivative of
+$F(z+t(z'-z))$ from $0$ to $1$ proves the claim because
+$\mathsf H(e^z,e^{z'})=\|z-z'\|_V$.
 :::
 
-### Nested Simplex Images
-
-The contraction is already visible on the three-state probability simplex.
-With the column-vector convention, every positive column-stochastic matrix
-$K$ maps $\simplex_3$ into its interior, and
-
-```{math}
-K^{\ell+1}\simplex_3
-=K^\ell(K\simplex_3)
-\subseteq K^\ell\simplex_3.
-```
-
-The first two panels use the explicit family
+Before applying this to nonlinear Sinkhorn scaling, consider ordinary power
+iteration. For a positive square kernel $K$, normalize $Ku$ on any fixed
+positive affine section of the projective cone. The preceding contraction
+theorem and completeness of this cone give a unique fixed ray $u^\star>0$,
+hence the Perron--Frobenius eigenvector up to scale, and
 
 ```{math}
-J_3=\frac13\mathbf1_3\mathbf1_3^\top,
-\qquad
-A=
-\begin{pmatrix}
-0&-1&1\\
-1&0&-1\\
--1&1&0
-\end{pmatrix},
-\qquad
-K_{\rho,\delta}=\rho I_3+(1-\rho)J_3+\delta A.
+\mathsf H(K^\ell u^{(0)},u^\star)
+\leq\lambda(K)^\ell\mathsf H(u^{(0)},u^\star).
 ```
 
-This family is doubly stochastic and is strictly positive when
-$|\delta|<(1-\rho)/3$. We use
-
-```{math}
-\rho=.90,\qquad \delta=.014,\qquad
-K_1=K_{\rho,0},\quad K_2=K_{\rho,\delta}.
-```
-
-The control $K_1$ acts as $\rho I$ on the zero-sum tangent plane. Since the
-restriction of $A$ has eigenvalues $\pm\mathrm i\sqrt3$, the non-Perron
-eigenvalues of $K_{\rho,\delta}$ are
-$\rho\pm\mathrm i\sqrt3\delta$. Thus $K_2$ contracts isotropically while
-turning gradually. The third panel instead uses the positive doubly
-stochastic, non-normal kernel
-
-```{math}
-K_3=K_{\mathrm{aniso}}
-=
-\begin{pmatrix}
-.950&.018&.032\\
-.042&.880&.078\\
-.008&.102&.890
-\end{pmatrix}.
-```
-
-Its non-Perron eigenvalues are approximately $.9222$ and $.7978$. Their
-unequal moduli make the images progressively slender, while non-normality adds
-shear and a gradual transient turn. Writing
-
-```{math}
-r_i=\max\{|z|:z\in\operatorname{spec}(K_i),\ z\ne1\}
-```
-
-gives $r_1=\rho$, $r_2=\sqrt{\rho^2+3\delta^2}\simeq.9003$, and
-$r_3\simeq.9222$. This Euclidean asymptotic rate
-is distinct from the global Birkhoff factor $\lambda(K_i)$ in Hilbert's metric.
-
-Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` contrasts isotropic contraction, rotation, and anisotropic non-normal contraction.
+Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` displays this
+contraction simultaneously for the entire three-state simplex. It uses
+$J_3=\mathbf1_3\mathbf1_3^\top/3$ and
+$K_{\rho,\delta}=\rho I_3+(1-\rho)J_3+\delta A$, where $A$ is skew-cyclic,
+together with a positive non-normal kernel. These choices respectively show
+isotropic contraction, contraction with rotation, and anisotropic contraction.
 
 (fig:sinkhorn-birkhoff-simplex-contraction)=
 :::{div}
@@ -1034,122 +1076,67 @@ Figure {ref}`fig:sinkhorn-birkhoff-simplex-contraction` contrasts isotropic cont
 
 ```{code-cell} ipython3
 :tags: [remove-input]
-# Isotropic, rotating, and anisotropic positive kernels.
 show_book_figure("sinkhorn-birkhoff-simplex-contraction")
 ```
 
 *Positive Markov kernels contract the three-state simplex and can
-simultaneously rotate its image.* Color progresses from red at $\ell=0$ to
-blue at $\ell=15$, and the star is the common stationary vector
-$\mathbf1_3/3$. The isotropic $K_1$ keeps parallel edges, $K_2$ rotates an
-essentially homothetic triangle, and the non-normal $K_3$ both turns and
-strongly elongates its image because its tangent modes contract at unequal
-rates. The outer boundary is only a geometric reference, since the Hilbert
-metric becomes finite after the first positive image.
+simultaneously rotate its image.* Color progresses from red at the initial
+simplex to blue near the Perron eigenvector, marked by a star. The panels show
+an isotropic baseline, a rotating kernel, and an anisotropic non-normal kernel.
 :::
 
-The theorem applies to positive linear maps between proper cones. Related
-nonlinear projective results require order preservation and homogeneity; a
-generic affine map is not covered.
+### Sinkhorn Contraction
+
+A Sinkhorn cycle composes two positive kernel maps with entrywise inversion and
+multiplication. The kernel maps contract Hilbert distance, whereas the latter
+two operations are projective isometries. A complete row--column cycle thus
+contracts by the square of the kernel factor. The following theorem, due to
+Franklin and Lorenz {cite:p}`franklin1989scaling`, makes this argument precise.
 
 (thm-sinkhorn-hilbert-linear)=
 :::{admonition} Theorem: Projective Linear Convergence of Sinkhorn
 :class: important
-Let $v^{(0)}>0$, generate Sinkhorn iterates, and fix optimal scalings
-$(u^\star,v^\star)$. For $\ell\geq1$, set
-
-```{math}
-\P^{(\ell)}
-=
-\operatorname{diag}(u^{(\ell)})K\operatorname{diag}(v^{(\ell)}),
-```
-
-and for $\ell\geq0$ define the row-normalized half-step
-
-```{math}
-\P^{(\ell+1/2)}
-=
-\operatorname{diag}(u^{(\ell+1)})K\operatorname{diag}(v^{(\ell)}).
-```
-
-Writing $\lambda=\lambda(K)$, one has
+Let $v^{(0)}>0$, generate the iterates of {eq}`eq-sinkhorn-web`, and fix optimal
+scalings $(u^\star,v^\star)$. With $\lambda=\lambda(K)$,
 
 ```{math}
 \mathsf H(v^{(\ell)},v^\star)
-\leq
-\lambda^{2\ell}\mathsf H(v^{(0)},v^\star),
+\leq\lambda^{2\ell}\mathsf H(v^{(0)},v^\star),
 \qquad
 \mathsf H(u^{(\ell+1)},u^\star)
-\leq
-\lambda^{2\ell+1}\mathsf H(v^{(0)},v^\star).
+\leq\lambda^{2\ell+1}\mathsf H(v^{(0)},v^\star).
 ```
 
 The scaling rays converge linearly. After fixing a gauge, their representatives
-converge and $\P^{(\ell)}\to \P^\star$ entrywise. The posterior estimates are
+converge and $P^{(\ell)}\to P^\star$ entrywise. For the primal iterates defined
+in {eq}`eq-kl-sinkh-proj-web`, the posterior estimates are
 
 ```{math}
 \mathsf H(u^{(\ell)},u^\star)
-\leq
-\frac{\mathsf H(\P^{(\ell)}\mathbf1_m,a)}{1-\lambda^2},
-\qquad \ell\geq1,
-```
-
-and
-
-```{math}
+\leq\frac{\mathsf H(P^{(\ell)}\mathbf1_m,a)}{1-\lambda^2},
+\qquad
 \mathsf H(v^{(\ell)},v^\star)
-\leq
-\frac{\mathsf H((\P^{(\ell+1/2)})^\top\mathbf1_n,b)}{1-\lambda^2},
-\qquad \ell\geq0.
+\leq\frac{\mathsf H((P^{(\ell+1/2)})^\top\mathbf1_n,b)}{1-\lambda^2}.
 ```
 
-Finally,
+Moreover,
 
 ```{math}
-\norm{\log \P^{(\ell)}-\log \P^\star}_\infty
-\leq
-\mathsf H(u^{(\ell)},u^\star)
-+
-\mathsf H(v^{(\ell)},v^\star).
+\|\log P^{(\ell)}-\log P^\star\|_\infty
+\leq\mathsf H(u^{(\ell)},u^\star)+\mathsf H(v^{(\ell)},v^\star).
 ```
 :::
 
 :::{dropdown} Proof
-Entrywise multiplication by a fixed positive vector and entrywise inversion
-are isometries of Hilbert's metric. The row map
-$R(v)=a/(Kv)$ and column map $C(u)=b/(K^\top u)$ are therefore both
-$\lambda$-Lipschitz. The full-cycle maps $C\circ R$ and $R\circ C$ contract by
-$\lambda^2$, which gives the first bounds.
-
-For a $q$-contraction $F$ with fixed point $x^\star$,
-
-```{math}
-d(x,x^\star)
-\leq
-\frac{d(x,Fx)}{1-q}.
-```
-
-Applying this with $q=\lambda^2$ and using
-
-```{math}
-\mathsf H(u^{(\ell+1)},u^{(\ell)})
-=
-\mathsf H(a,\P^{(\ell)}\mathbf1_m),
-```
-
-```{math}
-\mathsf H(v^{(\ell+1)},v^{(\ell)})
-=
-\mathsf H(b,(\P^{(\ell+1/2)})^\top\mathbf1_n)
-```
-
-gives the posterior estimates. For the plan bound, write
-$\xi_i=\log(u_i^{(\ell)}/u_i^\star)$ and
-$\zeta_j=\log(v_j^{(\ell)}/v_j^\star)$. Then
-$\log(\P_{ij}^{(\ell)}/\P_{ij}^\star)=\xi_i+\zeta_j$. Both plans have mass one,
-so zero lies between the minimum and maximum of $\xi\oplus\zeta$; its sup norm
-is bounded by its oscillation, which is
-$\norm\xi_V+\norm\zeta_V$.
+The row map $R(v)=a/(Kv)$ and column map $C(u)=b/(K^\top u)$ are each
+$\lambda$-Lipschitz because inversion and multiplication are Hilbert
+isometries. The full cycles $C\circ R$ and $R\circ C$ therefore contract by
+$\lambda^2$. For a $q$-contraction $F$,
+$d(x,x^\star)\leq d(x,Fx)/(1-q)$, which gives the posterior estimates from the
+marginal violations. Finally,
+$\log(P_{i,j}^{(\ell)}/P_{i,j}^\star)=\xi_i+\zeta_j$. Equal total masses imply
+that zero lies between the minimum and maximum of $\xi\oplus\zeta$, so its
+supremum norm is bounded by its oscillation.
 :::
 
 ### Nonlinear Sinkhorn Images of the Simplex
@@ -1275,6 +1262,383 @@ under additional semiconcavity or log-concavity assumptions
 normalized: the source residual at $P^{(\ell)}$ and the target residual at
 $P^{(\ell+1/2)}$ are the two meaningful posterior diagnostics.
 
+(sec-sinkhorn-local-acceleration)=
+## Local Convergence Analysis and Acceleration
+
+The global projective rate of {ref}`sec-sinkhorn-hilbert` depends only on the
+kernel and can be pessimistic near the solution. Linearization reveals a
+sharper common structure: the dual Hessian, the Jacobian of a complete
+Sinkhorn cycle, and the curvature of the entropic semi-dual are governed by
+the same conditional-expectation operator. This gives the exact local factor
+and motivates blockwise over-relaxation and variable projection.
+
+### Conditional Operator and Maximal Correlation
+
+Let
+$L_0^2(\alpha)=\{h\in L^2(\alpha):\int h\,d\alpha=0\}$ and define
+$L_0^2(\beta)$ similarly.
+
+(def-sinkhorn-conditional-operator)=
+:::{admonition} Definition: Conditional Coupling Operator
+:class: important
+For $\pi\in\mathcal U(\alpha,\beta)$, write its disintegrations as
+$\pi(dx,dy)=\alpha(dx)\pi_x(dy)=\beta(dy)\pi^y(dx)$ and define
+
+(eq-sinkhorn-conditional-operator)=
+```{math}
+(T_\pi k)(x)=\int k(y)\,d\pi_x(y),
+\qquad
+(T_\pi^*h)(y)=\int h(x)\,d\pi^y(x).
+```
+
+The centered maximal correlation is
+
+(eq-sinkhorn-maximal-correlation)=
+```{math}
+\sigma(\pi)
+=
+\sup_{\substack{k\in L_0^2(\beta)\\\|k\|_{L^2(\beta)}=1}}
+\|T_\pi k\|_{L^2(\alpha)}
+=
+\sup_{\substack{h\in L_0^2(\alpha),\ k\in L_0^2(\beta)\\
+\|h\|_{L^2(\alpha)}=\|k\|_{L^2(\beta)}=1}}
+\int h(x)k(y)\,d\pi(x,y).
+```
+
+For the optimal entropic coupling $\pi_\epsilon$, set
+$T_\epsilon=T_{\pi_\epsilon}$ and
+$\sigma_\epsilon=\sigma(\pi_\epsilon)$.
+:::
+
+The two operators are adjoint in the marginal $L^2$ spaces. Conditional
+Jensen gives $\|T_\pi\|\leq1$, and constants are preserved, so
+$0\leq\sigma(\pi)\leq1$. In the discrete setting,
+
+(eq-sinkhorn-conditional-operator-discrete)=
+```{math}
+T_\epsilon=\operatorname{diag}(a)^{-1}P_\epsilon,
+\qquad
+T_\epsilon^*=\operatorname{diag}(b)^{-1}P_\epsilon^\top,
+```
+
+with adjointness in the weighted Euclidean inner products. Thus
+$\sigma_\epsilon$ is the largest nonconstant singular value of the normalized
+optimal coupling, equivalently the second singular value of
+$\operatorname{diag}(a)^{-1/2}P_\epsilon
+\operatorname{diag}(b)^{-1/2}$.
+
+### Dual Hessian and Exact Local Rate
+
+The next result linearizes the dual objective and the two soft transforms at
+the same optimum.
+
+(prop-sinkhorn-local-rate)=
+:::{admonition} Proposition: Dual Hessian and Local Sinkhorn Rate
+:class: important
+Assume that differentiation under the Gibbs integrals and the stated $L^2$
+Taylor expansions are valid. This is automatic in finite spaces. For bounded
+directions $(h,k)$ and $(h',k')$,
+
+(eq-sinkhorn-dual-hessian-form)=
+```{math}
+-\epsilon D^2\mathcal D_\epsilon(f_\epsilon,g_\epsilon)
+[(h,k),(h',k')]
+=
+\int (h(x)+k(y))(h'(x)+k'(y))\,d\pi_\epsilon(x,y).
+```
+
+Hence, on $L^2(\alpha)\oplus L^2(\beta)$,
+
+(eq-sinkhorn-dual-hessian-operator)=
+```{math}
+-\nabla^2\mathcal D_\epsilon(f_\epsilon,g_\epsilon)
+=
+\frac1\epsilon
+\begin{pmatrix}
+I&T_\epsilon\\
+T_\epsilon^*&I
+\end{pmatrix}.
+```
+
+Modulo the gauge direction $(1,-1)$, its spectrum lies in
+$[(1-\sigma_\epsilon)/\epsilon,2/\epsilon]$. When
+$\sigma_\epsilon<1$, the full-dual condition number is therefore
+$2/(1-\sigma_\epsilon)$.
+
+The derivatives of the soft transforms are
+
+(eq-sinkhorn-soft-transform-jacobians)=
+```{math}
+D[g\mapsto g^{\bar c,\epsilon}](g_\epsilon)=-T_\epsilon,
+\qquad
+D[f\mapsto f^{c,\epsilon}](f_\epsilon)=-T_\epsilon^*.
+```
+
+Consequently the Jacobian of one complete Sinkhorn cycle is
+$T_\epsilon^*T_\epsilon$. For centered errors
+$e^{(\ell)}=g^{(\ell)}-g_\epsilon$,
+
+(eq-sinkhorn-local-error)=
+```{math}
+e^{(\ell+1)}
+=T_\epsilon^*T_\epsilon e^{(\ell)}
++o(\|e^{(\ell)}\|_{L^2(\beta)}),
+\qquad
+\limsup_{\ell\to\infty}
+\frac{\|e^{(\ell+1)}\|_{L^2(\beta)}}
+{\|e^{(\ell)}\|_{L^2(\beta)}}
+\leq\sigma_\epsilon^2.
+```
+
+If $\sigma_\epsilon^2$ is isolated and the error has a nonzero component in
+its eigenspace, the ratio converges to $\sigma_\epsilon^2$.
+:::
+
+:::{dropdown} Proof
+Twice differentiating the exponential term in the entropic dual and using the
+optimal density law gives {eq}`eq-sinkhorn-dual-hessian-form`. The marginal
+terms form the two identity blocks and the cross term is represented by
+$T_\epsilon$, which gives {eq}`eq-sinkhorn-dual-hessian-operator`. On centered
+functions, the cross term is bounded in absolute value by
+$\sigma_\epsilon\|h\|\|k\|$; the common-constant direction has eigenvalue
+$2/\epsilon$, while $(1,-1)$ is the gauge kernel. This proves the spectral
+bounds. Differentiating either log-partition formula gives minus the
+corresponding conditional expectation, proving
+{eq}`eq-sinkhorn-soft-transform-jacobians`. The chain rule then yields
+{eq}`eq-sinkhorn-local-error` because
+$\|T_\epsilon^*T_\epsilon\|_{L_0^2(\beta)}=\sigma_\epsilon^2$.
+:::
+
+The law of total variance gives the useful gap formula
+
+(eq-sinkhorn-conditional-variance-gap)=
+```{math}
+1-\sigma_\epsilon^2
+=
+\inf_{\substack{k\in L_0^2(\beta)\\\|k\|_{L^2(\beta)}=1}}
+\int \operatorname{Var}_{\pi_{\epsilon,x}}(k(Y))\,d\alpha(x).
+```
+
+Sinkhorn therefore slows down when the conditional laws $Y\mid X=x$ become
+nearly deterministic, as happens when $\epsilon\to0$ in a smooth Monge regime.
+
+As expected, a global contraction factor must bound the derivative of the
+iteration at its fixed point. The next proposition makes this comparison
+precise, while emphasizing that the kernel-only global estimate can be much
+more pessimistic than the coupling-dependent local rate.
+
+(prop-sinkhorn-hilbert-controls-local)=
+:::{admonition} Proposition: The Global Hilbert Factor Controls the Local Rate
+:class: important
+In the discrete positive-kernel setting of
+{ref}`thm-sinkhorn-hilbert-linear`,
+
+(eq-sinkhorn-hilbert-controls-local)=
+```{math}
+\sigma_\epsilon\leq\lambda(K)<1,
+\qquad
+\sigma_\epsilon^2\leq\lambda(K)^2.
+```
+:::
+
+:::{dropdown} Proof
+The row and column scaling maps are each $\lambda(K)$-Lipschitz in Hilbert's
+metric, so a complete cycle is $\lambda(K)^2$-Lipschitz. Under
+$g=\epsilon\log v$, this is the variation norm on potentials. Differentiating
+at the fixed point gives
+$\|T_\epsilon^*T_\epsilon h\|_V\leq\lambda(K)^2\|h\|_V$.
+Applying this to a leading centered eigenvector of the positive self-adjoint
+operator $T_\epsilon^*T_\epsilon$ yields the claim.
+:::
+
+The global inequality is robust but often pessimistic. In a smooth
+nondegenerate Monge regime, the conditional laws have width
+$O(\sqrt\epsilon)$; a coercive Laplace expansion then suggests
+$1-\sigma_\epsilon^2\asymp\epsilon$, whereas the kernel-only Hilbert factor can
+approach one exponentially fast.
+
+### Blockwise Over-Relaxation
+
+A minimal acceleration extrapolates each block toward its soft-transform
+maximizer. For $\omega>0$,
+
+(eq-sinkhorn-block-overrelaxation)=
+```{math}
+f^{(\ell+1)}=(1-\omega)f^{(\ell)}
++\omega(g^{(\ell)})^{\bar c,\epsilon},
+\qquad
+g^{(\ell+1)}=(1-\omega)g^{(\ell)}
++\omega(f^{(\ell+1)})^{c,\epsilon}.
+```
+
+The case $\omega=1$ is ordinary Sinkhorn; $1<\omega<2$ over-relaxes both
+half-steps.
+
+(prop-sinkhorn-optimal-overrelaxation)=
+:::{admonition} Proposition: Optimal Local Block Relaxation
+:class: important
+If $\sigma_\epsilon<1$, then every $0<\omega<2$ gives local linear
+convergence modulo the gauge. The optimal parameter and complete-cycle factor
+are
+
+(eq-sinkhorn-optimal-overrelaxation)=
+```{math}
+\omega_\star
+=\frac{2}{1+\sqrt{1-\sigma_\epsilon^2}},
+\qquad
+r_\star=\omega_\star-1
+=\frac{1-\sqrt{1-\sigma_\epsilon^2}}
+{1+\sqrt{1-\sigma_\epsilon^2}}.
+```
+
+For $\omega=1$, the factor is $\sigma_\epsilon^2$.
+:::
+
+:::{dropdown} Proof
+On a singular mode $s\in[0,\sigma_\epsilon]$, the centered linearization is
+
+```{math}
+M_\omega(s)=
+\begin{pmatrix}
+1-\omega&-\omega s\\
+-\omega s(1-\omega)&1-\omega+\omega^2s^2
+\end{pmatrix}.
+```
+
+Its characteristic polynomial is
+$z^2-(2(1-\omega)+\omega^2s^2)z+(1-\omega)^2$. The worst mode is
+$s=\sigma_\epsilon$. Its roots have equal modulus when
+$\omega^2\sigma_\epsilon^2=4(\omega-1)$; the smaller solution is
+$\omega_\star$, and the common modulus is $\omega_\star-1$. The dominant
+modulus decreases before this value and increases after it.
+:::
+
+Writing $\delta_\epsilon=1-\sigma_\epsilon^2$, the accelerated factor obeys
+$r_\star=1-2\sqrt{\delta_\epsilon}+2\delta_\epsilon
++O(\delta_\epsilon^{3/2})$, compared with
+$1-\delta_\epsilon$ for ordinary Sinkhorn.
+
+(fig:sinkhorn-overrelaxation)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-overrelaxation")
+```
+
+*Blockwise over-relaxation accelerates local Sinkhorn convergence.* Left: the
+small-temperature entropic coupling. Middle: marginal residuals after a common
+ordinary-Sinkhorn warm start for five relaxation parameters. Right: the
+continuous curve is the theoretical local gain $1-r_{\rm loc}(\omega)$;
+filled circles mark the five displayed parameters and crosses are empirical
+gains fitted from the marginal residuals. The palette switches to teal--blue
+beyond $\omega_\star$ to distinguish the post-optimal branch.
+:::
+
+### Entropic Semi-Dual and Variable Projection
+
+Eliminating $f$ by its soft $\bar c$-transform gives
+
+(eq-entropic-semidual-local)=
+```{math}
+\mathcal E_\epsilon(g)
+=\mathcal D_\epsilon(g^{\bar c,\epsilon},g)
+=\int g^{\bar c,\epsilon}\,d\alpha+\int g\,d\beta.
+```
+
+This is variable projection (VarPro): one optimizes out a block whenever its
+conditional optimizer is available. Its Schur-complement Hessian cannot worsen
+local conditioning {cite:p}`golub1973variableprojection,golub2003variableprojection`.
+
+(rem-sinkhorn-semidual-gradient)=
+:::{admonition} Sinkhorn as an Approximate Semi-Dual Gradient Ascent
+:class: note
+Let $\pi_g$ be the Gibbs measure generated by
+$(g^{\bar c,\epsilon},g)$, let $\beta_g$ be its second marginal, and write
+$r_g=d\beta_g/d\beta$. Then
+
+(eq-sinkhorn-semidual-gradient-comparison)=
+```{math}
+r_g
+=\exp\!\left(\frac{g-(g^{\bar c,\epsilon})^{c,\epsilon}}{\epsilon}\right),
+\qquad
+\nabla\mathcal E_\epsilon(g)=1-r_g.
+```
+
+Thus one ordinary cycle satisfies
+$(g^{\bar c,\epsilon})^{c,\epsilon}-g
+=\epsilon\nabla\mathcal E_\epsilon(g)+o(\|g-g_\epsilon\|)$.
+Sinkhorn is locally semi-dual gradient ascent with step $\epsilon$, although
+the nonlinear algorithms are not globally identical. Quasi-Newton methods
+instead learn the inverse reduced curvature from successive gradients, which
+explains the effectiveness of BFGS and L-BFGS on regularized semi-duals
+{cite:p}`2016-Cuturi-siims,cuturi2018semidual,nocedal`. The calculation below
+quantifies the conditioning improvement produced by eliminating $f$ and thus
+supports direct optimization of the semi-dual.
+:::
+
+VarPro was introduced for separable nonlinear least-squares problems. A
+representative example is training a two-layer network through
+
+```{math}
+\min_{U,V}\frac12\|U\sigma(VX)-Y\|_{\rm F}^2,
+```
+
+using the weights $(U,V)$ and activation $\sigma$ of the models studied in
+Section {ref}`sec-wasserstein-flows-mlp`. For fixed $V$, the outer weights $U$
+are obtained by linear least squares before optimizing the reduced, generally
+nonconvex objective in $V$ {cite:p}`kim2008variableprojection`. In entropic OT,
+$(U,V)$ is replaced by the potential pair $(f,g)$, the objective
+$\mathcal D_\epsilon(f,g)$ is jointly concave, and the eliminated block has the
+closed-form maximizer $f=g^{\bar c,\epsilon}$.
+
+(prop-sinkhorn-semidual-curvature)=
+:::{admonition} Proposition: Semi-Dual Curvature and Conditioning
+:class: important
+For bounded directions $k,k'$,
+
+(eq-entropic-semidual-derivatives)=
+```{math}
+D\mathcal E_\epsilon(g)[k]=\int k\,d(\beta-\beta_g),
+\qquad
+D^2\mathcal E_\epsilon(g)[k,k']
+=-\frac1\epsilon\int
+\operatorname{Cov}_{\pi_{g,x}}(k(Y),k'(Y))\,d\alpha(x).
+```
+
+At the optimum, on $L_0^2(\beta)$,
+
+(eq-entropic-semidual-hessian)=
+```{math}
+-\nabla^2\mathcal E_\epsilon(g_\epsilon)
+=\frac1\epsilon(I-T_\epsilon^*T_\epsilon),
+\qquad
+\frac{1-\sigma_\epsilon^2}{\epsilon}I
+\preceq-\nabla^2\mathcal E_\epsilon(g_\epsilon)
+\preceq\frac1\epsilon I.
+```
+
+Its condition number is at most $1/(1-\sigma_\epsilon^2)$.
+:::
+
+:::{dropdown} Proof
+The envelope theorem gives the first derivative. Differentiating the normalized
+conditional Gibbs law gives the covariance formula. At the optimum, total
+covariance yields $I-T_\epsilon^*T_\epsilon$, and the spectral bounds follow
+from the definition of $\sigma_\epsilon$.
+:::
+
+For a generic VarPro problem, the Schur-complement improvement is only
+qualitative because the full and reduced spectra depend on several unrelated
+Hessian blocks. Here both diagonal blocks in
+{eq}`eq-sinkhorn-dual-hessian-operator` are identities, while the off-diagonal
+blocks are $T_\epsilon$ and $T_\epsilon^*$. Both condition numbers therefore
+depend only on $\sigma_\epsilon$: the full-dual bound is
+$2/(1-\sigma_\epsilon)$, whereas the semi-dual bound is
+$1/(1-\sigma_\epsilon^2)$. Eliminating $f$ thus improves the bound by the
+explicit factor $2(1+\sigma_\epsilon)$.
+
 (sec-gaussian-sinkhorn)=
 ## Entropic Optimal Transport Between Gaussians
 
@@ -1283,6 +1647,10 @@ behavior. The soft $c$-transform preserves quadratic potentials, the optimal
 entropic coupling is Gaussian, and the value can be written with matrix square
 roots {cite:p}`janati2020gaussian`. This is the entropic counterpart of the
 Gaussian $\Wass_2$ and Bures formula.
+
+Gaussian log densities and soft transforms are quadratic, so every dual
+Sinkhorn iterate is a quadratic polynomial and the algorithm closes on
+finitely many coefficients.
 
 (prop-gaussian-sinkhorn-closure)=
 :::{admonition} Proposition: Quadratic Closure of Sinkhorn Iterates
@@ -1300,21 +1668,7 @@ f(x)
 \,\d\beta(y)
 ```
 
-is a quadratic polynomial in $x$. In particular, starting Sinkhorn from
-$g_0=0$ gives
-
-```{math}
-f_1(x)
-=
-\frac{\epsilon}{2}
-\log\det\!\left(I+\frac{2\Sigma_\beta}{\epsilon}\right)
-+
-\epsilon
-\left\langle
-x-m_\beta,
-(\epsilon I+2\Sigma_\beta)^{-1}(x-m_\beta)
-\right\rangle .
-```
+is a quadratic polynomial in $x$.
 :::
 
 :::{dropdown} Proof
@@ -1324,6 +1678,10 @@ integral as a positive constant times the exponential of a quadratic
 polynomial in $x$. Taking $-\epsilon\log$ therefore gives a quadratic
 polynomial.
 :::
+
+Closure of the iterates suggests, but does not by itself prove, Gaussian
+optimality. Entropy maximization at fixed covariance supplies the variational
+argument and yields the following closed form.
 
 (prop-gaussian-sinkhorn-closed-form)=
 :::{admonition} Proposition: Balanced Entropic OT Between Gaussians
@@ -1338,16 +1696,9 @@ and let
 U\operatorname{diag}(\sigma_i)V^\top
 ```
 
-be a singular-value decomposition. For the balanced objective
-
-```{math}
-\min_{\pi\in\Couplings(\alpha,\beta)}
-\int\norm{x-y}^2\,\d\pi(x,y)
-+
-\epsilon\operatorname{KL}(\pi\mid\alpha\otimes\beta),
-```
-
-the optimizer is Gaussian with cross-covariance
+be a singular-value decomposition. For the entropic primal problem
+{eq}`eq-entropic-generic-web` with $c(x,y)=\|x-y\|^2$, the optimizer is Gaussian
+with cross-covariance
 
 ```{math}
 K_\epsilon
@@ -1413,6 +1764,9 @@ The first-order condition is
 $2\sigma_i=\epsilon s/(1-s^2)$, whose positive solution is the displayed
 $s_i$.
 :::
+
+Debiasing the preceding closed form cancels the separate trace terms and
+produces a smooth spectral approximation of the Bures covariance term.
 
 (cor-gaussian-sinkhorn-divergence)=
 :::{admonition} Corollary: Gaussian Sinkhorn Divergence and Smoothed Bures Term
@@ -1504,26 +1858,30 @@ angle changes the covariance misalignment.
 
 <iframe class="ot4ml-live-frame" title="Gaussian Sinkhorn controls" src="../live/sinkhorn-advanced-gaussian.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+The one-dimensional isotropic case permits an exact non-asymptotic analysis
+along the invariant family of quadratic potentials.
+
 (prop-gaussian-sinkhorn-1d-rate)=
 :::{admonition} Proposition: One-Dimensional Gaussian Sinkhorn Rate
 :class: important
-Consider $\alpha=\beta=\mathcal N(0,1)$ on $\RR$ with $c(x,y)=(x-y)^2$. If a
-dual potential has the form $g_q(y)=q y^2+\text{cst}$, then one soft transform
-has quadratic coefficient
+Consider $\alpha=\beta=\mathcal N(0,1)$ on $\RR$ with $c(x,y)=(x-y)^2$.
+Initialize $g^{(0)}=0$ and, after $\ell$ complete Sinkhorn cycles, write
+$g^{(\ell)}(y)=q^{(\ell)}y^2+\text{cst}$. One soft transform maps a quadratic
+coefficient $q$ to
 
 ```{math}
-T_\epsilon(q)
+\mathsf Q_\epsilon(q)
 =
 1-\frac{1}{1-q+\epsilon/2},
 \qquad
 q<1+\epsilon/2.
 ```
 
-One full Sinkhorn cycle acts as $q\mapsto T_\epsilon(T_\epsilon(q))$. The
-fixed point $q_\star=T_\epsilon(q_\star)$ is determined by
+Thus
+$q^{(\ell+1)}=\mathsf Q_\epsilon(\mathsf Q_\epsilon(q^{(\ell)}))$. Set
 
 ```{math}
-A_\star^2-\frac{\epsilon}{2}A_\star-1=0,
+A_\ell\eqdef 1-q^{(\ell)}+\frac{\epsilon}{2},
 \qquad
 A_\star
 \eqdef
@@ -1532,15 +1890,23 @@ A_\star
 \frac{\epsilon+\sqrt{\epsilon^2+16}}{4}.
 ```
 
-Consequently the local asymptotic contraction factor of one full Sinkhorn
-cycle on the quadratic coefficient is
+Then $q^{(\ell)}\to q_\star=1+\epsilon/2-A_\star$, and the convergence obeys
+the exact identity
 
 ```{math}
-\rho_\epsilon
+\frac{A_\ell-A_\star}{A_\ell+A_\star^{-1}}
 =
-A_\star^{-4}
-=
-\left(\frac{4}{\epsilon+\sqrt{\epsilon^2+16}}\right)^4 .
+A_\star^{-4\ell}
+\frac{A_0-A_\star}{A_0+A_\star^{-1}}.
+```
+
+In particular,
+
+```{math}
+0\leq q_\star-q^{(\ell)}
+\leq
+q_\star
+\left(\frac{4}{\epsilon+\sqrt{\epsilon^2+16}}\right)^{4\ell}.
 ```
 :::
 
@@ -1555,55 +1921,62 @@ Completing the square in
 \,\d\mathcal N(0,1)(y)
 ```
 
-gives the coefficient $T_\epsilon(q)$. The fixed-point equation
-$q_\star=1-1/A_\star$, together with
-$q_\star=1+\epsilon/2-A_\star$, gives
+gives $\mathsf Q_\epsilon(q)$. Write $a=\epsilon/2$. Applying this map twice
+shows that $A_\ell=1-q^{(\ell)}+a$ satisfies
 
 ```{math}
-A_\star^2-\frac{\epsilon}{2}A_\star-1=0.
+A_{\ell+1}=M(A_\ell),
+\qquad
+M(A)=a+\frac{A}{1+aA}.
 ```
 
-The positive solution is the displayed $A_\star$. Since
+The fixed points of $M$ solve $A^2-aA-1=0$ and are $A_\star>0$ and
+$-A_\star^{-1}$. Direct algebra gives
 
 ```{math}
-T_\epsilon'(q)
+\frac{M(A)-A_\star}{M(A)+A_\star^{-1}}
 =
--\frac{1}{(1-q+\epsilon/2)^2},
+A_\star^{-4}
+\frac{A-A_\star}{A+A_\star^{-1}},
 ```
 
-the derivative of the full-cycle map at the fixed point is
-$T_\epsilon'(q_\star)^2=A_\star^{-4}$.
+which proves the exact identity by iteration. Moreover, $A_0>A_\star$ and the
+iterates stay in $[A_\star,A_0]$. On this interval,
+$0<M'(A)\leq A_\star^{-4}$, so
+$0\leq A_\ell-A_\star\leq A_\star^{-4\ell}(A_0-A_\star)$. Since
+$A_0-A_\star=q_\star$ and
+$A_\ell-A_\star=q_\star-q^{(\ell)}$, this is the announced bound.
 :::
 
-This scalar calculation illustrates the general Gaussian convergence picture
-of Chizat, Delalande and Vaskevicius {cite:p}`chizat2024sharper`: the rate
-improves when $\epsilon$ is large or the covariance scales overlap well, and
-deteriorates in the small-temperature limit where the entropic coupling
-approaches a deterministic Brenier map.
+Since $A_\star^{-4}=1-\epsilon+O(\epsilon^2)$, reducing the relative error
+$(q_\star-q^{(\ell)})/q_\star$ below $\delta$ requires only
+$O(\epsilon^{-1}\log(1/\delta))$ cycles. This is much less pessimistic than
+the global Hilbert estimate: it is unavailable on the full Gaussian space
+because the quadratic cost is unbounded, and on a bounded truncation its gap
+from one is exponentially small in $1/\epsilon$. There is no contradiction,
+because the explicit bound applies only to the invariant quadratic family
+{cite:p}`chizat2024sharper`.
 
 (sec-continuous-epsilon-sinkhorn)=
 ## Continuous $\varepsilon$-Sinkhorn Flow
 
-This section studies a simultaneous high-resolution, many-iteration limit. It
-is not a continuous-time interpolation of a fixed-temperature algorithm: the
-grid is refined while the temperature and the fictitious time step both vanish
-as $1/k$.
+A complementary limit sends the entropic temperature to zero while increasing
+the number of Sinkhorn cycles proportionally to $1/\epsilon$. After assigning
+time step $\epsilon$ to one complete cycle, the discrete fixed-point iteration
+converges formally to a parabolic Monge--Ampere equation for the transport
+potential.
 
 ### Parabolic Monge--Ampere Limit
 
-For the quadratic torus cost $c(x,y)=d_{\mathbb T^d}(x,y)^2/2$, Berman's
-scaling discretizes both marginals on a grid of mesh $1/k$, sets
-$\epsilon_k=1/k$, and assigns duration $1/k$ to each Sinkhorn update
-{cite:p}`berman2017sinkhorn`. The $m$-th log-potential is observed at time
-$t=m/k$. In this coupled limit, Sinkhorn becomes a parabolic Monge--Ampere flow.
+Work on the flat torus $\mathbb T^d$ with quadratic periodic cost and smooth
+positive densities $d\alpha=e^{-F}dx$, $d\beta=e^{-G}dy$.
 
 (def-continuous-epsilon-sinkhorn)=
 :::{admonition} Definition: Continuous $\varepsilon$-Sinkhorn Flow
 :class: important
-Let $\alpha=e^{-F}\,dx$ and $\beta=e^{-G}\,dx$ be smooth positive probability
-densities on the unit-volume flat torus $\mathbb T^d$. A mean-zero potential
-$u_t$ follows the continuous $\varepsilon$-Sinkhorn flow when
+The continuous $\varepsilon$-Sinkhorn flow is the gauge-fixed evolution
 
+(eq-continuous-epsilon-sinkhorn-pde)=
 ```{math}
 \partial_tu_t(x)
 =
@@ -1611,184 +1984,106 @@ $u_t$ follows the continuous $\varepsilon$-Sinkhorn flow when
 -G(x+\nabla u_t(x))+F(x)-\bar r_t,
 ```
 
-where $x+\nabla u_t(x)$ is understood modulo $\mathbb Z^d$,
-$I+\nabla^2u_t\succ0$, and $\bar r_t$ is the spatial mean of the other terms
-on the right-hand side.
+where
+$\bar r_t$ is the unique scalar preserving the gauge $\int u_tdx=0$. The
+equation is considered while $I+\nabla^2u_t\succ0$.
 :::
-
-To make the scaling explicit, let $\alpha^{(k)}$ and $\beta^{(k)}$ be the
-positive grid discretizations and define
-
-```{math}
-v_k[u](y)
-\eqdef
-\frac1k\log\int
- e^{-k(c(x,y)+u(x))}\,d\alpha^{(k)}(x),
-```
-
-```{math}
-(S_ku)(x)
-\eqdef
-\frac1k\log\int
- e^{-k(c(x,y)+v_k[u](y))}\,d\beta^{(k)}(y).
-```
-
-The multiplicative increment is
-
-```{math}
-\rho_{k,u}(x)
-\eqdef
-e^{k(S_ku(x)-u(x))}
-=
-e^{-ku(x)}
-\int
-\frac{e^{-kc(x,y)}}
-{\int e^{-k(c(x',y)+u(x'))}\,d\alpha^{(k)}(x')}
-\,d\beta^{(k)}(y).
-```
-
-The normalized update subtracts the spatial mean of $S_ku$.
-
-(prop-scaled-log-sinkhorn-limit)=
-:::{admonition} Proposition: Scaled Log-Sinkhorn Limit
-:class: important
-Let $\epsilon_k=1/k$, generate the mean-zero grid iterates with $S_k$, and set
-$u^{(k)}(t)=u_{\lfloor kt\rfloor}^{(k)}$. Assume smooth convergence to $u_t$
-on compact time intervals, $I+\nabla^2u_t\succ0$, and uniform validity of the
-Laplace expansion below. Then $u_t$ solves the continuous
-$\varepsilon$-Sinkhorn flow.
-:::
-
-:::{dropdown} Proof
-The normalized increment is
-
-```{math}
-u_{m+1}^{(k)}-u_m^{(k)}
-=
-\frac1k\left[
-\log\rho_{k,u_m^{(k)}}
--
-\int_{\mathbb T^d}\log\rho_{k,u_m^{(k)}}\,dx
-\right].
-```
-
-Berman's discrete Laplace estimate gives
-
-```{math}
-\rho_{k,u}(x)
-=
-\det(I+\nabla^2u(x))
- e^{F(x)-G(x+\nabla u(x))}
-\bigl(1+O(k^{-1})\bigr).
-```
-
-Taking logarithms, dividing by the time step $1/k$, and passing to the smooth
-limit gives the stated PDE with its mean-zero gauge correction.
-:::
-
-No explicit $\epsilon$ remains in the normalized limiting PDE: it records the
-vanishing temperature before rescaling. The Kahler analogue is the parabolic
-complex Monge--Ampere equation.
 
 (prop-continuous-sinkhorn-stationary)=
 :::{admonition} Proposition: Stationary Continuous Sinkhorn Potentials
 :class: important
-Let $u$ be a smooth stationary solution with $I+\nabla^2u\succ0$, and define
-$T(x)=x+\nabla u(x)$ modulo $\mathbb Z^d$. Then $T_{\#}\alpha=\beta$.
-Conversely, any smooth map of this form with $T_{\#}\alpha=\beta$ solves the
-stationary equation up to the additive gauge of $u$.
+A smooth mean-zero potential $u$ with $I+\nabla^2u\succ0$ is stationary if and
+only if $T=\operatorname{Id}+\nabla u$ transports $\alpha$ to $\beta$.
 :::
 
 :::{dropdown} Proof
-At stationarity,
-
-```{math}
-\log\det(I+\nabla^2u(x))-G(T(x))+F(x)=c.
-```
-
-Hence
-
-```{math}
-e^{-G(T(x))}\det(\nabla T(x))=e^{-F(x)}e^c.
-```
-
-The positive-definite Jacobian makes $T$ an orientation-preserving local
-diffeomorphism. Since it is homotopic to the identity, it has degree one and
-is a diffeomorphism of the torus. Both measures have mass one, so change of
-variables gives $e^c=1$. The identity is then exactly the Jacobian equation
-for $T_{\#}\alpha=\beta$. The converse reverses the argument.
+Stationarity says that
+$\log\det(I+\nabla^2u)-G(T)+F$ is constant. Integrating the associated
+change-of-variables identity fixes this constant to zero, giving
+$e^{-F(x)}=e^{-G(T(x))}\det DT(x)$, which is exactly $T_\sharp\alpha=\beta$.
 :::
 
-### Gaussian Closure
+### Rescaled Continuous Sinkhorn Iterates
 
-Gaussian marginals give a finite-dimensional test case for the continuous
-flow. The theorem above is stated on the flat torus, but the same local Laplace
-calculation can be read formally on $\RR^d$ for confining Gaussian densities.
-Write $\alpha=\Gaussian(m_\alpha,\Sigma_\alpha)$ and
-$\beta=\Gaussian(m_\beta,\Sigma_\beta)$, and restrict the potential to the
-quadratic ansatz for which
+Let $\mathsf S_\epsilon$ denote one complete continuous dual Sinkhorn cycle,
+written with $u=-f$. In terms of the continuous soft transforms introduced
+earlier,
 
 ```{math}
-T_t(x)\eqdef x+\nabla u_t(x)
-=
-q_t+B_t(x-m_\alpha),
-\qquad B_t\in\mathbb S_{++}^d .
+\mathsf S_\epsilon u
+=-\Big((-u)^{c,\epsilon}\Big)^{\bar c,\epsilon}.
 ```
 
-Taking the spatial gradient of the continuous $\varepsilon$-Sinkhorn PDE
-removes the additive gauge. Since
+Generate mean-zero iterates by
 
 ```{math}
-F(x)=\frac12\langle x-m_\alpha,\Sigma_\alpha^{-1}(x-m_\alpha)\rangle+\mathrm{cst},
+u_\epsilon^{(\ell+1)}
+=\mathsf S_\epsilon u_\epsilon^{(\ell)}
+-\int_{\mathbb T^d}\mathsf S_\epsilon u_\epsilon^{(\ell)}dx
+```
+
+and interpolate them in time by
+$u_\epsilon(t)=u_\epsilon^{(\lfloor t/\epsilon\rfloor)}$. Thus, for
+$\epsilon=1/k$, the potential observed at time $t$ is
+$u_{1/k}^{(\lfloor kt\rfloor)}$.
+
+(prop-scaled-log-sinkhorn-limit)=
+:::{admonition} Proposition: Rescaled Continuous Sinkhorn Limit
+:class: important
+Assume that, as $\epsilon\downarrow0$, $u_\epsilon(t)$ converges smoothly on
+compact time intervals to $u_t$, that $I+\nabla^2u_t\succ0$, and that the
+Laplace expansion below is uniform along the sequence. Then $u_t$ solves
+{eq}`eq-continuous-epsilon-sinkhorn-pde`.
+:::
+
+:::{dropdown} Proof
+Laplace expansion of the two soft transforms gives, up to a spatially constant
+term,
+
+```{math}
+\mathsf S_\epsilon u-u
+=\epsilon\bigl[\log\det(I+\nabla^2u)
+-G(\operatorname{Id}+\nabla u)+F\bigr]+O(\epsilon^2).
+```
+
+Divide the normalized increment by the time step $\epsilon$ and pass formally
+to the smooth limit. The subtracted spatial average gives $\bar r_t$.
+:::
+
+Berman proves a stronger result that combines this limit with a simultaneous
+discretization of the marginals on increasingly fine grids
+{cite:p}`berman2017sinkhorn`.
+
+### One-Dimensional Gaussian Closure
+
+For $\alpha=\mathcal N(m_\alpha,\sigma_\alpha^2)$ and
+$\beta=\mathcal N(m_\beta,\sigma_\beta^2)$, use the quadratic ansatz
+
+```{math}
+x+u_t'(x)=q_t+a_t(x-m_\alpha),
+\qquad a_t>0.
+```
+
+Matching the quadratic and linear coefficients in
+{eq}`eq-continuous-epsilon-sinkhorn-pde` gives
+
+(eq-continuous-sinkhorn-gaussian-1d)=
+```{math}
+\dot a_t=\frac1{\sigma_\alpha^2}-\frac{a_t^2}{\sigma_\beta^2},
 \qquad
-G(y)=\frac12\langle y-m_\beta,\Sigma_\beta^{-1}(y-m_\beta)\rangle+\mathrm{cst},
+\dot q_t=-\frac{a_t}{\sigma_\beta^2}(q_t-m_\beta).
 ```
 
-coefficient matching in the identity $\partial_tT_t=\nabla\partial_tu_t$ gives
+The equilibrium $a_\star=\sigma_\beta/\sigma_\alpha$,
+$q_\star=m_\beta$ is the one-dimensional Gaussian Brenier map. No equation is
+needed for the additive constant because the gauge removes it.
 
-```{math}
-\dot B_t=\Sigma_\alpha^{-1}-B_t\Sigma_\beta^{-1}B_t,
-\qquad
-\dot q_t=-B_t\Sigma_\beta^{-1}(q_t-m_\beta).
-```
-
-Thus the parabolic Monge--Ampere equation reduces, on the Gaussian ansatz, to a
-Riccati evolution for the linear part of the transport. The image mean is
-$q_t$, and the image covariance is
-
-```{math}
-\Sigma_t=B_t\Sigma_\alpha B_t,
-\qquad
-\dot\Sigma_t=\dot B_t\Sigma_\alpha B_t+B_t\Sigma_\alpha\dot B_t.
-```
-
-At equilibrium,
-
-```{math}
-B\Sigma_\beta^{-1}B=\Sigma_\alpha^{-1},
-\qquad q=m_\beta,
-```
-
-which is equivalent to $B\Sigma_\alpha B=\Sigma_\beta$. The stationary map is
-therefore the Gaussian Brenier map, and the endpoint covariance is governed by
-the same Bures--Wasserstein geometry as in Section {ref}`sec-gaussian-sinkhorn`.
-This Gaussian reduction should be viewed as the finite-dimensional covariance
-shadow of the vanishing-temperature continuous Sinkhorn limit, not as the
-fixed-temperature Gaussian Sinkhorn formula itself.
-
-In one dimension the flow reduces to
+In one dimension, the full flow is
 
 ```{math}
 \partial_tu_t(x)
-=
-\log(1+u_t''(x))-G(x+u_t'(x))+F(x)-\bar r_t,
+=\log(1+u_t''(x))-G(x+u_t'(x))+F(x)-\bar r_t.
 ```
-
-as long as $1+u_t''>0$. This scalar case is useful for visualization because
-the potential curves can be plotted directly and the positivity condition is
-exactly the monotonicity of $x\mapsto x+u_t'(x)$.
-
-Figure {ref}`fig:sinkhorn-continuous-epsilon-flow` shows this evolution from the zero initialization for two smooth pairs of marginals.
 
 (fig:sinkhorn-continuous-epsilon-flow)=
 :::{div}
@@ -1799,291 +2094,8 @@ Figure {ref}`fig:sinkhorn-continuous-epsilon-flow` shows this evolution from the
 show_book_figure("sinkhorn-continuous-epsilon-flow")
 ```
 
-*Continuous $\varepsilon$-Sinkhorn flow in one dimension. The curves are snapshots of
-the gauge-fixed potential $u_t$, initialized at $u_0=0$, under the parabolic
-Monge--Ampere equation obtained from Berman's high-resolution,
-vanishing-temperature Sinkhorn scaling. Time is encoded from red to blue; the
-faint bottom silhouettes show the source density in red and the target density
-in blue.*
+*Continuous $\epsilon$-Sinkhorn flow in one dimension.* The curves are
+snapshots of the gauge-fixed potential $u_t$, initialized at $u_0=0$, under
+the parabolic Monge--Ampere equation. Time runs from red to blue; the bottom
+silhouettes show the source density in red and target density in blue.
 :::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Adjust the entropic scale and flow time to watch the log-domain continuous Sinkhorn relaxation approach the fixed-point dual potentials.
-:::
-
-<iframe class="ot4ml-live-frame" title="Continuous ε-Sinkhorn flow controls" src="../live/sinkhorn-continuous-epsilon.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
-
-
-(sec-mfunction-scaling)=
-## Monotone Clearing Beyond Variational Sinkhorn
-
-The preceding convergence mechanisms mostly used variational structure:
-Sinkhorn is alternating KL projection, coordinate ascent on a dual objective, or
-a contraction in a projective metric. There is another, more algebraic,
-convergence mechanism which keeps the scaling form but discards the existence
-of an objective. In Galichon's equilibrium-flow viewpoint, and in related work
-on substitutability and inverse isotonicity, one studies nonlinear
-market-clearing equations whose Jacobian has a substitute sign structure
-{cite:p}`GalichonJacquet2024Substitutability,GalichonSamuelsonVernet2022Monotone`.
-This is the nonlinear analogue of the classical theory of nonsingular
-M-matrices and M-functions
-{cite:p}`MoreRheinboldt1973PSFunctions,Plemmons1977MMatrix`. The relevance for
-OT is that Sinkhorn is the canonical scaling example, but the same monotone
-clearing proof also covers fixed-point equations that are not first-order
-conditions of any convex regularized transport problem.
-
-### Two-block clearing maps
-
-Write the unknowns as two blocks $z=(u,v)\in\RR^n\times\RR^m$, where $u$ and
-$v$ will be signed log-scalings, and let
-
-```{math}
-Q(z)=(Q^\alpha(u,v),Q^\beta(u,v))\in\RR^n\times\RR^m.
-```
-
-The parallel coordinate-clearing map $T$ is defined by solving, for each
-coordinate,
-
-```{math}
-Q_\ell(T_\ell(z),z_{-\ell})=0,
-\qquad 1\leq \ell\leq n+m.
-```
-
-This is the Jacobi version: all coordinates are cleared against the old values
-of the other coordinates. In two-block scaling problems, all coordinates in
-$u$ decouple when $v$ is fixed, and all coordinates in $v$ decouple when $u$ is
-fixed. The more common alternating Sinkhorn sweep is the Gauss--Seidel
-composition of these two block clearings; the order argument below is stated
-for the parallel map to keep the notation short. The same construction extends
-to any finite number of blocks.
-
-(def-mfunctions)=
-:::{admonition} Definition: Z-functions and M-functions
-:class: important
-Let $D\subset\RR^N$ be an order interval. A map $Q:D\to\RR^N$ is diagonally
-isotone if $Q_\ell(z_\ell,z_{-\ell})$ is nondecreasing in $z_\ell$ for every
-$\ell$. It is a Z-function if increasing the other coordinates cannot increase
-the $\ell$-th component:
-
-```{math}
-z_{-\ell}\leq z'_{-\ell}
-\quad\Longrightarrow\quad
-Q_\ell(z_\ell,z_{-\ell})\geq Q_\ell(z_\ell,z'_{-\ell}).
-```
-
-For a $C^1$ map this means $\partial Q_\ell/\partial z_k\leq0$ for
-$k\neq\ell$. An M-function is a Z-function that is inverse isotone:
-
-```{math}
-Q(z)\leq Q(z')\quad\Longrightarrow\quad z\leq z'.
-```
-
-A vector $z$ is a subsolution if $Q(z)\leq0$, and a supersolution if
-$Q(z)\geq0$.
-:::
-
-The M-function assumption says that cross-effects have the sign of substitutes,
-and that own effects dominate them strongly enough to prevent a global reversal
-of order. Galichon, Samuelson and Vernet formulate this idea through
-nonreversingness and unified gross substitutes; for single-valued maps this is
-the inverse-isotone structure used below. A degenerate $M_0$-function keeps the
-same order structure but allows a null gauge direction, which is exactly what
-happens for balanced Sinkhorn before a potential normalization is imposed.
-
-(thm-mfunction-jacobi-convergence)=
-:::{admonition} Theorem: Monotone convergence of coordinate clearing
-:class: important
-Let $D=[\underline z,\overline z]\subset\RR^N$ be a closed order interval,
-with $\underline z$ a subsolution and $\overline z$ a supersolution. Assume
-that $Q:D\to\RR^N$ is continuous, diagonally isotone and an M-function. Assume
-also that, for every $z\in D$ and every $\ell$, the scalar clearing equation
-$Q_\ell(\xi,z_{-\ell})=0$ has a unique solution
-$\xi\in[\underline z_\ell,\overline z_\ell]$. Then $Q(z)=0$ has a unique
-solution $z^\star\in D$. The Jacobi coordinate-clearing iterates starting from
-any subsolution in $D$ increase monotonically to $z^\star$, while those
-starting from any supersolution in $D$ decrease monotonically to $z^\star$.
-:::
-
-:::{dropdown} Proof
-Let $T$ be the coordinate-clearing map. If $z\in D$ is a subsolution, then
-$Q_\ell(z_\ell,z_{-\ell})\leq0=Q_\ell(T_\ell(z),z_{-\ell})$. Diagonal
-isotonicity and uniqueness of the scalar zero give $z_\ell\leq T_\ell(z)$ for
-every $\ell$, hence $z\leq T(z)$. Since $Q$ is a Z-function,
-
-```{math}
-Q_\ell(T(z))\leq Q_\ell(T_\ell(z),z_{-\ell})=0,
-```
-
-so $T(z)$ is again a subsolution. Since every subsolution lies below every
-supersolution by inverse isotonicity, $T(z)\leq\overline z$, and therefore
-$T(z)\in D$. The supersolution argument is the same with all inequalities
-reversed. The lower and upper iterates are thus monotone and trapped in the
-compact interval $D$. Their limits exist, and passing to the limit in
-$Q_\ell(z_\ell^{k+1},z_{-\ell}^k)=0$ gives $Q(z^\star)=0$. If $z$ and $z'$ were
-two zeros in $D$, inverse isotonicity applied in both directions gives $z=z'$.
-:::
-
-(prop-smooth-mfunction-certificate)=
-:::{admonition} Proposition: Smooth M-matrix certificate
-:class: important
-Let $D\subset\RR^N$ be a convex order interval and let $Q:D\to\RR^N$ be $C^1$.
-Assume that $DQ(z)$ has nonpositive off-diagonal entries for every $z\in D$.
-If there exists $\lambda\gg0$ such that
-
-```{math}
-\lambda^\top DQ(z)\gg0
-\qquad\text{for all }z\in D,
-```
-
-or equivalently
-
-```{math}
-\lambda_\ell\frac{\partial Q_\ell}{\partial z_\ell}(z)
->
-\sum_{k\neq \ell}\lambda_k
-\left|\frac{\partial Q_k}{\partial z_\ell}(z)\right|,
-\qquad 1\leq \ell\leq N,
-```
-
-then $Q$ is an M-function on $D$.
-:::
-
-:::{dropdown} Proof
-The off-diagonal sign gives the Z-property by integrating the partial
-derivatives along coordinatewise increasing segments. The displayed inequalities
-imply that each $DQ(z)$ is a strictly weighted column diagonally dominant
-Z-matrix, hence a nonsingular M-matrix; in particular its inverse is nonnegative
-for each fixed $z$ {cite:p}`Plemmons1977MMatrix`. For two points
-$z,z'\in D$, set
-
-```{math}
-A=\int_0^1 DQ\big(z'+t(z-z')\big)\,dt .
-```
-
-The matrix $A$ has the same Z-sign pattern and the same strict weighted
-diagonal dominance, so it is again a nonsingular M-matrix and $A^{-1}\geq0$.
-Since $Q(z)-Q(z')=A(z-z')$, the implication $Q(z)\leq Q(z')$ gives
-$z-z'=A^{-1}(Q(z)-Q(z'))\leq0$. This is inverse isotonicity. The positive
-diagonal entries also give diagonal isotonicity.
-:::
-
-### Sinkhorn as the canonical $M_0$-system
-
-Let $K=\exp(-C/\epsilon)>0$ and write
-
-```{math}
-\P_{ij}=r_iK_{ij}s_j,
-\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-```
-
-The signed convention $v=-\log s$ makes the clearing equations
-
-```{math}
-Q_i^\alpha(u,v)=\sum_jK_{ij}e^{u_i-v_j}-a_i,
-\qquad
-Q_j^\beta(u,v)=b_j-\sum_iK_{ij}e^{u_i-v_j}.
-```
-
-Then $Q=0$ is exactly $\P\mathbf 1=a$ and $\P^\top\mathbf 1=b$, and coordinate
-clearing gives the usual Sinkhorn scalings
-
-```{math}
-r_i^+=\frac{a_i}{\sum_jK_{ij}s_j},
-\qquad
-s_j^+=\frac{b_j}{\sum_iK_{ij}r_i}.
-```
-
-The Jacobian has positive diagonal entries and nonpositive off-diagonal
-entries. Its column sums vanish, reflecting the gauge invariance
-$(u,v)\mapsto(u+c\mathbf 1,v+c\mathbf 1)$. Thus balanced Sinkhorn is naturally
-an $M_0$-system. Fixing one log-scaling coordinate turns the reduced Jacobian
-into a principal minor of the weighted bipartite graph Laplacian. Under
-connected support, automatic here because $K>0$, it is a nonsingular M-matrix. This complements
-the variational and Hilbert-metric proofs above, and also connects Sinkhorn
-scaling with choice models {cite:p}`QuGalichonUgander2023SinkhornChoice`.
-
-(ex-lossy-sinkhorn-clearing)=
-:::{admonition} Example: Lossy Sinkhorn clearing with outside options
-:class: ot4ml-example
-
-The following OT-shaped clearing model is deliberately minimal. It keeps a positive transport kernel and multiplicative scalings, but introduces outside options and lossy arrivals. It should be read as a toy absorptive matching model rather than as a new transport distance. Let $0<\eta_{ij}\leq1$, $\sigma_i>0$, $\tau_j>0$, and set
-
-```{math}
-\P_{ij}=r_i\K_{ij}s_j,\qquad r_i=e^{u_i},\qquad s_j=e^{-v_j}.
-```
-
-The clearing equations are
-
-```{math}
-\sigma_i r_i+\sum_jP_{ij}=a_i,
-\qquad
-\tau_j s_j+\sum_i\eta_{ij}\P_{ij}=b_j.
-```
-
-They say that source mass can exit through an outside sink, while target demand can be met either by effective arrivals or by a local outside source. The coordinate-clearing update is still Sinkhorn-like:
-
-```{math}
-r_i^+=\frac{a_i}{\sigma_i+\sum_j\K_{ij}s_j},
-\qquad
-s_j^+=\frac{b_j}{\tau_j+\sum_i\eta_{ij}\K_{ij}r_i}.
-```
-
-In the variables $(u,v)$, the off-diagonal derivatives again have the Z-sign. On the invariant domain $r_i\leq a_i/\sigma_i$, the simple sufficient condition
-
-```{math}
-\tau_j>\sum_i(1-\eta_{ij})\K_{ij}\frac{a_i}{\sigma_i},
-\qquad 1\leq j\leq m,
-```
-
-implies the weighted diagonal-dominance certificate $\ones^\top DQ\gg0$, hence Proposition {ref}`prop-smooth-mfunction-certificate` shows that the system is an M-function on that domain. Indeed, for the clearing map $Q_i^\alpha=\sigma_i r_i+\sum_jP_{ij}-a_i$ and $Q_j^\beta=b_j-\tau_j s_j-\sum_i\eta_{ij}\P_{ij}$, the column sums of the Jacobian are
-
-```{math}
-\sigma_i r_i+\sum_j(1-\eta_{ij})\P_{ij}>0,
-\qquad
-\tau_j s_j-\sum_i(1-\eta_{ij})\P_{ij}
-=
-s_j\left(\tau_j-\sum_i(1-\eta_{ij})\K_{ij}r_i\right)>0.
-```
-
-The model is generally non-variational. If $Q=\nabla\mathcal E$ for a $C^2$ potential, the cross-partials would satisfy
-
-```{math}
-\frac{\partial Q_i^\alpha}{\partial v_j}
-=
-\frac{\partial Q_j^\beta}{\partial u_i}.
-```
-
-Here this would force $-\P_{ij}=-\eta_{ij}\P_{ij}$ on every active arc, hence $\eta_{ij}=1$. Lossy arrivals therefore destroy exactness of the one-form $\sum_\ell Q_\ell\,\d z_\ell$, while preserving the monotone clearing structure.
-:::
-
-
-Figure {ref}`fig:sinkhorn-mfunctions-nonvariational-scaling` shows this mechanism on two empirical Gaussian mixtures in $\RR^2$.
-
-(fig:sinkhorn-mfunctions-nonvariational-scaling)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-mfunctions-nonvariational-scaling")
-```
-
-*Non-variational lossy Sinkhorn scaling on two Gaussian-mixture point clouds.*
-The outside coefficients are $\sigma_i=\rho\bar\sigma_i$ and
-$\tau_j=\rho\bar\tau_j$, and columns increase the common scale $\rho$.
-Colors show centered log-scalings, $\log r-\langle\log r\rangle$
-on the source row and $\log s-\langle\log s\rangle$ on the target row; faint
-violet links mark the largest entries of the induced effective plan. The first displayed case
-uses uniform outside coefficients, while the second uses spatially varying outside
-coefficients and directional loss factors. The updates are
-Sinkhorn-like row and column clearings, but $\eta_{ij}\neq1$ breaks the
-cross-partial symmetry required by a convex potential.
-:::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Change the two monotone update temperatures to watch the source and target logarithmic scalings stabilize under a non-variational Sinkhorn-like iteration.
-:::
-
-<iframe class="ot4ml-live-frame" title="Interactive M-functions scaling panel" src="../live/sinkhorn-mfunctions-scaling.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>

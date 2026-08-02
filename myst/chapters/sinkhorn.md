@@ -2434,7 +2434,9 @@ B_\Phi(\pi|\xi)
 \int\delta\Phi(\xi)\,\d(\pi-\xi),
 ```
 
-where $\delta\Phi(\xi)$ is the first variation.
+where $\delta\Phi(\xi)$ is the first variation in the sense of Definition
+{ref}`def-first-variation`. The formula is understood whenever its right-hand
+side is well-defined.
 :::
 
 With the product reference $\xi=\alpha\otimes\beta$, the corresponding
@@ -2517,8 +2519,8 @@ for some $\kappa\ge0$ and $a\in\RR$. Hence the common divergence is a multiple o
 KL, up to an irrelevant affine term.
 :::
 
-Thus the two generalizations lead to different duals and different
-algorithms. Only for KL do density-ratio regularization and Bregman
+Thus, except for KL, the two generalizations lead to different duals and
+different algorithms. In the KL case, density-ratio regularization and Bregman
 projection geometry coincide and reduce to multiplicative Sinkhorn scalings.
 
 ### Generalized Soft $c$-Transforms and Alternate Dual Maximization Method
@@ -3050,7 +3052,7 @@ show_book_figure("sinkhorn-complex-epsilon-continuation")
 
 *The magnitude of a complex Sinkhorn coupling exposes the oscillations created
 by an imaginary temperature. Two Gaussian-mixture histograms and
-$\epsilon_0=0.55$ are fixed, while $\epsilon=\epsilon_0+i\eta$ is continued
+$\epsilon_0=0.12$ are fixed, while $\epsilon=\epsilon_0+i\eta$ is continued
 through $\eta\in\{0,0.20,0.40,0.60\}$. Every panel uses the same intensity
 scale. The red and blue profiles are the prescribed marginals of the complex
 coupling; the violet profiles are the marginals of its entrywise modulus and

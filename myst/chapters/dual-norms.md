@@ -563,6 +563,7 @@ and is called superlinear. Any entropy function induces a $\phi$-divergence,
 also known as a Ciszar divergence or $f$-divergence
 {cite:p}`ciszar1967information,ali1966general`.
 
+(def_divergence)=
 :::{admonition} Definition: $\phi$-Divergence
 :class: important
 Let $\phi$ be an entropy function and let

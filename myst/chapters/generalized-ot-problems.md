@@ -566,8 +566,8 @@ whenever Fourier inversion is valid.
 :::{admonition} Proposition: Radon Least-Squares Pseudoinverse
 :class: important
 Let $d\geq2$, let $\sigma$ be the uniform probability measure on
-$\Sphere^{d-1}$, and let $R$ be the density Radon transform from Remark
-{ref}`rem-sliced-radon-viewpoint`. Write
+$\Sphere^{d-1}$, and let $R$ be the density Radon transform introduced in the
+{ref}`rem-sliced-radon-viewpoint` paragraph. Write
 
 ```{math}
 \mathcal D(R)
@@ -2071,7 +2071,7 @@ For a cost matrix $\C\in\RR^{n\times m}$, the low-rank constrained OT value is
 
 ```{math}
 \min_{(\Q,\R,g)}
-\sum_{k=1}^r \frac{\Q_{:,k}^\top \C \R_{:,k}}{g_k}.
+\left\langle\C,\Q\operatorname{diag}(g)^{-1}\R^\top\right\rangle.
 ```
 
 The minimization is over triples satisfying Definition
@@ -2087,7 +2087,7 @@ positive latent law $g\in\simplex_r$ and optimize only the two sub-couplings:
 :label: eq-low-rank-entropic-ot
 \min_{\substack{\Q\ones_r=a,\;\Q^\top\ones_n=g\\
 \R\ones_r=b,\;\R^\top\ones_m=g}}
-\sum_{k=1}^r \frac{\Q_{:,k}^\top \C \R_{:,k}}{g_k}
+\left\langle\C,\Q\operatorname{diag}(g)^{-1}\R^\top\right\rangle
 +
 \epsilon\KLD(\Q|a\otimes g)
 +
@@ -2131,8 +2131,15 @@ For $\ell=0,\ldots,L-1$:
 Return $\P^{(L)}$ if the loop reaches $L$ iterations.
 :::
 
-Each update exactly minimizes one factor block while keeping the other fixed,
-so the objective decreases monotonically. Positivity makes each block minimizer
+Each update exactly minimizes one factor block while keeping the other fixed.
+Once its effective cost has been formed, one Sinkhorn scaling step for the
+$\Q$ block costs $O(nr)$ operations and one for the $\R$ block costs $O(mr)$,
+instead of $O(nm)$ for a scaling step on the full coupling. The factors require
+only $O((n+m)r)$ storage as long as the full matrix $\P$ is kept implicit. For
+a dense unstructured cost, however, forming $\C\R$ or $\C^\top\Q$ costs $O(nmr)$ per
+block, so an overall speedup requires structure in the cost multiplication or
+enough inner scaling iterations to amortize this cost. The objective decreases
+monotonically. Positivity makes each block minimizer
 unique and keeps it in the relative interior of its transport polytope.
 Compactness and exact cyclic block-coordinate descent imply that every
 accumulation point is a coordinatewise minimizer, hence a stationary point of
@@ -2411,28 +2418,25 @@ regularization selects a unique plan and, for positive finite histograms, gives
 ordinary derivatives on the simplex interiors.
 
 (prop-ot-first-variations-unregularized)=
-:::{admonition} Proposition: First variations of unregularized OT
+:::{admonition} Proposition: First variations of OT values
 :class: important
-Let $\alpha\in\Pp(\Xx)$ and $\beta\in\Pp(\Yy)$, where $\Xx,\Yy$ are compact
-metric spaces, and let $c\in\Cc(\Xx\times\Yy)$. Define
+Let $\alpha$ and $\beta$ be probability measures with compact supports
+$\Xx=\supp(\alpha)$ and $\Yy=\supp(\beta)$, let
+$c\in\Cc(\Xx\times\Yy)$, and let $\epsilon\geq0$. Use the convention
+$\MK_c^0=\MK_c$, where the two values are defined in
+{eq}`eq-mk-generic` and {eq}`eq-entropic-generic-web`. Denote by
+$\mathcal O_c^\epsilon(\alpha,\beta)$ and
+$\mathcal D_c^\epsilon(\alpha,\beta)$ the sets of primal and dual optimizers of
+the corresponding problem.
 
-```{math}
-\mathcal V_c(\alpha,\beta)
-\eqdef
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\int_{\Xx\times\Yy}c(x,y)\d\pi(x,y).
-```
-
-Let $\mathcal O_c(\alpha,\beta)$ be the set of optimal couplings and let
-$\mathcal D_c(\alpha,\beta)$ be the set of optimal dual potentials $(f,g)$ with
-$f(x)+g(y)\leq c(x,y)$. If $\chi$ is a signed measure with $\chi(\Xx)=0$ and
+If $\chi$ is a signed measure with $\chi(\Xx)=0$ and
 $\alpha_t=\alpha+t\chi$ is a probability measure for $0\leq t\leq t_0$, then
 
 ```{math}
 \left.\frac{\d}{\d t}\right|_{t=0^+}
-\mathcal V_c(\alpha_t,\beta)
+\MK_c^\epsilon(\alpha_t,\beta)
 =
-\sup_{(f,g)\in\mathcal D_c(\alpha,\beta)}
+\sup_{(f,g)\in\mathcal D_c^\epsilon(\alpha,\beta)}
 \int_{\Xx} f(x)\d\chi(x).
 ```
 
@@ -2440,61 +2444,68 @@ If $h\in\Cc(\Xx\times\Yy)$ and $c_t=c+th$, then
 
 ```{math}
 \left.\frac{\d}{\d t}\right|_{t=0^+}
-\mathcal V_{c_t}(\alpha,\beta)
+\MK_{c_t}^\epsilon(\alpha,\beta)
 =
-\inf_{\pi\in\mathcal O_c(\alpha,\beta)}
+\inf_{\pi\in\mathcal O_c^\epsilon(\alpha,\beta)}
 \int_{\Xx\times\Yy} h(x,y)\d\pi(x,y).
 ```
 
-In particular, if the normalized optimal potential $f^\star$ and the optimal
-plan $\pi^\star$ are unique, then
+For fixed $(\alpha,\beta)$, a finite signed Radon measure $\eta$ on
+$\Xx\times\Yy$ represents the first variation of the functional
+$c\mapsto\MK_c^\epsilon(\alpha,\beta)$ if,
+for every $h\in\Cc(\Xx\times\Yy)$,
 
 ```{math}
-\frac{\delta \mathcal V_c}{\delta\alpha}=f^\star,
-\qquad
-\frac{\delta \mathcal V_c}{\delta c}=\pi^\star .
+\MK_{c+t h}^\epsilon(\alpha,\beta)
+=
+\MK_c^\epsilon(\alpha,\beta)
++t\int_{\Xx\times\Yy}h\d\eta+o(t)
+\qquad(t\to0).
 ```
 
-The second identity means that the first variation with respect to the
-function $c$ is represented by the optimal measure $\pi^\star$ on
-$\Xx\times\Yy$.
+In particular, if the normalized optimal potential $f_\epsilon^\star$ and the
+optimal plan $\pi_\epsilon^\star$ are unique (so in particular when
+$\epsilon>0$), then, with the marginal first variation understood as in
+Definition {ref}`def-first-variation`,
+
+```{math}
+\frac{\delta \MK_c^\epsilon}{\delta\alpha}(\alpha,\beta)=f_\epsilon^\star,
+\qquad
+\frac{\delta \MK_c^\epsilon}{\delta c}(\alpha,\beta)=\pi_\epsilon^\star .
+```
 :::
 
 :::{dropdown} Proof
-Kantorovich duality writes
+For $\epsilon=0$, the Kantorovich duality theorem is stated in Proposition
+{ref}`prop-kantorovich-duality-general`. Its dual value is a supremum of affine
+functions of $\alpha$, so Danskin's theorem {cite:p}`Danskin1967` gives the
+first formula as the supremum over active dual potentials. The condition
+$\chi(\Xx)=0$ makes this expression independent of the additive gauge
+$(f,g)\mapsto(f+\lambda,g-\lambda)$.
 
-```{math}
-\mathcal V_c(\alpha,\beta)
-=
-\sup_{f\oplus g\leq c}
-\int f\d\alpha+\int g\d\beta .
-```
+For $\epsilon>0$, use the continuous entropic duality and primal-dual density
+law of Proposition {ref}`prop-continuous-entropic-duality`. At an optimal pair,
+the marginal constraint makes the density in
+{eq}`eq-continuous-entropic-density-law-web` integrate to one with respect to
+$\beta$ for every $x$ on the source support. Therefore the derivative of the
+dual objective {eq}`eq-dual-sinkhorn-objective-web` with respect to $\alpha$ at
+fixed optimal potentials is $\int f_\epsilon^\star\d\chi$: the derivative of
+its exponential term vanishes after the row normalization. Danskin's theorem
+then gives the same first formula, now with a singleton set of normalized
+active potentials.
 
-This is a supremum of affine functions of $\alpha$, so Danskin's theorem gives
-the one-sided directional derivative as the supremum over active maximizers,
-namely the optimal dual potentials. The condition $\chi(\Xx)=0$ makes the
-formula independent of the additive gauge $(f,g)\mapsto(f+\lambda,g-\lambda)$.
-
-For the cost variable,
-
-```{math}
-\mathcal V_{c_t}(\alpha,\beta)
-=
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\int c\d\pi+t\int h\d\pi
-```
-
-is an infimum of affine functions of $t$. Danskin's theorem for a minimum gives
-the right directional derivative as the infimum of $\int h\d\pi$ over the
-active minimizers. If the active dual potential or coupling is unique, the
-corresponding directional derivative is linear in the perturbation, which is
-the displayed first variation.
+For every $\epsilon\geq0$, the primal objective depends on $c$ only through the
+affine term $\int c\d\pi$. The minimum form of Danskin's theorem therefore gives
+the second formula as the infimum of $\int h\d\pi$ over active primal
+optimizers. Uniqueness makes the corresponding directional derivative linear,
+which gives the two first variations.
 :::
 
-In the discrete case, this proposition says that any optimal dual vector
-$f^\star$ is a subgradient with respect to the source weights $a$, while any
-optimal plan $P^\star$ is a supergradient with respect to the cost matrix $C$,
-because the value is concave in $C$:
+In the discrete unregularized case, the primal problem
+{eq}`eq-kanto-discr-web` and its dual {eq}`eq-dual` show that any optimal dual
+vector $f^\star$ is a subgradient with respect to the source weights $a$, while
+any optimal plan $P^\star$ is a supergradient with respect to the cost matrix
+$C$, because the value is concave in $C$:
 
 ```{math}
 f^\star\in\partial_a\mathcal L_C(a,b),
@@ -2510,125 +2521,51 @@ $\nabla_C\mathcal L_C(a,b)=P^\star$. Without uniqueness, the exact directional
 derivative with respect to $C$ in a direction $\Delta C$ is the minimum of
 $\dotp{\Delta C}{P}$ over all optimal plans.
 
-(prop-ot-first-variations-entropic)=
-:::{admonition} Proposition: First variations of entropic OT
-:class: important
-Under the compact-space and continuous-cost assumptions of Proposition
-{ref}`prop-ot-first-variations-unregularized`, let $\epsilon>0$ and define the
-KL-normalized entropic value
+For $\epsilon>0$, uniqueness makes these ordinary derivatives on the relative
+interiors of finite-dimensional simplices. For a finite-dimensional
+parametrization $c_\theta$, the entropic formula gives the backpropagation rule
 
 ```{math}
-\mathcal V_{c,\epsilon}(\alpha,\beta)
-\eqdef
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\int c\d\pi+\epsilon\operatorname{KL}(\pi\mid\alpha\otimes\beta).
-```
-
-Choose optimal entropic potentials $(f_\epsilon,g_\epsilon)$ in soft-transform
-form, so that the following density has marginals $\alpha$ and $\beta$:
-
-```{math}
-\d\pi_\epsilon(x,y)
+\partial_{\theta}\MK_{c_\theta}^\epsilon(\alpha,\beta)
 =
-\exp\!\left(\frac{f_\epsilon(x)+g_\epsilon(y)-c(x,y)}{\epsilon}\right)
-\d\alpha(x)\d\beta(y)
+\int \partial_\theta c_\theta(x,y)\d\pi_{\theta,\epsilon}^\star(x,y),
 ```
 
-This defines the unique optimal coupling. For the same perturbations
-$\alpha_t=\alpha+t\chi$ and $c_t=c+th$ as above,
+where $\pi_{\theta,\epsilon}^\star$ is the entropic optimizer between
+$(\alpha,\beta)$ for the cost $c_\theta$. For example, let
+$\Xx=\Yy=\RR^d$ and $c_A(x,y)=\dotp{Ax}{y}$, with
+$A\in\RR^{d\times d}$. For every perturbation $H\in\RR^{d\times d}$,
 
 ```{math}
-\left.\frac{\d}{\d t}\right|_{t=0^+}
-\mathcal V_{c,\epsilon}(\alpha_t,\beta)
+D_A\MK_{c_A}^\epsilon(\alpha,\beta)[H]
 =
-\int f_\epsilon\d\chi,
-\qquad
-\left.\frac{\d}{\d t}\right|_{t=0^+}
-\mathcal V_{c_t,\epsilon}(\alpha,\beta)
+\int \dotp{Hx}{y}\d\pi_{A,\epsilon}^\star(x,y)
 =
-\int h\d\pi_\epsilon .
+\left\langle H,\int yx^\top\d\pi_{A,\epsilon}^\star(x,y)\right\rangle_{\mathrm F}.
 ```
 
-Equivalently,
+Consequently,
 
 ```{math}
-\frac{\delta \mathcal V_{c,\epsilon}}{\delta\alpha}=f_\epsilon,
-\qquad
-\frac{\delta \mathcal V_{c,\epsilon}}{\delta c}=\pi_\epsilon .
-```
-
-In finite dimension, for positive histograms, these are ordinary derivatives
-on the relative interior of the simplices.
-:::
-
-:::{dropdown} Proof
-The cost derivative follows directly from the primal envelope theorem, because
-the entropic optimizer is unique. For the measure derivative, use the
-continuous entropic dual formula from the Sinkhorn chapter. At an optimal pair,
-the soft-transform equations imply the row normalization
-
-```{math}
-\int_{\Yy}
-\exp\!\left(\frac{f_\epsilon(x)+g_\epsilon(y)-c(x,y)}{\epsilon}\right)
-\d\beta(y)
-=1
-\qquad\text{for all }x.
-```
-
-Differentiating the dual objective with respect to $\alpha$ at fixed optimal
-potentials gives
-
-```{math}
-\int f_\epsilon\d\chi
--
-\epsilon
-\int_{\Xx\times\Yy}
-\left(
-e^{(f_\epsilon(x)+g_\epsilon(y)-c(x,y))/\epsilon}-1
-\right)
-\d\chi(x)\d\beta(y).
-```
-
-The second term vanishes by the previous normalization identity, leaving
-$\int f_\epsilon\d\chi$. The gauge ambiguity of
-$(f_\epsilon,g_\epsilon)$ again disappears because $\chi(\Xx)=0$.
-:::
-
-For a finite-dimensional parametrization $c_\theta$ or $\C_\theta$, the
-entropic formula gives the backpropagation rule
-
-```{math}
-\partial_{\theta}\mathcal V_{c_\theta,\epsilon}
+\nabla_A\MK_{c_A}^\epsilon(\alpha,\beta)
 =
-\int \partial_\theta c_\theta(x,y)\d\pi_\epsilon(x,y),
+\int yx^\top\d\pi_{A,\epsilon}^\star(x,y)
+=
+\operatorname{Cov}_{\pi_{A,\epsilon}^\star}(Y,X)+m_\beta m_\alpha^\top,
 ```
 
-where $\pi_\epsilon$ is the entropic optimizer. For the unregularized value
-$\mathcal V_{c_\theta}$, uniqueness of the optimal plan $\pi^\star$ gives
-$\partial_\theta\mathcal V_{c_\theta}
-=\int\partial_\theta c_\theta\,\d\pi^\star$. Without uniqueness, the
-directional derivative in a parameter direction $\dot\theta$ is obtained by
-minimizing $\int \dot\theta\cdot\partial_\theta c_\theta\,\d\pi$ over the
-optimal face, while any selected optimal plan gives a valid supergradient with
-respect to the cost. This is the calculus behind ground-metric learning, which
-was explicitly studied in
+where $(X,Y)\sim\pi_{A,\epsilon}^\star$, $m_\alpha=\int x\d\alpha(x)$ and
+$m_\beta=\int y\d\beta(y)$. Thus the gradient is the raw cross-moment of the
+optimal coupling, and it is its cross-covariance when both marginals are
+centered. This is the calculus behind
+ground-metric learning, which was explicitly studied in
 {cite:p}`CuturiGroundMetric2014` and connects to the broader metric-learning
-literature {cite:p}`MAL-019,bellet2015metric`. If one uses the entropy-only
-discrete convention of the Sinkhorn chapter instead of the KL-normalized value,
-then, for positive source weights,
-
-```{math}
-\mathcal L_C^\epsilon(a,b)
-=
-\mathcal V_{C,\epsilon}(a,b)
--
-\epsilon H(a)-\epsilon H(b),
-```
-
-so its derivative with respect to $a$ is represented on the simplex tangent
-space by $f_\epsilon+\epsilon\log a$, up to an irrelevant additive constant.
-
-Figure {ref}`fig:metric-learning-cost-deformation` gives the geometric counterpart of this differentiation rule: changing an anisotropic quadratic cost changes which transport segments are selected.
+literature {cite:p}`MAL-019,bellet2015metric`. Figure
+{ref}`fig:metric-learning-cost-deformation` uses instead the Mahalanobis cost
+$c_A^{\mathrm{quad}}(x,y)=(x-y)^\top A(x-y)$ with $A$ symmetric positive
+definite. For fixed marginals, its two purely quadratic terms depend only on $(\alpha,\beta)$, while its
+coupling-dependent term is $-2\dotp{Ax}{y}$; the same cross-moment therefore
+controls how the optimal matching changes with $A$.
 
 (fig:metric-learning-cost-deformation)=
 :::{div}
@@ -2641,7 +2578,7 @@ show_book_figure("metric-learning-cost-deformation")
 
 *Changing the ground metric changes the optimal coupling. The same red and
 blue empirical measures are matched with
-$c_A(x,y)=(x-y)^\top A(x-y)$ for the Euclidean metric and two increasingly
+$c_A^{\mathrm{quad}}(x,y)=(x-y)^\top A(x-y)$ for the Euclidean metric and two increasingly
 anisotropic Mahalanobis metrics. The small gray ellipse shows the unit ball of
 the metric: directions in which the ellipse is elongated are cheaper, and
 this deforms the transport segments selected by the OT plan.*
@@ -2663,137 +2600,100 @@ so the segments show how the learned cost changes the matching.
 
 Inverse OT asks for a ground cost that explains observed matchings or flows as
 optimal transport plans. In its most direct form, one observes a plan
-$\widehat\pi$ with marginals $(\alpha,\beta)$ and seeks a cost $c$ such that
-$\widehat\pi$ is optimal for
+$\widehat\pi\in\Couplings(\alpha,\beta)$ and seeks a cost $c$ for which
+$\widehat\pi$ solves the $\epsilon$-regularized problem
+{eq}`eq-entropic-generic-web`, with $\epsilon\geq0$ and the convention
+$\MK_c^0=\MK_c$.
+
+This inverse problem is ill-posed without structure. Adding $u(x)+v(y)$ to a
+cost shifts every feasible objective by the same marginal-dependent constant
+and leaves its minimizers unchanged. When $\epsilon=0$, multiplication by a
+positive scalar is another invariance and the zero cost rationalizes every
+feasible plan. An identifiable model must therefore fix the relevant gauges
+and, in the unregularized case, its scale.
+
+The natural loss is the regularized suboptimality of the observed plan.
+
+(def-inverse-ot-loss)=
+:::{admonition} Definition: Regularized Inverse-OT Loss
+:class: important
+Let $\epsilon\geq0$ and
+$\widehat\pi\in\Couplings(\alpha,\beta)$, with
+$\operatorname{KL}(\widehat\pi\mid\alpha\otimes\beta)<+\infty$ when
+$\epsilon>0$. The regularized inverse-OT loss is
 
 ```{math}
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\int c(x,y)\d\pi(x,y).
-```
-
-This is ill-posed without structure. Adding $u(x)+v(y)$ to a cost shifts every
-feasible objective by the same marginal-dependent constant, multiplying a cost
-by a positive scalar does not change its minimizers, and the zero cost
-rationalizes every feasible plan. An identifiable model must quotient or
-normalize these gauge and scale freedoms; a sparse observed plan can still be
-compatible with a nontrivial cone of normalized costs.
-
-A useful statistical methodology is to measure the suboptimality of the
-observed plan through a Fenchel--Young loss. Write the score as $s=-c$ and
-define the convex regularized prediction value
-
-```{math}
-G_\epsilon(s)
-=
-\sup_{\pi\in\Couplings(\alpha,\beta)}
-\int s\d\pi
--
-\epsilon\operatorname{KL}(\pi\mid\alpha\otimes\beta).
-```
-
-The Fenchel--Young loss
-
-```{math}
-\mathcal L_\epsilon(c;\widehat\pi)
-=
-G_\epsilon(-c)
-+
-G_\epsilon^*(\widehat\pi)
-+
+:label: eq-inverse-ot-loss
+\mathcal F_\epsilon(c\mid\widehat\pi)
+\eqdef
 \int c\d\widehat\pi
++\epsilon\operatorname{KL}(\widehat\pi\mid\alpha\otimes\beta)
+-\MK_c^\epsilon(\alpha,\beta),
 ```
 
-is nonnegative by Fenchel's inequality and vanishes exactly when
-$\widehat\pi\in\partial G_\epsilon(-c)$, i.e. when $\widehat\pi$ satisfies the
-regularized optimality conditions for $c$. Entropic regularization is
-important here because it makes the forward map smoother and provides
-gradients with respect to $c$, at the price of a statistical bias
-{cite:p}`andrade2025sharpened,peyre2026curvature`.
+where the entropy term is set to zero when $\epsilon=0$.
+:::
 
-In the discrete unregularized case, this loss reduces to the optimality gap of
-the observed coupling. For $\widehat \P\in\mathbf U(a,b)$ and a cost matrix
-$\C$, denote it by
+This definition treats unregularized and entropic inverse OT with the same
+notation. It is also a Fenchel--Young loss for the convex prediction map
+associated with regularized OT {cite:p}`andrade2025sharpened`. As shown next,
+it is convex in $c$; minimizing it over a convex class of costs is therefore a
+convex problem that avoids non-convex bilevel optimization through a forward
+OT solver.
+
+(prop-inverse-ot-convex)=
+:::{admonition} Proposition: Convexity and Calibration of the Inverse-OT Loss
+:class: important
+For fixed $(\alpha,\beta,\widehat\pi)$, the map
+$c\mapsto\mathcal F_\epsilon(c\mid\widehat\pi)$ is convex and nonnegative.
+Moreover,
 
 ```{math}
-\mathcal L_{\mathrm{iOT}}(\C;\widehat \P)
-=
-\dotp{\C}{\widehat \P}
--
-\min_{\P\in\mathbf U(a,b)}\dotp{\C}{\P}.
+\mathcal F_\epsilon(c\mid\widehat\pi)=0
+\quad\Longleftrightarrow\quad
+\widehat\pi\text{ solves the regularized OT problem for the cost }c.
 ```
 
-This inverse-OT gap loss is nonnegative and vanishes exactly when
-$\widehat \P$ is optimal for $\C$.
+When $\epsilon>0$, the regularized optimizer is unique whenever the value is
+finite, so the equality condition identifies the forward coupling for a fixed
+cost.
+:::
 
-In practice, one restricts the cost to a finite-dimensional model class,
-often affine:
+:::{dropdown} Proof
+The first two terms in {eq}`eq-inverse-ot-loss` are respectively linear and
+constant in $c$, whereas
+$c\mapsto\MK_c^\epsilon(\alpha,\beta)$ is concave because it is the infimum
+of affine functions of $c$. Testing the regularized OT problem with
+$\widehat\pi$ proves nonnegativity, and equality holds precisely when this
+test plan attains the infimum. Uniqueness for $\epsilon>0$ follows from the
+strict convexity of relative entropy on finite-entropy couplings.
+:::
 
-```{math}
-\C_\theta=\sum_{r=1}^R\theta_r \C^{(r)},
-\qquad
-\theta\in\Theta,
-```
+#### Bilinear Cost Learning
 
-where $\Theta$ is convex and the matrices $\C^{(r)}$ encode features, graph
-distances or a Mahalanobis parameterization. This viewpoint appears in
-low-rank and sparse inverse OT models
-{cite:p}`dupuy2016estimating,andrade2024sparsistency` and in convex
-formulations for learning OT costs from observed plans
-{cite:p}`ma2020learning,peyre2026curvature`.
-
-A minimal finite-dimensional model is obtained by learning a bilinear cost on
-$\RR^d$,
+For concreteness, consider the bilinear model on $\RR^d$,
 
 ```{math}
 c_A(x,y)=\dotp{Ax}{y},
 \qquad A\in\RR^{d\times d}.
 ```
 
-For empirical measures
-$\alpha=\frac1n\sum_i\delta_{x_i}$ and
-$\beta=\frac1n\sum_j\delta_{y_j}$, this gives the cost matrix
+After fixing the cost invariances through a convex admissible set
+$\mathcal A\subset\RR^{d\times d}$, one estimates
 
 ```{math}
-\C(A)_{i,j}=\dotp{Ax_i}{y_j},
+:label: eq-inverse-ot-bilinear-estimator
+A^\star\in\argmin_{A\in\mathcal A}
+\mathcal F_\epsilon(c_A\mid\widehat\pi).
 ```
 
-so both maps $A\mapsto \C(A)$ and $A\mapsto c_A$ are linear. Inverse OT
-within this model asks which matrix $A$ makes an observed matching or
-coupling look optimal; learning the cost is thus reduced to estimating a
-linear parameter.
-
-For a fixed matrix $A$, the forward prediction is the optimal face
-
-```{math}
-\mathcal P_A\eqdef
-\uargmin{\P\in\CouplingsD(\ones_n/n,\ones_n/n)}
-\dotp{\C(A)}{\P}.
-```
-
-When this face is a singleton, write its element as $\P_A$; otherwise $\P_A$
-denotes a deterministic tie-broken selection. Although $A\mapsto \C(A)$ is
-linear, the solution correspondence $A\mapsto\mathcal P_A$ is polyhedral:
-changing $A$ changes the direction in which the transport polytope is probed,
-and a tie-broken selection is constant on normal-cone cells. The figure below
-illustrates this correspondence on the OT4ML point clouds. The construction
-follows the visual idea of the Python Optimal Transport logo
-{cite:p}`flamary2021pot`: red source atoms, blue target atoms and straight
-segments show the selected optimal bijection. With $e=(1,1)^\top$ and
-$\delta=10^{-3}$, the first two rank-one matrices are
-
-```{math}
-A_h=-e_1e^\top+\delta e_2e^\top,
-\qquad
-A_v=\delta e_1e^\top-e_2e^\top .
-```
-
-These small transverse terms break the large ties of the pure horizontal or
-vertical scores while preserving a rank-one cost. The matrix $A=-I$ gives the
-usual quadratic $\Wass_2$ assignment, up to the marginal-only terms discussed
-below, while $A=+I$ reverses the correlation and produces an anti-$\Wass_2$
-matching.
-
-Figure {ref}`fig:inverse-ot-forward-logo` illustrates this correspondence on the OT4ML point clouds.
+This is an instance of the preceding convex formulation because
+$A\mapsto c_A$ is linear. Figure
+{ref}`fig:inverse-ot-forward-logo` illustrates the correspondence between $A$
+and the resulting coupling on the OT4ML point clouds in the unregularized case
+$\epsilon=0$. The choices $A=-I$ and $A=+I$ favor, respectively, correlated
+and anticorrelated assignments, while rank-one matrices select predominantly
+horizontal or vertical correspondences.
 
 (fig:inverse-ot-forward-logo)=
 :::{div}
@@ -2812,66 +2712,38 @@ show_book_figure("inverse-ot-bilinear-logo-map")
 ```
 
 *Forward solutions of the bilinear cost $c_A(x,y)=\dotp{Ax}{y}$ on the OT4ML
-logo point clouds. Each panel solves the equal-weight assignment problem with a
-different matrix $A$; the first two use $\delta=10^{-3}$ to break rank-one
+logo point clouds.* Each panel solves the equal-weight assignment problem with
+a different matrix $A$; the first two use $\delta=10^{-3}$ to break rank-one
 ties. The source atoms are red, the target atoms are blue, and the gray
-segments give one deterministic optimal bijection.*
+segments give one deterministic optimal bijection.
 :::
 
-This elementary model already contains the quadratic Wasserstein assignment.
-Adding to a cost matrix a term depending only on $x_i$ or only on $y_j$ shifts
-all feasible couplings by the same constant, and therefore does not change the
-optimizer. Since
+#### Finite-Sample Polyhedrality and Population Curvature
+
+Let $A_0=-I$ and let $\pi_0$ be the associated population optimal plan,
+equivalently the quadratic $\Wass_2$ plan. From i.i.d. pairs
+$(X_i,Y_i)\sim\pi_0$, form
 
 ```{math}
-\norm{x-y}^2=\norm{x}^2+\norm{y}^2-2\dotp{x}{y},
+\widehat\pi_n=\frac1n\sum_{i=1}^n\delta_{(X_i,Y_i)}.
 ```
 
-the usual quadratic Wasserstein assignment has the same optimizer as the
-bilinear cost with $A_\star=-I$, up to these marginal-only terms and an
-irrelevant positive factor. The inverse problem goes in the opposite
-direction: after observing a coupling, one asks which matrices $A$ could have
-generated it. The next figure generates an observed coupling $\widehat \P$ from
-this cost on two empirical mixtures of Gaussians, and then evaluates
-$\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)$ along the anisotropic path
-
-```{math}
-A_t=-\diag(1+t,1-t),
-\qquad -1\leq t\leq 1,
-```
-
-so that $t=0$ recovers the matrix that generated the observed coupling.
-Equivalently, with equal weights,
-$\widehat \P\in\CouplingsD(\ones_n/n,\ones_n/n)=\mathcal B_n/n$, and the
-plotted loss is the Kantorovich gap
-
-```{math}
-\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)
-=
-\dotp{\C(A_t)}{\widehat \P}
--
-\min_{\P\in\CouplingsD(\ones_n/n,\ones_n/n)}
-\dotp{\C(A_t)}{\P},
-\qquad
-\C(A_t)_{i,j}=\dotp{A_t x_i}{y_j}.
-```
-
-Because $t\mapsto \C(A_t)$ is affine and the Kantorovich value is a minimum of
-affine functions over the fixed polytope
-$\CouplingsD(\ones_n/n,\ones_n/n)$, this one-dimensional gap is convex and
-piecewise affine. Its zero set can contain an interval for a small sample,
-reflecting the fact that the same observed coupling remains optimal for a cone
-of nearby costs.
-
-Figure {ref}`fig:inverse-ot-gap-loss` generates an observed coupling $\widehat \P$ from this cost on two empirical mixtures of Gaussians, and then evaluates $\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)$ along the anisotropic path
+To vary the cost while fixing its trace, let
+$J=\left(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\right)$ and
+$A_t=-I+tJ$. The interactive panel and book figure below plot the already-defined
+loss $t\mapsto\mathcal F_0(c_{A_t}\mid\widehat\pi_n)$. For every finite $n$,
+this is a convex polyhedral function: the observed-plan cost is affine in $t$,
+whereas the empirical OT value is the minimum of finitely many affine
+assignment costs. Its zero set can therefore contain an interval even when
+the population cost is identifiable.
 
 (fig:inverse-ot-gap-loss)=
 :::{div}
 :class: ot4ml-interactive-note
-**Interactive panel.** Vary sample size and cost rotation to recompute the empirical Kantorovich gap along the one-parameter inverse-OT path.
+**Interactive panel.** Change the sample size and nonlinear Brenier map to recompute the empirical loss along the transverse cost path.
 :::
 
-<iframe class="ot4ml-live-frame" title="Interactive inverse-OT gap-loss panel" src="../live/inverse-ot-gap.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+<iframe class="ot4ml-live-frame" title="Interactive inverse-OT loss panel" src="../live/inverse-ot-gap.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
 :::{div}
 :class: ot4ml-book-figure
@@ -2881,118 +2753,51 @@ Figure {ref}`fig:inverse-ot-gap-loss` generates an observed coupling $\widehat \
 show_book_figure("inverse-ot-gap-loss")
 ```
 
-*Inverse-OT gap loss for a bilinear cost. Panel (a): two empirical mixtures of
-two Gaussians are matched with the cost
-$c_{A_\star}(x,y)=\dotp{A_\star x}{y}$ for $A_\star=-I$, which gives the same
-optimizer as the quadratic $\Wass_2$ cost; red and blue level sets display the
-two sampling densities. Panels (b,c): the unregularized Fenchel--Young Kantorovich gap
-$\mathcal L_{\mathrm{iOT}}(\C(A_t);\widehat \P)$ along
-$A_t=-\diag(1+t,1-t)$ for $n=10$ and $n=100$, using the same vertical scale.
-The red dot marks the generating parameter $t=0$; the curves are convex and
-piecewise affine.*
+*Empirical inverse-OT losses approach a curved population geometry.* Panel (a)
+shows $n=10$ i.i.d. pairs from a fixed plan
+$\pi_0=(I,T)_\sharp\alpha$ generated by a nonlinear Brenier map $T$ for
+$A_0=-I$. Panels (b,c) plot
+$t\mapsto\mathcal F_0(c_{A_t}\mid\widehat\pi_n)$ for $n=10$ and $n=100$ on
+the same vertical scale. Each finite-sample curve is convex and polyhedral;
+increasing $n$ resolves progressively more affine pieces around the generating
+parameter $t=0$.
 :::
 
-The comparison between $n=10$ and $n=100$ illustrates a statistical effect:
-as the number of sampled points grows, the flat zero region can shrink to a
-sharper piecewise-affine minimum. A finite-sample linear-programming gap remains
-polyhedral and has no classical second derivative inside its cells. Curvature
-is instead a population phenomenon. Peyré, Poon and Tron
-{cite:p}`peyre2026curvature` prove local curvature and identifiability modulo
-the natural cost invariances for smooth positive marginals under a
-nondegeneracy condition. They also identify affine-map settings, including
-Gaussian or elliptical examples, as genuinely degenerate cases. Larger samples
-can reveal population curvature, but do not remove structural
-non-identifiability by themselves.
+As $n\to+\infty$, these empirical losses converge to the population loss
+$\mathcal F_0(c_{A_t}\mid\pi_0)$ under the usual moment assumptions. Peyré,
+Poon and Tron {cite:p}`peyre2026curvature` identify conditions under which this
+limit is genuinely curved. In their smooth setting, the source and target have
+positive Hölder densities bounded away from zero on compact connected
+uniformly convex domains, $A_0$ is invertible, and the Hessians of the
+associated Kantorovich potential span the symmetric matrices. The population
+loss is then locally quadratic in directions transverse to the unavoidable ray
+$\{\lambda A_0:\lambda>0\}$. Thus increasing $n$ can reveal population
+curvature, as suggested by the numerical experiment below, but it cannot
+repair a structural failure of identifiability such as the affine Gaussian
+case.
 
-(prop-inverse-ot-convex)=
-:::{admonition} Proposition: Convex Dual-Gap Formulation of Inverse OT
-:class: important
-Let $\widehat \P\in\mathbf U(a,b)$ be an observed coupling and let
-$\C_\theta$ depend affinely on $\theta\in\Theta$, where $\Theta$ is convex.
-The condition that $\widehat \P$ is optimal for the cost $\C_\theta$ is
-equivalent to the existence of dual potentials $(f,g)$ such that
+#### Statistical Estimation
 
-```{math}
-f_i+g_j\leq (\C_\theta)_{i,j}
-\qquad\text{and}\qquad
-\sum_{i,j}\widehat \P_{i,j}
-\big((\C_\theta)_{i,j}-f_i-g_j\big)=0.
-```
-
-Consequently, for a convex regularizer $R$ and $\lambda\geq0$, the dual-gap
-fitting problem is the convex program
+Suppose that $(X_i,Y_i)_{i=1}^n$ are i.i.d. samples from the entropic optimizer
+$\pi_{A_0,\epsilon}^\star$ associated with $c_{A_0}$, and set
+$\widehat\pi_n=n^{-1}\sum_{i=1}^n\delta_{(X_i,Y_i)}$. Applying
+{eq}`eq-inverse-ot-bilinear-estimator` with the empirical marginals of
+$\widehat\pi_n$ gives a convex empirical estimator. In a fixed-dimensional
+identifiable model, Andrade, Peyré and Poon {cite:p}`andrade2024sparsistency`
+analyze its $\ell^1$-regularized version for $\epsilon>0$. Under their
+nondegenerate-certificate assumptions and with a regularization parameter of
+order $n^{-1/2}$, up to logarithmic, confidence and $\epsilon$-dependent
+factors, they prove
 
 ```{math}
-:label: eq-inverse-ot-convex
-\min_{\theta\in\Theta,f,g}
-R(\theta)
-+
-\lambda
-\sum_{i,j}\widehat \P_{i,j}
-\big((\C_\theta)_{i,j}-f_i-g_j\big)
+\norm{A_n^\star-A_0}_{\mathrm F}=O_{\mathbb P}(n^{-1/2})
 ```
 
-subject to $f_i+g_j\leq(\C_\theta)_{i,j}$ for all $i,j$. It is nontrivial
-only if $\Theta$ imposes a cost normalization or otherwise excludes the
-zero-cost and marginal-gauge degeneracies.
-:::
-
-:::{dropdown} Proof
-For a fixed cost $\C_\theta$, Kantorovich duality gives
-
-```{math}
-\min_{\P\in\mathbf U(a,b)}
-\dotp{\C_\theta}{\P}
-=
-\max_{f_i+g_j\leq(\C_\theta)_{i,j}}
-\dotp{f}{a}+\dotp{g}{b}.
-```
-
-Since $\widehat \P$ has marginals $(a,b)$, every dual feasible pair satisfies
-
-```{math}
-\dotp{\C_\theta}{\widehat \P}
--
-\dotp{f}{a}
--
-\dotp{g}{b}
-=
-\sum_{i,j}\widehat \P_{i,j}
-\big((\C_\theta)_{i,j}-f_i-g_j\big)
-\geq0.
-```
-
-This nonnegative quantity is exactly the primal-dual gap of $\widehat \P$. It
-vanishes if and only if $\widehat \P$ reaches the dual value and is therefore
-optimal. If $\C_\theta$ is affine, $\lambda\geq0$, and $\Theta$ and $R$ are
-convex, the constraints and objective in the displayed program are convex. If
-$\C_\theta=0$ is allowed and minimizes $R$, then $(\C,f,g)=(0,0,0)$ is a trivial
-minimizer; this proves the need for normalization.
-:::
-
-The formulation avoids differentiating through a forward OT solver: it learns
-a normalized cost by making the observed plan nearly satisfy complementary
-slackness. In statistical settings, $\widehat \P$ is only partially observed or
-noisy, so one adds sparsity, low-rank, smoothness or metric constraints to
-select a meaningful representative
-{cite:p}`dupuy2016estimating,andrade2024sparsistency`. For entropic OT, the optimality condition becomes
-smoother:
-
-```{math}
-\widehat \P_{i,j}
-\approx
-a_i b_j
-\exp\!\left(
-\frac{f_i+g_j-(\C_\theta)_{i,j}}{\epsilon}
-\right),
-```
-
-which leads to likelihood-based or KL-based convex objectives when
-$\C_\theta$ is affine, and connects inverse OT with generalized Sinkhorn
-iterations and transport-regularized inverse problems
-{cite:p}`karlsson2016generalized,ma2020learning`.
-
-
+together with recovery of the support of $A_0$. This rate is not
+unconditional: cost gauges, identifiability and the stated nondegeneracy
+assumptions are essential. More general Fenchel--Young formulations and
+curvature properties of inverse OT are studied in
+{cite:p}`andrade2025sharpened,peyre2026curvature`.
 
 (sec-weak-ot)=
 ## Weak Optimal Transport
@@ -3031,12 +2836,20 @@ and the barycentric projection of $\pi$ is the map
 The projected target $\bar\beta_\pi$ records the distribution of conditional
 means, not the full second marginal. Thus it is generally different from
 $\beta$; if $\pi=(\Id,T)_\sharp\alpha$ is induced by a map, then
-$\bar T_\pi=T$ and $\bar\beta_\pi=\beta$. This projection is not an optimal
-map for an arbitrary coupling: a deterministic rotation of a radially
-symmetric source, for example, projects to the rotation itself, whereas the
-optimal map from the source to itself is the identity. The useful positive
-statement is attached to quadratic optimal plans, as in the tangent-space
-viewpoint on $\Wass_2$ developed by Ambrosio, Gigli and Savare
+$\bar T_\pi=T$ and $\bar\beta_\pi=\beta$. For discrete measures
+$\alpha=\sum_{i=1}^n a_i\delta_{x_i}$ and
+$\beta=\sum_{j=1}^m b_j\delta_{y_j}$, write
+$\pi=\sum_{i,j}\mathrm P_{i,j}\delta_{(x_i,y_j)}$ with
+$\mathrm P\in\mathrm U(a,b)$. Then
+
+```{math}
+\pi_{x_i}=\sum_{j=1}^m\frac{\mathrm P_{i,j}}{a_i}\delta_{y_j}
+\qquad\text{and}\qquad
+\bar T_\pi(x_i)=\frac{1}{a_i}\sum_{j=1}^m\mathrm P_{i,j}y_j.
+```
+
+The useful positive statement is attached to quadratic optimal plans, as in
+the tangent-space viewpoint on $\Wass_2$ developed by Ambrosio, Gigli and Savare
 {cite:p}`ambrosio2006gradient`.
 
 (prop-barycentric-projection-optimal)=
@@ -3110,6 +2923,15 @@ existence, duality and optimality conditions developed on Polish spaces
 {cite:p}`gozlan2017kantorovich,backhoff2019weak`. For a weak cost
 $C:\Xx\times\mathcal P(\Yy)\to\RR\cup\{+\infty\}$, the weak OT value is
 
+(def-weak-optimal-transport)=
+:::{admonition} Definition: Weak Optimal Transport
+:class: important
+Let $\Xx$ and $\Yy$ be Polish spaces, let $\alpha\in\mathcal P(\Xx)$ and
+$\beta\in\mathcal P(\Yy)$, and let
+$C:\Xx\times\mathcal P(\Yy)\to\RR\cup\{+\infty\}$ be measurable. For
+$\pi\in\Couplings(\alpha,\beta)$, write
+$\pi(\d x,\d y)=\alpha(\d x)\pi_x(\d y)$. Then
+
 ```{math}
 :label: eq-weak-ot
 \WOT_C(\alpha,\beta)
@@ -3117,6 +2939,13 @@ $C:\Xx\times\mathcal P(\Yy)\to\RR\cup\{+\infty\}$, the weak OT value is
 \inf_{\pi\in\Couplings(\alpha,\beta)}
 \int C(x,\pi_x)\d\alpha(x).
 ```
+:::
+
+If $C(x,\cdot)$ is convex for $\alpha$-a.e. $x$, this objective is convex in
+$\pi$. Indeed, the conditional law of $(1-t)\pi^0+t\pi^1$ is
+$(1-t)\pi_x^0+t\pi_x^1$. Since $\Couplings(\alpha,\beta)$ is convex, weak OT
+is then a convex optimization problem over couplings; without this hypothesis
+it need not be.
 
 The classical Kantorovich problem is recovered when
 $C(x,\nu)=\int c(x,y)\d\nu(y)$, because the objective then becomes
@@ -3180,6 +3009,16 @@ gives $g^C(x)$ and the constraint contributes $\int g\d\beta$. See
 {cite:p}`backhoff2019weak` for the Polish-space formulation.
 :::
 
+The dual is a concave maximization problem. For each $x$, the map
+$g\mapsto g^C(x)$ is the pointwise infimum over $\nu$ of affine functions of
+$g$, hence is concave. Therefore
+$g\mapsto\int g^C\d\alpha+\int g\d\beta$ is concave, although generally
+non-smooth.
+
+The most common weak transport model on $\RR^d$ retains only the conditional
+barycenter. Its quadratic cost gives a convex relaxation of quadratic
+Wasserstein transport.
+
 (prop-barycentric-weak-ot)=
 :::{admonition} Proposition: Barycentric Weak Transport Is Weaker than $\Wass_2$
 :class: important
@@ -3191,8 +3030,17 @@ C_{\mathrm{bar}}(x,\nu)
 \norm{x-\int y\d\nu(y)}^2.
 ```
 
-Equivalently, for a coupling $\pi$, the integrand is
-$\norm{x-\bar T_\pi(x)}^2$. Then
+Equivalently,
+
+```{math}
+:label: eq-barycentric-weak-primal
+\WOT_{C_{\mathrm{bar}}}(\alpha,\beta)
+=
+\inf_{\pi\in\Couplings(\alpha,\beta)}
+\int_{\RR^d}\norm{x-\bar T_\pi(x)}^2\d\alpha(x).
+```
+
+Then
 
 ```{math}
 \WOT_{C_{\mathrm{bar}}}(\alpha,\beta)
@@ -3216,7 +3064,71 @@ $\int C_{\mathrm{bar}}(x,\pi_x)\d\alpha(x)\leq
 \int\norm{x-y}^2\d\pi(x,y)$. Taking the infimum over $\pi$ proves the claim.
 :::
 
-Figure {ref}`fig:weak-ot-barycentric-projection` separates the full conditional coupling from its barycentric projection, making explicit which part of each conditional law is retained by the weak cost.
+For discrete measures $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$ and
+$\beta=\sum_{j=1}^m b_j\delta_{y_j}$, {eq}`eq-barycentric-weak-primal`
+becomes
+
+```{math}
+:label: eq-barycentric-weak-discrete
+\min_{\mathrm P\in\mathrm U(a,b)}
+\sum_{i=1}^n a_i
+\left\|x_i-\frac{1}{a_i}\sum_{j=1}^m\mathrm P_{i,j}y_j\right\|^2.
+```
+
+Each row barycenter is affine in $\mathrm P$, so this is a convex quadratic
+program on the transport polytope. This contrasts with GW in Section
+{ref}`sec-gromov-wasserstein`, whose quadratic coupling energy is generally
+indefinite and non-convex.
+
+One may add $\epsilon\operatorname{KL}(\pi\mid\alpha\otimes\beta)$ to the
+objective. If $F_{\mathrm{bar}}$ denotes the unregularized objective in
+{eq}`eq-barycentric-weak-primal`, a linearized ground cost at $\pi$ is
+
+```{math}
+:label: eq-barycentric-weak-linearized-cost
+c_\pi^{\mathrm{bar}}(x,y)
+\eqdef
+2\dotp{x-\bar T_\pi(x)}{x-y}.
+```
+
+Indeed, for every $\widehat\pi\in\Couplings(\alpha,\beta)$,
+
+```{math}
+\left.\frac{\d}{\d t}\right|_{t=0}
+F_{\mathrm{bar}}\bigl((1-t)\pi+t\widehat\pi\bigr)
+=
+\int c_\pi^{\mathrm{bar}}\d(\widehat\pi-\pi).
+```
+
+The $x$-only term in {eq}`eq-barycentric-weak-linearized-cost` is a harmless
+source-marginal gauge; equivalently one may use
+$2\dotp{\bar T_\pi(x)-x}{y}$. The first-order condition for a regularized
+minimizer is the self-consistent entropic OT problem
+
+```{math}
+:label: eq-barycentric-weak-entropic-fixed-point
+\pi^\star
+\in
+\argmin_{\widehat\pi\in\Couplings(\alpha,\beta)}
+\left\{
+\int c_{\pi^\star}^{\mathrm{bar}}\d\widehat\pi
++\epsilon\operatorname{KL}(\widehat\pi\mid\alpha\otimes\beta)
+\right\}.
+```
+
+Because the regularized objective is convex, this self-consistency condition
+characterizes its global minimizers, unlike frozen-cost stationarity for
+general GW. Freezing $c_\pi^{\mathrm{bar}}$ gives an entropic OT subproblem
+solvable by Sinkhorn, in the same computational spirit as Algorithm
+{ref}`alg-entropic-gromov-wasserstein`. The curvature is opposite: here the
+tangent is a lower model, so the undamped fixed-point iteration is not
+automatically a descent method. Damped conditional-gradient or proximal
+mirror-descent variants retain the convex optimization interpretation.
+
+Figure {ref}`fig:weak-ot-barycentric-projection` compares the usual quadratic OT
+plan with barycentric weak OT. It first displays the full optimal plan, then
+retains only its conditional barycenters, and finally shows how optimizing
+these barycenters changes the solution.
 
 (fig:weak-ot-barycentric-projection)=
 :::{div}
@@ -3227,13 +3139,14 @@ Figure {ref}`fig:weak-ot-barycentric-projection` separates the full conditional 
 show_book_figure("weak-ot-barycentric-projection")
 ```
 
-*Weak barycentric transport on a small disk-to-annulus coupling. The left
-panel shows the full conditional laws: each red source atom splits its mass
-among several blue target atoms, with segment thickness proportional to
-transported mass. The right panel collapses each conditional law $\pi_x$ to
-its barycenter $\bar T_\pi(x)=\int y\d\pi_x(y)$, shown in violet. The
-barycentric weak cost only sees the red-to-violet displacement, and therefore
-ignores the conditional spread around each barycenter.*
+*Classical and weak quadratic transport between a red disk and a blue
+annulus.* Left: the quadratic OT plan $\pi_{\mathrm{OT}}$, with segment
+thickness proportional to transported mass. Center: its barycentric
+projection $\bar T_{\pi_{\mathrm{OT}}}$, shown by violet displacements. Right:
+the projection $\bar T_{\pi_{\mathrm{weak}}}$ of a minimizer of
+{eq}`eq-barycentric-weak-primal`; it remains much closer to the source points
+because the weak objective ignores the conditional spread needed to reproduce
+the blue marginal.
 :::
 
 The interactive demo lets each source point split toward several targets. Increasing
@@ -3251,10 +3164,12 @@ weak barycentric cost can remain much smaller.
 The barycentric cost is the canonical example to keep in mind: admissibility
 still constrains the full conditional laws to have second marginal $\beta$,
 but the objective only charges the displacement from $x$ to $\bar T_\pi(x)$
-and ignores the conditional variance around this barycenter. This connects
-weak OT with martingale transport, Strassen-type convex-order constraints,
-barycentric projections and learning problems where conditional averages are
-meaningful objects.
+and ignores the conditional variance around this barycenter. Its zero level
+already points toward the next section. Vanishing cost means that every
+conditional law is centered at its source, $\bar T_\pi(x)=x$, which is exactly
+the martingale constraint. Martingale feasibility is therefore the zero-cost
+question for barycentric weak OT, and Strassen's theorem will identify it with
+the convex-order relation $\alpha\preceq_{\mathrm{cx}}\beta$.
 
 
 (sec-martingale-ot)=
@@ -3294,6 +3209,29 @@ For a cost $c$, the martingale OT value is
 $+\infty$ if the admissible set is empty, and otherwise is obtained by
 minimizing $\int c\d\pi$ over
 $\Couplings_{\mathrm{mart}}(\alpha,\beta)$.
+:::
+
+(rem-weak-ot-martingale-feasibility)=
+:::{admonition} Remark: Zero Barycentric Cost and Martingale Feasibility
+:class: note
+For $\alpha,\beta\in\mathcal P_2(\RR^d)$,
+
+```{math}
+:label: eq-weak-zero-iff-martingale
+\WOT_{C_{\mathrm{bar}}}(\alpha,\beta)=0
+\quad\Longleftrightarrow\quad
+\Couplings_{\mathrm{mart}}(\alpha,\beta)\neq\emptyset.
+```
+
+Every martingale coupling has $\bar T_\pi=\Id$ and is therefore a zero-cost
+competitor in {eq}`eq-barycentric-weak-primal`. Conversely, the barycentric
+weak problem attains its minimum for finite-second-moment marginals: compactness
+of the coupling set and lower semicontinuity of the convex weak cost give an
+optimal $\pi$ {cite:p}`backhoff2019weak`. If the value is zero, nonnegativity
+of the integrand yields $\bar T_\pi=\Id$ $\alpha$-almost everywhere, hence
+$\pi\in\Couplings_{\mathrm{mart}}(\alpha,\beta)$. By Theorem
+{ref}`thm-strassen-martingale`, these conditions are also equivalent to
+$\alpha\preceq_{\mathrm{cx}}\beta$.
 :::
 
 The terminology comes from probability: if $(X,Y)\sim\pi$, then

@@ -28,6 +28,9 @@ ROUTES = {
     "matching": "matching",
     "monge": "monge",
     "kantorovich": "kantorovich",
+    # The web edition currently keeps the newly split Wasserstein-space
+    # chapter on the Kantorovich page, where its anchors remain stable.
+    "wasserstein-space": "kantorovich",
     "dual": "dual",
     "semidiscr-w1": "semidiscrete-w1",
     "dual-norms": "dual-norms",

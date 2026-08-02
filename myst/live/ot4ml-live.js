@@ -10624,13 +10624,38 @@ function drawInverseOTForward() {
   setStatus(`${n} equal-weight points; each panel solves a true Hungarian assignment for c_A(x,y)=<Ax,y>.`);
 }
 
-function inverseOTGapCurve(n, seed, angleDeg, tGrid) {
-  const { source, target } = inverseOTCloud(n, seed);
-  const observedCost = bilinearCostMatrix(source, target, diagonalBilinear(0, angleDeg));
-  const observed = hungarian(observedCost);
+function inverseOTPopulationSample(n, seed, strength) {
+  const random = rng(seed);
+  const source = [];
+  const target = [];
+  const directions = [[1, 0], [0, 1], [Math.SQRT1_2, Math.SQRT1_2], [0.857493, -0.514496]];
+  const amplitudes = [0.90, 0.72, 0.80, 0.65].map((a) => strength * a / 0.72);
+  const biases = [0.10, -0.35, 0.45, -0.20];
+  for (let i = 0; i < n; i += 1) {
+    const radius = Math.sqrt(random());
+    const theta = 2 * Math.PI * random();
+    const x = [radius * Math.cos(theta), radius * Math.sin(theta)];
+    const y = [0.85 * x[0] + 0.15 * x[1] + 0.22, 0.15 * x[0] + 0.78 * x[1] - 0.16];
+    for (let r = 0; r < directions.length; r += 1) {
+      const v = directions[r];
+      const coefficient = amplitudes[r] * Math.tanh(v[0] * x[0] + v[1] * x[1] + biases[r]);
+      y[0] += coefficient * v[0];
+      y[1] += coefficient * v[1];
+    }
+    source.push(x);
+    target.push(y);
+  }
+  return { source, target };
+}
+
+function inverseOTGapCurve(n, seed, strength, tGrid) {
+  const { source, target } = inverseOTPopulationSample(n, seed, strength);
+  // The nonlinear map is the gradient of a strongly convex potential, so the
+  // paired empirical plan is optimal for A_0=-I at every sample size.
+  const observed = Array.from({ length: n }, (_, i) => i);
   const gaps = [];
   for (const t of tGrid) {
-    const C = bilinearCostMatrix(source, target, diagonalBilinear(t, angleDeg));
+    const C = bilinearCostMatrix(source, target, [[-1, -t], [t, -1]]);
     const best = hungarian(C);
     gaps.push(Math.max(0, assignmentMeanCost(C, observed) - assignmentMeanCost(C, best)));
   }
@@ -10639,22 +10664,25 @@ function inverseOTGapCurve(n, seed, angleDeg, tGrid) {
 
 function drawInverseOTGap() {
   const nLarge = Math.round(val("iogPoints"));
-  const angle = val("iogAngle");
+  const strength = val("iogStrength");
   const seed = Math.round(val("iogSeed"));
-  const tGrid = Array.from({ length: 67 }, (_, i) => lerp(-0.92, 0.92, i / 66));
-  const small = inverseOTGapCurve(10, seed, angle, tGrid);
-  const large = inverseOTGapCurve(nLarge, seed + 17, angle, tGrid);
+  // Each path sample solves an assignment problem; 41 values keep the control
+  // responsive at n=100 while resolving the finite-sample affine pieces.
+  const tGrid = Array.from({ length: 41 }, (_, i) => lerp(-0.80, 0.80, i / 40));
+  const population = inverseOTPopulationSample(Math.max(nLarge, 10), seed, strength);
+  const small = inverseOTGapCurve(10, seed, strength, tGrid);
+  const large = inverseOTGapCurve(nLarge, seed, strength, tGrid);
   const { ctx, w, h } = resizeCanvas(430);
   const boxes = beyondBoxes(w, h, 3, 850);
-  const lim = limits(large.source.concat(large.target));
-  drawPairedMapPanel(ctx, large.source, large.target, large.observed, boxes[0], lim, "observed coupling", 0.2);
+  const lim = limits(population.source.concat(population.target));
+  drawPairedMapPanel(ctx, small.source, small.target, small.observed, boxes[0], lim, "samples from π₀", 0.28);
   const ymax = Math.max(...small.gaps, ...large.gaps, 1e-4) * 1.12;
-  drawFrame(ctx, boxes[1], "gap loss, n=10");
-  drawCurve(ctx, tGrid, small.gaps, boxes[1], -0.92, 0.92, 0, ymax, RED, 2.2);
-  drawFrame(ctx, boxes[2], `gap loss, n=${nLarge}`);
-  drawCurve(ctx, tGrid, large.gaps, boxes[2], -0.92, 0.92, 0, ymax, BLUE, 2.2);
+  drawFrame(ctx, boxes[1], "empirical loss, n=10");
+  drawCurve(ctx, tGrid, small.gaps, boxes[1], -0.80, 0.80, 0, ymax, RED, 2.2);
+  drawFrame(ctx, boxes[2], `empirical loss, n=${nLarge}`);
+  drawCurve(ctx, tGrid, large.gaps, boxes[2], -0.80, 0.80, 0, ymax, BLUE, 2.2);
   for (const box of [boxes[1], boxes[2]]) {
-    const X0 = box.x + ((0 + 0.92) / 1.84) * box.w;
+    const X0 = box.x + 0.5 * box.w;
     ctx.strokeStyle = "rgba(20,20,20,.35)";
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -10664,7 +10692,7 @@ function drawInverseOTGap() {
     ctx.setLineDash([]);
     drawSmallLabel(ctx, "true t=0", X0 + 4, box.y + 15, "#26333f", "left");
   }
-  setStatus(`Hungarian gap scan along A_t=-R diag(1+t,1-t) R^T; larger n usually sharpens the zero valley.`);
+  setStatus(`paired samples come from one nonlinear W2 plan π₀; the curves show F₀(c_{A_t} | π̂ₙ) along A_t=-I+tJ.`);
 }
 
 function det2(A) {
@@ -11899,8 +11927,8 @@ function init() {
     bind(drawInverseOTForward);
   } else if (kind === "inverseotgap") {
     controls.innerHTML = [
-      slider("iogPoints", "large n", 46, 20, 82, 2),
-      slider("iogAngle", "rotation", 12, -45, 45, 1),
+      slider("iogPoints", "large n", 64, 20, 100, 2),
+      slider("iogStrength", "nonlinearity", 0.72, 0.25, 1.00, 0.01),
       slider("iogSeed", "seed", 4770, 4760, 4820, 1),
     ].join("");
     bind(drawInverseOTGap);

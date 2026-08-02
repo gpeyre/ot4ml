@@ -790,8 +790,8 @@ cells separate the main numerical steps.
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="inverse-ot-gap-loss.ipynb"><img src="thumbnails/inverse-ot-gap-loss.png" alt="Inverse OT gap loss on Gaussian mixtures" width="210"></a><br>
-  <strong>Inverse OT gap loss on Gaussian mixtures</strong><br>
+  <a href="inverse-ot-gap-loss.ipynb"><img src="thumbnails/inverse-ot-gap-loss.png" alt="Empirical inverse OT loss and population curvature" width="210"></a><br>
+  <strong>Empirical inverse OT loss and population curvature</strong><br>
   <a href="inverse-ot-gap-loss.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/inverse-ot-gap-loss.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 

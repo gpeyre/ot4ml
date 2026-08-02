@@ -1,10 +1,13 @@
 \section{Wasserstein Gradient Flows}
 \label{sec-wasserstein-gradient-flows}
 \subsection{Minimizing Movements and Wasserstein Gradients}
+\begin{defn}[JKO minimizing movement]\label{def-jko-minimizing-movement}
+Given $\tau>0$ and $\alpha^{(0)}$, define recursively
 \begin{equation}
-\alpha_{t+\tau} \in \uargmin{\alpha\in\Pp_2(\RR^d)}
-\left\{\frac{1}{2 \tau} \Wass_2(\alpha_t, \alpha)^2 + f(\alpha)\right\}. \label{eq:jko-discr}
+\alpha^{(\ell+1)} \in \uargmin{\alpha\in\Pp_2(\RR^d)}
+\left\{\frac{1}{2 \tau} \Wass_2(\alpha^{(\ell)}, \alpha)^2 + f(\alpha)\right\}. \label{eq:jko-discr}
 \end{equation}
+\end{defn}
 \paragraph{Euclidean gradient flows.}
 If we restrict \eqref{eq:jko-discr} to finite dimensions and assume $\alpha_t = \delta_{x(t)}$ and $\alpha = \delta_x$ (single Dirac measures), this matches the implicit Euler scheme:
 
@@ -18,8 +21,21 @@ where $h(x) = f(\delta_x)$. When $h$ is differentiable and the minimizer is uniq
 \begin{equation}
 \dot{x}(t) = -\nabla h(x(t)). \label{eq:grad-flow-classical}
 \end{equation}
-\paragraph{Wasserstein gradient formula.}
-\(f((1-\tau)\alpha + \tau \beta) = f(\alpha + \tau \eta) = f(\alpha) + \tau \int [\delta f(\alpha)](x) \d \eta(x) + o(\tau).\)
+\paragraph{Vertical derivatives (first- and higher-order variations).}
+\begin{defn}[First variation]\label{def-first-variation}
+Assume that \(f(\alpha)<+\infty\). A measurable function \(\delta f(\alpha)\) is a first variation of \(f\) at \(\alpha\) if, for every \(\beta\in\Pp(\RR^d)\) such that \(\delta f(\alpha)\) is integrable with respect to \(\lvert\beta-\alpha\rvert\) and the mixture \(\alpha_\vartheta\) remains in the domain of \(f\) for small \(\vartheta>0\),
+\(f(\alpha_\vartheta) = f(\alpha) +\vartheta\int_{\RR^d}[\delta f(\alpha)](x) \d(\beta-\alpha)(x) +o(\vartheta) \qquad(\vartheta\downarrow0).\)
+\end{defn}
+\(Df(\alpha)[\eta] \eqdef \int_{\RR^d}[\delta f(\alpha)](x)\d\eta(x)\)
+\begin{defn}[Higher-order vertical derivatives]\label{def-higher-order-vertical-derivatives}
+Set \(D^0f=f\). The functional \(f\) admits vertical derivatives through order \(r\) if there are symmetric multilinear forms
+\(D^j f(\alpha):\Mm_0(\Xx)^j\longrightarrow\RR, \qquad 1\leq j\leq r,\)
+such that, along every mixture segment in \(\Pp(\Xx)\) and for fixed \(\eta_1,\ldots,\eta_{j-1}\in\Mm_0(\Xx)\),
+\(\frac{\d}{\d\vartheta} D^{j-1}f(\alpha_\vartheta)[\eta_1,\ldots,\eta_{j-1}] = D^j f(\alpha_\vartheta) [\beta-\alpha,\eta_1,\ldots,\eta_{j-1}].\)
+At the endpoints, derivatives are understood one-sided.
+\end{defn}
+\(D^j f(\alpha)[\eta_1,\ldots,\eta_j] = \int_{\Xx^j} \frac{\delta^j f}{\delta\alpha^j} (\alpha,x_1,\ldots,x_j) \d\eta_1(x_1)\cdots\d\eta_j(x_j)\)
+\paragraph{Horizontal derivative (Wasserstein gradient).}
 \begin{defn}[Wasserstein gradient]\label{def-wasserstein-gradient}
 Assume that $f$ admits a smooth first variation $\delta f(\alpha)$. In the smooth formal calculus on $\Pp_2(\RR^d)$, the Wasserstein gradient of $f$ at $\alpha$ is the gradient vector field
 \(\Wgrad f(\alpha) = \nabla_x \delta f(\alpha).\)
@@ -63,18 +79,25 @@ f(\alpha_t)
 +o(\tau).
 \]
 \paragraph{Metric derivative and curves of maximal slope.}
-The same descent principle admits a coordinate-free formulation, which is the right language for limits of JKO schemes. Let $(\mathcal X,d)$ be a metric space and let $x:[0,T]\to\mathcal X$ be an absolutely continuous curve.
-
+\begin{defn}[Metric derivative and absolutely continuous curve]\label{def-metric-derivative-ac-curve}
+For \(1\leq p\leq+\infty\), a curve $x:[0,T]\to(\mathcal X,d)$ belongs to \(AC^p([0,T];\mathcal X)\) if some $g\in L^p(0,T)$ satisfies $d(x_s,x_t)\leq\int_s^t g(r)\d r$. Absolutely continuous means \(AC^1\). Its metric derivative is
 \(|\dot x_t| \eqdef \lim_{h\to 0}\frac{d(x_{t+h},x_t)}{|h|}\)
+for a.e. $t$.
+\end{defn}
+\begin{defn}[Metric slope and curve of maximal slope]\label{def-curve-maximal-slope}
+For lower-semicontinuous $f:\mathcal X\to(-\infty,+\infty]$, define
 \[
 |\partial f|(x)
 \eqdef
+\begin{cases}
 \limsup_{\substack{y\to x\\ y\neq x}}
-\frac{( f(x)-f(y) )_+}{d(x,y)}.
+\dfrac{( f(x)-f(y) )_+}{d(x,y)}, & f(x)<+\infty,\\[.4em]
++\infty, & f(x)=+\infty.
+\end{cases}
 \]
-When this slope is a strong upper gradient for $f$, meaning that $|f(y_t)-f(y_s)|\leq \int_s^t |\partial f|(y_r)|\dot y_r|\d r$ along absolutely continuous curves $y_r$, an absolutely continuous curve $x_t$ is called a curve of maximal slope if it satisfies the energy-dissipation inequality
-
+It is a strong upper gradient if $|f(y_t)-f(y_s)|\leq \int_s^t |\partial f|(y_r)|\dot y_r|\d r$ along every absolutely continuous $y$. When this property holds, a curve $x_t$ is a curve of maximal slope for $f$ if
 \(f(x_t) +\frac12\int_s^t |\dot x_r|^2\d r +\frac12\int_s^t |\partial f|^2(x_r)\d r \leq f(x_s), \qquad 0\leq s<t.\)
+\end{defn}
 \paragraph{Discrete evolutions.}
 If $f$ admits a first variation whose spatial gradient is well defined at empirical measures, the characteristic form of~\eqref{eq:wassflow-pde} preserves the number and weights of the atoms. For equal weights, write $\alpha_t = \frac{1}{n} \sum_i \delta_{x_i(t)}$. The particles $X(t):= (x_i(t))_i$ evolve according to the coupled ODEs
 
@@ -85,6 +108,9 @@ where $F(X):= f\left(\frac{1}{n} \sum_i \delta_{x_i}\right)$ and the factor $n$ 
 
 \paragraph{Linear functionals.}
 \paragraph{Shannon neg-entropy.}
+\begin{defn}[Score function]\label{def-score-function}
+For $\alpha=\rho\,\d x$ with differentiable positive density $\rho$, its score is $\nabla\log\rho$. Relative to $\beta$, its relative score is $\nabla\log(\d\alpha/\d\beta)$ whenever this logarithmic density has a weak gradient.
+\end{defn}
 \paragraph{Interaction energies.}
 \begin{equation}
 f(\alpha):= \iint k(x, y) \d \alpha(x) \d \alpha(y). \label{eq:quadratic-func}
@@ -140,10 +166,10 @@ f_{\rho_{\max}}(\rho\d x)=\int_\Omega h(x)\rho(x)\d x+
 where $\Omega\subset\RR^d$ is a convex domain and $\mathcal K_{\rho_{\max}}$ is assumed nonempty; if $\Omega$ has finite volume, this requires $\rho_{\max}|\Omega|\geq1$. The indicator term has no classical first variation; it contributes the normal cone to $\mathcal K_{\rho_{\max}}$ in the Wasserstein first-order condition.
 
 \begin{equation}\label{eq-density-constrained-jko}
-\alpha^{k+1}
+\alpha^{(\ell+1)}
 \in
 \uargmin{\alpha\in\mathcal K_{\rho_{\max}}}
-\frac{1}{2\tau}\Wass_2^2(\alpha^k,\alpha)+\int_\Omega h\,\d\alpha.
+\frac{1}{2\tau}\Wass_2^2(\alpha^{(\ell)},\alpha)+\int_\Omega h\,\d\alpha.
 \end{equation}
 \begin{equation}\label{eq-density-constrained-pressure-flow}
 \partial_t\rho_t=\diverg\left(\rho_t\nabla(h+p_t)\right),
@@ -170,10 +196,10 @@ Several applications involve several densities living on the same physical space
 \Wass_2^2\!\left(\frac{\alpha_i}{m_i},\frac{\eta_i}{m_i}\right).
 \end{equation}
 \begin{equation}\label{eq-multispecies-jko}
-\alpha^{k+1}
+\alpha^{(\ell+1)}
 \in
 \uargmin{\alpha\in\Pp_{2,\mathbf m}(\Omega;\RR_+^p)}
-\frac{1}{2\tau}\Wass_{2,\oplus}^2(\alpha^k,\alpha)+f(\alpha).
+\frac{1}{2\tau}\Wass_{2,\oplus}^2(\alpha^{(\ell)},\alpha)+f(\alpha).
 \end{equation}
 For smooth densities and first variations $\phi_i=\delta f/\delta\rho_i$, this yields
 
@@ -189,15 +215,15 @@ For smooth densities and first variations $\phi_i=\delta f/\delta\rho_i$, this y
 {\sum_{i=1}^p \alpha_i=\beta}.
 \end{equation}
 \begin{equation}\label{eq-multispecies-constrained-jko}
-\alpha^{k+1}
+\alpha^{(\ell+1)}
 \in
 \uargmin{\alpha\in\mathcal C_\beta}
-\frac{1}{2\tau}\Wass_{2,\oplus}^2(\alpha^k,\alpha)+f(\alpha).
+\frac{1}{2\tau}\Wass_{2,\oplus}^2(\alpha^{(\ell)},\alpha)+f(\alpha).
 \end{equation}
 \begin{equation}\label{eq-multispecies-constrained-pde}
 \partial_t\rho_i=\diverg\left(\rho_i\nabla(\phi_i-\lambda_t)\right),
 \qquad
-\diverg(b\nabla\lambda_t)=\diverg\left(\sum_{i=1}^p \rho_i\nabla\phi_i\right).
+\diverg(\density{\beta}\nabla\lambda_t)=\diverg\left(\sum_{i=1}^p \rho_i\nabla\phi_i\right).
 \end{equation}
 For the separable Shannon entropy $f(\alpha)=\sum_i\int_\Omega \rho_i\log\rho_i\d x$, this becomes
 
@@ -285,9 +311,9 @@ is geodesically convex on \(\Pp_2(\RR^d)\).
 \end{thm}
 \begin{proof}
 It is enough to prove the inequality for smooth positive compactly supported densities; the general case follows by approximation and lower semicontinuity. Let \(T=\nabla\varphi\) be the Brenier map from \(\alpha_0=\rho_0\d x\) to \(\alpha_1=\rho_1\d x\), set \(T_t=(1-t)\Id+tT\), and denote
-\(J_t(x)=\det\big((1-t)\Id+t\nabla T(x)\big).\)
+\(J_t(x)=\det\big((1-t)\Id+t\nabla T(x)\big)\).
 The interpolation satisfies \(\alpha_t=(T_t)_\sharp\alpha_0\) and
-\(\rho_t(T_t(x))J_t(x)=\rho_0(x).\)
+\(\rho_t(T_t(x))J_t(x)=\rho_0(x)\).
 By concavity of \(\det^{1/d}\) on positive semidefinite matrices, \(J_t(x)^{1/d}\geq (1-t)+t\det(\nabla T(x))^{1/d}.\)
 Introduce \(s_t(x)=(J_t(x)/\rho_0(x))^{1/d}\). Since
 \(\rho_1(T(x))\det\nabla T(x)=\rho_0(x)\), this gives
@@ -309,15 +335,15 @@ r\log r-r+1, & m=1.
 \]
 Then the following geodesic-convexity statements hold.
 \begin{enumerate}
-\item If \(\Omega\subset\RR^d\) is convex, \(\beta=b\,\mathds{1}_\Omega\d x\), and \(m\geq1-1/d\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \(\Pp_2(\Omega)\).
+\item If \(\Omega\subset\RR^d\) is convex, \(\beta=\density{\beta}\d x\) is uniform on \(\Omega\), and \(m\geq1-1/d\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \(\Pp_2(\Omega)\).
 \item If \(\beta=Z^{-1}e^{-V}\d x\) on \(\RR^d\), \(V\) is convex, and \(m\geq1\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \((\Pp_2(\RR^d),\Wass_2)\).
 \item In the KL case \(m=1\), if \(V\) is \(\lambda\)-strongly convex, then \(\alpha\mapsto\KL(\alpha|\beta)=\Divergm_{\phi_1}(\alpha|\beta)\) is \(\lambda\)-geodesically convex.
 \end{enumerate}
 All statements use the convention that the divergence is \(+\infty\) when \(\alpha\) is not absolutely continuous with respect to \(\beta\).
 \end{prop}
 \begin{proof}
-For the flat reference case, write \(\alpha=\rho\d x\). Up to affine terms in \(\rho\), which only add constants on probability measures, the integrand \(b\,\phi_m(\rho/b)\) has non-affine part \(b^{1-m}\rho^m/(m(m-1))\) for \(m\neq1\), and \(\rho\log\rho\) for \(m=1\). For \(m=1\), McCann's criterion gives \(\psi(r)=-d\log r\). For \(m\neq1\), the transformed non-affine part is, up to the irrelevant factor \(b^{1-m}\),
-\(\psi_m(r)=\frac{r^{d(1-m)}}{m(m-1)}.\)
+For the flat reference case, write \(\alpha=\rho\d x\) and let \(\density{\beta}=b\,\mathds{1}_\Omega\), where $b=1/|\Omega|$. Up to affine terms in \(\rho\), which only add constants on probability measures, the integrand \(b\,\phi_m(\rho/b)\) has non-affine part \(b^{1-m}\rho^m/(m(m-1))\) for \(m\neq1\), and \(\rho\log\rho\) for \(m=1\). For \(m=1\), McCann's criterion gives \(\psi(r)=-d\log r\). For \(m\neq1\), the transformed non-affine part is, up to the irrelevant factor \(b^{1-m}\),
+\(\psi_m(r)=\frac{r^{d(1-m)}}{m(m-1)}\).
 If \(m>1\), this function is convex and nonincreasing. If \(0<m<1\), it is convex and nonincreasing exactly when \(d(1-m)\leq1\), i.e. \(m\geq1-1/d\). This proves the first claim by Theorem~\ref{thm-mccann-internal-energy}.
 
 Assume next that \(m>1\) and \(V\) is convex. Up to constants, \(\Divergm_{\phi_m}(\alpha|\beta) = \frac{Z^{m-1}}{m(m-1)} \int \rho(x)^m e^{(m-1)V(x)}\,\d x.\)
@@ -490,7 +516,7 @@ If \(r=0\), then \(\alpha=\alpha^\star\) and there is nothing to prove. Otherwis
 Therefore
 \(f(\alpha)-f(\alpha_s) \geq s g+\frac{\lambda}{2}s(1-s)r^2.\)
 Dividing by \(\Wass_2(\alpha,\alpha_s)=sr\) and letting \(s\downarrow0\) in the definition of the descending metric slope yields
-\(a\geq \frac{g}{r}+\frac{\lambda}{2}r.\)
+\(a\geq \frac{g}{r}+\frac{\lambda}{2}r\).
 Equivalently, \(g\leq ar-\lambda r^2/2\). Maximizing the right-hand side over \(r\geq0\) gives \(g\leq a^2/(2\lambda)\), which is the desired PL inequality.
 \end{proof}
 \paragraph{Wasserstein Kurdyka--{\L}ojasiewicz inequalities.}
@@ -522,7 +548,7 @@ O\!\left(t^{-(1-\theta)/(2\theta-1)}\right).
 If \(E\) reaches zero at some time, then the flow is already at a global minimizer. Indeed, the integrated energy-dissipation identity forces both \(|\dot\alpha_t|\) and \(|\partial f|(\alpha_t)\) to vanish afterwards. We therefore argue on intervals where \(E>0\). For a.e. \(t\),
 \(-E'(t)=|\partial f|^2(\alpha_t)=|\dot\alpha_t|^2.\)
 The Wasserstein--KL inequality yields
-\(E'(t) \leq -c^2E(t)^{2\theta}.\)
+\(E'(t) \leq -c^2E(t)^{2\theta}\).
 Since \(1-2\theta<0\), \(\frac{\d}{\d t}E(t)^{1-2\theta} = (1-2\theta)E(t)^{-2\theta}E'(t) \geq c^2(2\theta-1),\)
 and integration from \(0\) to \(t\) gives the announced polynomial bound.
 
@@ -583,8 +609,9 @@ The constant is sharp, with equality for Euclidean balls.
 \end{prop}
 \begin{proof}
 We first give the argument for regular sets, the general Borel case following by approximation from inside and outside. Let $\alpha$ and $\beta$ be the uniform probability measures on $A$ and $B$, and let $T=\nabla\phi$ be the Brenier map with $T_\sharp\alpha=\beta$. The interpolating map $T_t=(1-t)\Id+tT$ sends $\alpha$ to a measure $\alpha_t$ supported in $(1-t)A+tB$. At points where $T$ is differentiable,
-\(\det DT_t = \det((1-t)\Id+tDT).\)
-Since $DT$ is symmetric positive semidefinite and $\det^{1/d}$ is concave on the positive semidefinite cone, \(\det(DT_t)^{1/d} \geq (1-t)+t\det(DT)^{1/d}.\)
+\(\det DT_t = \det((1-t)\Id+tDT)\).
+Since $DT$ is symmetric positive semidefinite and $\det^{1/d}$ is concave on the positive semidefinite cone,
+\(\det(DT_t)^{1/d} \geq (1-t)+t\det(DT)^{1/d}\).
 The change-of-variables identity for the uniform measures gives $\det(DT)=\mathrm{Vol}(B)/\mathrm{Vol}(A)$ almost everywhere. If $\rho_t$ denotes the density of $\alpha_t$, a second application of the same formula gives
 \(\rho_t(T_t(x))^{-1/d} = \mathrm{Vol}(A)^{1/d}\det(DT_t(x))^{1/d} \geq c_t,\)
 where $c_t=(1-t)\mathrm{Vol}(A)^{1/d}+t\mathrm{Vol}(B)^{1/d}$. Thus $\rho_t\leq c_t^{-d}$ almost everywhere. Since $\alpha_t$ has total mass one and is supported in $(1-t)A+tB$, this gives $\mathrm{Vol}((1-t)A+tB)\geq c_t^d$, which is the displayed Brunn--Minkowski inequality.
@@ -607,11 +634,12 @@ Then
 \end{prop}
 \begin{proof}
 The endpoint cases are immediate, so fix $t\in(0,1)$. Set $U=\int u$ and $V=\int v$. If $U=0$ or $V=0$, the conclusion is trivial; hence assume $U,V>0$. Let $\alpha=(u/U)\d x$ and $\beta=(v/V)\d x$, and let $T$ be the Brenier map from $\alpha$ to $\beta$. Put $T_t=(1-t)\Id+tT$. On a smooth positive regularization, $T_t$ is the gradient of a strictly convex function and is therefore one-to-one almost everywhere. The area formula gives
-\(\int w \geq \int w(T_t(x))\det(DT_t(x))\d x.\)
+\(\int w \geq \int w(T_t(x))\det(DT_t(x))\d x\).
 For each eigenvalue $s\geq0$ of $DT$, weighted arithmetic--geometric mean gives $(1-t)+ts\geq s^t$. Hence
-\(\det((1-t)\Id+tDT)\geq\det(DT)^t.\)
+\(\det((1-t)\Id+tDT)\geq\det(DT)^t\).
 \(\int w \geq \int u(x)^{1-t}v(T(x))^t\det(DT(x))^t\d x.\)
-Since $T_\sharp\alpha=\beta$, the Monge--Amp\`ere identity gives \(\det(DT(x))=\frac{u(x)V}{v(T(x))U}\)
+Since $T_\sharp\alpha=\beta$, the Monge--Amp\`ere identity gives
+\(\det(DT(x))=\frac{u(x)V}{v(T(x))U}\)
 almost everywhere. Substitution yields
 \[
 \int w
@@ -623,20 +651,24 @@ U^{1-t}V^t.
 Approximation removes the smoothness and positivity assumptions.
 \end{proof}
 \paragraph{Logarithmic Sobolev inequalities.}
+\begin{defn}[Relative Fisher information and logarithmic Sobolev inequality]\label{def-relative-fisher-lsi}
+Let \(\beta\in\Pp(\RR^d)\) have a positive density. For a probability measure \(\alpha=h\beta\), define
 \begin{equation}\label{eq-relative-fisher-information}
 \mathcal I(\alpha|\beta)
 \eqdef
-\int \norm{\nabla\log h}^2\,\d\alpha
+4\int \norm{\nabla\sqrt h}^2\,\d\beta
 =
-\int \frac{\norm{\nabla h}^2}{h}\,\d\beta,
+\int \norm{\nabla\log h}^2\,\d\alpha,
 \end{equation}
+whenever $\sqrt h$ has a weak gradient and the integral is finite, and set \(\mathcal I(\alpha|\beta)=+\infty\) otherwise, including when \(\alpha\not\ll\beta\). The measure \(\beta\) satisfies a logarithmic Sobolev inequality with constant \(\lambda>0\) if
 \begin{equation}\label{eq-general-log-sobolev}
 \KL(\alpha|\beta)
 \leq
 \frac{1}{2\lambda}\mathcal I(\alpha|\beta)
 \qquad
-\text{for all probability measures }\alpha.
+\text{for every probability measure }\alpha.
 \end{equation}
+\end{defn}
 \begin{prop}[Curvature implies logarithmic Sobolev]\label{prop-curvature-log-sobolev}
 Let \(\beta=Z^{-1}e^{-V}\d x\) be a smooth probability measure on \(\RR^d\). If \(\nabla^2V\succeq\lambda\Id\) for some \(\lambda>0\), then \(\beta\) satisfies \eqref{eq-general-log-sobolev} with constant \(\lambda\).
 \end{prop}
@@ -885,12 +917,16 @@ The rigorous Chizat--Bach theorem replaces the full directional support assumpti
 \subsection{Generalized Dynamic Wasserstein Flows}
 \label{sec-generalized-dynamic-wasserstein-flows}
 \paragraph{Generalized Wasserstein flows.}
+\begin{defn}[Generalized action gradient flow]\label{def-generalized-action-gradient-flow}
+Let \(d=\mathsf D_{\mathbb A}\) be the dynamic distance induced by the action \(\mathbb A\) in Definition~\ref{def-generalized-dynamic-action-distance}. Given \(\alpha^{(0)}\in\Pp(\RR^d)\) and \(\tau>0\), define
 \begin{equation}\label{eq-generalized-jko-step}
-\alpha_{t+\tau}
+\alpha^{(\ell+1)}
 \in
-\uargmin{\alpha}
-\frac{1}{2\tau}d^2(\alpha_t,\alpha)+f(\alpha).
+\uargmin{\alpha\in\Pp(\RR^d)}
+\left\{\frac{1}{2\tau}d^2(\alpha^{(\ell)},\alpha)+f(\alpha)\right\}.
 \end{equation}
+Any continuous-time limit of its piecewise-constant interpolants is called a generalized action gradient flow of \(f\) for \(\mathbb A\).
+\end{defn}
 \begin{equation}\label{eq-generalized-flow-continuity-motivation}
 \partial_t\alpha_t+\diverg(\alpha_t v_{\alpha_t})=0,
 \end{equation}
@@ -999,12 +1035,11 @@ A_\alpha^\star
 \uargmin{A\in\mathcal B_\gamma\cap\mathbb S_{++}^d}
 \tr\!\left(A^{-1}S_\alpha(g)\right).
 \]
-Then
-\begin{equation}\label{eq-normalized-spectral-direction-explicit}
+\eqllead{Then}{eq-normalized-spectral-direction-explicit}{
 \operatorname{PMO}_{\mathbb A_\gamma,\alpha}(g)(x)
 =
 -(A_\alpha^\star)^{-1}g(x)
-\end{equation}
+}
 is the spectral PMO direction. If the minimizer lies on the boundary of $\mathcal B_\gamma$, the same formula is understood by a limiting argument along positive definite minimizers, or equivalently by replacing the inverse by the corresponding inverse on the range of $S_\alpha(g)$.
 \end{prop}
 \begin{proof}
@@ -1083,7 +1118,7 @@ When \(K\) is singular, the integral defining \(L\) is understood in the princip
 \end{prop}
 \begin{proof}[Proof idea]
 The key identity is the logarithmic-mean relation
-\(\theta(a,b)(\log a-\log b)=a-b.\)
+\(\theta(a,b)(\log a-\log b)=a-b\).
 The first variation of \(\mathrm{Ent}_{\mathfrak m}\) is \(\log\rho+1\). With the sign convention of \eqref{eq-nonlocal-continuity-weak}, the steepest descent velocity is
 \(v(x,y) = -\bar\nabla(\log\rho+1)(x,y) = \log\rho(x)-\log\rho(y).\)
 Hence \(\theta(\rho(x),\rho(y))v(x,y)=\rho(x)-\rho(y)\). Substituting this in \eqref{eq-nonlocal-continuity-weak} and using the symmetry of \(\mathsf J\) gives
@@ -1101,24 +1136,24 @@ More generally, when a target-dependent jump kernel \(K_\beta\) satisfies detail
 
 \paragraph{Discrete Wasserstein flows on Markov chains.}
 \(\operatorname{Ent}_\pi(\rho)\eqdef\sum_i\pi_i\rho_i\log\rho_i.\)
-\(\frac{\rho^{k+1}-\rho^k}{\tau} =-\mathcal K_{\rho^{k+1}}\log\rho^{k+1}+o(1) =K\rho^{k+1}+o(1).\)
-Here \((K\rho)_i=\sum_jK_{ij}(\rho_j-\rho_i)\). Under smoothness and strict positivity, $\rho^{k+1}=\rho^k+O(\tau)$, so the last expression also equals $K\rho^k+O(\tau)$.
+\(\frac{\rho^{(\ell+1)}-\rho^{(\ell)}}{\tau} =-\mathcal K_{\rho^{(\ell+1)}}\log\rho^{(\ell+1)}+o(1) =K\rho^{(\ell+1)}+o(1).\)
+Here \((K\rho)_i=\sum_jK_{i,j}(\rho_j-\rho_i)\). Under smoothness and strict positivity, $\rho^{(\ell+1)}=\rho^{(\ell)}+O(\tau)$, so the last expression also equals $K\rho^{(\ell)}+O(\tau)$.
 
 \begin{prop}[Entropy gradient flow of a reversible Markov chain]
 \label{prop-discrete-markov-entropy-gradient}
 Let \(K\) be reversible with invariant law \(\pi\). The gradient flow of \(\operatorname{Ent}_\pi\) for the metric \(\mathcal W_K\) is the forward equation of the Markov chain,
 \begin{equation}
 \label{eq-discrete-markov-gradient-flow}
-\dot\rho_i(t)=\sum_jK_{ij}\bigl(\rho_j(t)-\rho_i(t)\bigr).
+\dot\rho_i(t)=\sum_jK_{i,j}\bigl(\rho_j(t)-\rho_i(t)\bigr).
 \end{equation}
-Equivalently, for the masses \(a_i(t)=\pi_i\rho_i(t)\), this is \(\dot a_i(t)=\sum_j(a_j(t)K_{ji}-a_i(t)K_{ij})\).
+Equivalently, for the masses \(a_i(t)=\pi_i\rho_i(t)\), this is \(\dot a_i(t)=\sum_j(a_j(t)K_{j,i}-a_i(t)K_{i,j})\).
 \end{prop}
 \begin{proof}
 The first variation of the entropy, with respect to the weighted pairing \(\sum_i\pi_i\xi_i\varphi_i\), is \(\log\rho_i+1\). Constants do not contribute to \(\mathcal K_\rho\), hence the metric gradient-flow equation is
-\(\dot\rho=-\mathcal K_\rho\log\rho.\)
+\(\dot\rho=-\mathcal K_\rho\log\rho\).
 Using the identity
-\(\theta(a,b)(\log a-\log b)=a-b,\)
-one obtains, componentwise, \(\dot\rho_i =-\sum_jK_{ij}\theta(\rho_i,\rho_j)(\log\rho_i-\log\rho_j) = \sum_jK_{ij}(\rho_j-\rho_i),\)
+\(\theta(a,b)(\log a-\log b)=a-b\),
+one obtains, componentwise, \(\dot\rho_i =-\sum_jK_{i,j}\theta(\rho_i,\rho_j)(\log\rho_i-\log\rho_j) = \sum_jK_{i,j}(\rho_j-\rho_i),\)
 which is the density form of the Kolmogorov forward equation. Multiplying by \(\pi_i\) and using detailed balance gives the equation for the probability masses.
 \end{proof}
 \subsection{Dynamic Unbalanced OT and WFR Flows}
@@ -1129,10 +1164,10 @@ The generalized dynamic Wasserstein flows of Section~\ref{sec-generalized-dynami
 \begin{defn}[WFR minimizing movement]\label{def-wfr-jko-gradient-flow}
 Let $f:\Mm_+(\RR^d)\to\RR\cup\{+\infty\}$ be an energy on positive finite measures and let $\WFR_\kappa$ be the Wasserstein--Fisher--Rao distance with growth scale $\kappa>0$, defined by the dynamic balance-equation formulation~\eqref{eq-dynamic-unbalanced-ot} and its static equivalence in Proposition~\ref{prop-static-dynamic-unbalanced}. The unbalanced JKO step is
 \begin{equation}\label{eq-wfr-jko}
-\alpha^{k+1}
+\alpha^{(\ell+1)}
 \in
 \uargmin{\alpha\in\Mm_+(\RR^d)}
-\frac{1}{2\tau}\WFR_\kappa^2(\alpha^k,\alpha)+f(\alpha).
+\frac{1}{2\tau}\WFR_\kappa^2(\alpha^{(\ell)},\alpha)+f(\alpha).
 \end{equation}
 The continuous-time limit, when it exists, is called the $\WFR_\kappa$ gradient flow of $f$.
 \end{defn}
@@ -1234,11 +1269,11 @@ for $\lambda$-a.e. condition $s$, whenever the first variation is differentiable
 Let $F:\RR^{N}\to\RR$ be a smooth finite-dimensional objective. With step size $h>0$ and damping $\lambda_{\rm fric}>0$, one convenient velocity form is
 
 \begin{equation}\label{eq-polyak-momentum}
-S^{k+1}=(1-\lambda_{\rm fric} h)S^k-h\nabla F(X^k),
+S^{(\ell+1)}=(1-\lambda_{\rm fric} h)S^{(\ell)}-h\nabla F(X^{(\ell)}),
 \qquad
-X^{k+1}=X^k+hS^{k+1}.
+X^{(\ell+1)}=X^{(\ell)}+hS^{(\ell+1)}.
 \end{equation}
-If $S^k$ approximates $\dot X(kh)$, this is a semi-implicit, or symplectic-Euler, discretization of the first-order system: the velocity update is explicit, while the position uses the newly updated velocity. The limiting system is
+If $S^{(\ell)}$ approximates $\dot X(\ell h)$, this is a semi-implicit, or symplectic-Euler, discretization of the first-order system: the velocity update is explicit, while the position uses the newly updated velocity. The limiting system is
 
 \begin{equation}\label{eq-heavy-ball-first-order-system}
 \dot X(t)=S(t),
@@ -1249,9 +1284,9 @@ If $S^k$ approximates $\dot X(kh)$, this is a semi-implicit, or symplectic-Euler
 \ddot X(t)+\lambda_{\rm fric}\dot X(t)+\nabla F(X(t))=0.
 \end{equation}
 \begin{equation}\label{eq-nesterov-momentum}
-Y^k=X^k+\theta_k(X^k-X^{k-1}),
+Y^{(\ell)}=X^{(\ell)}+\theta^{(\ell)}(X^{(\ell)}-X^{(\ell-1)}),
 \qquad
-X^{k+1}=Y^k-h\nabla F(Y^k),
+X^{(\ell+1)}=Y^{(\ell)}-h\nabla F(Y^{(\ell)}),
 \end{equation}
 \begin{equation}\label{eq-nesterov-ode}
 \ddot X(t)+\frac{r}{t}\dot X(t)+\nabla F(X(t))=0.

@@ -107,9 +107,15 @@ have densities, atoms or other singular parts.
 
 As $\tau\to0$, under suitable conditions on $f$, {eq}`eq-jko-discr` defines a
 continuous evolution $t\mapsto\alpha_t$. As in the dynamic formulation, this
-evolution can be described by a Lagrangian evolution. We use the following
-first-variation convention: for any $\beta\in\Pp(\RR^d)$ and the signed
-zero-mass perturbation $\eta=\beta-\alpha$,
+evolution can be described by a Lagrangian evolution. The simplest
+differential notion on measures follows affine perturbations.
+
+(def-first-variation)=
+:::{admonition} Definition: First Variation
+:class: important
+A measurable function $\delta f(\alpha)$ is a first variation of $f$ at
+$\alpha$ if, for every $\beta\in\Pp(\RR^d)$ and the signed zero-mass
+perturbation $\eta=\beta-\alpha$ for which the expansion is well-defined,
 
 ```{math}
 f((1-\tau)\alpha+\tau\beta)
@@ -120,6 +126,7 @@ f(\alpha)+
 \tau\int[\delta f(\alpha)](x)\d\eta(x)
 +o(\tau).
 ```
+:::
 
 The key infinitesimal object is the vector field that represents this
 differential in the Wasserstein metric.
@@ -537,10 +544,10 @@ m_i\,
 
 This is the diagonal, or independent-channel, geometry: each species is
 transported by its own scalar Wasserstein metric, while cross-effects may still
-enter through the energy or through constraints. In the dynamic language used
-later for vector-valued measures, this is the special case of a diagonal
-mobility; see {ref}`prop-diagonal-positive-vector-bb`. The corresponding JKO
-step for a functional $f$ is
+enter through the energy or through constraints. In the dynamic language of
+Section {ref}`sec-vector-matrix-valued-measures`, it corresponds to the
+diagonal mobility {eq}`eq-diagonal-vector-mobility`. The corresponding JKO step
+for a functional $f$ is
 
 ```{math}
 :label: eq-multispecies-jko

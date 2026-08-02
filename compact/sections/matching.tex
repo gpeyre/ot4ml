@@ -3,11 +3,13 @@
 \subsection{Monge Problem for Discrete Points}
 \label{sec-monge-pbm}
 \paragraph{Assignment problem.}
-Let $\C\in\RR^{n\times n}$ be a cost matrix, where $\C_{i,j}$ is the cost of pairing source $i$ with target $j$, and let $\Perm(n)$ denote the set of bijections of $\range{n}=\{1,\ldots,n\}$. The optimal assignment problem is
-
+\begin{defn}[Optimal assignment problem]\label{def-optimal-assignment}
+For a cost matrix $\C\in\RR^{n\times n}$ and the set $\Perm(n)$ of bijections of $\range{n}=\{1,\ldots,n\}$, the optimal assignment value is
 \eql{\label{eq-optimal-assignment}
 \umin{\sigma \in \Perm(n)} \frac{1}{n}\sum_{i=1}^n \C_{i,\sigma(i)}.
 }
+A minimizer is an optimal assignment, or optimal permutation.
+\end{defn}
 \paragraph{Convex costs on the line.}
 \begin{proposition}[Monotone matching on the line]\label{prop-matching-1d-monotone}
 Assume that $x_1,\ldots,x_n$ are pairwise distinct and that $y_1,\ldots,y_n$ are pairwise distinct. If $\C_{i,j}=h(x_i-y_j)$ for a strictly convex function $h:\RR\to\RR$, then the unique optimizer is the order-preserving permutation, characterized by
@@ -16,14 +18,9 @@ In particular, the result applies to $h(s)=|s|^p$ for $p>1$.
 \end{proposition}
 \begin{proof}
 A permutation that does not preserve order contains an inversion: after relabeling, $x<x'$ are matched to $y'>y$. Set $d=y'-y>0$ and
-\(D(s)=\frac{h(s)-h(s-d)}{d}.\)
+\(D(s)=\frac{h(s)-h(s-d)}{d}\).
 Strict convexity of $h$ makes $D$ strictly increasing. Therefore
-\[
-\begin{split}
-&h(x-y')+h(x'-y)-h(x-y)-h(x'-y')\\
-&\hspace{8em}=d\bigl(D(x'-y)-D(x-y)\bigr)>0.
-\end{split}
-\]
+\(h(x-y')+h(x'-y)-h(x-y)-h(x'-y') =d\bigl(D(x'-y)-D(x-y)\bigr)>0.\)
 Swapping the two inverted targets strictly lowers the cost. Repeating this exchange eliminates every inversion; the only order-preserving bijection between the two sorted clouds pairs equal ranks.
 \end{proof}
 If $h$ is convex but not strictly convex, the same exchange inequality is non-strict. The equal-rank matching remains optimal, but other, non-monotone optimizers can coexist. To construct a monotone optimizer, choose sorting permutations $\sigma_X,\sigma_Y$ such that
@@ -80,36 +77,82 @@ Cut the circle at such a $\theta$ and lift it to $(\theta,\theta+1)$. Every matc
 Let $x_1,\ldots,x_n,y_1,\ldots,y_n\in\RR^2$ and let $c(x,y)=\norm{x-y}$. If $\sigma$ is optimal, then two matched segments cannot cross properly: their relative interiors cannot meet at a point where their supporting lines are distinct.
 \end{proposition}
 \begin{proof}
-Suppose that $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$ cross properly at $z$. The triangle inequality along the two reconnected paths gives \(\norm{x_i-y_{\sigma(j)}} \leq \norm{x_i-z}+\norm{z-y_{\sigma(j)}},\)
-and
-\(\norm{x_j-y_{\sigma(i)}} \leq \norm{x_j-z}+\norm{z-y_{\sigma(i)}}.\)
+Suppose that $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$ cross properly at $z$. The triangle inequality along the two reconnected paths gives
+\(\norm{x_i-y_{\sigma(j)}} \leq \norm{x_i-z}+\norm{z-y_{\sigma(j)}} ,\qquad \norm{x_j-y_{\sigma(i)}} \leq \norm{x_j-z}+\norm{z-y_{\sigma(i)}}.\)
 The sum of the two right-hand sides is exactly the cost of the two original segments. At least one inequality is strict because a proper crossing is non-collinear. Swapping $\sigma(i)$ and $\sigma(j)$ therefore strictly decreases the assignment cost, contradicting optimality. Collinear overlaps are excluded from the statement precisely because the exchange can then have equal cost.
 \end{proof}
 \(C_n=\frac{1}{n+1}\binom{2n}{n}\sim \frac{4^n}{\sqrt{\pi}n^{3/2}}.\)
 \subsection{Hungarian Algorithm}
-We now present a first algorithm for solving the optimal matching problem. The Hungarian method gives a self-contained preview of duality by computing an assignment together with an optimality certificate. The auction algorithm is postponed to Section~\ref{sec-auction-dual-ascent}, after the discrete semi-dual has been introduced.
-
 \paragraph{Hungarian primal-dual method.}
-The Hungarian method constructs a partial matching and a dual certificate together. The certificate can be isolated as follows.
+\eql{\label{eq-hungarian-dual}
+\umax{(\fD,\gD)\in\RR^n\times\RR^n}
+\sum_{i=1}^n\fD_i+\sum_{j=1}^n\gD_j
+\qquad\text{subject to}\qquad
+\fD_i+\gD_j\leq\C_{i,j}\quad\forall i,j.
+}
 \begin{prop}[Dual certificate for an assignment]\label{prop-assignment-dual-certificate}
-If $\fD_i+\gD_j\leq\C_{i,j}$ for all $i,j$, then every $\tau\in\Perm(n)$ satisfies
-\(\sum_i\C_{i,\tau(i)}\geq\sum_i\fD_i+\sum_j\gD_j.\)
-If equality holds on every edge $(i,\sigma(i))$ of a permutation $\sigma$, then $\sigma$ is optimal and $(\fD,\gD)$ is dual optimal.
+Let $(\fD,\gD)$ be feasible for~\eqref{eq-hungarian-dual}. Then every permutation $\tau\in\Perm(n)$ satisfies
+\eql{\label{eq-assignment-dual-lower-bound}
+\sum_i\C_{i,\tau(i)}
+\geq
+\sum_i\fD_i+\sum_j\gD_j.
+}
+If a permutation $\sigma$ uses only tight constraints,
+\eql{\label{eq-assignment-tight-certificate}
+\fD_i+\gD_{\sigma(i)}=\C_{i,\sigma(i)}
+\qquad\text{for every }i,
+}
+then $\sigma$ is an optimal assignment and $(\fD,\gD)$ is dual optimal. Equivalently, for a feasible pair, equality in~\eqref{eq-assignment-dual-lower-bound} at $\tau=\sigma$ holds if and only if every edge $(i,\sigma(i))$ is tight.
 \end{prop}
 \begin{proof}
-Sum $\C_{i,\tau(i)}\geq\fD_i+\gD_{\tau(i)}$ over $i$ and use that $\tau$ permutes the target indices. Tightness along $\sigma$ makes this lower bound equal to its assignment cost.
+Dual feasibility gives $\C_{i,\tau(i)}\geq\fD_i+\gD_{\tau(i)}$ for every $i$. Summing and using that $\tau$ is a permutation yields
+\(\sum_i\C_{i,\tau(i)} \geq \sum_i\fD_i+\sum_i\gD_{\tau(i)} = \sum_i\fD_i+\sum_j\gD_j,\)
+which proves~\eqref{eq-assignment-dual-lower-bound}. If~\eqref{eq-assignment-tight-certificate} holds, the assignment cost of $\sigma$ equals the dual value of $(\fD,\gD)$. The lower bound shows that no permutation can have smaller cost. Applied to $\sigma$ and any other feasible dual pair, it also shows that no feasible dual value can exceed this cost. Thus $\sigma$ and $(\fD,\gD)$ are respectively primal and dual optimal. Finally, the difference between the two sides of~\eqref{eq-assignment-dual-lower-bound} at $\tau=\sigma$ is the sum of the nonnegative slacks $\C_{i,\sigma(i)}-\fD_i-\gD_{\sigma(i)}$. It vanishes exactly when every one of them vanishes.
 \end{proof}
-This is the uniform-mass instance of the discrete dual in Section~\ref{sec-discrete-dual}. The equality graph contains the zero-slack edges $(i,j)$ satisfying $\fD_i+\gD_j=\C_{i,j}$. By Proposition~\ref{prop-assignment-dual-certificate}, a perfect matching in this graph is optimal. Starting at an unmatched source, an alternating tree follows equality edges to targets and matched edges back to sources. Reaching an unmatched target gives an augmenting path. If no equality edge leaves the reached source set $S$ toward $T^c$, use
-\[
+\eql{\label{eq-hungarian-slack}
+s_{i,j}\eqdef\C_{i,j}-\fD_i-\gD_j\geq0.
+}
+\(E(\fD,\gD) \eqdef \enscond{(i,j)}{s_{i,j}=0} = \enscond{(i,j)}{\fD_i+\gD_j=\C_{i,j}}.\)
+The invariant $M\subset E(\fD,\gD)$ means that every currently matched pair is already certified by equality in the dual constraint. If $M$ is perfect, its associated permutation $\sigma$ satisfies~\eqref{eq-assignment-tight-certificate}; Proposition~\ref{prop-assignment-dual-certificate} then certifies that $\sigma$ is optimal.
+
+To increase the matching, choose an unmatched source $i_0$ as a root. The algorithm grows a tree in the bipartite equality graph whose reached source and target vertices are denoted by $S$ and $T$.
+
+\eql{\label{eq-hungarian-dual-shift}
 \delta=\min_{i\in S,\ j\notin T}\bigl(\C_{i,j}-\fD_i-\gD_j\bigr),
 \qquad
 \fD_i\leftarrow \fD_i+\delta\ (i\in S),\qquad
-\gD_j\leftarrow \gD_j-\delta\ (j\in T),
-\]
-which preserves feasibility and creates a new equality edge. Since $|S|=|T|+1$, this shift increases the dual objective by $\delta$. Section~\ref{sec-auction-dual-ascent} contrasts this exact augmenting-tree mechanism with the $\epsilon$-relaxed auction ascent.
+\gD_j\leftarrow \gD_j-\delta\ (j\in T).
+}
+Here $\delta>0$ because no such edge is currently tight. The update leaves the slack unchanged on $S\times T$, decreases it by $\delta$ on $S\times T^c$, and increases it by $\delta$ on $S^c\times T$.
+
+For an efficient implementation, one does not recompute all the minima in~\eqref{eq-hungarian-dual-shift}. For each unreached target, store
+
+\eql{\label{eq-hungarian-maintained-slack}
+\ell_j=\min_{i\in S}s_{i,j}
+}
+and a parent source $p(j)\in S$ attaining this minimum. When a source $i'$ enters $S$, each unreached target is updated by comparing $\ell_j$ with the single new slack $s_{i',j}$.
+
 \begin{prop}[Correctness and complexity of the Hungarian primal-dual method]\label{prop-hungarian-correct}
-For every $\C\in\RR^{n\times n}$, the Hungarian method terminates after $n$ augmentation phases and returns an optimal permutation $\sigma$. With maintained slacks, it uses $O(n^3)$ arithmetic and comparison operations and $O(n^2)$ storage.
+For every cost matrix $\C\in\RR^{n\times n}$, Algorithm~\ref{alg:hungarian-primal-dual} terminates after $n$ augmentation phases. It returns a permutation $\sigma\in\Perm(n)$ and feasible potentials $(\fD,\gD)$ such that
+\(\fD_i+\gD_{\sigma(i)}=\C_{i,\sigma(i)} \qquad\forall i.\)
+With the maintained slacks~\eqref{eq-hungarian-maintained-slack}, the algorithm uses $O(n^3)$ arithmetic and comparison operations and $O(n^2)$ storage, including the cost matrix.
 \end{prop}
 \begin{proof}
-Initialize $\fD_i=\min_j\C_{i,j}$ and $\gD_j=0$. Feasibility holds and the empty matching uses only equality edges. Before reaching a free target, the tree has $|S|=|T|+1$, so $T$ omits a target. A dual shift leaves slacks unchanged on $S\times T$, decreases them by $\delta$ on $S\times T^c$, and increases them on $S^c\times T$. Hence it preserves feasibility and tight matched edges while creating a new equality edge. The tree therefore reaches a free target in at most $n$ expansions; flipping the resulting alternating path adds one matched pair. Exactly $n$ phases produce a perfect matching $\sigma$. Its edges are tight, so Proposition~\ref{prop-assignment-dual-certificate} proves optimality. Maintaining $\ell_j=\min_{i\in S}(\C_{i,j}-\fD_i-\gD_j)$ and a minimizing parent costs $O(n)$ per tree expansion: when a source enters $S$, one compares its row of slacks with the current $\ell_j$. Hence one phase costs $O(n^2)$ and all $n$ phases cost $O(n^3)$.
+Initialization is dual feasible because $\fD_i=\min_j\C_{i,j}$ and $\gD=0$, and the empty matching is contained in the equality graph.
+
+At the start of a phase, the initialization of $\ell_j$ and $p(j)$ gives \(\ell_j=\min_{i\in S}s_{i,j}=s_{p(j),j} \qquad (j\notin T).\)
+This identity remains true when a matched source $i'$ enters $S$, because the algorithm compares every $\ell_j$ with the one new candidate $s_{i',j}$.
+
+Consider an inner iteration before a free target is reached. Every target in $T$ is matched to a source in $S$, and every source in $S$ except the unmatched root is reached through its matched target. Hence $|S|=|T|+1$, so $T\neq\range{n}$. Dual feasibility gives $\ell_j\geq0$, and therefore
+\(\delta=\min_{j\notin T}\ell_j =\min_{i\in S,\,j\notin T}s_{i,j}\geq0.\)
+After the potential update, the slack becomes
+$s_{i,j}^{+}=s_{i,j}-\delta$ on $S\times T^c$,
+$s_{i,j}^{+}=s_{i,j}+\delta$ on $S^c\times T$, and remains
+$s_{i,j}^{+}=s_{i,j}$ on the other two blocks.
+The definition of $\delta$ makes every entry nonnegative. For $j\notin T$, all slacks from $S$ decrease by the same amount $\delta$, exactly as does $\ell_j$; hence the maintained-minimum identity remains valid. At least one maintained slack becomes zero, and its parent $p(j)$ identifies a corresponding zero-slack edge from $S$ to an unreached target. Thus dual feasibility is preserved and the next target selected by the algorithm is connected to the alternating tree. Moreover, every matched edge either has both endpoints in $S\times T$ or both endpoints outside the tree, so all matched edges remain tight.
+
+Each inner iteration adds a new target to $T$. If that target is matched, its unique partner is added to $S$, and the slack update restores the maintained-minimum identity above. If it is unmatched, the pointers $p$ and $q$ trace an alternating path from $i_0$ to this target. Flipping the status of the edges on that path preserves the matching property, increases $|M|$ by one, and uses only equality edges. Since a target enters $T$ at most once, every phase reaches a free target after at most $n$ inner iterations. Starting from $M=\emptyset$, exactly $n$ phases therefore produce a perfect matching $M=\{(i,\sigma(i))\}_i$.
+
+At termination, every matched edge is tight, so Proposition~\ref{prop-assignment-dual-certificate} directly proves that $\sigma$ is optimal and $(\fD,\gD)$ is dual optimal. This is the finite assignment instance of the complementary-slackness mechanism proved in general in Proposition~\ref{prop-discrete-complementary-slackness}.
+Finally, initializing the slack and parent arrays costs $O(n)$ per phase. Each inner iteration scans the unreached targets to find $\delta$, updates the potentials and maintained slacks, and, when necessary, compares those slacks with one newly reached source row. These operations cost $O(n)$ per iteration. There are at most $n$ iterations per phase and $n$ phases, giving $O(n^3)$ arithmetic and comparison operations. The cost matrix uses $O(n^2)$ storage; the matching, reached sets, parents, and maintained slacks require only $O(n)$ additional storage.
 \end{proof}

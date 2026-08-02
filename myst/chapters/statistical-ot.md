@@ -54,8 +54,9 @@ def show_book_figure(name, width=760):
 (sec-law-large-numbers-clt)=
 ## Law of Large Numbers and Central Limit Theorem
 
-Before discussing sample complexity, it is useful to separate consistency from
-rates. If $X_1,\ldots,X_n$ are i.i.d. samples with common law $\alpha$, the
+Before discussing sample complexity in Section {ref}`sec-sample-complexity`, it
+is useful to separate consistency from rates. If $X_1,\ldots,X_n$ are i.i.d.
+samples with common law $\alpha$, the
 associated empirical measure is the random probability measure
 
 ```{math}
@@ -77,7 +78,7 @@ $\mathbb E\Wass_p(\hat\alpha_n,\alpha)^p\to0$. This is the qualitative consisten
 statement behind empirical OT plug-in estimators: empirical transport
 distances converge to their population counterparts once the sampled laws
 themselves converge in Wasserstein distance. It says nothing yet about the
-speed, which is the topic of {ref}`sec-sample-complexity`.
+speed.
 
 (prop-empirical-lln-wasserstein)=
 :::{admonition} Proposition: Empirical Law of Large Numbers in $\Wass_p$
@@ -208,7 +209,8 @@ G\sim\gamma.
 
 For each such $h$, solve Stein's equation
 $f_h'(x)-xf_h(x)=h(x)-\mathbb{E}h(G)$. Its solution satisfies
-$\norm{f_h'}_\infty+\norm{f_h''}_\infty\leq C$. Writing
+$\norm{f_h'}_\infty+\norm{f_h''}_\infty\leq C$
+{cite:p}`chen2011normal`. Writing
 $S_n^{(i)}=S_n-X_i/\sqrt n$, independence and $\mathbb E X_i=0$ give
 
 ```{math}
@@ -347,18 +349,19 @@ one obtains
 
 Figure {ref}`fig:statistical-berry-esseen-w1` confronts these equivalents with
 exact one-dimensional computations. For a centered, unit-variance input law
-$\alpha_0$, define
+$\alpha$, define
 
 ```{math}
-\alpha_n=(D_{1/\sqrt n})_\sharp\alpha_0^{*n},
+\alpha_n=(D_{1/\sqrt n})_\sharp\alpha^{*n},
 \qquad n\geq1,
 ```
 
-so that $\alpha_1=\alpha_0$. For Bernoulli input, the distance is evaluated by
+so that $\alpha_1=\alpha$. For Bernoulli input, the distance is evaluated by
 the exact quantile formula and atom masses are divided by the current lattice
 spacing in the density display. For continuous-uniform input, the normalized
-convolution is an affine image of the Irwin--Hall distribution and Vallender's
-CDF formula is integrated numerically. Neither computation uses Monte Carlo
+convolution is an affine image of the Irwin--Hall distribution, whose density
+is, up to rescaling, a cardinal B-spline of degree $n-1$, and the absolute CDF
+difference is integrated numerically. Neither computation uses Monte Carlo
 sampling.
 
 (fig:statistical-berry-esseen-w1)=
@@ -371,7 +374,7 @@ show_book_figure("statistical-berry-esseen-w1", width=920)
 ```
 
 *Sharp lattice and density central-limit asymptotics in $\Wass_1$.* The two
-left panels show $\alpha_0$, $\alpha_2$, and $\alpha_6$ for symmetric
+left panels show $\alpha_1$, $\alpha_2$, and $\alpha_6$ for symmetric
 Bernoulli and continuous-uniform inputs; the gray curve is the standard
 Gaussian density. The right panel compares the exact numerical distances
 (solid) with the sharp equivalents in {eq}`eq-bernoulli-uniform-sharp-w1-clt`
@@ -379,46 +382,6 @@ Gaussian density. The right panel compares the exact numerical distances
 the continuous-uniform curve approaches
 $(1+4e^{-3/2})/(10\sqrt{2\pi}\,n)$.
 :::
-
-### Empirical-Process Fluctuations
-
-The fluctuation object used by statistical OT is the empirical law itself,
-not only a normalized sum in Euclidean space. There is no canonical Gaussian
-law on an unrestricted infinite-dimensional space of signed measures, so the
-precise finite-dimensional statement is made through test functions. Uniform
-convergence over an infinite class requires a Donsker condition
-{cite:p}`vanDerVaartWellner1996`.
-
-(prop-empirical-process-clt)=
-:::{admonition} Proposition: Finite-Dimensional Empirical-Process CLT
-:class: important
-Let $X_1,X_2,\ldots$ be i.i.d. with law $\alpha$, and let
-$\varphi_1,\ldots,\varphi_q\in L^2(\alpha)$. Then
-
-```{math}
-\sqrt n\left(\int\varphi_r\,d(\hat\alpha_n-\alpha)\right)_{r=1}^q
-\Longrightarrow G_\alpha,
-```
-
-where $G_\alpha$ is centered Gaussian in $\RR^q$ with covariance
-
-```{math}
-\mathbb E[(G_\alpha)_r(G_\alpha)_s]
-=
-\int\left(\varphi_r-\int\varphi_r\,d\alpha\right)
-\left(\varphi_s-\int\varphi_s\,d\alpha\right)d\alpha.
-```
-:::
-
-:::{dropdown} Proof
-Apply the multivariate central limit theorem to the centered i.i.d. vectors
-$(\varphi_r(X_i)-\int\varphi_r\,d\alpha)_{r=1}^q$.
-:::
-
-This linear CLT is the input to the delta-method arguments in
-{ref}`sec-bias-variance-ot`. Exact OT may have only directional derivatives,
-whereas fixed-temperature entropic OT is smooth in the relative interiors of
-finite probability simplices.
 
 (sec-sample-complexity)=
 ## Sample Complexity
@@ -447,29 +410,60 @@ through its covering numbers {cite:p}`dudley1969speed,weed2017sharp`.
 Related two-sample-testing viewpoints are developed in
 {cite:p}`ramdas2017wasserstein`.
 
-Figure {ref}`fig:sinkhorn-bias-variance-tradeoff` gives a numerical overview: exact OT exhibits dimension-dependent empirical fluctuations, whereas MMD and fixed-temperature Sinkhorn divergences lie much closer to the parametric $n^{-1/2}$ scale.
+For $n\geq2$, $p\geq1$, and $d\geq1$, define the worst-case empirical scale
 
-(fig:sinkhorn-bias-variance-tradeoff)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-bias-variance-tradeoff")
+```{math}
+:label: eq-empirical-wasserstein-scale
+r_{n,p,d}
+\eqdef
+\begin{cases}
+n^{-1/(2p)}, & d<2p,\\
+n^{-1/(2p)}(\log(1+n))^{1/p}, & d=2p,\\
+n^{-1/d}, & d>2p.
+\end{cases}
 ```
 
-*Empirical fluctuations in dimensions three and six. For each sample size
-$n$, two independent empirical measures are drawn from the same standard
-Gaussian law. Exact OT follows a slower dimension-dependent scale, while MMD
-and the fixed-$\epsilon$ Sinkhorn divergence behave closer to the parametric
-$n^{-1/2}$ guide. This is a statistical illustration, not a solver benchmark.*
+The following proposition turns this scale into uniform one-sample and
+two-sample bounds for empirical OT.
+
+(prop-empirical-ot-rate)=
+:::{admonition} Proposition: Empirical OT Has Intrinsic-Dimension Value Rates
+:class: important
+Let $p\geq1$ and let $\mathcal X\subset\mathbb R^d$ be compact. For
+$\alpha\in\mathcal P(\mathcal X)$, let $\hat\alpha_n$ be its empirical law.
+Then
+
+```{math}
+:label: eq-empirical-wasserstein-moment-scale
+\sup_{\alpha\in\mathcal P(\mathcal X)}
+\mathbb E\!\left[\Wass_p(\hat\alpha_n,\alpha)^p\right]^{1/p}
+\leq C_{\mathcal X,p,d}\,r_{n,p,d}.
+```
+
+Consequently, if $\alpha,\beta$ are supported on $[0,1]^d$ and
+$\hat\alpha_n,\hat\beta_m$ are independent empirical measures, then
+
+```{math}
+\mathbb E\!\left[
+\left|\Wass_p(\hat\alpha_n,\hat\beta_m)-\Wass_p(\alpha,\beta)\right|^p
+\right]^{1/p}
+\lesssim_{p,d} r_{n,p,d}+r_{m,p,d}.
+```
 :::
 
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Vary dimension, sample budget and temperature to compare the curse-of-dimensionality OT guide with the parametric fluctuation and bias floor of entropic OT.
+:::{admonition} Remark: Adaptation to Intrinsic Dimension
+:class: note
+If the supports have covering numbers of order $O(\delta^{-d'})$ at scale
+$\delta$, the same estimates hold with $d'$ in place of $d$, under the
+corresponding volume-growth and moment assumptions. In particular,
+distributions supported on a regular compact $d'$-dimensional submanifold
+have rate $r_{n,p,d'}$. Empirical OT therefore adapts to the support
+dimension rather than the ambient Euclidean dimension
+{cite:p}`dudley1969speed,weed2017sharp`.
 :::
 
+The following multiscale estimate makes the mechanism behind the $\Wass_1$
+bound explicit.
 
 (prop-dyadic-partition-w1)=
 :::{admonition} Proposition: Dyadic Partition Bound for $\Wass_1$
@@ -490,63 +484,58 @@ $\alpha,\beta\in\mathcal P([0,1]^d)$,
 :::{dropdown} Proof Sketch
 Match the common mass inside the finest cells, then recursively match the
 remaining common mass inside each parent cell. Mass first matched at scale
-$j$ moves by at most $\sqrt d,2^{-j}$, and its total amount is bounded by
+$j$ moves by at most $\sqrt d\,2^{-j}$, and its total amount is bounded by
 the sum of the child-cell imbalances. The residual at the finest unresolved
-scale has mass at most one and moves by at most $\sqrt d,2^{-J}$.
+scale has mass at most one and moves by at most $\sqrt d\,2^{-J}$.
 :::
 
-(prop-empirical-ot-rate)=
-:::{admonition} Proposition: Empirical OT has Intrinsic-Dimension Value Rates
-:class: important
-Let $\alpha$ and $\beta$ be supported on $[0,1]^d$, and let
-$\hat\alpha_n,\hat\beta_m$ be independent empirical measures. Then
+:::{dropdown} Proof of the empirical-OT rate proposition
+General empirical Wasserstein moment estimates prove the one-sample statement
+for arbitrary $p$ {cite:p}`dereich2013constructive,fournier2015rate`; reverse
+triangle and Minkowski then give the two-sample estimate. We give the direct
+multiscale proof for $p=1$. The triangle inequality reduces the result to
+$\mathbb E\Wass_1(\hat\alpha_n,\alpha)$. For each dyadic cell $Q$,
 
 ```{math}
-\mathbb E\left|
-\Wass_1(\hat\alpha_n,\hat\beta_m)-\Wass_1(\alpha,\beta)
-\right|
-\lesssim_d r_d(n)+r_d(m),
-```
-
-where
-
-```{math}
-r_d(N)=
-\begin{cases}
-N^{-1/2}, & d=1,\\
-(\log N)N^{-1/2}, & d=2,\\
-N^{-1/d}, & d\geq3.
-\end{cases}
-```
-
-For $\Wass_p$ on a regular $d'$-dimensional support, the high-dimensional
-rate is $N^{-1/d'}$ when $d'>2p$ under the usual volume-growth and moment
-assumptions. The dimension is therefore intrinsic rather than necessarily
-ambient.
-:::
-
-:::{dropdown} Proof
-The triangle inequality reduces the result to
-$\mathbb E\Wass_1(\hat\alpha_N,\alpha)$. For each dyadic cell $Q$,
-
-```{math}
-\mathbb E|\hat\alpha_N(Q)-\alpha(Q)|
-\leq \sqrt{\alpha(Q)/N}.
+\mathbb E|\hat\alpha_n(Q)-\alpha(Q)|
+\leq \sqrt{\alpha(Q)/n}.
 ```
 
 Summing by Cauchy--Schwarz and applying
 {ref}`prop-dyadic-partition-w1` gives
 
 ```{math}
-\mathbb E\Wass_1(\hat\alpha_N,\alpha)
+\mathbb E\Wass_1(\hat\alpha_n,\alpha)
 \lesssim_d
-2^{-J}+N^{-1/2}\sum_{j=0}^{J-1}2^{j(d/2-1)}.
+2^{-J}+n^{-1/2}\sum_{j=0}^{J-1}2^{j(d/2-1)}.
 ```
 
-Optimizing $J$ yields the three displayed regimes. Replacing dyadic cubes by
-covers of cardinality $O(2^{jd'})$ gives the intrinsic-dimensional extension
-{cite:p}`dudley1969speed,fournier2015rate,weed2017sharp`.
+Optimizing $J$ yields the three displayed regimes for $p=1$.
 :::
+
+Figure {ref}`fig:sinkhorn-bias-variance-tradeoff` gives a numerical overview of these regimes: exact OT exhibits dimension-dependent empirical fluctuations, whereas MMD and fixed-temperature Sinkhorn divergences lie much closer to the parametric $n^{-1/2}$ scale.
+
+(fig:sinkhorn-bias-variance-tradeoff)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-bias-variance-tradeoff")
+```
+
+*Empirical fluctuations in dimensions three and six.* For each sample size
+$n$, two independent empirical measures are drawn from the same standard
+Gaussian law. Exact OT follows a slower dimension-dependent scale, while MMD
+and the fixed-$\epsilon$ Sinkhorn divergence behave closer to the parametric
+$n^{-1/2}$ guide. This is a statistical illustration, not a solver benchmark.
+:::
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Vary dimension, sample budget and temperature to compare the curse-of-dimensionality OT guide with the parametric fluctuation and bias floor of entropic OT.
+:::
+
 
 ### Lower Bounds and Minimax Optimality
 
@@ -559,15 +548,21 @@ distribution-estimation obstruction
 :::{admonition} Proposition: Minimax Lower Bound for Bounded Densities
 :class: important
 Let $d\geq3$ and let $\mathcal A$ contain the laws on $[0,1]^d$ with density
-$\rho$ satisfying $1/2\leq\rho\leq3/2$. Then
+$\rho$ satisfying $1/2\leq\rho\leq3/2$. For each $n\geq1$, let $\mathfrak E_n$
+be the class of measurable estimators
+$\widetilde\alpha_n:([0,1]^d)^n\to\mathcal P([0,1]^d)$. Then
 
 ```{math}
-\inf_{\widetilde\alpha_N}\sup_{\alpha\in\mathcal A}
-\mathbb E_\alpha\Wass_1(\widetilde\alpha_N,\alpha)
-\geq c_dN^{-1/d},
+\inf_{\widetilde\alpha_n\in\mathfrak E_n}
+\sup_{\alpha\in\mathcal A}
+\mathbb E_{(X_1,\ldots,X_n)\sim\alpha^{\otimes n}}
+\left[
+\Wass_1\big(\widetilde\alpha_n(X_1,\ldots,X_n),\alpha\big)
+\right]
+\geq c_d n^{-1/d},
 ```
 
-where the infimum is over every estimator based on $N$ i.i.d. samples.
+where the expectation is over i.i.d. samples $X_i\sim\alpha$.
 :::
 
 :::{dropdown} Proof Sketch
@@ -575,24 +570,47 @@ Partition the cube into $M=m^d$ cells of width $h=1/m$, and put an
 independent signed, zero-mean bump of fixed small amplitude in each cell.
 Kantorovich--Rubinstein duality gives a separation of order
 $h^{d+1}$ per differing sign. Neighboring experiments have one-sample KL
-divergence $O(h^d)$, so choosing $M\asymp N$ keeps their $N$-sample total
-variation bounded away from one. Assouad's lemma then gives
-$Mh^{d+1}=h\asymp N^{-1/d}$.
+divergence $O(h^d)$. Pinsker's inequality ({ref}`thm-pinsker`) shows that
+choosing $M\asymp n$ keeps their $n$-sample total variation bounded away from
+one. Assouad's lemma then gives
+$Mh^{d+1}=h\asymp n^{-1/d}$.
 :::
 
 ### Leveraging Smoothness
 
-Smooth densities permit a better estimator: first remove fine empirical
-oscillations with a wavelet or kernel smoother, then compute OT between the
-smoothed laws {cite:p}`nilesweed2019minimaxSmooth`.
+For a Sobolev-smooth density, convolving the empirical measure at bandwidth
+$h$ creates a bias of order $h^{s+1}$ but reduces the empirical fluctuation to
+order $n^{-1/2}h^{1-d/2}$. Balancing these terms selects
+$h_n\asymp n^{-1/(d+2s)}$, which improves on the empirical $n^{-1/d}$ rate
+when $d>2$
+{cite:p}`nilesweed2019minimaxSmooth,divol2022measure`.
 
 (prop-smooth-plugin-w1-rate)=
 :::{admonition} Proposition: Smoothed Plug-In Rates
 :class: important
-Let $d\geq3$, $s>0$, and suppose the source and target densities on
-$[0,1]^d$ are bounded above and below and lie in a bounded
-$B^s_{\infty,\infty}$ class. There are normalized nonnegative wavelet
-estimators $\tilde\alpha_n,\tilde\beta_m$ such that
+Let $d\geq3$, $0<s\leq1$, and suppose that $\alpha,\beta$ have densities in a
+bounded subset of $H^s(\mathbb T^d)$. Let $\kappa$ be a smooth symmetric
+probability density with finite second moment and rapidly decaying Fourier
+transform, and let $\kappa_h$ be the periodization of
+$h^{-d}\kappa(\cdot/h)$. For empirical measures formed from i.i.d. samples of
+$\alpha$ and $\beta$, define
+
+```{math}
+\tilde\alpha_n=\hat\alpha_n\ast\kappa_{h_n},
+\qquad
+\tilde\beta_m=\hat\beta_m\ast\kappa_{h_m}.
+```
+
+Then
+
+```{math}
+\mathbb E W_1(\tilde\alpha_n,\alpha)
+\leq
+C\left(h_n^{s+1}+n^{-1/2}h_n^{1-d/2}\right),
+```
+
+and likewise for $\beta$. With $h_n\asymp n^{-1/(d+2s)}$ and
+$h_m\asymp m^{-1/(d+2s)}$,
 
 ```{math}
 \mathbb E\left|
@@ -604,21 +622,92 @@ C\left(n^{-\frac{s+1}{d+2s}}+m^{-\frac{s+1}{d+2s}}\right).
 :::
 
 :::{dropdown} Proof Sketch
-At wavelet scale $J$, the $B^{-1}_{1,1}$ approximation bias is
-$O(2^{-J(s+1)})$ and the stochastic term is
-$O(N^{-1/2}2^{J(d/2-1)})$. Since $\Wass_1$ is controlled by this negative
-Besov norm for densities bounded away from zero, balancing the two terms with
-$2^J\asymp N^{1/(d+2s)}$ gives the rate. Projection onto nonnegative
-unit-mass densities preserves its order.
+Kantorovich--Rubinstein duality bounds $W_1$ by the negative Sobolev norm
+$\dot H^{-1}$. Since
+$\mathbb E\rho_{\tilde\alpha_n}=\rho_\alpha\ast\kappa_h$, Fourier estimates
+give kernel bias $O(h^{s+1})$, while Parseval's identity gives
+
+```{math}
+\mathbb E
+\left\|
+\rho_{\tilde\alpha_n}-\rho_\alpha\ast\kappa_h
+\right\|_{\dot H^{-1}}^2
+\lesssim
+\frac1n\sum_{k\neq0}
+\frac{|\widehat\kappa(hk)|^2}{4\pi^2|k|^2}
+\lesssim
+\frac{h^{2-d}}n.
+```
+
+Balancing the bias with the square root of this fluctuation yields the stated
+bandwidth and rate.
 :::
 
-This gain is statistical rather than automatically computational: a grid at
-bandwidth $h$ has $O(h^{-d})$ degrees of freedom, so direct smoothing remains
-expensive in high dimension. Sum-of-squares relaxations offer theoretical
-dimension-free exponents but are still costly in practice
-{cite:p}`vacher2021dimensionfreeSmoothOT`.
+The restriction $s\leq1$ permits a nonnegative symmetric kernel and hence a
+genuine probability estimator. Exploiting higher smoothness requires
+higher-order, generally signed kernels followed by a positivity correction.
+Dimensions one and two have separate parametric or logarithmic regimes
+{cite:p}`divol2022measure`.
+
+This statistical acceleration has a numerical price. For a Gaussian kernel,
+$\tilde\alpha_n$ is a mixture of $n$ Gaussians, and OT between two such
+mixtures has no closed form in general. A direct particle implementation draws
+$M$ independent vectors $\xi_{i,j}\sim\mathcal N(0,\mathrm{Id}_d)$ around each
+observation and defines
+
+```{math}
+\tilde\alpha_{n,M}
+=
+\frac1{nM}\sum_{i=1}^n\sum_{j=1}^M
+\delta_{X_i+h_n\xi_{i,j}}.
+```
+
+Here addition is understood modulo $\mathbb Z^d$. Conditionally on the
+observations, convexity of $W_1$ under mixing, together with translation,
+scaling and the $1$-Lipschitz projection onto the torus, gives
+
+```{math}
+\mathbb E W_1(\tilde\alpha_{n,M},\tilde\alpha_n)
+\leq
+h_n\,\mathbb E W_1\left(
+\frac1M\sum_{j=1}^M\delta_{\xi_j},
+\mathcal N(0,\mathrm{Id}_d)
+\right)
+\lesssim_d h_nM^{-1/d}.
+```
+
+The last estimate is the moment form of the empirical OT rate
+{cite:p}`fournier2015rate`. At the optimal bandwidth
+$h_n\asymp n^{-1/(d+2s)}$, keeping this extra error below the statistical rate
+is guaranteed by
+$M\gtrsim n^{sd/(d+2s)}$. This componentwise strategy therefore uses
+$N_{\rm comp}=nM\gtrsim n^{1+sd/(d+2s)}$ particles per measure.
+
+Approximating every Gaussian separately is conservative. One can instead
+sample or quantize the whole smoothed mixture using $N$ points. In dimension
+$d>2$, the corresponding $W_1$ error is of order $N^{-1/d}$, up to
+dimension-dependent constants {cite:p}`graf2000foundationsquantization`.
+Thus target accuracy $\delta$ requires $N\gtrsim\delta^{-d}$, whereas the
+componentwise construction uses
+$N_{\rm comp}\gtrsim\delta^{-d-2s/(s+1)}$. The global strategy is cheaper, but
+its particle count remains exponential in $d$ at fixed accuracy. Forming and
+storing a dense $N\times N$ transport kernel costs $O(N^2)$ work and memory,
+and each direct Sinkhorn scaling costs another $O(N^2)$ operations. Fast
+kernel summation or low-rank approximations may reduce this matrix cost, but
+without additional structure they do not remove the underlying $N^{-1/d}$
+discretization barrier.
 
 ### MMD
+
+MMD contains no transport optimization: its square is a combination of
+expectations of kernel evaluations, estimated empirically by sums of kernel
+values. Ordinary Monte Carlo averaging therefore gives a dimension-free
+parametric rate for bounded kernels. This sharply contrasts with exact
+empirical OT, whose value is defined through an optimization problem and whose
+worst-case $W_1$ plug-in bias in dimension $d>2$ decays only as $n^{-1/d}$,
+corresponding to a sample requirement of order $\delta^{-d}$ at accuracy
+$\delta$. The constants for MMD still depend on the kernel and its bandwidth,
+and changing the kernel changes the discrepancy being estimated.
 
 (prop-mmd-sample-rate)=
 :::{admonition} Proposition: MMD has a Parametric Value Rate
@@ -725,14 +814,13 @@ C_d\Lambda_{d,\sigma}(\epsilon)
 \left(\frac1{\sqrt n}+\frac1{\sqrt m}\right).
 ```
 
-Thus fixed temperature gives a parametric rate, while the prefactor grows only
-polynomially as $\epsilon\downarrow0$.
 :::
 
 :::{dropdown} Proof Sketch
 Dual optimality bounds a one-marginal perturbation by the empirical process
-indexed by normalized entropic potentials. Mena--Niles-Weed prove polynomial
-local Hölder bounds for these potentials under a common subgaussian proxy.
+indexed by normalized entropic potentials. One can show that these potentials
+obey polynomial local Hölder bounds under a common subgaussian proxy
+{cite:p}`mena2019statistical`.
 Their covering numbers have a finite Dudley integral, hence the empirical
 process is $O(n^{-1/2})$ with constant $C_d(1+\sigma^{q_d})$ at
 $\epsilon=1$. The rescaling $x\mapsto x/\sqrt\epsilon$ gives the displayed
@@ -740,10 +828,49 @@ $\Lambda_{d,\sigma}(\epsilon)$. Perturbing both marginals and applying the
 same estimate to the cross and two self terms yields the debiased result.
 :::
 
+For fixed $\epsilon>0$, the empirical fluctuation is therefore parametric,
+while the prefactor deteriorates only polynomially as $\epsilon\downarrow0$.
+Compact support is a special case: if both supports lie in a common ball
+$B(z,R)$, translating them by $-z$ leaves the quadratic transport problem
+unchanged, and the subgaussian assumption holds with
+$\sigma=R/\sqrt{2d\log 2}=O(R)$. Genevay--Chizat--Bach--Cuturi--Peyré
+established the compactly supported result, and Mena--Niles-Weed extended it to
+the subgaussian setting above
+{cite:p}`genevay2018sample,mena2019statistical`.
+
+(rem-sinkhorn-no-free-lunch)=
+:::{admonition} Remark: No free lunch when approximating exact OT
+:class: ot4ml-remark
+
+The parametric rate in Proposition {ref}`prop-sinkhorn-sample-rate` holds for fixed $\epsilon$. If the goal is to approximate the unregularized OT value, one must also account for the regularization bias. In a typical bounded-cost finite-dimensional regime,
+
+```{math}
+\abs{\bar\MK_\c^\epsilon(\alpha,\beta)-\MK_\c(\alpha,\beta)}
+\leq C\epsilon,
+\qquad
+\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_\c^\epsilon(\alpha,\beta)}
+\leq C_{d,\sigma}\epsilon^{-p_d}n^{-1/2},
+\qquad
+p_d\eqdef\left\lceil\frac{5d}{4}\right\rceil+2,
+```
+
+where the second estimate is the small-$\epsilon$ form of the polynomial Mena--Niles-Weed bound. Balancing the two terms gives $\epsilon\simeq n^{-1/(2(p_d+1))}$ and total error of order $n^{-1/(2(p_d+1))}$ under this conservative bound. Thus entropic smoothing improves the statistical behavior at fixed scale, and the refined analysis avoids an exponential $e^{C/\epsilon}$ penalty, but approximating exact OT still forces a bias-variance tradeoff whose exponent deteriorates with dimension.
+:::
+
+The interactive demo below is only a scaling guide: change the dimension to see the
+exact-OT exponent flatten, and change $\epsilon$ to move the Sinkhorn bias
+floor against its parametric fluctuation term.
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** This exploratory panel is a scaling guide. Use dimension, sample size, and epsilon to compare statistical fluctuation with regularization bias.
+:::
+
 ### Sample Complexity of Estimating OT Maps
 
 The preceding estimates concern transport values. For map estimation, one
-solves the empirical dual problem for potentials
+solves the empirical discrete dual problem {eq}`eq-dual` or its entropic
+counterpart {eq}`eq-dual-formulation` for potentials
 $(\mathbf f_{n,m}^\epsilon,\mathbf g_{n,m}^\epsilon)\in\RR^n\times\RR^m$, with
 $\epsilon=0$ denoting the unregularized Kantorovich problem, and then uses the
 soft $c$-transform as an out-of-sample extrapolator.
@@ -847,70 +974,46 @@ portmanteau theorem for bounded test functions continuous almost everywhere
 under the limiting measure gives the desired limit.
 :::
 
-Quantitative map rates require stronger stability assumptions on Brenier
-potentials. For unregularized map estimation, Hütter--Rigollet,
-Deb--Ghosal--Sen, and Manole--Balakrishnan--Niles-Weed--Wasserman obtain,
-under smoothness and curvature assumptions, squared $L^2(\alpha)$ risk of
-order
+Quantitative map convergence requires stronger regularity than consistency.
+The following result gives a direct guarantee for the Sinkhorn-based estimator
+defined above {cite:p}`pooladian2021entropicOTMaps`.
+
+(prop-entropic-map-rate)=
+:::{admonition} Proposition: Finite-Sample Rate for the Entropic Map
+:class: important
+Assume that $\alpha$ and $\beta$ have densities on a common compact set
+$\Omega$, both bounded above and with $\rho_\beta$ bounded below away from
+zero. Let $T=\nabla\phi$ be the quadratic Brenier map, assume
+$\phi\in C^2(\Omega)$ and $\phi^*\in C^{s+1}(\Omega)$ for some $s>1$, and
+suppose
 
 ```{math}
-\mathbb E\norm{\widehat T_n-T_0}_{L^2(\alpha)}^2
-\lesssim
-\left(n^{-\frac{2s}{2(s-1)+d}}\vee n^{-1}\right)
+\mu\mathrm{Id}_d\preceq\nabla^2\phi(x)\preceq L\mathrm{Id}_d
+\qquad (x\in\Omega).
 ```
 
-up to logarithms, and this rate is minimax optimal
+Set $\bar s=s\wedge3$, assume
+$\mathcal I_{\rm geo}(\alpha,\beta)<+\infty$, and draw $n$ independent
+samples from each measure. If
+
+```{math}
+\epsilon_n\asymp n^{-1/(d+\bar s+1)},
+```
+
+then the estimator $T_{n,n}^{\epsilon_n}$ defined above satisfies
+
+```{math}
+\mathbb E\norm{T_{n,n}^{\epsilon_n}-T}_{L^2(\alpha)}^2
+\lesssim
+\bigl(1+\mathcal I_{\rm geo}(\alpha,\beta)\bigr)
+n^{-\frac{\bar s+1}{2(d+\bar s+1)}}\log n.
+```
+:::
+
+This estimator is directly computable from Sinkhorn potentials. Under stronger
+modeling and smoothing assumptions, unregularized estimators can attain sharper
+minimax rates
 {cite:p}`hutter2021minimaxOTMaps,deb2021ratesBarycentricMaps,manole2021pluginOTMaps`.
-For the Sinkhorn-computable entropic barycentric estimator,
-Pooladian--Niles-Weed prove
-
-```{math}
-\mathbb E\norm{T_{\epsilon,(n,n)}-T_0}_{L^2(\alpha)}^2
-\lesssim
-\epsilon^{-d/2}\log(n)n^{-1/2}
-+
-\epsilon^{(\bar s+1)/2}
-+
-\epsilon^2\mathcal I_0(\alpha,\beta),
-```
-
-with $\bar s=s\wedge3$ {cite:p}`pooladian2021entropicOTMaps`. The first term
-is the statistical fluctuation of the entropic map, while the last two terms
-are regularization-bias terms. Thus fixed $\epsilon$ gives a parametric
-empirical fluctuation for the regularized map, whereas
-$\epsilon\simeq n^{-1/(d+\bar s+1)}$ gives a convergent estimator of the
-Brenier map. The unregularized case can achieve sharper minimax rates when
-combined with enough smooth extension machinery; the regularized estimator is
-instead directly Sinkhorn-computable.
-
-(rem-sinkhorn-no-free-lunch)=
-:::{admonition} Remark: No free lunch when approximating exact OT
-:class: ot4ml-remark
-
-The parametric rate in Proposition {ref}`prop-sinkhorn-sample-rate` holds for fixed $\epsilon$. If the goal is to approximate the unregularized OT value, one must also account for the regularization bias. In a typical bounded-cost finite-dimensional regime,
-
-```{math}
-\abs{\bar\MK_\c^\epsilon(\alpha,\beta)-\MK_\c(\alpha,\beta)}
-\leq C\epsilon,
-\qquad
-\EE\abs{\bar\MK_\c^\epsilon(\hat\alpha_n,\hat\beta_n)-\bar\MK_\c^\epsilon(\alpha,\beta)}
-\leq C_{d,\sigma}\epsilon^{-p_d}n^{-1/2},
-\qquad
-p_d\eqdef\left\lceil\frac{5d}{4}\right\rceil+2,
-```
-
-where the second estimate is the small-$\epsilon$ form of the polynomial Mena--Niles-Weed bound. Balancing the two terms gives $\epsilon\simeq n^{-1/(2(p_d+1))}$ and total error of order $n^{-1/(2(p_d+1))}$ under this conservative bound. Thus entropic smoothing improves the statistical behavior at fixed scale, and the refined analysis avoids an exponential $e^{C/\epsilon}$ penalty, but approximating exact OT still forces a bias-variance tradeoff whose exponent deteriorates with dimension.
-:::
-
-
-The interactive demo below is only a scaling guide: change the dimension to see the
-exact-OT exponent flatten, and change $\epsilon$ to move the Sinkhorn bias
-floor against its parametric fluctuation term.
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** This exploratory panel is a scaling guide. Use dimension, sample size, and epsilon to compare statistical fluctuation with regularization bias.
-:::
 
 ### Sliced Wasserstein
 
@@ -924,50 +1027,43 @@ $\sigma$ on $\mathbb S^{d-1}$, define
 \Wass_p((P_\theta)_\#\alpha,(P_\theta)_\#\beta)^p,d\sigma(\theta).
 ```
 
-The construction is studied in {ref}`sec-sliced-wasserstein`. Statistically,
-it inherits one-dimensional empirical rates rather than ambient-dimensional
-matching rates {cite:p}`nadjahi2019asymptotic,nadjahi2020statistical,manole2019minimax`.
+The construction is studied in {ref}`sec-sliced-wasserstein`. For $p=1$, it
+inherits a particularly clean one-dimensional empirical-CDF rate rather than
+an ambient-dimensional matching rate
+{cite:p}`nadjahi2019asymptotic,nadjahi2020statistical,manole2019minimax`.
 
 (thm-sliced-sample-complexity)=
-:::{admonition} Theorem: Dimension-Free Empirical Rate for Sliced Wasserstein
+:::{admonition} Theorem: Dimension-Free Empirical Rate for Sliced Wasserstein-1
 :class: important
-Let $p\geq1$. Assume all one-dimensional projections satisfy
+Let $\alpha,\beta\in\mathcal P(\mathbb R^d)$ satisfy
+$\operatorname{supp}(\alpha)\cup\operatorname{supp}(\beta)\subset B(0,R)$,
+and let $\hat\alpha_n$ and $\hat\beta_m$ be their empirical measures from $n$
+and $m$ i.i.d. samples, respectively. Then
 
 ```{math}
-\sup_\theta\mathbb E\Wass_p((P_\theta)_\#\hat\alpha_n,(P_\theta)_\#\alpha)^p
-\leq A_\alpha n^{-p/2},
-\qquad
-\sup_\theta\mathbb E\Wass_p((P_\theta)_\#\hat\beta_m,(P_\theta)_\#\beta)^p
-\leq A_\beta m^{-p/2}.
-```
-
-Then
-
-```{math}
-\mathbb E|\SW_p(\hat\alpha_n,\hat\beta_m)-\SW_p(\alpha,\beta)|
-\leq A_\alpha^{1/p}n^{-1/2}+A_\beta^{1/p}m^{-1/2}.
-```
-
-For $p=1$, bounded support implies the assumption. For $p=2$, a sufficient
-condition is the uniform projected Bobkov--Ledoux $J_2$ bound
-
-```{math}
-\sup_\theta\int_0^1
-\left[
-\frac{u(1-u)}{h_{\alpha,\theta}(Q_{\alpha,\theta}(u))^2}
-+\frac{u(1-u)}{h_{\beta,\theta}(Q_{\beta,\theta}(u))^2}
-\right]\,du<\infty.
+\mathbb E|\SW_1(\hat\alpha_n,\hat\beta_m)-\SW_1(\alpha,\beta)|
+\leq R\left(\frac1{\sqrt n}+\frac1{\sqrt m}\right).
 ```
 :::
 
 :::{dropdown} Proof
-The triangle inequality reduces the claim to two one-sample sliced distances.
-Jensen's inequality moves expectation inside the spherical integral, after
-which the assumed projected bounds apply. For $p=1$, use the
-Dvoretzky--Kiefer--Wolfowitz inequality and
-$\Wass_1=\int|F_{\hat\alpha_n}-F_\alpha|$. For $p=2$, use the
-one-dimensional $J_2$ quantile-process estimate
-{cite:p}`BobkovLedoux2019EmpiricalKantorovich`.
+The triangle inequality reduces the claim to the two one-sample terms
+$\SW_1(\hat\alpha_n,\alpha)$ and $\SW_1(\hat\beta_m,\beta)$. Fix a direction
+$\theta$, and let $F_\theta$ and $\hat F_{\theta,n}$ be the CDFs of
+$(P_\theta)_\#\alpha$ and $(P_\theta)_\#\hat\alpha_n$. Their supports lie in
+$[-R,R]$, and the one-dimensional CDF formula gives
+
+```{math}
+\mathbb E\Wass_1((P_\theta)_\#\hat\alpha_n,(P_\theta)_\#\alpha)
+=\int_{-R}^R\mathbb E|\hat F_{\theta,n}(s)-F_\theta(s)|\,ds
+\leq\int_{-R}^R\sqrt{\frac{F_\theta(s)(1-F_\theta(s))}{n}}\,ds
+\leq\frac R{\sqrt n}.
+```
+
+Here $n\hat F_{\theta,n}(s)$ is binomial with success probability
+$F_\theta(s)$. Integrating over $\theta$ yields
+$\mathbb E\SW_1(\hat\alpha_n,\alpha)\leq R/\sqrt n$. The same argument for
+$\beta$ concludes the proof.
 :::
 
 
@@ -975,376 +1071,304 @@ one-dimensional $J_2$ quantile-process estimate
 :::{admonition} Remark: Directions are another sample budget
 :class: ot4ml-remark
 
-The theorem concerns the statistical samples used to form $\hat\alpha_n$ and $\hat\beta_m$. In computation one also replaces the spherical average in the definition of $\SW_p$ by an empirical average over $L$ random directions. For bounded support, the resulting Monte-Carlo error for $\SW_p^p$ is of order $L^{-1/2}$, independently of $d$, because it is just the average of bounded one-dimensional costs. This should not be read as saying that a small number of directions captures full $\Wass_2$ geometry in high dimension. Even the exact sliced distance is an averaged projected geometry, not a bi-Lipschitz surrogate for $\Wass_2$ uniformly in dimension; see Proposition {ref}`prop-sliced-wasserstein-metric` and {ref}`par-sliced-intrinsic-length`. Moreover, if a discrepancy is visible only inside a spherical cap of angular radius $\delta$, the probability that $L$ random directions hit it is roughly $1-(1-\sigma(\mathrm{cap}_\delta))^L$, and $\sigma(\mathrm{cap}_\delta)$ scales like $\delta^{d-1}$ for small caps. For a fixed narrow aperture, it decays exponentially with $d$. Thus estimating the sliced objective is dimension-friendly, while using random slices to approximate a worst direction, a max-sliced distance, or a proxy meant to behave like full $\Wass_2$, reintroduces an angular-covering cost. This is the practical no-free-lunch behind sliced, max-sliced and subspace-sliced variants; see also Section {ref}`sec-sliced-wasserstein`.
+The theorem concerns the statistical samples used to form $\hat\alpha_n$ and
+$\hat\beta_m$. In computation, draw i.i.d. directions
+$\theta_1,\ldots,\theta_L$ with law $\sigma$, independently of the data, and
+use the random estimator
+
+```{math}
+:label: eq-empirical-direction-sliced-w1
+\widehat{\SW}_1^{\,L}(\hat\alpha_n,\hat\beta_m)
+\eqdef
+\frac1L\sum_{r=1}^L
+\Wass_1((P_{\theta_r})_\#\hat\alpha_n,(P_{\theta_r})_\#\hat\beta_m).
+```
+
+Conditionally on the samples, the summands are i.i.d., take values in
+$[0,2R]$, and have mean $\SW_1(\hat\alpha_n,\hat\beta_m)$. Their conditional
+variance is at most $R^2$, and therefore
+
+```{math}
+\mathbb E\left[
+\left|\widehat{\SW}_1^{\,L}(\hat\alpha_n,\hat\beta_m)
+-\SW_1(\hat\alpha_n,\hat\beta_m)\right|
+\,\middle|\,\hat\alpha_n,\hat\beta_m
+\right]
+\leq \frac R{\sqrt L}.
+```
+
+Combining this estimate with Theorem {ref}`thm-sliced-sample-complexity` gives
+
+```{math}
+:label: eq-sliced-joint-sample-direction-rate
+\mathbb E\left|
+\widehat{\SW}_1^{\,L}(\hat\alpha_n,\hat\beta_m)-\SW_1(\alpha,\beta)
+\right|
+\leq
+R\left(\frac1{\sqrt L}+\frac1{\sqrt n}+\frac1{\sqrt m}\right).
+```
+
+Thus the directional approximation preserves the empirical rate provided
+$L\gtrsim\min\{n,m\}$. More precisely, its contribution is no larger than the
+two-sample contribution whenever
+$L\geq(n^{-1/2}+m^{-1/2})^{-2}$. If only $\alpha$ is sampled while $\beta$ is
+known, the corresponding bound is $R(L^{-1/2}+n^{-1/2})$, and retaining the
+$n^{-1/2}$ rate requires $L\gtrsim n$.
 :::
 
 
 (sec-bias-variance-ot)=
 ## Bias and Variance of OT
 
+### Bias, Variance and Approximation Errors
+
 The previous section answered a coarse but essential question: how many samples
 are needed before an empirical OT quantity is accurate, typically up to
-universal constants. We now ask for a finer statistical description. Rather
-than only estimating the size of the error, we seek the first expansion of the
-plug-in estimator. Given empirical laws $\hat\alpha_n$ and $\hat\beta_m$, and
-a scalar OT value $\mathcal V$, this expansion separates the leading statistical bias
+universal constants. We now ask for a finer statistical description of the
+KL-normalized entropic OT value $\MK_c^\epsilon$ defined in
+{eq}`eq-entropic-generic-web`, with the convention
+$\MK_c^0\eqdef\MK_c$ for unregularized OT. Fixing $c$, $\alpha$ and $\beta$,
+define the statistical bias
 
 ```{math}
-B_{n,m}(\mathcal V)
+B_{n,m}^\epsilon
 \eqdef
-\mathbb E\mathcal V(\hat\alpha_n,\hat\beta_m)-\mathcal V(\alpha,\beta)
+\mathbb E\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)
+-\MK_c^\epsilon(\alpha,\beta)
 ```
 
 and the centered fluctuation
 
 ```{math}
-Z_{n,m}(\mathcal V)
+Z_{n,m}^\epsilon
 \eqdef
-\mathcal V(\hat\alpha_n,\hat\beta_m)
--\mathbb E\mathcal V(\hat\alpha_n,\hat\beta_m),
+\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)
+-\mathbb E\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m).
 ```
 
-for values such as $\mathcal V(\alpha,\beta)=\Wass_p^p(\alpha,\beta)$,
-$\mathcal V(\alpha,\beta)=\MK_c(\alpha,\beta)$, or their entropic analogues. This
-goes beyond Proposition {ref}`prop-empirical-process-clt`: the empirical
-fluctuation is now pushed through a nonlinear, often nonsmooth, transport
-value. The resulting law is governed by local differentiability and by the
-geometry of the optimal dual face.
-
-### Literature Map
-
-The shape of the limit depends sharply on the analytic regularity of the
-transport value. For exact OT on a finite or countable space, the map from
-empirical weights to optimal cost is convex and piecewise affine. Sommerfeld
-and Munk {cite:p}`sommerfeld2018inference`, and the countable-space extensions
-of Tameling--Sommerfeld--Munk
-{cite:p}`tameling2017empirical`, show that the natural
-limit is a directional delta-method limit: often a support function of a
-Gaussian process over an optimal dual face, rather than a Gaussian random
-variable. For Euclidean costs, del Barrio--Loubes and collaborators obtain
-central-limit theorems for empirical transportation costs under regularity and
-uniqueness assumptions on the Kantorovich potentials
-{cite:p}`delBarrioLoubes2017clt,delBarrioGonzalezSanzLoubes2021central`.
-Entropic regularization makes the problem smoother. For fixed $\epsilon>0$,
-the value is differentiable with respect to the marginals, and the limiting
-variance is read directly from the entropic dual potentials. This is the point
-of view developed by
-Bigot--Cazelles--Papadakis, Klatt--Tameling--Munk, Hundrieser--Klatt--Munk, and
-Mena--Niles-Weed
-{cite:p}`bigot2017central,klatt2020empirical,hundrieser2021limit,mena2019statistical`.
-More recent results clarify weak limits beyond smooth costs and second-order
-null limits for Sinkhorn divergences
-{cite:p}`gonzalezSanzHundrieser2023weak,goldfeld2022limit`. These asymptotic
-statements do not replace the dimension-dependent bounds of
-{ref}`sec-sample-complexity`; they explain what the leading random object is,
-what constants appear, and where the bias comes from.
-
-### Bias Versus Centered Fluctuation
-
-The decomposition
+If the target is the exact cost but the statistic is entropically regularized,
+these quantities isolate the three sources of error:
 
 ```{math}
-\mathcal V(\hat\alpha_n,\hat\beta_m)-\mathcal V(\alpha,\beta)
+\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)-\MK_c^0(\alpha,\beta)
 =
-\underbrace{\mathbb E\mathcal V(\hat\alpha_n,\hat\beta_m)-\mathcal V(\alpha,\beta)}_{\text{bias}}
+\underbrace{\MK_c^\epsilon(\alpha,\beta)-\MK_c^0(\alpha,\beta)}_{\text{regularization bias}}
 +
-\underbrace{\mathcal V(\hat\alpha_n,\hat\beta_m)-\mathbb E\mathcal V(\hat\alpha_n,\hat\beta_m)}_{\text{centered fluctuation}}
+\underbrace{B_{n,m}^\epsilon}_{\text{statistical bias}}
++
+\underbrace{Z_{n,m}^\epsilon}_{\text{centered fluctuation}}.
 ```
 
-is elementary, but in OT it is genuinely diagnostic because the two terms may
-live on different scales. For the self-distance
-$\mathcal V(\hat\alpha_n,\alpha)=\Wass_p^p(\hat\alpha_n,\alpha)$, the population value
-is zero and the deterministic bias
-$\mathbb E\Wass_p^p(\hat\alpha_n,\alpha)$ is the leading term. On a regular
-$d'$-dimensional support, the high-dimensional matching scale is $n^{-p/d'}$
-when $d'>2p$, with a critical logarithmic correction when $d'=2p$. Below this
-threshold the rate is controlled by empirical-process fluctuations and can be
-faster; in one dimension, smooth positive densities give the familiar
-quantile-process asymptotics for $\Wass_p^p$, of order $n^{-p/2}$ for $p>1$,
-and in particular $n^{-1}$ for $\Wass_2^2$. Thus $p/d'$ is the
-high-dimensional matching exponent, not a universal rate formula
-{cite:p}`dudley1969speed,fournier2015rate,weed2017sharp`. By contrast, when
-$\mathcal V(\alpha,\beta)$ is nonzero and the OT value is differentiable at
-$(\alpha,\beta)$, the centered fluctuation is often governed by an ordinary
-$n^{-1/2}$ central limit theorem. A ``slow OT statistic'' can therefore have
-three distinct causes: a large empirical bias, a nonsmooth directional limit,
-or a regularization bias $\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)$ that
-still has to be removed.
+For the debiased Sinkhorn divergence, define $\bar B_{n,m}^\epsilon$ and
+$\bar Z_{n,m}^\epsilon$ by replacing $\MK_c^\epsilon$ with
+$\bar\MK_c^\epsilon$ above; the same decomposition then holds with bars. It is
+usually read after choosing a temperature $\epsilon=\epsilon_n$. At fixed
+$\epsilon>0$ and on finite supports, the statistical bias is typically
+$O(n^{-1}+m^{-1})$, while the centered fluctuation is
+$O_{\mathbb P}(n^{-1/2}+m^{-1/2})$. The regularization bias disappears only
+when $\epsilon\to0$, whereas the fluctuation constants can deteriorate in this
+limit. This is the bias--variance tradeoff illustrated in
+{ref}`fig:sinkhorn-bias-variance-tradeoff`.
+
+The remainder of this section analyzes the latter two terms. The superscript
+records their dependence on the regularization strength. The empirical
+fluctuation is pushed through the nonlinear transport value $\MK_c^\epsilon$,
+which can be nonsmooth at $\epsilon=0$. Its limiting law is governed by local
+differentiability and by the geometry of the optimal dual potentials.
+
+For exact OT on finite spaces, empirical central-limit theorems follow from a
+directional delta method {cite:p}`sommerfeld2018inference,tameling2017empirical`;
+fixed positive entropic regularization makes the transport value smooth on the
+interiors of the marginal simplices
+{cite:p}`bigot2017central,klatt2020empirical,hundrieser2021limit,mena2019statistical`.
+The following statement isolates the Gaussian regime common to both settings:
+at zero temperature, uniqueness of the dual potentials turns the directional
+derivative into an ordinary linear derivative.
 
 (prop-finite-ot-clt)=
-:::{admonition} Proposition: Finite-Space Bias and CLT for Exact OT
+:::{admonition} Proposition: Finite-Space Bias and CLT for OT
 :class: important
-Let $a\in\simplex_n$ and $b\in\simplex_m$ have positive entries, let
-$\C\in\RR^{n\times m}$, and define
+Let
 
 ```{math}
-\MKD_\C(a,b)
-=
-\min_{\P\in\CouplingsD(a,b)}\dotp{\C}{\P}.
+\alpha=\sum_{i=1}^{N}a_i\delta_{x_i},
+\qquad
+\beta=\sum_{j=1}^{M}b_j\delta_{y_j},
 ```
 
-Let $\hat a_N$ be the empirical histogram of $N$ independent samples from $a$,
-while $b$ is fixed. Denote by
+where all weights are positive and $c$ is finite on the product support. Let
+$\hat\alpha_n$ and $\hat\beta_n$ be the independent empirical laws of $n$
+i.i.d. samples from $\alpha$ and $\beta$, respectively. Fix $\epsilon\geq0$,
+with $\MK_c^0=\MK_c$, and let $(f_\epsilon^\star,g_\epsilon^\star)$ be optimal
+dual potentials for $\MK_c^\epsilon(\alpha,\beta)$. When $\epsilon=0$, assume
+that this pair is unique up to the additive gauge; for $\epsilon>0$, this
+uniqueness follows after fixing the gauge. Define
 
 ```{math}
-\mathcal D^\star(a,b)
+\mathsf{v}_\epsilon
 \eqdef
-\argmax_{f_i+g_j\leq \C_{ij}}
-\dotp{f}{a}+\dotp{g}{b}
+\sum_{i=1}^{N}a_i\bigl(f_\epsilon^\star(x_i)-\bar f_\epsilon\bigr)^2
++
+\sum_{j=1}^{M}b_j\bigl(g_\epsilon^\star(y_j)-\bar g_\epsilon\bigr)^2,
 ```
 
-the set of optimal dual vectors, modulo the gauge
-$(f,g)\mapsto(f+\lambda\ones,g-\lambda\ones)$. If $G_a$ is a centered Gaussian
-vector with covariance
+where $\bar f_\epsilon=\sum_i a_i f_\epsilon^\star(x_i)$ and
+$\bar g_\epsilon=\sum_j b_j g_\epsilon^\star(y_j)$. Then, as
+$n\to+\infty$ with $N,M$ fixed,
 
 ```{math}
-\mathbb E\,G_aG_a^\top=\operatorname{diag}(a)-aa^\top,
+\sqrt n\,B_{n,n}^\epsilon\longrightarrow0,
+\qquad
+\sqrt n\,Z_{n,n}^\epsilon\Longrightarrow\mathcal N(0,\mathsf{v}_\epsilon),
+\qquad
+n\,\operatorname{Var}\!\left[\MK_c^\epsilon(\hat\alpha_n,\hat\beta_n)\right]
+\longrightarrow\mathsf{v}_\epsilon.
 ```
 
-then
+Equivalently,
 
 ```{math}
-\sqrt N\big(\MKD_\C(\hat a_N,b)-\MKD_\C(a,b)\big)
-\Longrightarrow
-\sup_{(f,g)\in\mathcal D^\star(a,b)}\dotp{f}{G_a}.
+\sqrt n\left(
+\MK_c^\epsilon(\hat\alpha_n,\hat\beta_n)
+-
+\MK_c^\epsilon(\alpha,\beta)
+\right)
+\Longrightarrow\mathcal N(0,\mathsf{v}_\epsilon).
 ```
 
-Moreover,
-
-```{math}
-\sqrt N\big(\mathbb E\MKD_\C(\hat a_N,b)-\MKD_\C(a,b)\big)
-\longrightarrow
-\mathbb E\sup_{(f,g)\in\mathcal D^\star(a,b)}\dotp{f}{G_a},
-```
-
-and the rescaled variance converges to the variance of the same limit.
-If the source dual potential $f^\star$ is unique up to constants, the limit is
-Gaussian with variance
-
-```{math}
-\sigma_{\mathrm{OT}}^2
-=
-\sum_i a_i
-\left(f^\star_i-\sum_k a_k f^\star_k\right)^2.
-```
-
-In this differentiable case, the first-order bias vanishes:
-
-```{math}
-\mathbb E\MKD_\C(\hat a_N,b)-\MKD_\C(a,b)=o(N^{-1/2}).
-```
+For every fixed $\epsilon>0$, one moreover has
+$B_{n,n}^\epsilon=O(n^{-1})$.
 :::
 
 :::{dropdown} Proof
-The multinomial central limit theorem gives
+Writing $\hat a_n$ and $\hat b_n$ for the two empirical histograms, the
+independent multinomial central-limit theorems give
 
 ```{math}
-\sqrt N(\hat a_N-a)\Longrightarrow G_a,
-\qquad
-G_a\in\{\xi:\dotp{\ones}{\xi}=0\}.
-```
-
-The dual formulation writes $\MKD_\C(\cdot,b)$ as the supremum, over the feasible
-polyhedron $f_i+g_j\leq\C_{ij}$, of the affine functions
-$a\mapsto\dotp f a+\dotp g b$. Its directional derivative at $a$, in any
-tangent direction $h$ with
-$\dotp{\ones}{h}=0$, is therefore
-
-```{math}
-D_a\MKD_\C(a,b)[h]
-=
-\sup_{(f,g)\in\mathcal D^\star(a,b)}\dotp f h,
-```
-
-which is the finite-dimensional form of Danskin's theorem already used in
-{ref}`prop-ot-first-variations-unregularized`. The directional delta method
-gives the displayed distributional limit. After fixing a gauge, the relevant
-dual face is bounded, so the support functions above have at most linear
-growth in the multinomial fluctuation. Uniform integrability then yields
-convergence of the first two moments, hence the bias and variance
-statements. If $f^\star$ is unique modulo constants, the support function
-reduces to the linear form $\dotp{f^\star}{G_a}$. Its expectation is zero, and
-the covariance of $G_a$ gives exactly the displayed variance.
-:::
-
-The same argument gives the independent two-sample limit. If
-$N/(N+M)\to\lambda\in(0,1)$, then, with
-$r_{N,M}=\sqrt{NM/(N+M)}$,
-
-```{math}
-r_{N,M}\big(\MKD_\C(\hat a_N,\hat b_M)-\MKD_\C(a,b)\big)
+\sqrt n(\hat a_n-a,\hat b_n-b)
 \Longrightarrow
-\sup_{(f,g)\in\mathcal D^\star(a,b)}
-\left(
-\sqrt{1-\lambda}\,\dotp{f}{G_a}
-+
-\sqrt{\lambda}\,\dotp{g}{G_b}
-\right),
+(G_a,G_b),
 ```
 
-where $G_a$ and $G_b$ are independent multinomial Gaussian limits. When both
-dual potentials are unique, the first-order bias is negligible and the
-asymptotic variance of the unscaled estimator is
+where $G_a$ and $G_b$ are independent centered Gaussian vectors with covariance
+matrices $\operatorname{diag}(a)-aa^\top$ and
+$\operatorname{diag}(b)-bb^\top$. Proposition
+{ref}`prop-ot-first-variations-unregularized` gives the directional derivative
+for every $\epsilon\geq0$. It is linear under the assumed uniqueness at
+$\epsilon=0$, and automatically at positive temperature. Thus,
 
 ```{math}
-\frac{1}{N}\sum_i a_i(f^\star_i-\bar f^\star)^2
-+
-\frac{1}{M}\sum_j b_j(g^\star_j-\bar g^\star)^2,
-\qquad
-\bar f^\star=\sum_i a_i f_i^\star,
-\quad
-\bar g^\star=\sum_j b_j g_j^\star.
-```
-
-If the optimal face contains several dual potentials, the limit is the
-supremum of a Gaussian process over that face and need not itself be Gaussian.
-The leading bias is then the expectation of this supremum divided by the
-square-root sample size. This nonsmoothness is the basic reason why inference
-for exact OT can remain delicate even on a finite space.
-
-(prop-finite-entropic-ot-clt)=
-:::{admonition} Proposition: Finite-Space Bias and CLT for Entropic OT
-:class: important
-Fix $\epsilon>0$, positive histograms $a,b$, and a finite cost matrix $\C$.
-Consider the KL-normalized entropic value
-
-```{math}
-\mathcal V_{\C,\epsilon}(a,b)
-\eqdef
-\min_{\P\in\CouplingsD(a,b)}
-\dotp{\C}{\P}+\epsilon\operatorname{KL}(\P|a\otimes b).
-```
-
-Let $(f_\epsilon,g_\epsilon)$ be normalized entropic dual potentials for
-$\mathcal V_{\C,\epsilon}(a,b)$. If $\hat a_N$ is the empirical histogram of $N$ samples
-from $a$, then
-
-```{math}
-\sqrt N\big(\mathcal V_{\C,\epsilon}(\hat a_N,b)-\mathcal V_{\C,\epsilon}(a,b)\big)
-\Longrightarrow
-\mathcal N(0,\sigma_{\epsilon,a}^2),
-```
-
-and
-
-```{math}
-\mathbb E\mathcal V_{\C,\epsilon}(\hat a_N,b)-\mathcal V_{\C,\epsilon}(a,b)=O(N^{-1}),
-\qquad
-N\,\operatorname{Var}\big(\mathcal V_{\C,\epsilon}(\hat a_N,b)\big)\to\sigma_{\epsilon,a}^2,
-```
-
-where
-
-```{math}
-\sigma_{\epsilon,a}^2
+D\MK_c^\epsilon(\alpha,\beta)[h,k]
 =
-\sum_i a_i
-\left((f_\epsilon)_i-\sum_k a_k(f_\epsilon)_k\right)^2.
+\sum_i f_\epsilon^\star(x_i)h_i
++
+\sum_j g_\epsilon^\star(y_j)k_j.
 ```
 
-For two independent empirical histograms, the first-order asymptotic variance is
+The delta method therefore gives the Gaussian limit
+$\sum_i f_\epsilon^\star(x_i)(G_a)_i+
+\sum_j g_\epsilon^\star(y_j)(G_b)_j$. Independence and the two multinomial
+covariance formulas give exactly $\mathsf{v}_\epsilon$.
+
+It remains to justify convergence of the moments, which does not follow from
+convergence in distribution alone. Set
+$R=\max_{i,j}c(x_i,y_j)-\min_{i,j}c(x_i,y_j)$. Exact dual potentials may be
+replaced by their $c$-transforms, and entropic potentials by their soft
+$c$-transforms; in either case their oscillations are at most $R$. Since
+differences of histograms have zero sum, integrating the corresponding
+subgradient bounds along segments in the two marginal simplices gives, for any
+histograms $(a',b')$ and their associated measures $(\alpha',\beta')$,
 
 ```{math}
-\frac{\sigma_{\epsilon,a}^2}{N}
-+
-\frac{\sigma_{\epsilon,b}^2}{M},
-\qquad
-\sigma_{\epsilon,b}^2
-=
-\sum_j b_j
-\left((g_\epsilon)_j-\sum_\ell b_\ell(g_\epsilon)_\ell\right)^2.
+\left|\MK_c^\epsilon(\alpha',\beta')-\MK_c^\epsilon(\alpha,\beta)\right|
+\leq
+\frac{R}{2}\left(\|a'-a\|_1+\|b'-b\|_1\right).
 ```
+
+Because $N,M$ are fixed, the fourth moments of
+$\sqrt n\|\hat a_n-a\|_1$ and $\sqrt n\|\hat b_n-b\|_1$ are uniformly
+bounded. The squared rescaled OT values are therefore uniformly integrable.
+The Gaussian limit then yields convergence of the means and second moments,
+which proves the assertions for $B_{n,n}^\epsilon$, $Z_{n,n}^\epsilon$, and the
+variance.
+
+For fixed $\epsilon>0$, the entropic value is twice continuously differentiable
+in a neighborhood of the positive pair $(a,b)$. A second-order Taylor expansion
+on this neighborhood has a uniformly bounded remainder; its linear term has
+zero expectation and
+$\mathbb E(\|\hat a_n-a\|^2+\|\hat b_n-b\|^2)=O(n^{-1})$. The probability
+of leaving the neighborhood is exponentially small, and the preceding global
+Lipschitz bound controls its contribution. Hence
+$B_{n,n}^\epsilon=O(n^{-1})$.
 :::
 
-:::{dropdown} Proof
-For positive histograms and fixed $\epsilon>0$, the entropic problem has a
-unique optimizer, and the KL-normalized value is smooth on a neighborhood of
-$(a,b)$ inside the relative interiors of the simplices.
-{ref}`prop-ot-first-variations-entropic` gives
+The uniqueness assumption at $\epsilon=0$ is substantive. Without it, the
+directional delta method gives the generally non-Gaussian limit
 
 ```{math}
-D_a\mathcal V_{\C,\epsilon}(a,b)[h]=\dotp{f_\epsilon}{h}.
+\sup_{(f,g)\in\mathcal D_c(\alpha,\beta)}
+\left\{
+\sum_i f(x_i)(G_a)_i+
+\sum_j g(y_j)(G_b)_j
+\right\},
 ```
 
-Applying the ordinary delta method to the multinomial CLT
-$\sqrt N(\hat a_N-a)\Rightarrow G_a$ gives the one-sample limit
-$\dotp{f_\epsilon}{G_a}$, whose variance is the displayed covariance formula.
-Fix a relative-interior neighborhood $U$ of $a$ on which the Hessian is
-bounded. Multinomial concentration gives
-$\mathbb P(\hat a_N\notin U)\leq Ce^{-cN}$. On $U$, Taylor's formula has a
-centered linear term and a quadratic remainder bounded by
-$C\norm{\hat a_N-a}^2$, whose expectation is $O(N^{-1})$. On the exponentially
-unlikely complement, the value remains bounded; on a boundary face, its
-natural definition simply discards zero-weight atoms. This proves the bias
-bound. The same expansion and bounded multinomial moments give convergence of
-the rescaled variance. The two-sample formula follows independently for the
-two marginals.
-:::
+where $\mathcal D_c(\alpha,\beta)$ is the set of optimal dual pairs modulo the
+additive gauge. Its expectation need not vanish, so the exact-OT bias can then
+have order $n^{-1/2}$ rather than being negligible at the central-limit scale
+{cite:p}`sommerfeld2018inference,tameling2017empirical`.
 
-For the entropy-only convention $\MKD_\C^\epsilon$ used in
-{ref}`sec-entropic-discrete`,
+### Fixed Support Versus a Continuum
+
+{ref}`prop-finite-ot-clt` keeps the support sizes $N$ and $M$ fixed while $n$
+grows. More explicitly, its limiting variable is
 
 ```{math}
-\MKD_\C^\epsilon(a,b)
-=\mathcal V_{\C,\epsilon}(a,b)-\epsilon\HD(a)-\epsilon\HD(b).
-```
-
-The marginal entropy derivatives described after
-{ref}`prop-ot-first-variations-entropic` must therefore be added to the
-potentials. For
-the debiased Sinkhorn divergence $\bar\MK_c^\epsilon$, the derivative is
-instead the difference between cross and self entropic potentials. At the null
-$\alpha=\beta$, this first derivative can vanish for the debiased statistic,
-and second-order limits then become relevant {cite:p}`goldfeld2022limit`. This
-is a useful warning: the asymptotic law is determined not only by a rate, but
-also by the local geometry of the functional.
-
-### Three Error Terms When Entropy Estimates Exact OT
-
-If the target is $\MK_c(\alpha,\beta)$ but the statistic uses
-$\MK_c^\epsilon$, three errors should be kept separate:
-
-```{math}
-\MK_c^\epsilon(\hat\alpha_n,\hat\beta_m)-\MK_c(\alpha,\beta)
-=
-\underbrace{\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)}_{\text{regularization bias}}
+\sum_{i=1}^{N}f_\epsilon^\star(x_i)(G_a)_i
 +
-\underbrace{B_{n,m}(\MK_c^\epsilon)}_{\text{statistical bias}}
-+
-\underbrace{Z_{n,m}(\MK_c^\epsilon)}_{\text{centered fluctuation}}.
+\sum_{j=1}^{M}g_\epsilon^\star(y_j)(G_b)_j,
+\qquad
+\begin{cases}
+\operatorname{Cov}(G_a)=\operatorname{diag}(a)-aa^\top,\\
+\operatorname{Cov}(G_b)=\operatorname{diag}(b)-bb^\top.
+\end{cases}
 ```
 
-Although algebraic, this identity is important statistically. It is
-usually read after choosing $\epsilon=\epsilon_n$. For fixed
-$\epsilon$, the statistical bias is typically $O(n^{-1}+m^{-1})$ in finite
-dimension, and the centered fluctuation is
-$O_{\mathbb P}(n^{-1/2}+m^{-1/2})$; boundary events where an empirical finite
-histogram has a zero entry have exponentially small probability when the
-population weights are positive. The regularization bias disappears only when
-$\epsilon\to0$, whereas the variance constants usually deteriorate as
-$\epsilon\downarrow0$. This is the asymptotic form of the bias--variance
-tradeoff illustrated in {ref}`fig:sinkhorn-bias-variance-tradeoff`.
+The variance does not necessarily diverge with $N,M$: for a uniformly bounded
+cost, normalized dual potentials have bounded oscillation, hence
+$\mathsf{v}_\epsilon$ remains bounded. What fails to be uniform is the
+differentiability argument. If $a_{\min}=\min_i a_i$ and
+$b_{\min}=\min_j b_j$, then
 
-### What Changes in Continuous Spaces
+```{math}
+\mathbb P[\text{some source or target atom is unobserved}]
+\leq
+N e^{-n a_{\min}}+M e^{-n b_{\min}}.
+```
 
-The finite-dimensional formulas above are not merely toy models; they are the
-cleanest template for the general mechanism. Whenever an OT value is Hadamard
-differentiable and admits a unique sufficiently regular dual potential
-$f^\star$, the empirical-process CLT and the delta method give a first-order
-Gaussian limit with one-sample variance
-$\operatorname{Var}_\alpha(f^\star(X))$. When differentiability fails, as can
-happen for exact OT because the dual optimizer is not unique or because one
-studies the degenerate self-distance $\MK_c(\alpha,\alpha)=0$, the limit may be
-non-Gaussian or may occur at a slower non-parametric scale. Entropic
-regularization smooths the dual potentials and typically restores a
-conventional first-order CLT for fixed $\epsilon$, even under weak assumptions
-on the cost. If the target is unregularized OT, however, this statistical
-expansion must still be balanced against the bias
-$\MK_c^\epsilon(\alpha,\beta)-\MK_c(\alpha,\beta)$. Thus
-{ref}`sec-sample-complexity` gives dimension-dependent magnitudes, while the
-present section identifies the local asymptotic constants and covariance
-formulas needed for inference.
+For nearly uniform weights, making this probability vanish already requires
+both $n\gg N\log N$ and $n\gg M\log M$. Moreover, exact-dual uniqueness margins can
+close as the supports become dense, while entropic Hessian bounds can
+deteriorate with the smallest weights and as $\epsilon\downarrow0$. Thus the
+constant hidden in the bias estimate may grow even when the first-order
+variance stays bounded.
 
+There is therefore no distribution-free passage from this multinomial CLT to
+arbitrary continuous laws. Continuous CLTs nevertheless hold under hypotheses
+ensuring stable unique potentials, with limiting variance
+$\operatorname{Var}_\alpha(f_\epsilon^\star)+
+\operatorname{Var}_\beta(g_\epsilon^\star)$
+in the independent two-sample setting
+{cite:p}`delBarrioLoubes2017clt,delBarrioGonzalezSanzLoubes2021central,mena2019statistical,gonzalezSanzHundrieser2023weak`.
+The first-order description ceases to be informative in degenerate regimes. For
+instance, when $\epsilon=0$, $c=\dist^p$, and $\alpha=\beta$, the first
+derivative vanishes; the two-sample empirical cost
+$\MK_{\dist^p}(\hat\alpha_n,\hat\beta_n)$ is instead governed by the
+dimension-dependent matching behavior studied in {ref}`sec-sample-complexity`.
+This is where the curse of dimensionality re-enters. The first derivative of
+the debiased Sinkhorn divergence also vanishes under the null, so its nontrivial
+limit is of second order
+{cite:p}`goldfeld2022limit`.
 
 (sec-sketching-sinkhorn)=
 ## Sketching Sinkhorn in Linear Time
@@ -1387,15 +1411,38 @@ where $\xi$ is a latent distribution. Drawing $z_1,\ldots,z_r\sim\xi$ gives
 \dotp{\phi(x,z_\ell)}{\phi(y,z_\ell)}_{\RR^p}.
 ```
 
-This is the classical random-feature principle. For data points
-$(x_i)_{i=1}^n$, the dense Gram matrix $K=(k(x_i,x_j))_{ij}$ is replaced by
-$\widetilde K=\Phi\Phi^\top$, where $\Phi\in\RR^{n\times rp}$ is the sampled
-feature matrix with entries
-$\Phi_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell)$, $1\leq \ell\leq r$,
-$1\leq q\leq p$. The number $r$ of sampled latent variables is thus a second
-sample size, distinct from the number of data points. At this stage no
-positivity of $\phi$ is assumed; signed or oscillatory features are exactly
-what make Fourier sketches useful.
+This is the classical random-feature principle. Given two point families
+$(x_i)_{i=1}^n$ and $(y_j)_{j=1}^m$, define the rectangular cross-kernel matrix
+$K\in\RR^{n\times m}$ by $K_{ij}=k(x_i,y_j)$. Set $R=rp$, flatten
+$(\ell,q)$ into a single feature index, and define
+
+```{math}
+:label: eq-rectangular-feature-sketch-web
+(\Phi_X)_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell),
+\qquad
+(\Phi_Y)_{j,(\ell,q)}=r^{-1/2}\phi_q(y_j,z_\ell),
+\qquad
+\widetilde K=\Phi_X\Phi_Y^\top.
+```
+
+Here $\Phi_X\in\RR^{n\times R}$, $\Phi_Y\in\RR^{m\times R}$, and
+
+```{math}
+\widetilde K_{ij}
+=
+\frac1r\sum_{\ell=1}^r
+\dotp{\phi(x_i,z_\ell)}{\phi(y_j,z_\ell)}_{\RR^p}
+=
+\widetilde k_r(x_i,y_j).
+```
+
+Although $K$ is generally rectangular and hence is not itself a Gram matrix,
+it is a cross-block of the Gram matrix evaluated on the union of the two point
+families. When the families coincide, $\Phi_X=\Phi_Y=\Phi$, and the construction
+reduces to the symmetric approximation $\widetilde K=\Phi\Phi^\top$. The number
+$r$ of sampled latent variables is thus a second sample size, distinct from $n$
+and $m$. At this stage no positivity of $\phi$ is assumed; signed or oscillatory
+features are exactly what make Fourier sketches useful.
 
 For translation-invariant kernels on $\RR^d$, Bochner's theorem gives the
 standard Fourier sketch. If $k(x,y)=\kappa(x-y)$ and
@@ -1410,6 +1457,68 @@ for kernel ridge regression and related supervised methods is analyzed, for
 instance, in
 {cite:p}`RudiRosasco2017RandomFeatures,AvronKapralovMusco2017RandomFourierKRR`.
 
+The following concentration bound assesses the entrywise quality of the
+rectangular sketch {eq}`eq-rectangular-feature-sketch-web`. This is the relevant
+control when the kernel will subsequently be used inside logarithms or
+componentwise divisions.
+
+(prop-sinkhorn-sketch-positive-guarantee)=
+:::{admonition} Proposition: Entrywise Accuracy of Rectangular Feature Sketches
+:class: important
+Let $z_1,\ldots,z_r$ be independent with law $\xi$, and let
+$K_{ij}=k(x_i,y_j)$ and $\widetilde K$ be the rectangular kernel matrix and
+sketch defined above. Assume that, for some $M<+\infty$,
+
+```{math}
+\left|\dotp{\phi(x_i,z)}{\phi(y_j,z)}_{\RR^p}\right|\leq M
+\qquad
+\text{for all }(i,j)\text{ and }\xi\text{-a.e. }z.
+```
+
+If $K_{\min}\eqdef\min_{i,j}K_{ij}>0$, then, for every
+$0<\delta\leq1/2$,
+
+```{math}
+:label: eq-rectangular-sketch-relative-concentration-web
+\mathbb P\left(
+\max_{i,j}\left|\frac{\widetilde K_{ij}}{K_{ij}}-1\right|>\delta
+\right)
+\leq
+2nm\exp\left(-\frac{rK_{\min}^2\delta^2}{2M^2}\right).
+```
+
+On the complementary event, $\widetilde K$ is entrywise positive and, for
+every $\epsilon>0$,
+
+```{math}
+\max_{i,j}
+\left|-\epsilon\log\widetilde K_{ij}+\epsilon\log K_{ij}\right|
+\leq 2\epsilon\delta.
+```
+:::
+
+:::{dropdown} Proof
+For each fixed $(i,j)$, the summands in the definition of
+$\widetilde K_{ij}$ have expectation $K_{ij}$ and lie in $[-M,M]$.
+Hoeffding's inequality therefore gives
+
+```{math}
+\mathbb P\left(
+\left|\widetilde K_{ij}-K_{ij}\right|>\delta K_{ij}
+\right)
+\leq
+2\exp\left(-\frac{r\delta^2K_{ij}^2}{2M^2}\right)
+\leq
+2\exp\left(-\frac{r\delta^2K_{\min}^2}{2M^2}\right).
+```
+
+A union bound over the $nm$ entries proves
+{eq}`eq-rectangular-sketch-relative-concentration-web`. On its complementary
+event, write $\widetilde K_{ij}=K_{ij}(1+s_{ij})$, where
+$|s_{ij}|\leq\delta\leq1/2$. Hence $\widetilde K_{ij}>0$, and
+$|\log(1+s_{ij})|\leq2|s_{ij}|$ gives the logarithmic estimate.
+:::
+
 ### Application to Sinkhorn Kernels
 
 Let
@@ -1417,13 +1526,15 @@ Let
 ```{math}
 \alpha=\sum_{i=1}^n a_i\delta_{x_i},
 \qquad
-\beta=\sum_{j=1}^m b_j\delta_{y_j},
-\qquad
-K_{ij}=k_\epsilon(x_i,y_j)\eqdef e^{-c(x_i,y_j)/\epsilon}.
+\beta=\sum_{j=1}^m b_j\delta_{y_j}.
 ```
 
-Assume here that the weights are positive and that $K_{ij}>0$. The Sinkhorn
-scaling equations are
+Specialize the preceding construction to the Gibbs kernel
+$k_\epsilon(x,y)=e^{-c(x,y)/\epsilon}$, assumed to be PSD and to admit the
+displayed feature representation. Thus the rectangular matrix defined above is
+precisely the Sinkhorn kernel, $K_{ij}=k_\epsilon(x_i,y_j)$. Assume that the
+weights and the entries of $K$ are positive. Recall the Sinkhorn scaling
+equations {eq}`eq-sinkhorn-web`:
 
 ```{math}
 u=\frac{a}{Kv},
@@ -1431,36 +1542,9 @@ u=\frac{a}{Kv},
 v=\frac{b}{K^\top u},
 ```
 
-where divisions are componentwise. The factorization used by Sinkhorn is
-rectangular, because the source points $x_i$ and target points $y_j$ need not
-coincide. Starting from the same sketch
-$k(x,y)\simeq r^{-1}\sum_{\ell=1}^r
-\dotp{\phi(x,z_\ell)}{\phi(y,z_\ell)}_{\RR^p}$, set $R=rp$ and flatten the
-pair $(\ell,q)$ into a single column index. Define
-
-```{math}
-(\Phi_X)_{i,(\ell,q)}=r^{-1/2}\phi_q(x_i,z_\ell),
-\qquad
-(\Phi_Y)_{j,(\ell,q)}=r^{-1/2}\phi_q(y_j,z_\ell).
-```
-
-Then $\Phi_X\in\RR^{n\times R}$, $\Phi_Y\in\RR^{m\times R}$, and
-
-```{math}
-\widetilde K_{ij}
-=
-(\Phi_X\Phi_Y^\top)_{ij}
-=
-\frac1r\sum_{\ell=1}^r
-\dotp{\phi(x_i,z_\ell)}{\phi(y_j,z_\ell)}_{\RR^p}
-\simeq K_{ij}.
-```
-
-When the two supports are the same, one has $\Phi_X=\Phi_Y=\Phi$ and this
-reduces to the symmetric Gram approximation $\widetilde K=\Phi\Phi^\top$. In
-the rectangular case, if $K$ is replaced by the rank-$R$ factorization
-$\widetilde K=\Phi_X\Phi_Y^\top$, the two matrix-vector products are evaluated
-as
+where divisions are componentwise. Replacing $K$ by its rank-$R$ sketch
+{eq}`eq-rectangular-feature-sketch-web`, the two matrix-vector products are
+evaluated as
 
 ```{math}
 \widetilde K v=\Phi_X(\Phi_Y^\top v),
@@ -1476,129 +1560,108 @@ error on the entries, because $-\epsilon\log K_{ij}$ is the effective cost.
 This is a more stringent requirement than the usual spectral or Frobenius
 approximation of a PSD Gram matrix.
 
-The next proposition is not a substitute for the sharp low-rank Sinkhorn
-theory. It is an elementary concentration lemma whose role is to isolate the
-two facts that matter for Sinkhorn: positivity of the approximate kernel and
-accuracy after taking logarithms. The full algorithmic statements rely on more
-refined Nyström or Gaussian-kernel approximations together with stability of
-Sinkhorn scaling
-{cite:p}`AltschulerBachRudiWeed2018QuadraticTransport,AltschulerBachRudiNilesWeed2019NystromSinkhorn`.
+The interaction between kernel accuracy and scaling accuracy can be quantified
+for Gaussian kernels. The following specialization of the Nyström--Sinkhorn
+analysis of Altschuler, Bach, Rudi and Niles-Weed
+{cite:p}`AltschulerBachRudiWeed2018QuadraticTransport,AltschulerBachRudiNilesWeed2019NystromSinkhorn`
+uses $\epsilon$ for the entropic temperature and $\tau$ for the requested
+numerical accuracy. We write $\widetilde O$ for bounds up to logarithmic factors
+in $N$, $1/\tau$, and $1/\delta$.
 
-(prop-sinkhorn-sketch-positive-guarantee)=
-:::{admonition} Proposition: Finite Positivity and Logarithmic Accuracy
+(prop-gaussian-nystrom-sinkhorn-complexity)=
+:::{admonition} Proposition: Accuracy and Complexity of Gaussian Nyström--Sinkhorn
 :class: important
-Let $\epsilon>0$ and $K_{ij}=\mathbb E h_{ij}(Z)>0$ for
-$1\leq i\leq n$, $1\leq j\leq m$, where $Z$ has law $\xi$ and
-$|h_{ij}(Z)|\leq M$ almost surely. Set
-$c_{ij}=-\epsilon\log K_{ij}$, and let
+Let $\alpha=\sum_{i=1}^n a_i\delta_{x_i}$ and
+$\beta=\sum_{j=1}^m b_j\delta_{y_j}$ have positive weights, assume that all
+their support points lie in the ball $B(0,D)\subset\RR^d$, and set $N=n+m$.
+For the quadratic cost $c(x,y)=\norm{x-y}^2$, fix $\epsilon>0$ and
+$\tau,\delta\in(0,1)$. There is a randomized Nyström construction of an
+entrywise-positive rank-$R$ approximation $\widetilde K$ of the Gaussian kernel
+$K_{ij}=e^{-\norm{x_i-y_j}^2/\epsilon}$, followed by approximate Sinkhorn
+scaling and rounding, which returns a feasible coupling
+$\widehat P\in\CouplingsD(a,b)$ and a value $\widehat W$ such that, with
+probability at least $1-\delta$,
 
 ```{math}
-\widetilde K_{ij}=\frac1r\sum_{\ell=1}^r h_{ij}(Z_\ell),
+0\leq
+\dotp{C}{\widehat P}
++\epsilon\operatorname{KL}(\widehat P\,|\,a\otimes b)
+-\MK_c^\epsilon(\alpha,\beta)
+\leq\tau,
 \qquad
-Z_1,\ldots,Z_r\sim\xi.
+\left|\widehat W-\MK_c^\epsilon(\alpha,\beta)\right|\leq\tau.
 ```
 
-Then, for every $\eta>0$,
+The sketch rank can be chosen so that
 
 ```{math}
-\mathbb P\left(\max_{i,j}|\widetilde K_{ij}-K_{ij}|>\eta\right)
-\leq
-2nm\exp\left(-\frac{r\eta^2}{2M^2}\right).
+:label: eq-gaussian-nystrom-rank-web
+R
+\lesssim_d
+\left(
+1+\frac{D^2}{\epsilon}
++\log\frac{N(1+D^2)}{\tau}
+\right)^d
+\log\frac{N}{\delta},
 ```
 
-In particular, if $\kappa\eqdef\min_{i,j}K_{ij}>0$, $\eta<\kappa$, and the
-event above does not occur, then $\widetilde K$ is entrywise positive. If
-moreover $\eta\leq\kappa/2$, then the sketched cost
-$\widetilde c_{ij}=-\epsilon\log \widetilde K_{ij}$ satisfies
+and the complete computation uses
 
 ```{math}
-\max_{i,j}|\widetilde c_{ij}-c_{ij}|
-\leq
-\frac{2\epsilon\eta}{\kappa}.
-```
-
-If, more sharply, the relative variables
-$\zeta_{ij}(Z)\eqdef h_{ij}(Z)/K_{ij}$ satisfy
-$|\zeta_{ij}(Z)|\leq\psi$ almost surely, then for every
-$0<\delta\leq1/2$,
-
-```{math}
-\mathbb P\left(
-\max_{i,j}\left|\frac{\widetilde K_{ij}}{K_{ij}}-1\right|>\delta
+\widetilde O\left(
+NR\left(R+\frac{D^4}{\epsilon\tau}\right)
 \right)
-\leq
-2nm\exp\left(-\frac{r\delta^2}{2\psi^2}\right).
+\quad\text{operations and}\quad
+O\left(N(R+d)\right)
+\quad\text{memory}.
 ```
 
-On the complementary event,
-
-```{math}
-\widetilde K_{ij}>0
-\quad\hbox{and}\quad
-\max_{i,j}|\widetilde c_{ij}-c_{ij}|
-\leq
-2\epsilon\delta .
-```
+Here the constant hidden in $\lesssim_d$ depends only on $d$.
 :::
 
 :::{dropdown} Proof
-For a fixed pair $(i,j)$, Hoeffding's inequality applied to bounded variables
-in $[-M,M]$ gives
-
-```{math}
-\mathbb P\left(|\widetilde K_{ij}-K_{ij}|>\eta\right)
-\leq 2\exp\left(-\frac{r\eta^2}{2M^2}\right).
-```
-
-A union bound over the $nm$ entries gives the first claim. If
-$\max_{ij}|\widetilde K_{ij}-K_{ij}|\leq\eta<\kappa$, then
-$\widetilde K_{ij}\geq\kappa-\eta>0$. Writing
-$\widetilde K_{ij}=K_{ij}(1+s_{ij})$, one has
-$|s_{ij}|\leq\eta/\kappa\leq1/2$, hence
-$|\log(1+s_{ij})|\leq2|s_{ij}|$, which proves the absolute logarithmic bound.
-Applying the same Hoeffding argument to $\zeta_{ij}(Z)$, whose expectation is
-$1$, gives the relative estimate. On the corresponding event,
-$\widetilde K_{ij}=K_{ij}(1+s_{ij})$ with
-$|s_{ij}|\leq\delta\leq1/2$, so positivity and
-$\epsilon|\log(1+s_{ij})|\leq2\epsilon\delta$ follow.
+Apply the Gaussian Nyström approximation to the Gram matrix on the union of the
+$N$ support points and retain its source--target block. Since
+$\norm{x-y}\leq2D$, one has $K_{\min}\geq e^{-4D^2/\epsilon}$. The adaptive
+stopping rule of Altschuler, Bach, Rudi and Niles-Weed resolves the kernel below
+this scale, hence produces $\widetilde K>0$ with the same logarithmic control
+singled out in {ref}`prop-sinkhorn-sketch-positive-guarantee`. Their Gaussian
+effective-dimension estimate gives {eq}`eq-gaussian-nystrom-rank-web`.
+Stability of entropic OT with respect to $\log K$, followed by approximate
+Sinkhorn scaling and rounding, gives the two error bounds. The low-rank
+factorization costs $O(NR^2)$ to construct, each kernel product costs $O(NR)$,
+and the quantitative scaling bound contributes
+$\widetilde O(NRD^4/(\epsilon\tau))$, yielding the stated time and memory
+estimates. Their entropy convention differs from the KL-normalized value
+$\MK_c^\epsilon$ only by a constant depending on $(a,b)$, so the approximation
+bounds are unchanged.
 :::
 
-This proposition pinpoints the obstruction. When $\epsilon$ is small or the
-data diameter is large, $\kappa=\min K_{ij}$ can be exponentially small, so an
-ordinary signed sketch may need a very large $r$ just to keep all entries
-positive. What Sinkhorn really needs is relative control of the kernel,
-equivalently additive control of the sketched costs. Positive features do not
-solve the whole approximation problem, but they remove the most basic failure
-mode, negative entries in $\widetilde K$. The log-normal positive features
-below are unbounded, so this Hoeffding proposition does not apply to them
-without truncation or a different concentration argument.
+The power $d$ in {eq}`eq-gaussian-nystrom-rank-web` is the principal
+limitation. Sinkhorn requires $\widetilde K>0$ and control of
+$\log\widetilde K$, so an additive kernel approximation must resolve entries as
+small as $e^{-4D^2/\epsilon}$. The Gaussian effective dimension at this
+resolution scales as $(D^2/\epsilon)^d$, up to logarithmic factors. For example,
+when $n=m$ and both measures are uniform,
+$0\leq\MK_c^\epsilon-\MK_c\leq\epsilon\log n$. Approximating unregularized OT
+to accuracy $\tau$ therefore calls for $\epsilon$ of order $\tau/\log n$, and
+the sufficient rank scales as $\tau^{-d}$ up to powers of $D$ and logarithmic
+factors. This is the dimension-dependent price of the sketch; replacing $d$ by
+a smaller intrinsic dimension is possible under additional geometric
+assumptions on the data
+{cite:p}`AltschulerBachRudiNilesWeed2019NystromSinkhorn`.
 
-Available worst-case bounds retain explicit dimension dependence. For the quadratic
-cost on points contained in a radius-$R$ ball of $\RR^d$, the Nyström analysis
-of Altschuler, Bach, Rudi and Niles-Weed
-{cite:p}`AltschulerBachRudiNilesWeed2019NystromSinkhorn` studies
-$K_{ij}=\exp(-\eta\norm{x_i-x_j}^2)$ and bounds the effective rank by a
-quantity of the form
+### Positive Features and Complete Positivity
 
-```{math}
-r_\ast(X,\eta,\epsilon_0)
-\lesssim
-\left(\eta R^2+\log(n/\epsilon_0)\right)^d
-```
-
-up to universal constants and harmless logarithms. Thus the resulting Sinkhorn computation is near-linear in $n$ once this rank
-is fixed, but the required rank is polynomial in the inverse kernel bandwidth,
-with exponent $d$ and only logarithmic dependence on $n$ in this bound. When the same machinery is used to approximate unregularized
-quadratic OT to additive accuracy $\tau$, one takes $\eta$ of order
-$\tau^{-1}\log n$, so the complexity contains a factor $\tau^{-O(d)}$, often
-summarized informally as an $\epsilon^{-d}$-type dependence on the target
-precision. The same work also explains why this can be much better on data
-with lower intrinsic dimension.
-
-### Positive Features and Total Positivity
-
-A positive feature sketch asks for more than positive semidefiniteness. In
-finite dimension, let
+The preceding analysis identifies positivity as a central bottleneck: a signed
+sketch may require many features merely to avoid negative entries, whereas
+Sinkhorn repeatedly divides by kernel--vector products and therefore cannot
+tolerate this failure. A natural remedy is to build entrywise nonnegativity
+into every sketch by using nonnegative features; under a mild nondegeneracy
+condition, the resulting entries are strictly positive. Not every positive
+semidefinite and pointwise-positive kernel admits such a representation,
+however. We therefore first identify the matrix and kernel classes for which
+positive sketches are possible. In finite dimension, let
 
 ```{math}
 \mathrm{DNN}_n=\{A\in\RR^{n\times n}: A\succeq0,\ A_{ij}\geq0\},
@@ -1610,78 +1673,188 @@ Matrices in $\mathrm{DNN}_n$ are doubly nonnegative, while matrices in
 $\mathrm{CP}_n$ are completely positive. One always has
 $\mathrm{CP}_n\subset\mathrm{DNN}_n$, with equality for $n\leq4$ and strict
 inclusion for $n\geq5$
-{cite:p}`BermanShakedMonderer2003,AnstreicherBurerDuer2009`. Checking
+{cite:p}`BermanShakedMonderer2003,AnstreicherBurerDuer2009`. Thus, from five
+sampled points onward, positive sketchability is strictly more demanding than
+being doubly nonnegative: the latter is the spectral and entrywise positivity
+condition desirable for stable Sinkhorn kernels, whereas the former guarantees
+nonnegative low-rank features and hence positive Sinkhorn sketches. This gap
+does not occur for ordinary sketches, where no sign constraint is imposed on
+the features: spectral positivity is equivalent to the existence of a possibly
+signed Hilbert feature representation. It appears only when one insists that
+every feature, and hence every finite sketch, be pointwise nonnegative. Checking
 membership in the completely positive cone is computationally hard: strong
 membership is NP-hard, and weak membership for the completely positive cone and
 its copositive dual is NP-hard {cite:p}`DickinsonGijben2014`.
 
-For kernels, it is useful to distinguish the two corresponding notions. A
-kernel $k$ is *doubly positive* if every finite Gram matrix belongs to
-$\mathrm{DNN}_n$, i.e. if $k$ is PSD and pointwise nonnegative. It is *totally
-positive* in the positive-feature sense if every finite Gram matrix belongs to
-$\mathrm{CP}_n$. This terminology should not be confused with Karlin's
-classical total positivity, which concerns nonnegativity of all minors of an
-ordered kernel {cite:p}`Karlin1968TotalPositivity`; it is a
-complete-positive-type condition, studied for instance in
-{cite:p}`DeCorteOliveiraFilhoVallentin2022`.
-
-The positive-feature construction of Scetbon and Cuturi
-{cite:p}`ScetbonCuturi2020PositiveFeatures` makes the reason for this
-definition direct. If
+A concrete five-point obstruction is provided by the periodic kernel
 
 ```{math}
-k(x,y)=\int_Z\dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\xi(z),
-\qquad
-\phi(x,z)\in\RR_+^p,
+k_\lambda(x,y)=\lambda+\cos^2\left(\frac{x-y}{2}\right),
+\qquad \lambda>0.
 ```
 
-then every finite Gram matrix is a conic combination of rank-one matrices
-$vv^\top$ with $v\geq0$, and hence is completely positive. Conversely, on a
-fixed finite set, $K\in\mathrm{CP}_n$ is exactly the existence of a
-nonnegative factorization $K=BB^\top$. Thus total positivity is the relevant
-finite-sample kernel condition behind positive random features. For
-rectangular source--target matrices, one applies the same statement to the
-Gram matrix on the union of the sampled source and target points and then
-extracts its $n\times m$ cross block.
+It is PSD and strictly positive pointwise because
+$\cos^2(t/2)=(1+\cos t)/2$ has nonnegative Fourier coefficients. Yet, for
+$\lambda=1/20$, its Gram matrix $K$ on five equally spaced points is not
+completely positive. Indeed, the Horn copositive matrix $H$ is nonnegative on
+$\mathrm{CP}_5$, whereas
 
-(prop-totally-positive-kernel-closure)=
-:::{admonition} Proposition: Basic Closure of Totally Positive Kernels
+```{math}
+\langle H,K\rangle
+=
+\frac{21}{4}-\frac{5\sqrt5}{2}<0.
+```
+
+Thus $K\in\mathrm{DNN}_5\setminus\mathrm{CP}_5$, as displayed in Figure
+{ref}`fig:sinkhorn-doubly-positive-counterexample`.
+
+(fig:sinkhorn-doubly-positive-counterexample)=
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sinkhorn-doubly-positive-counterexample")
+```
+
+:::{div}
+:class: ot4ml-interactive-note
+**Interactive panel.** Change the offset to compare an entrywise positive PSD
+kernel matrix with the Horn certificate obstructing complete positivity.
+:::
+
+<iframe class="ot4ml-live-frame" title="Interactive doubly-positive counterexample panel" src="../live/sinkhorn-doubly-positive-counterexample.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
+
+(def-dnn-cp-kernels)=
+:::{admonition} Definition: Completely Positive and Positive-Feature Kernels
+:class: note
+A kernel is **doubly positive**, respectively **completely positive**, if
+every finite Gram matrix belongs to $\mathrm{DNN}_n$, respectively
+$\mathrm{CP}_n$. It is a **positive-feature kernel** if there are a
+probability space $(Z,\xi)$, an integer $p\geq1$, and measurable features
+$\phi(x,\cdot):Z\to\RR_+^p$ such that
+
+```{math}
+k(x,y)=\int_Z\dotp{\phi(x,z)}{\phi(y,z)}_{\RR^p}\,d\xi(z).
+```
+:::
+
+A doubly positive kernel is equivalently PSD and pointwise nonnegative.
+
+(prop-cp-kernel-positive-features)=
+:::{admonition} Proposition: Complete Positivity and Positive Features
 :class: important
-Nonnegative sums and pointwise products of totally positive kernels are totally
-positive. The same holds for measurable nonnegative mixtures whenever the
-resulting kernel is finite. In particular, positive autocorrelations
+Let $k:\Xx\times\Xx\to\RR$ be a finite-valued PSD kernel whose canonical
+pseudometric
+
+```{math}
+d_k(x,y)^2:=k(x,x)+k(y,y)-2k(x,y)
+```
+
+is separable. Then $k$ is completely positive if and only if it is a
+positive-feature kernel. Scalar features suffice. On a finite set this reduces
+to
+
+```{math}
+K\in\mathrm{CP}_n
+\quad\Longleftrightarrow\quad
+K=BB^\top\quad\text{for some }B\geq0.
+```
+:::
+
+:::{dropdown} Proof
+If $k$ has positive features, then on $x_1,\ldots,x_n$,
+
+```{math}
+K=\sum_{q=1}^p\int_Zv_q(z)v_q(z)^\top\,d\xi(z),
+\qquad
+v_q(z):=(\phi_q(x_i,z))_{i=1}^n\geq0.
+```
+
+The integrand belongs to the closed convex cone $\mathrm{CP}_n$, hence so does
+$K$.
+
+The zero kernel is trivial. Otherwise, choose a $d_k$-dense sequence $(x_i)$
+and positive weights $(\omega_i)$ such that
+$0<S:=\sum_i\omega_i k(x_i,x_i)<+\infty$. Factor each
+finite Gram matrix as $K^{(r)}=B^{(r)}(B^{(r)})^\top$. If $b_\ell$ are its
+nonzero columns, set
+$t_\ell=\sum_{i\leq r}\omega_i(b_\ell)_i^2$,
+$S_r=\sum_\ell t_\ell$, and
+$z_i^{(r,\ell)}=\sqrt{S_r/t_\ell}(b_\ell)_i$ for $i\leq r$, with zero
+coordinates afterward. The probability measures
+
+```{math}
+\xi_r:=\sum_\ell\frac{t_\ell}{S_r}\delta_{z^{(r,\ell)}}
+```
+
+are supported on the compact product
+$\prod_i[0,\sqrt{S/\omega_i}]$ and satisfy
+$\int z_i z_j\,d\xi_r=k(x_i,x_j)$ for $i,j\leq r$. A weak limit $\xi$ gives
+scalar nonnegative features $\phi(x_i,z)=z_i$. Their $L^2(\xi)$-distance is
+$d_k(x_i,x_j)$, so they extend by continuity to all $x\in\Xx$, remain
+nonnegative, and have inner products $k(x,y)$.
+:::
+
+The separability assumption holds for continuous kernels on separable metric
+spaces. It cannot be omitted for a common probability feature space: the delta
+kernel on an uncountable discrete set has completely positive finite Gram
+matrices but would require uncountably many pairwise orthogonal nonzero
+elements of $L^2_+(\xi)$. For a rectangular source--target matrix, the
+proposition is applied to the Gram matrix on the union of the two point sets,
+after which one extracts the rectangular cross block.
+
+Despite this certification difficulty, completely positive kernels,
+equivalently positive-sketchable kernels under the preceding proposition,
+enjoy a useful closure algebra. It provides a systematic way to construct new
+kernels whose low-rank features remain nonnegative.
+
+(prop-completely-positive-kernel-closure)=
+:::{admonition} Proposition: Basic Closure of Completely Positive Kernels
+:class: important
+Let $k_1,\ldots,k_J$ be completely positive kernels,
+$a_1,\ldots,a_J\geq0$, and $(k_\theta)_{\theta\in\Theta}$ a measurable family
+of completely positive kernels. Whenever they are finite, the kernels
+
+```{math}
+k_{\mathrm{sum}}:=\sum_{j=1}^J a_jk_j,
+\qquad
+k_{\mathrm{prod}}:=\prod_{j=1}^J k_j,
+\qquad
+k_{\mathrm{mix}}:=\int_\Theta k_\theta\,d\eta(\theta),
+\quad \eta\geq0,
+```
+
+are completely positive. In particular, so is every positive autocorrelation
 
 ```{math}
 k(x,y)=\int g(u-x)g(u-y)\,du,
 \qquad g\geq0,
 ```
 
-and all nonnegative mixtures of such kernels are totally positive.
+and every nonnegative mixture of such kernels.
 :::
 
 :::{dropdown} Proof
-For sums, concatenate the nonnegative features and rescale them by the square
-roots of the nonnegative coefficients. For products, tensor the nonnegative
-features:
+On an arbitrary finite point set, nonnegative sums are handled by concatenating
+nonnegative factors. If $K_j=B_jB_j^\top$, then
 
 ```{math}
-\dotp{\phi_1(x,z_1)}{\phi_1(y,z_1)}
-\dotp{\phi_2(x,z_2)}{\phi_2(y,z_2)}
+K_1\odot K_2
 =
-\dotp{\phi_1(x,z_1)\otimes\phi_2(x,z_2)}
-      {\phi_1(y,z_1)\otimes\phi_2(y,z_2)}.
+\sum_{\ell,s}
+\big((B_1)_{\cdot,\ell}\odot(B_2)_{\cdot,s}\big)
+\big((B_1)_{\cdot,\ell}\odot(B_2)_{\cdot,s}\big)^\top,
 ```
 
-The tensor feature remains entrywise nonnegative. A measurable mixture is a
-limit of conic combinations in the closed completely positive cone on every
-finite point set. The autocorrelation formula is already a positive feature
-representation with latent variable $u$ and scalar feature $g(u-x)$.
+so pointwise products are completely positive. Measurable nonnegative mixtures
+remain in the closed convex cone $\mathrm{CP}_n$. The autocorrelation formula
+is directly a scalar positive-feature representation, so the same integral
+argument applies.
 :::
 
-The Gaussian Gibbs kernels used by Sinkhorn admit an especially simple positive
-feature representation, which is the construction exploited by Scetbon and
-Cuturi {cite:p}`ScetbonCuturi2020PositiveFeatures`. The same construction
-extends to the generalized Gaussian kernels
+For the quadratic cost $c(x,y)=\norm{x-y}^2$, the Gaussian Gibbs kernel used
+by Sinkhorn admits an especially simple positive feature representation,
+which is the construction exploited by Scetbon and Cuturi
+{cite:p}`ScetbonCuturi2020PositiveFeatures`. The same construction extends to
+the generalized Gaussian kernels
 $e^{-\norm{x-y}^p/\epsilon}$ for $0<p\leq2$, because these kernels are
 mixtures of Gaussian kernels. This is the Schoenberg--Bernstein mechanism
 behind the positive definiteness of radial stable kernels
@@ -1699,42 +1872,30 @@ k_{p,\epsilon}(x,y)
 \qquad x,y\in\RR^d .
 ```
 
-Set $a=p/2\in(0,1]$. Let $S_a$ be the positive $a$-stable random variable
-normalized by
+Set $a=p/2$, let $S_a$ be the positive $a$-stable random variable normalized by
 
 ```{math}
 \mathbb E\left(e^{-tS_a}\right)=e^{-t^a},
 \qquad t\geq0,
 ```
 
-and set $\Lambda=\epsilon^{-1/a}S_a$. Denote by $\nu_{a,\epsilon}$ the law
-of $\Lambda$. Then
+and draw independently
 
 ```{math}
-\exp\left(-\frac{t^a}{\epsilon}\right)
-=
-\int_0^{+\infty} e^{-\lambda t}\,d\nu_{a,\epsilon}(\lambda),
-\qquad t\geq0.
-```
-
-Equivalently, for a nonnegative random variable
-$\Lambda\sim\nu_{a,\epsilon}$,
-
-```{math}
-k_{p,\epsilon}(x,y)
-=
-\mathbb E_\Lambda\exp\left(-\Lambda\norm{x-y}^2\right).
-```
-
-Fix a centering point $x_0\in\RR^d$, let $Z\sim\mathcal N(0,\Id_d)$,
-independent of $\Lambda$, and set
-
-```{math}
-q_x(\Lambda)=\sqrt{2\Lambda}\,(x-x_0),
+\Lambda=\epsilon^{-1/a}S_a,
 \qquad
-\phi_p(x,\Lambda,Z)
-=
-\exp\left(\dotp{Z}{q_x(\Lambda)}-\norm{q_x(\Lambda)}^2\right).
+Z\sim\mathcal N(0,\Id_d).
+```
+
+For any $x_0\in\RR^d$, define the positive feature
+
+```{math}
+\phi_{p,\epsilon}(x;\Lambda,Z)
+:=
+\exp\left(
+\sqrt{2\Lambda}\dotp{Z}{x-x_0}
+-2\Lambda\norm{x-x_0}^2
+\right).
 ```
 
 Then
@@ -1742,35 +1903,43 @@ Then
 ```{math}
 k_{p,\epsilon}(x,y)
 =
-\mathbb E_{\Lambda,Z}
-\left(\phi_p(x,\Lambda,Z)\phi_p(y,\Lambda,Z)\right).
+\mathbb E\left[
+\phi_{p,\epsilon}(x;\Lambda,Z)
+\phi_{p,\epsilon}(y;\Lambda,Z)
+\right],
 ```
 
-Thus $k_{p,\epsilon}$ is totally positive in the complete-positive sense. In
-particular, if $(\Lambda_\ell,Z_\ell)_{\ell=1}^r$ are i.i.d. copies of
-$(\Lambda,Z)$, then
+so $k_{p,\epsilon}$ is completely positive. For i.i.d. copies
+$(\Lambda_\ell,Z_\ell)_{\ell=1}^r$, define the positive sketching features
 
 ```{math}
-\widetilde k_{p,\epsilon}(x,y)
-=
-\sum_{\ell=1}^r
-\varphi_\ell(x)\varphi_\ell(y),
-\qquad
-\varphi_\ell(x)=r^{-1/2}\phi_p(x,\Lambda_\ell,Z_\ell),
+\varphi_\ell(x)
+=r^{-1/2}\phi_{p,\epsilon}(x;\Lambda_\ell,Z_\ell),
+\qquad 1\leq\ell\leq r.
 ```
 
-is an unbiased nonnegative feature sketch of $k_{p,\epsilon}$.
+They satisfy $\varphi_\ell\geq0$ and
 
-For $p=2$, the mixing law reduces to the Dirac mass
-$\nu_{1,\epsilon}=\delta_{1/\epsilon}$, which recovers the usual Gaussian
-feature formula.
+```{math}
+\mathbb E\left[\sum_{\ell=1}^r
+\varphi_\ell(x)\varphi_\ell(y)\right]
+=k_{p,\epsilon}(x,y).
+```
+
+For $p=2$, one has $S_1=1$ almost surely and
+
+```{math}
+\phi_{2,\epsilon}(x;Z)
+=
+\exp\left(
+\sqrt{2/\epsilon}\dotp{Z}{x-x_0}
+-(2/\epsilon)\norm{x-x_0}^2
+\right).
+```
 :::
 
 :::{dropdown} Proof
-The function $s\mapsto e^{-s^a}$ is completely monotone for $0<a\leq1$.
-Bernstein's theorem therefore gives the Laplace-transform representation of a
-positive $a$-stable random variable $S_a$. The scaling
-$\Lambda=\epsilon^{-1/a}S_a$ gives
+The stable-law normalization gives
 
 ```{math}
 \mathbb E e^{-t\Lambda}
@@ -1778,29 +1947,18 @@ $\Lambda=\epsilon^{-1/a}S_a$ gives
 \exp\left(-\frac{t^a}{\epsilon}\right),
 ```
 
-which is the displayed representation by $\nu_{a,\epsilon}$. Applying this
-identity with $t=\norm{x-y}^2$ gives the Gaussian-mixture formula.
-
-Conditionally on $\Lambda=\lambda$, the Gaussian moment-generating function
-gives
+while, conditionally on $\Lambda$, the Gaussian moment-generating function gives
 
 ```{math}
-\begin{aligned}
-\mathbb E_Z\left(\phi_p(x,\lambda,Z)\phi_p(y,\lambda,Z)\right)
-&=
-\exp\left(-\norm{q_x(\lambda)}^2-\norm{q_y(\lambda)}^2\right)
-\mathbb E_Z\left(\exp\dotp{Z}{q_x(\lambda)+q_y(\lambda)}\right) \\
-&=
-\exp\left(-\frac12\norm{q_x(\lambda)-q_y(\lambda)}^2\right)
-=
-\exp\left(-\lambda\norm{x-y}^2\right).
-\end{aligned}
+\mathbb E_Z\left[
+\phi_{p,\epsilon}(x;\Lambda,Z)
+\phi_{p,\epsilon}(y;\Lambda,Z)
+\right]
+=e^{-\Lambda\norm{x-y}^2}.
 ```
 
-Taking the expectation over $\Lambda$ gives $k_{p,\epsilon}$. Since $\phi_p$ is
-positive, this is a positive-feature representation; hence every finite Gram
-matrix is completely positive. The Monte-Carlo sketch is just the empirical
-average of this representation.
+Taking $t=\norm{x-y}^2$ in the first identity proves the feature formula, and
+averaging independent copies proves unbiasedness.
 :::
 
 :::{admonition} Remark: The range $0<p\leq2$
@@ -1811,111 +1969,37 @@ $x\mapsto e^{-\gamma\norm{x}^p}$ is positive definite on every Euclidean
 space precisely in this range. For $p>2$, some finite Gram matrices have a
 negative eigenvalue, so no universal positive-feature factorization should be
 expected.
-
-For $p<2$, the positive stable mixing variable is heavy tailed. For
-$x\neq x_0$,
-$$
-\mathbb E_Z\phi_p(x,\Lambda,Z)^4
-=\exp\left(8\Lambda\norm{x-x_0}^2\right),
-$$
-whose expectation over $\Lambda$ is infinite. Unbiasedness therefore does not
-give a finite-variance Monte-Carlo sketch; practical implementations need
-truncation, quadrature, variance reduction, or another positive
-representation. The $p=2$ case avoids this issue because
-$\Lambda=1/\epsilon$ is deterministic.
 :::
 
-
-Choosing $x_0$ near the data can reduce the dynamic range of the features
-without changing the kernel. More generally, Gaussian scale mixtures give many
-radial totally positive kernels, including standard covariance families used
-in Gaussian processes {cite:p}`rasmussen2006gaussian`.
-
-The gap between doubly positive and totally positive kernels is real. On the
-circle, consider
-
-```{math}
-k_\lambda(x,y)=\lambda+\cos^2\left(\frac{x-y}{2}\right),
-\qquad \lambda>0.
-```
-
-This kernel is PSD and strictly positive pointwise, since
-$\cos^2(t/2)=(1+\cos t)/2$ has nonnegative Fourier coefficients and $\lambda$
-adds a positive constant mode. For $\lambda=1/20$, however, its Gram matrix on
-five equally spaced points is not completely positive. The Horn copositive
-matrix $H$ satisfies $\langle H,B\rangle\geq0$ for every completely positive
-matrix $B$, but the five-point Gram matrix $K$ gives
-
-```{math}
-\langle H,K\rangle
-=
-\frac{21}{4}-\frac{5\sqrt5}{2}<0.
-```
-
-Thus $K\in\mathrm{DNN}_5\setminus\mathrm{CP}_5$, and the kernel is doubly
-positive but not totally positive.
-
-Figure {ref}`fig:sinkhorn-doubly-positive-counterexample` displays this finite certificate and the separating witness.
-
-(fig:sinkhorn-doubly-positive-counterexample)=
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-doubly-positive-counterexample")
-```
-
-Figure {ref}`fig:sinkhorn-doubly-positive-counterexample` displays this finite
-certificate.
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Change the offset to compare an entrywise positive PSD
-kernel matrix with the Horn certificate obstructing complete positivity.
-:::
-
-<iframe class="ot4ml-live-frame" title="Interactive doubly-positive counterexample panel" src="../live/sinkhorn-doubly-positive-counterexample.html" loading="lazy" style="width:100%;height:520px;border:0;display:block;"></iframe>
 
 ### Positive Sketches for Sinkhorn
 
-For the $p$-power cost $c_p(x,y)=\norm{x-y}^p$, with $0<p\leq2$, the Sinkhorn
-Gibbs kernel is the generalized Gaussian kernel
+For the $p$-power cost $c_p(x,y)=\norm{x-y}^p$, with $0<p\leq2$, let
 
 ```{math}
-k_{p,\epsilon}(x,y)
+K_{i,j}=k_{p,\epsilon}(x_i,y_j)
 =
-\exp\left(-\frac{\norm{x-y}^p}{\epsilon}\right).
+\exp\left(-\frac{\norm{x_i-y_j}^p}{\epsilon}\right).
 ```
 
 The factor $1/p$, often used in the definition of $W_p^p$, only rescales
 $\epsilon$. For $p\geq1$, this is the usual $p$-Wasserstein power cost; for
 $0<p<1$, it should be read simply as a concave power transport cost.
-Proposition {ref}`prop-gaussian-positive-features` gives a positive
-factorization of this kernel. With $r$ draws
-$(\Lambda_\ell,Z_\ell)\sim\nu_{p/2,\epsilon}\otimes\mathcal N(0,\Id_d)$,
-define the normalized features
+Using the sketching features $\varphi_\ell$ of Proposition
+{ref}`prop-gaussian-positive-features`, define directly
 
 ```{math}
-\varphi_\ell(x)=r^{-1/2}\phi_p(x,\Lambda_\ell,Z_\ell),
-\qquad 1\leq \ell\leq r .
-```
-
-They satisfy
-
-```{math}
-\widetilde k_{p,\epsilon}(x,y)
-=
-\sum_{\ell=1}^r\varphi_\ell(x)\varphi_\ell(y)
-\geq0,
+(\Phi_X)_{i,\ell}=\varphi_\ell(x_i),
 \qquad
-\mathbb E[\widetilde k_{p,\epsilon}(x,y)]=k_{p,\epsilon}(x,y).
+(\Phi_Y)_{j,\ell}=\varphi_\ell(y_j).
 ```
 
-The corresponding matrices $(\Phi_X)_{i\ell}=\varphi_\ell(x_i)$ and
-$(\Phi_Y)_{j\ell}=\varphi_\ell(y_j)$ give a positive factorization
-$\widetilde K=\Phi_X\Phi_Y^\top$. Sinkhorn can therefore be run safely on the
-sketched kernel, and the resulting plan is represented as
+The proposition gives $K_r:=\Phi_X\Phi_Y^\top\geq0$ entrywise and
+$\mathbb E[K_r]=K$. Sinkhorn applied to $K_r$ uses only products by the two
+feature matrices, and its plan is represented as
 
 ```{math}
-\widetilde P
+P_r
 =
 \diag(u)\Phi_X\Phi_Y^\top\diag(v)
 =
@@ -1926,17 +2010,17 @@ L=\diag(u)\Phi_X,
 R=\diag(v)\Phi_Y .
 ```
 
-The output is the exact entropic coupling for the sketched effective cost
-$\widetilde c_{p,\epsilon}=-\epsilon\log\widetilde k_{p,\epsilon}$, and it
-approximates the original $W_p$-type entropic problem only insofar as this
-logarithmic kernel approximation is accurate. This route is complementary to
+This route is complementary to
 worst-case near-linear Sinkhorn analyses {cite:p}`altschuler2017near`, low-rank
 Gaussian-kernel approximations for quadratic transport
 {cite:p}`AltschulerBachRudiWeed2018QuadraticTransport`, and factored-coupling
 models in which the coupling itself is constrained to have low rank
 {cite:p}`scetbon2021lowrank`.
 
-Figure {ref}`fig:sinkhorn-positive-feature-sketching` compares the exact Sinkhorn plan with positive-feature approximations and displays the associated approximation of the ground cost.
+Figure {ref}`fig:sinkhorn-positive-feature-sketching` uses the $p=2$ Gaussian
+Gibbs kernel. A sufficiently large rank gives a visually accurate plan and
+entrywise logarithm of the kernel matrix, whereas coarse sketches preserve the
+marginals but lose geometric concentration.
 
 (fig:sinkhorn-positive-feature-sketching)=
 ```{code-cell} ipython3
@@ -1944,27 +2028,22 @@ Figure {ref}`fig:sinkhorn-positive-feature-sketching` compares the exact Sinkhor
 show_book_figure("sinkhorn-positive-feature-sketching")
 ```
 
-Figure {ref}`fig:sinkhorn-positive-feature-sketching` shows the object that is
-changed by this approximation. The top row shows the entropic couplings, while
-the bottom row shows the matching effective costs
-$\widetilde c_\epsilon(x,y)=-\epsilon\log\widetilde k_\epsilon(x,y)$ with black
-level sets. The dense Gaussian Gibbs kernel gives the usual entropic plan and
-the quadratic cost $|x-y|^2$. A sufficiently rich rank-$40$ positive-feature
-sketch remains visually close to both, whereas rank-$10$ and rank-$3$ sketches
-still enforce the prescribed marginals after Sinkhorn scaling but progressively
-lose the geometric concentration of the true coupling because the logarithmic
-kernel approximation has become too coarse.
+The top row shows the entropic couplings. The bottom row displays the entries
+$-\epsilon\log (K_r)_{i,j}$ with black level sets, compared with the exact
+quadratic cost $|x_i-y_j|^2$ in the first column. Rank $40$ remains close to the dense
+computation, while ranks $10$ and $3$ preserve the marginals but increasingly
+blur the transport geometry.
 
 :::{div}
 :class: ot4ml-interactive-note
 **Interactive panel.** Change the regularization and random seed to compare the
-exact Gibbs kernel with positive low-rank sketches and their effective
-logarithmic costs.
+exact Gibbs matrix with positive low-rank sketches and their logarithmic
+matrices.
 :::
 
 <iframe class="ot4ml-live-frame" title="Interactive positive-feature Sinkhorn sketch panel" src="../live/sinkhorn-positive-sketching.html" loading="lazy" style="width:100%;height:700px;border:0;display:block;"></iframe>
 
-### Connection with Linear Attention
+### Connection with Linear Time Attention
 
 The same algebra appears in transformer attention, studied later from a
 continuous-depth transport viewpoint in

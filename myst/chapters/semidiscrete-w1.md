@@ -635,9 +635,85 @@ much mass shrink.
 
 <iframe class="ot4ml-live-frame" title="Semi-discrete Laguerre controls" src="../live/semidiscrete-laguerre.html" loading="lazy" style="width:100%;height:510px;border:0;display:block;"></iframe>
 
+### One-dimensional Semi-discrete OT
+
+In one dimension, the Laguerre geometry of Definition
+{ref}`def-laguerre-power-cells` becomes explicit. Consider the quadratic cost
+$c(x,y)=|x-y|^2$, assume that $\alpha$ has a density and that
+$y_1<\cdots<y_m$, and set $B_0=0$ and $B_j=\sum_{k=1}^j b_k$. For $j<k$,
+the difference between the weighted costs
+$c(x,y_j)-g_j$ and $c(x,y_k)-g_k$ is affine and increasing in $x$. The active
+site index is therefore nondecreasing, so the nonempty Laguerre cells are
+intervals ordered like the sites. If $g^\star$ maximizes the semi-dual problem
+{eq}`eq-semi-dual-discrete-web`, its induced map pushes $\alpha$ to $\beta$;
+hence its $j$-th cell has $\alpha$-mass $b_j$. Writing
+$q_\alpha=F_\alpha^{-1}$ therefore gives
+
+```{math}
+:label: eq-semidiscrete-1d-laguerre-cells-web
+\text{for }j=1,\ldots,m,\qquad
+\alpha\!\left(\mathcal L_j(g^\star)\mathbin\triangle I_j\right)=0,
+\qquad
+I_j\coloneqq\left(q_\alpha(B_{j-1}),q_\alpha(B_j)\right],
+```
+
+with the harmless endpoint conventions $q_\alpha(0)=-\infty$ and
+$q_\alpha(1)=+\infty$. Thus the optimal semi-discrete map is
+$T^\star(x)=y_j$ on $I_j$; this is the Laguerre-cell realization of the
+monotone rearrangement in Theorem {ref}`prop-1d-quantile-map`. For equal target
+weights, $B_j=j/m$, and the same interval partition yields a closed-form
+quadratic cost through the integrated quantile.
+
+(prop-semidiscrete-1d-quantile)=
+:::{admonition} Proposition: Closed-form One-dimensional Semi-discrete Transport
+:class: important
+Let $\alpha=\rho_\alpha\,\d x\in\mathcal P_2(\RR)$, write
+$q_\alpha=F_\alpha^{-1}$, and define its integrated quantile by
+
+```{math}
+M_\alpha(r)\coloneqq\int_0^r q_\alpha(s)\,\d s.
+```
+
+For
+
+```{math}
+\beta=\frac1m\sum_{j=1}^m\delta_{y_j},
+\qquad y_1<\cdots<y_m,
+```
+
+one has
+
+```{math}
+:label: eq-semidiscrete-1d-w2-uniform-web
+\Wass_2(\alpha,\beta)^2
+=
+\int_\RR x^2\,\d\alpha(x)
++\frac1m\sum_{j=1}^m y_j^2
+-2\sum_{j=1}^m y_j
+\left[M_\alpha\left(\frac jm\right)
+-M_\alpha\left(\frac{j-1}{m}\right)\right].
+```
+:::
+
+:::{dropdown} Proof
+Proposition {ref}`prop-wass-quantile-1d` gives
+$\Wass_2(\alpha,\beta)^2=\int_0^1|q_\alpha-q_\beta|^2$. The target quantile
+satisfies $q_\beta(r)=y_j$ for almost every $r\in((j-1)/m,j/m]$. Expanding the
+square, using $\int_0^1q_\alpha(r)^2\,\d r=\int_\RR x^2\,\d\alpha(x)$, and
+integrating $q_\alpha$ over each interval gives the stated formula.
+:::
+
+The formula isolates the dependence on the source in its second moment and in
+the increments of $M_\alpha$ across the uniform quantile bins. In higher
+dimensions, no global order determines the cells, and the Laguerre-cell
+machinery becomes necessary.
+
 ### Mass Balance
 
-The semi-dual energy can be rewritten as
+Returning to arbitrary dimension and target weights, one has
+$g^{\bar c}(x)=c(x,y_j)-g_j$ on each tie-broken cell $\mathcal L_j(g)$.
+Splitting the integral in the semi-dual objective
+{eq}`eq-semi-dual-discrete-web` over this partition gives
 
 ```{math}
 :label: eq-semi-disc-energy-web

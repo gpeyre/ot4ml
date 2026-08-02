@@ -61,9 +61,13 @@ the target {cite:p}`LieroMielkeSavareLong,2015-chizat-unbalanced,2017-chizat-foc
 
 ### Relaxed Formulation
 
+(def-unbalanced-optimal-transport)=
+:::{admonition} Definition: Unbalanced Optimal Transport
+:class: important
 For nonnegative measures
-$(\alpha,\beta)\in\mathcal M_+(\X)\times\mathcal M_+(\Y)$, a generic relaxed
-formulation is
+$(\alpha,\beta)\in\mathcal M_+(\X)\times\mathcal M_+(\Y)$, a nonnegative
+measurable cost $c$, and proper lower-semicontinuous convex entropy functions
+$\psi_s:[0,+\infty)\to[0,+\infty]$ satisfying $\psi_s(1)=0$, define
 
 ```{math}
 :label: eq-unbalanced-primal
@@ -77,7 +81,11 @@ formulation is
 \mathcal D_{\psi_2}(\pi_2\mid\beta),
 ```
 
-where $\psi_1,\psi_2$ are convex entropy functions. Exact conservation
+where $\mathcal D_{\psi_s}$ is the $\phi$-divergence defined in
+{ref}`def_divergence`.
+:::
+
+Exact conservation
 $(\pi_1,\pi_2)=(\alpha,\beta)$ is replaced by a cost for changing the
 marginals. Writing $\psi_s=\tau\bar\psi_s$ exposes the relaxation scale:
 
@@ -334,7 +342,13 @@ c(x,y)
 \end{aligned}
 ```
 
-This motivates the local reverse cost
+This factorization motivates two scalar costs: the local reverse cost and its
+homogeneous marginal perspective.
+
+(def-unbalanced-local-costs)=
+:::{admonition} Definition: Local Reverse Cost and Homogeneous Perspective
+:class: important
+For $c,r,s\geq0$, the local reverse cost is
 
 ```{math}
 :label: eq-unbalanced-reverse-local-cost
@@ -343,8 +357,21 @@ L_c(r,s)
 c+r\psi_1(1/r)+s\psi_2(1/s),
 ```
 
-with the usual recession convention at $r=0$ or $s=0$. If
-$\alpha=F\pi_1+\alpha^\perp$ and $\beta=G\pi_2+\beta^\perp$ are the Lebesgue
+with the usual recession convention at $r=0$ or $s=0$. Its homogeneous
+marginal perspective is
+
+```{math}
+:label: eq-unbalanced-homogeneous-local-cost
+H_c(r,s)
+\eqdef
+\inf_{\theta>0}
+\theta L_c(r/\theta,s/\theta).
+```
+:::
+
+By construction, $H_c$ is positively $1$-homogeneous.
+
+If $\alpha=F\pi_1+\alpha^\perp$ and $\beta=G\pi_2+\beta^\perp$ are the Lebesgue
 decompositions of the reference marginals with respect to the transported
 marginals, then
 
@@ -359,18 +386,8 @@ marginals, then
 \psi_2(0)\beta^\perp(\Y).
 ```
 
-The homogeneous formulation is obtained by taking the perspective transform
-of $L_c$,
-
-```{math}
-:label: eq-unbalanced-homogeneous-local-cost
-H_c(r,s)
-\eqdef
-\inf_{\theta>0}
-\theta L_c(r/\theta,s/\theta),
-```
-
-which is positively $1$-homogeneous. It defines
+The homogeneous perspective in Definition {ref}`def-unbalanced-local-costs`
+defines
 
 ```{math}
 :label: eq-homogeneous
@@ -575,8 +592,6 @@ projections coincide and $\alpha=\beta$.
 A generic entropic regularization of unbalanced OT reads
 
 ```{math}
-\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)
-\eqdef
 \inf_{\pi\in\mathcal M_+(\X\times\Y)}
 \int c\d\pi
 +
@@ -740,15 +755,15 @@ $K_{ij}=e^{-\C_{ij}/\epsilon}\a_i\b_j, \quad \omega=\frac{\tau}{\tau+\epsilon}, 
 
 ### Partial Optimal Transport
 
-Total variation gives a sharp active-mass selection and connects unbalanced OT
-with the classical partial-transport problem. The latter fixes in advance the
-amount of transported mass. For
+Partial OT permits only part of the available mass to be matched. The active
+mass can be prescribed, unmatched mass can be penalized, or the same penalized
+problem can be written as unbalanced OT with total-variation marginals.
 
-```{math}
-0\leq m\leq \min\{\alpha(\X),\beta(\Y)\},
-```
-
-define
+(def-partial-optimal-transport)=
+:::{admonition} Definition: Fixed-Mass, Penalized and TV-Unbalanced Transport
+:class: important
+Let $A=\alpha(\X)$, $B=\beta(\Y)$, and $M=\min\{A,B\}$. For
+$0\leq m\leq M$, define
 
 ```{math}
 \operatorname{POT}_m(\alpha,\beta)
@@ -756,112 +771,112 @@ define
 \inf_{\substack{\pi\in\mathcal M_+(\X\times\Y)\\
 \pi_1\leq\alpha,\ \pi_2\leq\beta\\
 \pi(\X\times\Y)=m}}
-\int c\,\d\pi .
+\int c\,\d\pi.
 ```
 
-Thus only a submeasure of $\alpha$ is transported onto a submeasure of $\beta$;
-the remaining mass is left unmatched. The corresponding Lagrangian form is
-obtained by adding total-variation penalties. For a price $\lambda>0$ for
-discarding or creating one unit of mass, denote by
-$\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)$ the value
-
-```{math}
-\inf_{\pi\in\mathcal M_+(\X\times\Y)}
-\int c\,\d\pi
-+
-\lambda\|\alpha-\pi_1\|_{\TV}
-+
-\lambda\|\beta-\pi_2\|_{\TV}.
-```
-
-Assume $c\geq0$. Allowing transported marginals larger than the available
-marginals does not improve the value: excess transported mass can be trimmed,
-which decreases the transport cost and cannot increase the sum of the two
-total-variation penalties. Hence an optimal plan may be chosen with
-$\pi_1\leq\alpha$ and
-$\pi_2\leq\beta$. If $m=\pi(\X\times\Y)$, the penalty then reduces to
-
-```{math}
-\lambda\big(\alpha(\X)-m\big)+\lambda\big(\beta(\Y)-m\big),
-```
-
-so the precise relation is a one-dimensional Lagrange duality in the transported
-mass.
-
-(prop-tv-partial-ot-lagrange)=
-:::{admonition} Proposition: TV Penalization Selects Fixed-Mass Partial OT
-:class: important
-Assume that $\X,\Y$ are compact metric spaces and that $c$ is continuous and
-nonnegative. Set $A=\alpha(\X)$, $B=\beta(\Y)$, and $M=\min(A,B)$. Then
+For an unmatched-mass price $\lambda\geq0$, define
 
 ```{math}
 \operatorname{POT}^{\TV}_\lambda(\alpha,\beta)
+\eqdef
+\inf_{\substack{\pi\in\mathcal M_+(\X\times\Y)\\
+\pi_1\leq\alpha,\ \pi_2\leq\beta}}
+\left\{\int c\,\d\pi
++\lambda\bigl(A+B-2\pi(\X\times\Y)\bigr)\right\}.
+```
+
+The corresponding TV-unbalanced value is
+
+```{math}
+\mathsf{UW}^{\TV}_{c,\lambda}(\alpha,\beta)
+\eqdef
+\inf_{\pi\in\mathcal M_+(\X\times\Y)}
+\left\{\int c\,\d\pi
++\lambda\|\alpha-\pi_1\|_{\TV}
++\lambda\|\beta-\pi_2\|_{\TV}\right\}.
+```
+:::
+
+The last problem is unbalanced OT with
+$\psi_1=\psi_2=\lambda\phi_{\TV}$. The first two explicitly constrain the
+transported marginals to be submeasures of the available ones.
+
+(prop-tv-partial-ot-lagrange)=
+:::{admonition} Proposition: Equivalence of Partial and TV-Unbalanced Transport
+:class: important
+Assume that $\X,\Y$ are compact metric spaces and that $c$ is continuous and
+nonnegative. Then
+
+```{math}
+\mathsf{UW}^{\TV}_{c,\lambda}(\alpha,\beta)
+=
+\operatorname{POT}^{\TV}_\lambda(\alpha,\beta)
 =
 \lambda(A+B)
-+
-\inf_{0\leq m\leq M}
++\min_{0\leq m\leq M}
 \big\{\operatorname{POT}_m(\alpha,\beta)-2\lambda m\big\}.
 ```
 
-If a penalized optimizer has mass $m_\lambda$, it is optimal for
-$\operatorname{POT}_{m_\lambda}$ and $m_\lambda$ minimizes the scalar problem.
-Conversely, if $2\lambda\in\partial\operatorname{POT}_m$, every fixed-mass
-optimizer is penalized-optimal. Every $m\in[0,M]$ is selected by at least one
-$\lambda\geq0$, possibly together with an interval of masses on a flat exposed
-face.
+The function $m\mapsto\operatorname{POT}_m(\alpha,\beta)$ is convex. A
+TV-unbalanced optimizer can be chosen with submeasure marginals. If its mass is
+$m_\lambda$, it solves $\operatorname{POT}_{m_\lambda}$ and $m_\lambda$
+minimizes the scalar problem above. Conversely, a fixed-mass optimizer at $m$
+solves both penalized problems whenever
+$2\lambda\in\partial[m'\mapsto\operatorname{POT}_{m'}](m)$, after extending
+the value function by $+\infty$ outside $[0,M]$.
 :::
 
 :::{dropdown} Proof
-Write $V(m)=\operatorname{POT}_m(\alpha,\beta)$. Compactness gives an optimizer.
-Convex combinations of subcouplings show that $V$ is convex, while rescaling a
-plan shows that it is nondecreasing. If $m_0<m_1$, choose submeasures of mass
-$m_1-m_0$ from the residual source and target measures of an optimizer at
-$m_0$, couple them, and add this coupling. This proves
-$V(m_1)-V(m_0)\leq\|c\|_\infty(m_1-m_0)$, so $V$ is Lipschitz.
+Starting from any plan, first trim its source marginal to the greatest common
+submeasure with $\alpha$, then trim its target marginal to a submeasure of
+$\beta$. Removing $\delta$ units decreases one TV term by
+$\lambda\delta$ and increases the other by at most the same amount, while the
+nonnegative transport cost cannot increase. Thus an optimizer can be chosen
+with $\pi_1\leq\alpha$ and $\pi_2\leq\beta$.
 
-Grouping every penalized competitor by its total transported mass gives the
-displayed scalar infimum. Equality forces simultaneous optimality in the
-fixed-mass and scalar problems. The converse is precisely the subgradient
-inequality. Since the extended convex function is Lipschitz on $[0,M]$ and
-nondecreasing, a nonnegative subgradient exists at every mass after including
-the interval's normal cone.
+For a subcoupling of mass $m$, the two TV terms are $A-m$ and $B-m$.
+Grouping subcouplings by their mass gives the displayed identity. Convex
+combinations of feasible plans prove convexity of the fixed-mass value. The
+optimizer and subgradient statements are then the usual optimality conditions
+for the remaining scalar convex problem.
 :::
+
+The parameter $\lambda$ is therefore the Lagrange multiplier associated with
+transported mass: increasing it makes unmatched mass more expensive and favors
+larger active masses.
 
 (prop-partial-ot-metric-slice)=
 :::{admonition} Proposition: Fixed Total Mass Reduces Partial OT to Balanced OT
 :class: important
-Let $c=d^p$, $p\geq1$, and fix $m>0$. On nonnegative measures of total mass
-exactly $m$ and finite $p$th moment,
+Let $c=d^p$, $p\geq1$, and fix $m>0$. If $\alpha$ and $\beta$ have total
+mass $m$ and finite $p$th moments, then
 
 ```{math}
-\operatorname{POT}_m(\alpha,\beta)^{1/p}
+\operatorname{POT}_m(\alpha,\beta)
 =
-m^{1/p}\Wass_p(\alpha/m,\beta/m)
+m\Wass_p\!\left(\frac{\alpha}{m},\frac{\beta}{m}\right)^p.
 ```
 
-is a distance. On the larger class of measures with mass at least $m$, it is
-not a distance in general.
+Consequently,
+$(\alpha,\beta)\mapsto\operatorname{POT}_m(\alpha,\beta)^{1/p}$ is a
+distance on the space of finite-$p$th-moment measures with total mass $m$.
 :::
 
 :::{dropdown} Proof
-When both endpoint masses equal $m$, the inequalities
-$\pi_1\leq\alpha$, $\pi_2\leq\beta$ and the mass constraint force
-$\pi_1=\alpha$, $\pi_2=\beta$. Thus partial couplings are exactly balanced
-couplings, and normalization by $m$ gives the formula. On a larger class,
-$\alpha=m\delta_x+r\delta_y$ and $\beta=m\delta_x+r\delta_z$ are distinct but
-share the zero-cost partial plan $m\delta_{(x,x)}$.
+The marginal inequalities become equalities because both prescribed measures
+and the partial plan have mass $m$. Thus the feasible plans are exactly the
+balanced couplings. Dividing them by $m$ proves the identity, and the distance
+claim follows from the metric properties of $\Wass_p$.
 :::
 
-Thus TV penalization is the Lagrangian envelope of constrained partial OT:
-increasing $\lambda$ selects larger transported masses, while small $\lambda$
-makes deletion and creation cheaper. The constrained theory, including active
-regions and free boundaries, was developed
-by Caffarelli--McCann and
+The fixed-total-mass restriction is essential: on a larger class, distinct
+measures may share a common submeasure of mass $m$ and hence have zero partial
+cost. The constrained theory, including active regions and free boundaries,
+was developed by Caffarelli--McCann and
 Figalli {cite}`CaffarelliMcCannPartial,FigalliPartial`. Modern computational and
 learning applications include partial Wasserstein and partial
 Gromov--Wasserstein variants, for instance in
 Chapel--Alaya--Gasso {cite}`ChapelAlayaGassoPartial`.
-
 Figure {ref}`fig:partial-ot-active-mass` shows this active-region mechanism for two one-dimensional two-Gaussian mixtures, with the source mixture shifted to the left and the target mixture shifted to the right.
 
 (fig:partial-ot-active-mass)=
@@ -973,98 +988,14 @@ distance is
 ```
 :::
 
-Since each projected problem can be solved by sorting or quantiles,
-$\operatorname{SW}_p$ is much cheaper to approximate numerically than
+Since each projected problem can be solved by the sorting rule in Proposition
+{ref}`prop-matching-1d-monotone` or the quantile formula in Proposition
+{ref}`prop-wass-quantile-1d`, $\operatorname{SW}_p$ is much cheaper to approximate numerically than
 high-dimensional OT. It metrizes the
 same weak-plus-moment topology as $\Wass_p$, but its geometry is not
 bi-Lipschitz equivalent to $\Wass_p$ in high dimension
 {cite:p}`nadjahi2019asymptotic`.
 
-(rem-sliced-radon-viewpoint)=
-:::{admonition} Remark: Radon viewpoint
-:class: ot4ml-remark
-
-Slicing can also be understood as applying a Radon transform before measuring discrepancy. For a probability measure $\al$ on $\RR^d$, define its measure-valued Radon transform by
-
-```{math}
-\mathfrak R\al(\theta)\eqdef (P_\theta)_\sharp\al,
-\qquad
-\theta\in\Sphere^{d-1}.
-```
-
-Thus $\mathfrak R\al$ is a collection of one-dimensional projected measures indexed by directions. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density given by the classical Radon transform
-
-```{math}
-R\rho(\theta,s)
-=
-\int_{\{x:\dotp{\theta}{x}=s\}}\rho(x)\,\d\mathcal H^{d-1}(x).
-```
-
-To make the metric meaning of *pull-back* explicit, equip Radon fields
-$h:\mathbb S^{d-1}\to\mathcal P_p(\mathbb R)$ with
-
-```{math}
-d_{\mathrm{Rad},p}(h_0,h_1)
-\eqdef
-\left(
-\int_{\mathbb S^{d-1}}
-\Wass_p\big(h_0(\theta),h_1(\theta)\big)^p
-\d\sigma(\theta)
-\right)^{1/p}.
-```
-
-For a map $F:E\to(Y,d_Y)$, pulling the metric $d_Y$ back through $F$ means
-precomposing both metric arguments:
-
-```{math}
-(F^*d_Y)(x,x')\eqdef d_Y\big(F(x),F(x')\big).
-```
-
-Consequently, {eq}`eq-sliced-wasserstein` reads
-
-```{math}
-\SW_p(\alpha,\beta)
-=
-d_{\mathrm{Rad},p}(\mathfrak R\alpha,\mathfrak R\beta)
-=
-(\mathfrak R^*d_{\mathrm{Rad},p})(\alpha,\beta).
-```
-
-This is not the adjoint relation between the pull-back
-$T^\sharp g=g\circ T$ of a test function and the push-forward $T_\sharp$ of
-a measure discussed in Remark {ref}`rem-pullback-pushforward`, although both
-uses amount to precomposition by a map. Here both arguments of a metric are
-precomposed; each coordinate
-$\mathfrak R\alpha(\theta)=(P_\theta)_\sharp\alpha$ is itself a
-push-forward. A metric pull-back is generally only a pseudometric when $F$ is
-not injective. Here the full all-direction transform is injective on
-probability measures by the Cramér--Wold theorem {cite:p}`CramerWold1936`,
-which is why sliced Wasserstein separates measures. The warning is numerical
-and variational: finitely sampled Radon data are not injective, and
-independently constructed one-dimensional Radon data need not satisfy the
-range conditions of an actual image. This is precisely the issue behind sliced
-and Radon barycenter reconstructions discussed in Section
-{ref}`sec-barycenters` and illustrated in Figure
-{ref}`fig:sliced-radon-barycenter`.
-:::
-
-
-Figure {ref}`fig:sliced-wasserstein-projections` turns this Radon viewpoint into a concrete comparison: each planar density produces a family of one-dimensional projected laws, which can then be compared by ordinary one-dimensional Wasserstein distances.
-
-(fig:sliced-wasserstein-projections)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sliced-wasserstein-projections")
-```
-
-*Sliced Wasserstein projections between two planar densities. Fixed directions
-are drawn on both densities, and the middle panels show smoothed
-one-dimensional density estimates of the projected measures. Sliced OT
-averages one-dimensional Wasserstein discrepancies over many such directions.*
-:::
 
 The interactive demo separates two uses of a slice: comparing projected measures and
 lifting the sorted one-dimensional matching back to the plane. The lifted plan
@@ -1229,13 +1160,149 @@ a bounded-support lower bound on $\operatorname{SW}_p$ in terms of $\Wass_p$;
 sharpness is asserted only for $p=1$.
 :::
 
-The infinitesimal comparison is most transparent along smooth Brenier
-perturbations. The usual Wasserstein distance sees the full $L^2(\alpha)$ norm
-of the displacement, while slicing sees only its one-dimensional projections.
-The same result also isolates the different behavior of finite atomic curves.
+(rem-sliced-radon-viewpoint)=
+### Radon Point of View
+
+The family of all projected laws is itself a transform of measures. Slicing can therefore be understood as applying the following transform before measuring discrepancy.
+
+(def-measure-radon-transform)=
+:::{admonition} Definition: Measure-Valued Radon Transform
+:class: important
+For a probability measure $\al$ on $\RR^d$, define
+
+```{math}
+\mathfrak R\al(\theta)\eqdef (P_\theta)_\sharp\al,
+\qquad
+\theta\in\Sphere^{d-1}.
+```
+:::
+
+Thus $\mathfrak R\al$ is a collection of one-dimensional projected measures indexed by directions. If $\al=\rho(x)\d x$ has a density, then $\mathfrak R\al(\theta)$ has density given by the classical Radon transform
+
+```{math}
+R\rho(\theta,s)
+=
+\int_{\{x:\dotp{\theta}{x}=s\}}\rho(x)\,\d\mathcal H^{d-1}(x).
+```
+
+To make the metric meaning of *pull-back* explicit, and to distinguish it from
+the pull-back of test functions introduced together with push-forwards in
+Remark {ref}`rem-pullback-pushforward`, equip measurable Radon fields
+$h:\mathbb S^{d-1}\to\mathcal P_p(\mathbb R)$ having finite integrated $p$th
+moment with the metric
+
+```{math}
+d_{\mathrm{Rad},p}(h_0,h_1)
+\eqdef
+\left(
+\int_{\mathbb S^{d-1}}
+\Wass_p\big(h_0(\theta),h_1(\theta)\big)^p
+\d\sigma(\theta)
+\right)^{1/p}.
+```
+
+This is also exactly a conditional Wasserstein metric. Associate with each
+Radon field $h$ the joint law
+
+```{math}
+\widehat h(\d\theta,\d s)
+\eqdef
+h(\theta)(\d s)\sigma(\d\theta)
+```
+
+on $\mathbb S^{d-1}\times\mathbb R$. Its first marginal is $\sigma$, so
+$\widehat h\in\Pp_{p,\sigma}(\mathbb S^{d-1}\times\mathbb R)$, and Definition
+{ref}`def-conditional-wasserstein-distance`, with condition space
+$S=\mathbb S^{d-1}$ and fiber $\Omega=\mathbb R$, gives
+
+```{math}
+d_{\mathrm{Rad},p}(h_0,h_1)
+=
+\Wass_{p,\sigma}(\widehat h_0,\widehat h_1).
+```
+
+For a map $F:E\to(Y,d_Y)$, pulling the metric $d_Y$ back through $F$ means
+precomposing both metric arguments:
+
+```{math}
+(F^*d_Y)(x,x')\eqdef d_Y\big(F(x),F(x')\big).
+```
+
+Consequently, {eq}`eq-sliced-wasserstein` reads
+
+```{math}
+\SW_p(\alpha,\beta)
+=
+d_{\mathrm{Rad},p}(\mathfrak R\alpha,\mathfrak R\beta)
+=
+(\mathfrak R^*d_{\mathrm{Rad},p})(\alpha,\beta).
+```
+
+(rem-sliced-hilbert-embedding)=
+:::{admonition} Remark: Hilbert Embedding for $\SW_2$
+:class: ot4ml-remark
+
+In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile
+functions. Hence
+
+```{math}
+\SW_2(\alpha,\beta)^2
+=
+\int_{\Sphere^{d-1}}\int_0^1
+\abs{F_{\theta,\alpha}^{-1}(u)-F_{\theta,\beta}^{-1}(u)}^2
+\d u\d\sigma(\theta),
+```
+
+where $F_{\theta,\alpha}^{-1}$ is the quantile function of
+$(P_\theta)_\sharp\alpha$. Thus $\SW_2$ is the Hilbertian distance obtained
+by embedding each measure into its field of projected quantile functions.
+Consequently, $\exp(-\gamma\SW_2^2)$ is a positive-definite kernel on
+probability measures for every $\gamma>0$.
+:::
+
+Here both arguments of a metric, rather than a test function, are precomposed;
+each coordinate
+$\mathfrak R\alpha(\theta)=(P_\theta)_\sharp\alpha$ is itself a
+push-forward. A metric pull-back is generally only a pseudometric when $F$ is
+not injective. Here the full all-direction transform is injective on
+probability measures by the Cramér--Wold theorem {cite:p}`CramerWold1936`,
+which is why sliced Wasserstein separates measures. The warning is numerical
+and variational: finitely sampled Radon data are not injective, and
+independently constructed one-dimensional Radon data need not satisfy the
+range conditions of an actual image. This is precisely the issue behind sliced
+and Radon barycenter reconstructions discussed in Section
+{ref}`sec-barycenters` and illustrated in Figure
+{ref}`fig:sliced-radon-barycenter`.
+
+Figure {ref}`fig:sliced-wasserstein-projections` turns this Radon viewpoint into a concrete comparison: each planar density produces a family of one-dimensional projected laws, which can then be compared by ordinary one-dimensional Wasserstein distances.
+
+(fig:sliced-wasserstein-projections)=
+:::{div}
+:class: ot4ml-book-figure
+
+```{code-cell} ipython3
+:tags: [remove-input]
+show_book_figure("sliced-wasserstein-projections")
+```
+
+*Sliced Wasserstein projections between two planar densities. Fixed directions
+are drawn on both densities, and the middle panels show smoothed
+one-dimensional density estimates of the projected measures. Sliced OT
+averages one-dimensional Wasserstein discrepancies over many such directions.*
+:::
+
+
+### Infinitesimal SW Geometry
+
+The preceding estimates compare finite displacements. The infinitesimal
+comparison is most transparent along smooth Brenier perturbations. The usual
+Wasserstein distance sees the full $L^2(\alpha)$ norm of the displacement,
+while slicing sees only its one-dimensional projections. The proposition below gives the general upper bound. The two remarks that
+follow show that it is locally sharp on fixed-weight atomic strata but can be
+strict for smooth measures.
 
 (prop-sliced-first-order-tangent)=
-:::{admonition} Proposition: First-Order Comparison: Strictness and Atomic Equality
+:::{admonition} Proposition: First-Order Sliced Comparison Along Brenier Perturbations
 :class: theorem
 
 Let $\alpha\in\Pp_2(\RR^d)$ be absolutely continuous, and let
@@ -1248,25 +1315,99 @@ T_t(x)\eqdef x+t\nabla\varphi(x),
 \alpha_t\eqdef(T_t)_\sharp\alpha .
 ```
 
-Then $T_t$ is the quadratic Brenier map from $\alpha$ to $\alpha_t$ for
-$\abs{t}$ small enough, and
+Then $T_t$ is the quadratic Brenier map from $\alpha$ to $\alpha_t$,
 
 ```{math}
 \Wass_2(\alpha,\alpha_t)^2
 =
-t^2\int_{\RR^d}\norm{\nabla\varphi(x)}^2\d\alpha(x).
+t^2\int_{\RR^d}\norm{\nabla\varphi(x)}^2\d\alpha(x),
 ```
 
-Moreover,
+and
 
 ```{math}
 \SW_2(\alpha,\alpha_t)^2
 \leq
 \frac{t^2}{d}\int_{\RR^d}\norm{\nabla\varphi(x)}^2\d\alpha(x).
 ```
+:::
 
-The upper bound can be strict at order $t^2$. Let $d\geq2$, let
-$\alpha=\Gaussian(0,\Id)$, and take
+:::{admonition} Proof
+:class: proof
+
+The map $T_t$ is the gradient of
+$\psi_t(x)=\frac12\norm{x}^2+t\varphi(x)$. Since $\nabla^2\varphi$ is bounded,
+$\nabla^2\psi_t=\Id+t\nabla^2\varphi$ is positive semidefinite for $\abs{t}$
+small enough. Hence $T_t=\nabla\psi_t$ is a Brenier map and
+
+```{math}
+\Wass_2(\alpha,\alpha_t)^2
+=
+\int\norm{x-T_t(x)}^2\d\alpha(x)
+=
+t^2\int\norm{\nabla\varphi(x)}^2\d\alpha(x).
+```
+
+For each $\theta$, the coupling $(P_\theta,P_\theta\circ T_t)_\sharp\alpha$ is
+admissible between the projected laws, so
+
+```{math}
+\Wass_2\big((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\alpha_t\big)^2
+\leq
+t^2\int\abs{\dotp{\theta}{\nabla\varphi(x)}}^2\d\alpha(x).
+```
+
+Integrating over $\theta$ and using
+$\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{w}}^2\d\sigma(\theta)=\norm{w}^2/d$
+proves the result.
+:::
+
+(rem-sliced-local-atomic-equality)=
+:::{admonition} Remark: $\SW_2$ and $\Wass_2$ Local Equality for Discrete Measures
+:class: ot4ml-remark
+
+Let $a_i>0$ satisfy $\sum_i a_i=1$, let the $x_i$ be pairwise distinct, and let
+$v_i\in\RR^d$. For
+
+```{math}
+\eta=\sum_{i=1}^n a_i\delta_{x_i},
+\qquad
+\eta_t=\sum_{i=1}^n a_i\delta_{x_i+t v_i},
+```
+
+one has
+
+```{math}
+\lim_{t\to0}\frac{\SW_2(\eta,\eta_t)^2}{t^2}
+=
+\frac1d\sum_{i=1}^n a_i\norm{v_i}^2
+=
+\frac1d\lim_{t\to0}\frac{\Wass_2(\eta,\eta_t)^2}{t^2}.
+```
+
+For all sufficiently small $t$, the diagonal coupling between $x_i$ and
+$x_i+t v_i$ is optimal for $\Wass_2$. Indeed, with
+$c_{i,j}(t)=\norm{x_i-x_j-tv_j}^2$, the dual potentials $f_i=0$ and
+$g_j=c_{j,j}(t)$ are feasible and certify the diagonal plan. Thus
+
+```{math}
+\Wass_2(\eta,\eta_t)^2=t^2\sum_{i=1}^n a_i\norm{v_i}^2.
+```
+
+Outside the finite union of great spheres
+$\{\dotp{\theta}{x_i-x_j}=0\}$, the projected atoms are distinct and retain
+their order for small $t$. Monotone one-dimensional transport pairs each atom
+with its perturbation, while the diagonal projected coupling gives an
+integrable upper bound. Dominated convergence and the spherical second-moment
+identity yield the sliced limit.
+:::
+
+(rem-sliced-local-gaussian-strict)=
+:::{admonition} Remark: $\SW_2$ and $\Wass_2$ Strict Local Inequality
+:class: ot4ml-remark
+
+The upper bound in Proposition {ref}`prop-sliced-first-order-tangent` can be
+strict at order $t^2$. Let $d\geq2$, let $\alpha=\Gaussian(0,\Id)$, and take
 $\varphi(x)=\frac12x^\top A x$ for a symmetric matrix $A$ that is not a scalar
 multiple of $\Id$. Then
 
@@ -1280,55 +1421,9 @@ multiple of $\Id$. Then
 \frac1d\lim_{t\to0}\frac{\Wass_2(\alpha,\alpha_t)^2}{t^2}.
 ```
 
-Separately, equality holds at first order along every finite atomic curve with
-fixed weights. Let $a_i>0$ satisfy $\sum_i a_i=1$, let the $x_i$ be pairwise
-distinct, and let $v_i\in\RR^d$. If
-$\eta=\sum_{i=1}^n a_i\delta_{x_i}$ and
-$\eta_t=\sum_{i=1}^n a_i\delta_{x_i+t v_i}$, then
-
-```{math}
-\lim_{t\to0}\frac{\SW_2(\eta,\eta_t)^2}{t^2}
-=
-\frac1d\sum_{i=1}^n a_i\norm{v_i}^2
-=
-\frac1d\lim_{t\to0}\frac{\Wass_2(\eta,\eta_t)^2}{t^2}.
-```
-:::
-
-:::{admonition} Proof
-:class: proof
-
-The map $T_t$ is the gradient of
-$\psi_t(x)=\frac12\norm{x}^2+t\varphi(x)$. Since $\nabla^2\varphi$ is bounded,
-$\nabla^2\psi_t=\Id+t\nabla^2\varphi$ is positive semidefinite for $\abs{t}$
-small enough. Hence $\psi_t$ is convex and $T_t=\nabla\psi_t$ is a Brenier map.
-Its graph is cyclically monotone, so the Brenier optimality criterion gives
-
-```{math}
-\Wass_2(\alpha,\alpha_t)^2
-=
-\int\norm{x-T_t(x)}^2\d\alpha(x)
-=
-t^2\int\norm{\nabla\varphi(x)}^2\d\alpha(x).
-```
-
-For each $\theta$, the coupling $(P_\theta,P_\theta\circ T_t)_\sharp\alpha$ is
-admissible between $(P_\theta)_\sharp\alpha$ and
-$(P_\theta)_\sharp\alpha_t$, so
-
-```{math}
-\Wass_2\big((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\alpha_t\big)^2
-\leq
-t^2\int\abs{\dotp{\theta}{\nabla\varphi(x)}}^2\d\alpha(x).
-```
-
-Integrating over $\theta$ and using
-$\int_{\Sphere^{d-1}}\abs{\dotp{\theta}{w}}^2\d\sigma(\theta)=\norm{w}^2/d$
-proves the result.
-
-For the Gaussian example, $T_t=\Id+tA$. The projected source and target in
-direction $\theta$ are centered one-dimensional Gaussians with standard
-deviations $1$ and $\norm{(\Id+tA)\theta}$. Hence
+Indeed, $T_t=\Id+tA$, and the projected source and target in direction $\theta$
+are centered one-dimensional Gaussians with standard deviations $1$ and
+$\norm{(\Id+tA)\theta}$. Hence
 
 ```{math}
 \lim_{t\to0}\frac{1}{t^2}
@@ -1343,25 +1438,8 @@ The spherical fourth-moment identity gives
 =\frac{\tr(A)^2+2\tr(A^2)}{d(d+2)}.
 ```
 
-The Brenier formula gives
-$\Wass_2(\alpha,\alpha_t)^2=t^2\tr(A^2)$, and strictness follows from
-$\tr(A)^2<d\tr(A^2)$ for a symmetric non-scalar matrix.
-
-For the atomic curve, the diagonal coupling between $x_i$ and $x_i+t v_i$ is
-optimal for all sufficiently small $t$. Indeed, with
-$c_{ij}(t)=\norm{x_i-x_j-tv_j}^2$, the discrete dual potentials $f_i=0$ and
-$g_j=c_{jj}(t)$ are feasible for small $t$ and certify the diagonal plan. Thus
-
-```{math}
-\Wass_2(\eta,\eta_t)^2=t^2\sum_{i=1}^n a_i\norm{v_i}^2.
-```
-
-Outside the finite union of great spheres
-$\{\dotp{\theta}{x_i-x_j}=0\}$, the projected atoms are distinct and retain
-their order for small $t$. The monotone one-dimensional coupling therefore
-pairs each atom with its perturbation. The diagonal projected coupling gives a
-uniform integrable upper bound, so dominated convergence and the spherical
-second-moment identity yield the sliced limit.
+The Brenier formula gives $\Wass_2(\alpha,\alpha_t)^2=t^2\tr(A^2)$, and
+strictness follows from $\tr(A)^2<d\tr(A^2)$ for symmetric non-scalar $A$.
 :::
 
 (par-sliced-intrinsic-length)=
@@ -1379,9 +1457,18 @@ In dimension one, $\SW_2=\Wass_2$. For $d\geq2$, $\SW_2$ is not a length metric
 \int_0^1\abs{\dot\gamma_t}_{\SW_2}\,\d t,
 ```
 
-where $\abs{\dot\gamma_t}_{\SW_2}$ is the metric derivative. Park and Slepčev
-prove that the infimum is attained, so $(\Pp_2(\RR^d),\ell_{\SW_2})$ is a
-geodesic space. Every path length dominates the endpoint distance, while
+where
+
+```{math}
+\abs{\dot\gamma_t}_{\SW_2}
+\eqdef
+\lim_{h\to0}\frac{\SW_2(\gamma_{t+h},\gamma_t)}{\abs{h}}
+```
+
+is the metric derivative, which exists for almost every $t$ along every
+$\SW_2$-absolutely continuous curve. Park and Slepčev prove that the infimum is
+attained, so $(\Pp_2(\RR^d),\ell_{\SW_2})$ is a geodesic space. Every path
+length dominates the endpoint distance, while
 Proposition {ref}`prop-sliced-wasserstein-metric` bounds the sliced length of a
 $\Wass_2$-geodesic. Therefore
 
@@ -1390,10 +1477,10 @@ $\Wass_2$-geodesic. Therefore
 ```
 
 Neither inequality identifies the intrinsic geometry with a rescaled
-Wasserstein geometry. Proposition {ref}`prop-sliced-first-order-tangent` shows
-that the sliced metric derivative equals $d^{-1/2}$ times the Wasserstein
-metric derivative along finite atomic curves with fixed weights. By contrast,
-the Gaussian deformation in the same proposition is strictly slower for
+Wasserstein geometry. Remark {ref}`rem-sliced-local-atomic-equality` shows that the sliced metric
+derivative equals $d^{-1/2}$ times the Wasserstein metric derivative along
+finite atomic curves with fixed weights. By contrast, the Gaussian deformation
+in Remark {ref}`rem-sliced-local-gaussian-strict` is strictly slower for
 $\SW_2$. Its sliced speed depends continuously on time, so strictness persists
 on a short interval. Integrating along that $\Wass_2$-geodesic gives, for every
 sufficiently small $t\neq0$,
@@ -1403,235 +1490,114 @@ sufficiently small $t\neq0$,
 <d^{-1/2}\Wass_2(\alpha,\alpha_t).
 ```
 
-There is no reverse comparison by a constant depending only on dimension.
-Example 3.2 of Park and Slepčev considers two nearby parallel line segments
-moving in opposite directions. Most projected motions cancel after slicing:
-for every $\delta>0$, the construction produces a compactly supported atomless
-curve $(\alpha_t^\delta)_t$ such that, for small $t\geq0$,
-
-```{math}
-\abs{\dot\alpha_t^\delta}_{\Wass_2}=1,
-\qquad
-\abs{\dot\alpha_t^\delta}_{\SW_2}\leq C_d(t+\delta).
-```
-
-Since the first identity gives
-$\Wass_2(\alpha_0^\delta,\alpha_h^\delta)=h+o(h)$, while the second gives
-$\ell_{\SW_2}(\alpha_0^\delta,\alpha_h^\delta)
-\leq C_d(\delta h+h^2/2)$, one obtains
-
-```{math}
-\limsup_{h\downarrow0}
-\frac{\ell_{\SW_2}(\alpha_0^\delta,\alpha_h^\delta)}
-     {\Wass_2(\alpha_0^\delta,\alpha_h^\delta)}
-\leq C_d\delta.
-```
-
-Letting $\delta\to0$ gives
-
-```{math}
-:label: eq-no-lower-comparison-sliced-length
-\inf_{\substack{\alpha,\beta\in\Pp_2(\RR^d)\\\alpha\neq\beta}}
-\frac{\ell_{\SW_2}(\alpha,\beta)}{\Wass_2(\alpha,\beta)}=0.
-```
-
-Thus $\ell_{\SW_2}$ and $\Wass_2$ are not globally bi-Lipschitz equivalent,
-even after inserting the factor $d^{-1/2}$.
-
-The atomic equality remains stable in its natural regime. If $\eta$ is a fixed
-finite atomic measure with positive masses and separated atoms, Theorem 5.5 of
-Park and Slepčev gives
-
-```{math}
-\frac{\SW_2(\eta,\beta)}{\Wass_2(\eta,\beta)}
-\longrightarrow\frac1{\sqrt d},
-\qquad
-\frac{\ell_{\SW_2}(\eta,\beta)}{\Wass_2(\eta,\beta)}
-\longrightarrow\frac1{\sqrt d}
-\quad\text{as }\Wass_\infty(\eta,\beta)\to0,
-```
-
-along $\beta\neq\eta$. By contrast, under suitable common-support and density
-bounds in the diffuse regime, their Theorem 5.2 shows that both $\SW_2$ and
-$\ell_{\SW_2}$ are locally equivalent to $\dot H^{-(d+1)/2}$, while the
-infinitesimal geometry of $\Wass_2$ around a positive density is of
-$\dot H^{-1}$ type. These results settle the comparison: the intrinsic sliced
-metric agrees asymptotically with $d^{-1/2}\Wass_2$ near finite atomic measures,
-but it is genuinely different globally and around diffuse measures.
-
-(rem-sliced-hilbert-embedding)=
-:::{admonition} Remark: Hilbert embedding for $\SW_2$
-:class: ot4ml-remark
-
-In one dimension, $\Wass_2$ is the $L^2(0,1)$ distance between quantile functions. Hence
-
-```{math}
-\SW_2(\alpha,\beta)^2
-=
-\int_{\Sphere^{d-1}}\int_0^1
-\abs{F_{\theta,\alpha}^{-1}(u)-F_{\theta,\beta}^{-1}(u)}^2
-\d u\d\sigma(\theta),
-```
-
-where $F_{\theta,\alpha}^{-1}$ is the quantile of $(P_\theta)_\sharp\alpha$. Thus $\SW_2$ is a Hilbertian distance after embedding each measure into its field of projected quantiles. Consequently, $\exp(-\gamma\SW_2^2)$ is a positive definite kernel on probability measures for every $\gamma>0$.
-
-The compact reverse estimates in Proposition {ref}`prop-sliced-wasserstein-metric` explain why sliced distances metrize the same topology on bounded sets, while the dimension-dependent powers prevent a dimension-free bi-Lipschitz comparison with $\Wass_p$.
-:::
-
-
 ### Sliced Wasserstein Between Gaussians
 
 Gaussian projections remain Gaussian, so quadratic sliced transport reduces
 to the one-dimensional Gaussian formula in every direction. This gives an
-exact angular representation and makes its relation with the Bures covariance
-geometry explicit.
+exact angular representation.
 
 (prop-sliced-gaussian)=
 :::{admonition} Proposition: Sliced Wasserstein Between Gaussians
 :class: theorem
-Let
-$\alpha=\Gaussian(m_\alpha,\Sigma_\alpha)$ and
-$\beta=\Gaussian(m_\beta,\Sigma_\beta)$ on $\RR^d$, with positive
-semidefinite covariance matrices. Then
+
+Let $\alpha=\Gaussian(m_\alpha,\Sigma_\alpha)$ and
+$\beta=\Gaussian(m_\beta,\Sigma_\beta)$ on $\RR^d$, with
+positive-semidefinite covariance matrices. Then
 
 ```{math}
 :label: eq-sliced-gaussian
-\begin{aligned}
 \SW_2(\alpha,\beta)^2
-&=
+=
 \frac{\norm{m_\alpha-m_\beta}^2}{d}
-+\int_{\Sphere^{d-1}}
++
+\int_{\Sphere^{d-1}}
 \left(
 \sqrt{\theta^\top\Sigma_\alpha\theta}
--\sqrt{\theta^\top\Sigma_\beta\theta}
-\right)^2\d\sigma(\theta)\\
-&=
-\frac{\norm{m_\alpha-m_\beta}^2
-+\operatorname{tr}(\Sigma_\alpha)+\operatorname{tr}(\Sigma_\beta)}{d}
--2\int_{\Sphere^{d-1}}
-\sqrt{(\theta^\top\Sigma_\alpha\theta)
-(\theta^\top\Sigma_\beta\theta)}\d\sigma(\theta).
-\end{aligned}
-```
-
-Moreover,
-
-```{math}
-:label: eq-sliced-gaussian-fidelity
-\int_{\Sphere^{d-1}}
-\sqrt{(\theta^\top\Sigma_\alpha\theta)
-(\theta^\top\Sigma_\beta\theta)}\d\sigma(\theta)
-\geq
-\frac1d\operatorname{tr}\left[
-\left(\Sigma_\alpha^{1/2}\Sigma_\beta
-\Sigma_\alpha^{1/2}\right)^{1/2}
-\right],
-```
-
-and therefore
-$\SW_2(\alpha,\beta)^2\leq\Wass_2(\alpha,\beta)^2/d$. If both
-covariances are positive definite, equality holds if and only if they are
-proportional. More generally, if
-$\Sigma_\alpha=s^2\Sigma$ and $\Sigma_\beta=t^2\Sigma$ for some
-positive semidefinite $\Sigma$ and $s,t\geq0$, then
-
-```{math}
-:label: eq-sliced-gaussian-proportional
-\SW_2(\alpha,\beta)^2
-=\frac1d\Wass_2(\alpha,\beta)^2
-=\frac{\norm{m_\alpha-m_\beta}^2
-+(s-t)^2\operatorname{tr}(\Sigma)}{d}.
+-
+\sqrt{\theta^\top\Sigma_\beta\theta}
+\right)^2
+\d\sigma(\theta).
 ```
 :::
 
-Indeed, $(P_\theta)_\sharp\alpha$ is the one-dimensional Gaussian with mean
-$\theta^\top m_\alpha$ and variance
-$\theta^\top\Sigma_\alpha\theta$. The one-dimensional Gaussian formula,
-followed by the spherical identity
-$\int\theta\theta^\top\d\sigma(\theta)=I_d/d$, proves the displayed
-expressions. For positive-definite covariances, let $A$ be the Bures transport
-matrix, so that $A\Sigma_\alpha A=\Sigma_\beta$. Cauchy--Schwarz for the
-$\Sigma_\alpha$-inner product gives
+:::{admonition} Proof
+:class: proof
+
+For every $\theta\in\Sphere^{d-1}$,
 
 ```{math}
-\theta^\top\Sigma_\alpha A\theta
-\leq
-\sqrt{(\theta^\top\Sigma_\alpha\theta)
-(\theta^\top\Sigma_\beta\theta)}.
+(P_\theta)_\sharp\alpha
+=
+\Gaussian\bigl(\theta^\top m_\alpha,
+\theta^\top\Sigma_\alpha\theta\bigr),
 ```
 
-Integration yields the fidelity bound above because
-$\operatorname{tr}(\Sigma_\alpha A)
-=\operatorname{tr}[(\Sigma_\alpha^{1/2}\Sigma_\beta
-\Sigma_\alpha^{1/2})^{1/2}]$. The singular case follows by continuity.
-Equality forces $A\theta$ to be collinear with $\theta$ in every direction,
-hence $A=rI_d$ and $\Sigma_\beta=r^2\Sigma_\alpha$.
-
-The spherical formula is exact, but for generic anisotropic covariances it has
-no Bures-like matrix-square-root simplification and is evaluated by angular
-quadrature or Monte Carlo. In dimensions $d>1$, nonidentical measures cannot
-satisfy $\SW_2=\Wass_2$ under normalized spherical averaging; the two
-distances coincide in dimension one.
-
-Two isotropic covariances saturate the normalized upper bound:
+and similarly for $\beta$. The one-dimensional Gaussian formula gives
 
 ```{math}
-\Sigma_\alpha=s^2I_d,\quad\Sigma_\beta=t^2I_d
-\quad\Longrightarrow\quad
-\SW_2^2
-=\frac{\norm{m_\alpha-m_\beta}^2}{d}+(s-t)^2
-=\frac1d\Wass_2^2.
-```
-
-One isotropic covariance alone does not suffice. If
-$\Sigma_\alpha=s^2I_d$ and $(\lambda_i)_i$ are the eigenvalues of
-$\Sigma_\beta$, concavity of the square root gives
-
-```{math}
+\Wass_2\bigl((P_\theta)_\sharp\alpha,(P_\theta)_\sharp\beta\bigr)^2
+=
+\abs{\theta^\top(m_\alpha-m_\beta)}^2
++
+\left(
+\sqrt{\theta^\top\Sigma_\alpha\theta}
+-
 \sqrt{\theta^\top\Sigma_\beta\theta}
-=\sqrt{\sum_i\lambda_i\theta_i^2}
-\geq\sum_i\sqrt{\lambda_i}\theta_i^2.
+\right)^2.
 ```
 
-Consequently,
+Integrating over $\theta$ and using
+$\int_{\Sphere^{d-1}}\theta\theta^\top\d\sigma(\theta)=I_d/d$
+gives {eq}`eq-sliced-gaussian`.
+:::
+
+The associated Gaussian sliced-Wasserstein flow is revisited in Proposition
+{ref}`prop-centered-gaussian-covariance-catalogue`.
+Formula {eq}`eq-sliced-gaussian` is exact, but for generic anisotropic
+covariances its spherical integral has no matrix-square-root simplification
+and is evaluated by angular quadrature or Monte Carlo.
+
+(rem-sliced-gaussian-special-cases)=
+:::{admonition} Remark: Proportional and Rank-One Covariances
+:class: ot4ml-remark
+
+If $\Sigma_\alpha=s^2\Sigma$ and $\Sigma_\beta=t^2\Sigma$ for
+$s,t\geq0$, then
 
 ```{math}
-\int_{\Sphere^{d-1}}\sqrt{\theta^\top\Sigma_\beta\theta}
-\d\sigma(\theta)
-\geq \frac1d\operatorname{tr}(\Sigma_\beta^{1/2}),
+\SW_2(\alpha,\beta)^2
+=
+\frac{\norm{m_\alpha-m_\beta}^2+(s-t)^2\operatorname{tr}(\Sigma)}{d}.
 ```
 
-with equality only when $\Sigma_\beta$ is isotropic. Hence
-$\SW_2^2<\Wass_2^2/d$ for an anisotropic $\Sigma_\beta$.
-
-Rank-one covariances expose the orientation gap explicitly. If
-$\Sigma_\alpha=a^2uu^\top$, $\Sigma_\beta=b^2vv^\top$, and
-$\chi=|\langle u,v\rangle|$, then
+For the rank-one covariances
+$\Sigma_\alpha=a^2uu^\top$ and $\Sigma_\beta=b^2vv^\top$, where $u$ and
+$v$ are unit vectors, set $\chi=\abs{\langle u,v\rangle}$. Then
 
 ```{math}
 \begin{aligned}
 \SW_2(\alpha,\beta)^2
-&=\frac1d\left[
+&=
+\frac1d\left[
 \norm{m_\alpha-m_\beta}^2+a^2+b^2
--\frac{4ab}{\pi}\left(\sqrt{1-\chi^2}+\chi\arcsin\chi\right)
-\right],\\
-\Wass_2(\alpha,\beta)^2
-&=\norm{m_\alpha-m_\beta}^2+a^2+b^2-2ab\chi.
+-\frac{4ab}{\pi}
+\left(\sqrt{1-\chi^2}+\chi\arcsin(\chi)\right)
+\right] \\
+&\leq
+\frac1d\Wass_2(\alpha,\beta)^2
+=
+\frac1d\left[
+\norm{m_\alpha-m_\beta}^2+a^2+b^2-2ab\chi
+\right].
 \end{aligned}
 ```
 
-To obtain the cross term, rotational invariance allows
-$u=e_1$ and $v=\chi e_1+\sqrt{1-\chi^2}e_2$. Writing
-$(\theta_1,\theta_2)=R(\cos\varphi,\sin\varphi)$, with $\varphi$ uniform and
-$\mathbb E[R^2]=2/d$, reduces the calculation to an elementary angular
-integral.
-
-Aligned rank-one covariances saturate the normalized upper bound, whereas
-centered, orthogonal, equal-scale covariances satisfy
-$\SW_2=\sqrt{1-2/\pi}\,\Wass_2/\sqrt d$. Thus sliced transport retains the
-relative angle but attenuates it through angular averaging rather than the
-linear Bures factor $\chi$. The corresponding Gaussian sliced-Wasserstein
-flow is revisited in the Gaussian closure catalogue.
+The inequality is the $p=2$ case of Proposition
+{ref}`prop-sliced-wasserstein-metric`, and the final identity follows from the
+Gaussian $\Wass_2$ formula.
+Aligned directions attain this upper bound. For centered, orthogonal,
+equal-scale covariances, $\SW_2^2=2a^2(1-2/\pi)/d$.
+:::
 
 
 ### $L^q$-Sliced, Max-Sliced and Subspace Variants
@@ -1678,13 +1644,6 @@ and extend the definition to $q=\infty$ by
 \Wass_p\big((U^\top)_\sharp\alpha,(U^\top)_\sharp\beta\big).
 ```
 
-The supremum is attained because the Stiefel manifold is compact and the
-projected Wasserstein distance depends continuously on $U$. Moreover, the
-integrand is unchanged under $U\mapsto UQ$ for $Q\in\operatorname O(k)$,
-because $Q^\top$ is an isometry of $\RR^k$. Thus the construction depends only
-on the subspace spanned by the columns of $U$; the Stiefel manifold is a
-convenient parametrization of the corresponding Grassmann manifold.
-
 We use the abbreviations
 
 ```{math}
@@ -1706,6 +1665,14 @@ to the subspace-robust distances
 studied later in {ref}`sec-spectral-subspace-wasserstein`
 {cite:p}`paty2019subspace`.
 :::
+
+The supremum in the max-sliced case is attained because the Stiefel manifold
+is compact and the projected Wasserstein distance depends continuously on
+$U$. Moreover, the integrand is unchanged under $U\mapsto UQ$ for
+$Q\in\operatorname O(k)$, because $Q^\top$ is an isometry of $\RR^k$.
+Thus the construction depends only on the subspace spanned by the columns of
+$U$; the Stiefel manifold is a convenient parametrization of the corresponding
+Grassmann manifold.
 
 Metricity and the direct comparison with $\Wass_p$ carry over from ordinary
 slicing. The topological statement requires slightly more care when $q<p$:
@@ -2004,61 +1971,52 @@ $\mathcal C_\theta(\alpha,\beta)=\{\pi_\theta\}$ and
 {eq}`eq-min-sw-definition` reduces to {eq}`eq-min-sw-empirical-plan`.
 
 (prop-min-sw-comparison)=
-:::{admonition} Proposition: Min-SW Bounds, Exactness and Metric Status
+:::{admonition} Proposition: Min-SW Lower Bound, Topology and Metric Status
 :class: theorem
 
-For $\alpha,\beta\in\Pp_2(\RR^d)$,
+For all $\alpha,\beta\in\Pp_2(\RR^d)$,
 
 ```{math}
 :label: eq-min-sw-comparison
 \Wass_2(\alpha,\beta)
 \leq
-\MinSW_2(\alpha,\beta)
-\leq
-\inf_{z\in\RR^d}
-\left(
-2\int\norm{x-z}^2\d\alpha(x)
-+2\int\norm{y-z}^2\d\beta(y)
-\right)^{1/2}.
+\MinSW_2(\alpha,\beta).
 ```
 
-If both supports lie in a compact set $K$, the last term can be replaced by
-$\diam(K)$. Moreover,
-$\MinSW_2(\alpha,\beta)=\Wass_2(\alpha,\beta)$ if and only if some quadratic
-optimal plan $\pi^\star\in\Couplings(\alpha,\beta)$ satisfies
-$(P_\theta,P_\theta)_\sharp\pi^\star=\varpi_\theta$ for some $\theta$.
-Thus, for equal-weight point clouds, equality holds whenever an optimal
-assignment is induced by sorting both clouds along one direction. In
-particular, it holds for two uniform $n$-point measures when $d\geq2n-1$ and
-the concatenated family $x_1,\ldots,x_n,y_1,\ldots,y_n$ is in general position
-{cite:p}`TanguyChapelDelon2025SlicedTransportPlans`. Here general position
-means that, for each $1\leq k\leq d$, no subset of $k+2$ points from this
-family lies in a $k$-dimensional affine subspace.
+Consequently, convergence for $\MinSW_2$ implies convergence for $\Wass_2$.
+The converse fails in every dimension $d\geq2$: there are measures $\alpha_n$
+such that
+
+```{math}
+:label: eq-min-sw-topological-counterexample
+\Wass_2(\alpha_n,\gamma_d)\longrightarrow0
+\qquad\text{but}\qquad
+\inf_n\MinSW_2(\alpha_n,\gamma_d)>0,
+\qquad
+\gamma_d=\Gaussian(0,\Id_d).
+```
+
+Thus $\MinSW_2$ does not metrize weak convergence, or even $\Wass_2$
+convergence, on $\Pp_2(\RR^d)$, and no estimate
+$\MinSW_2(\alpha,\beta)\leq\omega(\Wass_2(\alpha,\beta))$ can hold for all
+measures with a modulus $\omega(r)\to0$ as $r\to0$. In particular, there is
+no global H\"older bound $\MinSW_2\leq C\Wass_2^a$ with $a>0$.
 
 The function $\MinSW_2$ is non-negative, symmetric and separates measures,
 but it does not satisfy the triangle inequality in general. It is therefore a
-separating symmetric discrepancy, not a distance.
+separating symmetric discrepancy, not a distance. In dimension one, by
+contrast, $\MinSW_2=\Wass_2$.
 :::
 
 :::{admonition} Proof
 :class: proof
 
 Every $\pi\in\mathcal C_\theta(\alpha,\beta)$ is an admissible coupling,
-which proves the first inequality in {eq}`eq-min-sw-comparison`. For every
-$z\in\RR^d$, the pointwise bound
-$\norm{x-y}^2\leq2\norm{x-z}^2+2\norm{y-z}^2$ proves the second one after
-minimizing over $z$, while
-$\norm{x-y}\leq\diam(K)$ gives the compact-support version. Equality with
-$\Wass_2$ holds precisely when the constrained set for some direction contains
-a quadratic optimal plan. Under the stated dimension and general-position
-hypotheses, every ordering of the concatenated $2n$-point family is induced by
-some linear projection. One may therefore choose an ordering that realizes an
-optimal assignment; this is the projection-order theorem proved in
-{cite:p}`TanguyChapelDelon2025SlicedTransportPlans`.
+which proves {eq}`eq-min-sw-comparison`. Symmetry follows by transposing the
+constrained plans, and separation follows from the same lower bound.
 
-Symmetry follows by transposing the constrained plans, and separation follows
-from the lower bound by $\Wass_2$. To see that the triangle inequality can
-fail, let $\alpha_X,\alpha_Y,\alpha_Z$ be the uniform laws on the rows of
+To see that the triangle inequality can fail, let
+$\alpha_X,\alpha_Y,\alpha_Z$ be the uniform laws on the rows of
 
 ```{math}
 X=\begin{pmatrix}-4&-4\\0&3\\1&-2\\4&-4\end{pmatrix},
@@ -2101,6 +2059,110 @@ Thus $\MinSW_2(\alpha_X,\alpha_Z)^2=63/4$, and consequently
 +
 \MinSW_2(\alpha_Y,\alpha_Z).
 ```
+
+It remains to prove the topological claim. Write
+$\gamma_k=\Gaussian(0,\Id_k)$ and let
+
+```{math}
+:label: eq-min-sw-quantization-obstruction
+e_d^2
+\eqdef
+\inf_{z_1,\ldots,z_d\in\RR^{d-1}}
+\int_{\RR^{d-1}}
+\min_{1\leq j\leq d}\norm{u-z_j}^2
+\d\gamma_{d-1}(u)>0.
+```
+
+This is the optimal quadratic quantization error of a $(d-1)$-dimensional
+standard Gaussian by at most $d$ points. It is positive because the set of
+probability measures supported on at most $d$ points is closed for $\Wass_2$,
+whereas $\gamma_{d-1}$ is not finitely supported.
+
+Choose a sequence
+$\alpha_n=n^{-1}\sum_{i=1}^n\delta_{x_i}$ converging to $\gamma_d$ in
+$\Wass_2$ and in affine general position, meaning that no affine hyperplane
+contains more than $d$ of the $x_i$. Such a deterministic sequence exists: an
+i.i.d. Gaussian sequence has both properties almost surely. Fix $\theta$ and
+$\pi\in\mathcal C_\theta(\alpha_n,\gamma_d)$, and let $(X,Y)\sim\pi$. Write
+$S=\dotp{\theta}{X}$, $T=\dotp{\theta}{Y}$ and
+$Z=P_{\theta^\perp}Y$, where
+$P_{\theta^\perp}=\Id_d-\theta\theta^\top$ is identified with an orthogonal
+projection onto $\RR^{d-1}$. The monotone coupling between the discrete law of
+$S$ and the atomless Gaussian law of $T$ makes $S$ a function of $T$. Since
+$Y\sim\gamma_d$, the variables $T$ and $Z\sim\gamma_{d-1}$ are independent;
+hence the conditional law of $Z$ given $S$ is still $\gamma_{d-1}$. For each
+value $s$ of $S$, affine general position gives
+
+```{math}
+\#\{i:\dotp{\theta}{x_i}=s\}\leq d.
+```
+
+Conditionally on $S=s$, the vector $P_{\theta^\perp}X$ therefore takes at most
+$d$ values. By {eq}`eq-min-sw-quantization-obstruction`,
+
+```{math}
+\EE\!\left[\norm{P_{\theta^\perp}(X-Y)}^2\mid S=s\right]\geq e_d^2.
+```
+
+Averaging and discarding the non-negative displacement along $\theta$ gives
+$\int\norm{x-y}^2\d\pi(x,y)\geq e_d^2$. This holds for every admissible $\pi$
+and every $\theta$, so $\MinSW_2(\alpha_n,\gamma_d)\geq e_d$, which proves
+{eq}`eq-min-sw-topological-counterexample` and rules out every vanishing
+modulus $\omega$.
+:::
+
+Despite the topological obstruction above, Min-SW is exact on the
+finite-dimensional family of nondegenerate Gaussian laws.
+
+(prop-min-sw-gaussians)=
+:::{admonition} Proposition: Min-SW Between Nondegenerate Gaussians
+:class: theorem
+
+Let $\alpha=\Gaussian(m_\alpha,\Sigma_\alpha)$ and
+$\beta=\Gaussian(m_\beta,\Sigma_\beta)$, where
+$\Sigma_\alpha,\Sigma_\beta\succ0$. Then
+
+```{math}
+:label: eq-min-sw-gaussians
+\MinSW_2(\alpha,\beta)^2
+=
+\Wass_2(\alpha,\beta)^2
+=
+\norm{m_\alpha-m_\beta}^2
++
+\operatorname{tr}\!\left(
+\Sigma_\alpha+\Sigma_\beta
+-2\left(\Sigma_\alpha^{1/2}\Sigma_\beta\Sigma_\alpha^{1/2}\right)^{1/2}
+\right).
+```
+:::
+
+:::{admonition} Proof
+:class: proof
+
+Let $T(x)=m_\beta+A(x-m_\alpha)$ be the Gaussian Brenier map of
+Proposition {ref}`prop-gaussian-w2-bures`, where the symmetric
+positive-definite matrix $A$ is given by {eq}`eq-bures-map-web`. Choose a unit
+eigenvector $\theta$ of $A$, with $A\theta=\lambda\theta$ and $\lambda>0$.
+If $X\sim\alpha$ and $Y=T(X)$, then
+
+```{math}
+\dotp{\theta}{Y-m_\beta}
+=
+\dotp{A\theta}{X-m_\alpha}
+=
+\lambda\dotp{\theta}{X-m_\alpha}.
+```
+
+The projected variables are related by an increasing affine map, so
+$(P_\theta,P_\theta)_\sharp(\Id,T)_\sharp\alpha$ is their monotone
+one-dimensional coupling $\varpi_\theta$. Hence the optimal Gaussian
+coupling $(\Id,T)_\sharp\alpha$ belongs to
+$\mathcal C_\theta(\alpha,\beta)$ defined in
+{eq}`eq-min-sw-constrained-lifts` and is feasible for
+{eq}`eq-min-sw-definition`. This gives
+$\MinSW_2\leq\Wass_2$; the reverse inequality is
+{eq}`eq-min-sw-comparison`, and the Gaussian formula completes the proof.
 :::
 
 For comparison, fixing $\theta$ before comparing the measures restores a
@@ -2110,13 +2172,15 @@ ordered along $\theta$. The constrained fixed-direction extension is likewise
 a metric on the class of measures with atomless $\theta$-projections
 {cite:p}`TanguyChapelDelon2025SlicedTransportPlans`. It is the subsequent
 pair-dependent minimization over $\theta$ that destroys the triangle
-inequality. In dimension one no such directional choice remains, and
-$\MinSW_2=\Wass_2$.
-
-The right-hand side of {eq}`eq-min-sw-comparison` and the diameter estimate are
-absolute upper bounds, not multiplicative comparisons with $\Wass_2$. Beyond
-the exactness criterion above, the cited theory does not provide a universal
-converse of the form $\MinSW_2\leq C\Wass_2$.
+inequality. The topological obstruction in Proposition
+{ref}`prop-min-sw-comparison` has a different origin: a one-dimensional
+projection does not resolve the $(d-1)$ transverse coordinates of a continuous
+law. Even though empirical measures converge in $\Wass_2$, each projected atom
+can represent at most finitely many transverse locations, leaving a
+non-vanishing quantization error. Accordingly, the weak-convergence result of
+Mahey et al. {cite:p}`MaheyChapelGassoBonetCourty2023MinSW` concerns the
+fixed-cardinality empirical space $\Pp_2^n(\RR^d)$ and does not extend to the
+full Wasserstein space.
 
 Figure {ref}`fig:min-sliced-transport-plan` illustrates the resulting gap: the direction selected by Min-SW produces a valid lifted planar coupling, but that coupling need not be the quadratic optimal plan.
 
@@ -2472,29 +2536,29 @@ Linear OT starts from the multivariate analogue of quantile coordinates. The
 one-dimensional quantile function represents a probability measure by the
 monotone map sending a fixed reference law to it; in dimension $d>1$,
 Brenier's theorem gives the corresponding construction after choosing an
-absolutely continuous reference probability $\rho$, typically the uniform law
+absolutely continuous reference probability $\gamma$, typically the uniform law
 on a convex body or a standard Gaussian.
 
 ### Vector Quantiles
 
-Assume that $\rho$ is absolutely continuous. For a target law $\al$ with
-finite second moment, its vector quantile relative to $\rho$ is the Brenier
+Assume that $\gamma$ is absolutely continuous. For a target law $\al$ with
+finite second moment, its vector quantile relative to $\gamma$ is the Brenier
 map
 
 ```{math}
 T_\al=\nabla\phi_\al,
 \qquad
-(T_\al)_\sharp\rho=\al,
+(T_\al)_\sharp\gamma=\al,
 ```
 
 or equivalently the solution of
 
 ```{math}
-\min_{T_\sharp\rho=\al}
-\int\norm{x-T(x)}^2\d\rho(x).
+\min_{T_\sharp\gamma=\al}
+\int\norm{x-T(x)}^2\d\gamma(x).
 ```
 
-This construction is canonical only after fixing $\rho$: changing the
+This construction is canonical only after fixing $\gamma$: changing the
 reference law changes the coordinates used to represent $\al$. The same
 transport-based quantile map has been used in several complementary
 statistical directions. Conditional vector quantile regression replaces
@@ -2512,33 +2576,33 @@ regression learns such conditional maps with flexible models
 Linear OT replaces a nonlinear transport distance by a Hilbert norm between
 reference maps. It is useful when one reference measure is fixed and many
 nearby distributions must be compared cheaply. Let $T_\alpha$ be the Brenier
-map pushing $\rho$ to $\alpha$, understood as an element of
-$L^2(\rho;\RR^d)$ and hence defined only $\rho$-almost everywhere. The linear
+map pushing $\gamma$ to $\alpha$, understood as an element of
+$L^2(\gamma;\RR^d)$ and hence defined only $\gamma$-almost everywhere. The linear
 OT embedding is
 
 ```{math}
 :label: eq-lot-embedding
-\alpha\mapsto T_\alpha-\Id\in L^2(\rho;\RR^d),
+\alpha\mapsto T_\alpha-\Id\in L^2(\gamma;\RR^d),
 \qquad
-\operatorname{LOT}_\rho(\alpha,\beta)
+\operatorname{LOT}_\gamma(\alpha,\beta)
 =
-\norm{T_\alpha-T_\beta}_{L^2(\rho)}.
+\norm{T_\alpha-T_\beta}_{L^2(\gamma)}.
 ```
 
 If one of the two targets equals the reference, the linearized distance is
 exact: for instance,
-$\operatorname{LOT}_\rho(\rho,\alpha)
-=\norm{T_\alpha-\Id}_{L^2(\rho)}
-=\Wass_2(\rho,\alpha)$. For two arbitrary targets, the coupling
-$(T_\alpha,T_\beta)_\sharp\rho$ is admissible but not generally optimal, so
-$\operatorname{LOT}_\rho$ is a tangent-space approximation of the Wasserstein
+$\operatorname{LOT}_\gamma(\gamma,\alpha)
+=\norm{T_\alpha-\Id}_{L^2(\gamma)}
+=\Wass_2(\gamma,\alpha)$. For two arbitrary targets, the coupling
+$(T_\alpha,T_\beta)_\sharp\gamma$ is admissible but not generally optimal, so
+$\operatorname{LOT}_\gamma$ is a tangent-space approximation of the Wasserstein
 geometry. Introduced for the analysis of image populations
 {cite:p}`wang2013linear`, LOT has subsequently been used for continuous
 image-pattern analysis {cite:p}`kolouri2016continuous`, provable
 classification of transformed distributions {cite:p}`moosmuller2023linear`,
 collider-event analysis {cite:p}`cai2020linearized`, and scalable Wasserstein
 dimensionality reduction {cite:p}`cloninger2025linearized`. Uniqueness of the
-Brenier maps also shows that $\operatorname{LOT}_\rho$ is a genuine distance
+Brenier maps also shows that $\operatorname{LOT}_\gamma$ is a genuine distance
 on the class of targets for which these maps are defined.
 
 For a family $(\alpha_s)_s$ with weights $(\lambda_s)_s$, the linearized
@@ -2547,7 +2611,7 @@ barycenter is obtained by averaging maps,
 ```{math}
 \bar T=\sum_s\lambda_s T_{\alpha_s},
 \qquad
-\bar\alpha_{\operatorname{LOT}}=\bar T_\sharp\rho.
+\bar\alpha_{\operatorname{LOT}}=\bar T_\sharp\gamma.
 ```
 
 This is exact in one dimension, where quantile functions linearize
@@ -2565,8 +2629,8 @@ Figure {ref}`fig:dualnorms-linear-ot-embedding` makes the LOT embedding explicit
 show_book_figure("dualnorms-linear-ot-embedding")
 ```
 
-*Linear OT coordinates. Fixing a reference measure $\rho$ turns each target
-into a map $T_\alpha$ from $\rho$ to $\alpha$, or equivalently into the
+*Linear OT coordinates. Fixing a reference measure $\gamma$ turns each target
+into a map $T_\alpha$ from $\gamma$ to $\alpha$, or equivalently into the
 displacement field $T_\alpha-\Id$. In one dimension this is exactly the
 quantile parametrization of $\Wass_2$. In two dimensions, averaging the maps
 gives the linearized barycenter, which is compared with the genuine McCann
@@ -2592,16 +2656,16 @@ The usefulness of these coordinates depends on controlling how much they distort
 :::{admonition} Proposition: Quantitative Stability of Linear OT
 :class: important
 Let $X,Y\subset\RR^d$ be compact convex sets, assume that $X$ has positive
-Lebesgue measure, and let $\rho$ be normalized Lebesgue measure on $X$. There
+Lebesgue measure, and let $\gamma$ be normalized Lebesgue measure on $X$. There
 is a constant $C=C(d,X,Y)$ such that, for all
 $\alpha,\beta\in\mathcal P(Y)$,
 
 ```{math}
 \Wass_2(\alpha,\beta)
 \leq
-\operatorname{LOT}_\rho(\alpha,\beta)
+\operatorname{LOT}_\gamma(\alpha,\beta)
 \qquad\text{and}\qquad
-\operatorname{LOT}_\rho(\alpha,\beta)
+\operatorname{LOT}_\gamma(\alpha,\beta)
 \leq
 C\Wass_1(\alpha,\beta)^{2/15}.
 ```
@@ -2609,11 +2673,11 @@ C\Wass_1(\alpha,\beta)^{2/15}.
 
 :::{dropdown} Proof
 The first inequality is immediate:
-$(T_\alpha,T_\beta)_\sharp\rho$ is a feasible coupling between $\alpha$ and
+$(T_\alpha,T_\beta)_\sharp\gamma$ is a feasible coupling between $\alpha$ and
 $\beta$. The second inequality is the global quantitative stability theorem of
 Mérigot, Delalande and Chazal {cite:p}`merigot2020stability`. Its proof controls
 the difference of Kantorovich potentials by $\Wass_1$ and then uses convexity
-and interpolation estimates to control their gradients in $L^2(\rho)$.
+and interpolation estimates to control their gradients in $L^2(\gamma)$.
 
 In one dimension, quantiles make the embedding isometric and the exponent
 improves to one. In several dimensions the theorem is global but only Hölder;
@@ -2624,7 +2688,7 @@ it is not a global Lipschitz estimate in $\Wass_2$.
 :::{admonition} Remark: Three Hilbertian embeddings of measures
 :class: ot4ml-remark
 
-Several constructions in this text embed measures into Hilbert spaces, but they encode different geometries. Kernel mean embeddings send $\alpha$ to $\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances; see Section {ref}`sec-rkhs-mmd`. Quadratic sliced Wasserstein sends a measure to the collection of one-dimensional quantile functions of its projections, viewed in $L^2(\Sphere^{d-1}\times[0,1])$; see Section {ref}`sec-sliced-wasserstein`. Linear OT sends $\alpha$ to the displacement field $T_\alpha-\Id$ from a fixed reference $\rho$ in $L^2(\rho;\RR^d)$. The first construction is linear in the measure and depends on the kernel, the second is nonlinear but reduces OT to projected one-dimensional quantiles, and the third is a tangent approximation to the full Wasserstein geometry around a chosen reference.
+Several constructions in this text embed measures into Hilbert spaces, but they encode different geometries. Kernel mean embeddings send $\alpha$ to $\int k(x,\cdot)\d\alpha(x)$ in an RKHS and lead to MMD distances; see Section {ref}`sec-rkhs-mmd`. Quadratic sliced Wasserstein sends a measure to the collection of one-dimensional quantile functions of its projections, viewed in $L^2(\Sphere^{d-1}\times[0,1])$; see Section {ref}`sec-sliced-wasserstein`. Linear OT sends $\alpha$ to the displacement field $T_\alpha-\Id$ from a fixed reference $\gamma$ in $L^2(\gamma;\RR^d)$. The first construction is linear in the measure and depends on the kernel, the second is nonlinear but reduces OT to projected one-dimensional quantiles, and the third is a tangent approximation to the full Wasserstein geometry around a chosen reference.
 :::
 
 ### Principal Components in Linear OT Coordinates
@@ -2635,38 +2699,38 @@ applied to deformations rather than to densities. Given training measures
 $(\alpha_i)_{i=1}^N$, set
 
 ```{math}
-z_i \eqdef T_{\alpha_i}-\Id,
+\xi_i \eqdef T_{\alpha_i}-\Id,
 \qquad
-\bar z \eqdef \frac1N\sum_{i=1}^N z_i .
+\bar\xi \eqdef \frac1N\sum_{i=1}^N \xi_i .
 ```
 
-The map $\Id+\bar z$ defines the linear OT mean
-$(\Id+\bar z)_\sharp\rho$. The empirical covariance operator on
-$L^2(\rho;\RR^d)$ is the finite-rank operator
+The map $\Id+\bar\xi$ defines the linear OT mean
+$(\Id+\bar\xi)_\sharp\gamma$. The empirical covariance operator on
+$L^2(\gamma;\RR^d)$ is the finite-rank operator
 
 ```{math}
 \mathcal C_{\operatorname{LOT}} h
 \eqdef
 \frac1N\sum_{i=1}^N
-\dotp{z_i-\bar z}{h}_{L^2(\rho)}
-(z_i-\bar z),
+\dotp{\xi_i-\bar\xi}{h}_{L^2(\gamma)}
+(\xi_i-\bar\xi),
 ```
 
 and its leading orthonormal eigenvectors $e_k$ define the principal linear OT modes.
 Equivalently, one diagonalizes the $N\times N$ Gram matrix
-$G_{ij}=\frac1N\dotp{z_i-\bar z}{z_j-\bar z}_{L^2(\rho)}$. If
+$G_{i,j}=\frac1N\dotp{\xi_i-\bar\xi}{\xi_j-\bar\xi}_{L^2(\gamma)}$. If
 $Gv^{(k)}=\lambda_k v^{(k)}$ with $\lambda_k>0$ and
 $\norm{v^{(k)}}=1$, then
 
 ```{math}
-e_k=\frac{1}{\sqrt{N\lambda_k}}\sum_{i=1}^N v_i^{(k)}(z_i-\bar z)
+e_k=\frac{1}{\sqrt{N\lambda_k}}\sum_{i=1}^N v_i^{(k)}(\xi_i-\bar\xi)
 ```
 
 is the corresponding unit eigenvector of $\mathcal C_{\operatorname{LOT}}$.
 The score of $\alpha_i$ along mode $e_k$ is
 
 ```{math}
-a_{i,k} \eqdef \dotp{z_i-\bar z}{e_k}_{L^2(\rho)} .
+a_{i,k} \eqdef \dotp{\xi_i-\bar\xi}{e_k}_{L^2(\gamma)} .
 ```
 
 A low-rank reconstruction, or a synthetic excursion with prescribed
@@ -2674,15 +2738,15 @@ coefficients $a=(a_1,\ldots,a_m)$, is then obtained by pushing the reference
 through
 
 ```{math}
-T_a(x) \eqdef x+\bar z(x)+\sum_{k=1}^m a_k e_k(x),
+T_a(x) \eqdef x+\bar\xi(x)+\sum_{k=1}^m a_k e_k(x),
 \qquad
-\alpha_a \eqdef (T_a)_\sharp\rho .
+\alpha_a \eqdef (T_a)_\sharp\gamma .
 ```
 
 For small excursions around the mean displacement, this gives a practical
 tangent-space PCA for probability measures: it captures dominant modes of
 deformation while avoiding repeated pairwise OT computations. For large
-coefficients, $T_a$ may fail to be the Brenier map from $\rho$ to
+coefficients, $T_a$ may fail to be the Brenier map from $\gamma$ to
 $\alpha_a$, and may even leave the regular chart where $T_a$ is a gradient
 of a convex function. Thus the curve $a\mapsto\alpha_a$ should be read as a
 chart-dependent linearized visualization rather than as an intrinsic
@@ -2695,6 +2759,10 @@ directly in the curved Wasserstein space
 {cite:p}`SeguyCuturi,bigot2017geodesic`.
 
 Figure {ref}`fig:linear-ot-1d-pca` first shows the exact one-dimensional case.
+A balanced ensemble varies the common translation and relative separation of
+two Gaussian components, with weaker scale and weight variations. Its exact
+empirical Wasserstein barycenter is obtained by averaging the finely sampled
+quantile functions before performing PCA in $L^2(0,1)$.
 
 (fig:linear-ot-1d-pca)=
 :::{div}
@@ -2705,7 +2773,13 @@ Figure {ref}`fig:linear-ot-1d-pca` first shows the exact one-dimensional case.
 show_book_figure("linear-ot-1d-pca", width=760)
 ```
 
-*One-dimensional linear OT PCA for well-separated synthetic two-Gaussian mixtures. The PCA is fit on a large training ensemble, while the dataset panel displays only representative densities and the quantile average in violet. Each mode panel shows densities obtained from \(Q_{\bar\alpha}+a e_k\), using slightly extrapolated coefficients \(a\) increasing from red to blue. Since the embedding is the exact quantile parametrization \(Q_\alpha\in L^2(0,1)\), this is PCA in exact Wasserstein coordinates.*
+*One-dimensional linear OT PCA for synthetic two-Gaussian mixtures. The exact
+empirical Wasserstein barycenter has quantile
+$Q_{\bar\alpha}=N^{-1}\sum_iQ_{\alpha_i}$. Each panel shows nine densities with
+quantiles $Q_{\bar\alpha}+a e_k$, including the barycenter at the violet
+midpoint $a=0$, with $a$ increasing from red to blue. The first mode is a
+common translation and the second changes the separation of the components;
+every displayed quantile remains increasing.*
 :::
 
 Figure {ref}`fig:linear-ot-mnist-pca` then illustrates a regularized numerical approximation of the same construction on MNIST digit-zero images.
@@ -2761,7 +2835,16 @@ $\gamma(QMQ^\top)=\gamma(M)$ for every orthogonal matrix $Q$, and
 \gamma(M)\leq\gamma(N).
 ```
 
-For $1\leq q\leq+\infty$, the Schatten gauge
+:::
+
+The monotonicity condition means that increasing the displacement covariance
+in Loewner order cannot decrease the transport penalty. A fundamental family
+is obtained from Schatten norms.
+
+(def-schatten-gauge)=
+:::{admonition} Definition: Schatten Gauge
+:class: important
+For $1\leq q\leq+\infty$, define the Schatten gauge by
 
 ```{math}
 \gamma_q(M)\eqdef\norm{M}_{S_q}
@@ -2769,15 +2852,12 @@ For $1\leq q\leq+\infty$, the Schatten gauge
 \begin{cases}
 \left(\sum_{i=1}^d\lambda_i(M)^q\right)^{1/q}, & 1\leq q<+\infty,\\
 \lambda_{\max}(M), & q=+\infty,
-\end{cases}
+\end{cases}.
 ```
 
-is a monotone spectral gauge. The cases $q=1$, $q=2$ and $q=+\infty$ are
+It is a monotone spectral gauge. The cases $q=1$, $q=2$ and $q=+\infty$ are
 respectively the trace, Frobenius and spectral gauges.
 :::
-
-The monotonicity condition means that increasing the displacement covariance
-in Loewner order cannot decrease the transport penalty.
 
 (def-spectral-wasserstein)=
 :::{admonition} Definition: Spectral Wasserstein Distance
@@ -2882,9 +2962,7 @@ then
 \sqrt b\,\Wass_2(\alpha,\beta).
 ```
 
-The robust representation proves that $\Wass_\gamma$ is a distance: the
-supremum of pseudodistances gives symmetry and the triangle inequality, while
-the lower comparison with $\Wass_2$ gives definiteness. When $\gamma$ is the
+In particular, $\Wass_\gamma$ is a distance. When $\gamma$ is the
 restriction of a norm to the positive semidefinite cone, finite-dimensional
 norm equivalence supplies such constants automatically.
 :::
@@ -2930,6 +3008,9 @@ b\Wass_2(\alpha,\beta)^2,
 which proves definiteness and equivalence with $\Wass_2$.
 :::
 
+Restricting the robust directions to orthogonal projections gives a non-convex,
+dimension-controlled counterpart of spectral Wasserstein transport.
+
 (def-subspace-robust-wasserstein)=
 :::{admonition} Definition: Subspace Robust Wasserstein
 :class: important
@@ -2946,48 +3027,61 @@ For $1\leq k\leq d$, the Paty--Cuturi subspace robust Wasserstein distance is
 ```
 :::
 
-For the Ky Fan gauge
+The Ky Fan gauge supplies the convex spectral relaxation of this
+rank-constrained construction.
+
+(prop-ky-fan-srw-comparison)=
+:::{admonition} Proposition: Ky Fan Relaxation of Subspace Robust Transport
+:class: important
+Let $\lambda_1(M)\geq\cdots\geq\lambda_d(M)\geq0$ and define the Ky Fan gauge
+$\gamma_k(M)=\sum_{\ell=1}^k\lambda_\ell(M)$. Then
 
 ```{math}
-\gamma_k(M)=\sum_{\ell=1}^k\lambda_\ell(M),
-```
-
-where the eigenvalues are sorted in decreasing order, the polar set is
-
-```{math}
-\mathcal B_{\gamma_k}
-=
-\{A:0\preceq A\preceq I,\ \tr(A)\leq k\}.
-```
-
-Thus $k=d$ gives $\gamma_d(M)=\tr(M)$ and recovers $\Wass_2$. The convex hull
-of rank-$k$ projectors is
-
-```{math}
-\{A:0\preceq A\preceq I,\ \tr(A)=k\},
-```
-
-and, since $M\succeq0$, the associated support function is the same Ky Fan
-gauge. Thus $\Wass_{\gamma_k}$ is the convexified spectral counterpart of
-$\operatorname{SRW}_{2,k}$, while $\operatorname{SRW}_{2,k}$ keeps the
-original non-convex rank constraint. More precisely,
-
-```{math}
-\operatorname{SRW}_{2,k}(\alpha,\beta)
+\max\left\{
+\operatorname{SRW}_{2,k}(\alpha,\beta),
+\sqrt{\frac{k}{d}}\Wass_2(\alpha,\beta)
+\right\}
 \leq
 \Wass_{\gamma_k}(\alpha,\beta)
 \leq
-\Wass_2(\alpha,\beta),
-\qquad
-\sqrt{\frac{k}{d}}\Wass_2(\alpha,\beta)
-\leq
-\Wass_{\gamma_k}(\alpha,\beta).
+\Wass_2(\alpha,\beta).
 ```
 
-Indeed, $\mathcal B_{\gamma_k}$ contains the rank-$k$ projectors and
-$(k/d)I$, and it is contained in $\{0\preceq A\preceq I\}$. For $k=1$,
-$\gamma_1(M)=\lambda_{\max}(M)$ and
-$\mathcal B_{\gamma_1}=\{A\succeq0:\tr(A)\leq1\}$.
+For $k=d$, all displayed bounds are equalities and
+$\Wass_{\gamma_d}=\Wass_2$.
+:::
+
+:::{dropdown} Proof
+Writing $\mathcal P_k=\{P:P^2=P=P^\top,\ \tr(P)=k\}$, diagonalizing $M$
+gives Ky Fan's variational formula
+
+```{math}
+\gamma_k(M)
+=
+\max_{P\in\mathcal P_k}\tr(PM)
+=
+\max_{0\preceq A\preceq I,\ \tr(A)\leq k}\tr(AM).
+```
+
+Hence minimax weak duality yields
+
+```{math}
+\operatorname{SRW}_{2,k}(\alpha,\beta)^2
+=
+\sup_{P\in\mathcal P_k}\inf_{\pi\in\Couplings(\alpha,\beta)}\tr(PM_\pi)
+\leq
+\inf_{\pi\in\Couplings(\alpha,\beta)}\sup_{P\in\mathcal P_k}\tr(PM_\pi)
+=
+\Wass_{\gamma_k}(\alpha,\beta)^2.
+```
+
+Finally, $(k/d)\tr(M)\leq\gamma_k(M)\leq\tr(M)$ for every $M\succeq0$.
+Taking infima over couplings and square roots proves the remaining bounds.
+:::
+
+For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$. The associated spectral gradient
+flows and their connection with the Muon algorithm are studied in Section
+{ref}`sec-normalized-spectral-wasserstein-dynamics`.
 
 Figure {ref}`fig:spectral-wasserstein-gauge` compares the trace and top-eigenvalue geometries at both levels: the selected transport plans and the displacement interpolations they induce.
 

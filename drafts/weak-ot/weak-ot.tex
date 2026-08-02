@@ -1,0 +1,562 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\PiSet}{\Pi}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\supp}{\operatorname{supp}}
+
+\title{Weak Optimal Transport with a Barycentric Projection Cost}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Continuous weak optimal transport}
+
+Let
+\[
+    \alpha\in\mathcal{P}_2(\R^d),
+    \qquad
+    \beta\in\mathcal{P}_2(\R^d)
+\]
+be probability measures with finite second moments. The set of couplings between
+$\alpha$ and $\beta$ is
+\[
+    \PiSet(\alpha,\beta)
+    =
+    \left\{
+        \pi\in\mathcal{P}(\R^d\times\R^d):
+        (\operatorname{proj}_x)_\#\pi=\alpha,
+        \qquad (\operatorname{proj}_y)_\#\pi=\beta
+    \right\}.
+\]
+
+Since the first marginal of $\pi$ is $\alpha$, one may disintegrate $\pi$ as
+\[
+    \pi(dx,dy)=\alpha(dx)\,\pi_x(dy),
+\]
+where $\pi_x$ is the conditional distribution of $Y$ given $X=x$. Its
+conditional barycenter is
+\[
+    b_\pi(x)
+    :=
+    \int_{\R^d} y\,\pi_x(dy)
+    =
+    \mathbb{E}_{\pi}[Y\mid X=x].
+\]
+
+The quadratic weak optimal transport cost is
+\[
+    \boxed{
+    \mathcal{W}_{\mathrm{weak}}^2(\alpha,\beta)
+    :=
+    \inf_{\pi\in\PiSet(\alpha,\beta)}
+    \int_{\R^d}
+    \left\|x-b_\pi(x)\right\|^2
+    \,\alpha(dx).
+    }
+\]
+Equivalently, introducing the weak cost
+\[
+    C(x,p)
+    =
+    \left\|
+        x-\int_{\R^d}y\,p(dy)
+    \right\|^2,
+\]
+one has
+\[
+    \mathcal{W}_{\mathrm{weak}}^2(\alpha,\beta)
+    =
+    \inf_{\pi\in\PiSet(\alpha,\beta)}
+    \int_{\R^d} C(x,\pi_x)\,\alpha(dx).
+\]
+
+This differs from classical quadratic optimal transport:
+\[
+    W_2^2(\alpha,\beta)
+    =
+    \inf_{\pi\in\PiSet(\alpha,\beta)}
+    \int_{\R^d\times\R^d}
+    \|x-y\|^2\,\pi(dx,dy).
+\]
+Indeed, conditional Jensen's inequality gives
+\[
+    \left\|x-\mathbb{E}[Y\mid X=x]\right\|^2
+    \leq
+    \mathbb{E}\left[\|x-Y\|^2\mid X=x\right],
+\]
+and consequently
+\[
+    \mathcal{W}_{\mathrm{weak}}^2(\alpha,\beta)
+    \leq W_2^2(\alpha,\beta).
+\]
+
+Moreover,
+\[
+    \mathcal{W}_{\mathrm{weak}}^2(\alpha,\beta)=0
+\]
+whenever there exists a martingale coupling satisfying
+\[
+    \mathbb{E}[Y\mid X]=X.
+\]
+In particular, by Strassen's theorem, this happens when $\alpha$ is dominated
+by $\beta$ in convex order.
+
+\section{Discrete formulation}
+
+Assume that
+\[
+    \alpha=\sum_{i=1}^n a_i\delta_{x_i},
+    \qquad
+    \beta=\sum_{j=1}^m b_j\delta_{y_j},
+\]
+where
+\[
+    a_i>0,\qquad b_j>0,\qquad
+    \sum_{i=1}^n a_i=\sum_{j=1}^m b_j=1.
+\]
+
+A discrete coupling is represented by a nonnegative transport matrix
+\[
+    P=(P_{ij})\in\R_+^{n\times m}.
+\]
+The marginal constraints are
+\[
+    P\bm{1}_m=\bm{a},
+    \qquad
+    P^\top\bm{1}_n=\bm{b},
+\]
+so the discrete transport polytope is
+\[
+    U(\bm{a},\bm{b})
+    :=
+    \left\{
+        P\in\R_+^{n\times m}:
+        P\bm{1}_m=\bm{a},\
+        P^\top\bm{1}_n=\bm{b}
+    \right\}.
+\]
+
+The conditional probability of $y_j$ given $x_i$ is
+\[
+    \mathbb{P}(Y=y_j\mid X=x_i)
+    =
+    \frac{P_{ij}}{a_i}.
+\]
+Thus, the barycentric projection of row $i$ is
+\[
+    \overline{y}_i(P)
+    :=
+    \mathbb{E}[Y\mid X=x_i]
+    =
+    \frac{1}{a_i}\sum_{j=1}^m P_{ij}y_j.
+\]
+
+The discrete weak transport problem is therefore
+\[
+    \boxed{
+    \min_{P\in U(\bm{a},\bm{b})}
+    \mathcal{B}(P),
+    \qquad
+    \mathcal{B}(P)
+    :=
+    \sum_{i=1}^n
+    a_i
+    \left\|
+        x_i-\frac{1}{a_i}\sum_{j=1}^m P_{ij}y_j
+    \right\|^2.
+    }
+\]
+An equivalent expression is
+\[
+    \mathcal{B}(P)
+    =
+    \sum_{i=1}^n
+    \frac{1}{a_i}
+    \left\|
+        a_i x_i-\sum_{j=1}^m P_{ij}y_j
+    \right\|^2.
+\]
+
+Notice that the objective depends on each row of $P$ only through its
+barycenter. Consequently, two different transport matrices can have exactly
+the same weak transport cost.
+
+\section{Convexity}
+
+For fixed positive weights $a_i$, the map
+\[
+    P
+    \longmapsto
+    \frac{1}{a_i}
+    \left\|
+        a_i x_i-\sum_j P_{ij}y_j
+    \right\|^2
+\]
+is a convex quadratic function of the $i$-th row of $P$. Hence
+$\mathcal{B}$ is convex.
+
+More explicitly, for a perturbation $H\in\R^{n\times m}$,
+\[
+    D^2\mathcal{B}(P)[H,H]
+    =
+    2\sum_{i=1}^n
+    \frac{1}{a_i}
+    \left\|
+        \sum_{j=1}^m H_{ij}y_j
+    \right\|^2
+    \geq 0.
+\]
+Since $U(\bm{a},\bm{b})$ is convex and defined by linear constraints, the
+discrete weak transport problem is a convex optimization problem.
+
+It is generally not strictly convex. Indeed, if
+\[
+    \sum_{j=1}^m H_{ij}y_j=0
+    \qquad\text{for every }i,
+\]
+then the quadratic form above vanishes, even when $H\neq 0$. Thus, different
+couplings with identical row barycenters may all be minimizers.
+
+The same convexity principle holds in the continuous setting because
+\[
+    p\longmapsto
+    \left\|x-\int y\,p(dy)\right\|^2
+\]
+is convex in the conditional measure $p$.
+
+\section{KL-regularized weak transport}
+
+A natural entropic regularization uses the independent coupling
+$\alpha\otimes\beta$ as reference:
+\[
+    \boxed{
+    \inf_{\pi\in\PiSet(\alpha,\beta)}
+    \left\{
+        \int
+        \left\|x-b_\pi(x)\right\|^2\,\alpha(dx)
+        +
+        \varepsilon
+        \KL\!\left(\pi\,\middle\|\,\alpha\otimes\beta\right)
+    \right\}.
+    }
+\]
+
+In the discrete setting, define
+\[
+    Q_{ij}:=a_i b_j
+\]
+and use the generalized KL divergence
+\[
+    \KL(P\|Q)
+    =
+    \sum_{i=1}^n\sum_{j=1}^m
+    \left[
+        P_{ij}\log\left(\frac{P_{ij}}{Q_{ij}}\right)
+        -P_{ij}+Q_{ij}
+    \right].
+\]
+The regularized problem is
+\[
+    \boxed{
+    \min_{P\in U(\bm{a},\bm{b})}
+    \left\{
+        \mathcal{B}(P)
+        +
+        \varepsilon\KL(P\|\bm{a}\bm{b}^{\top})
+    \right\}.
+    }
+\]
+For $\varepsilon>0$, the KL term is strictly convex on positive matrices.
+Thus, under the assumption $a_i,b_j>0$, the regularized problem has a unique
+optimal transport matrix.
+
+\section{Optimality conditions}
+
+Let
+\[
+    \overline{y}_i(P)
+    =
+    \frac{1}{a_i}\sum_j P_{ij}y_j.
+\]
+The gradient of the barycentric cost is
+\[
+    \frac{\partial\mathcal{B}}{\partial P_{ij}}(P)
+    =
+    2\left\langle
+        \overline{y}_i(P)-x_i,\,
+        y_j
+    \right\rangle.
+\]
+Define the endogenous cost matrix
+\[
+    C_{ij}(P)
+    :=
+    2\left\langle
+        \overline{y}_i(P)-x_i,\,
+        y_j
+    \right\rangle.
+\]
+The first-order optimality conditions imply that there exist potentials
+$f_i$ and $g_j$ such that
+\[
+    P_{ij}
+    =
+    a_i b_j
+    \exp\left(
+        \frac{
+            f_i+g_j-C_{ij}(P)
+        }{\varepsilon}
+    \right).
+\]
+Unlike classical entropic optimal transport, the cost matrix depends on the
+unknown coupling through its row barycenters. Therefore, one does not obtain
+the solution from a single Sinkhorn scaling. Instead, the solution satisfies
+a nonlinear Sinkhorn fixed-point equation.
+
+\section{Saddle-point reformulation}
+
+Use the Fenchel identity
+\[
+    \|x-z\|^2
+    =
+    \sup_{u\in\R^d}
+    \left\{
+        2\langle u,x-z\rangle-\|u\|^2
+    \right\}.
+\]
+Applying it row by row yields
+\begin{align*}
+    \mathcal{B}(P)
+    &=
+    \sup_{u_1,\ldots,u_n\in\R^d}
+    \left\{
+        \sum_{i=1}^n
+        \left(
+            2a_i\langle u_i,x_i\rangle
+            -a_i\|u_i\|^2
+        \right)
+        -
+        2\sum_{i,j}P_{ij}\langle u_i,y_j\rangle
+    \right\}.
+\end{align*}
+Consequently, the regularized weak transport problem is equivalent to
+\[
+    \sup_{\bm{u}}
+    \left\{
+        \sum_i
+        \left(
+            2a_i\langle u_i,x_i\rangle-a_i\|u_i\|^2
+        \right)
+        +
+        \min_{P\in U(\bm{a},\bm{b})}
+        \left[
+            \sum_{i,j}C_{ij}(\bm{u})P_{ij}
+            +
+            \varepsilon\KL(P\|\bm{a}\bm{b}^{\top})
+        \right]
+    \right\},
+\]
+where
+\[
+    C_{ij}(\bm{u})
+    =
+    -2\langle u_i,y_j\rangle.
+\]
+For fixed $\bm{u}$, the inner problem is now an ordinary entropic linear
+optimal transport problem and can be solved by Sinkhorn iterations.
+
+The corresponding Gibbs kernel is
+\[
+    K_{ij}(\bm{u})
+    =
+    \exp\left(
+        -\frac{C_{ij}(\bm{u})}{\varepsilon}
+    \right)
+    =
+    \exp\left(
+        \frac{2\langle u_i,y_j\rangle}{\varepsilon}
+    \right).
+\]
+The optimal coupling for fixed $\bm{u}$ has the scaling form
+\[
+    P_{ij}
+    =
+    a_i b_j\,r_i K_{ij}(\bm{u})s_j,
+\]
+where $r_i,s_j>0$ enforce the marginal constraints.
+
+The Sinkhorn scaling iterations are
+\[
+    r_i
+    \leftarrow
+    \frac{1}{
+        \sum_{j=1}^m b_j K_{ij}(\bm{u})s_j
+    },
+    \qquad i=1,\ldots,n,
+\]
+followed by
+\[
+    s_j
+    \leftarrow
+    \frac{1}{
+        \sum_{i=1}^n a_i r_i K_{ij}(\bm{u})
+    },
+    \qquad j=1,\ldots,m.
+\]
+
+Let $P(\bm{u})$ denote the result of this inner Sinkhorn problem, and let
+\[
+    \overline{y}_i(\bm{u})
+    :=
+    \frac{1}{a_i}\sum_j P_{ij}(\bm{u})y_j.
+\]
+By the envelope theorem, the gradient of the outer concave objective
+$\Phi(\bm{u})$ is
+\[
+    \nabla_{u_i}\Phi(\bm{u})
+    =
+    2a_i
+    \left(
+        x_i-u_i-\overline{y}_i(\bm{u})
+    \right).
+\]
+At the optimum,
+\[
+    \boxed{
+    u_i^\star
+    =
+    x_i-\overline{y}_i(P^\star).
+    }
+\]
+Substituting this identity into the Gibbs kernel recovers the nonlinear
+optimality condition
+\[
+    K_{ij}^\star
+    =
+    \exp\left(
+        \frac{
+            2\langle
+                x_i-\overline{y}_i(P^\star),y_j
+            \rangle
+        }{\varepsilon}
+    \right).
+\]
+
+\section{Sinkhorn-type algorithm}
+
+A practical algorithm alternates between a Sinkhorn solve for fixed
+$\bm{u}$ and a damped ascent step in $\bm{u}$.
+
+\begin{algorithm}[h]
+\caption{Damped Sinkhorn iteration for weak entropic transport}
+\begin{algorithmic}[1]
+\STATE Initialize $u_i^{(0)}=0$ and $s_j^{(0)}=1$.
+\FOR{$k=0,1,2,\ldots$}
+    \STATE Form the kernel
+    \[
+        K_{ij}^{(k)}
+        =
+        \exp\left(
+            \frac{2\langle u_i^{(k)},y_j\rangle}{\varepsilon}
+        \right).
+    \]
+    \STATE Using warm starts, iterate
+    \[
+        r_i
+        \leftarrow
+        \frac{1}{\sum_j b_jK_{ij}^{(k)}s_j},
+        \qquad
+        s_j
+        \leftarrow
+        \frac{1}{\sum_i a_ir_iK_{ij}^{(k)}}
+    \]
+    until the marginal errors are sufficiently small.
+    \STATE Set
+    \[
+        P_{ij}^{(k)}
+        =
+        a_i b_jr_iK_{ij}^{(k)}s_j.
+    \]
+    \STATE Compute the barycentric projections
+    \[
+        \overline{y}_i^{(k)}
+        =
+        \frac{1}{a_i}
+        \sum_j P_{ij}^{(k)}y_j.
+    \]
+    \STATE Update, with a damping parameter $\rho_k>0$,
+    \[
+        u_i^{(k+1)}
+        =
+        u_i^{(k)}
+        +
+        \rho_k
+        \left(
+            x_i-u_i^{(k)}-\overline{y}_i^{(k)}
+        \right).
+    \]
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+The update is a diagonally preconditioned gradient-ascent step for the
+concave outer objective. The undamped fixed-point choice $\rho_k=1$ gives
+\[
+    u_i^{(k+1)}
+    =
+    x_i-\overline{y}_i^{(k)},
+\]
+but this full update can oscillate. A smaller step size, or a backtracking
+line search on the outer objective, gives a more robust method.
+
+A suitable stationarity residual is
+\[
+    \max_i
+    \left\|
+        u_i^{(k)}
+        -
+        \left(x_i-\overline{y}_i^{(k)}\right)
+    \right\|.
+\]
+It should be monitored together with the marginal errors
+\[
+    \left\|P^{(k)}\bm{1}_m-\bm{a}\right\|,
+    \qquad
+    \left\|(P^{(k)})^\top\bm{1}_n-\bm{b}\right\|.
+\]
+
+For small $\varepsilon$, the entries of $K$ can overflow or underflow.
+As in standard entropic optimal transport, one should then implement the
+Sinkhorn iterations in the logarithmic domain using log-sum-exp
+stabilization.
+
+\section{Summary}
+
+The main conclusions are:
+\begin{itemize}
+    \item The barycentric weak transport objective is convex in the coupling
+    $P$, because it is a sum of convex quadratic functions of row
+    barycenters.
+    \item It is generally not strictly convex, since the objective cannot
+    distinguish couplings having the same conditional barycenters.
+    \item Adding $\varepsilon\KL(P\|\bm{a}\bm{b}^{\top})$ makes the discrete
+    objective strictly convex and selects a unique coupling.
+    \item The regularized problem is not a standard entropic OT problem with
+    a fixed cost matrix: its effective cost depends on $P$.
+    \item A Fenchel saddle-point representation introduces variables $u_i$
+    for which the coupling subproblem becomes an ordinary entropic transport
+    problem. It can therefore be solved by an inner Sinkhorn scaling,
+    combined with an outer damped ascent or fixed-point iteration.
+\end{itemize}
+
+\end{document}

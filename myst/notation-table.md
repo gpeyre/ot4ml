@@ -129,16 +129,13 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\operatorname{prox}_{\mathsf h}^{\KLD}$ | KL-proximal map of a marginal penalty. | [Eq. eq-kl-prox-marginal](sinkhorn#eq-kl-prox-marginal) |
 | $\norm{\cdot}_V$ | Variation seminorm on potentials modulo constants. | [Definition def-variation-seminorm](sinkhorn-advanced#def-variation-seminorm) |
 | $\Hilbert$ | Hilbert projective metric on positive vectors. | [Definition def-hilbert-metric](sinkhorn-advanced#sinkhorn-convergence-linear-hilbert-metric-rate) |
-| $\Delta_k$ | Entropic dual suboptimality after $k$ Sinkhorn cycles. | [Proposition prop-sinkhorn-dual-rate](sinkhorn-advanced#prop-sinkhorn-dual-rate) |
+| $\Delta^{(\ell)}$ | Entropic dual suboptimality after $\ell$ Sinkhorn cycles. | [Proposition prop-sinkhorn-dual-rate](sinkhorn-advanced#prop-sinkhorn-dual-rate) |
 | $\eta(K),\lambda(K)$ | Projective cross-ratio and Birkhoff contraction factor. | [Theorem thm-birkhoff](sinkhorn-advanced#thm-birkhoff) |
 | $\Proj^\KLD$ | KL/Bregman projection. | [Eq. eq-kl-proj](sinkhorn-advanced#alternating-kl-projections) |
 | $\bar\MK_\c^\epsilon(\al,\be)$ | Debiased Sinkhorn divergence. | [Eq. eq-sinkhorn-divergence](sinkhorn#eq-sinkhorn-divergence-web) |
-| $v_k,S_k,\rho_{k,u}$ | Scaled log-Sinkhorn transforms and multiplicative increment. | [Proposition prop-scaled-log-sinkhorn-limit](sinkhorn-advanced#prop-scaled-log-sinkhorn-limit) |
-| $z=(u,v),Q(z)$ | Log-scaling variables and clearing map in the M-function view. | [Definition def-mfunctions](sinkhorn-advanced#def-mfunctions) |
-| $\underline z,\overline z,z^\star$ | Lower/upper order barriers and the monotone-clearing fixed point. | [Theorem thm-mfunction-jacobi-convergence](sinkhorn-advanced#thm-mfunction-jacobi-convergence) |
-| $\eta_{ij},\sigma_i,\tau_j$ | Loss factors and outside-option coefficients in lossy Sinkhorn clearing. | [Example ex-lossy-sinkhorn-clearing](sinkhorn-advanced#ex-lossy-sinkhorn-clearing) |
+| $\mathsf S_\epsilon$ | One complete continuous dual Sinkhorn cycle in the potential variable $u=-f$. | [Proposition prop-scaled-log-sinkhorn-limit](sinkhorn-advanced#prop-scaled-log-sinkhorn-limit) |
 | $u_t,F,G,\bar r_t$ | Continuous $\varepsilon$-Sinkhorn potential, log-densities and gauge term. | [Definition def-continuous-epsilon-sinkhorn](sinkhorn-advanced#def-continuous-epsilon-sinkhorn) |
-| $B_t,q_t$ | Gaussian linear part and mean shift in continuous Sinkhorn closure. | [Section sec-continuous-epsilon-sinkhorn](sinkhorn-advanced#sec-continuous-epsilon-sinkhorn) |
+| $a_t,q_t$ | Slope and image mean in one-dimensional Gaussian continuous Sinkhorn closure. | [Section sec-continuous-epsilon-sinkhorn](sinkhorn-advanced#sec-continuous-epsilon-sinkhorn) |
 
 ## Extensions of OT
 
@@ -146,6 +143,9 @@ This appendix collects the main notation used throughout the book. The last colu
 | --- | --- | --- |
 | $\psi_1,\psi_2$ | Entropy functions penalizing marginal mismatch. | [Eq. eq-unbalanced-primal](generalized-wasserstein#eq-unbalanced-primal) |
 | $\UW_c,\UW_{c,\tau}$ | Relaxed unbalanced OT value with marginal penalties. | [Eq. eq-unbalanced-primal](generalized-wasserstein#eq-unbalanced-primal) |
+| $\operatorname{POT}_m$ | Partial OT value transporting exactly mass $m$. | [Definition def-partial-optimal-transport](generalized-wasserstein#def-partial-optimal-transport) |
+| $\operatorname{POT}^{\TV}_\lambda$ | Partial OT with an unmatched-mass penalty. | [Definition def-partial-optimal-transport](generalized-wasserstein#def-partial-optimal-transport) |
+| $\mathsf{UW}^{\TV}_{c,\lambda}$ | Unbalanced OT with total-variation marginal penalties. | [Definition def-partial-optimal-transport](generalized-wasserstein#def-partial-optimal-transport) |
 | $L_c$ | Reverse-formulation local unbalanced cost. | [Eq. eq-unbalanced-reverse-local-cost](generalized-wasserstein#eq-unbalanced-reverse-local-cost) |
 | $H_c$ | Homogeneous perspective of the local cost $L_c$. | [Eq. eq-unbalanced-homogeneous-local-cost](generalized-wasserstein#eq-unbalanced-homogeneous-local-cost) |
 | $\HW$ | Homogeneous unbalanced formulation. | [Eq. eq-homogeneous](generalized-wasserstein#eq-homogeneous) |
@@ -161,8 +161,8 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\SW_p$ | Sliced Wasserstein distance. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
 | $\Sphere^{d-1}$ | Unit sphere of projection directions. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
 | $P_\theta$ | Projection on direction $\theta$. | [Definition def-sliced-wasserstein](generalized-wasserstein#eq-sliced-wasserstein) |
-| $\mathfrak R\al$ | Measure-valued Radon transform of $\alpha$. | [Remark rem-sliced-radon-viewpoint](generalized-wasserstein#rem-sliced-radon-viewpoint) |
-| $R\rho$ | Density Radon transform of $\rho$. | [Remark rem-sliced-radon-viewpoint](generalized-wasserstein#rem-sliced-radon-viewpoint) |
+| $\mathfrak R\al$ | Measure-valued Radon transform of $\alpha$. | [Definition def-measure-radon-transform](generalized-wasserstein#def-measure-radon-transform) |
+| $R\rho$ | Density Radon transform of $\rho$. | [Radon point of view](generalized-wasserstein#rem-sliced-radon-viewpoint) |
 | $R^\dagger h$ | Least-squares Radon pseudoinverse density reconstructed from a sinogram $h$. | [Proposition prop-radon-pseudoinverse](generalized-ot-problems#prop-radon-pseudoinverse) |
 | $\gamma_\theta$ | One-dimensional projected/Radon-domain barycenter law. | [Section sec-barycenters](generalized-ot-problems#sec-barycenters) |
 | $\SW_{p,q,k}$ | $L^q$ aggregate of $p$-Wasserstein distances over $k$-dimensional projections. | [Definition def-sliced-variants](generalized-wasserstein#def-sliced-variants) |
@@ -172,14 +172,14 @@ This appendix collects the main notation used throughout the book. The last colu
 | $\mathcal B_\gamma$ | Polar set defining the robust projected form of $\Wass_\gamma$. | [Eq. eq-spectral-polar-set](generalized-wasserstein#eq-spectral-polar-set) |
 | $\Wass_{2,A}$ | Quadratic Wasserstein pseudodistance after projection by $A^{1/2}$. | [Eq. eq-quadratic-projected-cost](generalized-wasserstein#eq-quadratic-projected-cost) |
 | $\SRW_{2,k}$ | Paty--Cuturi subspace robust Wasserstein distance. | [Section sec-spectral-subspace-wasserstein](generalized-wasserstein#spectral-and-robust-wasserstein-distances) |
-| $\LOT_\rho$ | Linear OT distance around reference $\rho$. | [Eq. eq-lot-embedding](generalized-wasserstein#eq-lot-embedding) |
+| $\LOT_\gamma$ | Linear OT distance around reference $\gamma$. | [Eq. eq-lot-embedding](generalized-wasserstein#eq-lot-embedding) |
 | $Q,R,g$ | Low-rank OT factors and latent mass vector. | [Definition def-low-rank-couplings](generalized-ot-problems#def-low-rank-couplings) |
 | $\P(\Q,\R,g)$ | Coupling induced by a low-rank factored representation. | [Eq. eq-low-rank-coupling-factor](generalized-ot-problems#eq-low-rank-coupling-factor) |
 | $\eta=\sum_k g_k\delta_{z_k}$ | Abstract intermediate measure in low-rank OT. | [Definition def-low-rank-couplings](generalized-ot-problems#def-low-rank-couplings) |
 | $\MK_c^\kappa,\kappa$ | Capacity-constrained OT value and capacity density. | [Eq. eq-capacity-constrained-ot](generalized-ot-problems#eq-capacity-constrained-ot) |
 | $U_{ij}$ | Discrete upper-capacity matrix for a capped coupling. | [Eq. eq-discrete-capacity-constrained-ot](generalized-ot-problems#eq-discrete-capacity-constrained-ot) |
-| $\mathcal V_c,\mathcal V_{c,\epsilon}$ | Unregularized and KL-normalized entropic OT values used in sensitivity formulas. | [Propositions prop-ot-first-variations-unregularized](generalized-ot-problems#prop-ot-first-variations-unregularized), [prop-ot-first-variations-entropic](generalized-ot-problems#prop-ot-first-variations-entropic) |
-| $\mathcal L_{\mathrm{iOT}}$ | Inverse-OT primal--dual gap loss. | [Section sec-metric-learning-inverse-ot](generalized-ot-problems#sec-metric-learning-inverse-ot) |
+| $\frac{\delta \MK_c^\epsilon}{\delta\alpha},\frac{\delta \MK_c^\epsilon}{\delta c}$ | First variations of the OT value with respect to a marginal and the cost. | [Proposition prop-ot-first-variations-unregularized](generalized-ot-problems#prop-ot-first-variations-unregularized) |
+| $\mathcal F_\epsilon(c\mid\widehat\pi)$ | Regularized inverse-OT loss. | [Definition def-inverse-ot-loss](generalized-ot-problems#def-inverse-ot-loss) |
 | $\bar T_\pi$ | Barycentric projection of a coupling $\pi$. | [Eq. eq-barycentric-projection](generalized-ot-problems#eq-barycentric-projection) |
 | $\bar\beta_\pi$ | Pushforward of $\alpha$ by the barycentric projection. | [Eq. eq-barycentric-projection](generalized-ot-problems#eq-barycentric-projection) |
 | $\WOT_C$ | Weak OT value with conditional-law cost $C$. | [Eq. eq-weak-ot](generalized-ot-problems#eq-weak-ot) |

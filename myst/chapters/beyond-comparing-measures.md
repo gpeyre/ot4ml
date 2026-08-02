@@ -78,8 +78,8 @@ A positive $\RR_+^m$-valued measure on $\X$ is a tuple
 where each component $\al^k$ is a nonnegative finite measure.
 :::
 
-This models multi-channel densities such as color histograms, spectral bins
-or several species transported on the same domain. In a conservative model
+This models multi-channel densities such as spectral bins or several species
+transported on the same domain. In a conservative model
 the mass of each channel is preserved, so one assumes
 $\al_0^k(\X)=\al_1^k(\X)$ for every $k$. The natural vector-valued extension
 therefore starts from the positive cone $\RR_+^m$.
@@ -90,8 +90,9 @@ conditions. First suppose that the endpoints and the curve have densities.
 The direct analogue of Benamou--Brenier fixes a vector
 density $u_t(x)\in\RR_+^m$ and a spatial flux
 $V_t(x)=(V_{t,1},\ldots,V_{t,d})\in(\RR^m)^d$, where $V_{t,\ell}^k$ is the
-momentum of channel $k$ in spatial direction $\ell$. The conservative vector
-transport cost associated with an action density $\Phi$ is
+velocity of channel $1\leq k\leq m$ in spatial direction
+$1\leq\ell\leq d$. The conservative vector transport cost associated with an
+action density $\Phi$ is
 
 ```{math}
 :label: eq-vector-valued-bb
@@ -119,6 +120,18 @@ still couple the components. Singular curves are handled as in scalar dynamic
 OT by replacing densities and fluxes by measures and using the lower
 semicontinuous perspective recession convention.
 
+The notation $\mathcal W_\Phi$ does not by itself imply a distance for an
+arbitrary action $\Phi$. Sufficient structural conditions are reversibility
+$\Phi(u,-V)=\Phi(u,V)$ and quadratic time scaling
+$\Phi(u,sV)=s^2\Phi(u,V)$ for $s\geq0$, together with lower semicontinuity and
+coercive nondegeneracy. The latter means that curves with vanishing action
+cannot join two distinct endpoints. Time reversal then gives symmetry, while
+concatenation with an optimal allocation of time gives the triangle inequality
+for the square root of {eq}`eq-vector-valued-bb`. Thus $\mathcal W_\Phi$ is an
+extended distance on each finite-action component. Equality of all channel
+masses is necessary for finiteness; without these assumptions, the formula is
+only a dynamic transport cost and may be asymmetric or degenerate.
+
 A simple quadratic family is obtained from a mobility matrix
 $\mathsf M(u)\in\mathbb S_+^m$:
 
@@ -138,6 +151,7 @@ and $\mathsf M(su)=s\mathsf M(u)$ for $s>0$. For $m=1$ and
 $\mathsf M(u)=u$, one
 recovers exactly the scalar Benamou--Brenier action. For
 
+(eq-diagonal-vector-mobility)=
 ```{math}
 \mathsf M_{\mathrm{diag}}(u)=\operatorname{diag}(u_1,\ldots,u_m),
 ```
@@ -156,50 +170,16 @@ law. For instance, with $q=m^{-1/2}(1,\ldots,1)$ and $\kappa\geq0$,
 
 increases the mobility in the common channel direction $q$ while leaving
 transverse directions controlled by the diagonal part. The local cost of
-moving one component can therefore depend on the densities and momenta of the
+moving one component can therefore depend on the densities and velocities of the
 other components, even though each component mass remains conserved.
 
-(prop-diagonal-positive-vector-bb)=
-:::{admonition} Proposition: Diagonal Positive Vector Benamou--Brenier
-:class: important
-Assume that $\al_0^k,\al_1^k\in\mathcal M_+(\X)$ have finite second moments
-and the same mass $m_k$ for every $k$. For the diagonal mobility
-$\mathsf M_{\mathrm{diag}}$,
-
-```{math}
-\mathcal W_{\mathrm{diag}}^2(\al_0,\al_1)
-=
-\sum_{k:m_k>0}
-m_k\,
-\Wass_2^2\!\left(
-\frac{\al_0^k}{m_k},
-\frac{\al_1^k}{m_k}
-\right),
-```
-
-with the convention that zero-mass channels contribute zero.
-:::
-
-:::{dropdown} Proof
-For $\mathsf M_{\mathrm{diag}}(u)=\operatorname{diag}(u_1,\ldots,u_m)$, the
-action separates as
-
-```{math}
-\sum_{\ell=1}^d
-V_\ell^\top\mathsf M_{\mathrm{diag}}(u)^\dagger V_\ell
-=
-\sum_{k=1}^m\frac{|V^k|^2}{u^k},
-```
-
-where $V^k=(V_1^k,\ldots,V_d^k)$ is the spatial momentum of channel $k$. The
-constraint {eq}`eq-vector-valued-continuity` also separates into
-$\partial_t u^k+\nabla\cdot V^k=0$. The minimization therefore splits into
-$m$ independent scalar Benamou--Brenier problems. If $m_k>0$, normalizing
-$\rho_t^k=u_t^k/m_k$ and $p_t^k=V_t^k/m_k$ factors the channel action as
-$m_k\int |p_t^k|^2/\rho_t^k$, hence the scalar value is the displayed
-$m_k\Wass_2^2$ term. If $m_k=0$, nonnegativity and conservation force the
-whole channel to vanish. Summing over all channels proves the claim.
-:::
+For the linear mobility actions above, these requirements hold: the action is
+even and quadratic in $V$, while the range convention and finite-dimensional
+coercivity make it separating on its effective domain. Their
+lower-semicontinuous measure extensions therefore define extended distances on
+the finite-action components with prescribed channel masses. The diagonal
+choice, writing $m_k=\al_0^k(\X)=\al_1^k(\X)$, gives the weighted product metric whose squared value is
+$\sum_{k:m_k>0}m_k\Wass_2^2(\al_0^k/m_k,\al_1^k/m_k)$.
 
 The conservative positive-cone model above is the basic extension of
 Benamou--Brenier. Adding a source term
@@ -314,6 +294,15 @@ convex on this effective domain and positively one-homogeneous in $(A,P)$.
 This gives the simplest
 non-trivial matrix-valued transport model: spatial motion is conservative,
 but the fiber carries orientation through the eigenvectors of $A_t(x)$.
+
+Here $\mathcal W_{\mathrm{mat}}$ is an extended distance. The action is
+invariant under $P\mapsto-P$, quadratic under time rescaling, and zero only for
+$P=0$ on its effective domain. These properties give symmetry, the triangle
+inequality, and definiteness. The value is finite only between endpoints joined
+by a finite-action curve; equality of their total matrices is necessary but
+need not by itself guarantee finiteness. Consequently,
+$\mathcal W_{\mathrm{mat}}$ is a genuine distance on each finite-action
+component and is $+\infty$ between distinct components.
 
 (prop-matrix-diagonal-reduction)=
 :::{admonition} Proposition: Diagonal Matrix Subproblem
@@ -441,11 +430,15 @@ increases the mobility in the common channel direction $q$ while leaving transve
 (sec-wasserstein-over-wasserstein)=
 ## Wasserstein Over Wasserstein
 
-The construction can be iterated. Once $(\X,d)$ is a metric space, the set of
-probability measures on $\X$ becomes a metric space through $\Wass_p$. It can
-therefore serve as a new ground space. This is useful whenever the objects to
-compare are themselves random probability measures, or mixtures whose
-components are meaningful objects rather than only a collapsed density.
+The Wasserstein construction can itself be iterated: once $(\X,d)$ is a metric
+space, $(\Pp_p(\X),\Wass_p)$ is again a metric space and can serve as the ground
+space for another Wasserstein distance. This is useful when the objects to
+compare are random probability measures, or mixtures whose components are
+meaningful objects rather than only a collapsed density. We first record the
+structure of this new ground space, then distinguish a law of measures from its
+collapsed mixture, and finally transport such laws.
+
+### Wasserstein Spaces as Ground Spaces
 
 The standard setting is that of Polish spaces, introduced in
 {ref}`def-polish-metric-space`. These assumptions provide separability,
@@ -475,6 +468,8 @@ supported measures on a countable dense subset and rational weights. If
 $\X$ is compact, Prokhorov compactness and Wasserstein metrization of weak
 convergence give compactness.
 :::
+
+### Random Measures and Collapsed Mixtures
 
 Fix $1\leq p<\infty$. Elements of $\Pp_p(\Pp_p(\X))$ are probability laws
 over probability measures, or random probability measures. A measurable
@@ -509,6 +504,13 @@ For $\mathfrak A\in\Pp(\Pp(\X))$, the collapsed mixture is defined by
 for every bounded continuous $f$.
 :::
 
+The term “barycentric mixture” should not be confused with the Wasserstein
+barycenter of Definition {ref}`def-ot-barycenter` in Section
+{ref}`sec-barycenters`. The collapse {eq}`eq-wow-barycentric-mixture` is linear
+in $\mathfrak A$, whereas a Wasserstein barycenter gives a nonlinear way to
+reduce a law over measures to one measure by minimizing its average transport
+cost.
+
 If $\mathfrak A\in\Pp_p(\Pp_p(\X))$, then
 $\bar\alpha_{\mathfrak A}\in\Pp_p(\X)$ because
 
@@ -518,7 +520,10 @@ $\bar\alpha_{\mathfrak A}\in\Pp_p(\X)$ because
 \int_{\Pp_p(\X)}\Wass_p(\alpha,\delta_{x_0})^p\,\d\mathfrak A(\alpha).
 ```
 
-The Wasserstein distance on the Wasserstein space is
+### Transport Between Random Measures
+
+Having equipped $\Pp_p(\X)$ with the ground distance $\Wass_p$, one applies
+the ordinary Kantorovich construction to probability laws on this space:
 
 ```{math}
 :label: eq-wow-distance
@@ -978,6 +983,12 @@ minimized by the discrete GW objective for the displayed correspondence.*
 
 <iframe class="ot4ml-live-frame" title="Gromov-Wasserstein distortion controls" src="../live/beyond-gromov-distortion.html" loading="lazy" style="width:100%;height:500px;border:0;display:block;"></iframe>
 
+Mapping each point to its distance-profile distribution and pushing forward the
+ambient measure produces a distribution over distributions. This is a direct
+instance of the Wasserstein-over-Wasserstein geometry defined in
+{eq}`eq-wow-distance` and developed in Section
+{ref}`sec-wasserstein-over-wasserstein`.
+
 (prop-memoli-gw-profile-lower-bound)=
 :::{admonition} Proposition: Memoli Profile Lower Bound
 :class: important
@@ -1272,12 +1283,33 @@ Let $\mathbb H_n$ be the real vector space of $n\times n$ Hermitian matrices,
 \{A\in\mathbb H_n^+:\operatorname{tr}(A)=1\}.
 ```
 
+Here $A\succeq0$ means that $A$ is positive semidefinite, namely
+$z^*Az\geq0$ for every $z\in\mathbb C^n$, or equivalently that all
+eigenvalues of $A$ are nonnegative.
 Elements of $\mathbb H_n^{+,1}$ are density matrices.
 :::
 
-A joint quantum state between $\mathbb C^n$ and $\mathbb C^m$ is a matrix
-$T\in\mathbb H_{nm}^+$ acting on $\mathbb C^n\otimes\mathbb C^m$. Its
-marginals are the partial traces, defined by duality through
+For $A\in\mathbb H_n$ and $B\in\mathbb H_m$, the tensor product $A\otimes B$
+is the linear operator determined by
+
+```{math}
+:label: eq-qot-tensor-product
+(A\otimes B)(x\otimes y)=(Ax)\otimes(By),
+\qquad
+A\otimes B=[A_{i,k}B]_{i,k=1}^n,
+\qquad
+(A\otimes B)_{(i,j),(k,\ell)}=A_{i,k}B_{j,\ell}.
+```
+
+(def-joint-quantum-state)=
+:::{admonition} Definition: Joint Quantum States and Partial Traces
+:class: important
+A joint quantum state between $\mathbb C^n$ and $\mathbb C^m$ is a density
+matrix $T\in\mathbb H_{nm}^{+,1}$ acting on
+$\mathbb C^n\otimes\mathbb C^m$. Its marginals are the partial traces
+$\operatorname{Tr}_B(T)\in\mathbb H_n^{+,1}$ and
+$\operatorname{Tr}_A(T)\in\mathbb H_m^{+,1}$ defined, for all
+$F\in\mathbb H_n$ and $G\in\mathbb H_m$, by
 
 ```{math}
 :label: eq-qot-partial-traces
@@ -1290,10 +1322,34 @@ marginals are the partial traces, defined by duality through
 \operatorname{tr}((I_n\otimes G)T).
 ```
 
-for all $F\in\mathbb H_n$ and $G\in\mathbb H_m$. Thus
-$\operatorname{Tr}_B(T)\in\mathbb H_n^+$ and
-$\operatorname{Tr}_A(T)\in\mathbb H_m^+$ play exactly the role of the two
-marginals of a classical coupling.
+They play the role of the two marginals of a classical coupling.
+:::
+
+In product bases $(e_i)_{i=1}^n$ and $(f_j)_{j=1}^m$, the operator $T$ can
+equivalently be viewed as the four-index tensor
+
+```{math}
+T_{(i,j),(k,\ell)}
+=
+\langle e_i\otimes f_j,T(e_k\otimes f_\ell)\rangle.
+```
+
+The full and partial traces then read
+
+```{math}
+:label: eq-qot-partial-traces-indices
+\operatorname{tr}(T)=\sum_{i=1}^n\sum_{j=1}^mT_{(i,j),(i,j)},
+\qquad
+[\operatorname{Tr}_B T]_{i,k}=\sum_{j=1}^mT_{(i,j),(k,j)},
+\qquad
+[\operatorname{Tr}_A T]_{j,\ell}=\sum_{i=1}^nT_{(i,j),(i,\ell)}.
+```
+
+In particular,
+$\operatorname{tr}(T)=\operatorname{tr}(\operatorname{Tr}_B T)
+=\operatorname{tr}(\operatorname{Tr}_A T)$. The feasible set below is never
+empty, since $A\otimes B$ has partial traces $A$ and $B$ whenever $A$ and $B$
+are density matrices.
 
 (def-finite-dimensional-qot)=
 :::{admonition} Definition: Finite-Dimensional Quantum OT
@@ -1570,6 +1626,17 @@ commutes with the cost.
 
 ### Gurvits Scaling and Quantum Sinkhorn
 
+The exact Bregman scheme above has a major computational obstruction: unlike
+classical marginal rescaling, projection onto either non-commutative marginal
+constraint requires solving a nonlinear matrix equation and has no closed form
+in general. Gurvits scaling instead provides an explicit fixed-point
+construction of a feasible quantum coupling, used as a surrogate for entropic
+QOT. Its iterates do not minimize the entropic QOT objective and, outside
+special commuting settings, do not generally arise as block minimizations of a
+global energy. In the diagonal case, however, the construction
+coincides with classical Sinkhorn and hence recovers its variational
+interpretation.
+
 The algorithm often called quantum Sinkhorn comes from the operator-scaling
 literature of Gurvits and subsequent developments
 {cite:p}`gurvits2003classical,gurvits2004classical,georgiou2015positive,garg2018recent`.
@@ -1590,14 +1657,47 @@ Z=F\otimes I_m+I_n\otimes G,
 ```
 
 where $U=\exp(F/(2\epsilon))$, $V=\exp(G/(2\epsilon))$ and
-$K=\exp(-C/\epsilon)$. If $[Z,C]=0$, then $T_s(F,G)=T_e(F,G)$; otherwise this
-is a Strang-type symmetric surrogate.
+$K=\exp(-C/\epsilon)$. For two matrices $M,N$, their commutator is
+$[M,N]\eqdef MN-NM$. Thus $[Z,C]=0$ means that $Z$ and $C$ commute; in this
+case $T_s(F,G)=T_e(F,G)$, whereas otherwise $T_s$ is a Strang-type symmetric
+surrogate.
 
-Fix a Choi convention and let $\mathcal K:\mathbb H_m\to\mathbb H_n$ be the
-completely positive map represented by the positive Choi matrix $K$; let
-$\mathcal K^\star$ be its Hilbert--Schmidt adjoint. Up to the transpose
-dictated by the chosen Choi convention, the marginal equations for the
-symmetric coupling take the operator-scaling form
+To make the Choi identification unambiguous, use the product bases fixed above
+and associate with $K$ the positive linear map
+$\mathcal K:\mathbb H_m\to\mathbb H_n$ and its Hilbert--Schmidt adjoint
+$\mathcal K^\star:\mathbb H_n\to\mathbb H_m$ through
+
+```{math}
+:label: eq-qot-choi-map
+\mathcal K(X)
+\eqdef
+\operatorname{Tr}_B\!\bigl(K(I_n\otimes X)\bigr),
+\qquad
+\mathcal K^\star(Y)
+\eqdef
+\operatorname{Tr}_A\!\bigl(K(Y\otimes I_m)\bigr).
+```
+
+Equivalently,
+
+```{math}
+[\mathcal K(X)]_{i,k}
+=
+\sum_{j,\ell}K_{(i,j),(k,\ell)}X_{\ell,j},
+\qquad
+[\mathcal K^\star(Y)]_{j,\ell}
+=
+\sum_{i,k}K_{(i,j),(k,\ell)}Y_{k,i}.
+```
+
+The adjoint relation is
+$\operatorname{tr}(Y\mathcal K(X))
+=\operatorname{tr}(\mathcal K^\star(Y)X)$. In the standard Choi convention,
+the completely positive map with Choi matrix $K$ is
+$X\mapsto\mathcal K(X^\top)$; convention {eq}`eq-qot-choi-map` merely places
+this basis-dependent transpose in the Choi identification rather than in the
+marginal equations. With this convention, the marginal equations for the
+symmetric coupling are exactly
 
 ```{math}
 U\,\mathcal K(V^2)\,U=A,
@@ -1647,7 +1747,7 @@ T_s=
 \exp\!\left(\frac{Z}{2\epsilon}\right).
 ```
 
-The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm.
+The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm or, in general, as block minimization of an underlying energy.
 :::
 
 

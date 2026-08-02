@@ -71,6 +71,7 @@ SKIP_ENVS = {
     "example",
     "exmp",
     "alg",
+    "algH",
     "algblock",
 }
 
