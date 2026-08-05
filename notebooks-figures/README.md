@@ -869,6 +869,12 @@ cells separate the main numerical steps.
   <a href="dynamic-time-warping.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/dynamic-time-warping.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 
+<td width="33%" align="center" valign="top">
+  <a href="quantum-classical-square-root-transport.ipynb"><img src="thumbnails/quantum-classical-square-root-transport.png" alt="Quadratic Wasserstein versus classical square-root transport" width="210"></a><br>
+  <strong>Wasserstein versus classical square-root transport</strong><br>
+  <a href="quantum-classical-square-root-transport.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/quantum-classical-square-root-transport.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
+</td>
+
 </tr>
 </table>
 

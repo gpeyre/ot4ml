@@ -19,6 +19,7 @@ PACKAGE_DISTRIBUTIONS = {
     "PIL": "Pillow",
     "sklearn": "scikit-learn",
     "fitz": "PyMuPDF",
+    "cvxpy": "cvxpy",
 }
 
 

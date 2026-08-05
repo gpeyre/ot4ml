@@ -9,7 +9,7 @@
 \index{Sinkhorn!algorithm}% strictindex
 \label{sec-sinkhorn}
 
-Entropic regularization makes optimal transport smooth, strictly convex and scalable. This chapter first explains the discrete KL-regularized problem, derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the same construction as a relative-entropy projection problem. It then records the general continuous formulation, develops the dual soft-transform picture, explains the path-space Schr\"odinger problem behind the static coupling formulation, and presents the main convex regularization variants and the debiased Sinkhorn divergence. A final section records a less standard viewpoint: after fixing the potential gauge, the finite-dimensional Sinkhorn equations admit a local holomorphic continuation to complex values of the temperature. The presentation connects the older matrix-scaling literature~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67} with modern entropic OT~\cite{CuturiSinkhorn,peyre2019computational}.
+Entropic regularization makes optimal transport smooth, strictly convex and scalable. This chapter first explains the discrete KL-regularized problem, derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the same construction as a relative-entropy projection problem. It then records the general continuous formulation, develops the dual soft-transform picture, and presents the main convex regularization variants and the debiased Sinkhorn divergence. Its stochastic path-space interpretation is developed later, alongside dynamic OT, in Section~\ref{sec-path-space-schrodinger}. A final section records a less standard viewpoint: after fixing the potential gauge, the finite-dimensional Sinkhorn equations admit a local holomorphic continuation to complex values of the temperature. The presentation connects the older matrix-scaling literature~\cite{Sinkhorn64,SinkhornKnopp67,Sinkhorn67} with modern entropic OT~\cite{CuturiSinkhorn,peyre2019computational}.
 \index{matrix!scaling}% strictindex
 \index{entropic!OT}% strictindex
 \index{path-space formulation}% strictindex
@@ -597,7 +597,7 @@ Figure~\ref{fig:sinkhorn-plan-epsilon} illustrates the two limits of Proposition
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{General Formulation}
 
-The continuous formulation replaces matrices by measures and discrete KL by relative entropy. This section records the measure-theoretic problem, explains how the temperature $\epsilon$ connects exact transport to the independent product coupling, and states the two asymptotic regimes that are useful later: a large-temperature expansion around independence and a small-temperature expansion around quadratic optimal transport. The path-space interpretation developed in Section~\ref{sec-path-space-schrodinger} explains how the same static endpoint problem is obtained from an optimization problem on stochastic paths.
+The continuous formulation replaces matrices by measures and discrete KL by relative entropy. This section records the measure-theoretic problem, explains how the temperature $\epsilon$ connects exact transport to the independent product coupling, and states the two asymptotic regimes that are useful later: a large-temperature expansion around independence and a small-temperature expansion around quadratic optimal transport.
 \index{relative!entropy}% strictindex
 
 \paragraph{Measure formulation.}
@@ -625,9 +625,11 @@ The measure-theoretic definition is the exact analogue of Definition~\ref{def-di
 		By convention, $\KL(\pi|\xi)=+\infty$ if $\pi$ is not absolutely continuous with respect to $\xi$.
 \end{defn}
 %
-For fixed balanced marginals, the specific product reference in the entropy only matters up to additive constants, exactly as in Proposition~\ref{prop-kl-shift}, provided the alternative reference marginals are mutually absolutely continuous with $\al$ and $\be$. Its support and absolute-continuity structure are nevertheless essential: they determine which couplings have finite entropy. This distinction becomes substantive in the unbalanced setting, where the marginal constraints no longer freeze the additive terms.
+For fixed balanced marginals, the specific product reference in the entropy only matters up to additive constants, exactly as in Proposition~\ref{prop-kl-shift}. More precisely, an alternative product reference $\eta\otimes\zeta$ is admissible when $\al\ll\eta$, $\be\ll\zeta$ and the two marginal relative entropies are finite. The domination direction matters: a reference that fails to dominate a prescribed marginal gives infinite relative entropy. This distinction becomes substantive in the unbalanced setting, where the marginal constraints no longer freeze the additive terms.
 \index{marginal!constraint}% strictindex
 \index{absolute continuity}% strictindex
+
+The dynamic counterpart of~\eqref{eq-entropic-generic} is the path-space Schr\"odinger problem developed in Section~\ref{sec-path-space-schrodinger}: it replaces an endpoint coupling by a probability law on noisy trajectories with the same prescribed endpoint marginals.
 
 \paragraph{Probabilistic interpretation.}
 
@@ -860,7 +862,6 @@ At the opposite end, entropic transport is a viscous perturbation of quadratic o
 The dual point of view replaces couplings by potentials and soft $c$-transforms. It is the right formulation for stabilized implementations and differentiation.
 \index{soft!c-transform}% strictindex
 
-%%%
 \paragraph{Discrete dual.}
 
 The following proposition details the dual problem associated with the KL-normalized formulation~\eqref{eq-regularized-discr-rescaled}. This formulation has the same minimizer as~\eqref{eq-regularized-discr}; its optimal value is shifted by the constant $\epsilon\HD(\a)+\epsilon\HD(\b)$.
@@ -921,7 +922,6 @@ We introduce Lagrange multipliers and consider
 	has first-order condition $s-\log r=0$, hence $r=e^s$ and $\phi^*(s)=e^s-1$.
 \end{proof}
 
-%%%
 \paragraph{Discrete soft $c$-transforms.}
 \index{soft!c-transform}% strictindex
 
@@ -1020,7 +1020,6 @@ Figure~\ref{fig:sinkhorn-soft-c-transform-epsilon} visualizes the corresponding 
 \label{fig:sinkhorn-soft-c-transform-epsilon}
 \end{figure}
 
-%%%
 \paragraph{Continuous dual and soft-transforms.}
 \index{continuous!dual}% strictindex
 
@@ -1142,368 +1141,8 @@ A useful parameterization is given by input-convex neural networks (ICNNs)~\cite
 \index{soft!transform}% strictindex
 \end{rem}
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-\section{Path-Space Schr\"odinger Problem}
-\index{path-space formulation}% strictindex
-\index{Schrodinger@Schr\"odinger!problem}% strictindex
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-\label{sec-path-space-schrodinger}
-
-Schr\"odinger's reciprocal problem is naturally posed on paths rather than on endpoint pairs. A noisy reference dynamics defines a probability law on trajectories; after optimizing out the conditional law of a path given its endpoints, only the endpoint coupling remains, and the Sinkhorn problem appears.
-
-\paragraph{Unregularized path-space transport.}
-\index{path-space transport}% strictindex
-
-Throughout this section, both endpoint measures live on the same state space $\X$; this is the setting relevant to dynamic transport and Brownian bridges. The static coupling formulation above also makes sense between two different spaces $\X$ and $\Y$.
-\index{bridge!Brownian}% strictindex
-\index{Brownian bridge}% strictindex
-%
-Let $\Om=C([0,1];\X)$ be a path space and denote by
-\index{path space}% strictindex
-\[
-	e_t:\Om\to\X,\qquad e_t(\omega)=\omega_t
-\]
-the evaluation maps. A probability $M\in\Pp(\Om)$ is a law of random trajectories. Imposing the endpoint constraints
-\[
-	(e_0)_\sharp M=\al,
-	\qquad
-	(e_1)_\sharp M=\be
-\]
-means that the random path starts with law $\al$ and ends with law $\be$. Given a path action $\Aa:\Om\to[0,+\infty]$, the unregularized path-space problem is
-\index{path-space formulation}% strictindex
-\index{path space}% strictindex
-\begin{equation}\label{eq-path-space-ot}
-	\inf_{M\in\Pp(\Om)}
-	\enscond{
-		\int_\Om \Aa(\omega)\,\d M(\omega)
-	}{
-		(e_0)_\sharp M=\al,\ (e_1)_\sharp M=\be
-	}.
-\end{equation}
-For the quadratic Wasserstein geometry on $\RR^d$, one takes
-\[
-	\Aa(\omega)=
-	\begin{cases}
-	\displaystyle \int_0^1 \norm{\dot\omega_t}^2\,\d t,
-		& \text{if }\omega\text{ is absolutely continuous},\\[.4em]
-	+\infty, & \text{otherwise}.
-	\end{cases}
-\]
-This is the Lagrangian version of the Benamou--Brenier formulation recalled in the path-space formulation of Section~\ref{rem-bb-path-space}.
-\index{Benamou-Brenier@Benamou--Brenier}% strictindex
-\index{Benamou-Brenier@Benamou--Brenier!formulation}% strictindex
-\index{path space}% strictindex
-
-The endpoint cost induced by the action is
-\begin{equation}\label{eq-path-action-endpoint-cost}
-	c_\Aa(x,y)
-	\eqdef
-	\inf_{\omega\in\Om}
-	\enscond{\Aa(\omega)}{e_0(\omega)=x,\ e_1(\omega)=y}.
-\end{equation}
-For the quadratic action above, the minimizing path is the straight segment
-$\omega_t=(1-t)x+ty$, and $c_\Aa(x,y)=\norm{x-y}^2$.
-
-\begin{prop}[Endpoint reduction of path-space transport]\label{prop-path-space-ot-endpoint-reduction}
-\index{path-space formulation}% strictindex
-\index{path-space transport}% strictindex
-	Assume that minimizing paths in~\eqref{eq-path-action-endpoint-cost} can be selected measurably, or more generally that the infimum can be approximated by measurable selections. Then~\eqref{eq-path-space-ot} has the same value as the Kantorovich problem
-\index{measurable selection}% strictindex
-\index{Kantorovich!problem}% strictindex
-\index{path space}% strictindex
-	\[
-		\inf_{\pi\in\Couplings(\al,\be)}
-		\int_{\X\times\X} c_\Aa(x,y)\,\d\pi(x,y).
-	\]
-	Moreover, if $\pi^\star$ is an optimal endpoint coupling and $\omega^{x,y}$ is an optimal path from $x$ to $y$, then
-\index{endpoint coupling}% strictindex
-	\[
-		M^\star
-		=
-		\int_{\X\times\X}\delta_{\omega^{x,y}}\,\d\pi^\star(x,y)
-	\]
-	is an optimal path law.
-\end{prop}
-
-\begin{proof}
-	Let $M$ be any feasible path law and set $\pi=(e_0,e_1)_\sharp M$. Then $\pi\in\Couplings(\al,\be)$ and, by the definition of $c_\Aa$,
-	\[
-		\int_\Om \Aa(\omega)\,\d M(\omega)
-		\geq
-		\int_{\X\times\X} c_\Aa(x,y)\,\d\pi(x,y).
-	\]
-	This proves that the path-space value is at least the Kantorovich value. Conversely, given a coupling $\pi$ and a measurable selection $(x,y)\mapsto\omega^{x,y}$ with action arbitrarily close to $c_\Aa(x,y)$, the mixture of Dirac path laws
-\index{measurable selection}% strictindex
-\index{path-space formulation}% strictindex
-\index{path space}% strictindex
-	\[
-		M=\int\delta_{\omega^{x,y}}\,\d\pi(x,y)
-	\]
-	has endpoints $\al$ and $\be$ and action equal, up to the selected approximation error, to $\int c_\Aa\,\d\pi$. Optimizing over $\pi$ and letting the approximation error vanish proves equality. If exact minimizing paths are selected for an optimal $\pi^\star$, the displayed $M^\star$ is optimal.
-\end{proof}
-
-Thus the classical coupling problem can be read as a path problem where the endpoints are chosen first and the connecting path is then selected with minimal action. The Schr\"odinger problem changes exactly this last step: between two endpoints, it keeps the random fluctuations of a reference dynamics instead of collapsing onto a deterministic least-action path.
-\index{Schrodinger@Schr\"odinger!problem}% strictindex
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-
-\paragraph{Entropic path-space problem.}
-\index{path-space formulation}% strictindex
-\index{path-space problem}% strictindex
-
-Let $\Rr^\epsilon\in\Pp(\Om)$ be a reference path law, for instance a Brownian or Langevin dynamics at noise level $\epsilon$. Schr\"odinger's dynamic problem is the entropy projection
-\index{Langevin dynamics}% strictindex
-\begin{equation}\label{eq-schrodinger-path-space}
-	\mathrm{SB}_\epsilon(\al,\be)
-	\eqdef
-	\inf_{M\in\Pp(\Om)}
-	\enscond{
-		\epsilon\KL(M|\Rr^\epsilon)
-	}{
-		(e_0)_\sharp M=\al,\ (e_1)_\sharp M=\be
-	}.
-\end{equation}
-This is the dynamic Schr\"odinger bridge problem. It asks for the most likely path law, relative to the prior dynamics $\Rr^\epsilon$, among all path laws matching the observed endpoint marginals. This viewpoint goes back to Schr\"odinger's reciprocal problem~\cite{Schroedinger31} and is surveyed in modern OT language in~\cite{leonard2012schrodinger,LeonardSchroedinger}; stochastic-control formulations are developed in~\cite{chen2016relation}.
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-
-\paragraph{Stochastic-control interpretation.}
-\index{stochastic!control}% strictindex
-\index{Girsanov theorem}% strictindex
-\index{Doob transform}% strictindex
-For Brownian references, the entropy projection has a direct control meaning. To fix constants, suppose that $\Rr^\epsilon$ is the law of
-\[
-	\d X_t = \sqrt{\epsilon}\,\d B_t,
-	\qquad
-	X_0\sim\al ,
-\]
-so that the generator is $(\epsilon/2)\Delta$. Under the standard finite-entropy assumptions, a path law $M$ with the same initial marginal and $M\ll \Rr^\epsilon$ can be represented, in the weak sense, by an adapted drift $u_t$ of finite energy,
-\[
-	\d X_t = u_t\,\d t+\sqrt{\epsilon}\,\d B_t,
-	\qquad
-	X_0\sim\al .
-\]
-Conversely, such a drift defines an absolutely continuous change of law when the usual Girsanov integrability conditions hold. Girsanov's formula then gives
-\index{Girsanov theorem}% strictindex
-\[
-	\KL(M|\Rr^\epsilon)
-	=
-	\frac{1}{2\epsilon}\EE_M\int_0^1 \norm{u_t}^2\,\d t,
-	\qquad
-	\epsilon\KL(M|\Rr^\epsilon)=\frac12\EE_M\int_0^1 \norm{u_t}^2\,\d t .
-\]
-If the reference initial law is not $\al$, an additional term $\epsilon\KL(\al|\Rr^\epsilon_0)$ appears, but it is fixed by the endpoint constraint. Hence, up to this fixed endpoint cost, the Schr\"odinger bridge can be read as
-\[
-	\inf_u
-	\enscond{
-		\frac12\EE\int_0^1\norm{u_t}^2\,\d t
-	}{
-		\d X_t=u_t\,\d t+\sqrt{\epsilon}\,\d B_t,\quad
-		X_0\sim\al,\ X_1\sim\be
-	},
-\]
-namely as the least energetic change of drift that steers the Brownian prior from $\al$ to $\be$. The optimizer may be chosen Markovian. If $h_t$ denotes the positive space-time harmonic Schr\"odinger factor associated with the terminal constraint, then the optimal feedback drift has the Doob-transform form
-\[
-	u_t^\star(x)=\epsilon\nabla\log h_t(x).
-\]
-Equivalently, with the value potential $\phi_t=\epsilon\log h_t$, one has $u_t^\star=\nabla\phi_t$ and $\phi_t$ solves the viscous Hamilton--Jacobi equation $\partial_t\phi_t+\frac12\norm{\nabla\phi_t}^2+\frac{\epsilon}{2}\Delta\phi_t=0$. This control viewpoint and the endpoint-coupling reduction below are two faces of the same object: the controlled diffusion describes the whole path law, whereas the static Sinkhorn coupling records only its two endpoints.
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-\index{bridge!Brownian}% strictindex
-\index{Hamilton-Jacobi equation}% strictindex
-
-\paragraph{Viscous Benamou--Brenier formulations.}
-\index{Benamou-Brenier@Benamou--Brenier!viscous}% strictindex
-The Schr\"odinger interpolation also admits dynamic optimal-control descriptions, which are viscous analogues of the Benamou--Brenier formula. In this paragraph, $v_t$ denotes the forward drift called $u_t$ above, while $u_t$ denotes the associated current velocity. Write $\sigma>0$ for the diffusion intensity; thus the uncontrolled noise is $\sqrt{\sigma}\,\d B_t$ and its generator is $(\sigma/2)\Delta$. Formally, for smooth positive densities the controlled Fokker--Planck equation is
-\index{Schrodinger@Schr\"odinger!interpolation}% strictindex
-\index{Benamou-Brenier@Benamou--Brenier}% strictindex
-\[
-	\partial_t\rho_t+\diverg(\rho_t v_t)
-	=
-	\frac{\sigma}{2}\Delta\rho_t,
-\]
-one minimizes, among curves joining the prescribed endpoint densities, the kinetic action
-\index{kinetic action}% strictindex
-\[
-	\int_0^1\!\int
-	\frac12\norm{v_t(x)}^2\rho_t(x)\d x\d t .
-\]
-Equivalently, one can absorb the diffusion into the velocity by writing
-\[
-	u_t=v_t-\frac{\sigma}{2}\nabla\log\rho_t,
-	\qquad
-	\partial_t\rho_t+\diverg(\rho_t u_t)=0.
-\]
-Expanding $v_t=u_t+\frac{\sigma}{2}\nabla\log\rho_t$ and using the continuity equation for $(\rho_t,u_t)$ gives
-\index{continuity equation}% strictindex
-	\begin{align*}
-		\int_0^1\!\int
-		\frac12\norm{v_t}^2\rho_t\,\d x\,\d t
-		&=
-		\int_0^1\!\int
-		\left(
-			\frac12\norm{u_t}^2
-		+
-		\frac{\sigma^2}{8}\norm{\nabla\log\rho_t}^2
-	\right)\rho_t\,\d x\,\d t
-		\\
-		&\quad+
-		\frac{\sigma}{2}
-		\left[
-			\int\rho_1\log\rho_1\,\d x
-		-
-			\int\rho_0\log\rho_0\,\d x
-		\right].
-	\end{align*}
-Since the entropy term depends only on the prescribed endpoints, the same minimizers are obtained from the modified Benamou--Brenier action
-\index{Benamou-Brenier@Benamou--Brenier}% strictindex
-\[
-	\int_0^1\!\int
-	\left(
-		\frac12\norm{u_t(x)}^2
-		+
-		\frac{\sigma^2}{8}\norm{\nabla\log\rho_t(x)}^2
-	\right)
-	\rho_t(x)\d x\d t .
-\]
-Thus the Schr\"odinger bridge is a least-action interpolation with both transport kinetic energy and a Fisher-information penalty. If one instead writes the viscous equation with diffusion coefficient $\sigma\Delta\rho_t$, the same formula is obtained after replacing $\sigma$ above by $2\sigma$, so the Fisher coefficient becomes $\sigma^2/2$.
-\index{Fisher information}% strictindex
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-
-The reduction to endpoint couplings follows from disintegration. We write
-\index{disintegration}% strictindex
-\index{endpoint coupling}% strictindex
-\[
-	\Rr^\epsilon(\d\omega)
-	=
-	\int \Rr^{\epsilon,x,y}(\d\omega)\,
-		\Rr^\epsilon_{01}(\d x,\d y),
-	\qquad
-	\Rr^\epsilon_{01}\eqdef(e_0,e_1)_\sharp\Rr^\epsilon,
-\]
-where $\Rr^{\epsilon,x,y}$ is the reference bridge conditioned on endpoints $(x,y)$. Similarly, for any feasible $M$, write
-\[
-	M(\d\omega)
-	=
-	\int M^{x,y}(\d\omega)\,\pi(\d x,\d y),
-	\qquad
-	\pi\eqdef(e_0,e_1)_\sharp M.
-\]
-
-\begin{prop}[Endpoint reduction of the Schr\"odinger problem]\label{prop-schrodinger-endpoint-reduction}
-\index{Schrodinger@Schr\"odinger!problem}% strictindex
-	Assume that the regular conditional laws above exist and that the relative-entropy chain rule applies, with value $+\infty$ when absolute continuity fails. Then
-\index{conditional!law}% strictindex
-\index{absolute continuity}% strictindex
-\index{relative!entropy}% strictindex
-	\begin{equation}\label{eq-schrodinger-static-endpoint}
-		\mathrm{SB}_\epsilon(\al,\be)
-		=
-		\inf_{\pi\in\Couplings(\al,\be)}
-		\epsilon\KL(\pi|\Rr^\epsilon_{01}).
-	\end{equation}
-	For a fixed endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{01})$, the minimizing path law is the mixture of reference bridges
-\index{endpoint coupling}% strictindex
-	\begin{equation}\label{eq-schrodinger-bridge-mixture}
-		M^\pi
-		=
-		\int \Rr^{\epsilon,x,y}\,\d\pi(x,y).
-	\end{equation}
-	Consequently, if $\pi^\star$ solves~\eqref{eq-schrodinger-static-endpoint}, then $M^{\pi^\star}$ solves the path-space problem~\eqref{eq-schrodinger-path-space}.
-\index{path-space formulation}% strictindex
-\index{path space}% strictindex
-\end{prop}
-
-\begin{proof}
-	If $M$ has finite relative entropy with respect to $\Rr^\epsilon$, then $\pi=(e_0,e_1)_\sharp M$ is necessarily absolutely continuous with respect to $\Rr^\epsilon_{01}$. The chain rule for relative entropy gives
-\index{relative!entropy}% strictindex
-	\begin{equation}\label{eq-kl-chain-rule-path}
-		\KL(M|\Rr^\epsilon)
-		=
-		\KL(\pi|\Rr^\epsilon_{01})
-		+
-		\int_{\X\times\X}
-			\KL(M^{x,y}|\Rr^{\epsilon,x,y})
-			\,\d\pi(x,y).
-	\end{equation}
-	The second term is nonnegative and vanishes exactly when $M^{x,y}=\Rr^{\epsilon,x,y}$ for $\pi$-almost every $(x,y)$. Thus, once an endpoint coupling $\pi$ with finite $\KL(\pi|\Rr^\epsilon_{01})$ is fixed, the best path law is~\eqref{eq-schrodinger-bridge-mixture}, and the remaining minimization is precisely~\eqref{eq-schrodinger-static-endpoint}. If no such endpoint coupling exists, both sides are $+\infty$.
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-\index{endpoint coupling}% strictindex
-\end{proof}
-
-This proposition makes the connection between the dynamic and static views precise. The static Schr\"odinger problem stores only the endpoints of the optimal random trajectories; the full bridge is recovered by filling each transported endpoint pair with the corresponding reference bridge. In the zero-noise limit, these bridges concentrate on least-action paths and one recovers the unregularized path-space transport problem, hence the Monge--Kantorovich problem~\cite{leonard2012schrodinger}.
-\index{Kantorovich!problem}% strictindex
-\index{path-space formulation}% strictindex
-\index{path-space transport}% strictindex
-\index{Schrodinger@Schr\"odinger!problem}% strictindex
-
-\paragraph{Brownian bridges and Sinkhorn couplings.}
-\index{bridge!Brownian}% strictindex
-\index{Sinkhorn!coupling}% strictindex
-\index{Brownian bridge}% strictindex
-
-For $\X=\RR^d$, take $\Rr^\epsilon$ to be a Brownian reference dynamics. With the convention $\d X_t=\sqrt{\epsilon}\,\d B_t$ used above, its unit-time transition density is proportional to $e^{-\norm{x-y}^2/(2\epsilon)}$, so multiplying the endpoint entropy by $\epsilon$ produces the static cost $\norm{x-y}^2/2$. Equivalently, after renaming the static temperature by a factor of two, the heat-kernel density has the form
-\[
-	p_\epsilon(x,y)\propto \exp\!\left(-\frac{\norm{x-y}^2}{\epsilon}\right).
-\]
-More generally, suppose that the endpoint prior can be written, up to a normalization constant independent of $\pi$, as
-\[
-	\Rr^\epsilon_{01}(\d x,\d y)
-	\propto
-	\exp\!\left(-\frac{c(x,y)}{\epsilon}\right)
-	\al(\d x)\be(\d y).
-\]
-This includes the usual heat-kernel reference after rewriting it with respect to $\al\otimes\be$, whenever the one-time endpoint densities are fixed and mutually absolutely continuous. The additional one-body density factors only add constants under the marginal constraints.
-\index{marginal!constraint}% strictindex
-Then, for every $\pi\in\Couplings(\al,\be)$,
-\[
-	\epsilon\KL(\pi|\Rr^\epsilon_{01})
-	=
-	\int c(x,y)\,\d\pi(x,y)
-	+
-	\epsilon\KL(\pi|\al\otimes\be)
-	+
-	\mathrm{constant},
-\]
-where the constant does not depend on $\pi$. Hence~\eqref{eq-schrodinger-static-endpoint} is exactly the continuous Sinkhorn problem~\eqref{eq-entropic-generic}, up to an additive constant in the value. The optimal static coupling $\pi_\epsilon^\star$ is the endpoint law of the most likely controlled noisy dynamics, while the associated path law is
-\[
-	M_\epsilon^\star
-	=
-	\int \Rr^{\epsilon,x,y}\,\d\pi_\epsilon^\star(x,y).
-\]
-In words, Sinkhorn computes which endpoints should be paired; the path-space Schr\"odinger bridge then connects each paired endpoint by a Brownian bridge rather than by a deterministic straight line.
-\index{path-space formulation}% strictindex
-\index{Schrodinger@Schr\"odinger!bridge}% strictindex
-\index{bridge!Brownian}% strictindex
-\index{path space}% strictindex
-
-Figure~\ref{fig:sinkhorn-path-space-bridges} illustrates this endpoint-to-path lifting on a small discrete example. The red atoms form a compact source cloud and the blue atoms surround them. The first panel uses the unregularized OT coupling and zero bridge noise; the next panels increase $\epsilon$, which simultaneously softens the endpoint coupling and amplifies the Brownian fluctuations between paired endpoints.
-\index{endpoint coupling}% strictindex
-
-
-\begin{figure}[H]
-\centering
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}cccc@{}}
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges--eps-0.pdf} &
-\index{path space}% strictindex
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges--eps-0p035.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges--eps-0p10.pdf} &
-\includegraphics[width=.235\linewidth]{figures/sinkhorn-path-space-bridges--eps-0p28.pdf} \\[-.1em]
-\small $\epsilon=0$ &
-\small $\epsilon=0.035$ &
-\small $\epsilon=0.10$ &
-\small $\epsilon=0.28$
-\end{tabular}
-\caption{\emph{Endpoint couplings lifted to Brownian bridges.} Each panel transports six equally weighted red atoms concentrated near the center to six blue atoms distributed around them. For the displayed value of $\epsilon$, the endpoint coupling is either the exact quadratic OT plan ($\epsilon=0$) or the entropic Sinkhorn plan ($\epsilon>0$). A total of 60 paths is sampled by a multinomial allocation with probabilities $\pi_{ij}$, and each selected pair $(x_i,y_j)$ is filled by a Brownian bridge with covariance proportional to $\epsilon t(1-t)$. Colors encode time from red to blue.}
-\index{endpoint coupling}% strictindex
-\index{bridge!Brownian}% strictindex
-\label{fig:sinkhorn-path-space-bridges}
-\end{figure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Marginal-Dependent Problems}
 \index{marginal-dependent problem}% strictindex
 \label{sec-sinkhorn-marginal-dependent}
@@ -2340,7 +1979,6 @@ Figure~\ref{fig:sinkhorn-entropic-versus-quadratic-regularization} shows the cor
 
 Sinkhorn divergences remove the entropic self-bias while retaining smoothness. Under the kernel assumptions stated below, they interpolate between OT geometry and a Hilbertian energy distance, which explains their useful statistical behavior~\cite{feydy2018interpolating}.
 
-%%%
 \paragraph{Entropic bias.}
 \index{entropic!bias}% strictindex
 
@@ -2404,7 +2042,6 @@ Thus, at large $\epsilon$, the raw entropic cost approaches the bilinear cross-e
 	For the quadratic cost $c(x,y)=\norm{x-y}^2$ on $\RR^d$, assuming $\al$ has finite second moment, one has $V_\al(y)=\norm{y-\int x\d\al(x)}^2+\mathrm{const}$, so the collapse is toward the Dirac mass at the mean of $\al$.
 \end{example}
 
-%%%
 \paragraph{Sinkhorn divergences.}
 \index{Sinkhorn!divergence}% strictindex
 
@@ -2423,6 +2060,34 @@ The raw entropic OT value has a large-temperature attraction toward the product 
 	}
 \end{defn}
 Although this formula is a debiasing by self-costs, its non-negativity is not automatic from the definition; Proposition~\ref{prop-sinkhorn-positive} proves it below by a kernel Cauchy--Schwarz argument.
+
+\begin{rem}[Reference-measure invariance]\label{rem-sinkhorn-reference-invariance}
+	The product reference in~\eqref{eq-entropic-generic} is convenient but not intrinsic to the debiased quantity. Let $\eta$ and $\zeta$ be auxiliary probability measures on the common state space such that $\al\ll\eta$, $\be\ll\zeta$ and $\KL(\al|\eta)+\KL(\be|\zeta)<+\infty$, and denote by
+	\[
+		\MK_{c;\eta\otimes\zeta}^\epsilon(\al,\be)
+		\eqdef
+		\inf_{\pi\in\Couplings(\al,\be)}
+		\left\{
+			\int c\,\d\pi+\epsilon\KL(\pi|\eta\otimes\zeta)
+		\right\}
+	\]
+	the entropic value computed with this auxiliary reference. The measure-theoretic chain rule underlying Proposition~\ref{prop-kl-shift} gives, whenever the values are finite,
+	\[
+		\MK_{c;\eta\otimes\zeta}^\epsilon(\al,\be)
+		=
+		\MK_c^\epsilon(\al,\be)
+		+\epsilon\KL(\al|\eta)+\epsilon\KL(\be|\zeta).
+	\]
+	Consequently, the marginal corrections cancel exactly:
+	\begin{equation}\label{eq-sinkhorn-reference-invariance}
+		\bar\MK_c^\epsilon(\al,\be)
+		=
+		\MK_{c;\eta\otimes\zeta}^\epsilon(\al,\be)
+		-\frac12\MK_{c;\eta\otimes\eta}^\epsilon(\al,\al)
+		-\frac12\MK_{c;\zeta\otimes\zeta}^\epsilon(\be,\be).
+	\end{equation}
+	Thus the Sinkhorn divergence is independent of the compatible product references used to compute its three terms. Mutual absolute continuity is sufficient but unnecessary; the required direction is $\al\ll\eta$ and $\be\ll\zeta$, together with finite marginal relative entropies, while reverse domination alone does not suffice. Consistency is essential: the same $\eta$ must be used in the cross-term and the $\al$ self-term, and similarly $\zeta$ must be used in the cross-term and the $\be$ self-term.
+\end{rem}
 
 Figure~\ref{fig:sinkhorn-divergence-debiasing} demonstrates the role of the two self-cost corrections by optimizing a finite point cloud against a fixed target with and without debiasing.
 
