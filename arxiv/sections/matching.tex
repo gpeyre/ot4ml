@@ -22,11 +22,16 @@ This section formulates matching as Monge's deterministic transport problem on t
 \paragraph{Assignment problem.}
 \index{assignment problem}% strictindex
 
-Let $\C\in\RR^{n\times n}$ be a cost matrix, where $\C_{i,j}$ is the cost of pairing source $i$ with target $j$, and let $\Perm(n)$ denote the set of bijections of $\range{n}=\{1,\ldots,n\}$. The optimal assignment problem is
+The finite matching problem searches over bijections rather than over general mass splittings.
 \index{cost!matrix}% strictindex
+\begin{defn}[Optimal assignment problem]\label{def-optimal-assignment}
+For a cost matrix $\C\in\RR^{n\times n}$ and the set $\Perm(n)$ of bijections of $\range{n}=\{1,\ldots,n\}$, the optimal assignment value is
 \eql{\label{eq-optimal-assignment}
 	\umin{\sigma \in \Perm(n)} \frac{1}{n}\sum_{i=1}^n \C_{i,\sigma(i)}.
 }
+	A minimizer is an optimal assignment, or optimal permutation.
+\end{defn}
+Here $\C_{i,j}$ is the cost of pairing source $i$ with target $j$.
 When $\C_{i,j}=c(x_i,y_j)$, this is the Monge problem between the empirical measures $n^{-1}\sum_i\delta_{x_i}$ and $n^{-1}\sum_j\delta_{y_j}$. The normalization by $1/n$ records the mass of each atom but does not change the minimizing permutation. Exhaustive search evaluates all $n!$ permutations and is therefore impractical; efficient methods exploit geometry or linear-programming duality. Unless additional assumptions are imposed on $\C$, the optimizer need not be unique.
 
 \paragraph{Convex costs on the line.}
@@ -44,16 +49,12 @@ In particular, the result applies to $h(s)=|s|^p$ for $p>1$.
 \end{proposition}
 \begin{proof}
 	A permutation that does not preserve order contains an inversion: after relabeling, $x<x'$ are matched to $y'>y$. Set $d=y'-y>0$ and
-	\[
-		D(s)=\frac{h(s)-h(s-d)}{d}.
-	\]
+	\(D(s)=\frac{h(s)-h(s-d)}{d}\).
 	Strict convexity of $h$ makes $D$ strictly increasing. Therefore
-	\[
-	\begin{split}
-	&h(x-y')+h(x'-y)-h(x-y)-h(x'-y')\\
-	&\hspace{8em}=d\bigl(D(x'-y)-D(x-y)\bigr)>0.
-	\end{split}
-	\]
+		\[
+			h(x-y')+h(x'-y)-h(x-y)-h(x'-y')
+			=d\bigl(D(x'-y)-D(x-y)\bigr)>0.
+		\]
 	Swapping the two inverted targets strictly lowers the cost. Repeating this exchange eliminates every inversion; the only order-preserving bijection between the two sorted clouds pairs equal ranks.
 \end{proof}
 
@@ -84,6 +85,7 @@ and match $x_{\sigma_X(k)}$ with $y_{\sigma_Y(k)}$. Thus $\sigma=\sigma_Y\circ\s
 \end{alg}
 
 \paragraph{Concave costs on the line.}
+\index{concave cost}% strictindex
 Concavity reverses the exchange preference: one long and one short displacement can cost less than two displacements of intermediate length. Thus costs $c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing, such as $g(r)=r^p$ for $0<p<1$, favor nested or crossing assignments rather than equal ranks; see Figure~\ref{fig:matching-1d-convex-concave-costs}. This is the strictly concave regime described by Gangbo and McCann~\cite{gangbo1996geometry}.
 
 The order of the line still provides an exact algorithmic structure. For a source point, its right neighbor is the nearest target to its right such that the intervening open interval contains equally many sources and targets; left neighbors and target-to-source neighbors are defined symmetrically. Iterating this balanced-neighbor relation partitions a unit-mass problem into independent alternating chains~\cite{delon-concave}. On a balanced chain
@@ -147,9 +149,14 @@ The resulting constructive rule is summarized as Algorithm~\ref{alg:concave-line
 \textbf{Remove} their endpoints, invalidate affected cached indicators, relabel the chains, and set $k=1$.
 
 \end{algblock}
-\textbf{Else if} $k$ is below the maximal admissible order \textbf{then set} $k\leftarrow k+1$.
-
-\textbf{Else} match the remaining chain by equal indices in its current orientation and remove it.
+\textbf{Else if} $k$ is below the maximal admissible order \textbf{then}:
+\begin{algblock}
+\textbf{Set} $k\leftarrow k+1$.
+\end{algblock}
+\textbf{Else}:
+\begin{algblock}
+\textbf{Match} the remaining chain by equal indices in its current orientation and remove it.
+\end{algblock}
 
 \end{algblock}
 
@@ -158,27 +165,23 @@ The resulting constructive rule is summarized as Algorithm~\ref{alg:concave-line
 \textbf{Return} $M$.
 \end{alg}
 
-Figure~\ref{fig:matching-1d-convex-concave-costs} contrasts this alternating-chain behavior with monotone rank matching for a convex cost, first on unimodal clouds and then on multimodal clouds.
+Figure~\ref{fig:matching-1d-convex-concave-costs} contrasts this alternating-chain behavior with monotone rank matching for a convex cost on the same ordered clouds.
 
 \begin{figure}[H]
 \centering
 \begin{tabular}{@{}cc@{}}
-\includegraphics[width=.46\linewidth]{figures/matching-1d-convex-concave-costs--convex.pdf} &
-\includegraphics[width=.46\linewidth]{figures/matching-1d-convex-concave-costs--concave.pdf} \\[-.1em]
-\small convex cost, $p=2$ &
-\small concave cost, $p=1/2$ \\[.25em]
 \includegraphics[width=.46\linewidth]{figures/matching-1d-convex-concave-costs--mixture-convex.pdf} &
 \includegraphics[width=.46\linewidth]{figures/matching-1d-convex-concave-costs--mixture-concave.pdf} \\[-.1em]
-\small two-mode to three-mode, $p=2$ &
-\small two-mode to three-mode, $p=1/2$
+\small convex cost, $p=2$ &
+\small concave cost, $p=1/2$
 \end{tabular}
-\caption{\emph{One-dimensional assignments for ordered source and target clouds with costs $c_p(x,y)=|x-y|^p$.} The top row uses single-Gaussian source and target clouds; the bottom row uses a denser two-component source and three-component target. For the convex quadratic cost, equal ranks are matched and the segments do not cross. For the concave cost, the optimum creates long crossing exchanges; the ordered line remains useful, but through the alternating-chain structure of concave transport rather than through monotone rearrangement.}
+\caption{\emph{One-dimensional assignments for convex and concave costs.} The same ordered source and target clouds are matched with $c_p(x,y)=|x-y|^p$. For the convex quadratic cost, equal ranks are matched and the segments do not cross. For the concave cost, the optimum instead creates long crossing exchanges governed by the alternating-chain structure.}
 \index{monotone!rearrangement}% strictindex
 \index{quadratic!cost}% strictindex
 \label{fig:matching-1d-convex-concave-costs}
 \end{figure}
 
-Figure~\ref{fig:matching-1d-quantile-assignment} isolates the rank-matching mechanism for both unimodal and multimodal laws: sampling the two quantile functions at the same levels produces the non-crossing optimal assignment.
+Figure~\ref{fig:matching-1d-quantile-assignment} isolates the rank-matching mechanism for both unimodal and multimodal laws: sampling the two quantile functions at the same levels produces the non-crossing optimal assignment. Section~\ref{sec-optimal-quantization}, and specifically Proposition~\ref{prop-1d-equal-weight-quantization}, revisits this inverse-CDF placement for one-dimensional equal-weight quantization; there the exact quadratic optimum uses quantile-bin averages, while midpoint quantiles provide an asymptotically equivalent sampling rule.
 
 \begin{figure}[H]
 \centering
@@ -217,7 +220,7 @@ Figure~\ref{fig:monge-histogram-equalization} applies this construction to image
 \includegraphics[width=.21\linewidth]{figures/monge-histogram-equalization--hist-t100.pdf}
 \end{tabular}
 \caption{\emph{Histogram equalization as one-dimensional Monge transport on pixel intensities.} The map is the monotone rearrangement $T=Q_\beta\circ F_\alpha$, using the cumulative and quantile functions defined later in Definition~\ref{def-cdf-quantile}; here $\beta$ is a truncated Gaussian concentrated near dark intensities. The images are interpolated pointwise by $I_t=(1-t)I+tT(I)$, and all histograms share the same vertical scale to make the displacement of intensity mass comparable across time.}
-\index{cumulative function}% strictindex
+\index{cumulative distribution function}% strictindex
 \index{quantile!function}% strictindex
 \index{monotone!rearrangement}% strictindex
 \label{fig:monge-histogram-equalization}
@@ -228,14 +231,10 @@ Strict convexity makes every optimizer increasing and, for distinct points, make
 
 \begin{example}[Discrete book-shifting and non-uniqueness for $\Wass_1$]\label{ex-book-shifting-w1}
 \index{book-shifting}% strictindex
-\index{Wasserstein!W1 non-uniqueness}% strictindex
-	Fix $m\geq1$ and consider two equal-cardinality point clouds
-	\[
-		X=\{1,\ldots,2m\},
-		\qquad
-		Y=\{m+1,\ldots,3m\},
-	\]
-	with uniform weights. The monotone assignment sends $i$ to $i+m$ and has average cost $m$ for $c(x,y)=|x-y|$. It is not unique. The discrete book-shifting assignment
+\index{Wasserstein!W1 non-uniqueness@$\Wass_1$ non-uniqueness}% strictindex
+		Fix $m\geq1$ and consider the two equal-cardinality point clouds
+		$X=\{1,\ldots,2m\}$ and $Y=\{m+1,\ldots,3m\}$ with uniform weights.
+		The monotone assignment sends $i$ to $i+m$ and has average cost $m$ for $c(x,y)=|x-y|$. It is not unique. The discrete book-shifting assignment
 	\[
 		T_{\rm book}(i)=
 		\begin{cases}
@@ -304,7 +303,7 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 \end{proof}
 
 \begin{alg}[Circle assignment by cutting]\label{alg:circle-cut-assignment}
-\textbf{Input:} Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; cost $d_{\mathbb S^1}^p$.
+\textbf{Input:} Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; exponent $p>1$.
 
 \textbf{Output:} Optimal cyclic assignment and a compatible cut $\theta_{\rm cut}$.
 
@@ -316,18 +315,22 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 \end{algblock}
 \textbf{Set} $s^\star$ to the smallest minimizer of $(E_s)_{s=0}^{n-1}$.
 
-\textbf{Construct} the shortest arcs from $x_{(k)}$ to $y_{(k+s^\star)}$.
+\textbf{For} each component $I$ of $\mathbb S^1\setminus(\{x_i\}_i\cup\{y_j\}_j)$ in cyclic order \textbf{do}:
+\begin{algblock}
+\textbf{Choose} a test angle $\theta\in I$ and orient any antipodal matched arc to avoid $\theta$.
 
-\textbf{Choose} $\theta_{\rm cut}$ outside their union and outside all endpoints.
+\textbf{If} no shortest matched arc crosses $\theta$ \textbf{then}:
+\begin{algblock}
+\textbf{Set} $\theta_{\rm cut}=\theta$ and leave the loop.
+\end{algblock}
+\end{algblock}
 
 \textbf{Lift} every point to its representative in $(\theta_{\rm cut},\theta_{\rm cut}+1)$.
 
 \textbf{Return} $x_{(k)}\mapsto y_{(k+s^\star)}$ and $\theta_{\rm cut}$.
 \end{alg}
 
-After sorting, this direct enumeration costs $O(n^2)$. The convex dependence of the circular transport cost on a continuous shift parameter leads to faster algorithms for general weighted histograms~\cite{delon-circle}.
-
-Figure~\ref{fig:monge-circle-cut-unfolding} shows how the selected cut turns the circular assignment into an ordinary ordered matching on an interval.
+After sorting, this direct enumeration costs $O(n^2)$. The convex dependence of the circular transport cost on a continuous shift parameter leads to faster algorithms for general weighted histograms~\cite{delon-circle}. Figure~\ref{fig:monge-circle-cut-unfolding} shows how the selected cut turns the circular assignment into an ordinary ordered matching on an interval.
 
 \begin{figure}[H]
 \centering
@@ -374,16 +377,14 @@ Sorting no longer orders a planar cloud, but a simple local exchange still rules
 \begin{proof}
 	Suppose that $[x_i,y_{\sigma(i)}]$ and $[x_j,y_{\sigma(j)}]$ cross properly at $z$. The triangle inequality along the two reconnected paths gives
 \index{triangle inequality}% strictindex
-	\[
-		\norm{x_i-y_{\sigma(j)}}
-		\leq
-		\norm{x_i-z}+\norm{z-y_{\sigma(j)}},
-	\]
-	and
-	\[
-		\norm{x_j-y_{\sigma(i)}}
-		\leq
-		\norm{x_j-z}+\norm{z-y_{\sigma(i)}}.
+		\[
+			\norm{x_i-y_{\sigma(j)}}
+			\leq
+			\norm{x_i-z}+\norm{z-y_{\sigma(j)}}
+			,\qquad
+			\norm{x_j-y_{\sigma(i)}}
+			\leq
+			\norm{x_j-z}+\norm{z-y_{\sigma(i)}}.
 	\]
 	The sum of the two right-hand sides is exactly the cost of the two original segments. At least one inequality is strict because a proper crossing is non-collinear. Swapping $\sigma(i)$ and $\sigma(j)$ therefore strictly decreases the assignment cost, contradicting optimality. Collinear overlaps are excluded from the statement precisely because the exchange can then have equal cost.
 \end{proof}
@@ -397,13 +398,9 @@ This property alone is, however, not enough to lead to an efficient algorithm. N
 
 \begin{rem}[Catalan count of alternating non-crossing matchings]
 \index{matching!non-crossing}% strictindex
-	The count follows from the standard Catalan recurrence. Fix one red vertex $r$. In a non-crossing perfect matching, if $r$ is matched to a blue vertex $b$, the chord $[r,b]$ splits the polygon into two smaller polygons. Since the boundary colors alternate, each side contains the same number of red and blue vertices. If one side contains $k$ red and $k$ blue vertices, the other contains $n-1-k$ red and $n-1-k$ blue vertices. Non-crossing matchings on the two sides are independent, because no segment can cross the chord $[r,b]$. Thus, denoting by $M_n$ the number of such matchings, one has
-\index{matching!perfect}% strictindex
-	\[
-		M_0=1,
-		\qquad
-		M_n=\sum_{k=0}^{n-1} M_k M_{n-1-k}.
-	\]
+		The count follows from the standard Catalan recurrence. Fix one red vertex $r$. In a non-crossing perfect matching, if $r$ is matched to a blue vertex $b$, the chord $[r,b]$ splits the polygon into two smaller polygons. Since the boundary colors alternate, each side contains the same number of red and blue vertices. If one side contains $k$ red and $k$ blue vertices, the other contains $n-1-k$ red and $n-1-k$ blue vertices. Non-crossing matchings on the two sides are independent, because no segment can cross the chord $[r,b]$. Thus, denoting by $M_n$ the number of such matchings,
+		\index{matching!perfect}% strictindex
+		one has $M_0=1$ and $M_n=\sum_{k=0}^{n-1}M_kM_{n-1-k}$.
 	This recurrence characterizes the Catalan numbers, hence $M_n=C_n$.
 \index{Catalan number}% strictindex
 \end{rem}
@@ -467,9 +464,9 @@ The elementary certificate used by both Hungarian and auction methods is worth i
 \end{proof}
 
 Formula~\eqref{eq-hungarian-dual} is precisely the uniform-mass specialization of the discrete Kantorovich dual~\eqref{eq-dual}, multiplied by $n$.
-
+%
 The method maintains such feasible potentials together with a partial matching $M$, namely a set of source--target pairs in which no source or target occurs twice. Define the slack, also called the reduced cost, by
-\index{partial matching}% strictindex
+\index{matching!partial}% strictindex
 \index{dual!price}% strictindex
 \eql{\label{eq-hungarian-slack}
 	s_{i,j}\eqdef\C_{i,j}-\fD_i-\gD_j\geq0.
@@ -621,17 +618,10 @@ The snapshots in Figure~\ref{fig:matching-hungarian-progression} are taken at in
 		\delta=\min_{j\notin T}\ell_j
 		=\min_{i\in S,\,j\notin T}s_{i,j}\geq0.
 	\]
-	After the potential update, the four blocks of the slack matrix become
-	\[
-		s_{i,j}^{+}
-		=
-		\begin{cases}
-			s_{i,j}, & (i,j)\in S\times T,\\
-			s_{i,j}-\delta, & (i,j)\in S\times T^c,\\
-			s_{i,j}+\delta, & (i,j)\in S^c\times T,\\
-			s_{i,j}, & (i,j)\in S^c\times T^c.
-		\end{cases}
-	\]
+		After the potential update, the slack becomes
+		$s_{i,j}^{+}=s_{i,j}-\delta$ on $S\times T^c$,
+		$s_{i,j}^{+}=s_{i,j}+\delta$ on $S^c\times T$, and remains
+		$s_{i,j}^{+}=s_{i,j}$ on the other two blocks.
 	The definition of $\delta$ makes every entry nonnegative. For $j\notin T$, all slacks from $S$ decrease by the same amount $\delta$, exactly as does $\ell_j$; hence the maintained-minimum identity remains valid. At least one maintained slack becomes zero, and its parent $p(j)$ identifies a corresponding zero-slack edge from $S$ to an unreached target. Thus dual feasibility is preserved and the next target selected by the algorithm is connected to the alternating tree. Moreover, every matched edge either has both endpoints in $S\times T$ or both endpoints outside the tree, so all matched edges remain tight.
 
 	Each inner iteration adds a new target to $T$. If that target is matched, its unique partner is added to $S$, and the slack update restores the maintained-minimum identity above. If it is unmatched, the pointers $p$ and $q$ trace an alternating path from $i_0$ to this target. Flipping the status of the edges on that path preserves the matching property, increases $|M|$ by one, and uses only equality edges. Since a target enters $T$ at most once, every phase reaches a free target after at most $n$ inner iterations. Starting from $M=\emptyset$, exactly $n$ phases therefore produce a perfect matching $M=\{(i,\sigma(i))\}_i$.

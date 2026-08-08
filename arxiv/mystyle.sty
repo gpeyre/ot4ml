@@ -52,7 +52,9 @@
 		\small
 		\noindent\hspace*{\otfigurecaptionmargin}%
 		\parbox[t]{\dimexpr\hsize-2\otfigurecaptionmargin\relax}{%
-			\raggedright{\itshape #1:} #2\par
+			\leftskip=0pt \rightskip=0pt \parfillskip=0pt plus 1fil
+			\emergencystretch=1em
+			{\itshape #1:} #2\par
 		}%
 		\endgroup
 	\else
@@ -131,7 +133,7 @@
 		#1,
 		line width=.9pt,
 		decorate,
-		decoration={snake, amplitude=.45pt, segment length=3.4pt}
+		decoration={snake, amplitude=.9pt, segment length=6.8pt}
 	] ([xshift=.5pt]frame.north west) -- ([xshift=.5pt]frame.south west);%
 }
 \newtcolorbox{otremarkbox}{%
@@ -217,13 +219,15 @@
 
 \usepackage{float}
 \definecolor{algorithmrule}{HTML}{6D7D8C}
+\definecolor{algorithmkeyword}{HTML}{315F83}
 \makeatletter
 \newcommand{\otalgrule}[1]{%
 	\begingroup\color{algorithmrule}\hrule height #1\relax\endgroup%
 }
+\newcommand\floatc@otruled[2]{{\@fs@cfont #1:} #2\par}
 \newcommand\fs@otruled{%
-	\def\@fs@cfont{\bfseries}%
-	\let\@fs@capt\floatc@ruled
+	\def\@fs@cfont{\bfseries\color{algorithmkeyword}}%
+	\let\@fs@capt\floatc@otruled
 	\def\@fs@pre{\otalgrule{.65pt}\kern2.5pt}%
 	\def\@fs@mid{\kern2pt\otalgrule{.35pt}\kern3pt}%
 	\def\@fs@post{\kern2.5pt\otalgrule{.65pt}\relax}%
@@ -233,15 +237,15 @@
 \floatstyle{otruled}
 \newfloat{algfloat}{tbp}{loa}[chapter]
 \floatname{algfloat}{Algorithm}
-\definecolor{algorithmblockrule}{HTML}{B7C0C8}
+\definecolor{algorithmblockrule}{HTML}{9EABB5}
 \mdfdefinestyle{algorithmblock}{%
 	backgroundcolor=white,
 	linecolor=algorithmblockrule,
-	linewidth=.45pt,
+	linewidth=.55pt,
 	topline=false,
 	rightline=false,
 	bottomline=false,
-	innerleftmargin=7pt,
+	innerleftmargin=8pt,
 	innerrightmargin=0pt,
 	innertopmargin=0pt,
 	innerbottommargin=0pt,
@@ -270,6 +274,9 @@
 	\setlength{\abovedisplayskip}{0pt}%
 	\setlength{\belowdisplayskip}{0pt}%
 	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
+	\raggedright
+	\let\otalgtextbf\textbf
+	\renewcommand{\textbf}[1]{\textcolor{algorithmkeyword}{\otalgtextbf{##1}}}%
 }{%
 	\end{algfloat}%
 }
@@ -282,6 +289,9 @@
 	\setlength{\abovedisplayskip}{0pt}%
 	\setlength{\belowdisplayskip}{0pt}%
 	\if\relax\detokenize{#1}\relax\else\caption{#1}\fi
+	\raggedright
+	\let\otalgtextbf\textbf
+	\renewcommand{\textbf}[1]{\textcolor{algorithmkeyword}{\otalgtextbf{##1}}}%
 }{%
 	\end{algfloat}%
 }
@@ -495,6 +505,22 @@
 \newcommand{\eqdef}{\coloneqq}
 \newcommand{\eq}[1]{\begin{equation*}#1\end{equation*}}
 \newcommand{\eql}[1]{\begin{equation}#1\end{equation}}
+\newsavebox{\eqlleadformula}
+\newsavebox{\eqlleadtext}
+\newlength{\eqlleadspace}
+\newcommand{\eqllead}[3]{%
+	\begingroup
+	\sbox{\eqlleadformula}{$\displaystyle #3$}%
+	\sbox{\eqlleadtext}{#1}%
+	\setlength{\eqlleadspace}{\dimexpr(\linewidth-\wd\eqlleadformula)/2\relax}%
+	\ifdim\dimexpr\wd\eqlleadtext+1em\relax>\eqlleadspace
+		\PackageWarning{mystyle}{Equation lead `#1' is too wide for its display}%
+	\fi
+	\begin{equation}\label{#2}
+		\llap{\makebox[\eqlleadspace][l]{\usebox{\eqlleadtext}}}#3
+	\end{equation}
+	\endgroup
+}
 \newcommand{\eqm}[1]{\begin{align*}#1\end{align*}}
 \newcommand{\eqml}[1]{\begin{align}#1\end{align}}
 
