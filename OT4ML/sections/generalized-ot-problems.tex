@@ -705,6 +705,39 @@ Thus a complete generalized Sinkhorn cycle is exact two-block coordinate ascent 
 Classical applications include two-dimensional image interpolation, three-dimensional shape interpolation, and barycenters on surfaces where the ground cost is the square of the geodesic distance; see~\cite{2015-solomon-siggraph} for applications to computer graphics and imaging.
 \index{ground cost}% strictindex
 
+\paragraph{Doubly regularized entropic barycenters.}
+\index{barycenter!doubly regularized}% strictindex
+\index{entropic!barycenter}% strictindex
+
+For $\epsilon>0$, the KL-normalized entropic value $\MK_\c^\epsilon$ of Definition~\ref{def-continuous-entropic-ot} is convex in either marginal when the other is fixed, but it is not jointly convex in both marginals in general~\cite{Chizat2025DoublyRegularizedBarycenter}. Indeed, if one marginal is fixed, mixing two feasible plans mixes both the plans and their product reference measures, and the claim follows from joint convexity of relative entropy, a special case of Proposition~\ref{prop-basic-phi-divergence-properties}; varying both marginals creates an additional cross term in the product reference. This separate convexity makes it possible to regularize the unknown barycenter directly. Fix a reference probability measure $\ga$ on $\Xx$, for instance a discrete grid measure or normalized Lebesgue measure on a compact Euclidean domain.
+
+\begin{defn}[Doubly regularized entropic barycenter]\label{def-doubly-regularized-entropic-barycenter}
+For $\epsilon,\tau\geq0$, define
+\eql{\label{eq-doubly-regularized-entropic-barycenter}
+	\mathcal E_{\epsilon,\tau}(\al)
+	\eqdef
+	\sum_{s=1}^S\la_s\MK_\c^\epsilon(\al,\be_s)
+	+\tau\KL(\al|\ga),
+	\qquad
+	\al_{\epsilon,\tau}^\star
+	\in
+	\argmin_{\al\in\Mm_+^1(\Xx)}\mathcal E_{\epsilon,\tau}(\al),
+}
+with the convention $\MK_\c^0=\MK_\c$.
+\end{defn}
+
+On a compact space with continuous cost, $\mathcal E_{\epsilon,\tau}$ is proper, lower semicontinuous and convex, so it admits a minimizer. If $\tau>0$, strict convexity of $\KL(\cdot|\ga)$ makes this minimizer unique; finite outer entropy also imposes $\al_{\epsilon,\tau}^\star\ll\ga$. Thus a discrete $\ga$ fixes a candidate support, whereas a continuous $\ga$ permits a grid-free density.
+
+The relation with the entropy-only fixed-support problem~\eqref{eq-entropic-bary} follows from an exact cancellation. In the notation of Definition~\ref{def-fixed-support-discrete-barycenter}, let $\ga=\sum_{i=1}^n g_i\de_{y_i}$ with $g_i>0$ and $\gD\eqdef(g_i)_{i=1}^n$, and write $\mathcal E_{\epsilon,\tau}(\a)$ for the objective at $\al=\sum_i a_i\de_{y_i}$. The KL reformulation~\eqref{eq-regularized-discr-rescaled} gives
+\begin{equation}\label{eq-doubly-regularized-barycenter-cancellation}
+\mathcal E_{\epsilon,\tau}(\a)=\sum_{s=1}^S\la_s\MKD_{\C_s}^\epsilon(\a,\b_s)+(\epsilon-\tau)\HD(\a)-\tau\sum_{i=1}^n a_i\log g_i+\epsilon\sum_{s=1}^S\la_s\HD(\b_s).
+\end{equation}
+Indeed, $\KLD(\a|\gD)=-\HD(\a)-\sum_i a_i\log g_i$, while each normalized entropic OT value contributes $\epsilon\HD(\a)+\epsilon\HD(\b_s)$. If $\ga$ is uniform on the grid and $\tau=\epsilon$, every term outside the first sum in~\eqref{eq-doubly-regularized-barycenter-cancellation} is constant. Hence the minimizers coincide exactly with those of~\eqref{eq-entropic-bary}, with support constrained to the grid. For a non-uniform discrete reference, the remaining linear term yields the weighted variant obtained by replacing each cost with $(\C_s')_{i,j}=(\C_s)_{i,j}-\epsilon\log g_i$, rather than the standard fixed-support problem.
+
+The outer-only choice $(\epsilon,\tau)=(0,\tau)$ includes entropy-penalized Wasserstein barycenters studied in~\cite{BigotCazellesPapadakis2019Penalization,BigotCazellesPapadakis2019DataDriven,CarlierEichingerKroshnin2020EntropicBarycenterCLT}. In the discrete identity above, $0<\tau<\epsilon$ leaves the positive penalty $(\epsilon-\tau)\HD(\a)$, which discourages diffuse barycenters and therefore sharpens the blurred $\tau=\epsilon$ solution. An earlier entropy-constraint version of this \emph{entropic sharpening} was proposed experimentally in~\cite{2015-solomon-siggraph}. Chizat~\cite{Chizat2025DoublyRegularizedBarycenter} develops the two-parameter formulation~\eqref{eq-doubly-regularized-entropic-barycenter} systematically, including uniqueness for $\tau>0$. For normalized Lebesgue $\ga$, smooth densities and the squared Euclidean cost, Proposition~\ref{prop-small-epsilon-expansion} shows that the only first-order term depending on the candidate barycenter is $(\tau-\epsilon/2)\mathrm H(\al)$. The choice $\tau=\epsilon/2$ cancels this term, and Chizat proves an $O(\epsilon^2)$ suboptimality bound for the resulting approximation of the unregularized barycenter.
+\index{entropy!sharpening}% strictindex
+\index{barycenter!outer regularization}% strictindex
+
 \paragraph{Wasserstein-over-Wasserstein and barycenters.}
 \index{law over measures}% strictindex
 \index{random probability measure}% strictindex
