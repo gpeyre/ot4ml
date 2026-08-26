@@ -5139,19 +5139,19 @@ function clog(z) {
   return [Math.log(Math.max(Math.hypot(z[0], z[1]), 1e-300)), Math.atan2(z[1], z[0])];
 }
 
-function complexSinkhornPlan(cost, a, b, eps0, eta, iterations) {
+function complexSinkhornPlan(cost, a, b, eps0, theta, iterations) {
   const n = a.length;
   const m = b.length;
   let u = Array.from({ length: n }, () => [1, 0]);
   let v = Array.from({ length: m }, () => [1, 0]);
   let K = null;
 
-  // Continue in short imaginary-temperature steps. This is more stable than
-  // launching the complex fixed point directly at the requested value.
-  const continuationSteps = Math.max(1, Math.ceil(Math.abs(eta) / 0.04));
+  // Follow a constant-modulus arc in short angular steps rather than launching
+  // the complex fixed point directly at the requested phase.
+  const continuationSteps = Math.max(1, Math.ceil(Math.abs(theta) / 0.04));
   for (let step = 0; step <= continuationSteps; step += 1) {
-    const etaStep = eta * step / continuationSteps;
-    const eps = [eps0, etaStep];
+    const thetaStep = theta * step / continuationSteps;
+    const eps = [eps0 * Math.cos(thetaStep), eps0 * Math.sin(thetaStep)];
     K = Array.from({ length: n }, () => Array(m));
     for (let i = 0; i < n; i += 1) {
       for (let j = 0; j < m; j += 1) {
@@ -5159,7 +5159,7 @@ function complexSinkhornPlan(cost, a, b, eps0, eta, iterations) {
       }
     }
 
-    const localIterations = step === 0 ? iterations : Math.max(36, Math.floor(iterations / 2));
+    const localIterations = step === 0 ? iterations : Math.max(100, iterations);
     const relaxation = 0.58;
     for (let it = 0; it < localIterations; it += 1) {
       for (let i = 0; i < n; i += 1) {
@@ -5281,16 +5281,19 @@ function drawComplexMagnitudeMatrix(ctx, state, a, b, box) {
 function drawComplexSinkhorn() {
   const n = Math.round(val("cxBins"));
   const eps0 = val("cxEps0");
-  const eta = val("cxEta");
+  const theta = val("cxTheta");
   const iterations = Math.round(val("cxIter"));
   const data = sinkhornGrid(n, "wide_two", "three");
-  const state = complexSinkhornPlan(data.cost, data.a, data.b, eps0, eta, iterations);
+  const state = complexSinkhornPlan(data.cost, data.a, data.b, eps0, theta, iterations);
   const frameWidth = canvas.getBoundingClientRect().width || (canvas.parentElement ? canvas.parentElement.clientWidth - 24 : 760);
   const { ctx, w, h } = resizeCanvas(frameWidth < 620 ? 520 : 430);
   const side = Math.min(w - 70, h - 78);
   const box = { x: (w - side) / 2, y: 48, w: side, h: side };
   drawComplexMagnitudeMatrix(ctx, state, data.a, data.b, box);
-  setStatus(`epsilon = ${eps0.toFixed(2)} + ${eta.toFixed(2)} i; marginal residual ${state.residual.toExponential(2)}; total mass of |P| ${state.absoluteMass.toFixed(4)}`);
+  const epsilonReal = eps0 * Math.cos(theta);
+  const epsilonImaginary = eps0 * Math.sin(theta);
+  const convergence = state.residual < 1e-7 ? "certified" : "increase iterations";
+  setStatus(`epsilon = ${eps0.toFixed(2)} exp(${theta.toFixed(2)} i) = ${epsilonReal.toFixed(3)} ${epsilonImaginary >= 0 ? "+" : "-"} ${Math.abs(epsilonImaginary).toFixed(3)} i; marginal residual ${state.residual.toExponential(2)} (${convergence}); total mass of |P| ${state.absoluteMass.toFixed(4)}`);
 }
 
 function sinkhornTrace(cost, a, b, epsilon, maxHalfSteps) {
@@ -10628,19 +10631,26 @@ function inverseOTPopulationSample(n, seed, strength) {
   const random = rng(seed);
   const source = [];
   const target = [];
-  const directions = [[1, 0], [0, 1], [Math.SQRT1_2, Math.SQRT1_2], [0.857493, -0.514496]];
-  const amplitudes = [0.90, 0.72, 0.80, 0.65].map((a) => strength * a / 0.72);
-  const biases = [0.10, -0.35, 0.45, -0.20];
+  const anchorCount = 49;
+  const curvature = 0.46 + 0.75 * strength;
+  const anchors = Array.from({ length: anchorCount }, (_, r) => {
+    const s = lerp(-1, 1, r / (anchorCount - 1));
+    return [1.60 * s, 0.75 - curvature * s * s];
+  });
+  const temperature = 0.045;
   for (let i = 0; i < n; i += 1) {
     const radius = Math.sqrt(random());
     const theta = 2 * Math.PI * random();
     const x = [radius * Math.cos(theta), radius * Math.sin(theta)];
-    const y = [0.85 * x[0] + 0.15 * x[1] + 0.22, 0.15 * x[0] + 0.78 * x[1] - 0.16];
-    for (let r = 0; r < directions.length; r += 1) {
-      const v = directions[r];
-      const coefficient = amplitudes[r] * Math.tanh(v[0] * x[0] + v[1] * x[1] + biases[r]);
-      y[0] += coefficient * v[0];
-      y[1] += coefficient * v[1];
+    const logits = anchors.map((z) => (z[0] * x[0] + z[1] * (x[1] + 1.35)) / temperature);
+    const maxLogit = Math.max(...logits);
+    const weights = logits.map((z) => Math.exp(z - maxLogit));
+    const weightSum = weights.reduce((acc, z) => acc + z, 0);
+    const y = [0.15 * x[0] + 0.45, 0.15 * x[1] - 0.25];
+    for (let r = 0; r < anchorCount; r += 1) {
+      const weight = weights[r] / weightSum;
+      y[0] += weight * anchors[r][0];
+      y[1] += weight * anchors[r][1];
     }
     source.push(x);
     target.push(y);
@@ -10667,7 +10677,7 @@ function drawInverseOTGap() {
   const strength = val("iogStrength");
   const seed = Math.round(val("iogSeed"));
   // Each path sample solves an assignment problem; 41 values keep the control
-  // responsive at n=100 while resolving the finite-sample affine pieces.
+  // responsive while resolving the finite-sample affine pieces.
   const tGrid = Array.from({ length: 41 }, (_, i) => lerp(-0.80, 0.80, i / 40));
   const population = inverseOTPopulationSample(Math.max(nLarge, 10), seed, strength);
   const small = inverseOTGapCurve(10, seed, strength, tGrid);
@@ -11436,10 +11446,10 @@ function init() {
     bind(drawCapacityConstrained1D);
   } else if (kind === "sinkhorncomplex") {
     controls.innerHTML = [
-      slider("cxEps0", "real epsilon", 0.55, 0.22, 1.1, 0.01),
-      slider("cxEta", "imaginary part", 0.40, 0, 0.8, 0.01),
+      slider("cxEps0", "amplitude epsilon_0", 0.55, 0.22, 1.1, 0.01),
+      slider("cxTheta", "phase theta", 0.40, 0, 1.0, 0.01),
       slider("cxBins", "bins", 32, 18, 52, 2),
-      slider("cxIter", "iterations", 180, 60, 340, 10),
+      slider("cxIter", "iterations per step", 260, 100, 520, 20),
     ].join("");
     bind(drawComplexSinkhorn);
   } else if (kind === "sinkhornhopfcole") {

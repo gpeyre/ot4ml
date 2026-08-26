@@ -710,8 +710,8 @@ cells separate the main numerical steps.
 <tr>
 
 <td width="33%" align="center" valign="top">
-  <a href="spectral-wasserstein-gauge.ipynb"><img src="thumbnails/spectral-wasserstein-gauge.png" alt="Spectral gauges of displacement covariances" width="210"></a><br>
-  <strong>Spectral gauges of displacement covariances</strong><br>
+  <a href="spectral-wasserstein-gauge.ipynb"><img src="thumbnails/spectral-wasserstein-gauge.png" alt="Spectral gauges of displacement second moments" width="210"></a><br>
+  <strong>Spectral gauges of displacement second moments</strong><br>
   <a href="spectral-wasserstein-gauge.ipynb">Open notebook</a> &middot; <a href="https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/notebooks-figures/spectral-wasserstein-gauge.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab"></a>
 </td>
 

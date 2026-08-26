@@ -631,7 +631,7 @@ The residual update preserves nonnegativity and changes every row and column sum
 \]
 is the next normalized residual. Maximality of $\lambda=\min_i\R_{i,\sigma(i)}$ makes at least one formerly positive coordinate vanish, so $\widehat\P'$ lies in a proper face of $F$. Each nonterminal iteration therefore lowers the face dimension by at least one; if $\lambda=s$, the residual vanishes. Since $\dim(\mathcal B_n)=(n-1)^2$, Algorithm~\ref{alg-birkhoff-von-neumann-decomposition} terminates after at most $(n-1)^2+1$ extracted permutations. Summing its residual updates gives the asserted decomposition and $\sum_{(\lambda,\sigma)\in\mathcal D}\lambda=1$.
 
-If the current support graph has $E$ edges, the elementary matching subroutine performs at most $n$ breadth-first searches and costs $O(nE)$. Thus a dense implementation costs $O(n^3)$ per extracted permutation and, using the term bound above, at most $O(n^5)$ arithmetic and graph operations overall, with $O(n^2)$ memory. This is a conservative worst-case estimate rather than a bit-complexity bound; faster bipartite-matching routines improve it, and sparse residual supports reduce $E$ substantially~\cite{korte2012combinatorial,brualdi2006combinatorial}.
+If the current support graph has $E$ edges, the elementary matching subroutine performs at most $n$ breadth-first searches and costs $O(nE)$. Thus a dense implementation costs $O(n^3)$ per extracted permutation and, using the term bound above, at most $O(n^5)$ arithmetic and graph operations overall. Its auxiliary memory is $O(n^2)$ if extracted terms are streamed. Retaining the returned list $\mathcal D$ with each permutation stored as its $n$ indices takes $O(n^3)$ total space in the worst case; storing dense permutation matrices instead takes $O(n^4)$. These are conservative worst-case estimates rather than bit-complexity bounds; faster bipartite-matching routines improve them, and sparse residual supports reduce $E$ substantially~\cite{korte2012combinatorial,brualdi2006combinatorial}.
 \index{graph!augmenting path}% strictindex
 \index{algorithm!Birkhoff--von Neumann decomposition}% strictindex
 \index{complexity!Birkhoff--von Neumann decomposition}% strictindex
@@ -1002,7 +1002,7 @@ A last important class consists of semi-discrete problems, where $\al$ has a den
 		\int y\d\be(y)-\int x\d\al(x)
 		=1.
 	\]
-	Equality holds exactly for couplings concentrated on the half-plane $\{(x,y):y\geq x\}$, where $|y-x|=y-x$. Hence the optimal set is a whole face of the coupling polytope, not a single graph. The translation and book-shifting maps give two graph couplings inside this face, but many non-deterministic couplings are optimal as well.
+	Equality holds exactly for couplings concentrated on the half-plane $\{(x,y):y\geq x\}$, where $|y-x|=y-x$. Hence the optimal set is an exposed face of the convex coupling set, not a single graph. The translation and book-shifting maps give two graph couplings inside this face, but many non-deterministic couplings are optimal as well.
 \index{graph!coupling}% strictindex
 \index{optimal coupling}% strictindex
 \end{rem}
@@ -1155,7 +1155,7 @@ The proof of Brenier's theorem~\ref{thm-brenier} relies on Kantorovich relaxatio
 \index{Brenier!theorem}% strictindex
 \end{proof}
 
-The density assumption is exactly what prevents the relaxed plan from using several destinations at a nonsmooth point.
+A coupling $\pi$ is induced by a map exactly when, in its disintegration $\pi(\d x,\d y)=\pi_x(\d y)\al(\d x)$, the conditional law $\pi_x$ is a Dirac mass for $\al$-almost every $x$. In the Brenier argument, every optimal plan is concentrated on the subdifferential of a convex potential, so a sufficient structural condition for this absence of splitting is that the corresponding fiber be a singleton $\al$-almost everywhere. Absolute continuity guarantees this because convex potentials are then differentiable $\al$-almost everywhere; the weaker non-charging assumption discussed after Theorem~\ref{thm-brenier}, or hypotheses specific to a given pair of measures, can also suffice.
 
 \begin{rem}[Nonsmooth potentials and splitting]
 	If $\al$ does not have a density, then $\phi$ may be non-smooth on a set charged by $\al$, and non-smooth points can lead to mass splitting. For instance, moving $\delta_0$ to $(\delta_{-1}+\delta_{+1})/2$ can be represented by a plan concentrated on the set-valued subdifferential of $\phi(x)=|x|$, but not by a deterministic map. This is the continuous counterpart of the gap between the uniform matching case of Corollary~\ref{cor-kantorovich-matching} and the general splitting case.
@@ -1339,7 +1339,7 @@ This rearrangement is not intrinsic to $T$ alone: it depends on $\al$ through bo
 	}
 	If $h$ is strictly convex, this gap vanishes if and only if $T$ has a nondecreasing representative $\al$-almost everywhere.
 
-	For the equal-weight atomic measure $\al_n=\frac1n\sum_{i=1}^n\de_{x_i}$ on the uniform grid $x_i=x_1+(i-1)\Delta$, let $t_i=T(x_i)$ and let $t_{(1)}\leq\cdots\leq t_{(n)}$ be their order statistics. For $c(x,y)=|x-y|^2$,
+	For the equal-weight atomic measure $\al_n=\frac1n\sum_{i=1}^n\de_{x_i}$ on the increasing uniform grid $x_i=x_1+(i-1)\Delta$ with $\Delta>0$, let $t_i=T(x_i)$ and let $t_{(1)}\leq\cdots\leq t_{(n)}$ be their order statistics. For $c(x,y)=|x-y|^2$,
 	\eql{\label{eq-monge-gap-uniform-grid}
 		\mathcal M_{\al_n}^{|\cdot|^2}(T)
 		=
@@ -1349,7 +1349,7 @@ This rearrangement is not intrinsic to $T$ alone: it depends on $\al$ through bo
 	}
 \end{prop}
 \begin{proof}
-	The one-dimensional rearrangement result of Theorem~\ref{prop-1d-quantile-map}, together with its coupling extension in Theorem~\ref{prop-1d-kantorovich-quantile-coupling}, shows that $T^{\uparrow,\al}$ is optimal between $\al$ and $T_\sharp\al$. This gives~\eqref{eq-monge-gap-increasing-rearrangement}. If $h$ is strictly convex, atomlessness makes this optimal map unique $\al$-almost everywhere, so zero gap is equivalent to $T=T^{\uparrow,\al}$ $\al$-almost everywhere. For the empirical formula, sorting $(t_i)_i$ gives the increasing optimal assignment and hence the first equality. An adjacent exchange of an inversion $u>v$ decreases the average squared cost by $2\Delta(u-v)/n$; bubble sort exchanges every inverted pair once, which gives the second equality.
+	The one-dimensional rearrangement result of Theorem~\ref{prop-1d-quantile-map}, together with its coupling extension in Theorem~\ref{prop-1d-kantorovich-quantile-coupling}, shows that $T^{\uparrow,\al}$ is optimal between $\al$ and $T_\sharp\al$. This gives~\eqref{eq-monge-gap-increasing-rearrangement}. If $h$ is strictly convex, atomlessness makes this optimal map unique $\al$-almost everywhere, so zero gap is equivalent to $T=T^{\uparrow,\al}$ $\al$-almost everywhere. For the empirical formula, $\Delta>0$ orders the source points increasingly, so sorting $(t_i)_i$ gives the increasing optimal assignment and hence the first equality. An adjacent exchange of an inversion $u>v$ decreases the average squared cost by $2\Delta(u-v)/n$; bubble sort exchanges every inverted pair once, which gives the second equality.
 \end{proof}
 
 For quadratic cost, formula~\eqref{eq-monge-gap-uniform-grid} is a convex pairwise hinge penalty whose zero set is the isotonic cone $\{t_1\leq\cdots\leq t_n\}$. It is not the usual least-squares isotonic projection: rearrangement preserves the empirical output law, whereas isotonic regression moves and pools values. In higher dimension, Proposition~\ref{prop-affine-difference-monge-gap} replaces scalar order by cyclic monotonicity and convex subgradients. Monge-gap regularization therefore extends the role of isotonic constraints beyond a total order, while its defining comparison keeps $T_\sharp\al$ fixed.
@@ -1361,7 +1361,7 @@ For quadratic cost, formula~\eqref{eq-monge-gap-uniform-grid} is a convex pairwi
 \index{Monge gap!kernel regression}% strictindex
 \index{kernel!ridge regression}% strictindex
 
-The hinge representation above turns transport optimality into a tractable soft monotonicity prior. Let $x_i=x_1+(i-1)\Delta$ and let $y_i\in\RR$ be noisy observations. For a positive-semidefinite kernel $k$ with reproducing-kernel Hilbert space $\RKHS_k$, consider
+The hinge representation above turns transport optimality into a tractable soft monotonicity prior. Let $x_i=x_1+(i-1)\Delta$ with $\Delta>0$ and let $y_i\in\RR$ be noisy observations. For a positive-semidefinite kernel $k$ with reproducing-kernel Hilbert space $\RKHS_k$, consider
 \eql{\label{eq-monge-gap-kernel-ridge}
 	\umin{T\in\RKHS_k}
 	\left\{

@@ -16,7 +16,7 @@ This opening chapter isolates the simplest form of optimal transport: pairing tw
 \index{Monge!problem}% strictindex
 \label{sec-monge-pbm}
 
-This section formulates matching as Monge's deterministic transport problem on two equally weighted clouds. The one-dimensional case is a transparent reference case where the optimal map can be read off by sorting.
+This section formulates matching between two labeled, equally weighted clouds. When the source locations are distinct, a permutation is a Monge map on the empirical support; repeated locations instead lead naturally to a coupling after the labels are forgotten. The one-dimensional case is a transparent reference case where an optimal assignment can be read off by sorting.
 
 %%%%%%%
 \paragraph{Assignment problem.}
@@ -25,14 +25,17 @@ This section formulates matching as Monge's deterministic transport problem on t
 The finite matching problem searches over bijections rather than over general mass splittings.
 \index{cost!matrix}% strictindex
 \begin{defn}[Optimal assignment problem]\label{def-optimal-assignment}
-For a cost matrix $\C\in\RR^{n\times n}$ and the set $\Perm(n)$ of bijections of $\range{n}=\{1,\ldots,n\}$, the optimal assignment value is
+Let $n\geq1$. For a cost matrix $\C\in\RR^{n\times n}$ and the set $\Perm(n)$ of bijections of $\range{n}=\{1,\ldots,n\}$, the optimal assignment value is
 \eql{\label{eq-optimal-assignment}
 	\umin{\sigma \in \Perm(n)} \frac{1}{n}\sum_{i=1}^n \C_{i,\sigma(i)}.
 }
 	A minimizer is an optimal assignment, or optimal permutation.
 \end{defn}
-Here $\C_{i,j}$ is the cost of pairing source $i$ with target $j$.
-When $\C_{i,j}=c(x_i,y_j)$, this is the Monge problem between the empirical measures $n^{-1}\sum_i\delta_{x_i}$ and $n^{-1}\sum_j\delta_{y_j}$. The normalization by $1/n$ records the mass of each atom but does not change the minimizing permutation. Exhaustive search evaluates all $n!$ permutations and is therefore impractical; efficient methods exploit geometry or linear-programming duality. Unless additional assumptions are imposed on $\C$, the optimizer need not be unique.
+The set $\Perm(n)$ is nonempty and finite, so a minimizer always exists; throughout this chapter, point-cloud cardinalities are understood to be positive. Here $\C_{i,j}$ is the cost of pairing source $i$ with target $j$.
+
+When $\C_{i,j}=c(x_i,y_j)$, every permutation induces the empirical coupling $\pi_\sigma=n^{-1}\sum_{i=1}^n\delta_{(x_i,y_{\sigma(i)})}$ between $\alpha=n^{-1}\sum_{i=1}^n\delta_{x_i}$ and $\beta=n^{-1}\sum_{j=1}^n\delta_{y_j}$. If the source locations are pairwise distinct, this coupling is the graph of the map $T_\sigma(x_i)=y_{\sigma(i)}$, and the assignment problem is exactly the Monge problem between $\alpha$ and $\beta$. If a source location is repeated, a labeled permutation need not define a map on the geometric support: its copies can be sent to different targets, thereby splitting the corresponding atom after labels are forgotten.
+
+The normalization by $1/n$ records the mass of each labeled atom but does not change the minimizing permutation. Exhaustive search evaluates all $n!$ permutations and is therefore impractical; efficient methods exploit geometry or linear-programming duality. Unless additional assumptions are imposed on $\C$, the optimizer need not be unique.
 
 \paragraph{Convex costs on the line.}
 
@@ -88,7 +91,14 @@ and match $x_{\sigma_X(k)}$ with $y_{\sigma_Y(k)}$. Thus $\sigma=\sigma_Y\circ\s
 \index{concave cost}% strictindex
 Concavity reverses the exchange preference: one long and one short displacement can cost less than two displacements of intermediate length. Thus costs $c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing, such as $g(r)=r^p$ for $0<p<1$, favor nested or crossing assignments rather than equal ranks; see Figure~\ref{fig:matching-1d-convex-concave-costs}. This is the strictly concave regime described by Gangbo and McCann~\cite{gangbo1996geometry}.
 
-The order of the line still provides an exact algorithmic structure. For a source point, its right neighbor is the nearest target to its right such that the intervening open interval contains equally many sources and targets; left neighbors and target-to-source neighbors are defined symmetrically. Iterating this balanced-neighbor relation partitions a unit-mass problem into independent alternating chains~\cite{delon-concave}. On a balanced chain
+The local-indicator construction has a precise preprocessing convention. Set $\widetilde g(r)=g(r)-g(0)$, which preserves all minimizers and satisfies $\widetilde g(0)=0$. Concavity gives $\widetilde g(a)+\widetilde g(b)\geq\widetilde g(a+b)$, and monotonicity combines this with the triangle inequality. Hence, if a source copy at $z$ is paired with a target $y$ while a source $x$ is paired with a target copy at $z$, exchanging these two pairs gives
+\[
+	\widetilde g(0)+\widetilde g(|x-y|)
+	\leq \widetilde g(|x-z|)+\widetilde g(|z-y|).
+\]
+Starting from an optimum and performing this swap therefore produces an optimum that matches the two copies of $z$. Coincident source-target copies may consequently be canceled iteratively. The unit-mass algorithm below assumes that all positions in the remaining combined cloud are pairwise distinct. Repeated positions of only one color must instead be aggregated into weighted atoms and handled by the weighted stratification described below~\cite{delon-concave}.
+
+On this preprocessed domain, the order of the line provides an exact algorithmic structure. For a source point, its right neighbor is the nearest target to its right such that the intervening open interval contains equally many sources and targets; left neighbors and target-to-source neighbors are defined symmetrically. Iterating this balanced-neighbor relation partitions the remaining unit-mass problem into independent alternating chains~\cite{delon-concave}. On a balanced chain
 \[
 	p_1<q_1<p_2<q_2<\cdots<p_N<q_N,
 \]
@@ -111,7 +121,7 @@ with the opposite orientation handled by exchanging the roles of $p$ and $q$, De
 \end{align*}
 whenever the displayed indices exist. If all relevant lower-order indicators are nonnegative, a negative $I_k^p(i)$ certifies the $k$ pairs $p_{i+r}\leftrightarrow q_{i+r-1}$, whereas a negative $I_k^q(i)$ certifies $p_{i+r}\leftrightarrow q_{i+r}$, for $r=1,\ldots,k$. Removing these certified pairs and restarting on the remaining chains gives an exact algorithm for equal unit masses. With a table that reuses previously computed indicators, its worst-case complexity is $O(n^2)$~\cite{delon-concave}. The hypotheses that $g$ be concave and nondecreasing are essential to this certificate.
 
-For arbitrary real masses, the stratification argument in the same work gives a larger $O(n^3)$ worst-case bound. Very concave costs also motivate the simpler greedy rule that repeatedly matches the closest red--blue pair. This rule is generally heuristic, although quantitative guarantees are known for $g(r)=r^p$ when $0<p<1/2$~\cite{OttoliniSteinerberger2023GreedyConcave}. These methods are not generic linear-programming solvers: they exploit the order and concavity specific to the line.
+For arbitrary positive masses, including atoms obtained by aggregating repeated same-color locations, the stratification argument in the same work gives a larger $O(n^3)$ worst-case bound. Very concave costs also motivate the simpler greedy rule that repeatedly matches the closest red--blue pair. This rule is generally heuristic, although quantitative guarantees are known for $g(r)=r^p$ when $0<p<1/2$~\cite{OttoliniSteinerberger2023GreedyConcave}. These methods are not generic linear-programming solvers: they exploit the order and concavity specific to the line.
 \index{mass!balance}% strictindex
 \index{local matching indicator}% strictindex
 \index{assignment problem}% strictindex
@@ -119,15 +129,15 @@ For arbitrary real masses, the stratification argument in the same work gives a 
 The resulting constructive rule is summarized as Algorithm~\ref{alg:concave-line-local-indicators}.
 
 \begin{alg}[Concave line matching by local indicators]\label{alg:concave-line-local-indicators}
-\textbf{Input:} Two $n$-point unit-mass clouds on $\RR$; cost $c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing.
+\textbf{Input:} Two $n$-point unit-mass clouds on $\RR$ whose combined remaining support is pairwise distinct after canceling coincident source-target copies; cost $c(x,y)=g(|x-y|)$ with $g$ strictly concave and nondecreasing.
 
 \textbf{Output:} Optimal concave-cost matching $M$.
+
+\textbf{Initialize:} Replace $g$ by $\widetilde g=g-g(0)$, set $M=\emptyset$, match and remove coincident source-target copies, and add these zero-displacement pairs to $M$.
 
 \textbf{Sort} the combined source-target sequence.
 
 \textbf{Construct} the independent alternating chains induced by the balanced-neighbor relation.
-
-\textbf{Initialize:} Set $M=\emptyset$.
 
 \textbf{While} an active chain remains \textbf{do}:
 \begin{algblock}
@@ -199,7 +209,7 @@ Figure~\ref{fig:matching-1d-quantile-assignment} isolates the rank-matching mech
 \paragraph{Histogram equalization.}
 Order preservation survives any strictly increasing change of coordinates. In particular, if $\phi:\RR\to\RR$ is strictly increasing and $h:\RR_+\to\RR$ is convex and nondecreasing, sorting solves the assignment problem for the cost $h(|\phi(x)-\phi(y)|)$ after applying $\phi$ to both clouds.
 
-A typical application is grayscale histogram equalization. The empirical distribution of image luminances is transported to a prescribed target histogram, for instance a concentrated law or the histogram of a reference image. For equal-size samples with distinct ranks, monotone rearrangement gives the exact assignment. Repeated intensity values require a consistent tie-breaking or mass-splitting convention, but the same quantile construction remains the canonical one-dimensional solution. The operation matches distributions of intensities rather than spatial pixel locations.
+A typical application is grayscale histogram equalization. Let $I_\ell$, $\ell\in\range{N}$, be the labeled pixel intensities, write $\alpha_N=N^{-1}\sum_{\ell=1}^N\delta_{I_\ell}$, and choose a stable sorting permutation $\iota$ such that $I_{\iota(1)}\leq\cdots\leq I_{\iota(N)}$. For a prescribed target law $\beta$, set $u_k=(k-1/2)/N$ and assign pixel $\iota(k)$ the target intensity $Q_\beta(u_k)$. Writing $\beta_N=N^{-1}\sum_{k=1}^N\delta_{Q_\beta(u_k)}$, the resulting monotone optimal coupling is $\pi_N=N^{-1}\sum_{k=1}^N\delta_{(I_{\iota(k)},Q_\beta(u_k))}$ between $\alpha_N$ and $\beta_N$. For an atomless source law, the continuum counterpart is the deterministic map $T=Q_\beta\circ F_\alpha$, using the cumulative and quantile functions of Definition~\ref{def-cdf-quantile}. With repeated digital intensities, however, $\pi_N$ is not the graph of a function of intensity alone: it splits the tied atom. Reordering labels within a tie leaves $\pi_N$ unchanged but changes which spatial pixel receives each target value, so the displayed image requires the stated stable tie rule. In either case, the operation matches distributions of intensities rather than spatial pixel locations.
 \index{histogram}% strictindex
 \index{transport!map}% strictindex
 \index{monotone!rearrangement}% strictindex
@@ -219,7 +229,7 @@ Figure~\ref{fig:monge-histogram-equalization} applies this construction to image
 \includegraphics[width=.21\linewidth]{figures/monge-histogram-equalization/hist-t067.pdf} &
 \includegraphics[width=.21\linewidth]{figures/monge-histogram-equalization/hist-t100.pdf}
 \end{tabular}
-\caption{\emph{Histogram equalization as one-dimensional Monge transport on pixel intensities.} The map is the monotone rearrangement $T=Q_\beta\circ F_\alpha$, using the cumulative and quantile functions defined later in Definition~\ref{def-cdf-quantile}; here $\beta$ is a truncated Gaussian concentrated near dark intensities. The images are interpolated pointwise by $I_t=(1-t)I+tT(I)$, and all histograms share the same vertical scale to make the displacement of intensity mass comparable across time.}
+\caption{\emph{Histogram equalization by a tie-broken one-dimensional quantile coupling.} The target $\beta$ is a truncated Gaussian concentrated near dark intensities. The labeled pixels are stably ordered by intensity, and the pixel of rank $k$ is assigned $Q_\beta((k-1/2)/N)$; the fixed spatial order breaks intensity ties. The displayed images use $I_{t,\iota(k)}=(1-t)I_{\iota(k)}+tQ_\beta((k-1/2)/N)$, and all histograms share the same vertical scale to make the displacement of intensity mass comparable across time.}
 \index{cumulative distribution function}% strictindex
 \index{quantile!function}% strictindex
 \index{monotone!rearrangement}% strictindex
@@ -288,14 +298,18 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 		\frac1n\sum_{k=1}^n
 		d_{\mathbb S^1}\!\left(x_{(k)},y_{(k+s)}\right)^p
 	\]
-	over the $n$ shifts. For each optimal assignment there is a cut $\theta\in\mathbb S^1\setminus(\{x_i\}_i\cup\{y_j\}_j)$, crossed by none of its shortest transport arcs, such that the lifted assignment on $(\theta,\theta+1)$ is the equal-rank matching on the line.
+	over the $n$ shifts. For each optimal assignment there is a cut $\theta\in\mathbb S^1\setminus\{x_1,\ldots,x_n,y_1,\ldots,y_n\}$, crossed by none of its shortest transport arcs, such that the lifted assignment on $(\theta,\theta+1)$ is the equal-rank matching on the line.
 \index{monotone!matching}% strictindex
 \end{proposition}
 
 \begin{proof}
-	Fix an optimal assignment $\sigma$ and let $\gamma_i$ be an open shortest arc from $x_i$ to $y_{\sigma(i)}$, with either orientation fixed in the antipodal case. The path-uncrossing lemma of Delon, Rabin and Gousseau states that if two arcs of an optimal assignment intersect, then they have the same orientation and neither is strictly contained in the other~\cite{DelonRabinGousseau2011Circle}. Its proof is a two-edge exchange: opposite orientations or strict containment would, by monotonicity and strict convexity of $r\mapsto r^p$, produce a strictly cheaper pairing of the four endpoints.
+	Fix an optimal assignment $\sigma$ and relabel its sources in cyclic order. Let $\gamma_{(k)}$ be an open shortest arc from $x_{(k)}$ to $y_{\sigma(k)}$, with either orientation fixed in the antipodal case. The path-uncrossing lemma of Delon, Rabin and Gousseau states that if two arcs of an optimal assignment intersect, then they have the same orientation and neither is strictly contained in the other~\cite{DelonRabinGousseau2011Circle}. Its proof is a two-edge exchange: opposite orientations or strict containment would, by monotonicity and strict convexity of $r\mapsto r^p$, produce a strictly cheaper pairing of the four endpoints.
 
-	Suppose that the arcs cover the circle. Since each $\gamma_i$ is open, every source point lies in another transport arc. Order the sources cyclically. The path-uncrossing lemma then propagates one common orientation: either $x_{(k+1)}\in\gamma_{(k)}$ for every $k$, or $x_{(k-1)}\in\gamma_{(k)}$ for every $k$. In the first case, define a new assignment by giving $x_{(k+1)}$ the target previously assigned to $x_{(k)}$; every transport arc becomes strictly shorter. The opposite orientation gives the analogous backward reassignment. Both contradict optimality. Hence some $\theta$ lies outside every transport arc.
+	We first show that some source $x_{(k)}$ belongs to no arc $\gamma_{(\ell)}$ with $\ell\neq k$. Otherwise, for each $k$ choose $q(k)\neq k$ such that $x_{(k)}\in\gamma_{(q(k))}$. The arcs $\gamma_{(q(k))}$ and $\gamma_{(k)}$ intersect near the endpoint $x_{(k)}$, so the lemma gives them a common orientation. Suppose first that this orientation is positive. If $q(k)\neq k-1$, then the positive arc from $x_{(q(k))}$ through $x_{(k)}$ also contains the preceding source $x_{(k-1)}$. It consequently intersects $\gamma_{(k-1)}$, which must also be positive; if $x_{(k)}\notin\gamma_{(k-1)}$, then $\gamma_{(k-1)}$ would be strictly contained in $\gamma_{(q(k))}$, contrary to the lemma. Hence $x_{(k)}\in\gamma_{(k-1)}$. The negative case similarly gives $x_{(k)}\in\gamma_{(k+1)}$. Thus every source belongs to one of the two arcs issued from its cyclic neighbors.
+
+	This local alternative propagates around the circle. If $x_{(k)}\in\gamma_{(k-1)}$ for one index, then $\gamma_{(k-1)}$ and $\gamma_{(k)}$ have the same orientation and noncontainment excludes $x_{(k-1)}\in\gamma_{(k)}$. The preceding alternative therefore forces $x_{(k-1)}\in\gamma_{(k-2)}$; iterating gives $x_{(\ell)}\in\gamma_{(\ell-1)}$ for every $\ell$. Define the cyclic reassignment $\widetilde\sigma(\ell)=\sigma(\ell-1)$. Since $x_{(\ell)}$ lies in the open shortest arc from $x_{(\ell-1)}$ to $y_{\sigma(\ell-1)}$, one has $d_{\mathbb S^1}(x_{(\ell)},y_{\widetilde\sigma(\ell)})<d_{\mathbb S^1}(x_{(\ell-1)},y_{\sigma(\ell-1)})$ for every $\ell$. Summing these strict inequalities contradicts optimality. Starting from $x_{(k)}\in\gamma_{(k+1)}$ gives the analogous backward reassignment and contradiction. This proves the claim.
+
+	Fix such an uncovered source $x_{(k)}$. Pairwise distinctness ensures that $x_{(k)}$ is not an endpoint of any $\gamma_{(\ell)}$ with $\ell\neq k$; since it is not in their interiors either, it belongs to none of their closures. Finiteness of the family therefore gives a neighborhood of $x_{(k)}$ disjoint from all those arcs. The arc $\gamma_{(k)}$ leaves its source on only one side, so the other side contains an open subarc crossed by no matched arc. Choose $\theta$ in this subarc. Then $\theta\notin\{x_1,\ldots,x_n,y_1,\ldots,y_n\}$ and no shortest transport arc crosses it. This is the endpoint-free gap established in the appendix of~\cite{DelonRabinGousseau2011Circle}.
 
 	Cut the circle at such a $\theta$ and lift it to $(\theta,\theta+1)$. Every matched geodesic avoids the cut, so its circular length equals the ordinary distance between the corresponding lifts. Proposition~\ref{prop-matching-1d-monotone} now implies that the lifted matching preserves order. Returning to the circle, an order-preserving bijection between two cyclically ordered $n$-point sets is a cyclic shift. Minimizing over these $n$ shifts therefore recovers the optimum. This cut argument, including extensions to convex costs and nonuniform masses, is developed in~\cite{DelonRabinGousseau2011Circle,delon-circle}.
 \index{circle!unfolded interval}% strictindex
@@ -303,7 +317,7 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 \end{proof}
 
 \begin{alg}[Circle assignment by cutting]\label{alg:circle-cut-assignment}
-\textbf{Input:} Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$; exponent $p>1$.
+\textbf{Input:} Equal-weight points $(x_i)_{i=1}^n$, $(y_j)_{j=1}^n$ on $\mathbb S^1$, with all $2n$ locations pairwise distinct; exponent $p>1$.
 
 \textbf{Output:} Optimal cyclic assignment and a compatible cut $\theta_{\rm cut}$.
 
@@ -315,7 +329,7 @@ The only extra datum, compared with the line, is where one opens the circle. Onc
 \end{algblock}
 \textbf{Set} $s^\star$ to the smallest minimizer of $(E_s)_{s=0}^{n-1}$.
 
-\textbf{For} each component $I$ of $\mathbb S^1\setminus(\{x_i\}_i\cup\{y_j\}_j)$ in cyclic order \textbf{do}:
+\textbf{For} each component $I$ of $\mathbb S^1\setminus\{x_1,\ldots,x_n,y_1,\ldots,y_n\}$ in cyclic order \textbf{do}:
 \begin{algblock}
 \textbf{Choose} a test angle $\theta\in I$ and orient any antipodal matched arc to avoid $\theta$.
 
@@ -389,7 +403,7 @@ Sorting no longer orders a planar cloud, but a simple local exchange still rules
 	The sum of the two right-hand sides is exactly the cost of the two original segments. At least one inequality is strict because a proper crossing is non-collinear. Swapping $\sigma(i)$ and $\sigma(j)$ therefore strictly decreases the assignment cost, contradicting optimality. Collinear overlaps are excluded from the statement precisely because the exchange can then have equal cost.
 \end{proof}
 
-This property alone is, however, not enough to lead to an efficient algorithm. Non-crossing is only a necessary local test, not a compact certificate of optimality. For instance, if $n$ sources and $n$ targets are placed alternately on the boundary of a convex polygon, the number of non-crossing perfect matchings is the Catalan number
+This property alone is, however, not enough to lead to an efficient algorithm. Non-crossing is only a necessary local test, not a compact certificate of optimality. For instance, color the vertices of a strictly convex $2n$-gon alternately as $n$ sources and $n$ targets, and call a matching non-crossing when its matched chords have disjoint relative interiors. The number of such perfect matchings is the Catalan number
 \index{matching!perfect}% strictindex
 \index{Catalan number}% strictindex
 \[

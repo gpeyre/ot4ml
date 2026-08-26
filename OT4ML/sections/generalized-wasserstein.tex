@@ -49,7 +49,8 @@ Exact conservation $(\pi_1,\pi_2)=(\al,\be)$ is replaced by a cost for changing 
 	+
 	\tau\Dd_{\bar\psi_2}(\pi_2|\beta).
 \]
-As $\tau$ increases, marginal mismatch becomes expensive and the relaxed value approaches balanced OT whenever the hard marginal constraints are feasible. Small $\tau$ makes creation and destruction cheap; after division by $\tau$, the diagonal zero-transport part reveals the pure divergence geometry.
+The normalization $\bar\psi_s(1)=0$ alone does not imply a balanced large-$\tau$ limit: an entropy may vanish away from $1$, or even identically. A precise sufficient regime is the following. Assume that $\Xx$ and $\Yy$ are compact metric spaces, $c$ is lower semicontinuous, $\alpha$ and $\beta$ have the same finite mass and admit a finite-cost coupling, and
+$\bar\psi_s^{-1}(\{0\})=\{1\}$. If the induced divergences are lower semicontinuous and have compact sublevels for weak convergence of finite measures, then the functionals in the preceding display are equicoercive and $\Gamma$-converge in that topology, as $\tau\to+\infty$, to the balanced Kantorovich functional. Indeed, bounded energy forces both marginal divergences to vanish, so every limit plan has marginals $(\alpha,\beta)$; a balanced plan is its own recovery sequence. Consequently, the values converge to $\MK_c(\alpha,\beta)$, and every cluster point of minimizers is a balanced optimal plan. Small $\tau$ instead makes creation and destruction cheap; after division by $\tau$, the diagonal zero-transport part reveals the pure divergence geometry.
 
 Marginal relaxation changes which measures are compared, but not the transport problem once those modified marginals are fixed. To state this precisely, extend the Kantorovich value~\eqref{eq-mk-generic} by positive homogeneity: for finite measures $(\widetilde\alpha,\widetilde\beta)$ with common mass $M$,
 \index{marginal!relaxed}% strictindex
@@ -185,18 +186,18 @@ The entropy used in the marginal relaxation also changes the qualitative behavio
 	where \(\pi_1,\pi_2\) are the marginals of \(\pi\), interprets missing marginal mass as death or undersampling, and excess target marginal mass as growth or birth. Neural semi-coupling and entropic dynamic variants use this idea to model proliferating or dying cell populations from unpaired measurements~\cite{LuebeckBunneGutCastilloPelkmansAlvarezMelis2022NubOT,KleinUsciddaTheisCuturi2023GENOT}. The dynamic counterpart, where creation and transport are both part of the tangent dynamics, is discussed in Section~\ref{sec-dynamic-unbalanced-wfr-flows}.
 \end{example}
 
-Figure~\ref{fig:unbalanced-divergence-choice} now keeps the geometry, entropic plan regularization and relaxation strength fixed, and changes only the marginal divergence. This isolates the effect of the penalty: KL gives smooth rescaling, Burg discourages complete deletion of prescribed modes, while total variation produces sharper active-mass selection.
+Figure~\ref{fig:unbalanced-divergence-choice} now keeps the geometry, entropic plan regularization and relaxation strength fixed, and changes only the marginal divergence. This isolates the effect of the penalty: KL gives smooth rescaling, Burg discourages complete deletion of prescribed modes, while a smooth approximation of total variation produces sharper active-mass selection.
 
 \begin{figure}[H]
 \centering
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}ccc@{}}
-\small KL & \small Burg & \small total variation \\[-.15em]
+\small KL & \small Burg & \small smoothed TV \\[-.15em]
 \includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/kl.pdf} &
 \includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/burg.pdf} &
 \includegraphics[width=.30\linewidth]{figures/unbalanced-divergence-choice/tv.pdf}
 \end{tabular}
-\caption{\emph{Effect of the marginal divergence in unbalanced entropic OT.} The geometric cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$ are fixed; only the marginal penalty changes. KL allows smooth mass variation, Burg keeps transported marginals from vanishing on prescribed modes, and total variation gives a sharper active-mass selection. The side plots use the same convention as Figure~\ref{fig:unbalanced-mass-relaxation}.}
+\caption{\emph{Effect of the marginal divergence in unbalanced entropic OT.} The geometric cost, entropic plan regularization $\epsilon$, and relaxation strength $\tau$ are fixed; only the marginal penalty changes. KL allows smooth mass variation, Burg keeps transported marginals from vanishing on prescribed modes, and the displayed differentiable TV surrogate gives a sharper active-mass selection. The strictly positive plan is recovered from the Fenchel dual without an imposed numerical floor; every exported panel is checked for solver success and marginal first-order residual. The side plots use the same convention as Figure~\ref{fig:unbalanced-mass-relaxation}.}
 \index{mass!variation}% strictindex
 \index{marginal!divergence}% strictindex
 \index{marginal!penalty}% strictindex
@@ -266,13 +267,16 @@ These figures should be read as pictures of a single relaxed plan $\pi$: the sam
 \begin{prop}[Dual of unbalanced optimal transport]\label{prop-dual-unbalanced-ot}
 \index{unbalanced!OT dual}% strictindex
 \index{unbalanced!OT}% strictindex
-	Under the usual Fenchel--Rockafellar qualification assumptions, one has equality between~\eqref{eq-unbalanced-primal} and
+	Assume that $\Xx,\Yy$ are compact metric spaces, that $c$ is finite and continuous, and that $\alpha,\beta$ are finite Radon measures. Assume also that $\psi_1,\psi_2$ are entropy functions in the sense of Definition~\ref{def_entropy} and that either both are superlinear, or
+	$\psi'_{1,\infty}+\psi'_{2,\infty}+\min c>0$.
+	Assume finally that at least one plan has finite primal objective in~\eqref{eq-unbalanced-primal}.
+	Then one has equality between~\eqref{eq-unbalanced-primal} and
 \index{duality!Fenchel-Rockafellar@Fenchel--Rockafellar}% strictindex
 \index{Fenchel duality}% strictindex
 	\[
 		\UW_c(\al,\be)
 		=
-		\usup{f\oplus g\leq c}
+		\sup_{\substack{f\in C(\Xx),\ g\in C(\Yy)\\ f\oplus g\leq c}}
 		-
 		\Dd_{\psi_1}^*(-f|\al)
 		-
@@ -283,16 +287,18 @@ These figures should be read as pictures of a single relaxed plan $\pi$: the sam
 \begin{proof}
 	Use the variational formula~\eqref{eq-legendre} for the dual of a divergence and introduce the marginal variables through continuous potentials:
 	\[
-	\inf_{\pi\geq0}\sup_{f,g}
+	\inf_{\pi\geq0}\sup_{\substack{f\in C(\Xx)\\g\in C(\Yy)}}
 	\int c\d\pi + \int -f\d\pi_1 + \int -g\d\pi_2
 	-
 	\Dd_{\psi_1}^*(-f|\al)
 	-
 	\Dd_{\psi_2}^*(-g|\be).
 	\]
-	Exchanging the infimum and the supremum gives
+	Under the compactness and coercivity assumptions in the statement, the
+	entropy--transport duality theorem of Liero, Mielke and Savar\'e~\cite{LieroMielkeSavareLong}
+	justifies exchanging the infimum and the supremum. This gives
 	\[
-	\sup_{f,g}
+	\sup_{\substack{f\in C(\Xx)\\g\in C(\Yy)}}
 	-
 	\Dd_{\psi_1}^*(-f|\al)
 	-
@@ -323,21 +329,36 @@ The Liero--Mielke--Savar\'e formulation rewrites marginal penalties as a local t
 \right)
 \d\pi(x,y).
 \end{align*}
-This factorization motivates two scalar costs: the local reverse cost and its homogeneous marginal perspective.
-\Needspace{10\baselineskip}
+This factorization motivates two scalar costs: the local reverse cost and its closed homogeneous marginal perspective.
+\Needspace{14\baselineskip}
 \begin{defn}[Local reverse cost and homogeneous perspective]\label{def-unbalanced-local-costs}
-For $c,r,s\geq0$, define
+For $i\in\{1,2\}$ and $r\geq0$, let $R_i(r)=r\psi_i(1/r)$ when $r>0$ and $R_i(0)=\psi'_{i,\infty}$. For $c\in[0,+\infty]$ and $r,s\geq0$, define the reverse cost
 \eql{\label{eq-unbalanced-reverse-local-cost}
-	L_c(r,s) \eqdef c + r\psi_1(1/r)+s\psi_2(1/s),
+	L_c(r,s) \eqdef c+R_1(r)+R_2(s).
 }
-with the usual recession convention at $r=0$ or $s=0$, and
+For finite $c$, first set
 \index{homogeneous formulation}% strictindex
 \index{perspective transform}% strictindex
+\[
+	\widetilde H_c(r,s)
+	\eqdef
+	\inf_{\theta>0}\theta L_c(r/\theta,s/\theta)
+	=
+	\inf_{\theta>0}
+	\bigl\{r\psi_1(\theta/r)+s\psi_2(\theta/s)+\theta c\bigr\},
+\]
+where the second expression is initially read for $r,s>0$. Its lower-semicontinuous envelope on $[0,+\infty)^2$ is denoted by
 \eql{\label{eq-unbalanced-homogeneous-local-cost}
-	H_c(r,s) \eqdef \inf_{\theta>0}\theta L_c(r/\theta,s/\theta).
+	H_c \eqdef \operatorname{lsc}\widetilde H_c.
 }
+For $c=+\infty$, set $H_{+\infty}(r,s)=\psi_1(0)r+\psi_2(0)s$, which is also the monotone limit of $H_c$ as $c\to+\infty$.
 \end{defn}
-By construction, $H_c$ is positively $1$-homogeneous.
+The closure in this definition is essential: it supplies the correct axis costs that model pure creation and destruction; these costs are finite whenever the relevant entropy values are finite. By construction, $H_c$ is lower semicontinuous and positively $1$-homogeneous. For the unit KL entropy $\psi(t)=t\log t-t+1$, direct minimization in the positive quadrant followed by this closure gives, with $e^{-\infty}=0$,
+\[
+	H_c(r,s)=r+s-2\sqrt{rs}\,e^{-c/2},
+	\qquad c\in[0,+\infty],\quad r,s\geq0.
+\]
+In particular, $H_c(r,0)=r$, $H_c(0,s)=s$ and $H_c(0,0)=0$.
 If $\al=F\pi_1+\al^\perp$ and $\be=G\pi_2+\be^\perp$ are the Lebesgue decompositions of the reference marginals with respect to the transported marginals, then the reverse formulation reads
 \index{recession convention}% strictindex
 \index{Lebesgue decomposition}% strictindex
@@ -352,21 +373,9 @@ If $\al=F\pi_1+\al^\perp$ and $\be=G\pi_2+\be^\perp$ are the Lebesgue decomposit
 	+
 	\psi_2(0)\be^\perp(\Yy).
 \]
-The homogeneous perspective in Definition~\ref{def-unbalanced-local-costs} defines
-\eql{\label{eq-homogeneous}
-	\HW_c(\al,\be)
-	=
-	\inf_{\pi\geq0}
-	\int H_{c(x,y)}(F(x),G(y))\d\pi(x,y)
-	+
-	\psi_1(0)\al^\perp(\Xx)
-	+
-	\psi_2(0)\be^\perp(\Yy).
-}
-
-For the cone construction, and also for the proof of equivalence, it is useful to make explicit the semi-coupling form of the homogeneous value~\cite{LieroMielkeSavareLong}. Here one uses a base measure $\lambda$ on $\Xx\times\Yy$ and two nonnegative weights $u,v$ attached to each transported pair:
+The closed perspective absorbs these singular terms into its axis values. For the cone construction, and also for the proof of equivalence, define the homogeneous value through its semi-coupling form~\cite{LieroMielkeSavareLong}. Here one uses a base measure $\lambda$ on $\Xx\times\Yy$ and two nonnegative weights $u,v$ attached to each transported pair:
 \index{semi-coupling}% strictindex
-\eql{\label{eq-homogeneous-semicoupling}
+\eql{\label{eq-homogeneous}
 	\HW_c(\al,\be)
 	=
 	\inf_{\substack{\lambda\in\Mm_+(\Xx\times\Yy),\ u,v\geq0\\(\mathrm p_1)_\sharp(u\lambda)=\al,\ (\mathrm p_2)_\sharp(v\lambda)=\be}}
@@ -381,24 +390,23 @@ to mass that is created or destroyed rather than transported.
 \begin{prop}[Homogenization does not change the unbalanced cost]\label{prop-homogeneous-unbalanced}
 \index{homogenization}% strictindex
 \index{cost!unbalanced}% strictindex
-	Assume that the entropy functions are proper, lower semicontinuous and convex, with the usual recession extensions at zero. Then
+	Assume that $\Xx,\Yy$ are Polish spaces, that $c:\Xx\times\Yy\to[0,+\infty]$ is lower semicontinuous, and that the entropy functions satisfy Definition~\ref{def_entropy}. Assume that either both entropies are superlinear, or
+	$\psi'_{1,\infty}+\psi'_{2,\infty}+\inf c>0$ and $c$ has compact sublevels. Suppose moreover that the primal problem has a finite competitor. Then
 	$\HW_c(\al,\be)=\UW_c(\al,\be)$.
 \end{prop}
 
 \begin{proof}
-	Since $H_c(r,s)\leq L_c(r,s)$ by choosing the scale equal to one, every competitor in the reverse formulation gives a homogeneous competitor of no larger cost. Hence $\HW_c\leq\UW_c$.
+	This is the homogeneous-reformulation theorem of Liero, Mielke and Savar\'e~\cite[Theorems~5.5 and~5.8]{LieroMielkeSavareLong}. Its interior mechanism is worth recording. The reverse representation and $H_c\leq\widetilde H_c\leq L_c$ show that every unbalanced competitor induces a semi-coupling of no larger cost, including singular mass through the closed axis values; hence $\HW_c\leq\UW_c$.
 
-	For the converse, use the semi-coupling representation~\eqref{eq-homogeneous-semicoupling} and fix a feasible triple $(\lambda,u,v)$. For a positive measurable scale $\theta(x,y)$, set $\tilde\pi=\theta\lambda$. Disintegrate $\lambda$ with respect to its first spatial marginal. If $\bar u(x)$ and $\bar\theta(x)$ denote the corresponding conditional averages of $u$ and $\theta$, then $\alpha=\bar u\,(\mathrm p_1)_\sharp\lambda$ and $\tilde\pi_1=\bar\theta\,(\mathrm p_1)_\sharp\lambda$. Convexity of the perspective $(a,m)\mapsto a\psi_1(m/a)$ and conditional Jensen give
-	$\Dd_{\psi_1}(\tilde\pi_1|\alpha) \leq \int u\,\psi_1(\theta/u)\d\lambda$.
-	The same argument on the second marginal yields the analogous bound with $(v,\psi_2)$. Therefore
+	Conversely, first take a semi-coupling $(\lambda,u,v)$ with $u,v>0$ and finite $c$. Measurable $\eta$-minimizers $\theta>0$ of the raw perspective exist because the integrand is normal. With $\widetilde\pi=\theta\lambda$, disintegration and conditional Jensen for the perspective $(a,m)\mapsto a\psi_s(m/a)$ give
 	\[
-		\int c\d\tilde\pi
-		+\Dd_{\psi_1}(\tilde\pi_1|\alpha)
-		+\Dd_{\psi_2}(\tilde\pi_2|\beta)
+		\int c\d\widetilde\pi
+		+\Dd_{\psi_1}(\widetilde\pi_1|\alpha)
+		+\Dd_{\psi_2}(\widetilde\pi_2|\beta)
 		\leq
-		\int\big[c\theta+u\psi_1(\theta/u)+v\psi_2(\theta/v)\big]\d\lambda.
+		\int\bigl[c\theta+u\psi_1(\theta/u)+v\psi_2(\theta/v)\bigr]\d\lambda.
 	\]
-	The pointwise infimum of the integrand over $\theta>0$ is precisely $H_c(u,v)$. A measurable $\eta$-minimizing choice of $\theta$ exists because this is a lower-semicontinuous normal integrand; the recession conventions cover $u=0$ or $v=0$. Letting $\eta\downarrow0$ and then minimizing over $(\lambda,u,v)$ gives $\UW_c\leq\HW_c$.
+	Letting $\eta\downarrow0$ gives the converse inequality for interior semi-couplings and the raw perspective $\widetilde H_c$. For arbitrary semi-couplings, the relaxation theorem cited above passes to the lower-semicontinuous envelope $H_c$ while preserving the homogeneous marginal constraints; this is precisely the step that handles zero weights, singular mass and $c=+\infty$. The coercivity assumptions provide tightness. Minimizing over semi-couplings yields $\UW_c\leq\HW_c$.
 \index{perspective transform}% strictindex
 \index{conditional!Jensen inequality}% strictindex
 \end{proof}
@@ -469,7 +477,7 @@ In the following theorem, \(\CW\) denotes the \(p\)-action value on the cone. Th
 \begin{thm}[Cone formulation of unbalanced OT]\label{thm-cone-unbalanced-ot}
 \index{cone!formulation}% strictindex
 \index{unbalanced!OT}% strictindex
-	Assume that $\Xx$ is a compact metric space, that $(r,s)\mapsto H_{c(x,y)}(r,s)$ is convex for every $(x,y)$, and that $(x,y,r,s)\mapsto H_{c(x,y)}(r,s)$ is lower semicontinuous. Then
+	Under the hypotheses of Proposition~\ref{prop-homogeneous-unbalanced}, assume in addition that $\Xx$ is a compact metric space, that $(r,s)\mapsto H_{c(x,y)}(r,s)$ is convex for every $(x,y)$, and that $(x,y,r,s)\mapsto H_{c(x,y)}(r,s)$ is lower semicontinuous. Then
 	\[
 		\UW_c(\alpha,\beta)=\HW_c(\alpha,\beta)=\CW(\alpha,\beta).
 	\]
@@ -478,11 +486,11 @@ In the following theorem, \(\CW\) denotes the \(p\)-action value on the cone. Th
 \end{thm}
 
 \begin{proof}
-	The equality $\UW=\HW$ is Proposition~\ref{prop-homogeneous-unbalanced}. It remains to compare the semi-coupling representation~\eqref{eq-homogeneous-semicoupling} with the cone value.
+	The equality $\UW=\HW$ is Proposition~\ref{prop-homogeneous-unbalanced}. It remains to compare the semi-coupling representation~\eqref{eq-homogeneous} with the cone value.
 \index{disintegration}% strictindex
 \index{marginal!constraint}% strictindex
 
-	Let $(\lambda,u,v)$ be feasible in~\eqref{eq-homogeneous-semicoupling}. Define the cone coupling
+	Let $(\lambda,u,v)$ be feasible in~\eqref{eq-homogeneous}. Define the cone coupling
 	\[
 		\gamma
 		=
@@ -547,7 +555,7 @@ In the following theorem, \(\CW\) denotes the \(p\)-action value on the cone. Th
 \paragraph{Entropic KL relaxation.}
 \index{Kullback-Leibler@Kullback--Leibler!relaxation}% strictindex
 
-A generic entropic regularization of unbalanced OT reads
+On compact metric spaces, assume the continuous-cost setting of Proposition~\ref{prop-dual-unbalanced-ot}, with $\psi_1,\psi_2$ superlinear, and let $\phi$ be a superlinear entropy finite on $(0,+\infty)$. A generic entropic regularization of unbalanced OT then reads
 \index{entropic!regularization}% strictindex
 \index{unbalanced!OT}% strictindex
 \begin{equation}\label{eq-unbalanced-entropic-primal}
@@ -560,9 +568,9 @@ A generic entropic regularization of unbalanced OT reads
 	+
 	\epsilon\Dd_\phi(\pi|\al\otimes\be).
 \end{equation}
-Its dual is
+Fenchel--Rockafellar duality on finite Radon measures gives
 \[
-	\sup_{f,g}
+	\sup_{\substack{f\in C(\Xx)\\g\in C(\Yy)}}
 	-
 	\Dd_{\psi_1}^*(-f|\al)
 	-
@@ -572,7 +580,7 @@ Its dual is
 \]
 For $\Dd_\phi=\KL$, the primal-dual relation is $\d\pi=e^{(f\oplus g-c)/\epsilon}\d\al\d\be$. If, in addition, $\Dd_{\psi_1}=\Dd_{\psi_2}=\tau\KL$, the dual specializes to
 \[
-	\sup_{f,g}
+	\sup_{\substack{f\in C(\Xx)\\g\in C(\Yy)}}
 	-\tau\int(e^{-f/\tau}-1)\d\al
 	-\tau\int(e^{-g/\tau}-1)\d\be
 	-\epsilon\iint
@@ -735,7 +743,7 @@ For $\alpha,\beta\in\Mm_+(\RR^d)$ and $\tau>0$, define
 \right\}.
 \end{equation}
 \end{defn}
-Following Liero, Mielke and Savar\'e~\cite{LieroMielkeSavareLong}, this is called the \emph{Gaussian Hellinger--Kantorovich} (GHK) distance. The adjective ``Gaussian'' does not constrain the input measures: $\alpha$ and $\beta$ in Definition~\ref{def-gaussian-ghk} need not be Gaussian. It refers to the Gaussian kernel $k_\tau(x,y)=\exp(-\norm{x-y}^2/(2\tau))$ appearing in the associated homogeneous cone cost. The intrinsic length metric induced by GHK is the Hellinger--Kantorovich, or Wasserstein--Fisher--Rao, distance represented by the cosine cone cost in Section~\ref{sec-unbalanced-ot}; see Proposition~\ref{prop-static-dynamic-unbalanced}.
+	Following Liero, Mielke and Savar\'e~\cite{LieroMielkeSavareLong}, this is called the \emph{Gaussian Hellinger--Kantorovich} (GHK) distance. The adjective ``Gaussian'' does not constrain the input measures: $\alpha$ and $\beta$ in Definition~\ref{def-gaussian-ghk} need not be Gaussian. It refers to the Gaussian kernel $k_\tau(x,y)=\exp(-\norm{x-y}^2/(2\tau))$ appearing in the associated homogeneous cone cost. In the normalization of~\eqref{eq-dynamic-unbalanced-ot}, the intrinsic length metric induced by $\operatorname{GHK}_\tau$ is $\WFR_{\sqrt{\tau}/2}$. Indeed, the static cone cost~\eqref{eq-wfr-scaled-cone-metric} then has prefactor $\tau$ and angular argument $d(x,y)/\sqrt{\tau}$. Thus $\tau=1$ gives $\WFR_{1/2}$, namely the unscaled cosine-cone convention of Definition~\ref{def-wfr-distance}; see Proposition~\ref{prop-static-dynamic-unbalanced}.
 
 We now specialize~\eqref{eq-gaussian-ghk-endpoint} to scaled Gaussian inputs,
 \[
@@ -960,7 +968,7 @@ The equivalence shows that $\lambda$ is the Lagrange multiplier associated with 
 
 \begin{prop}[Fixed total mass reduces partial OT to balanced OT]\label{prop-partial-ot-metric-slice}
 \index{partial transport!fixed mass}% strictindex
-Let $(\Xx,d)$ be a metric space, let $p\geq1$, and fix $m>0$. If $\al$ and $\be$ have total mass $m$ and finite $p$th moments, then
+Specialize Definition~\ref{def-partial-optimal-transport} to $\Yy=\Xx$ and $c(x,y)=d(x,y)^p$, where $(\Xx,d)$ is a metric space and $p\geq1$. Fix $m>0$. If $\al$ and $\be$ have total mass $m$ and finite $p$th moments, then
 \begin{equation}\label{eq-partial-ot-balanced-slice}
 \operatorname{POT}_m(\al,\be)
 =
@@ -1162,7 +1170,7 @@ For $\al\in\Pp(\RR^d)$, define
 		=
 		\int_{\{x:\dotp{\theta}{x}=s\}}\rho(x)\,\d\mathcal H^{d-1}(x).
 	\]
-	To make the metric meaning of ``pull-back'' explicit, and to distinguish it from the pull-back of test functions introduced together with push-forwards in Remark~\ref{rem-pullback-pushforward}, equip measurable Radon fields $h:\Sphere^{d-1}\to\Pp_p(\RR)$ having finite integrated $p$th moment with the metric
+	To make the metric meaning of ``pull-back'' explicit, and to distinguish it from the pull-back of test functions introduced together with push-forwards in Remark~\ref{rem-pullback-pushforward}, equip measurable Radon fields $h:\Sphere^{d-1}\to\Pp_p(\RR)$ having finite integrated $p$th moment with the pseudometric
 \index{metric!pull-back}% strictindex
 	\[
 		d_{\mathrm{Rad},p}(h_0,h_1)
@@ -1173,7 +1181,7 @@ For $\al\in\Pp(\RR^d)$, define
 			\d\sigma(\theta)
 		\right)^{1/p}.
 	\]
-	This is also exactly a conditional Wasserstein metric. Indeed, associate with each Radon field $h$ the joint law
+	It is a metric after quotienting fields by $\sigma$-almost-everywhere equality. On these equivalence classes it is also exactly a conditional Wasserstein metric. Indeed, associate with each Radon field $h$ the joint law
 	\[
 		\widehat h(\d\theta,\d s)
 		\eqdef
@@ -1554,8 +1562,10 @@ family.
 	and $k=d$ gives $\SW_{p,q,d}=\Wass_p$ for every $q$. Quadratic max-slicing is useful
 	when only a small set of directions carries the discrepancy, for instance in
 	generative modeling~\cite{deshpande2019maxsliced}. For $p=2$, the $k$-dimensional
-	max-sliced case is the projection-robust Wasserstein distance, which is related to the
-	subspace-robust distances studied later in
+	max-sliced case is the projection-robust Wasserstein distance
+	$\MaxSW_{2,k}=\PRW_{2,k}$, which is related to the
+	subspace-robust distance of
+	Definition~\ref{def-projection-subspace-robust-wasserstein}, studied later in
 	Section~\ref{sec-spectral-subspace-wasserstein}~\cite{paty2019subspace}.
 \index{generative model}% strictindex
 \index{projection-robust Wasserstein}% strictindex
@@ -2093,7 +2103,7 @@ or by the same formula with $R\in\mathrm{SO}(d)$ if orientation should be preser
 
 \index{Procrustes!alternating minimization}% strictindex
 \index{rigid update}% strictindex
-	Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserstein-procrustes-rigid-update} give a block-coordinate method. The objective is not jointly convex, so the scheme should be read as a registration heuristic for the quotient problem rather than as a global solver. The exact block update moves the rigid motion fully; for visualization or continuation, one may damp the displayed motion between two successive poses.
+	Equations~\eqref{eq-wasserstein-procrustes-coupling-update}--\eqref{eq-wasserstein-procrustes-rigid-update} give a block-coordinate method. The objective is not jointly convex, so the scheme should be read as a registration heuristic for the quotient problem rather than as a global solver. The exact block update moves fully to the new rigid motion. A pose-damped continuation variant may instead interpolate rotations on the orthogonal group and translations linearly; this remains on the rigid-motion orbit but is no longer exact block minimization.
 \index{block-coordinate!method}% strictindex
 
 \begin{alg}[Alternating Wasserstein--Procrustes alignment]\label{alg:wasserstein-procrustes}
@@ -2129,7 +2139,7 @@ or by the same formula with $R\in\mathrm{SO}(d)$ if orientation should be preser
 \textbf{Return} \(\P^{(\ell)},R^{(\ell)},t^{(\ell)}\).
 \end{alg}
 
-Figure~\ref{fig:wasserstein-procrustes-rigid-motion} follows this block-coordinate scheme through a deliberately large translation, showing how the transport correspondences and the rigid registration stabilize together.
+Figure~\ref{fig:wasserstein-procrustes-rigid-motion} follows a pose-damped variant through a deliberately large translation, showing how the transport correspondences and the rigid registration stabilize together. At each iteration, the exact Procrustes candidate is computed and then interpolated with the current pose along $\mathrm{SO}(2)\times\RR^2$. This continuation heuristic differs from the full block update in Algorithm~\ref{alg:wasserstein-procrustes}, but every displayed state remains a rigid transform of the source.
 
 \begin{figure}[H]
 \centering
@@ -2142,7 +2152,7 @@ Figure~\ref{fig:wasserstein-procrustes-rigid-motion} follows this block-coordina
 \includegraphics[width=.19\linewidth]{figures/wasserstein-procrustes-rigid-motion/iter-05.pdf} &
 \includegraphics[width=.19\linewidth]{figures/wasserstein-procrustes-rigid-motion/iter-10.pdf}
 \end{tabular}
-\caption{\emph{Wasserstein--Procrustes alignment of two bunny silhouettes under a strong translation and a moderate rotation.} The target silhouette is shown in black. The moving source silhouette is sampled by farthest-point sampling and colored from red to blue at iterations \(1,2,3,5,10\). Each step solves an equal-weight OT assignment, then updates the rigid motion by the closed-form Procrustes formula of Proposition~\ref{prop-wasserstein-procrustes-rigid-update}; faint segments show selected correspondences of the current OT assignment. The displayed motion is damped only to make the registration path visible, while the underlying update is the block-coordinate method of Algorithm~\ref{alg:wasserstein-procrustes}.}
+\caption{\emph{Pose-damped Wasserstein--Procrustes alignment of two bunny silhouettes.} The target is black, while the rigidly transformed source is colored from red to blue at iterations \(1,2,3,5,10\). Each step solves an equal-weight assignment and computes the closed-form Procrustes candidate of Proposition~\ref{prop-wasserstein-procrustes-rigid-update}; rotation is then damped along $\mathrm{SO}(2)$ and translation linearly before the next assignment. Faint segments show selected current correspondences. This rigid continuation heuristic visualizes the registration path but is not the exact full block update of Algorithm~\ref{alg:wasserstein-procrustes}.}
 \label{fig:wasserstein-procrustes-rigid-motion}
 \end{figure}
 
@@ -2162,7 +2172,7 @@ Linear OT starts from the multivariate analogue of quantile coordinates. The one
 \paragraph{Vector quantiles.}
 \index{vector quantile}% strictindex
 
-Assume that $\gamma$ is absolutely continuous. For a target law $\al$ with finite second moment, its vector quantile relative to $\gamma$ is the Brenier map
+	Assume that $\gamma\in\Pp_2(\RR^d)$ is absolutely continuous. For a target law $\al\in\Pp_2(\RR^d)$, its vector quantile relative to $\gamma$ is the Brenier map
 \index{Brenier!map}% strictindex
 \[
 	\T_\al=\nabla\phi_\al,
@@ -2309,26 +2319,27 @@ For small excursions around the mean displacement, this gives a practical tangen
 \index{Brenier!map}% strictindex
 \index{Wasserstein!geodesic}% strictindex
 
-Figure~\ref{fig:linear-ot-1d-pca} first shows the exact one-dimensional case. A balanced training ensemble of well-separated two-Gaussian mixtures varies their common translation, relative separation and, more weakly, their scales and weights. Its empirical Wasserstein barycenter is computed exactly by averaging the finely sampled quantile functions, after which ordinary PCA is performed in \(L^2(0,1)\). The two leading modes are converted back into densities using amplitudes for which every displayed quantile remains increasing.
+Figure~\ref{fig:linear-ot-1d-pca} first shows the exact one-dimensional case. A balanced training ensemble of well-separated two-Gaussian mixtures varies their common translation, relative separation and, more weakly, their scales and weights. Its empirical Wasserstein barycenter is computed exactly by averaging the finely sampled quantile functions, after which ordinary PCA is performed in \(L^2(0,1)\). The three leading modes are converted back into densities by pushing the uniform law on \((0,1)\) through enlarged excursions along the PCA lines.
 \index{quantile!function}% strictindex
 
 \begin{figure}[htbp]
 \centering
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}cc@{}}
-\includegraphics[width=.47\linewidth]{figures/linear-ot-1d-pca/mode-1.pdf} &
-\includegraphics[width=.47\linewidth]{figures/linear-ot-1d-pca/mode-2.pdf}
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=.31\linewidth]{figures/linear-ot-1d-pca/mode-1.pdf} &
+\includegraphics[width=.31\linewidth]{figures/linear-ot-1d-pca/mode-2.pdf} &
+\includegraphics[width=.31\linewidth]{figures/linear-ot-1d-pca/mode-3.pdf}
 \\[-.1em]
-\small first quantile-PCA mode & \small second quantile-PCA mode
+\small first quantile-PCA mode & \small second quantile-PCA mode & \small third quantile-PCA mode
 \end{tabular}
-\caption{\emph{One-dimensional linear OT PCA for synthetic two-Gaussian mixtures.} The exact empirical Wasserstein barycenter has quantile \(Q_{\bar\alpha}=N^{-1}\sum_iQ_{\alpha_i}\). Each panel shows nine densities with quantiles \(Q_{\bar\alpha}+a e_k\), including the barycenter at the violet midpoint \(a=0\), with \(a\) increasing from red to blue. The first mode is a common translation and the second changes the separation of the two components. Since every displayed quantile is increasing, these are valid probability laws in exact one-dimensional Wasserstein coordinates.}
+\caption{\emph{One-dimensional linear OT PCA for synthetic two-Gaussian mixtures.} The exact empirical Wasserstein barycenter has quantile \(Q_{\bar\alpha}=N^{-1}\sum_iQ_{\alpha_i}\). Each panel shows nine pushforwards \(\alpha_{k,a}=(Q_{\bar\alpha}+a e_k)_\sharp\mathrm{Unif}(0,1)\), including the barycenter at the violet midpoint \(a=0\), with \(a\) increasing from red to blue over an enlarged range. The first mode is a common translation, the second changes the component separation, and the third captures the leading residual shape variation. At extreme amplitudes the displayed map need not remain monotone, but its pushforward is still a valid probability law.}
 \index{linear!OT}% strictindex
 \index{quantile!function}% strictindex
 \index{principal component analysis}% strictindex
 \label{fig:linear-ot-1d-pca}
 \end{figure}
 
-Figure~\ref{fig:linear-ot-mnist-pca} then illustrates a regularized numerical approximation of the same construction on MNIST digit-zero images. Each image is normalized as a probability measure on the pixel grid. A Sinkhorn barycenter is used as the reference \(\gamma\), entropic couplings from \(\gamma\) to the training images are converted into barycentric-projection maps, and PCA is applied to the resulting approximate displacement fields.
+Figure~\ref{fig:linear-ot-mnist-pca} then illustrates a regularized numerical approximation of the same construction on MNIST digit-zero images. Before normalization, a background value $0.020$ is added to every pixel; this prevents zero rows in the entropic computations but changes the input histograms. A Sinkhorn barycenter with regularization $0.004$ is used as the reference \(\gamma\), entropic couplings from \(\gamma\) to the training images are converted into barycentric-projection maps, and PCA is applied to the resulting approximate displacement fields.
 \index{Sinkhorn!barycenter}% strictindex
 \index{barycentric!projection}% strictindex
 
@@ -2354,7 +2365,7 @@ Figure~\ref{fig:linear-ot-mnist-pca} then illustrates a regularized numerical ap
 \small third LOT-PCA mode & \small fourth LOT-PCA mode
 \end{tabular}
 \end{tabular}
-\caption{\emph{Principal components in linear OT coordinates for MNIST digit-zero histograms.} The left panel shows the Sinkhorn barycenter reference \(\gamma\). Each mode panel is a triptych obtained by pushing \(\gamma\) through \(x\mapsto x+\bar\xi(x)+a e_k(x)\) with a negative, zero, and positive coefficient \(a\). The displayed densities use white for zero displayed mass and black for high displayed mass; the underlying transport computations still use the original densities, where high pixel values carry the mass. The modes capture rotations, aspect-ratio changes, and stroke-thickness deformations in the tangent chart around the barycenter.}
+\caption{\emph{Principal components in linear OT coordinates for MNIST digit-zero histograms.} The left panel shows the Sinkhorn barycenter reference \(\gamma\). Each mode panel is a triptych obtained by pushing \(\gamma\) through \(x\mapsto x+\bar\xi(x)+a e_k(x)\) with a negative, zero, and positive coefficient \(a\). The transport computations use densities obtained by adding $0.020$ to every pixel before normalization, with entropic regularization $0.004$; white and black respectively denote zero and high displayed mass. The modes capture rotations, aspect-ratio changes, and stroke-thickness deformations in the tangent chart around the barycenter.}
 \index{linear!OT}% strictindex
 \index{principal component analysis}% strictindex
 \label{fig:linear-ot-mnist-pca}
@@ -2369,14 +2380,14 @@ Figure~\ref{fig:linear-ot-mnist-pca} then illustrates a regularized numerical ap
 \index{robust!Wasserstein distance}% strictindex
 \label{sec-spectral-subspace-wasserstein}
 
-Spectral OT changes the scalar quadratic cost by measuring the whole displacement covariance through a matrix gauge. The same object admits a robust projected formulation: instead of fixing one projection, one maximizes over the polar set of the gauge. Subspace robust OT is the important non-convex rank-constrained version of this idea~\cite{paty2019subspace}; spectral gauges provide its convex minimax counterpart and connect to recent spectral-gradient viewpoints such as Muon dynamics~\cite{peyre2026muon}.
+Spectral OT changes the scalar quadratic cost by measuring the whole displacement second-moment matrix through a matrix gauge. The same object admits a robust projected formulation: instead of fixing one projection, one maximizes over the polar set of the gauge. Projection robust OT is the non-convex max--min version of this idea, while subspace robust OT reverses the order into a min--max problem~\cite{paty2019subspace}; spectral gauges express the latter through a convex matrix gauge and connect to recent spectral-gradient viewpoints such as Muon dynamics~\cite{peyre2026muon}.
 \index{spectral!gauge}% strictindex
 \index{rank constraint}% strictindex
 \index{minimax}% strictindex
 \index{polar set}% strictindex
 \index{projected formulation}% strictindex
 \index{Muon algorithm}% strictindex
-\index{displacement covariance}% strictindex
+\index{displacement second moment}% strictindex
 \index{quadratic!cost}% strictindex
 
 \begin{defn}[Monotone spectral gauge]\label{def-monotone-spectral-gauge}
@@ -2390,8 +2401,8 @@ Spectral OT changes the scalar quadratic cost by measuring the whole displacemen
 		\gamma(M)\leq\gamma(N).
 	\]
 \end{defn}
-The monotonicity condition means that increasing the displacement covariance in Loewner order cannot decrease the transport penalty. A fundamental family is obtained from Schatten norms.
-\index{displacement covariance}% strictindex
+The monotonicity condition means that increasing the displacement second-moment matrix in Loewner order cannot decrease the transport penalty. A fundamental family is obtained from Schatten norms.
+\index{displacement second moment}% strictindex
 
 \begin{defn}[Schatten gauge]\label{def-schatten-gauge}
 	For $1\leq q\leq+\infty$, define the Schatten gauge by
@@ -2413,7 +2424,7 @@ The monotonicity condition means that increasing the displacement covariance in 
 \begin{defn}[Spectral Wasserstein distance]\label{def-spectral-wasserstein}
 \index{Wasserstein!distance}% strictindex
 \index{spectral Wasserstein!distance}% strictindex
-	Let $\gamma$ be a monotone spectral gauge. For a coupling $\pi\in\Couplings(\alpha,\beta)$, define its displacement covariance
+	Let $\gamma$ be a monotone spectral gauge. For a coupling $\pi\in\Couplings(\alpha,\beta)$, define its displacement second-moment matrix
 \index{spectral!gauge}% strictindex
 	\[
 		M_\pi\eqdef\int (x-y)(x-y)^\top\d\pi(x,y).
@@ -2426,7 +2437,7 @@ The monotonicity condition means that increasing the displacement covariance in 
 	}
 \end{defn}
 
-The special case $\gamma(M)=\tr(M)$ gives the usual quadratic Wasserstein distance $\Wass_2$. The spectral gauge $\gamma(M)=\lambda_{\max}(M)$ instead measures the worst transported variance direction. For $A\succeq0$, define the quadratic projected transport cost
+The special case $\gamma(M)=\tr(M)$ gives the usual quadratic Wasserstein distance $\Wass_2$. The spectral gauge $\gamma(M)=\lambda_{\max}(M)$ instead measures the largest mean squared projected displacement. For $A\succeq0$, define the quadratic projected transport cost
 \index{Wasserstein!distance}% strictindex
 \index{spectral!gauge}% strictindex
 \eql{\label{eq-quadratic-projected-cost}
@@ -2515,41 +2526,49 @@ with the usual endpoint conventions. Thus the trace gauge has polar set $\{A:0\p
 \index{trace!norm}% strictindex
 \end{proof}
 
-Restricting the robust directions to orthogonal projections gives a non-convex, dimension-controlled counterpart of spectral Wasserstein transport.
+Restricting the robust directions to orthogonal projections gives the non-convex max--min counterpart of spectral Wasserstein transport.
 
-\begin{defn}[Subspace robust Wasserstein]\label{def-subspace-robust-wasserstein}
+\begin{defn}[Projection- and subspace-robust Wasserstein]\label{def-projection-subspace-robust-wasserstein}
 \index{robust!Wasserstein}% strictindex
-\index{subspace!robust Wasserstein}% strictindex
-	For $1\leq k\leq d$, the Paty--Cuturi subspace robust Wasserstein distance is
+\index{projection-robust Wasserstein}% strictindex
+	For $1\leq k\leq d$, let
+	$\mathcal P_k=\enscond{P}{P^2=P=\transp{P},\ \tr(P)=k}$.
+	The Paty--Cuturi projection-robust and subspace-robust Wasserstein distances are respectively the max--min and min--max quantities
 \index{Wasserstein!distance}% strictindex
 \index{robust!Wasserstein distance}% strictindex
 	\[
-		\SRW_{2,k}(\alpha,\beta)
+		\PRW_{2,k}(\alpha,\beta)
 		\eqdef
 		\sup_{\transp{U}U=\Id_k}
 		\Wass_2((\transp{U})_\sharp\alpha,(\transp{U})_\sharp\beta)
 		=
-		\sup_{P^2=P=\transp{P},\ \tr(P)=k}\Wass_{2,P}(\alpha,\beta).
+		\sup_{P\in\mathcal P_k}\Wass_{2,P}(\alpha,\beta),
+		\qquad
+		\SRW_{2,k}(\alpha,\beta)^2
+		\eqdef
+		\inf_{\pi\in\Couplings(\alpha,\beta)}
+		\sup_{P\in\mathcal P_k}\tr(PM_\pi).
 	\]
 \end{defn}
 
-The Ky Fan gauge supplies the convex spectral relaxation of this rank-constrained construction.
+Ky Fan's variational formula identifies the min--max value with a spectral Wasserstein distance and makes its relation to the max--min value explicit.
 
-\begin{prop}[Ky Fan relaxation of subspace robust transport]\label{prop-ky-fan-srw-comparison}
+\begin{prop}[Projection/subspace robust comparison]\label{prop-ky-fan-srw-comparison}
 \index{Ky Fan gauge}% strictindex
 \index{polar set}% strictindex
 	Let $\lambda_1(M)\geq\cdots\geq\lambda_d(M)\geq0$ and define the Ky Fan gauge $\gamma_k(M)=\sum_{\ell=1}^k\lambda_\ell(M)$. Then
 	\[
-		\max\left\{\SRW_{2,k}(\alpha,\beta),\sqrt{\frac{k}{d}}\,\Wass_2(\alpha,\beta)\right\}
+		\max\left\{\PRW_{2,k}(\alpha,\beta),\sqrt{\frac{k}{d}}\,\Wass_2(\alpha,\beta)\right\}
 		\leq
-		\Wass_{\gamma_k}(\alpha,\beta)
+		\SRW_{2,k}(\alpha,\beta)
+		=\Wass_{\gamma_k}(\alpha,\beta)
 		\leq
 		\Wass_2(\alpha,\beta).
 	\]
-	For $k=d$, all displayed bounds are equalities and $\Wass_{\gamma_d}=\Wass_2$.
+	For $k=d$, all displayed bounds are equalities and $\PRW_{2,d}=\SRW_{2,d}=\Wass_2$.
 \end{prop}
 \begin{proof}
-	Writing $\mathcal P_k=\enscond{P}{P^2=P=\transp{P},\ \tr(P)=k}$, diagonalizing $M$ gives Ky Fan's variational formula
+	Diagonalizing $M$ gives Ky Fan's variational formula
 	\[
 		\gamma_k(M)
 		=
@@ -2559,7 +2578,7 @@ The Ky Fan gauge supplies the convex spectral relaxation of this rank-constraine
 	\]
 	Hence minimax weak duality yields
 	\[
-		\SRW_{2,k}(\alpha,\beta)^2
+		\PRW_{2,k}(\alpha,\beta)^2
 		=
 		\sup_{P\in\mathcal P_k}\inf_{\pi\in\Couplings(\alpha,\beta)}\tr(PM_\pi)
 		\leq
@@ -2575,7 +2594,7 @@ For $k=1$, $\gamma_1(M)=\lambda_{\max}(M)$. The associated spectral gradient flo
 \index{Muon algorithm}% strictindex
 \index{spectral Wasserstein!distance}% strictindex
 
-Figure~\ref{fig:spectral-wasserstein-gauge} compares the trace and top-eigenvalue geometries at both levels: the selected transport plans and the displacement interpolations they induce.
+Figure~\ref{fig:spectral-wasserstein-gauge} compares the trace and top-eigenvalue geometries at both levels: each row is the exact discrete displacement interpolation induced by the corresponding computed plan, followed only by KDE smoothing for visualization. The coupling panels display the largest positive edges of those plans.
 
 \begin{figure}[H]
 \centering
@@ -2604,9 +2623,9 @@ Figure~\ref{fig:spectral-wasserstein-gauge} compares the trace and top-eigenvalu
 \multicolumn{5}{c}{\small $\lambda_{\max}$-gauge interpolation} \\[-.1em]
 \small $t=0$ & \small $t=1/4$ & \small $t=1/2$ & \small $t=3/4$ & \small $t=1$
 \end{tabular}
-\caption{\emph{Trace and spectral gauges for displacement covariances.} The trace gauge minimizes the average squared displacement and gives the usual quadratic transport plan from a shifted two-disk source silhouette to a shifted heart-shaped target. The $\lambda_{\max}$ gauge penalizes the worst projected displacement variance; the displayed plan is obtained by approximating the robust formulation with finitely many directions. The last two rows show the corresponding displacement interpolations, with the same convention as Figure~\ref{fig:monge-shape-mccann-interpolation}: white means zero density, and high density saturates in the red-to-blue interpolation color of the corresponding time. The spatial separation makes the different displacement geometries easier to read.}
+\caption{\emph{Trace and spectral gauges for displacement second moments.} Both plans use the same equal-weight discretizations of a shifted two-disk source and a shifted heart target. The trace gauge gives ordinary quadratic OT, while the $\lambda_{\max}$ gauge minimizes the largest mean squared projected displacement and is approximated with finitely many directions. The coupling panels show the largest positive plan entries. Each density row is the exact weighted pushforward $((1-t)x+ty)_\sharp\pi$ of the corresponding full discrete plan, KDE-smoothed on one fixed spatial frame; white is zero density and high density saturates in the red-to-blue time color.}
 \index{displacement interpolation}% strictindex
-\index{displacement covariance}% strictindex
+\index{displacement second moment}% strictindex
 \index{McCann!interpolation}% strictindex
 \index{spectral!gauge}% strictindex
 \index{plan!transport}% strictindex

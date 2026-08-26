@@ -645,33 +645,34 @@ the difference between the weighted costs
 $c(x,y_j)-g_j$ and $c(x,y_k)-g_k$ is affine and increasing in $x$. The active
 site index is therefore nondecreasing, so the nonempty Laguerre cells are
 intervals ordered like the sites. If $g^\star$ maximizes the semi-dual problem
-{eq}`eq-semi-dual-discrete-web`, its induced map pushes $\alpha$ to $\beta$;
-hence its $j$-th cell has $\alpha$-mass $b_j$. Writing
-$q_\alpha=F_\alpha^{-1}$ therefore gives
+{eq}`eq-semi-dual-discrete-web`, its induced map pushes $\alpha$ to $\beta$.
+Consequently, after modifying the cells on $\alpha$-null sets if necessary,
+the optimal cells are
 
 ```{math}
 :label: eq-semidiscrete-1d-laguerre-cells-web
 \text{for }j=1,\ldots,m,\qquad
-\alpha\!\left(\mathcal L_j(g^\star)\mathbin\triangle I_j\right)=0,
-\qquad
-I_j\coloneqq\left(q_\alpha(B_{j-1}),q_\alpha(B_j)\right],
+\mathcal L_j(g^\star)
+=
+\left(\cumul{\alpha}^{-1}(B_{j-1}),\cumul{\alpha}^{-1}(B_j)\right].
 ```
 
-with the harmless endpoint conventions $q_\alpha(0)=-\infty$ and
-$q_\alpha(1)=+\infty$. Thus the optimal semi-discrete map is
-$T^\star(x)=y_j$ on $I_j$; this is the Laguerre-cell realization of the
-monotone rearrangement in Theorem {ref}`prop-1d-quantile-map`. For equal target
-weights, $B_j=j/m$, and the same interval partition yields a closed-form
-quadratic cost through the integrated quantile.
+Here the harmless endpoint conventions are $\cumul{\alpha}^{-1}(0)=-\infty$
+and $\cumul{\alpha}^{-1}(1)=+\infty$. Thus the optimal semi-discrete map is
+$T^\star(x)=y_j$ for $x\in\mathcal L_j(g^\star)$; this is the Laguerre-cell
+realization of the monotone rearrangement in Theorem
+{ref}`prop-1d-quantile-map`. For equal target weights, $B_j=j/m$, and the same
+interval partition yields a closed-form quadratic cost through the integrated
+quantile.
 
 (prop-semidiscrete-1d-quantile)=
 :::{admonition} Proposition: Closed-form One-dimensional Semi-discrete Transport
 :class: important
-Let $\alpha=\rho_\alpha\,\d x\in\mathcal P_2(\RR)$, write
-$q_\alpha=F_\alpha^{-1}$, and define its integrated quantile by
+Let $\alpha=\rho_\alpha\,\d x\in\mathcal P_2(\RR)$, and define its integrated
+quantile by
 
 ```{math}
-M_\alpha(r)\coloneqq\int_0^r q_\alpha(s)\,\d s.
+M_\alpha(r)\coloneqq\int_0^r \cumul{\alpha}^{-1}(s)\,\d s.
 ```
 
 For
@@ -697,10 +698,11 @@ one has
 
 :::{dropdown} Proof
 Proposition {ref}`prop-wass-quantile-1d` gives
-$\Wass_2(\alpha,\beta)^2=\int_0^1|q_\alpha-q_\beta|^2$. The target quantile
-satisfies $q_\beta(r)=y_j$ for almost every $r\in((j-1)/m,j/m]$. Expanding the
-square, using $\int_0^1q_\alpha(r)^2\,\d r=\int_\RR x^2\,\d\alpha(x)$, and
-integrating $q_\alpha$ over each interval gives the stated formula.
+$\Wass_2(\alpha,\beta)^2=\int_0^1|\cumul{\alpha}^{-1}(r)-\cumul{\beta}^{-1}(r)|^2\,\d r$.
+The target quantile satisfies $\cumul{\beta}^{-1}(r)=y_j$ for almost every
+$r\in((j-1)/m,j/m]$. Expanding the square, using
+$\int_0^1|\cumul{\alpha}^{-1}(r)|^2\,\d r=\int_\RR x^2\,\d\alpha(x)$, and
+integrating $\cumul{\alpha}^{-1}$ over each interval gives the stated formula.
 :::
 
 The formula isolates the dependence on the source in its second moment and in
@@ -1562,15 +1564,7 @@ different asymptotic regime.
 Let $\alpha\in\mathcal M_+^1(\mathbb R)$ have quantile
 $Q\in C^1([0,1])$, and let
 $\widehat\alpha_m=m^{-1}\sum_{i=1}^m\delta_{X_i}$ with $X_i$ i.i.d. with law
-$\alpha$. If $B$ denotes the standard Brownian bridge on $[0,1]$, then
-
-```{math}
-m\,\mathcal W_2^2(\alpha,\widehat\alpha_m)
-\overset{\mathrm{law}}{\longrightarrow}
-\int_0^1 B(u)^2 |Q'(u)|^2\,\d u,
-```
-
-and, in expectation,
+$\alpha$. Then
 
 ```{math}
 m\,\mathbb E\!\left[
@@ -1594,30 +1588,13 @@ formula gives
 Write $X_i=Q(U_i)$ with $U_i$ i.i.d. uniform on $[0,1]$, and let
 $\widehat U_m^{-1}$ be the empirical quantile function of the $U_i$. Then
 $\widehat Q_m=Q\circ \widehat U_m^{-1}$. The classical uniform quantile-process
-theorem {cite:p}`vanDerVaartWellner1996,BobkovLedoux2019EmpiricalKantorovich` gives
-
-```{math}
-\sqrt m\,(\widehat U_m^{-1}-\operatorname{Id})
-\overset{\mathrm{law}}{\longrightarrow}
--B
-\quad\text{in }L^2(0,1).
-```
-
-Uniform continuity of $Q'$ and the functional delta method give
-
-```{math}
-\sqrt m\,(\widehat Q_m-Q)
-\overset{\mathrm{law}}{\longrightarrow}
--BQ'
-\quad\text{in }L^2(0,1).
-```
-
-Since $B$ and $-B$ have the same law, the sign disappears in the squared $L^2$
-norm. The continuous mapping theorem gives the distributional convergence.
-Standard fourth-moment bounds for the uniform quantile process give uniform
-integrability, hence convergence of expectations. Since
-$\mathbb E[B(u)^2]=u(1-u)$, Fubini's theorem gives the
-displayed expectation limit.
+theorem {cite:p}`vanDerVaartWellner1996,BobkovLedoux2019EmpiricalKantorovich`
+and the functional delta method show that
+$\sqrt m\,(\widehat Q_m-Q)$ converges in law in $L^2(0,1)$ to $Q'$ times a standard
+Brownian bridge, up to an immaterial sign. Standard fourth-moment bounds give
+uniform integrability of the squared $L^2$ norms, hence convergence of
+expectations. A standard Brownian bridge has pointwise second moment
+$u(1-u)$, so Fubini's theorem gives the displayed limit.
 :::
 
 Combining these propositions gives a sharp contrast between optimal placement

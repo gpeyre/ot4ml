@@ -121,7 +121,11 @@ This flow field is computed by solving an unconstrained least-squares problem, o
 \index{conditional!expectation}% strictindex
 
 \begin{prop}[Flow matching vector field]\label{prop-flow-matching-vector-field}
-	For each fixed $t$, assume $\partial_t I_t\in L^2(\pi;\RR^d)$. Consider the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
+	Assume that $t\mapsto I_t(u)$ is absolutely continuous for $\pi$-almost every $u$, that its derivative $(t,u)\mapsto\partial_t I_t(u)$ is jointly measurable, and that
+	\[
+		\int_0^1\!\int_{\RR^{d'}}\norm{\partial_t I_t(u)}^2\d\pi(u)\d t<+\infty.
+	\]
+	For almost every $t$, consider the flow-matching problem over measurable fields $v_t:\RR^d\to\RR^d$
 \index{flow matching}% strictindex
 	\begin{equation}
 		\min_{v_t} \int_{\RR^{d'}} \norm{v_t(I_t(u)) - [\partial_t I_t](u)}^2 \, \d\pi(u). \label{eq:flow-matching}
@@ -131,7 +135,7 @@ This flow field is computed by solving an unconstrained least-squares problem, o
 	\begin{equation}\label{eq:flow-match-conditional}
 		v_t(z) = \EE_{u \sim \pi} \big( [\partial_t I_t](u) \, \big| \, z = I_t(u) \big).
 	\end{equation}
-	Then the pair $(\alpha_t,v_t)$ satisfies the continuity equation~\eqref{eq:eulerian-advection}.
+	Then $v_t\in L^2(\alpha_t;\RR^d)$ for almost every $t$, and the pair $(\alpha_t,v_t)$ satisfies the continuity equation~\eqref{eq:eulerian-advection} in the distributional sense on $(0,1)\times\RR^d$.
 \index{continuity equation}% strictindex
 \end{prop}
 
@@ -147,7 +151,13 @@ This flow field is computed by solving an unconstrained least-squares problem, o
 		=
 		\int_{\RR^{d'}}\varphi(I_t(u))\,\d\pi(u).
 	\end{equation}
-	The minimizer in~\eqref{eq:flow-matching} is the orthogonal projection in $L^2(\pi;\RR^d)$ of the latent velocity $\partial_t I_t(u)$ onto the closed subspace of functions that depend on $u$ only through $I_t(u)$. This projection is the conditional expectation~\eqref{eq:flow-match-conditional}. Formally, this can be read as
+	For almost every $t$, the minimizer in~\eqref{eq:flow-matching} is the orthogonal projection in $L^2(\pi;\RR^d)$ of the latent velocity $\partial_t I_t(u)$ onto the closed subspace of functions that depend on $u$ only through $I_t(u)$. This projection is the conditional expectation~\eqref{eq:flow-match-conditional}. Conditional Jensen gives
+	\[
+		\int\norm{v_t}^2\d\alpha_t
+		\leq
+		\int\norm{\partial_t I_t}^2\d\pi,
+	\]
+	so the Eulerian velocity is square-integrable in space--time. Formally, this can be read as
 \index{conditional!expectation}% strictindex
 \index{flow matching}% strictindex
 	\[
@@ -169,7 +179,7 @@ This flow field is computed by solving an unconstrained least-squares problem, o
 		\int\dotp{v_t(z)}{\nabla\varphi(z)}\,\d\alpha_t(z)
 		=0.
 	\end{equation}
-	Using~\eqref{eq:flow-matching-pushforward-test} and differentiating under the integral sign gives
+	By the pathwise chain rule, $t\mapsto\varphi(I_t(u))$ is absolutely continuous for $\pi$-almost every $u$. The space--time integrability assumption and Fubini's theorem justify integration of its derivative, so~\eqref{eq:flow-matching-pushforward-test} gives, for almost every $t$,
 \index{push-forward}% strictindex
 \index{flow matching}% strictindex
 	\begin{equation}\label{eq:flow-matching-test-derivative}
@@ -863,7 +873,15 @@ For the formal density-level calculation, assume $\alpha=\rho_\alpha\,\d x$ and 
 	\big(\dotp{\nabla\log\rho_\beta(x)}{v(x)}+\diverg v(x)\big)
 	\d\alpha(x).
 \]
-The bracket is the Langevin--Stein operator applied to $v$ and averaged under $\alpha$; because it only evaluates $v$, $\diverg v$, and the target score at sample locations, it remains meaningful when $\alpha$ is empirical. Optimizing this linear functional over the unit ball of $\RKHS_k^d$ and using the reproducing property gives the RKHS steepest-descent direction,
+The bracket is the Langevin--Stein operator applied to $v$ and averaged under $\alpha$; because it only evaluates $v$, $\diverg v$, and the target score at sample locations, it remains meaningful when $\alpha$ is empirical. The reproducing property shows that the standard, unnormalized SVGD field is the unique solution of the quadratically penalized local problem
+\[
+	\min_{v\in\RKHS_k^d}
+	\left\{
+		\left.\frac{\d}{\d s}\KL\bigl((\Id+s v)_\sharp\alpha\,|\,\beta\bigr)\right|_{s=0}
+		+\frac12\norm{v}_{\RKHS_k^d}^2
+	\right\}.
+\]
+It is explicitly
 \begin{equation}\label{eq-svgd-velocity}
 	v_{\alpha}^{\mathrm{SVGD}}(x)
 	=
@@ -871,6 +889,7 @@ The bracket is the Langevin--Stein operator applied to $v$ and averaged under $\
 	\Big(k(y,x)\nabla\log\rho_\beta(y)+\nabla_y k(y,x)\Big)
 	\d\alpha(y).
 \end{equation}
+If $v_{\alpha}^{\mathrm{SVGD}}\neq0$, the optimizer of the corresponding linear descent problem over the RKHS unit ball is instead $v_{\alpha}^{\mathrm{SVGD}}/\norm{v_{\alpha}^{\mathrm{SVGD}}}_{\RKHS_k^d}$. Thus the normalized and standard fields have the same direction but a different state-dependent time parametrization.
 The associated mean-field equation is the transport equation
 \begin{equation}\label{eq-svgd-mean-field}
 	\partial_t\alpha_t+\diverg\bigl(\alpha_t v_{\alpha_t}^{\mathrm{SVGD}}\bigr)=0.

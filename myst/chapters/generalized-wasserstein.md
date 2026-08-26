@@ -2762,7 +2762,9 @@ Figure {ref}`fig:linear-ot-1d-pca` first shows the exact one-dimensional case.
 A balanced ensemble varies the common translation and relative separation of
 two Gaussian components, with weaker scale and weight variations. Its exact
 empirical Wasserstein barycenter is obtained by averaging the finely sampled
-quantile functions before performing PCA in $L^2(0,1)$.
+quantile functions before performing PCA in $L^2(0,1)$. The first three modes
+are displayed by pushing the uniform law on $(0,1)$ through enlarged
+excursions along the PCA lines.
 
 (fig:linear-ot-1d-pca)=
 :::{div}
@@ -2775,11 +2777,13 @@ show_book_figure("linear-ot-1d-pca", width=760)
 
 *One-dimensional linear OT PCA for synthetic two-Gaussian mixtures. The exact
 empirical Wasserstein barycenter has quantile
-$Q_{\bar\alpha}=N^{-1}\sum_iQ_{\alpha_i}$. Each panel shows nine densities with
-quantiles $Q_{\bar\alpha}+a e_k$, including the barycenter at the violet
-midpoint $a=0$, with $a$ increasing from red to blue. The first mode is a
-common translation and the second changes the separation of the components;
-every displayed quantile remains increasing.*
+$Q_{\bar\alpha}=N^{-1}\sum_iQ_{\alpha_i}$. Each panel shows nine pushforwards
+$\alpha_{k,a}=(Q_{\bar\alpha}+a e_k)_\sharp\mathrm{Unif}(0,1)$, including the
+barycenter at the violet midpoint $a=0$, with $a$ increasing from red to blue
+over an enlarged range. The first mode is a common translation, the second
+changes the component separation, and the third captures the leading residual
+shape variation. At extreme amplitudes the displayed map need not remain
+monotone, but its pushforward is still a valid probability law.*
 :::
 
 Figure {ref}`fig:linear-ot-mnist-pca` then illustrates a regularized numerical approximation of the same construction on MNIST digit-zero images.

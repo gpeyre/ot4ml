@@ -491,6 +491,17 @@ Thus~\eqref{eq-regularized-discr-rescaled} has exactly the same minimizer as the
 \(
 	\MKD_\C^\epsilon(\a,\b)+\epsilon\bigl(\HD(\a)+\HD(\b)\bigr)
 \).
+The same identity also exhibits the promised projection geometry. Indeed, for every
+$\P\in\CouplingsD(\a,\b)$,
+\eql{\label{eq-sinkhorn-tilted-kl-identity}
+	\dotp{\P}{\C}+\epsilon\KLD(\P|\a\otimes\b)
+	=
+	\epsilon\KLD\!\left(\P\middle|(\a\otimes\b)\odot e^{-\C/\epsilon}\right)
+	+
+	\epsilon\left(1-\sum_{i,j}a_i b_j e^{-\C_{i,j}/\epsilon}\right).
+}
+Consequently, entropic OT is the generalized-KL projection of the tilted Gibbs reference
+$(\a\otimes\b)\odot e^{-\C/\epsilon}$ onto the transport polytope. Section~\ref{sec-convergence-init} develops this interpretation and shows that the two Sinkhorn half-steps are precisely the KL projections onto the row- and column-marginal constraint sets.
 This normalization will matter again for unbalanced OT, where changing the reference measure is no longer merely a harmless notational choice.
 \index{unbalanced!OT}% strictindex
 
@@ -748,8 +759,10 @@ Relative to $\al\otimes\be_\epsilon$, its Sinkhorn scalings are explicitly
 	\qquad
 	u_\epsilon=\frac1{Z_\epsilon},
 	\quad
-	v_\epsilon=\frac1{q_\epsilon}.
+	v_\epsilon=\frac1{q_\epsilon}
+	\quad\text{on }\{q_\epsilon>0\}.
 \]
+The density identity is understood $\al\otimes\be_\epsilon$-almost everywhere; $v_\epsilon$ may be assigned any finite value, for instance zero, on the $\be_\epsilon$-null set $\{q_\epsilon=0\}$.
 \end{prop}
 
 \begin{proof}
@@ -957,7 +970,13 @@ At the opposite end, entropic transport is a viscous perturbation of quadratic o
 		+\frac{\epsilon^2}{16}\mathcal I_{\rm geo}(\al,\be)
 		+o(\epsilon^2).
 	\]
-	If, in addition, the endpoint densities are smooth and positive on their supports and the quadratic optimal map is a smooth non-degenerate diffeomorphism, let $f_\epsilon,g_\epsilon$ be optimal Sinkhorn potentials and $f_0,g_0$ Kantorovich potentials, normalized by $\int g_\epsilon\,\d\be=\int g_0\,\d\be=0$. Then $f_\epsilon\to f_0$ and $g_\epsilon\to g_0$ locally uniformly on the interiors of the supports~\cite{NutzWiesel2022EntropicPotentials}. Moreover, the scalar part of the first potential is fixed by
+	If, in addition, the normalized Kantorovich pair $(f_0,g_0)$ is unique, let $(f_\epsilon,g_\epsilon)$ be optimal Sinkhorn potentials normalized by $\int g_\epsilon\,\d\be=\int g_0\,\d\be=0$. Then
+	\[
+		f_\epsilon\longrightarrow f_0\quad\text{in }L^1(\al),
+		\qquad
+		g_\epsilon\longrightarrow g_0\quad\text{in }L^1(\be)
+	\]
+	as $\epsilon\downarrow0$~\cite{NutzWiesel2022EntropicPotentials}. If the potentials are chosen as their continuous soft $c$-transform representatives, this convergence is uniform on $\Supp(\al)$ and $\Supp(\be)$. Moreover, the scalar part of the first potential is fixed by
 	\[
 		\int f_\epsilon\,\d\al
 		=
@@ -967,7 +986,6 @@ At the opposite end, entropic transport is a viscous perturbation of quadratic o
 		+\frac{\epsilon^2}{16}\mathcal I_{\rm geo}(\al,\be)
 		+o(\epsilon^2).
 	\]
-	The spatial order-$\epsilon$ corrections follow from the Laplace prefactors in the two soft $c$-transform equations and depend on the endpoint densities and the Hessian of the quadratic contact phase.
 \end{prop}
 
 \begin{proof}
@@ -1004,8 +1022,17 @@ At the opposite end, entropic transport is a viscous perturbation of quadratic o
 		-2T\pa{\mathrm H(\al)+\mathrm H(\be)}
 		-dT\log(2\pi T),
 	\]
-	which is exactly the displayed expansion because $2T=\epsilon$. At a dual optimum the exponential penalty integrates to zero, so the gauge $\int g_\epsilon\d\be=0$ gives $\int f_\epsilon\d\al=\MK_{\norm{\cdot}^2}^\epsilon(\al,\be)$. This proves the displayed scalar expansion. Local convergence and the spatial corrections follow from Laplace's method applied to the soft $c$-transform equations; changing the additive gauge redistributes scalar terms between the two potentials.
+	which is exactly the displayed expansion because $2T=\epsilon$. At a dual optimum the exponential penalty integrates to zero, so the gauge $\int g_\epsilon\d\be=0$ gives $\int f_\epsilon\d\al=\MK_{\norm{\cdot}^2}^\epsilon(\al,\be)$. This proves the displayed scalar expansion. The cited compactness result gives subsequential $L^1$ convergence of the normalized potentials toward Kantorovich potentials; uniqueness identifies every cluster point and hence gives convergence of the full family.
+
+	It remains to justify the uniform statement, which does not follow from the citation alone. On the two compact supports, the quadratic cost has a common modulus of continuity in either variable. The soft $c$-transform formula therefore gives, uniformly in $\epsilon$,
+	\[
+		\abs{f_\epsilon(x)-f_\epsilon(x')}
+		\leq\sup_{y\in\Supp(\be)}\abs{c(x,y)-c(x',y)},
+	\]
+	and the same estimate holds for $g_\epsilon$ and for the limiting hard $c$-transforms. Thus both families are equicontinuous. If uniform convergence failed, equicontinuity would produce a fixed neighborhood on which the discrepancy stays bounded away from zero. Every neighborhood of a point in the support has positive marginal mass, contradicting $L^1$ convergence. Hence the convergence is uniform on both supports.
 \end{proof}
+
+Under stronger uniform non-degeneracy and boundary assumptions, Laplace's method applied to the two soft $c$-transform equations also gives spatial order-$\epsilon$ corrections involving the endpoint densities and the Hessian of the contact phase. This is a formal refinement, not part of Proposition~\ref{prop-small-epsilon-expansion}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1458,7 +1485,7 @@ Equivalently, if $\K_{i,j}=a_i b_j e^{-\C_{i,j}/\epsilon}$, the terms involving 
 
 \begin{prop}[Dual and scaling for marginal penalties]\label{prop-marginal-dependent-dual-scaling}
 \index{marginal-dependent problem}% strictindex
-Assume $a_i,b_j>0$, $\epsilon>0$, and a Fenchel qualification condition, for instance the existence of a matrix $\P>0$ such that $\P\ones_m$ and $\transp{\P}\ones_n$ belong to the relative interiors of $\dom(\mathsf F)$ and $\dom(\mathsf G)$. The Fenchel dual of~\eqref{eq-marginal-dependent-discrete} is
+Assume $a_i,b_j>0$, $\epsilon>0$, that $\C$ has finite entries, and that $\mathsf F,\mathsf G$ are proper lower-semicontinuous convex functions. Assume also a Fenchel qualification condition, for instance the existence of a matrix $\P>0$ such that $\P\ones_m$ and $\transp{\P}\ones_n$ belong to the relative interiors of $\dom(\mathsf F)$ and $\dom(\mathsf G)$. The Fenchel dual of~\eqref{eq-marginal-dependent-discrete} is
 \begin{equation}\label{eq-marginal-dependent-dual}
 	\sup_{\fD\in\RR^n,\gD\in\RR^m}
 	-
@@ -1496,7 +1523,7 @@ where divisions are entrywise and
 	\uargmin{r\in\RR_+^d}
 	\mathsf h(r)+\KLD(r|z).
 \end{equation}
-In particular, $\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ is the minimizer of $\mathsf F(r)+\epsilon\KLD(r|z)$.
+In particular, $\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ is the minimizer of $\mathsf F(r)+\epsilon\KLD(r|z)$. Each of the two proximal problems has a unique minimizer. Under the strict-feasibility assumption above, these minimizers are positive, so every division in~\eqref{eq-generalized-sinkhorn-kl-prox} is well-defined.
 \end{prop}
 
 \begin{proof}
@@ -1524,6 +1551,8 @@ For the scaling form, fix $\vD>0$, set $\widetilde{\K}=\K\diag(\vD)$ and $z=\wid
 	\KLD(r|z).
 \]
 Thus exact optimization of this block is equivalent to minimizing $\mathsf F(r)+\epsilon\KLD(r|z)$ over $r\geq0$, hence $r=\prox_{\mathsf F/\epsilon}^{\KLD}(z)$ and $\uD=r\oslash z$. The column update is identical with $w=\transp{\K}\uD$.
+
+	The KL term is strictly convex and superlinear for $z>0$. Together with proper lower semicontinuity and convexity of $\mathsf F$, this gives existence and uniqueness of the row proximal minimizer. It remains to justify positivity. Since $\C$ is finite and the current scalings are positive, $z>0$. Let $\bar r>0$ belong to $\dom(\mathsf F)$, as supplied by strict feasibility. If a proximal minimizer $r$ had a zero coordinate, then along $r_t=(1-t)r+t\bar r$ convexity bounds the change of $\mathsf F$ by $O(t)$, whereas the corresponding KL term contains $t\bar r_i\log t$. This negative $t\log(1/t)$ variation dominates all $O(t)$ terms and contradicts minimality. Thus $r>0$; the same argument applies to the column block.
 \end{proof}
 \index{Fenchel duality}% strictindex
 \index{dual!Sinkhorn}% strictindex
@@ -1535,7 +1564,7 @@ When $\mathsf F=\iota_{\{\a\}}$ and $\mathsf G=\iota_{\{\b\}}$, the first two du
 
 \begin{alg}[Generalized Sinkhorn for marginal penalties]\label{alg-generalized-sinkhorn-marginal-penalties}
 \index{Sinkhorn!generalized}% strictindex
-\textbf{Input:} Reference weights $\a,\b$, cost $\C$, convex marginal penalties $\mathsf F,\mathsf G$, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
+\textbf{Input:} Positive reference weights $\a,\b$, finite cost $\C$, convex marginal penalties $\mathsf F,\mathsf G$ satisfying the strict-feasibility assumptions of Proposition~\ref{prop-marginal-dependent-dual-scaling}, regularization $\epsilon>0$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
 \textbf{Output:} Coupling $\P$ and optimized marginals $r=\P\ones_m$, $s=\transp{\P}\ones_n$.
 
@@ -1654,10 +1683,7 @@ The heat operator can itself be applied through shifted-Laplacian solves:
 	\lim_{q\to\infty}
 	\left(\Id+\frac{\epsilon}{4q}L\right)^{-q}.
 \]
-On a triangulated surface or image grid, replace $L$ by a sparse positive semidefinite Laplacian $L_h$ and set
-\[
-	A_{\epsilon,q}\eqdef \Id+\frac{\epsilon}{4q}L_h.
-\]
+On a triangulated surface or image grid, replace $L$ by a sparse positive semidefinite Laplacian $L_h$ and set $A_{\epsilon,q}\eqdef \Id+\frac{\epsilon}{4q}L_h$.
 For fixed $(\epsilon,q)$, one computes a sparse Cholesky factorization $A_{\epsilon,q}=RR^\top$ once. Each application of $\mathsf H_\epsilon$ is then approximated by $q$ successive solves with $A_{\epsilon,q}$, and each solve uses only the two triangular substitutions associated with $R$. Since~\eqref{eq-convolutional-sinkhorn} repeatedly applies the same kernel, this factorization is reused throughout all Sinkhorn iterations~\cite{2015-solomon-siggraph}. This avoids both a dense kernel matrix and an all-pairs geodesic-distance computation. A temperature-scaling strategy requires one factorization for each value of $\epsilon$; on a finite-element mesh, the analogous shifted system is written with the mass and stiffness matrices. The small-temperature limit remains delicate because the diffusion length, of order $\sqrt\epsilon$, must be resolved by the mesh: if $\epsilon$ vanishes faster than the squared grid spacing, metrication artifacts and inconsistent discretizations dominate the intended geodesic limit.
 \index{heat kernel}% strictindex
 \index{mesh size}% strictindex
@@ -1694,11 +1720,7 @@ Figure~\ref{fig:sinkhorn-geodesics-in-heat} compares the exact distance to a non
 \index{Hopf-Cole@Hopf--Cole transform}% strictindex
 \index{log-sum-exp}% strictindex
 
-The Hopf--Lax formula is the Hamilton--Jacobi incarnation of the hard $c$-transform. We use the normalized quadratic cost
-\[
-	c(x,y)=\frac12\norm{x-y}^2,
-\]
-so that the Hopf--Lax operator applied to an initial datum $h$ is precisely
+The Hopf--Lax formula is the Hamilton--Jacobi incarnation of the hard $c$-transform. We use the normalized quadratic cost $c(x,y)=\frac12\norm{x-y}^2$, so that the Hopf--Lax operator applied to an initial datum $h$ is precisely
 \[
 	(-h)^{\bar c}(x)=\inf_y\left\{h(y)+\frac12\norm{x-y}^2\right\},
 \]
@@ -1733,10 +1755,7 @@ Thus a soft quadratic $c$-transform is a Gaussian convolution followed by a loga
 \begin{prop}[Soft quadratic $c$-transform and Legendre approximation]\label{prop-soft-legendre-convolution}
 \index{Legendre-Fenchel@Legendre--Fenchel transform}% strictindex
 \index{fast Legendre transform}% strictindex
-Let $f:\RR^d\to\RR\cup\{+\infty\}$ be such that the integrals below are finite, and introduce the quadratic shift
-\[
-	\mathsf S f(y)\eqdef f(y)-\frac12\norm{y}^2.
-\]
+Let $f:\RR^d\to\RR\cup\{+\infty\}$ be such that the integrals below are positive and finite, and introduce the quadratic shift $\mathsf S f(y)\eqdef f(y)-\frac12\norm{y}^2$.
 For $\epsilon>0$, define the soft conjugate by applying the soft $\bar c$-transform to the shifted function:
 \begin{equation}\label{eq-soft-legendre-definition}
 	f^{*,\epsilon}(p)
@@ -1757,7 +1776,7 @@ and equivalently
 	+\epsilon\log\Big(G_\epsilon\ast e^{-\mathsf S f/\epsilon}\Big)(p)
 	+\frac{\epsilon d}{2}\log(2\pi\epsilon).
 \end{equation}
-If, for instance, $f$ is proper, lower semicontinuous and superlinear, then $f^{*,\epsilon}(p)\to f^*(p)$ for every $p$ as $\epsilon\to0$.
+If, for instance, $f$ is finite, continuous and superlinear, then $f^{*,\epsilon}(p)\to f^*(p)$ for every $p$ as $\epsilon\to0$.
 \end{prop}
 
 \begin{proof}
@@ -1777,7 +1796,7 @@ This explains the shift: it turns the Legendre--Fenchel transform into a quadrat
 	\exp\!\left(-\frac{\norm{p}^2}{2\epsilon}\right)
 	\exp\!\left(\frac{\dotp{p}{y}-f(y)}{\epsilon}\right),
 \]
-which proves~\eqref{eq-soft-legendre-logsumexp}. Formula~\eqref{eq-soft-legendre-convolution} is the Gaussian-convolution identity~\eqref{eq-soft-c-transform-gaussian-convolution} applied to $\mathsf S f$. Under the stated superlinearity assumption, the functions $y\mapsto\dotp{p}{y}-f(y)$ have compact upper level sets, so Laplace's principle applied to~\eqref{eq-soft-legendre-logsumexp} gives the convergence to $f^*(p)$.
+which proves~\eqref{eq-soft-legendre-logsumexp}. Formula~\eqref{eq-soft-legendre-convolution} is the Gaussian-convolution identity~\eqref{eq-soft-c-transform-gaussian-convolution} applied to $\mathsf S f$. If $f$ is finite, continuous and superlinear, then $h_p(y)=\dotp{p}{y}-f(y)$ is continuous, attains its maximum, and has compact upper level sets. Every neighborhood of a maximizer has positive Lebesgue measure, while superlinearity controls the tails. The Laplace principle applied to~\eqref{eq-soft-legendre-logsumexp} therefore gives the pointwise supremum $\sup_y h_p(y)=f^*(p)$. Lower semicontinuity alone would not suffice: a downward spike of $f$ on a Lebesgue-null set changes $f^*$ but is invisible to the integral.
 \end{proof}
 
 \begin{rem}[Fast soft Legendre--Fenchel transforms]\label{rem-soft-legendre-fft}
@@ -1870,15 +1889,16 @@ Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, 
 }
 \end{defn}
 
-\begin{prop}[Dual and density law for $\phi$-regularized OT]\label{prop-phi-regularized-ot-dual}
+\begin{prop}[Dual and primal--dual law for $\phi$-regularized OT]\label{prop-phi-regularized-ot-dual}
 \index{phi-divergence regularized OT}% strictindex
-	Assume that the Fenchel--Rockafellar qualification condition holds; for example, let the spaces be compact, let $c$ be continuous, and assume that the product coupling belongs to the continuity domain of the divergence term. Then
+	Set $L\eqdef\phi'_\infty$ and assume exact Fenchel--Rockafellar duality for the marginalization constraint. This holds, in particular, when $\Xx,\Yy$ are compact metric spaces, $\al,\be$ have full support, $c$ is Lipschitz, and $\phi$ is of Legendre type~\cite{TerjekGonzalezSanchez2022}. Then
 \index{duality!Fenchel-Rockafellar@Fenchel--Rockafellar}% strictindex
 \index{Fenchel duality}% strictindex
 	\eql{\label{eq-phi-regularized-ot-dual}
 		\MK_{\c,\phi}^{\epsilon}(\al,\be)
 		=
-		\usup{f\in\Cc(\Xx),\,g\in\Cc(\Yy)}
+		\usup{\substack{f\in\Cc(\Xx),\,g\in\Cc(\Yy)\\
+					 f\oplus g-c\leq\epsilon L}}
 		\int f\d\al+\int g\d\be
 		-
 		\epsilon
@@ -1886,7 +1906,8 @@ Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, 
 		\phi^*\!\left(\frac{f(x)+g(y)-c(x,y)}{\epsilon}\right)
 		\d\al(x)\d\be(y).
 	}
-	If an optimal plan is absolutely continuous, with density $r^\star=\frac{\d\pi^\star}{\d(\al\otimes\be)}$, and $(f^\star,g^\star)$ are optimal potentials, then
+	The cap is vacuous when $L=+\infty$. If primal and dual optimizers exist, decompose
+	$\pi^\star=r^\star(\al\otimes\be)+(\pi^\star)^\perp$. Then
 \index{optimal coupling}% strictindex
 	\eql{\label{eq-phi-regularized-ot-density-law}
 		\frac{f^\star(x)+g^\star(y)-c(x,y)}{\epsilon}
@@ -1895,7 +1916,11 @@ Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, 
 		\qquad
 		\al\otimes\be\text{-a.e.}
 	}
-	In the smooth interior this reads
+	If $L<+\infty$, the singular part $(\pi^\star)^\perp$ is concentrated on the recession contact set
+	\[
+		\{(x,y):f^\star(x)+g^\star(y)-c(x,y)=\epsilon L\}.
+	\]
+	If $L=+\infty$ and the objective is finite, then $(\pi^\star)^\perp=0$. In the smooth interior, the absolutely continuous density reads
 	\[
 		r^\star(x,y)
 		=
@@ -1925,14 +1950,15 @@ Let $\phi$ be an entropy function in the sense of Definition~\ref{def_entropy}, 
 		\phi^*\!\left(\frac{f(x)+g(y)-c(x,y)}{\epsilon}\right)
 		\d\al(x)\d\be(y),
 	\]
-	which gives~\eqref{eq-phi-regularized-ot-dual}. Equality in the Fenchel inequality is equivalent to the subgradient inclusion
+	provided $f\oplus g-c\leq\epsilon L$, and it is $-\infty$ otherwise. This gives~\eqref{eq-phi-regularized-ot-dual}. Equality in the Fenchel inequality yields both the subgradient inclusion
 \index{phi-divergence regularized OT}% strictindex
 	\[
 		\frac{f^\star\oplus g^\star-c}{\epsilon}
 		\in
 		\partial\phi(r^\star),
 	\]
-	and inversion of $\phi'$ gives the density law when $\phi$ is differentiable and the optimizer is in the interior of its domain.
+	for the absolutely continuous part and the recession equality
+	$\int[\epsilon L-(f^\star\oplus g^\star-c)]\d(\pi^\star)^\perp=0$ for the singular part. The latter proves the contact-set statement. If $L=+\infty$, finite divergence excludes singular mass by Definition~\ref{def_divergence}. Inversion of $\phi'$ gives the density law when $\phi$ is differentiable and the density lies in the interior of its domain. See~\cite{TerjekGonzalezSanchez2022} for this finite-recession duality and the associated generalized Sinkhorn scheme.
 \end{proof}
 
 For the KL entropy $\phi(r)=r\log r-r+1$, one has $\phi^*(s)=e^s-1$, and~\eqref{eq-phi-regularized-ot-dual} reduces exactly to the continuous Sinkhorn dual~\eqref{eq-dual-sinkhorn-objective}. Other choices replace the exponential density law by another scalar transfer function:
@@ -1948,6 +1974,7 @@ For the KL entropy $\phi(r)=r\log r-r+1$, one has $\phi^*(s)=e^s-1$, and~\eqref{
 \qquad
 s\eqdef\frac{f^\star\oplus g^\star-c}{\epsilon}.
 \]
+For Burg entropy the displayed formula describes only the absolutely continuous part. Since $\phi'_\infty=1$, an optimizer may additionally carry singular mass on the contact set $s=1$.
 
 \paragraph{Bregman-divergence regularization.}
 \index{Bregman!regularization}% strictindex
@@ -1988,40 +2015,42 @@ Fix $\xi=\al\otimes\be$. For $\epsilon>0$, define
 \]
 \end{defn}
 
-\begin{prop}[Dual and density law for Bregman-regularized OT]\label{prop-bregman-regularized-ot-dual}
-	Fix the marginals $\al,\be$ and set $\xi\eqdef\al\otimes\be$. Let $\Phi$ be a convex G\^ateaux-differentiable functional on nonnegative measures on $\Xx\times\Yy$. Its convex conjugate is, for a continuous test function $u$,
+To type the function-space dual precisely, let $(\mathsf E,\mathsf E^*)$ be a separated locally convex dual pair in which $\mathsf E$ contains the signed measures on $\Xx\times\Yy$ under consideration and $\mathsf E^*$ contains the admissible test functions. Let $\mathsf U_\Xx$ and $\mathsf U_\Yy$ be potential spaces such that $f\oplus g\in\mathsf E^*$, and let $\mathsf A\pi=(\pi_1,\pi_2)$ denote the continuous marginalization map for these pairings.
+
+\begin{prop}[Dual and primal--dual law for Bregman-regularized OT]\label{prop-bregman-regularized-ot-dual}
+	Fix the marginals $\al,\be$ and set $\xi\eqdef\al\otimes\be$. Extend $\Phi$ by $+\infty$ outside the nonnegative cone of $\mathsf E$, and assume that it is proper, lower semicontinuous, convex, and G\^ateaux differentiable at $\xi$, with $q_\xi\eqdef\delta\Phi(\xi)\in\mathsf E^*$. For $u\in\mathsf E^*$, define
 \index{nonnegative measure}% strictindex
 \index{convex!conjugate}% strictindex
 	\[
 		\Phi^*(u)
 		\eqdef
-		\sup_{\pi\geq0}
+			\sup_{\pi\in\mathsf E}
 		\left\{
-			\int u\,\d\pi-\Phi(\pi)
+			\langle u,\pi\rangle-\Phi(\pi)
 		\right\}.
 	\]
-	Assume that Fenchel duality is exact for this constrained problem, as happens in finite-dimensional discretizations and, more generally, under standard compactness and lower-semicontinuity hypotheses. Then
+		Assume $c\in\mathsf E^*$ and that Fenchel--Rockafellar duality is exact for the affine constraint $\mathsf A\pi=(\al,\be)$ in the chosen dual pair. In finite dimension, the concrete condition that a feasible $\pi_0$ belongs to $\operatorname{ri}(\dom\Phi)$ is sufficient. Then
 \index{Fenchel duality}% strictindex
 	\eql{\label{eq-bregman-regularized-ot-dual}
 		\MK_{\c,\Phi}^{\epsilon}(\al,\be)
 		=
-		\sup_{f,g}
+		\sup_{f\in\mathsf U_\Xx,\,g\in\mathsf U_\Yy}
 		\int f\d\al+\int g\d\be
 		-
 		\epsilon
 		\left[
 			\Phi^*\!\left(
-				\delta\Phi(\xi)+\frac{f\oplus g-c}{\epsilon}
+				q_\xi+\frac{f\oplus g-c}{\epsilon}
 			\right)
 			-
-			\Phi^*(\delta\Phi(\xi))
+			\Phi^*(q_\xi)
 		\right].
 	}
-	If $(f^\star,g^\star)$ and $\pi^\star$ are optimal and the solution is interior, then
+	If $(f^\star,g^\star)$ and $\pi^\star$ are optimal and $\Phi$ is differentiable at $\pi^\star$, then
 	\eql{\label{eq-bregman-regularized-ot-density-law}
 		\delta\Phi(\pi^\star)
 		=
-		\delta\Phi(\xi)+\frac{f^\star\oplus g^\star-c}{\epsilon}.
+		q_\xi+\frac{f^\star\oplus g^\star-c}{\epsilon}.
 	}
 \end{prop}
 
@@ -2031,33 +2060,31 @@ Fix $\xi=\al\otimes\be$. For $\epsilon>0$, define
 	\[
 		\epsilon\Phi(\pi)
 		+
-		\int\big(c-\epsilon\delta\Phi(\xi)\big)\d\pi
-		-\epsilon\Phi(\xi)+\epsilon\int\delta\Phi(\xi)\d\xi.
+			\left\langle c-\epsilon q_\xi,\pi\right\rangle
+			-\epsilon\Phi(\xi)+\epsilon\langle q_\xi,\xi\rangle.
 	\]
 	Introduce dual potentials $(f,g)$ for the two marginal constraints. The inner minimization over nonnegative measures $\pi$ gives
 \index{nonnegative measure}% strictindex
 \index{marginal!constraint}% strictindex
 \index{dual!potential}% strictindex
 	\[
-		\inf_{\pi\geq0}
+		\inf_{\pi\in\mathsf E}
 		\left\{
 			\epsilon\Phi(\pi)
 			+
-			\int
-				\big(c-(f\oplus g)-\epsilon\delta\Phi(\xi)\big)
-			\d\pi
+				\left\langle c-(f\oplus g)-\epsilon q_\xi,\pi\right\rangle
 		\right\}
 		=
 		-\epsilon
 		\Phi^*\!\left(
-			\delta\Phi(\xi)+\frac{f\oplus g-c}{\epsilon}
+				q_\xi+\frac{f\oplus g-c}{\epsilon}
 		\right).
 	\]
 	Fenchel equality at $\xi$ gives
 	\[
-		-\Phi(\xi)+\int\delta\Phi(\xi)\d\xi
+		-\Phi(\xi)+\langle q_\xi,\xi\rangle
 		=
-		\Phi^*(\delta\Phi(\xi)),
+		\Phi^*(q_\xi),
 	\]
 	which yields~\eqref{eq-bregman-regularized-ot-dual}. Equality in Fenchel's inequality gives the primal--dual relation~\eqref{eq-bregman-regularized-ot-density-law}.
 \index{Bregman!regularization}% strictindex
@@ -2126,45 +2153,45 @@ Thus, except for KL, the two generalizations lead to different duals and differe
 \index{dual!alternate maximization}% strictindex
 \index{phi-divergence regularized OT}% strictindex
 
-The two dual formulations above lead to the same algorithmic principle: maximize exactly over one potential while the other is fixed, then exchange their roles. For the $\phi$-divergence dual~\eqref{eq-phi-regularized-ot-dual}, separability with respect to $\al\otimes\be$ makes each block update pointwise. The two $\phi$-soft $c$-transforms are
+The two dual formulations above lead to the same algorithmic principle: maximize exactly over one potential while the other is fixed, then exchange their roles. For the $\phi$-divergence dual~\eqref{eq-phi-regularized-ot-dual}, separability with respect to $\al\otimes\be$ makes each block update pointwise. Set $L=\phi'_\infty$; the inequalities below are vacuous when $L=+\infty$. The two constrained $\phi$-soft $c$-transforms are
 \eql{\label{eq-phi-soft-c-transform}
 \begin{aligned}
 	g^{\bar c,\epsilon,\phi}(x)
 	&\in
-	\uargmin{u\in\RR}
+		\uargmin{\substack{u\in\RR\\u+g(y)-c(x,y)\leq\epsilon L\ \forall y}}
 	\left\{
 	\epsilon\int_{\Yy}
 	\phi^*\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)\d\be(y)-u
 	\right\},\\
 	f^{c,\epsilon,\phi}(y)
 	&\in
-	\uargmin{v\in\RR}
+		\uargmin{\substack{v\in\RR\\f(x)+v-c(x,y)\leq\epsilon L\ \forall x}}
 	\left\{
 	\epsilon\int_{\Xx}
 	\phi^*\!\left(\frac{f(x)+v-c(x,y)}{\epsilon}\right)\d\al(x)-v
 	\right\}.
 \end{aligned}
 }
-When $\phi^*$ is differentiable, the first scalar minimizer is characterized by
+When $\phi^*$ is differentiable and the first scalar minimizer lies in the interior of the cap, it is characterized by
 \[
 	\int_{\Yy}
 	(\phi^*)'\!\left(\frac{u+g(y)-c(x,y)}{\epsilon}\right)\d\be(y)=1,
 \]
-and the second satisfies the symmetric equation. Thus each update normalizes one conditional density. For Burg or quadratic penalties, it remains a one-dimensional monotone solve, although it is no longer a log-sum-exp.
+and the second satisfies the symmetric equation. Thus an interior update normalizes one absolutely continuous conditional density. When the left derivative exists, a boundary minimizer instead satisfies the same integral inequality with right-hand side at most $1$; the missing mass is singular and supported where the recession cap is active, in agreement with Proposition~\ref{prop-phi-regularized-ot-dual}. For finite discrete marginals with positive weights, Burg updates are interior because $\phi^*(s)=-\log(1-s)$ diverges at $s=1$, so the update remains a one-dimensional monotone root solve. In general, however, a root-only implementation requires an interior-solution hypothesis; the constrained $\argmin$ above also covers boundary updates~\cite{TerjekGonzalezSanchez2022}.
 
-The Bregman dual~\eqref{eq-bregman-regularized-ot-dual} has analogous block transforms, but the global conjugate $\Phi^*$ prevents a pointwise definition in general. With $\xi=\al\otimes\be$, define
+The Bregman dual~\eqref{eq-bregman-regularized-ot-dual} has analogous block transforms, but the global conjugate $\Phi^*$ prevents a pointwise definition in general. Under the dual-pair and attainment assumptions of Proposition~\ref{prop-bregman-regularized-ot-dual}, with $\xi=\al\otimes\be$ and $q_\xi=\delta\Phi(\xi)$, define
 \eql{\label{eq-bregman-soft-c-transform}
 \begin{aligned}
 	g^{\bar c,\epsilon,\Phi}
-	&\in\uargmin{u\in\Cc(\Xx)}
+		&\in\uargmin{u\in\mathsf U_\Xx}
 	\left\{
-	\epsilon\Phi^*\!\left(\delta\Phi(\xi)+\frac{u\oplus g-c}{\epsilon}\right)
+		\epsilon\Phi^*\!\left(q_\xi+\frac{u\oplus g-c}{\epsilon}\right)
 	-\int u\d\al
 	\right\},\\
 	f^{c,\epsilon,\Phi}
-	&\in\uargmin{v\in\Cc(\Yy)}
+		&\in\uargmin{v\in\mathsf U_\Yy}
 	\left\{
-	\epsilon\Phi^*\!\left(\delta\Phi(\xi)+\frac{f\oplus v-c}{\epsilon}\right)
+		\epsilon\Phi^*\!\left(q_\xi+\frac{f\oplus v-c}{\epsilon}\right)
 	-\int v\d\be
 	\right\}.
 \end{aligned}
@@ -2230,7 +2257,7 @@ Figure~\ref{fig:sinkhorn-entropic-versus-quadratic-regularization} shows the cor
 \small $\phi(r)=r-\log r-1$ &
 \small $\phi(r)=\frac12(r-1)^2$
 \end{tabular}
-\caption{\emph{Density-ratio regularizers and coupling support.} The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. Dense violet level sets display the square root of the coupling density on a common scale, using the smaller regularization strength $\epsilon=.06$. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and alternate dual maximization with the quadratic soft $c$-transform produces the sparse rightmost plan through its positive-part law.}
+\caption{\emph{Density-ratio regularizers produce qualitatively different coupling supports.} The red and blue side curves are fixed one-dimensional Gaussian-mixture marginals. Dense violet level sets display the square root of the coupling density on a common scale, using $\epsilon=.06$. KL regularization gives the usual diffuse positive plan, the Burg barrier keeps a positive but differently tailed support, and the quadratic soft $c$-transform produces the sparse rightmost plan through its positive-part law. All three displayed matrices satisfy both marginal constraints to $\ell^1$ error below $3\cdot10^{-13}$; the retained Burg computation has primal--dual gap $1.9\cdot10^{-4}$.}
 \index{Gaussian!mixture}% strictindex
 \index{density!ratio}% strictindex
 \label{fig:sinkhorn-entropic-versus-quadratic-regularization}
@@ -2369,7 +2396,7 @@ Figure~\ref{fig:sinkhorn-divergence-debiasing} demonstrates the role of the two 
 \small $\MK_\c^\epsilon$, large $\epsilon$ &
 \small $\bar\MK_\c^\epsilon$, large $\epsilon$
 \end{tabular}
-\caption{\emph{Visualization of the debiasing effect by point optimization.} The red level sets show a fixed two-Gaussian target density $\be$, while the blue atoms are an optimized empirical measure $\al_n$ initialized in the same way in all panels. For small $\epsilon$, the entropic cost $\MK_\c^\epsilon$ and the debiased Sinkhorn divergence $\bar\MK_\c^\epsilon$ both keep the two overlapping modes. For large $\epsilon$, minimizing $\MK_\c^\epsilon$ collapses the atoms toward the barycenter predicted by the large-temperature bias, whereas the self-cost subtraction in~\eqref{eq-sinkhorn-divergence} keeps a bimodal cloud.}
+\caption{\emph{Finite-step point descent visualizes the debiasing effect.} The red level sets show a fixed two-Gaussian target density $\be$, while the blue atoms are finite-step Adam endpoints initialized identically in all panels. The optimized functional is the displayed raw or debiased cost plus the mild confinement $0.006\int\norm{x}^2\d\al_n(x)$. For small $\epsilon$, both objectives keep the two overlapping modes; for large $\epsilon$, the raw cost moves the atoms toward the barycenter while the self-cost subtraction in~\eqref{eq-sinkhorn-divergence} keeps a bimodal cloud. These endpoints are illustrative rather than certified global minimizers; the notebook retains objective decreases, terminal first-variation norms, marginal residuals below $6\cdot10^{-16}$, and verifies that the window-clipping branch is never activated.}
 \index{Sinkhorn!divergence}% strictindex
 \index{empirical!measure}% strictindex
 \label{fig:sinkhorn-divergence-debiasing}
@@ -2582,19 +2609,19 @@ After shrinking the neighborhoods if necessary, the scaling coordinates remain n
 	The theorem is local around a positive real point. It does not rule out complex singularities, changes of logarithm branch, or zeros in the denominators of the complexified updates~\eqref{eq-sinkhorn} farther away. Along a compact interval $[\epsilon_{\min},\epsilon_{\max}]\subset(0,+\infty)$, uniqueness lets the local branches agree on overlaps and therefore cover some neighborhood of that interval. This still gives no global single-valued continuation on $\CC\setminus\{0\}$.
 \end{rem}
 
-Figure~\ref{fig:sinkhorn-complex-epsilon-continuation} visualizes the continuation at the level of the coupling, without choosing logarithm branches. For a fixed real part $\epsilon_0$, it displays $\abs{\P_{\epsilon_0+i\eta}}$ at four increasing imaginary parts. The complex matrix $\P_{\epsilon_0+i\eta}$ always has marginals $(\a,\b)$, but taking its entrywise modulus destroys these linear identities. The red and blue side profiles therefore show the prescribed marginals, while the violet profiles show the row and column sums of $\abs{\P_{\epsilon_0+i\eta}}$ and reveal the cancellations hidden by the modulus.
+Figure~\ref{fig:sinkhorn-complex-epsilon-continuation} visualizes the continuation at the level of the coupling, without choosing logarithm branches. To keep the strength of the regularization fixed, it follows the constant-modulus arc $\epsilon_\theta=\epsilon_0e^{i\theta}$ and displays $\abs{\P_{\epsilon_\theta}}$ at four increasing phases. The complex matrix $\P_{\epsilon_\theta}$ always has marginals $(\a,\b)$, but taking its entrywise modulus destroys these linear identities. The red and blue side profiles therefore show the prescribed marginals, while the violet profiles show the row and column sums of $\abs{\P_{\epsilon_\theta}}$ and reveal the cancellations hidden by the modulus. The branch is followed by gauge-fixed Newton continuation in small angular steps, and every point on the computed path is checked against the marginal equations.
 
 \begin{figure}[ht]
 \centering
 \setlength{\tabcolsep}{2pt}
 \begin{tabular}{@{}cccc@{}}
-\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p00.pdf} &
-\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p20.pdf} &
-\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p40.pdf} &
-\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/eta-0p60.pdf} \\[-.1em]
-\small $\eta=0$ & \small $\eta=0.20$ & \small $\eta=0.40$ & \small $\eta=0.60$
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/theta-0p00.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/theta-0p40.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/theta-0p80.pdf} &
+\includegraphics[width=.242\linewidth]{figures/sinkhorn-complex-epsilon-continuation/theta-1p20.pdf} \\[-.1em]
+\small $\theta=0$ & \small $\theta=0.40$ & \small $\theta=0.80$ & \small $\theta=1.20$
 \end{tabular}
-\caption{\emph{The magnitude of a complex Sinkhorn coupling exposes the oscillations created by an imaginary temperature.} Two Gaussian-mixture histograms and $\epsilon_0=0.12$ are fixed, while $\epsilon=\epsilon_0+i\eta$ is continued through four nonnegative values of $\eta$. Every panel uses the same intensity scale. The attached red and blue profiles are the prescribed marginals $(\a,\b)$ of the complex coupling; the violet profiles are the marginals of its entrywise modulus and separate from them as cancellation increases.}
+\caption{\emph{The magnitude of a complex Sinkhorn coupling exposes the oscillations created by a complex phase.} Two Gaussian-mixture histograms and $\epsilon_0=0.12$ are fixed, while $\epsilon_\theta=\epsilon_0e^{i\theta}$ is continued through $\theta\in\{0,0.40,0.80,1.20\}$, so every panel has the same regularization amplitude $\abs{\epsilon_\theta}=0.12$. All panels use the same intensity scale. The attached red and blue profiles are the prescribed marginals $(\a,\b)$ of the complex coupling; the violet profiles are the marginals of its entrywise modulus and separate from them as cancellation increases. The maximum marginal residual over the full continuation path is below $10^{-11}$.}
 \index{complex!Sinkhorn coupling}% strictindex
 \index{Sinkhorn!holomorphic continuation}% strictindex
 \label{fig:sinkhorn-complex-epsilon-continuation}

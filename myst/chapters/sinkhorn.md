@@ -11,10 +11,11 @@ Entropic regularization makes optimal transport smooth, strictly convex and
 scalable. This chapter first explains the discrete KL-regularized problem,
 derives Sinkhorn's alternating matrix scaling algorithm, and then rewrites the
 same construction as a relative-entropy projection problem. It then records
-the general continuous formulation, develops the dual soft-transform
-picture, explains the path-space Schrodinger problem behind the static coupling
-formulation, and presents the main convex regularization variants
-and the debiased Sinkhorn divergence. A final section records a less standard
+the general continuous formulation, develops the dual soft-transform picture,
+and presents the main convex regularization variants and the debiased Sinkhorn
+divergence. Its stochastic path-space interpretation is developed later in
+Section {ref}`sec-path-space-schrodinger`, alongside dynamic optimal transport.
+A final section records a less standard
 viewpoint: after fixing the potential gauge, the finite-dimensional Sinkhorn
 equations admit a local holomorphic continuation to complex values of the
 temperature.
@@ -707,6 +708,11 @@ For fixed balanced marginals, the specific product reference only matters up
 to additive constants, provided the reference marginals are mutually
 absolutely continuous with $\alpha$ and $\beta$. Its support still matters: it
 determines which couplings have finite entropy.
+
+The dynamic counterpart of this measure formulation is the path-space
+Schrödinger problem developed in Section {ref}`sec-path-space-schrodinger`: it
+replaces an endpoint coupling by a probability law on noisy trajectories with
+the same prescribed endpoint marginals.
 
 ### Probabilistic Interpretation
 
@@ -1486,293 +1492,6 @@ For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve q
 
 **Return** $\P^{(\ell)}$.
 :::
-
-
-The path-space meaning of the static Schrodinger problem now follows the dual construction. A noisy reference dynamics first defines a probability law on trajectories; after optimizing out the conditional law of the path given its endpoints, only the endpoint coupling remains.
-
-(sec-path-space-schrodinger)=
-## Path-Space Schrodinger Problem
-
-Schrodinger's reciprocal problem is naturally posed on paths rather than on
-endpoint pairs. The Sinkhorn problem appears after the path law is reduced to
-its two endpoint marginals.
-
-### Unregularized Path-Space Transport
-
-Let $\Omega=C([0,1];\X)$ be a path space and let
-$e_t(\omega)=\omega_t$ be the evaluation maps. Given a path action
-$\mathcal A:\Omega\to[0,+\infty]$, the unregularized path-space problem is
-
-```{math}
-:label: eq-path-space-ot-web
-\inf_{M\in\mathcal P(\Omega)}
-\left\{
-\int_\Omega\mathcal A(\omega)\,\d M(\omega)
-:
-(e_0)_\sharp M=\alpha,\ (e_1)_\sharp M=\beta
-\right\}.
-```
-
-For quadratic Wasserstein geometry on $\RR^d$,
-
-```{math}
-\mathcal A(\omega)
-=
-\begin{cases}
-\int_0^1\norm{\dot\omega_t}^2\,\d t,
-& \omega\text{ absolutely continuous},\\
-+\infty, & \text{otherwise}.
-\end{cases}
-```
-
-The endpoint cost induced by the action is
-
-```{math}
-c_{\mathcal A}(x,y)
-\eqdef
-\inf\left\{
-\mathcal A(\omega):
-e_0(\omega)=x,\ e_1(\omega)=y
-\right\}.
-```
-
-For the quadratic action, the minimizing path is the straight segment and
-$c_{\mathcal A}(x,y)=\norm{x-y}^2$.
-
-(prop-path-space-ot-endpoint-reduction)=
-:::{admonition} Proposition: Endpoint Reduction of Path-Space Transport
-:class: important
-Assume that minimizing paths can be selected measurably, or approximated by
-measurable selections. Then the path-space problem has the same value as
-
-```{math}
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\int_{\X\times\X}c_{\mathcal A}(x,y)\,\d\pi(x,y).
-```
-
-If $\pi^\star$ is an optimal endpoint coupling and $\omega^{x,y}$ is an
-optimal path from $x$ to $y$, then
-
-```{math}
-M^\star
-=
-\int_{\X\times\X}\delta_{\omega^{x,y}}\,\d\pi^\star(x,y)
-```
-
-is an optimal path law.
-:::
-
-:::{dropdown} Proof
-For any feasible path law $M$, set $\pi=(e_0,e_1)_\sharp M$. Then
-$\pi\in\Couplings(\alpha,\beta)$ and by definition of $c_{\mathcal A}$,
-
-```{math}
-\int_\Omega\mathcal A(\omega)\,\d M(\omega)
-\ge
-\int_{\X\times\X}c_{\mathcal A}(x,y)\,\d\pi(x,y).
-```
-
-Conversely, mix selected minimizing paths according to any coupling $\pi$ and
-then optimize over $\pi$.
-:::
-
-### Entropic Path-Space Problem
-
-Let $R^\epsilon\in\mathcal P(\Omega)$ be a reference path law, for instance a
-Brownian or Langevin dynamics at noise level $\epsilon$. The dynamic
-Schrodinger bridge problem is the entropy projection
-
-```{math}
-:label: eq-schrodinger-path-web
-\mathrm{SB}_\epsilon(\alpha,\beta)
-\eqdef
-\inf_{M\in\mathcal P(\Omega)}
-\left\{
-\epsilon\operatorname{KL}(M|R^\epsilon):
-(e_0)_\sharp M=\alpha,\ (e_1)_\sharp M=\beta
-\right\}.
-```
-
-It asks for the most likely path law, relative to the prior dynamics, among
-all path laws matching the observed endpoints
-{cite:p}`Schroedinger31,leonard2012schrodinger,LeonardSchroedinger,chen2016relation`.
-
-### Stochastic-Control Interpretation
-
-For Brownian references, the entropy projection has a direct control meaning.
-To fix constants, suppose that $R^\epsilon$ is the law of
-
-```{math}
-\d X_t = \sqrt{\epsilon}\,\d B_t,
-\qquad
-X_0\sim\alpha ,
-```
-
-so that the generator is $(\epsilon/2)\Delta$. Under the standard
-finite-entropy assumptions, a path law $M$ with the same initial marginal and
-$M\ll R^\epsilon$ can be represented, in the weak sense, by an adapted drift
-$u_t$ of finite energy,
-
-```{math}
-\d X_t = u_t\,\d t+\sqrt{\epsilon}\,\d B_t,
-\qquad
-X_0\sim\alpha .
-```
-
-Conversely, such a drift defines an absolutely continuous change of law when
-the usual Girsanov integrability conditions hold. Girsanov's formula then gives
-
-```{math}
-\operatorname{KL}(M|R^\epsilon)
-=
-\frac{1}{2\epsilon}\mathbb E_M\int_0^1\norm{u_t}^2\,\d t,
-\qquad
-\epsilon\operatorname{KL}(M|R^\epsilon)
-=
-\frac12\mathbb E_M\int_0^1\norm{u_t}^2\,\d t .
-```
-
-If the reference initial law is not $\alpha$, an additional term
-$\epsilon\operatorname{KL}(\alpha|R^\epsilon_0)$ appears, but it is fixed by
-the endpoint constraint. Hence, up to this fixed endpoint cost, the Schrodinger bridge can be read as
-
-```{math}
-\inf_u
-\left\{
-\frac12\mathbb E\int_0^1\norm{u_t}^2\,\d t
-:
-\d X_t=u_t\,\d t+\sqrt{\epsilon}\,\d B_t,\quad
-X_0\sim\alpha,\ X_1\sim\beta
-\right\}.
-```
-
-Thus the bridge is the least energetic change of drift that steers the
-Brownian prior from $\alpha$ to $\beta$. The optimizer may be chosen Markovian.
-If $h_t$ denotes the positive space-time harmonic Schrodinger factor associated
-with the terminal constraint, then the optimal feedback drift has the
-Doob-transform form
-
-```{math}
-u_t^\star(x)=\epsilon\nabla\log h_t(x).
-```
-
-Equivalently, with the value potential $\phi_t=\epsilon\log h_t$, one has
-$u_t^\star=\nabla\phi_t$ and $\phi_t$ solves the viscous Hamilton--Jacobi
-equation
-$\partial_t\phi_t+\frac12\norm{\nabla\phi_t}^2+\frac{\epsilon}{2}\Delta\phi_t=0$.
-This control viewpoint and the endpoint-coupling reduction below are two faces
-of the same object: the controlled diffusion describes the whole path law,
-whereas the static Sinkhorn coupling records only its two endpoints.
-
-### Viscous Benamou--Brenier Formulations
-
-The dynamic problem also has viscous Benamou--Brenier formulations. Here
-$v_t$ denotes the forward drift called $u_t$ in the control formulation,
-whereas $u_t$ denotes the associated current velocity. If the uncontrolled
-noise is $\sqrt{\sigma}\,\d B_t$, its generator is $(\sigma/2)\Delta$ and
-
-```{math}
-\partial_t\rho_t+\operatorname{div}(\rho_t v_t)
-=
-\frac{\sigma}{2}\Delta\rho_t
-```
-
-and one minimizes a kinetic action. After absorbing the diffusion into the
-velocity $u_t=v_t-\frac{\sigma}{2}\nabla\log\rho_t$, the same minimizers are
-obtained from
-
-```{math}
-\int_0^1\!\int
-\left(
-\frac12\norm{u_t(x)}^2
-+
-\frac{\sigma^2}{8}\norm{\nabla\log\rho_t(x)}^2
-\right)
-\rho_t(x)\,\d x\,\d t,
-```
-
-up to endpoint entropy terms. The extra term is a Fisher-information penalty.
-
-(prop-schrodinger-endpoint-reduction)=
-:::{admonition} Proposition: Endpoint Reduction of the Schrodinger Problem
-:class: important
-Assume regular conditional laws exist and that the relative-entropy chain rule
-applies. If $R^\epsilon_{01}=(e_0,e_1)_\sharp R^\epsilon$, then
-
-```{math}
-\mathrm{SB}_\epsilon(\alpha,\beta)
-=
-\inf_{\pi\in\Couplings(\alpha,\beta)}
-\epsilon\operatorname{KL}(\pi|R^\epsilon_{01}).
-```
-
-For a fixed endpoint coupling $\pi$, the minimizing path law is the mixture of
-reference bridges
-
-```{math}
-M^\pi
-=
-\int R^{\epsilon,x,y}\,\d\pi(x,y).
-```
-:::
-
-:::{dropdown} Proof
-Disintegrate both $M$ and $R^\epsilon$ with respect to their endpoint pairs.
-The chain rule gives
-
-```{math}
-\operatorname{KL}(M|R^\epsilon)
-=
-\operatorname{KL}(\pi|R^\epsilon_{01})
-+
-\int
-\operatorname{KL}(M^{x,y}|R^{\epsilon,x,y})
-\,\d\pi(x,y).
-```
-
-The second term is nonnegative and vanishes exactly when the conditional path
-law is the reference bridge for $\pi$-almost every endpoint pair.
-:::
-
-### Brownian Bridges and Sinkhorn Couplings
-
-For the convention $\d X_t=\sqrt{\epsilon}\,\d B_t$, the endpoint kernel is
-$\exp(-\norm{x-y}^2/(2\epsilon))$ and the corresponding static cost is
-$\norm{x-y}^2/2$. Renaming the static temperature gives the equivalent kernel
-
-```{math}
-\exp\left(-\frac{\norm{x-y}^2}{\epsilon}\right).
-```
-
-After rewriting this prior with respect to $\alpha\otimes\beta$, the endpoint
-problem is exactly the continuous Sinkhorn problem up to an additive constant.
-Sinkhorn computes which endpoints should be paired; the path-space
-Schrodinger bridge then connects each pair by a Brownian bridge.
-
-Figure {ref}`fig:sinkhorn-path-space-bridges` illustrates this endpoint-to-path lifting on a small discrete example.
-
-(fig:sinkhorn-path-space-bridges)=
-:::{div}
-:class: ot4ml-book-figure
-
-```{code-cell} ipython3
-:tags: [remove-input]
-show_book_figure("sinkhorn-path-space-bridges")
-```
-
-*Endpoint couplings lifted to Brownian bridges. Increasing $\epsilon$ both
-softens the endpoint coupling and amplifies the Brownian fluctuations between
-paired endpoints.*
-:::
-
-:::{div}
-:class: ot4ml-interactive-note
-**Interactive panel.** Vary $\epsilon$ to move continuously from straight OT
-rays to noisy Brownian-bridge lifts with a more diffuse endpoint coupling.
-:::
-
-<iframe class="ot4ml-live-frame" title="Schrodinger bridge path controls" src="../live/sinkhorn-bridges.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
-
 
 
 (sec-sinkhorn-marginal-dependent)=
@@ -3033,13 +2752,15 @@ $\mathbb C\setminus\{0\}$.
 
 Figure {ref}`fig:sinkhorn-complex-epsilon-continuation` visualizes the local
 continuation at the level of the coupling, without choosing logarithm branches.
-For a fixed real part $\epsilon_0$, it displays
-$|\P_{\epsilon_0+i\eta}|$ at four increasing imaginary parts. The complex
-matrix $\P_{\epsilon_0+i\eta}$ retains the prescribed marginals $(a,b)$, but
-taking its entrywise modulus destroys these linear identities. The attached
-red and blue profiles therefore show $(a,b)$, while the violet profiles show
-the row and column sums of $|\P_{\epsilon_0+i\eta}|$ and reveal the
-cancellations hidden by the modulus.
+To keep the regularization strength fixed, it follows the constant-modulus arc
+$\epsilon_\theta=\epsilon_0e^{i\theta}$ and displays
+$|\P_{\epsilon_\theta}|$ at four increasing phases. The complex matrix
+$\P_{\epsilon_\theta}$ retains the prescribed marginals $(a,b)$, but taking
+its entrywise modulus destroys these linear identities. The attached red and
+blue profiles therefore show $(a,b)$, while the violet profiles show the row
+and column sums of $|\P_{\epsilon_\theta}|$ and reveal the cancellations hidden
+by the modulus. Gauge-fixed Newton continuation follows the branch in small
+angular steps, with the marginal equations checked at every step.
 
 (fig:sinkhorn-complex-epsilon-continuation)=
 :::{div}
@@ -3051,20 +2772,22 @@ show_book_figure("sinkhorn-complex-epsilon-continuation")
 ```
 
 *The magnitude of a complex Sinkhorn coupling exposes the oscillations created
-by an imaginary temperature. Two Gaussian-mixture histograms and
-$\epsilon_0=0.12$ are fixed, while $\epsilon=\epsilon_0+i\eta$ is continued
-through $\eta\in\{0,0.20,0.40,0.60\}$. Every panel uses the same intensity
-scale. The red and blue profiles are the prescribed marginals of the complex
-coupling; the violet profiles are the marginals of its entrywise modulus and
-separate from them as cancellation increases.*
+by a complex phase. Two Gaussian-mixture histograms and $\epsilon_0=0.12$ are
+fixed, while $\epsilon_\theta=\epsilon_0e^{i\theta}$ is continued through
+$\theta\in\{0,0.40,0.80,1.20\}$. Thus every panel has the same regularization
+amplitude $|\epsilon_\theta|=0.12$ and uses the same intensity scale. The red
+and blue profiles are the prescribed marginals of the complex coupling; the
+violet profiles are the marginals of its entrywise modulus and separate from
+them as cancellation increases. The maximum marginal residual over the full
+continuation path is below $10^{-11}$.*
 :::
 
 :::{div}
 :class: ot4ml-interactive-note
-**Interactive panel.** Vary the real and imaginary parts of the temperature to
-inspect $|\P_{\epsilon_0+i\eta}|$. The side profiles distinguish the prescribed
-marginals of the complex matrix from the marginals obtained after taking its
-entrywise modulus.
+**Interactive panel.** Vary the modulus $\epsilon_0$ and phase $\theta$ to
+inspect $|\P_{\epsilon_0e^{i\theta}}|$ at fixed regularization amplitude. The
+side profiles distinguish the prescribed marginals of the complex matrix from
+the marginals obtained after taking its entrywise modulus.
 :::
 
 <iframe class="ot4ml-live-frame" title="Complex-epsilon Sinkhorn continuation controls" src="../live/sinkhorn-complex.html" loading="lazy" style="width:100%;height:480px;border:0;display:block;"></iframe>
