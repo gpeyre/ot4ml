@@ -1,0 +1,630 @@
+\section{Wasserstein Space}
+\label{sec-wasserstein-space}
+\subsection{Wasserstein Distances}
+\label{sec-wasserstein-distances}
+\paragraph{OT defines a distance.}
+\begin{lem}[Discrete gluing lemma]\label{lem-gluing-discr}
+Given $(\a,\b,\VectMode{c}) \in \simplex_n \times \simplex_p \times \simplex_m$,
+let $\P \in \CouplingsD(\a,\b)$ and $\Q \in \CouplingsD(\b,\VectMode{c})$. Then there exists a nonnegative three-way array $\S \in \RR_+^{n \times p \times m}$
+such that its two-way marginals satisfy
+\(\sum_{k} \S_{i,j,k} = \P_{i,j} \qandq \sum_{i} \S_{i,j,k} = \Q_{j,k}.\)
+$\R_{i,k}\eqdef\sum_j\S_{i,j,k}$, belongs to
+$\CouplingsD(\a,\VectMode{c})$. For the canonical construction below, this
+glued coupling is the twisted matrix product
+$\R=\P\diag(1/\b)\Q$, with
+$\R_{i,k}=\sum_{j:\b_j>0}\P_{i,j}\Q_{j,k}/\b_j$.
+In the matrix notation, $1/\b_j$ is understood as $0$ when $\b_j=0$.
+\end{lem}
+\begin{proof}
+\eqllead{One verifies that}{eq-glued-discr}{
+\S_{i,j,k} = \choice{
+\frac{\P_{i,j} \Q_{j,k}}{\b_j} \qifq \b_j \neq 0 \\
+0 \text{ otherwise}
+}
+}
+has the required marginals. Indeed, if $\b_j \neq 0$, \(\sum_{k} \S_{i,j,k} = \sum_{k} \frac{\P_{i,j} \Q_{j,k}}{\b_j} = \frac{\P_{i,j}}{\b_j}(\Q\ones_m)_j = \frac{\P_{i,j}}{\b_j}\b_j.\)
+If $\b_j = 0$, then necessarily $\P_{i,j}=0$ and $\sum_{k} \S_{i,j,k} = 0 = \P_{i,j}$.
+The same computation gives the other prescribed marginal:
+\[
+\sum_i \S_{i,j,k}
+=
+\choice{
+\frac{\Q_{j,k}}{\b_j}\sum_i\P_{i,j}=\Q_{j,k} \qifq \b_j>0\\
+0=\Q_{j,k} \qifq \b_j=0.
+}
+\]
+Summing over $j$ then gives the displayed formula for $\R$. Its row and
+column sums are $\sum_k\R_{i,k}=\sum_j\P_{i,j}=\a_i$ and
+$\sum_i\R_{i,k}=\sum_j\Q_{j,k}=\VectMode{c}_k$, so
+$\R\in\CouplingsD(\a,\VectMode{c})$.
+\end{proof}
+When the cost matrix is the $p$th power of a distance matrix, the discrete Kantorovich value becomes a metric on histograms.
+
+\begin{defn}[Discrete Wasserstein distance]\label{def-discrete-wasserstein-distance}
+Let $\distD\in\RR_+^{n\times n}$ be a distance matrix on $\range{n}$ and let $p\geq1$. The discrete $p$-Wasserstein distance between histograms $\a,\b\in\simplex_n$ is
+\eql{\label{eq-wass-p-disc}
+\WassD_p(\a,\b) \eqdef \MKD_{\distD^p}(\a,\b)^{1/p}.
+}
+It depends on the chosen ground distance $\distD$.
+\end{defn}
+\begin{prop}[Metric property of discrete Wasserstein distance]\label{prop-metric-histo}
+For every distance matrix $\distD$ on $\range{n}$, Definition~\ref{def-discrete-wasserstein-distance} defines a distance on $\simplex_n$: $\WassD_p$ is symmetric, positive, $\WassD_p(\a,\b)=0$ if and only if $\a = \b$, and it satisfies the triangle inequality
+\(\foralls \a,\b,\VectMode{c} \in \simplex_n, \quad \WassD_p(\a,\VectMode{c}) \leq \WassD_p(\a,\b) + \WassD_p(\b,\VectMode{c}).\)
+\end{prop}
+\begin{proof}
+Transposition maps $\CouplingsD(\a,\b)$ bijectively onto $\CouplingsD(\b,\a)$ and preserves the cost because $\distD$ is symmetric. This proves symmetry. If $\a=\b$, the diagonal coupling $\diag(\a)$ has zero cost. Conversely, if an admissible coupling has zero cost, every off-diagonal entry must vanish because $\distD_{i,j}>0$ for $i\neq j$. The coupling is therefore diagonal, and its two marginals coincide. This proves definiteness.
+
+For the triangle inequality, let $\P\in\CouplingsD(\a,\b)$ and $\Q\in\CouplingsD(\b,\VectMode{c})$ be optimal. Lemma~\ref{lem-gluing-discr} provides $\S\in\RR_+^{n\times n\times n}$ with these two marginals. Its first-third marginal
+\(\R_{i,k}=\sum_j\S_{i,j,k}\)
+belongs to $\CouplingsD(\a,\VectMode{c})$. The ground-metric triangle inequality and Minkowski's inequality give
+\[
+\begin{aligned}
+\WassD_p(\a,\VectMode{c})
+&\leq \left(\sum_{i,j,k}\distD_{i,k}^p\S_{i,j,k}\right)^{1/p}\\
+&\leq \left(\sum_{i,j,k}(\distD_{i,j}+\distD_{j,k})^p\S_{i,j,k}\right)^{1/p}
+\leq \left(\sum_{i,j,k}\distD_{i,j}^p\S_{i,j,k}\right)^{1/p}
++\left(\sum_{i,j,k}\distD_{j,k}^p\S_{i,j,k}\right)^{1/p}\\
+&=\WassD_p(\a,\b)+\WassD_p(\b,\VectMode{c}).
+\end{aligned}
+\]
+\end{proof}
+\paragraph{Continuous gluing.}
+\begin{lem}[Gluing lemma]\label{lem-gluing-general}
+Let $(\al,\be,\ga) \in \Mm_+^1(\Xx) \times \Mm_+^1(\Yy) \times \Mm_+^1(\Zz)$, where $\Xx$, $\Yy$ and $\Zz$ are Polish spaces in the sense of Definition~\ref{def-polish-metric-space}.
+Given $\pi \in \Couplings(\al,\be)$ and $\xi \in \Couplings(\be,\ga)$, there exists a probability measure
+$\sigma \in \Mm_+^1(\Xx \times \Yy \times \Zz)$ such that
+\((P_{\Xx,\Yy})_\sharp \sigma = \pi \qandq (P_{\Yy,\Zz})_\sharp \sigma = \xi\)
+where $P_{\Xx,\Yy}(x,y,z)=(x,y)$ and $P_{\Yy,\Zz}(x,y,z)=(y,z)$ are the coordinate projections.
+\end{lem}
+\begin{proof}
+Disintegrate the two couplings with respect to their common marginal $\be$ as
+$\pi(\d x,\d y)=\pi_y(\d x)\be(\d y)$ and
+$\xi(\d y,\d z)=\be(\d y)\xi_y(\d z)$.
+The Polish hypotheses guarantee the existence of the probability kernels $y\mapsto\pi_y$ and $y\mapsto\xi_y$. Define their conditional product by
+\(\int g\,\d\sigma \eqdef \int_\Yy\int_\Xx\int_\Zz g(x,y,z)\,\xi_y(\d z)\pi_y(\d x)\be(\d y)\)
+for every bounded Borel function $g$. Taking $g(x,y,z)=h(x,y)$ recovers $\pi$, while taking $g(x,y,z)=h(y,z)$ recovers $\xi$, proving the two marginal identities.
+
+In the discrete setting, $\pi_{y_j}=\sum_i(\P_{i,j}/\b_j)\de_{x_i}$ and $\xi_{y_j}=\sum_k(\Q_{j,k}/\b_j)\de_{z_k}$ whenever $\b_j>0$. Hence
+$\sigma=\sum_{i,j,k}\S_{i,j,k}\de_{(x_i,y_j,z_k)}$, where
+$\S_{i,j,k}=\P_{i,j}\Q_{j,k}/\b_j$, with the value zero when $\b_j=0$,
+exactly as in~\eqref{eq-glued-discr}.
+\end{proof}
+\begin{defn}[$p$-Wasserstein space]\label{def-p-wasserstein-space}
+Let $(\Xx,d)$ be Polish, let $p\geq1$, and fix $x_0\in\Xx$. The $p$-Wasserstein space is \(\Pp_p(\Xx) \eqdef \enscond{\al\in\Mm_+^1(\Xx)}{\int d(x,x_0)^p\d\al(x)<+\infty},\)
+which is independent of the choice of $x_0$.
+\end{defn}
+If $\al,\be\in\Pp_p(\Xx)$, then the product coupling has finite $p$-cost by the triangle inequality, so the Kantorovich value is finite.
+
+\begin{defn}[Wasserstein distance]\label{def-wasserstein-distance}
+Let $(\X,\dist)$ be a Polish metric space and $p\geq1$. On the space $\Pp_p(\X)$ of Definition~\ref{def-p-wasserstein-space}, the $p$-Wasserstein distance is
+\eql{\label{eq-defn-wass-dist}
+\Wass_p(\al,\be) \eqdef \MK_{\dist^p}(\al,\be)^{1/p}
+=
+\left(\inf_{\pi\in\Couplings(\al,\be)}
+\int_{\X\times\X}\dist(x,y)^p\d\pi(x,y)\right)^{1/p}.
+}
+It depends on the ground distance $\dist$.
+\end{defn}
+\begin{prop}[Metric property of the Wasserstein distance]\label{prop-metric-measure}
+Definition~\ref{def-wasserstein-distance} defines a distance on $\Pp_p(\X)$: $\Wass_p$ is symmetric and nonnegative, $\Wass_p(\al,\be)=0$ if and only if $\al=\be$, and
+\(\foralls (\al,\be,\ga)\in\Pp_p(\X)^3, \qquad \Wass_p(\al,\ga)\leq\Wass_p(\al,\be)+\Wass_p(\be,\ga).\)
+\end{prop}
+\begin{proof}
+The value is finite on $\Pp_p(\X)$ because the product coupling has finite $p$-cost. If $\tau(x,y)=(y,x)$ is the flip map, then $\tau_\sharp\pi\in\Couplings(\be,\al)$ whenever $\pi\in\Couplings(\al,\be)$, and the transport cost is unchanged. This proves symmetry. The diagonal coupling $(\Id,\Id)_\sharp\al$ proves $\Wass_p(\al,\al)=0$.
+
+Conversely, Proposition~\ref{prop-kantorovich-existence-compact} supplies an optimal coupling $\pi$. If $\Wass_p(\al,\be)=0$, then $\dist(x,y)=0$ for $\pi$-almost every $(x,y)$, so $x=y$ almost surely under $\pi$. For every bounded Borel function $f$,
+\(\int f\,\d\al = \int f(x)\,\d\pi(x,y) = \int f(y)\,\d\pi(x,y) = \int f\,\d\be,\)
+and therefore $\al=\be$.
+
+For the triangle inequality, consider optimal couplings $\pi\in\Couplings(\al,\be)$ and $\xi\in\Couplings(\be,\ga)$,
+and glue them into $\sigma$ by Lemma~\ref{lem-gluing-general}. Let $P_{1,3}(x,y,z)=(x,z)$ and define $\eta\eqdef(P_{1,3})_\sharp\sigma$. Then $\eta\in\Couplings(\al,\ga)$. If the two original couplings are induced by maps $T_1$ and $T_2$, this construction is induced by $T_2\circ T_1$; gluing therefore extends composition of deterministic maps.
+The triangle inequality and Minkowski's inequality give
+\[
+\begin{aligned}
+\Wass_p(\al,\ga)
+&\leq\left(\int\dist(x,z)^p\d\sigma(x,y,z)\right)^{1/p}\\
+&\leq\left(\int(\dist(x,y)+\dist(y,z))^p\d\sigma(x,y,z)\right)^{1/p}\\
+&\leq\left(\int\dist(x,y)^p\d\sigma(x,y,z)\right)^{1/p}
++\left(\int\dist(y,z)^p\d\sigma(x,y,z)\right)^{1/p}\\
+&=\left(\int\dist(x,y)^p\d\pi\right)^{1/p}
++\left(\int\dist(y,z)^p\d\xi\right)^{1/p}
+=\Wass_p(\al,\be)+\Wass_p(\be,\ga).
+\end{aligned}
+\]
+\end{proof}
+\begin{prop}[Euclidean mean bound and quadratic decomposition]\label{prop-wasserstein-mean-decomposition}
+Let $p\geq1$ and $\al,\be\in\Pp_p(\RR^d)$, and denote their means by
+$m_\al\eqdef\int_{\RR^d}x\,\d\al(x)$ and
+$m_\be\eqdef\int_{\RR^d}x\,\d\be(x)$. Then
+$\norm{m_\al-m_\be}\leq\Wass_p(\al,\be)$. For $p=2$, define the centered
+translates $\al^0\eqdef(x\mapsto x-m_\al)_\sharp\al$ and
+$\be^0\eqdef(y\mapsto y-m_\be)_\sharp\be$.
+Then the following exact decomposition holds: \(\Wass_2^2(\al,\be) = \norm{m_\al-m_\be}^2+\Wass_2^2(\al^0,\be^0).\)
+\end{prop}
+\begin{proof}
+For every $\pi\in\Couplings(\al,\be)$,
+$m_\al-m_\be=\int_{\RR^d\times\RR^d}(x-y)\,\d\pi(x,y)$.
+Jensen's inequality therefore gives
+$\norm{m_\al-m_\be}\leq
+(\int\norm{x-y}^p\,\d\pi(x,y))^{1/p}$.
+Taking the infimum over $\pi$ proves the first claim.
+
+For $p=2$, set
+$\pi^0\eqdef((x,y)\mapsto(x-m_\al,y-m_\be))_\sharp\pi$.
+This translation defines a bijection from
+$\Couplings(\al,\be)$ onto $\Couplings(\al^0,\be^0)$. Writing
+$u=x-m_\al$ and $v=y-m_\be$, one has \(\int\norm{x-y}^2\,\d\pi = \norm{m_\al-m_\be}^2+\int\norm{u-v}^2\,\d\pi^0(u,v),\)
+because $\int(u-v)\,\d\pi^0(u,v)=0$. Taking the infimum over the corresponding couplings proves the decomposition.
+\end{proof}
+\paragraph{Interpolation induced by an optimal plan.}
+\label{sec-kantorovich-plan-interpolation}
+\begin{defn}[$\Wass_2$ geodesic induced by an optimal plan]\label{def-w2-geodesic-induced-by-plan}
+Let $\al_0,\al_1\in\Pp_2(\RR^d)$, and let $\pi^\star\in\Couplings(\al_0,\al_1)$ be optimal for $\Wass_2^2(\al_0,\al_1)$. For $t\in[0,1]$, define
+\(e_t(x,y)\eqdef(1-t)x+t y, \qquad \al_t\eqdef(e_t)_\sharp\pi^\star.\)
+The curve $(\al_t)_{t\in[0,1]}$ is the displacement, or McCann, $\Wass_2$ geodesic induced by $\pi^\star$.
+\end{defn}
+\begin{prop}[Optimal-plan interpolation is a $\Wass_2$ geodesic]\label{prop-plan-interpolation-w2-geodesic}
+Let $(\al_t)_{t\in[0,1]}$ be defined by Definition~\ref{def-w2-geodesic-induced-by-plan}. Then, for every $0\leq s\leq t\leq1$, \(\Wass_2(\al_s,\al_t) = (t-s)\Wass_2(\al_0,\al_1).\)
+Thus $t\mapsto\al_t$ is a constant-speed geodesic for the metric $\Wass_2$.
+\end{prop}
+\begin{proof}
+Push the optimal plan $\pi^\star$ forward by $(e_s,e_t)$.
+\(\int \norm{z-z'}^2\d\gamma_{s,t}(z,z') = \int \norm{e_t(x,y)-e_s(x,y)}^2\d\pi^\star(x,y) = (t-s)^2\Wass_2^2(\al_0,\al_1).\)
+Hence $\Wass_2(\al_s,\al_t)\leq(t-s)\Wass_2(\al_0,\al_1)$. Applying this upper bound to the three pairs $(0,s)$, $(s,t)$ and $(t,1)$, and using the triangle inequality of Proposition~\ref{prop-metric-measure}, gives
+\(\Wass_2(\al_0,\al_1) \leq \Wass_2(\al_0,\al_s)+\Wass_2(\al_s,\al_t)+\Wass_2(\al_t,\al_1) \leq \Wass_2(\al_0,\al_1).\)
+All inequalities are therefore equalities, in particular the middle segment has the claimed length.
+\end{proof}
+\paragraph{Comparison with Monge.}
+\begin{prop}[Kantorovich as the plan-space relaxation of Monge]\label{prop-kantorovich-relaxation-monge}
+Let $(\Xx,\dist)$ be a compact metric space, let $p\geq1$, and let $\al,\be\in\Pp(\Xx)$ with $\al$ atomless. Then
+\(\tilde\Wass_p(\al,\be)=\Wass_p(\al,\be).\)
+\end{prop}
+\begin{proof}
+Let $\pi\in\Couplings(\al,\be)$. Choose finite Borel partitions $(A_i)_i$ and $(B_j)_j$ of $\Xx$ whose cells have diameter at most $\varepsilon$. Set $m_{i,j}=\pi(A_i\times B_j)$. Since $\al$ is atomless and $\sum_j m_{i,j}=\al(A_i)$, each $A_i$ can be partitioned into Borel sets $A_{i,j}$ with $\al(A_{i,j})=m_{i,j}$. If $m_{i,j}>0$, then $\be(B_j)>0$, and Proposition~\ref{prop-existence-transport-map-atomless} gives a measurable map
+$T_{i,j}:A_{i,j}\to B_j$ satisfying
+$(T_{i,j})_\sharp(\al|_{A_{i,j}}/m_{i,j})=\be|_{B_j}/\be(B_j)$.
+Define $T$ by $T=T_{i,j}$ on $A_{i,j}$, ignoring null cells. Then $T_\sharp\al=\be$, because the contributions landing in $B_j$ sum to $\be|_{B_j}$, and the graph coupling $(\Id,T)_\sharp\al$ has the same masses $m_{i,j}$ as $\pi$ on all rectangles $A_i\times B_j$.
+
+Let $h\in\Cc(\Xx\times\Xx)$. By uniform continuity on the compact product, the oscillation of $h$ on every rectangle $A_i\times B_j$ goes to zero as $\varepsilon\to0$. Since $\pi$ and $(\Id,T)_\sharp\al$ have the same mass on each rectangle, their integrals against $h$ differ by at most this maximal oscillation. Taking partitions with mesh tending to zero therefore gives graph couplings $(\Id,T_k)_\sharp\al$ converging weakly to $\pi$. Applying this to the continuous function $(x,y)\mapsto\dist(x,y)^p$ gives the convergence of costs.
+
+Define
+\[
+\mathcal G(\al,\be)
+\eqdef
+\enscond{(\Id,T)_\sharp\al}{T_\sharp\al=\be}
+\subset\Couplings(\al,\be),
+\qquad
+F_p(\pi)\eqdef\int_{\Xx\times\Xx}\dist(x,y)^p\d\pi(x,y),
+\]
+and let $G$ be the Monge graph functional which equals $F_p$ on $\mathcal G(\al,\be)$ and $+\infty$ otherwise. The function $F_p$ is weakly continuous on $\Couplings(\al,\be)$ and satisfies $F_p\leq G$. If $H$ is any weakly lower-semicontinuous function with $H\leq G$, then for the graph approximation above,
+\(H(\pi)\leq\liminf_k H((\Id,T_k)_\sharp\al) \leq \lim_k F_p((\Id,T_k)_\sharp\al)=F_p(\pi).\)
+Thus $F_p$ is the largest weakly lower-semicontinuous minorant of $G$, that is, the lower-semicontinuous envelope. Minimizing this envelope over all couplings gives the Kantorovich value, and the density argument gives the same infimum when restricting to graph couplings.
+\end{proof}
+\begin{cor}[Lower-semicontinuous envelope of the Monge \(p\)-cost]\label{cor-wasserstein-lsc-envelope-monge-distance}
+Let $(\Xx,\dist)$ be a compact metric space and assume that atomless probability measures are dense in $\Pp(\Xx)$ for the $\Wass_p$ topology. Then $(\al,\be)\mapsto\Wass_p(\al,\be)^p$ is the lower-semicontinuous envelope, on $\Pp(\Xx)\times\Pp(\Xx)$ for the product $\Wass_p$ topology, of the extended Monge cost
+\[
+\tilde\Wass_p(\al,\be)^p
+=
+\inf_{\substack{T:\Xx\to\Xx\\ T_\sharp\al=\be}}
+\int_\Xx \dist(x,T(x))^p\d\al(x),
+\]
+with the convention $\tilde\Wass_p(\al,\be)^p=+\infty$ if no admissible map exists.
+\end{cor}
+\begin{proof}
+For every admissible map $T$, the graph plan $(\Id,T)_\sharp\al$ is a coupling, hence $\Wass_p(\al,\be)^p\leq \tilde\Wass_p(\al,\be)^p$. Since $\Wass_p^p$ is continuous for the product $\Wass_p$ topology, it is a lower-semicontinuous minorant of the extended Monge cost.
+
+Conversely, let $H$ be any lower-semicontinuous minorant of the extended Monge cost. Fix $(\al,\be)$ and choose atomless $\al_k\to\al$ in $\Wass_p$. By Proposition~\ref{prop-kantorovich-relaxation-monge}, $\tilde\Wass_p(\al_k,\be)^p=\Wass_p(\al_k,\be)^p$. Therefore
+\(H(\al,\be) \leq \liminf_k H(\al_k,\be) \leq \lim_k \Wass_p(\al_k,\be)^p = \Wass_p(\al,\be)^p.\)
+Thus no larger lower-semicontinuous minorant exists.
+\end{proof}
+\subsection{Topology and Applications}
+\label{sec-wasserstein-topology-applications}
+\paragraph{Convergence in law topology.}
+On a bounded metric space, all $\Wass_p$ distances define the same topology, although their comparison is generally H\"older rather than bi-Lipschitz.
+
+\begin{prop}[Comparison of Wasserstein distances on bounded spaces]\label{prop-comp-wass-p}
+Let $(\Xx,\dist)$ be a bounded Polish metric space, let $1\leq p\leq q<\infty$, and let $\al,\be\in\Pp_q(\Xx)$. If $p<q$, then
+\eq{
+\Wass_p(\al,\be) \leq \Wass_q(\al,\be) \leq \operatorname{diam}(\Xx)^{\frac{q-p}{q}} \Wass_p(\al,\be)^{\frac{p}{q}},
+\qquad
+\operatorname{diam}(\Xx)\eqdef\sup_{x,y\in\Xx}\dist(x,y).
+}
+If $p=q$, the comparison is simply the identity $\Wass_p=\Wass_q$.
+\end{prop}
+\begin{proof}
+The case $p=q$ is immediate, so assume $p<q$.
+The left inequality follows from Jensen's inequality, applied to any coupling $\pi$ and to the convex function $r\mapsto r^{q/p}$: \(\pa{\int \dist(x,y)^{p} \d\pi(x,y)}^{\frac{q}{p}} \leq \int \dist(x,y)^{q} \d\pi(x,y).\)
+Taking the infimum gives $\Wass_p\leq\Wass_q$. The right inequality follows from
+\(\dist(x,y)^q \leq \operatorname{diam}(\Xx)^{q-p} \dist(x,y)^p\)
+and taking the infimum over couplings once more.
+\end{proof}
+\begin{defn}[Weak, or narrow, topology]\label{dfn-weak-conv}
+A sequence $(\al_k)_k$ converges weakly, or narrowly, to $\al$ in $\Mm_+^1(\Xx)$, denoted $\al_k \rightharpoonup \al$, if and only if
+\(\int_\Xx f\d\al_k\longrightarrow\int_\Xx f\d\al \qquad\text{for every }f\in\Cc_b(\Xx).\)
+On a compact space, $\Cc_b(\Xx)=\Cc(\Xx)$ and this is precisely weak$^*$ convergence in the duality between measures and continuous functions. The term weak$^*$ is therefore also used informally in the book when no confusion can arise.
+\end{defn}
+\paragraph{Strong versus weak topology.}
+In the present section we only use the recall that, for a signed difference $\al-\be$, \(\norm{\al-\be}_{\TV}=|\al-\be|(\Xx),\)
+\begin{prop}[Total variation as a $0/1$-cost transport value]\label{prop-rel-wass-tv}
+Let $\Xx$ be a standard Borel space, let $\al$ and $\be$ be probability measures on $\Xx$, and define the measurable cost $d_0(x,x)=0$ and $d_0(x,y)=1$ for $x\neq y$. Then
+\(\MK_{d_0}(\al,\be) = \inf_{\pi\in\Couplings(\al,\be)}\int d_0(x,y)\d\pi(x,y) = \frac{1}{2}\norm{\al-\be}_{\TV}.\)
+If $\Xx$ is countable and carries the discrete topology, then $d_0$ is a Polish metric and, for every $p\geq1$, the left-hand side is $\Wass_p(\al,\be)^p$ because $d_0^p=d_0$.
+\end{prop}
+\begin{proof}
+Since $\Xx$ is standard Borel, its diagonal is measurable in $\Xx\times\Xx$; hence $d_0$ and the diagonal submeasure used below are well-defined.
+Let $\lambda=\al+\be$, write $a=\d\al/\d\lambda$ and $b=\d\be/\d\lambda$, and define the common part $\eta$ by
+\(\frac{\d\eta}{\d\lambda}=\min(a,b)\).
+Its residuals $\al'=\al-\eta$ and $\be'=\be-\eta$ are mutually singular and have the same mass
+\(r = 1-\eta(\Xx) = \frac12\int|a-b|\d\lambda = \frac12\norm{\al-\be}_{\TV}.\)
+For any $\pi\in\Couplings(\al,\be)$, define its diagonal submeasure by
+\(\zeta(A)=\pi\bigl(\{(x,x):x\in A\}\bigr)\).
+Then $\zeta\leq\al$ and $\zeta\leq\be$, so its density with respect to $\lambda$ is bounded by $\min(a,b)$.
+$\int d_0(x,y)\d\pi(x,y)=1-\pi(\{x=y\})\geq r$.
+If $r=0$, the diagonal coupling attains this bound. If $r>0$, let $\Delta(x)=(x,x)$ and set
+$\pi^\star=\Delta_\sharp\eta+r^{-1}\al^{\prime}\otimes\be^{\prime}$.
+This is a coupling of $\al$ and $\be$. Since $\al'\perp\be'$, the product term is concentrated off the diagonal, so its $0/1$ cost is exactly its total mass $r$. Thus $\pi^\star$ attains the lower bound.
+\end{proof}
+\paragraph{Probabilistic interpretation.}
+Probability theory gives weak convergence its most direct interpretation: it compares distributions rather than samplewise realizations. In terms of random vectors, if $X_n \sim \al_n$ and $X \sim \al$ (not necessarily defined on the same probability space), then $\al_n\rightharpoonup\al$ means precisely that $X_n$ converges in law to $X$.
+
+In that setting, $X_n\to X$ almost surely means pointwise convergence outside a null set, while convergence in probability means
+\(\foralls \epsilon>0,\qquad \PP(\norm{X_n-X}>\epsilon)\to0.\)
+\paragraph{Central limit theorem and OT.}
+\begin{defn}[Convolution of measures]\label{def-measure-convolution}
+For probability measures $\al,\be$ on $\RR^d$, their convolution is \(\al*\be\eqdef\operatorname{add}_\sharp(\al\otimes\be), \qquad \operatorname{add}(x,y)=x+y.\)
+Equivalently, for every bounded continuous $\varphi$, \(\int\varphi\,\d(\al*\be) = \iint\varphi(x+y)\,\d\al(x)\d\be(y).\)
+\end{defn}
+Thus $\al*\be$ is the law of $X+Y$ when $X$ and $Y$ are independent with laws $\al$ and $\be$. When $\al=\density{\al}\d x$ and $\be=\density{\be}\d x$, their convolution has density
+\(\density{\al*\be}(z) = (\density{\al}*\density{\be})(z) = \int_{\RR^d}\density{\al}(x)\density{\be}(z-x)\d x.\)
+\paragraph{Wasserstein metrizes weak convergence.}
+One can then contrast the strong topology with the Wasserstein distance if $x_n \neq x$, \(\norm{\de_{x_n}-\de_x}_{\TV}=2 \qandq \Wass_p(\de_{x_n},\de_x) = d(x_n,x).\)
+\begin{prop}[Wasserstein convergence on Polish spaces]\label{prop-wass-topology-polish}
+Let $(\Xx,d)$ be a Polish metric space, let $1\leq p<+\infty$, and let $\al_k,\al\in\Pp_p(\Xx)$. For any reference point $x_0\in\Xx$, the following are equivalent:
+\begin{enumerate}
+\item $\Wass_p(\al_k,\al)\to0$;
+\item $\al_k\rightharpoonup\al$ and the $p$th moments converge,
+\(\int d(x,x_0)^p\d\al_k(x) \longrightarrow \int d(x,x_0)^p\d\al(x);\)
+\item $\al_k\rightharpoonup\al$ and the $p$th moments are uniformly integrable,
+\(\lim_{R\to+\infty}\sup_k \int_{\{d(x,x_0)>R\}}d(x,x_0)^p\d\al_k(x)=0.\)
+\end{enumerate}
+These conditions do not depend on the choice of $x_0$.
+\end{prop}
+\begin{proof}
+Assume first that $\Wass_p(\al_k,\al)\to0$. Since $\Wass_1\leq\Wass_p$, integration against every bounded $1$-Lipschitz function converges; such functions determine weak convergence on Polish spaces. For any coupling $\pi\in\Couplings(\al_k,\al)$, the reverse triangle inequality in $L^p(\pi)$ gives
+\[
+\left|
+\left(\int d(x,x_0)^p\d\al_k(x)\right)^{1/p}
+-
+\left(\int d(y,x_0)^p\d\al(y)\right)^{1/p}
+\right|
+\leq
+\left(\int d(x,y)^p\d\pi(x,y)\right)^{1/p}.
+\]
+Taking the infimum over $\pi$ proves convergence of the $p$th moments, hence (ii).
+
+Conversely, assume (ii). By the Skorokhod representation theorem, there exist random variables $X_k\sim\al_k$ and $X\sim\al$ on a common probability space such that $X_k\to X$ almost surely. In particular, the family $(d(X_k,x_0)^p)_k$ is uniformly integrable. Since
+\(d(X_k,X)^p \leq 2^{p-1}\bigl(d(X_k,x_0)^p+d(X,x_0)^p\bigr),\)
+the variables $d(X_k,X)^p$ are uniformly integrable and converge almost surely to zero. Vitali's theorem therefore gives $\EE[d(X_k,X)^p]\to0$. The law of $(X_k,X)$ is an admissible coupling, so
+\(\Wass_p(\al_k,\al)^p\leq\EE[d(X_k,X)^p]\longrightarrow0.\)
+
+Conversely, assume (iii) and define the bounded continuous truncation $h_R(x)=\min\{d(x,x_0)^p,R^p\}$. Weak convergence gives $\int h_R\d\al_k\to\int h_R\d\al$ for every $R$. The uniform tail bound in (iii), together with the integrability of $d(\cdot,x_0)^p$ under $\al$, then lets $R\to+\infty$ and proves convergence of the untruncated moments. This establishes all three equivalences. Since (i) is independent of the reference point, so are (ii) and (iii).
+\end{proof}
+\begin{prop}[Comparison with total variation on finite spaces]
+Let $(\Xx,d)$ be a finite metric space with at least two points and define
+\(d_{\min} \eqdef \min_{x\neq y}d(x,y)>0, \qquad d_{\max} \eqdef \max_{x,y}d(x,y)<+\infty.\)
+Then, for every $\al,\be\in\Pp(\Xx)$, \(\frac{d_{\min}}{2}\norm{\al-\be}_{\TV} \leq \Wass_1(\al,\be) \leq \frac{d_{\max}}{2}\norm{\al-\be}_{\TV}.\)
+\end{prop}
+\begin{proof}
+We denote $d_0(x,y)$ the distance such that $d_0(x,x)=0$ and $d_0(x,y)=1$ for $x \neq y$. One has
+\(d_{\min} d_0(x,y) \leq d(x,y) \leq d_{\max} d_0(x,y)\),
+so that integrating this against any $\pi \in \Couplings(\al,\be)$ and taking the minimum among those $\pi$ gives the result using Proposition~\ref{prop-rel-wass-tv}.
+\end{proof}
+The constants are optimal: for $\al=\de_x$ and $\be=\de_y$ with $x\neq y$, the comparison reduces to
+\(d_{\min} \leq d(x,y) \leq d_{\max}.\)
+\subsection{Distributional Robustness and \texorpdfstring{$\Wass_\infty$}{W-infinity}}
+\label{sec-dro-wasserstein-infinity}
+\paragraph{DRO ambiguity sets.}
+Wasserstein distances are also used to define ambiguity sets around an empirical law. Given samples $z_i$ and $\widehat{\al}_n=\frac1n\sum_i\delta_{z_i}$, a distributionally robust optimization (DRO) problem replaces the empirical risk $\frac1n\sum_i \ell_\theta(z_i)$ by
+\(\sup_{\be:\,\Wass_p(\be,\widehat{\al}_n)\leq \rho} \int \ell_\theta(z)\d\be(z),\)
+\begin{prop}[Duality for empirical Wasserstein DRO]\label{prop-empirical-wasserstein-dro-duality}
+Let $(\Zz,d)$ be a Polish metric space, let $1\leq p<\infty$ and $\rho>0$, and let $\widehat{\al}_n=n^{-1}\sum_{i=1}^n\delta_{z_i}$. Let $\ell_\theta:\Zz\to\RR$ be Borel measurable and integrable with respect to $\widehat{\al}_n$. Assume that it has finite upper $p$-growth: for some $z_0\in\Zz$ and $A,B\geq0$,
+\(\ell_\theta(z)-\ell_\theta(z_0) \leq A d(z,z_0)^p+B \qquad\text{for every }z\in\Zz.\)
+Then the robust value is finite and
+\begin{equation}\label{eq-dro-dual-envelope}
+\sup_{\substack{\be\in\Pp_p(\Zz)\\\Wass_p(\be,\widehat{\al}_n)^p\leq \rho^p}}
+\int \ell_\theta\d\be
+=
+\min_{\lambda\geq0}
+\left\{
+\lambda\rho^p
++
+\frac1n\sum_{i=1}^n
+\sup_{z\in\Zz}\bigl[\ell_\theta(z)-\lambda d(z,z_i)^p\bigr]
+\right\}.
+\end{equation}
+\end{prop}
+\begin{proof}
+Orient a coupling so that its first marginal is $\widehat{\al}_n$. It then disintegrates as $\pi=n^{-1}\sum_i\delta_{z_i}\otimes\nu_i$, its second marginal is $n^{-1}\sum_i\nu_i$, and its transport cost is $n^{-1}\sum_i\int d(z,z_i)^p\d\nu_i(z)$. Lagranging this single budget constraint with $\lambda\geq0$ gives weak duality and separates the maximization over the $\nu_i$ into the pointwise suprema in~\eqref{eq-dro-dual-envelope}. The reverse inequality is the strong-duality theorem for Wasserstein ambiguity sets under finite upper $p$-growth.
+
+The growth bound and
+$d(z,z_0)^p\leq2^{p-1}\bigl(d(z,z_i)^p+d(z_i,z_0)^p\bigr)$ show that every pointwise supremum is finite for all sufficiently large $\lambda$. The dual objective is lower semicontinuous and convex because it is a sum of suprema of affine functions of $\lambda$. Choosing $z=z_i$ in each supremum bounds the full objective from below by
+$\lambda\rho^p+n^{-1}\sum_i\ell_\theta(z_i)$, so it is coercive because $\rho>0$. It therefore attains a finite minimum.
+\end{proof}
+The positive-radius hypothesis is deliberate. At $\rho=0$, the primal value is $n^{-1}\sum_i\ell_\theta(z_i)$. For $p=1$ and an $L_\theta$-Lipschitz loss, the Kantorovich--Rubinstein dual gives the transparent upper bound
+\(\sup_{\be:\,\Wass_1(\be,\widehat{\al}_n)\leq \rho} \int \ell_\theta\d\be \leq \frac1n\sum_i\ell_\theta(z_i)+\rho L_\theta,\)
+Applied to $c=d^p$, Proposition~\ref{prop-kantorovich-value-curvature} shows that $(\al,\be)\mapsto\Wass_p(\al,\be)^p$ is jointly convex. Thus $\Wass_1$ itself is jointly convex, but $\Wass_p$ need not be convex for $p>1$: on the real line,
+\(\Wass_p\big((1-t)\delta_0+t\delta_1,\delta_0\big)=t^{1/p},\)
+Therefore, if $z\mapsto\ell_\theta(z)$ is measurable and $\theta\mapsto\ell_\theta(z)$ is convex for every $z$, then
+\(\theta\mapsto \sup_{\be:\,\Wass_p(\be,\widehat{\al}_n)\leq\rho} \int \ell_\theta\,\d\be\)
+\paragraph{\texorpdfstring{$\Wass_\infty$}{W-infinity} robustness..}
+\begin{defn}[$\Wass_\infty$ extended distance]\label{def-wasserstein-infinity}
+Let $(\Xx,d)$ be a Polish metric space. For Borel probability measures $\al,\be\in\Pp(\Xx)$, define
+\begin{equation}\label{eq-wass-infty}
+\Wass_\infty(\al,\be)
+\eqdef
+\inf_{\pi\in\Couplings(\al,\be)}
+\operatorname*{ess\,sup}_{(x,y)\sim\pi} d(x,y)
+\end{equation}
+with value $+\infty$ if no finite-displacement coupling exists.
+\end{defn}
+\begin{prop}[Metric and endpoint properties of $\Wass_\infty$]\label{prop-wasserstein-infinity-metric}
+For every $\al,\be\in\Pp(\Xx)$ and every $r\geq0$, \(\Wass_\infty(\al,\be)\leq r \quad\Longleftrightarrow\quad \exists\,\pi\in\Couplings(\al,\be) \text{ supported on }\{(x,y):d(x,y)\leq r\}.\)
+In particular, the infimum in~\eqref{eq-wass-infty} is attained whenever it is finite, and $\Wass_\infty$ is an extended metric on $\Pp(\Xx)$, hence a finite-valued metric on each finite-distance component. If $d$ is bounded, then
+\(\lim_{q\to\infty}\Wass_q(\al,\be)=\Wass_\infty(\al,\be).\)
+\end{prop}
+\begin{proof}
+If $\Wass_\infty(\al,\be)\leq r$, choose $\pi_k\in\Couplings(\al,\be)$ with essential displacement at most $r+1/k$. The coupling set is tight and weakly closed, hence weakly compact by Prokhorov's theorem. Along a subsequence, $\pi_k\rightharpoonup\pi$. For every $m\geq1$, the closed set $F_m=\{d(x,y)\leq r+1/m\}$ has $\pi_k(F_m)=1$ eventually, so Portmanteau gives $\pi(F_m)=1$. Thus $\pi(\cap_mF_m)=1$, proving the nontrivial implication and attainment. The converse is immediate.
+
+Symmetry is inherited from transposing couplings, while a zero-cost coupling is supported on the diagonal and therefore has equal marginals. The triangle inequality is immediate if either term on its right-hand side is infinite. Otherwise, glue the attaining couplings of $(\al,\be)$ and $(\be,\ga)$ using Lemma~\ref{lem-gluing-general}; their $(x,z)$ marginal is supported where $d(x,z)\leq\Wass_\infty(\al,\be)+\Wass_\infty(\be,\ga)$. This proves the extended metric claim.
+
+Assume now that $d$ is bounded. Monotonicity of $L^q$ norms gives $\Wass_q\leq\Wass_\infty$, so $L\eqdef\lim_{q\to\infty}\Wass_q$ exists and satisfies $L\leq\Wass_\infty$. Choose $q_k\to\infty$ and optimal $\pi_k$ for $\Wass_{q_k}$, whose existence follows from Proposition~\ref{prop-kantorovich-existence-compact}, and extract a weak limit $\pi$. For every $r>L$, Markov's inequality yields
+\[
+\pi_k\{d>r\}
+\leq
+\left(\frac{\Wass_{q_k}(\al,\be)}{r}\right)^{q_k}
+\longrightarrow0.
+\]
+Since $\{d>r\}$ is open, Portmanteau gives $\pi\{d>r\}=0$. Letting $r\downarrow L$ shows that $\pi$ is supported on $\{d\leq L\}$, and hence $\Wass_\infty\leq L$.
+\end{proof}
+This limit concerns the distances, not the linear objectives defining $\Wass_p^p$. The endpoint minimizes the worst displacement rather than an average displacement.
+
+\begin{prop}[$\Wass_\infty$ robust envelope around an empirical law]\label{prop-wasserstein-infty-dro}
+Let $(\Zz,d)$ be a Polish metric space and let $\rho\geq0$. Let $\widehat{\al}=\sum_{i=1}^n a_i\delta_{z_i}$ with distinct $z_i$, positive $a_i$, and $\sum_i a_i=1$, and assume that the closed balls $\overline B(z_i,\rho)$ are compact. Repeated atoms can always be merged to meet this convention. For any real-valued upper-semicontinuous loss $\ell$,
+\(\sup_{\be:\,\Wass_\infty(\be,\widehat{\al})\leq\rho} \int \ell(z)\d\be(z) = \sum_{i=1}^n a_i\sup_{z\in\overline B(z_i,\rho)}\ell(z).\)
+\end{prop}
+\begin{proof}
+If $\Wass_\infty(\be,\widehat{\al})\leq\rho$, Proposition~\ref{prop-wasserstein-infinity-metric} provides a coupling $\pi\in\Couplings(\widehat{\al},\be)$ supported on $\{(x,z):d(x,z)\leq\rho\}$.
+Disintegrating $\pi$ with respect to the first marginal gives $\pi=\sum_i a_i\delta_{z_i}\otimes\nu_i$, where each $\nu_i$ is supported in the closed ball $\overline B(z_i,\rho)$ and $\be=\sum_i a_i\nu_i$. Hence
+\(\int\ell\,\d\be = \sum_i a_i\int\ell\,\d\nu_i \leq \sum_i a_i\sup_{\overline B(z_i,\rho)}\ell.\)
+The reverse inequality follows by choosing, for each $i$, a maximizer $z_i^\star\in\overline B(z_i,\rho)$ and setting $\be=\sum_i a_i\delta_{z_i^\star}$. The coupling $\sum_i a_i\delta_{(z_i,z_i^\star)}$ has essential displacement at most $\rho$, so this $\be$ is feasible and attains the displayed value.
+\end{proof}
+\subsection{Measure-to-Vector Maps on Wasserstein Space}\label{sec-measure-to-vector-maps}
+\paragraph{Functionals and Wasserstein--H\"older regularity.}
+A scalar functional is a map
+\(f:\Pp_p(\Xx)\longrightarrow\RR.\)
+\begin{defn}[Uniform norm on functionals]\label{def-uniform-norm-functionals}
+For a bounded functional \(f:\Pp_p(\Xx)\to\RR\), define
+\(\norm{f}_\infty \eqdef \sup_{\al\in\Pp_p(\Xx)}|f(\al)|.\)
+\end{defn}
+There is no loss of principle in starting with scalar values. If \(F=(f_1,\ldots,f_s):\Pp_p(\Xx)\to\RR^s\), the definitions and constructions below apply coordinatewise, and the resulting bounds combine in any norm on \(\RR^s\).
+
+\begin{defn}[Wasserstein--H\"older functional]\label{def-wasserstein-holder-functional}
+Let \(p\geq1\) and \(0<\eta\leq1\). A functional \(f:\Pp(\Xx)\to\RR\) is \(\eta\)-H\"older for \(\Wass_p\), with constant \(L\), if
+\begin{equation}\label{eq-wasserstein-holder-functional}
+|f(\al)-f(\be)|
+\leq
+L\Wass_p(\al,\be)^\eta
+\qquad
+\text{for all }\al,\be\in\Pp(\Xx).
+\end{equation}
+\end{defn}
+\paragraph{Examples and non-examples.}
+If \(V:\Xx\to\RR\) is \(L\)-Lipschitz, then Kantorovich--Rubinstein duality~\eqref{eq-w1-metric} and the comparison \(\Wass_1\leq\Wass_p\) from Proposition~\ref{prop-comp-wass-p} give
+\(f(\al)=\int_{\Xx} V\,\d\al, \qquad |f(\al)-f(\be)|\leq L\Wass_p(\al,\be).\)
+\paragraph{Interaction polynomials.}
+\begin{defn}[Wasserstein polynomial]\label{def-wasserstein-polynomial}
+For an integer \(m\geq1\), a functional on \(\Pp(\Xx)\) is a \emph{Wasserstein polynomial of order at most \(m\)} if it can be written, for some bounded continuous symmetric kernel \(\varphi_m:\Xx^m\to\RR\), as
+\begin{equation}\label{eq-wasserstein-interaction-polynomial}
+\mathsf P_{\varphi_m}(\al)
+\eqdef
+\int_{\Xx^m}\varphi_m(x_1,\ldots,x_m)
+\,\d\al(x_1)\cdots\d\al(x_m).
+\end{equation}
+\end{defn}
+\paragraph{Empirical particle approximation.}
+\begin{prop}[Density of Wasserstein polynomials]\label{prop-density-wasserstein-polynomials}
+Let \(\Xx\) be a compact metric space and \(p\geq1\). For every \(\Wass_p\)-continuous functional \(f:\Pp(\Xx)\to\RR\) and every \(\varepsilon>0\), there exists a Wasserstein polynomial \(\mathsf P\) such that
+\(\norm{f-\mathsf P}_{\infty} = \sup_{\al\in\Pp(\Xx)}|f(\al)-\mathsf P(\al)| <\varepsilon.\)
+\end{prop}
+\begin{proof}
+Since \(\Xx\) is compact, \(\Pp(\Xx)\) is compact for the weak topology, which coincides with the topology induced by \(\Wass_p\). Wasserstein polynomials are continuous on this space. They contain the constants and are stable under linear combinations, after lifting lower-order kernels by adding dummy variables. They are also stable under products: if \(\mathsf P_\varphi\) and \(\mathsf P_\psi\) have orders \(m\) and \(r\), then
+\(\mathsf P_\varphi(\al)\mathsf P_\psi(\al) = \int_{\Xx^{m+r}} \varphi(x_1,\ldots,x_m)\psi(x_{m+1},\ldots,x_{m+r}) \,\d\al^{\otimes(m+r)},\)
+which is a Wasserstein polynomial after symmetrizing its kernel. This algebra separates points: if \(\al\neq\be\), there exists \(V\in\mathcal C(\Xx)\) such that \(\int V\,\d\al\neq\int V\,\d\be\), and \(\al\mapsto\int V\,\d\al\) is an order-one polynomial. The real Stone--Weierstrass theorem therefore gives the claimed uniform density in \(\mathcal C(\Pp(\Xx))\).
+\end{proof}
+\begin{defn}[Particle polynomial]\label{def-particle-polynomial}
+Let \(f:\Pp(\Xx)\to\RR\) be bounded and continuous and let \(n\geq1\). Its symmetric \(n\)-particle kernel is
+\[
+\varphi_n^f(x_1,\ldots,x_n)
+\eqdef
+f\left(\frac1n\sum_{i=1}^n\de_{x_i}\right),
+\]
+and its associated \emph{particle polynomial} is
+\begin{equation}\label{eq-empirical-particle-polynomial}
+\mathsf B_n f(\al)
+\eqdef
+\int_{\Xx^n}\varphi_n^f(x_1,\ldots,x_n)
+\,\d\al^{\otimes n}(x_1,\ldots,x_n)
+=
+\EE f(\widehat\al_n),
+\end{equation}
+where \(\widehat\al_n=n^{-1}\sum_{i=1}^n\de_{X_i}\) for i.i.d.\ random variables \(X_i\sim\al\).
+\end{defn}
+\begin{prop}[Particle-polynomial approximation of H\"older functionals]\label{prop-holder-particle-polynomial}
+Let \(\Xx\subset\RR^d\) be compact and let \(f:\Pp(\Xx)\to\RR\) be \(\eta\)-H\"older for \(\Wass_p\), with \(p\geq1\), \(0<\eta\leq1\) and constant \(L\). Then, for every $n\geq1$ and every \(\al\in\Pp(\Xx)\),
+\begin{equation}\label{eq-holder-particle-polynomial-general}
+\left|\mathsf B_n f(\al)-f(\al)\right|
+\leq
+L\,\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right].
+\end{equation}
+Moreover, for every $n\geq2$,
+\begin{equation}\label{eq-holder-particle-polynomial-rate}
+\norm{\mathsf B_n f-f}_{\infty}
+\leq
+C_{\Xx,p,d,\eta}L\,r_{n,p,d}^{\,\eta},
+\end{equation}
+where the empirical Wasserstein scale \(r_{n,p,d}\) is defined in~\eqref{eq-empirical-wasserstein-scale} of Section~\ref{sec-sample-complexity}.
+\end{prop}
+\begin{proof}
+The empirical representation~\eqref{eq-empirical-particle-polynomial} and H\"older regularity give
+\[
+|\mathsf B_n f(\al)-f(\al)|
+\leq
+\EE|f(\widehat\al_n)-f(\al)|
+\leq
+L\,\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right],
+\]
+which proves~\eqref{eq-holder-particle-polynomial-general}. The empirical Wasserstein moment bound~\eqref{eq-empirical-wasserstein-moment-scale} gives
+\(\sup_{\al\in\Pp(\Xx)}\EE[\Wass_p(\widehat\al_n,\al)^p] \leq C_{\Xx,p,d}r_{n,p,d}^{\,p}.\)
+For any nonnegative random variable \(Z\) and exponents \(0<\eta\leq p\), Lyapunov's moment inequality states that
+\(\EE[Z^\eta]^{1/\eta}\leq\EE[Z^p]^{1/p}\).
+It is the monotonicity of \(L^q\) norms on a probability space and follows directly from Jensen's inequality applied to the concave function \(s\mapsto s^{\eta/p}\); see, for instance,. Applying it to \(Z=\Wass_p(\widehat\al_n,\al)\) gives
+\[
+\EE\!\left[\Wass_p(\widehat\al_n,\al)^\eta\right]
+\leq
+\EE\!\left[\Wass_p(\widehat\al_n,\al)^p\right]^{\eta/p},
+\]
+and taking the supremum over \(\al\) concludes the proof.
+\end{proof}
+\subsection{Measure-to-Measure Maps on Wasserstein Space}\label{sec-measure-to-measure-maps}
+\paragraph{Maps on Wasserstein space.}
+Once Wasserstein distances provide a topology on probability measures, it is natural to study transformations of probability measures as maps
+\(\Phi:\Pp_p(\Xx)\longrightarrow \Pp_p(\Xx)\)
+\paragraph{Particle-preserving transport representations.}
+The deterministic case is obtained by pushing each input measure through a map that may itself depend on that input measure:
+\begin{equation}\label{eq-measure-map-transport-representation}
+\Phi(\al) = \Gamma[\al]_\sharp \al,
+\qquad
+\Gamma[\al]: \Xx \to \Xx.
+\end{equation}
+Then, for every discrete measure,
+\begin{equation}\label{eq-measure-map-preserve-atoms}
+\al=\sum_{i=1}^n a_i\de_{x_i}
+\quad\Longrightarrow\quad
+\Phi(\al)=\sum_{i=1}^n a_i\de_{\Gamma[\al](x_i)}.
+\end{equation}
+When \(\Xx\subset\RR^d\), the family \(\al\mapsto\Gamma[\al]\) can equivalently be written as the jointly defined vector-valued map
+\begin{equation}\label{eq-curried-transport-representative}
+\Gamma:\Pp_p(\Xx)\times\Xx\to\RR^d,
+\qquad
+\Gamma(\al,x)\eqdef\Gamma[\al](x).
+\end{equation}
+A useful quantitative hypothesis is the uniform estimate
+\(\sup_{x\in\Xx} \norm{\Gamma(\al,x)-\Gamma(\be,x)} \leq L\Wass_p(\al,\be)^\eta.\)
+\paragraph{Wasserstein stability.}
+\begin{prop}[Wasserstein stability of transport representations]\label{prop-measure-map-wass-lipschitz}
+Let $(\Xx,d)$ be Polish, let $p\geq1$, let $E\subset\Xx$, and assume that, for all $\al,\be\in\Pp_p(\Xx)$ supported in $E$, the maps $T[\al]:E\to\Xx$ satisfy
+\(d(T[\al](x),T[\al](y)) \leq L_x d(x,y) \quad\text{for all }x,y\in E,\)
+and
+\(\sup_{y\in E} d(T[\al](y),T[\be](y)) \leq L_{\rm law} \Wass_p(\al,\be).\)
+Then $\Phi(\al)=T[\al]_\sharp\al$ is $(L_x+L_{\rm law})$-Lipschitz on probability measures supported in $E$: \(\Wass_p(\Phi(\al),\Phi(\be)) \leq (L_x+L_{\rm law})\Wass_p(\al,\be).\)
+\end{prop}
+\begin{proof}
+Let $\pi$ be an optimal coupling between $\al$ and $\be$. The measure $(T[\al],T[\be])_\sharp\pi$ is a coupling between $\Phi(\al)$ and $\Phi(\be)$, hence
+\[
+\Wass_p(\Phi(\al),\Phi(\be))
+\leq
+\left(
+\int d(T[\al](x),T[\be](y))^p\,\d\pi(x,y)
+\right)^{1/p}.
+\]
+By the triangle inequality, \(d(T[\al](x),T[\be](y)) \leq L_x d(x,y)+L_{\rm law}\Wass_p(\al,\be).\)
+Minkowski's inequality gives the claim.
+\end{proof}
+If $T:\Xx\to\Xx$ is $L$-Lipschitz, then
+\(\Wass_p(T_\sharp\al,T_\sharp\be)\leq L\Wass_p(\al,\be).\)
+\paragraph{Mean-field attention.}\label{par-mean-field-attention}
+In the non-causal, unmasked setting used here, its discrete output is
+\begin{equation}\label{eq-discrete-self-attention}
+\operatorname{Att}^{(n)}_\theta(x_1,\ldots,x_n)_i
+\eqdef
+\sum_{j=1}^n a_{i,j}(x_1,\ldots,x_n)Vx_j,
+\qquad
+a_{i,j}(x_1,\ldots,x_n)
+\eqdef
+\frac{\exp(\dotp{Qx_i}{Kx_j})}
+{\sum_{\ell=1}^n\exp(\dotp{Qx_i}{Kx_\ell})},
+\end{equation}
+Indeed, if \(\sigma\) is a permutation and \(x_i^\sigma=x_{\sigma(i)}\), reindexing the denominator gives \(a_{i,j}(x_1^\sigma,\ldots,x_n^\sigma)=a_{\sigma(i),\sigma(j)}(x_1,\ldots,x_n)\), and therefore
+\(\operatorname{Att}^{(n)}_\theta(x_1^\sigma,\ldots,x_n^\sigma)_i = \operatorname{Att}^{(n)}_\theta(x_1,\ldots,x_n)_{\sigma(i)}.\)
+\begin{defn}[Mean-field attention map]\label{def-mean-field-attention-map}
+Fix \(p\geq1\), let $Q,K\in\RR^{r\times d}$ and $V\in\RR^{d\times d}$, write \(\theta=(Q,K,V)\), and let \(\al\in\Pp_p(\RR^d)\). Assume that, for \(\al\)-almost every \(x\),
+\(0<\int e^{\dotp{Qx}{Kz}}\,\d\al(z)<+\infty \qandq \int e^{\dotp{Qx}{Kz}}\norm{Vz}\,\d\al(z)<+\infty.\)
+The \emph{mean-field attention field} is
+\begin{equation}\label{eq-mean-field-attention}
+\Gamma_\theta[\al](x)
+\eqdef
+\frac{\int e^{\dotp{Qx}{Kz}}Vz\,\d\al(z)}
+{\int e^{\dotp{Qx}{Kz}}\,\d\al(z)}
+\end{equation}
+and, whenever \(\Gamma_\theta[\al]\in L^p(\al)\), the induced attention map on measures is \(\operatorname{Att}_\theta(\al) \eqdef (\Gamma_\theta[\al])_\sharp\al.\)
+\end{defn}
+For an empirical token measure, the construction is an exact rewriting of discrete attention:
+\[
+\Gamma_\theta[\al](x_i)
+=
+\operatorname{Att}^{(n)}_\theta(x_1,\ldots,x_n)_i,
+\qquad
+\operatorname{Att}_\theta(\al)
+=
+\frac1n\sum_{i=1}^n
+\de_{\operatorname{Att}^{(n)}_\theta(x_1,\ldots,x_n)_i}.
+\]
+\begin{prop}[Compact-support attention stability]\label{prop-attention-wass-lipschitz}
+Assume $\Xx=\RR^d$. Fix $Q,K\in\RR^{r\times d}$ and $V\in\RR^{d\times d}$, write $\theta=(Q,K,V)$, and fix $R>0$. Let $\mathcal P_R$ be the set of probability measures supported in the Euclidean ball $B(0,R)$. For every $p\geq1$, there is a constant $C_{\theta,p}(R)$ such that
+\(\Wass_p(\operatorname{Att}_\theta(\al),\operatorname{Att}_\theta(\be)) \leq C_{\theta,p}(R)\Wass_p(\al,\be), \qquad \al,\be\in\mathcal P_R.\)
+Writing $A_R=\norm{Q}_{\rm op}\norm{K}_{\rm op}R^2$, one can take a constant bounded, up to polynomial factors in $R$ and the operator norms of $Q,K,V$, by \(C_{\theta,p}(R)\lesssim e^{2A_R}.\)
+This is the exponential-in-score-radius behavior, equivalently $e^{O(R^2)}$ for dot-product scores on $B(0,R)$, refined in.
+\end{prop}
+\begin{proof}
+Write \(A_R=\norm{Q}_{\rm op}\norm{K}_{\rm op}R^2\), and introduce the normalizer and numerator
+\(Z_\al(x)=\int e^{\dotp{Qx}{Kz}}\,\d\al(z), \qquad N_\al(x)=\int e^{\dotp{Qx}{Kz}}Vz\,\d\al(z).\)
+For \(x,z\in B(0,R)\), one has \(e^{-A_R}\leq e^{\dotp{Qx}{Kz}}\leq e^{A_R}\), and hence \(Z_\al(x)\geq e^{-A_R}\) and \(\norm{\Gamma_\theta[\al](x)}\leq\norm{V}_{\rm op}R\). As functions of \(z\), the scalar kernel \(e^{\dotp{Qx}{Kz}}\) and the vector-valued kernel \(e^{\dotp{Qx}{Kz}}Vz\) have Lipschitz constants bounded by \(e^{A_R}\) times polynomial factors in \(R\) and the operator norms of \(Q,K,V\). Kantorovich--Rubinstein duality, applied to the vector kernel after pairing it with arbitrary unit vectors, therefore gives
+\(|Z_\al(x)-Z_\be(x)| + \norm{N_\al(x)-N_\be(x)} \leq C_{\theta}(R)e^{A_R}\Wass_1(\al,\be).\)
+Using
+\(\Gamma_\theta[\al](x)-\Gamma_\theta[\be](x) = \frac{N_\al(x)-N_\be(x)}{Z_\al(x)} + \Gamma_\theta[\be](x) \frac{Z_\be(x)-Z_\al(x)}{Z_\al(x)}\)
+and the preceding bounds yield
+\(\sup_{x\in B(0,R)} \norm{\Gamma_\theta[\al](x)-\Gamma_\theta[\be](x)} \leq C_{\theta}(R)e^{2A_R}\Wass_1(\al,\be).\)
+For spatial regularity, introduce the attention law
+\(\d\omega_{\al,x}(z) \eqdef \frac{e^{\dotp{Qx}{Kz}}}{Z_\al(x)}\,\d\al(z).\)
+Differentiating~\eqref{eq-mean-field-attention} gives \(D_x\Gamma_\theta[\al](x) = \int \bigl(Vz-\Gamma_\theta[\al](x)\bigr) (Q^\top Kz)^\top \,\d\omega_{\al,x}(z),\)
+so \(\norm{D_x\Gamma_\theta[\al](x)}_{\rm op}\leq2\norm{V}_{\rm op}\norm{Q}_{\rm op}\norm{K}_{\rm op}R^2\), uniformly in \(\al\in\mathcal P_R\). Finally, \(\Wass_1\leq\Wass_p\) on probability measures and the output is supported in \(B(0,\norm{V}_{\rm op}R)\). Proposition~\ref{prop-measure-map-wass-lipschitz}, applied with \(E=B(0,R)\), proves the claim.
+\end{proof}
+\paragraph{Mass-splitting Markov maps.}
+To obtain a map on $\Pp_p(\Xx)$, assume the finite-moment bound
+\(\int_{\Xx} d(x,x_0)^p\,K(y,\d x) \leq C\bigl(1+d(y,x_0)^p\bigr)\)
+for some $x_0\in\Xx$. The associated linear map is defined weakly by
+\begin{equation}\label{eq-measure-map-markov-kernel}
+\int_{\Xx} f(x)\,\d\Psi_K(\al)(x)
+\eqdef
+\int_{\Xx}\int_{\Xx} f(x)\,K(y,\d x)\,\d\al(y).
+\end{equation}
+\begin{prop}[Wasserstein stability of Markov maps]\label{prop-markov-map-wasserstein-stability}
+Let $(\Xx,d)$ be Polish, let $p\geq1$, and let $K$ satisfy the preceding moment bound. If
+\(\Wass_p\bigl(K(y,\cdot),K(y',\cdot)\bigr) \leq Ld(y,y') \qquad\text{for all }y,y'\in\Xx,\)
+then the map~\eqref{eq-measure-map-markov-kernel} is $L$-Lipschitz: \(\Wass_p\bigl(\Psi_K(\al),\Psi_K(\be)\bigr) \leq L\Wass_p(\al,\be) \qquad\text{for all }\al,\be\in\Pp_p(\Xx).\)
+\end{prop}
+\begin{proof}
+Fix $\pi\in\Couplings(\al,\be)$. On Polish spaces, the measurable-selection theorem for optimal transport provides a probability kernel $(y,y')\mapsto q_{y,y'}$ such that
+\(q_{y,y'}\in\Couplings\bigl(K(y,\cdot),K(y',\cdot)\bigr) \qandq \int d(x,x')^p\,\d q_{y,y'}(x,x') = \Wass_p\bigl(K(y,\cdot),K(y',\cdot)\bigr)^p.\)
+Integrating this kernel against $\pi$ defines a coupling
+\(q(\d x,\d x') \eqdef \int_{\Xx\times\Xx} q_{y,y'}(\d x,\d x')\,\d\pi(y,y')\)
+between $\Psi_K(\al)$ and $\Psi_K(\be)$. Therefore
+\[
+\Wass_p\bigl(\Psi_K(\al),\Psi_K(\be)\bigr)^p
+\leq
+\int\Wass_p\bigl(K(y,\cdot),K(y',\cdot)\bigr)^p\,\d\pi(y,y')
+\leq
+L^p\int d(y,y')^p\,\d\pi(y,y').
+\]
+Taking the infimum over $\pi$ proves the claim.
+\end{proof}

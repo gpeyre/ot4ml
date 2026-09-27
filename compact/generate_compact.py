@@ -13,6 +13,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from editorial import polish_context, repair_dependencies, trim_topics
+
 ROOT = Path(__file__).resolve().parents[1]
 LATEX = ROOT / "OT4ML"
 OUT = ROOT / "compact"
@@ -22,6 +24,7 @@ SECTION_NAMES = [
     "matching",
     "monge",
     "kantorovich",
+    "wasserstein-space",
     "dual",
     "semidiscr-w1",
     "dual-norms",
@@ -146,6 +149,10 @@ def strip_citations(text: str) -> str:
         "related spectral Wasserstein gauges give analogous constructions.",
     )
     text = text.replace(
+        "A simple but effective approach, developed in, observes that~",
+        "Problem~",
+    )
+    text = text.replace(
         r"as in Remark~\ref{rem-soft-transform-convexity}",
         "using the convexity properties of soft transforms",
     )
@@ -228,6 +235,7 @@ def plain_heading(title: str) -> str:
     replacements = {
         r"$\Wass_1$": "W1",
         r"$\Wass_\infty$": "W-infinity",
+        r"$\epsilon$": "epsilon",
         r"$\phi$": "phi",
         r"$c$": "c",
         r"$p$": "p",
@@ -238,6 +246,7 @@ def plain_heading(title: str) -> str:
     plain = re.sub(r"\\texorpdfstring\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*)\}", r"\2", plain)
     plain = re.sub(r"\$([^$]*)\$", r"\1", plain)
     plain = plain.replace(r"\Wass", "W")
+    plain = plain.replace(r"\epsilon", "epsilon")
     plain = plain.replace(r"\phi", "phi")
     plain = plain.replace(r"\infty", "infinity")
     plain = re.sub(r"\\[a-zA-Z]+", "", plain)
@@ -265,7 +274,10 @@ def polish_heading(line: str) -> str:
     }[cmd]
     if cmd == "paragraph":
         title = title.strip()
-        if title and title[-1] not in ".?!:":
+        printed_title = title
+        if title.startswith(r"\texorpdfstring{"):
+            printed_title = _scan_bracketed(title, len(r"\texorpdfstring"), "{", "}")[0]
+        if printed_title and printed_title[-1] not in ".?!:":
             title += "."
     if "$" in title and r"\texorpdfstring" not in title:
         title = rf"\texorpdfstring{{{title}}}{{{plain_heading(title)}}}"
@@ -391,11 +403,59 @@ def compact_structural_line(line: str) -> str:
     return " ".join(kept).strip()
 
 
+def formula_context(lines: list[str], compacted: list[str]) -> list[str]:
+    """Keep the sentence that introduces a formula, even if it is pure prose."""
+    raw = " ".join(line.strip() for line in lines).strip()
+    if not raw:
+        return compacted
+    overrides = {
+        "The number of such perfect matchings is the Catalan number":
+            r"For an alternately colored convex $2n$-gon, the number of non-crossing perfect matchings is the Catalan number",
+        "the path space":
+            r"A Polish path space with its uniform metric is",
+        "Such gradients are monotone fields":
+            r"Gradients of convex functions are monotone:",
+        "In quantile coordinates, the interpolating measure is characterized by":
+            r"At time $t\in[0,1]$, interpolate the quantiles:",
+    }
+    for key, lead in overrides.items():
+        if key in raw:
+            return [lead]
+    sentences = split_sentences(raw)
+    lead = strip_citations(sentences[-1])
+    if not lead or DROP_SENTENCE_CONTAINS_RE.search(lead):
+        return compacted
+    kept = " ".join(compacted).strip()
+    if lead in kept:
+        return [kept]
+    # Do not resurrect references to omitted illustrations or isolated comments.
+    if re.search(r"\b(?:figure|panel|algorithm|remark|example)\b", lead, re.IGNORECASE):
+        return compacted
+    if len(lead) <= 600:
+        return [f"{kept} {lead}".strip()]
+    return compacted
+
+
+def starts_formula(line: str) -> bool:
+    return line.startswith((
+        r"\[", "$$", r"\eq{", r"\eql{", r"\eqllead{", r"\(",
+        r"\begin{equation", r"\begin{align",
+    ))
+
+
+def has_open_math_delimiter(line: str) -> bool:
+    if line.startswith(r"\["):
+        return r"\]" not in line
+    if line.startswith(r"\("):
+        return r"\)" not in line
+    return line.startswith("$$") and line.count("$$") == 1
+
+
 def can_inline_math(math: str) -> bool:
     """Return whether an unnumbered display is short enough to inline."""
     if len(math) > 145:
         return False
-    if "\\sum_j \\exp" in math:
+    if "\\sum_j \\exp" in math or "\\binom" in math:
         return False
     forbidden = ("\\\\", "&", "\\begin", "\\end", "\\label", "\\tag", "\\left", "\\right", "\\choice")
     return not any(tok in math for tok in forbidden)
@@ -503,6 +563,46 @@ def polish_compact_text(text: str) -> str:
     # displays have been inlined, so remove it at the final polishing stage.
     text = text.replace(r"\((\Id,\bar T_\pi)_\sharp\alpha\)", "")
     replacements = {
+        (
+            r"Algorithm~\ref{alg:hungarian-primal-dual}"
+        ): (
+            r"the Hungarian primal--dual method"
+        ),
+        (
+            r"Algorithm~\ref{alg:auction-bidding}"
+        ): (
+            r"the fixed-tolerance auction method"
+        ),
+        (
+            r"Algorithm~\ref{alg:auction-epsilon-scaling}"
+        ): (
+            r"the $\epsilon$-scaling auction method"
+        ),
+        (
+            r"Algorithm~\ref{alg:cyclic-bregman-projections}"
+        ): (
+            r"the cyclic Bregman projection iteration"
+        ),
+        (
+            r"With the full-variation convention~\eqref{eq-defn-tv},"
+        ): (
+            r"With the full-variation convention,"
+        ),
+        (
+            r"where $\phi_{\KL}$ is defined in~\eqref{eq-shannon-entropy}"
+        ): (
+            r"where $\phi_{\KL}(s)=s\log s-s+1$ for $s\geq0$, with $0\log0=0$"
+        ),
+        (
+            r"where $\phi_{\TV}$ is defined in~\eqref{eq-tv-entropy}"
+        ): (
+            r"where $\phi_{\TV}(s)=|s-1|$ for $s\geq0$"
+        ),
+        (
+            r"associated with the diagonal mobility~\eqref{eq-diagonal-vector-mobility}"
+        ): (
+            r"associated with $\mathsf M_{\mathrm{diag}}(u)=\diag(u_1,\ldots,u_m)$"
+        ),
         (
             r"\(\norm{\al-\be}_{\TV} = \int_\Xx |\rho_\al(x)-\rho_\be(x)|\,\d\lambda(x).\)"
             "\n"
@@ -623,6 +723,19 @@ def brace_delta(line: str) -> int:
     return line.count("{") - line.count("}")
 
 
+def remove_empty_paragraphs(text: str) -> str:
+    lines = text.splitlines()
+    kept = []
+    for i, line in enumerate(lines):
+        heading = parse_heading(line.strip())
+        if heading and heading[0] == "paragraph" and not heading[2]:
+            following = next((s for s in lines[i + 1:] if s.strip()), "")
+            if not following or parse_heading(following.strip()):
+                continue
+        kept.append(line)
+    return "\n".join(kept)
+
+
 def compact_section(path: Path) -> str:
     """Return the compacted TeX content for one source section."""
     out: list[str] = []
@@ -634,14 +747,24 @@ def compact_section(path: Path) -> str:
     skip_if_depth = 0
     skip_env_stack: list[str] = []
 
-    def flush() -> None:
+    def flush(*, before_math: bool = False) -> None:
         """Flush the pending prose paragraph into compact output."""
         nonlocal paragraph
-        out.extend(compact_paragraph(paragraph))
+        compacted = compact_paragraph(paragraph)
+        if before_math:
+            compacted = formula_context(paragraph, compacted)
+        out.extend(compacted)
         paragraph = []
 
     lines = path.read_text(encoding="utf-8").splitlines()
-    for raw_line in lines:
+    next_content = [""] * len(lines)
+    following = ""
+    for i in range(len(lines) - 1, -1, -1):
+        next_content[i] = following
+        stripped = remove_comment(lines[i]).strip()
+        if stripped and not is_index_line(stripped):
+            following = stripped
+    for i, raw_line in enumerate(lines):
         line = remove_comment(raw_line)
         stripped = line.strip()
 
@@ -681,17 +804,17 @@ def compact_section(path: Path) -> str:
             elif env_stack or custom_math_depth or display_math:
                 continue
             elif compact_env_stack:
-                flush()
+                flush(before_math=starts_formula(next_content[i]))
             else:
-                flush()
+                flush(before_math=starts_formula(next_content[i]))
             continue
 
         if compact_env_stack and not env_stack and not custom_math_depth and not display_math:
             compact_begins = [env for env in BEGIN_RE.findall(stripped) if env in COMPACT_ENVS]
             compact_ends = [env for env in END_RE.findall(stripped) if env in COMPACT_ENVS]
             begins = [env for env in BEGIN_RE.findall(stripped) if env in PRESERVE_ENVS]
-            starts_custom_math = stripped.startswith("\\eq{") or stripped.startswith("\\eql{")
-            starts_display = stripped.startswith("\\[") or stripped.startswith("$$")
+            starts_custom_math = stripped.startswith(("\\eq{", "\\eql{", "\\eqllead{"))
+            starts_display = stripped.startswith((r"\[", r"\(", "$$"))
 
             if compact_ends:
                 flush()
@@ -709,7 +832,7 @@ def compact_section(path: Path) -> str:
                 continue
 
             if begins or starts_custom_math or starts_display:
-                flush()
+                flush(before_math=starts_formula(stripped))
                 compact_line = compact_structural_line(line)
                 if compact_line:
                     out.append(compact_line)
@@ -718,7 +841,7 @@ def compact_section(path: Path) -> str:
                     custom_math_depth = brace_delta(stripped)
                     if custom_math_depth <= 0:
                         custom_math_depth = 0
-                if starts_display and not ("\\]" in stripped and stripped.index("\\[") < stripped.index("\\]")):
+                if starts_display and has_open_math_delimiter(stripped):
                     display_math = True
                 continue
 
@@ -741,14 +864,14 @@ def compact_section(path: Path) -> str:
                 custom_math_depth += brace_delta(stripped)
                 if custom_math_depth <= 0:
                     custom_math_depth = 0
-            if display_math and ("\\]" in stripped or "$$" in stripped):
+            if display_math and any(end in stripped for end in (r"\]", r"\)", "$$")):
                 display_math = False
             continue
 
         begins = [env for env in BEGIN_RE.findall(stripped) if env in PRESERVE_ENVS]
         compact_begins = [env for env in BEGIN_RE.findall(stripped) if env in COMPACT_ENVS]
-        starts_custom_math = stripped.startswith("\\eq{") or stripped.startswith("\\eql{")
-        starts_display = stripped.startswith("\\[") or stripped.startswith("$$")
+        starts_custom_math = stripped.startswith(("\\eq{", "\\eql{", "\\eqllead{"))
+        starts_display = stripped.startswith((r"\[", r"\(", "$$"))
 
         if stripped.startswith(("\\chapter", "\\section", "\\subsection", "\\subsubsection", "\\paragraph")):
             flush()
@@ -767,7 +890,7 @@ def compact_section(path: Path) -> str:
             continue
 
         if begins or starts_custom_math or starts_display:
-            flush()
+            flush(before_math=starts_formula(stripped))
             compact_line = compact_structural_line(line)
             if compact_line:
                 out.append(compact_line)
@@ -776,7 +899,7 @@ def compact_section(path: Path) -> str:
                 custom_math_depth = brace_delta(stripped)
                 if custom_math_depth <= 0:
                     custom_math_depth = 0
-            if starts_display and not ("\\]" in stripped and stripped.index("\\[") < stripped.index("\\]")):
+            if starts_display and has_open_math_delimiter(stripped):
                 display_math = True
             continue
 
@@ -794,10 +917,14 @@ def compact_section(path: Path) -> str:
     text = "\n".join(out).strip() + "\n"
     text = re.sub(r"(\\qifq[^\n]*),(\s*\\\\)", r"\1\2", text)
     text = re.sub(r"(\\qifq[^\n]*),\n(\})", r"\1\n\2", text)
+    text = trim_topics(text, path.stem, parse_heading)
+    text = repair_dependencies(text)
+    text = polish_context(text, path.stem)
     text = inline_short_displays(text)
     text = polish_compact_text(text)
+    text = remove_empty_paragraphs(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
-    return text
+    return text.rstrip() + "\n"
 
 
 def write_driver() -> None:
@@ -805,38 +932,84 @@ def write_driver() -> None:
     inputs = "\n".join(f"\\input{{sections/{name}}}" for name in SECTION_NAMES)
     driver = rf"""\documentclass[10pt,a4paper]{{article}}
 \pdfoutput=1
-\usepackage[bookmarks,bookmarksdepth=2,colorlinks=true,linkcolor=blue,urlcolor=blue]{{hyperref}}
-\usepackage[a4paper,top=6mm,bottom=6mm,left=6mm,right=6mm,includefoot,footskip=4mm]{{geometry}}
+\usepackage[T1]{{fontenc}}
+\usepackage[a4paper,top=9mm,bottom=8mm,left=9mm,right=9mm,includefoot,footskip=5mm]{{geometry}}
+\usepackage{{newpxtext}}
+\usepackage{{microtype}}
+\usepackage{{fancyhdr}}
+\usepackage{{needspace}}
 \usepackage[compact]{{titlesec}}
 \usepackage{{enumitem}}
 \usepackage{{longtable}}
 \usepackage[latin1]{{inputenc}}
 \usepackage{{mystyle}}
+\let\otmltransp\transp
+\let\transp\undefined
+\usepackage{{newpxmath}}
+\setcounter{{localmathalphabets}}{{0}}
+\let\newpxmathtransp\transp
+\let\transp\otmltransp
 \usepackage{{wrapfig}}
 \usepackage{{notations_ot}}
 \usepackage{{tikz}}
 
+\definecolor{{compactblue}}{{HTML}}{{234F70}}
+\definecolor{{compactparagraph}}{{HTML}}{{315F83}}
+\definecolor{{compactlink}}{{HTML}}{{7A3B2E}}
+\definecolor{{compactgray}}{{HTML}}{{606971}}
+\definecolor{{compactwash}}{{HTML}}{{F2F5F7}}
+\usepackage[bookmarks,bookmarksdepth=2,colorlinks=true,
+    linkcolor=compactlink,urlcolor=compactlink,
+    pdftitle={{Optimal Transport for Machine Learners: Compact Teaching Notes}},
+    pdfauthor={{Gabriel Peyr{{\'e}}}},
+    pdfsubject={{Compact mathematical notes on optimal transport}}]{{hyperref}}
+\renewcommand{{\a}}{{\VectMode{{a}}}}
+\renewcommand{{\b}}{{\VectMode{{b}}}}
+\renewcommand{{\c}}{{c}}
+\renewcommand{{\d}}{{\ins{{d}}}}
+\renewcommand{{\H}}{{H}}
+\renewcommand{{\P}}{{\VectMode{{P}}}}
+\renewcommand{{\S}}{{\VectMode{{S}}}}
+\renewcommand{{\SS}}{{\VectMode{{S}}}}
+\renewcommand{{\th}}{{\theta}}
+
 \setlength{{\parindent}}{{0pt}}
-\setlength{{\parskip}}{{0.2pt}}
-\linespread{{0.90}}
-\setlength{{\abovedisplayskip}}{{2pt plus .5pt minus .5pt}}
-\setlength{{\belowdisplayskip}}{{2pt plus .5pt minus .5pt}}
-\setlength{{\abovedisplayshortskip}}{{1pt plus .5pt minus .5pt}}
-\setlength{{\belowdisplayshortskip}}{{1pt plus .5pt minus .5pt}}
+\setlength{{\parskip}}{{.6pt plus .2pt}}
+\linespread{{0.92}}
+\AtBeginDocument{{%
+    \setlength{{\abovedisplayskip}}{{3pt plus .7pt minus .5pt}}%
+    \setlength{{\belowdisplayskip}}{{3pt plus .7pt minus .5pt}}%
+    \setlength{{\abovedisplayshortskip}}{{1pt plus .5pt minus .5pt}}%
+    \setlength{{\belowdisplayshortskip}}{{1pt plus .5pt minus .5pt}}%
+}}
 \setlength{{\jot}}{{1pt}}
 \setlength{{\topsep}}{{0pt}}
 \setlength{{\partopsep}}{{0pt}}
 \setlength{{\parsep}}{{0pt}}
 \setlength{{\itemsep}}{{0pt}}
 \setlist{{nosep,leftmargin=*}}
-\titlespacing*{{\section}}{{0pt}}{{.55ex plus .15ex}}{{.15ex}}
-\titlespacing*{{\subsection}}{{0pt}}{{.45ex plus .15ex}}{{.1ex}}
-\titlespacing*{{\subsubsection}}{{0pt}}{{.35ex plus .1ex}}{{.05ex}}
-\titlespacing*{{\paragraph}}{{0pt}}{{.25ex plus .1ex}}{{.45em}}
-\titleformat{{\section}}{{\large\bfseries}}{{\thesection}}{{.45em}}{{}}
-\titleformat{{\subsection}}{{\normalsize\bfseries}}{{\thesubsection}}{{.4em}}{{}}
-\titleformat{{\subsubsection}}{{\normalsize\itshape}}{{\thesubsubsection}}{{.35em}}{{}}
-\titleformat{{\paragraph}}[runin]{{\bfseries}}{{}}{{0pt}}{{}}
+\titlespacing*{{\section}}{{0pt}}{{2.2ex plus .5ex}}{{.65ex}}
+\titlespacing*{{\subsection}}{{0pt}}{{1.45ex plus .3ex}}{{.35ex}}
+\titlespacing*{{\subsubsection}}{{0pt}}{{1ex plus .2ex}}{{.2ex}}
+\titlespacing*{{\paragraph}}{{0pt}}{{1.05ex plus .25ex}}{{.55em}}
+\titleformat{{\section}}{{\Large\bfseries\color{{compactblue}}}}{{\thesection}}{{.55em}}{{}}[{{\vspace{{.15ex}}\titlerule[.35pt]}}]
+\titleformat{{\subsection}}{{\large\bfseries\color{{compactblue}}}}{{\thesubsection}}{{.5em}}{{}}
+\titleformat{{\subsubsection}}{{\normalsize\bfseries\color{{compactgray}}}}{{\thesubsubsection}}{{.45em}}{{}}
+\titleformat{{\paragraph}}[runin]{{\normalfont\bfseries\color{{compactparagraph}}}}{{}}{{0pt}}{{}}
+\pretocmd{{\paragraph}}{{\Needspace{{5\baselineskip}}}}{{}}{{}}
+\mdfdefinestyle{{definitionbox}}{{
+    backgroundcolor=compactwash,linecolor=compactparagraph,
+    linewidth=.65pt,topline=false,bottomline=false,rightline=false,
+    innertopmargin=1.5pt,innerbottommargin=1.5pt,
+    innerleftmargin=5pt,innerrightmargin=5pt,
+    skipabove=.18\baselineskip,skipbelow=.18\baselineskip,
+    nobreak=true,needspace=2.5\baselineskip}}
+\pagestyle{{fancy}}
+\fancyhf{{}}
+\fancyfoot[L]{{\scriptsize\color{{compactgray}}Optimal Transport\enspace /\enspace Compact Notes}}
+\fancyfoot[R]{{\small\color{{compactblue}}\thepage}}
+\renewcommand{{\headrulewidth}}{{0pt}}
+\renewcommand{{\footrulewidth}}{{0pt}}
 \allowdisplaybreaks[2]
 \emergencystretch=2em
 \sloppy
@@ -849,12 +1022,11 @@ def write_driver() -> None:
 
 \begin{{document}}
 \begin{{center}}
-{{\Large\bfseries Optimal Transport for Machine Learners}}\\[-.15em]
-{{\large\itshape Compact teaching notes}}\\[.35em]
-Gabriel Peyr{{\'e}}\\[-.1em]
-{{\small\today}}
+{{\fontsize{{21}}{{23}}\selectfont\bfseries\color{{compactblue}}Optimal Transport for Machine Learners}}\\[.35em]
+{{\large\itshape Compact teaching notes}}\\[.4em]
+{{\small Gabriel Peyr{{\'e}}\quad\textperiodcentered\quad\today}}
 \end{{center}}
-\vspace{{-.6em}}
+\vspace{{-.3em}}
 
 {inputs}
 
@@ -869,12 +1041,13 @@ def write_readme() -> None:
 
 This directory contains the compact, bibliography-free teaching version of the
 OT4ML manuscript. It is generated from the current sources in `OT4ML/` with
-`generate_compact.py`, using a 10pt A4 layout and tight margins for handouts.
+`generate_compact.py`, using a 10pt A4 layout, Palatino text and mathematics,
+muted-blue run-in headings, and compact definition boxes.
 
 The compact version is meant for lecture use: it follows the current chapter
 order of the full book, mapping chapters to article sections, and preserves the
 core mathematical statements, proofs and equations. It removes expansive
-exposition, side remarks and examples, transitions, references, figures, tables,
+exposition, side remarks and examples, bibliographic citations, figures, tables,
 the bibliography, the index, and the notation table from the full book.
 
 ## Build
@@ -889,13 +1062,18 @@ pdflatex -synctex=1 -interaction=nonstopmode -halt-on-error CourseOT-compact.tex
 Run these commands from the repository root. The first command refreshes the
 compact LaTeX source, and the two LaTeX passes refresh cross-references.
 
+Check the compact-only topic selection, formula introductions and cross-references
+with `python3 -m unittest discover -s compact -p 'test_*.py'`.
+
 ## Generator Policy
 
 - preserve formal mathematical environments and proofs;
 - follow the section order of `OT4ML/OT4ML.tex`;
 - strip citations and omit the bibliography, index, figures, tables, remarks,
   and examples;
-- remove pitches, transitions and background prose outside formal/math blocks;
+- remove extended background prose while retaining short formula introductions;
+- apply the compact-only topic selection in `editorial.py`, without modifying
+  the full manuscript;
 - inline short unnumbered displayed equations when this saves vertical space.
 
 LaTeX auxiliary files are ignored in this directory. Keep the generator, style
@@ -919,6 +1097,7 @@ def write_clean_copy(src: Path, dst: Path) -> None:
         text = text.replace("innerrightmargin=6pt,", "innerrightmargin=3.5pt,")
         text = text.replace(r"skipabove=.55\baselineskip,", r"skipabove=.18\baselineskip,")
         text = text.replace(r"skipbelow=.55\baselineskip,", r"skipbelow=.18\baselineskip,")
+        text = text.replace("\tnobreak=false,", "\tnobreak=true,")
         text = text.replace(
             r"skipbelow=.18\baselineskip,"
             "\n}",
