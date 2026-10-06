@@ -1,0 +1,896 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Entropic Optimal Transport and Sinkhorn}
+\hypersetup{pdftitle={Entropic Optimal Transport and Sinkhorn -- Exercises}}
+\begin{document}
+
+\maketitle
+
+\begin{exercise}[2$\times$2 entropic OT with perturbation]\label{ex:2x2-entropic-4parts}
+Let
+\[
+C=\begin{pmatrix}
+0 & 1\\
+1 & 0
+\end{pmatrix},\qquad
+a=\begin{pmatrix}p\\ 1-p\end{pmatrix},\qquad
+b=\begin{pmatrix}\tfrac12\\ \tfrac12\end{pmatrix},
+\]
+with $p\in(0,1)$, and let $\varepsilon>0$. Consider
+\[
+\min_{P\in\R_+^{2\times 2}} \ \ip{C}{P}
+\;+\;
+\varepsilon \sum_{i,j} P_{i,j}(\log P_{i,j}-1)
+\quad\text{subject to}\quad
+P\mathbf 1 = a,\quad P^\top \mathbf 1 = b.
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Show that every admissible transport plan can be written as
+  \[
+  P(x) =
+  \begin{pmatrix}
+  x & y(x)\\
+  z(x) & w(x)
+  \end{pmatrix}
+  \]
+  for a single scalar $x$, and give explicit formulas for $y(x)$, $z(x)$, $w(x)$, as well as the admissible interval $I(p)$ for $x$.
+  \item Rewrite the objective as a scalar function $F_\varepsilon(x)$ and compute $F_\varepsilon'(x)$.
+  \item Explain why the optimal $x_\varepsilon(p)$ is necessarily in the interior of $I(p)$ for $0<p<1$.
+    Optional: from the optimality condition $F_\varepsilon'(x)=0$, give the expression of the optimal $x_\varepsilon(p)$.
+  \item Optional: assume $0<p<1/2$. As $\varepsilon\downarrow0$, obtain an expansion $x_\varepsilon(p)=p+c(p)e^{-2/\varepsilon}+o(e^{-2/\varepsilon})$ and determine $c(p)$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Set $x=P_{1,1}$ and eliminate the other entries using the marginal constraints.\item Use $[r(\log r-1)]^\prime=\log r$.\item Inspect the signs of the derivative at the two endpoints, and its strict monotonicity.\item Put $x=p-\delta$ in the optimality equation and balance the leading terms as $e^{-2/\varepsilon}\to0$.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Let
+\[
+P = \begin{pmatrix} x & y \\ z & w \end{pmatrix}.
+\]
+The constraints $P\mathbf 1 = a$ and $P^\top \mathbf 1 = b$ are
+\[
+x + y = p,\qquad z + w = 1 - p,\qquad x + z = \tfrac12,\qquad y + w = \tfrac12.
+\]
+From $x+y=p$ we get $y=p-x$. From $x+z=\tfrac12$ we get $z=\tfrac12 - x$. Then $w$ is fixed by $z+w=1-p$:
+\[
+w = 1 - p - z = 1 - p - \Bigl(\tfrac12 - x\Bigr) = \tfrac12 - p + x.
+\]
+Hence every feasible plan is
+\[
+P(x) =
+\begin{pmatrix}
+x & p - x\\[2pt]
+\tfrac12 - x & \tfrac12 - p + x
+\end{pmatrix}.
+\]
+Nonnegativity gives
+\[
+x \ge 0,\quad p - x \ge 0,\quad \tfrac12 - x \ge 0,\quad \tfrac12 - p + x \ge 0.
+\]
+Thus
+\[
+x \in \Bigl[\max\bigl(0,p-\tfrac12\bigr),\ \min\bigl(p,\tfrac12\bigr)\Bigr] =: I_p.
+\]
+
+\medskip
+\textbf{(2)} The cost part is
+\[
+\ip{C}{P(x)} = (p - x) + \Bigl(\tfrac12 - x\Bigr) = p + \tfrac12 - 2x.
+\]
+For the entropic part set
+\[
+H(x) :=
+x(\log x - 1)
++ (p - x)(\log(p - x) - 1)
++ (\tfrac12 - x)(\log(\tfrac12 - x) - 1)
++ (\tfrac12 - p + x)(\log(\tfrac12 - p + x) - 1).
+\]
+Then
+\[
+F_\varepsilon(x) = p + \tfrac12 - 2x + \varepsilon\,H(x),
+\qquad x\in I_p.
+\]
+Differentiate term by term. Using
+\[
+\frac{d}{dx}\bigl[x(\log x - 1)\bigr] = \log x,\quad
+\frac{d}{dx}\bigl[(p - x)(\log(p - x) - 1)\bigr] = -\log(p - x),
+\]
+\[
+\frac{d}{dx}\bigl[(\tfrac12 - x)(\log(\tfrac12 - x) - 1)\bigr] = -\log(\tfrac12 - x),\quad
+\frac{d}{dx}\bigl[(\tfrac12 - p + x)(\log(\tfrac12 - p + x) - 1)\bigr] = \log(\tfrac12 - p + x),
+\]
+we get
+\[
+F'_\varepsilon(x)
+= -2 + \varepsilon\Bigl[
+\log x - \log(p - x) - \log(\tfrac12 - x) + \log(\tfrac12 - p + x)
+\Bigr].
+\]
+
+\medskip
+\textbf{(3)} In the interior, $F_\varepsilon^{\prime\prime}=\varepsilon(1/x+1/(p-x)+1/(1/2-x)+1/(1/2-p+x))>0$. At the left endpoint $F_\varepsilon^\prime\to-\infty$; at the right endpoint $F_\varepsilon^\prime\to+\infty$. Thus there is a unique interior minimizer. The condition $F'_\varepsilon(x)=0$ is
+\[
+-2 + \varepsilon\log\!\left(
+\frac{x(\tfrac12 - p + x)}{(p - x)(\tfrac12 - x)}
+\right) = 0,
+\]
+that is,
+\[
+\frac{x(\tfrac12 - p + x)}{(p - x)(\tfrac12 - x)}
+= \exp\!\Bigl(\tfrac{2}{\varepsilon}\Bigr) =: \tau.
+\]
+Equivalently,
+\[
+x(\tfrac12 - p + x) = \tau (p - x)(\tfrac12 - x),\qquad \tau = e^{2/\varepsilon}.
+\]
+This is a quadratic equation in $x$. Expanding and collecting terms one gets
+\[
+(1 - \tau)x^2
++ \Bigl(p\tau - p + \tfrac{\tau}{2} + \tfrac12\Bigr)x
+- \frac{p\tau}{2} = 0.
+\]
+Set
+\[
+a = 1 - \tau,\quad
+b = p\tau - p + \frac{\tau+1}{2},\quad
+c = -\frac{p\tau}{2}.
+\]
+Then $x$ solves
+\[
+a x^2 + b x + c = 0.
+\]
+Thus
+\[
+x_\varepsilon(p)
+= \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+= \frac{-b \pm \sqrt{b^2 - 2p\tau(\tau - 1)}}{2(1-\tau)}.
+\]
+Among the two roots, the one in $I_p=\bigl[\max(0,p-\tfrac12),\ \min(p,\tfrac12)\bigr]$ is the minimizer:
+\[
+x_\varepsilon(p)
+= \frac{-b + \sqrt{b^2 - 2p\tau(\tau - 1)}}{2(1-\tau)},
+\quad
+b = p\tau - p + \frac{\tau+1}{2},\quad
+\tau = e^{2/\varepsilon}.
+\]
+
+\medskip
+\textbf{(4) Asymptotics as $\varepsilon\to0^+$ (i.e. $\tau\to+\infty$).}
+Assume $p<\tfrac12$. Then the unregularized solution is $x_0(p)=p$ (right endpoint of $I_p$). For $\varepsilon>0$ small we look for
+\[
+x_\varepsilon = p - \delta_\varepsilon,\qquad \delta_\varepsilon>0,\ \delta_\varepsilon\ll 1.
+\]
+Plug into the optimality equation:
+\[
+\frac{(p-\delta_\varepsilon)\bigl(\tfrac12 - p + p - \delta_\varepsilon\bigr)}
+{(p - (p-\delta_\varepsilon))(\tfrac12 - (p-\delta_\varepsilon))}
+= \tau.
+\]
+This is
+\[
+\frac{(p-\delta_\varepsilon)(\tfrac12 - \delta_\varepsilon)}
+{\delta_\varepsilon (\tfrac12 - p + \delta_\varepsilon)}
+= \tau.
+\]
+For small $\delta_\varepsilon$,
+\[
+(p-\delta_\varepsilon)(\tfrac12 - \delta_\varepsilon)
+= \frac{p}{2} + O(\delta_\varepsilon),
+\qquad
+\tfrac12 - p + \delta_\varepsilon = \tfrac12 - p + O(\delta_\varepsilon).
+\]
+Hence, at leading order,
+\[
+\frac{\frac{p}{2}}{\delta_\varepsilon (\tfrac12 - p)} \simeq \tau
+\quad\Longrightarrow\quad
+\delta_\varepsilon \simeq \frac{p}{2(\tfrac12 - p)}\,\tau^{-1}
+= \frac{p}{1-2p}\,e^{-2/\varepsilon}.
+\]
+Therefore
+\[
+x_\varepsilon(p)
+= p - \delta_\varepsilon
+= p - \frac{p}{1-2p}\,\tau^{-1} + o(\tau^{-1})
+= p - \frac{p}{1-2p}\,e^{-2/\varepsilon} + o\bigl(e^{-2/\varepsilon}\bigr).
+\]
+For $p>\tfrac12$ the same argument, exchanging the two rows, gives the symmetric boundary layer near $x=\tfrac12$.
+\end{solution}
+
+\begin{exercise}[Dual of entropic-regularized linear program]\label{ex:entropic-LP-dual}
+Consider the entropic-regularized linear program
+\[
+\min_{P\ge 0,\ A(P)=b} \ \ip{C}{P} + \varepsilon\,H(P),
+\qquad
+H(P) := \sum_{i} P_i(\log P_i - 1),
+\]
+where $P$ is a finite-dimensional nonnegative vector (think of $P\in\R^N_+$, or a matrix reshaped as a vector), $C\in\R^N$, $A:\R^N\to\R^m$ is linear, $b\in\R^m$, and $\varepsilon>0$. Assume strict feasibility: there exists $P^0>0$ with $A(P^0)=b$. Use $0\log0=0$.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Write the Lagrangian $\mathcal L(P,\lambda)$.
+  \item Assuming we can swap $\inf_P$ and $\sup_\lambda$, write the dual problem.
+  \item Give the primal--dual optimality relation between $P$ and $\lambda$.
+  \item Give the expression of $A(P)$ in the case of the marginal constraint of classical OT.
+    Compute $A^\top$, and show that the dual you obtained matches the classical dual of entropic OT.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Use the sign convention $\langle\lambda,b-A(P)\rangle$.\item Minimize $dp+\varepsilon p(\log p-1)$ over $p\ge0$, entry by entry.\item Combine scalar stationarity with feasibility.\item Compute $\langle(f,g),A(P)\rangle$ and collect the coefficient of $P_{i,j}$.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Choose
+\[
+\mathcal L(P,\lambda)=\langle C,P\rangle+\varepsilon H(P)+\langle\lambda,b-A(P)\rangle.
+\]
+The scalar function $dp+\varepsilon p(\log p-1)$ has its unique minimum at $p=e^{-d/\varepsilon}$, with minimum value $-\varepsilon e^{-d/\varepsilon}$.
+
+\textbf{(2)} Applying this to $d=C_i-(A^\top\lambda)_i$ gives
+\[
+\sup_{\lambda\in\R^m}\left\{\langle b,\lambda\rangle
+-\varepsilon\sum_i e^{((A^\top\lambda)_i-C_i)/\varepsilon}\right\}.
+\]
+The primal objective is coercive because $H(P)$ grows faster than linearly. It has a unique minimizer on the nonempty closed feasible set. Strict feasibility ensures strong duality and a finite optimal multiplier; it also excludes forced zero coordinates.
+
+\textbf{(3)} The optimality equations are
+\[
+P_i^\star=e^{((A^\top\lambda^\star)_i-C_i)/\varepsilon},\qquad A(P^\star)=b.
+\]
+Conversely, these equations certify optimality by equality in the scalar minimizations. Multipliers need not be unique if the constraints are redundant.
+
+\textbf{(4)} For an $n\times m$ coupling matrix, write the constraint vector as $(a,b)$ instead of the generic $b$. Then
+\[
+A(P)=(P\mathbf1_m,P^\top\mathbf1_n),\qquad
+(A^\top(f,g))_{i,j}=f_i+g_j.
+\]
+Indeed, $\langle f,P\mathbf1_m\rangle+\langle g,P^\top\mathbf1_n\rangle=\sum_{i,j}(f_i+g_j)P_{i,j}$. The dual is therefore
+\[
+\sup_{f,g}\left\{\langle a,f\rangle+\langle b,g\rangle
+-\varepsilon\sum_{i,j}e^{(f_i+g_j-C_{i,j})/\varepsilon}\right\}.
+\]
+With $u_i=e^{f_i/\varepsilon}$, $v_j=e^{g_j/\varepsilon}$, and $K_{i,j}=e^{-C_{i,j}/\varepsilon}$, the primal relation is $P_{i,j}^\star=u_iK_{i,j}v_j$. Positive equal-mass marginals supply strict feasibility.
+\end{solution}
+
+\begin{exercise}[Entropic multimarginal OT with 3 marginals]\label{ex:multimarginal}
+Let $a\in\mathbb R_{++}^{n_1}$, $b\in\mathbb R_{++}^{n_2}$, $c\in\mathbb R_{++}^{n_3}$ of equal total mass, and let $\varepsilon>0$ and $C\in\mathbb R^{n_1\times n_2\times n_3}$. For $T\in\mathbb R_+^{n_1\times n_2\times n_3}$ define the three marginalization operators
+\[
+\pi_1(T) := \Bigl( \sum_{j,k} T_{i,j,k} \Bigr)_{i=1}^{n_1},\qquad
+\pi_2(T) := \Bigl( \sum_{i,k} T_{i,j,k} \Bigr)_{j=1}^{n_2},\qquad
+\pi_3(T) := \Bigl( \sum_{i,j} T_{i,j,k} \Bigr)_{k=1}^{n_3}.
+\]
+Consider the problem
+\[
+\min_{T\ge 0} \ \ip{C}{T} + \varepsilon \sum_{i,j,k} T_{i,j,k}(\log T_{i,j,k}-1)
+\quad\text{s.t.}\quad
+\pi_1(T)=a,\ \pi_2(T)=b,\ \pi_3(T)=c.
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Write the Lagrangian using multipliers $f,g,h$ for $\pi_1,\pi_2,\pi_3$.
+  \item Assuming one can swap $\min_T$ and $\max_{f,g,h}$, write the dual.
+  \item Write the Sinkhorn iterations in the log domain for the three potentials.
+  \item \textit{(Bonus)} Explain why the usual Hilbert-metric/Birkhoff argument for 2 marginals does not give a contraction here.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Use the constraints with signs $\langle f,a-\pi_1(T)\rangle$, and similarly for the other two.\item Apply the scalar entropy conjugate to each tensor entry.\item Enforce one marginal at a time, using the most recently updated potentials.\item Changing two input scalings contributes two projective errors, rather than a single linear-map error.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Introduce $f\in\R^{n_1}$, $g\in\R^{n_2}$, $h\in\R^{n_3}$. Using the shorthand
+\[
+\ip{f}{\pi_1(T)} = \sum_{i} f_i \sum_{j,k} T_{i,j,k},\quad\text{etc.},
+\]
+the Lagrangian is
+\[
+\mathcal L(T,f,g,h)
+= \ip{C}{T} + \varepsilon \sum_{i,j,k} T_{i,j,k}(\log T_{i,j,k} -1)
++ \ip{f}{a - \pi_1(T)} + \ip{g}{b - \pi_2(T)} + \ip{h}{c - \pi_3(T)}.
+\]
+Grouping terms in $T$:
+\[
+\mathcal L(T,f,g,h)
+= \ip{a}{f} + \ip{b}{g} + \ip{c}{h}
++ \sum_{i,j,k} \bigl(C_{i,j,k} - f_i - g_j - h_k\bigr) T_{i,j,k}
++ \varepsilon \sum_{i,j,k} T_{i,j,k}(\log T_{i,j,k} -1).
+\]
+
+\medskip
+\textbf{(2)} For fixed $(f,g,h)$ we minimize over $T\ge0$ termwise. For one entry $t\ge0$ with coefficient $d:=C_{i,j,k} - f_i - g_j - h_k$:
+\[
+\min_{t\ge0} \ d\,t + \varepsilon t(\log t -1)
+\quad\Rightarrow\quad
+d + \varepsilon \log t = 0
+\quad\Rightarrow\quad
+t = \exp\!\Bigl( \tfrac{f_i + g_j + h_k - C_{i,j,k}}{\varepsilon} \Bigr).
+\]
+Value at the minimum:
+\[
+-\varepsilon \exp\!\Bigl( \tfrac{f_i + g_j + h_k - C_{i,j,k}}{\varepsilon} \Bigr).
+\]
+Hence the dual function is
+\[
+g(f,g,h)
+= \ip{a}{f} + \ip{b}{g} + \ip{c}{h}
+- \varepsilon \sum_{i,j,k} \exp\!\Bigl( \tfrac{f_i + g_j + h_k - C_{i,j,k}}{\varepsilon} \Bigr).
+\]
+So the dual problem is
+\[
+\max_{f,g,h}\;
+\ip{a}{f} + \ip{b}{g} + \ip{c}{h}
+- \varepsilon \sum_{i,j,k} \exp\!\Bigl( \tfrac{f_i + g_j + h_k - C_{i,j,k}}{\varepsilon} \Bigr).
+\]
+
+\medskip
+\textbf{(3)} Let $K_{i,j,k} := e^{-C_{i,j,k}/\varepsilon}$ and define scaling vectors
+\[
+u_i := e^{f_i/\varepsilon},\quad
+v_j := e^{g_j/\varepsilon},\quad
+w_k := e^{h_k/\varepsilon}.
+\]
+The primal optimal tensor is then
+\[
+T_{i,j,k} = K_{i,j,k} u_i v_j w_k.
+\]
+Imposing the three marginal constraints compactly:
+\[
+\pi_1(K \odot (u\otimes v \otimes w)) = a,\quad
+\pi_2(K \odot (u\otimes v \otimes w)) = b,\quad
+\pi_3(K \odot (u\otimes v \otimes w)) = c,
+\]
+where $\odot$ is entrywise product and $(u\otimes v \otimes w)_{i,j,k}=u_i v_j w_k$.
+This yields the 3-block Sinkhorn updates:
+\begin{align*}
+u_i^{(\ell+1)} &= \frac{a_i}{\bigl[\pi_1(K \odot (1\otimes v^{(\ell)} \otimes w^{(\ell)}))\bigr]_i}
+= \frac{a_i}{\displaystyle \sum_{j,k} K_{i,j,k} v_j^{(\ell)} w_k^{(\ell)}},\\
+v_j^{(\ell+1)} &= \frac{b_j}{\displaystyle \sum_{i,k} K_{i,j,k} u_i^{(\ell+1)} w_k^{(\ell)}},\\
+w_k^{(\ell+1)} &= \frac{c_k}{\displaystyle \sum_{i,j} K_{i,j,k} u_i^{(\ell+1)} v_j^{(\ell+1)}}.
+\end{align*}
+In log form ($f_i=\varepsilon\log u_i$, etc.):
+\begin{align*}
+f_i^{(\ell+1)} &= \varepsilon \log a_i
+- \varepsilon \log \Bigl( \sum_{j,k} K_{i,j,k} e^{g_j^{(\ell)}/\varepsilon} e^{h_k^{(\ell)}/\varepsilon} \Bigr),\\
+g_j^{(\ell+1)} &= \varepsilon \log b_j
+- \varepsilon \log \Bigl( \sum_{i,k} K_{i,j,k} e^{f_i^{(\ell+1)}/\varepsilon} e^{h_k^{(\ell)}/\varepsilon} \Bigr),\\
+h_k^{(\ell+1)} &= \varepsilon \log c_k
+- \varepsilon \log \Bigl( \sum_{i,j} K_{i,j,k} e^{f_i^{(\ell+1)}/\varepsilon} e^{g_j^{(\ell+1)}/\varepsilon} \Bigr).
+\end{align*}
+
+\medskip
+
+\textbf{(4) Bonus.} Each two-marginal half-step is a positive linear map followed by componentwise inversion. With three marginals, the denominator for $u$ depends on $v\otimes w$, and
+\[
+d_H(v\otimes w,\widetilde v\otimes\widetilde w)
+=d_H(v,\widetilde v)+d_H(w,\widetilde w).
+\]
+Viewing tensor contraction as a positive linear map on this tensor-product input gives a bound of the form
+$d_H(u^{\rm new},\widetilde u^{\rm new})\le\lambda[d_H(v,\widetilde v)+d_H(w,\widetilde w)]$, where $\lambda<1$. This is not automatically a contraction in the maximum of the block errors, since its bound is $2\lambda$. It does not prove failure of convergence; it explains why the two-block proof cannot simply be reused. A Birkhoff coefficient itself never exceeds $1$.
+\end{solution}
+
+\begin{exercise}[Gaussian example for Sinkhorn in dual form]\label{ex:gaussian-sinkhorn}
+Let $\alpha$ and $\beta$ be probability measures on $\mathbb R$ and let $c(x,y)=\frac12(x-y)^2$. The entropic OT dual can be written
+\[
+\max_{f,g} \ \int f(x)\,d\alpha(x) + \int g(y)\,d\beta(y)
+- \varepsilon \int\!\!\int \exp\!\Bigl(\tfrac{f(x)+g(y)-c(x,y)}{\varepsilon}\Bigr)\,d\alpha(x)\,d\beta(y).
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Recall the Sinkhorn update on $f$ (dual form).
+ % f(x) \leftarrow -\varepsilon \log \int \exp\!\Bigl(\tfrac{g(y)-c(x,y)}{\varepsilon}\Bigr)\,d\beta(y).
+ % \]
+  \item Assume $\alpha=\mathcal N(m_1,\sigma_1^2)$, $\beta=\mathcal N(m_2,\sigma_2^2)$, with $\sigma_1,\sigma_2>0$, and let $g(y)=\frac12 a y^2+b y+c_0$, where $a<1+\varepsilon/\sigma_2^2$ (the integrability condition). Compute the integral on the right-hand side and show that the updated $f$ is also quadratic.
+  \item Give an intuitive explanation of why (for this quadratic/Gaussian setting) the optimal dual potentials remain quadratic, and what this implies for the optimal coupling $\pi^\star$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Maximize the dual in $f(x)$ pointwise.\item Complete the square in $y$ and retain the Gaussian normalization factor.\item Try a Gaussian joint law with cross-covariance $q$ and match its cross precision with that of the Gibbs kernel.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Pointwise stationarity in $f$ gives
+\[
+f^{\rm new}(x)=-\varepsilon\log\int e^{(g(y)-(x-y)^2/2)/\varepsilon}\,d\beta(y).
+\]
+The displayed dual in the statement omits the constant $+\varepsilon$ of the probability-normalized KL convention; this changes neither potentials nor optimizer.
+
+\textbf{(2)} Collect the exponent as $-Ay^2/2+B(x)y+D(x)$, where
+\[
+A=\frac{1-a}{\varepsilon}+\frac1{\sigma_2^2}>0,\quad
+B(x)=\frac{x+b}{\varepsilon}+\frac{m_2}{\sigma_2^2},\quad
+D(x)=\frac{c_0-x^2/2}{\varepsilon}-\frac{m_2^2}{2\sigma_2^2}.
+\]
+Completing the square yields
+\[
+\int e^{(g(y)-(x-y)^2/2)/\varepsilon}\,d\beta(y)
+=\frac{e^{D(x)+B(x)^2/(2A)}}{\sigma_2\sqrt A}.
+\]
+Thus $f^{\rm new}(x)=\varepsilon\log(\sigma_2\sqrt A)-\varepsilon D(x)-\varepsilon B(x)^2/(2A)$ is quadratic. Without $A>0$, the integral need not be finite, so the qualification in the statement is essential.
+
+\textbf{(3)} Quadratic updates suggest Gaussian closure, but invariance of an iteration family alone is not an existence proof. To verify the optimizer directly, take a Gaussian coupling with prescribed means and covariance
+\[
+\begin{pmatrix}\sigma_1^2&q\\q&\sigma_2^2\end{pmatrix},\qquad
+q=\frac{\sqrt{\varepsilon^2+4\sigma_1^2\sigma_2^2}-\varepsilon}{2}.
+\]
+Its determinant is $\varepsilon q>0$. Therefore its off-diagonal precision entry is $-q/(\varepsilon q)=-1/\varepsilon$. In its log density ratio relative to $\alpha\otimes\beta$, the mixed term is $xy/\varepsilon$, exactly as in $-(x-y)^2/(2\varepsilon)$. The remaining terms are separate quadratics in $x,y$, giving potentials $f,g$ and the exact relation
+$d\pi^\star/d(\alpha\otimes\beta)=e^{(f+g-c)/\varepsilon}$. Together with the prescribed marginals, this certifies primal--dual optimality. Strict convexity of entropy makes the coupling unique.
+\end{solution}
+
+\begin{exercise}[Envelope theorem and gradients of the entropic cost]\label{ex:envelope-entropic}
+Recall the envelope theorem in the finite-dimensional smooth case:
+
+\smallskip
+\emph{Let} $V(\theta) := \min_{z} F(z,\theta)$ \emph{with} $F$ \emph{smooth, with the minimization over a fixed compact set, and for each} $\theta$ \emph{assume there is a unique minimizer} $z^\star(\theta)$. \emph{Then}
+\[
+\nabla_\theta V(\theta) = \nabla_\theta F\bigl(z^\star(\theta),\theta\bigr),
+\]
+i.e. the derivative of $V$ w.r.t. $\theta$ is the partial derivative of $F$ at the optimizer (no derivative of $z^\star$ needed).
+
+\medskip
+Let $a\in\mathbb R_{++}^m$, $b\in\mathbb R_{++}^n$ be probability histograms, let $\varepsilon>0$, and $C\in\mathbb R^{m\times n}$ a cost matrix. The entropic OT cost is
+\[
+\W_\varepsilon(a,b;C)
+:= \min_{\substack{P\in\R_+^{m\times n}\\P\mathbf 1 = a,\ P^\top \mathbf 1 = b}}
+\biggl\{ \langle C,P\rangle + \varepsilon \sum_{i,j} P_{i,j}(\log P_{i,j} - 1)\biggr\}.
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Using the envelope theorem on this \emph{primal} problem, give the gradient $\nabla_C \W_\varepsilon(a,b;C)$.
+  \item Assume the cost comes from positions: $x=(x_1,\dots,x_m)\subset\R^d$, $y=(y_1,\dots,y_n)\subset\R^d$, and
+  \[
+  C_{i,j} = \tfrac12 \|x_i - y_j\|^2.
+  \]
+  Compute $\nabla_{x_1} \W_\varepsilon(a,b;C)$.
+  \item Recall the dual of entropic OT
+  \[
+  \W_\varepsilon(a,b;C)
+  = \max_{f\in\R^m,\,g\in\R^n} \ \langle f,a\rangle + \langle g,b\rangle
+  - \varepsilon \sum_{i,j} \exp\!\Bigl(\tfrac{f_i + g_j - C_{i,j}}{\varepsilon}\Bigr).
+  \]
+  Using again the envelope theorem, compute its derivative along perturbations $\dot a$ satisfying $\sum_i\dot a_i=0$, and explain the additive-constant ambiguity.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Differentiate the objective in $C$, holding the optimal plan fixed.\item Only the first row of costs depends on $x_1$.\item Work on the probability simplex. Potentials differing by a constant give the same pairing with a zero-sum perturbation.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Write
+\[
+F(P,C) = \langle C,P\rangle + \varepsilon \sum_{i,j} P_{i,j}(\log P_{i,j} - 1),
+\quad
+\W_\varepsilon(a,b;C) = \min_{P\in\Pi(a,b)} F(P,C),
+\]
+where $\Pi(a,b)$ is the transport polytope. For fixed $(a,b,C)$, let $P_\varepsilon^\star(a,b;C)$ be the unique optimal coupling. By the envelope theorem,
+\[
+\nabla_C \W_\varepsilon(a,b;C) = \nabla_C F\bigl(P_\varepsilon^\star,C\bigr)
+= P_\varepsilon^\star.
+\]
+Since $C$ and $P$ have the same shape, this means
+\[
+\frac{\partial \W_\varepsilon}{\partial C_{i,j}} = (P_\varepsilon^\star)_{i,j}.
+\]
+
+\medskip
+\textbf{(2)} Now $C_{1,j} = \tfrac12 \|x_1 - y_j\|^2$. By the chain rule,
+\[
+\nabla_{x_1} \W_\varepsilon(a,b;C)
+= \sum_{j=1}^n \frac{\partial \W_\varepsilon}{\partial C_{1,j}} \,\nabla_{x_1} C_{1,j}
+= \sum_{j=1}^n (P_\varepsilon^\star)_{1,j} \,(x_1 - y_j).
+\]
+Hence
+\[
+\nabla_{x_1} \W_\varepsilon(a,b;C)
+= x_1 \sum_{j} (P_\varepsilon^\star)_{1,j} - \sum_j (P_\varepsilon^\star)_{1,j} y_j.
+\]
+But $\sum_j (P_\varepsilon^\star)_{1,j} = a_1$, so
+\[
+\nabla_{x_1} \W_\varepsilon(a,b;C)
+= a_1 x_1 - \sum_{j} (P_\varepsilon^\star)_{1,j} y_j.
+\]
+
+\medskip
+\textbf{(3)} Consider the dual
+\[
+D(f,g;a,b) = \langle f,a\rangle + \langle g,b\rangle
+- \varepsilon \sum_{i,j} \exp\!\Bigl(\tfrac{f_i + g_j - C_{i,j}}{\varepsilon}\Bigr).
+\]
+Let $(f^\star,g^\star)$ be the maximizers. By the envelope theorem (now on the dual side),
+\[
+\nabla_a \W_\varepsilon(a,b;C) = f^\star,
+\qquad
+\nabla_b \W_\varepsilon(a,b;C) = g^\star.
+\]
+These equalities are understood on the tangent spaces of the probability simplices: $D_a\W_\varepsilon[\dot a]=\langle f^\star,\dot a\rangle$ for $\sum_i\dot a_i=0$, and similarly for $b$. The gauge $(f^\star,g^\star)\mapsto(f^\star+c,g^\star-c)$ does not change these derivatives. The orthogonal tangent-space representative is $f^\star-\frac1m(\sum_i f_i^\star)\mathbf1_m$, not an intrinsically defined ambient gradient.
+\end{solution}
+
+\begin{exercise}[Entropic OT, joint convexity, and semi-relaxed reformulation]\label{ex:semi-relaxed-simple}
+Let $a=(a_1,\dots,a_m)\in\Delta_m$ and $b=(b_1,\dots,b_n)\in\Delta_n$ be probability vectors and let $C\in\R^{m\times n}$ be a cost matrix. Consider the (balanced) entropic OT problem
+\[
+W_\varepsilon(a,b)
+:= \min_{\substack{P\in\R_+^{m\times n}\\ P\mathbf 1_n = a,\; P^\top \mathbf 1_m = b}}
+\Bigl\{ \langle C,P\rangle + \varepsilon\,H(P) \Bigr\},
+\qquad
+H(P) := \sum_{i,j} P_{i,j}(\log P_{i,j}-1).
+\]
+It is well known (and you may take it for granted) that the dual of this problem is
+\[
+W_\varepsilon(a,b)
+= \sup_{f\in\R^m,\;g\in\R^n}
+\left\{
+\langle f,a\rangle + \langle g,b\rangle
+- \varepsilon \sum_{i=1}^m \sum_{j=1}^n \exp\!\Bigl(\tfrac{f_i + g_j - C_{i,j}}{\varepsilon}\Bigr)
+\right\}.
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Using the dual expression above, show that \emph{both} maps
+  \[
+  a \longmapsto W_\varepsilon(a,b)
+  \quad\text{and}\quad
+  b \longmapsto W_\varepsilon(a,b)
+  \]
+  are convex, and in fact that $W_\varepsilon(a,b)$ is jointly convex in $(a,b)$.
+  \item Show that the outer problem
+  \[
+  \min_{a\in\Delta_m} \ W_\varepsilon(a,b)
+  \]
+  is equivalent to the semi-relaxed problem
+  \[
+  \min_{\substack{P\ge0\\ P^\top \mathbf 1_m = b}}
+  \ \langle C,P\rangle + \varepsilon\,H(P).
+  \]
+  \item Solve this semi-relaxed problem in closed form.
+ \end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item A supremum of affine functions is convex. Check which entropy convention is being used.\item The free source marginal is forced to be $P\mathbf1_n$.\item Minimize independently in each column with a single mass constraint.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1) Joint convexity.}
+From the dual
+\[
+W_\varepsilon(a,b)
+= \sup_{f,g} \bigl( \langle f,a\rangle + \langle g,b\rangle - R(f,g)\bigr),
+\quad
+R(f,g):=\varepsilon \sum_{i,j} \exp\!\Bigl(\tfrac{f_i + g_j - C_{i,j}}{\varepsilon}\Bigr),
+\]
+we see that for each fixed $(f,g)$ the map $(a,b)\mapsto \langle f,a\rangle + \langle g,b\rangle - R(f,g)$ is affine in $(a,b)$ (since $R$ does not depend on $(a,b)$). A supremum of affine functions is convex, hence $W_\varepsilon$ is convex in $a$, convex in $b$, and actually jointly convex in $(a,b)$.
+
+\medskip
+\textbf{(2) Semi-relaxed reformulation.}
+Write
+\[
+\min_{a\in\Delta_m} W_\varepsilon(a,b)
+= \min_{a\in\Delta_m} \min_{\substack{P\ge0\\ P\mathbf 1_n = a\\ P^\top \mathbf 1_m = b}}
+\{\langle C,P\rangle + \varepsilon H(P)\}.
+\]
+For any $P\ge0$ with $P^\top \mathbf 1_m = b$, choosing $a = P\mathbf 1_n$ makes $P$ feasible for the inner problem. Conversely, any feasible pair $(P,a)$ satisfies $a=P\mathbf 1_n$ anyway. Thus we can eliminate $a$ and obtain the equivalent problem
+\[
+\min_{\substack{P\ge0\\ P^\top \mathbf 1_m = b}}
+\ \langle C,P\rangle + \varepsilon H(P).
+\]
+
+\medskip
+\textbf{(3) Closed form.}
+The semi-relaxed problem separates over columns. For a fixed $j$, we solve
+\[
+\min_{p_1,\dots,p_m\ge0}
+\ \sum_{i=1}^m C_{i,j} p_i + \varepsilon \sum_{i=1}^m p_i(\log p_i - 1)
+\quad\text{s.t.}\quad \sum_{i=1}^m p_i = b_j.
+\]
+Using a Lagrange multiplier $\lambda_j$ for the column constraint, stationarity gives
+\[
+C_{i,j} + \varepsilon \log p_i - \lambda_j = 0
+\quad\Longrightarrow\quad
+p_i = \exp\!\Bigl(\tfrac{\lambda_j - C_{i,j}}{\varepsilon}\Bigr).
+\]
+Imposing $\sum_i p_i = b_j$ yields
+\[
+e^{\lambda_j/\varepsilon} = \frac{b_j}{\sum_{k=1}^m e^{-C_{k,j}/\varepsilon}},
+\]
+hence
+\[
+p_i = \frac{b_j\, e^{-C_{i,j}/\varepsilon}}{\sum_{k=1}^m e^{-C_{k,j}/\varepsilon}}.
+\]
+Doing this for each column gives $P^\star_{i,j}=b_j e^{-C_{i,j}/\varepsilon}/\sum_k e^{-C_{k,j}/\varepsilon}$. If $b_j=0$, the entire column is zero and the same formula still holds. This joint convexity concerns the entropy-only convention above; subtracting marginal entropies to use $\mathrm{KL}(P\mid a\otimes b)$ changes that conclusion.
+\end{solution}
+
+\begin{exercise}[Invariance and rescaling (continuous setting)]\label{ex:invariance-primal-dual-cont}
+Let $X,Y$ be compact metric spaces, $\alpha,\beta$ probability measures, and $c:X\times Y\to\R$ a continuous cost and $\varepsilon>0$, consider the entropic optimal transport problem
+\[
+\min_{\pi\in\Pi(\alpha,\beta)}
+\left\{
+\int_{X\times Y} c(x,y)\,d\pi(x,y)
++
+\varepsilon \int_{X\times Y}
+\Bigl(
+\log \frac{d\pi}{d(\alpha\otimes\beta)}(x,y) - 1
+\Bigr)\,d\pi(x,y)
+\right\},
+\]
+where $\Pi(\alpha,\beta)$ is the set of couplings of $\alpha$ and $\beta$ and the entropy is defined as $+\infty$ if $\pi\not\ll\alpha\otimes\beta$.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item (\textbf{Invariance under potentials})
+  Let $u:X\to\R$ and $v:Y\to\R$ be integrable. Show that replacing the cost by
+  \[
+  c'(x,y)=c(x,y)+u(x)+v(y)
+  \]
+  does \emph{not} change the optimal plan: the minimizer for $c'$ is the same coupling as for $c$.
+
+  \item (\textbf{Scaling of the cost})
+  For $\lambda>0$, denote by $\pi_{c,\varepsilon}$ the optimal coupling for cost $c$ and regularization $\varepsilon$, and by $\pi_{\lambda c,\varepsilon}$ the one for the scaled cost $\lambda c$. Show that
+  \[
+  \pi_{\lambda c,\varepsilon}
+  =
+  \pi_{c,\ \varepsilon/\lambda},
+  \]
+  i.e. \emph{scaling the cost by $\lambda$ is the same as keeping the cost and scaling the regularization by $1/\lambda$}. \end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Marginal-only terms integrate to constants on the feasible set.\item Divide the entire objective by $\lambda>0$.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} For every feasible coupling,
+\[
+\int(c+u+v)\,d\pi=\int c\,d\pi+\int u\,d\alpha+\int v\,d\beta.
+\]
+The last two integrals are finite constants independent of $\pi$, while the entropy and feasible set are unchanged. Therefore the minimizer is unchanged. The hypotheses give a finite feasible competitor $\alpha\otimes\beta$ and a unique entropic optimizer.
+
+\textbf{(2)} Writing $H_{\alpha\otimes\beta}(\pi)$ for the entropy appearing in the statement,
+\[
+\int\lambda c\,d\pi+\varepsilon H_{\alpha\otimes\beta}(\pi)
+=\lambda\left(\int c\,d\pi+\frac\varepsilon\lambda H_{\alpha\otimes\beta}(\pi)\right).
+\]
+Multiplication by a positive constant does not change the argmin. Thus $\pi_{\lambda c,\varepsilon}=\pi_{c,\varepsilon/\lambda}$. This direct argument avoids any need to recover potentials by evaluating a density on potentially exceptional slices.
+\end{solution}
+
+\Needspace{14\baselineskip}
+\section*{Further exercises}
+
+\begin{exercise}[Unbalanced OT as constrained entropic problem]\label{ex:uot}
+Let $C\in\R^{m\times n}$, $a\in\R_{++}^m$, $b\in\R_{++}^n$, $\tau>0$. Define, for $r\in\R_+^m$, $a\in\R_+^m$,
+\[
+\mathrm{KL}(r\,|\,a) := \sum_{i=1}^m \Bigl( r_i \log\frac{r_i}{a_i} - r_i + a_i \Bigr),
+\]
+and similarly for $\mathrm{KL}(s\,|\,b)$. Consider the unbalanced OT problem
+\[
+\min_{P\in\R_+^{m\times n}}\;
+\ip{C}{P}
++ \tau\,\mathrm{KL}(P\mathbf 1_n \,|\, a)
++ \tau\,\mathrm{KL}(P^\top \mathbf 1_m \,|\, b).
+\tag{UOT}
+\label{eq:UOT}
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Show that \eqref{eq:UOT} is equivalent to
+  \[
+  \min_{\substack{P\ge0\\ P\mathbf 1_n = r\\ P^\top \mathbf 1_m = s}}
+  \ip{C}{P} + \tau\,\mathrm{KL}(r\,|\,a) + \tau\,\mathrm{KL}(s\,|\,b),
+  \tag{$\star$}
+  \label{eq:star}
+  \]
+  and argue that if $(P^\star,r^\star,s^\star)$ solves \eqref{eq:star}, then $P^\star$ is an optimal \emph{balanced} OT plan between the (relaxed) marginals $(r^\star,s^\star)$.
+  \item Write the Lagrangian of \eqref{eq:star} using dual vectors $f\in\R^m$, $g\in\R^n$ for the constraints $P\mathbf 1_n=r$ and $P^\top \mathbf 1_m=s$.
+  \item Assuming we can swap $\inf_{P,r,s}$ and $\sup_{f,g}$, derive the dual involving only the two potentials $f,g$.
+  \item Assume $a,b$ have equal total mass. Show that the dual objective tends pointwise to the balanced OT dual objective as $\tau\to+\infty$, and justify convergence of the optimal values.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Introduce the actual row and column sums as auxiliary variables.\item Use $\langle f,r-P\mathbf1\rangle+\langle g,s-P^\top\mathbf1\rangle$.\item Minimize first over $P$, then use the conjugate of KL.\item Expand $e^{-f_i/\tau}$ for fixed potentials. For values, use a balanced competitor and coercivity of the KL penalties.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Introducing $r=P\mathbf1_n$ and $s=P^\top\mathbf1_m$ changes neither the objective nor the feasible plans. With $r,s$ fixed, both penalties are constant, so $P^\star$ minimizes $\langle C,P\rangle$ over the transport polytope with marginals $(r^\star,s^\star)$.
+
+\textbf{(2)} Choose the standard OT signs:
+\[
+\mathcal L=\langle C,P\rangle+\tau\mathrm{KL}(r\mid a)+\tau\mathrm{KL}(s\mid b)
++\langle f,r-P\mathbf1_n\rangle+\langle g,s-P^\top\mathbf1_m\rangle.
+\]
+\textbf{(3)} The infimum in $P\ge0$ is finite exactly when $f_i+g_j\le C_{i,j}$, and then equals zero. For each row,
+\[
+\inf_{r_i\ge0}\{\tau(r_i\log(r_i/a_i)-r_i+a_i)+f_ir_i\}
+=\tau a_i(1-e^{-f_i/\tau}),
+\]
+attained at $r_i=a_ie^{-f_i/\tau}$. Hence the dual is
+\[
+\sup_{f_i+g_j\le C_{i,j}}
+\left\{\tau\sum_i a_i(1-e^{-f_i/\tau})
++\tau\sum_j b_j(1-e^{-g_j/\tau})\right\}.
+\]
+The finite-dimensional convex problem is feasible and coercive; positive $a,b$ permit strict feasibility in its auxiliary-variable formulation, so strong duality holds. Notice the minus signs in the exponents: reversing the potential convention would also reverse the feasibility inequalities.
+
+\textbf{(4)} For fixed $f,g$, $\tau(1-e^{-f_i/\tau})\to f_i$, giving the usual balanced dual objective $\langle a,f\rangle+\langle b,g\rangle$ with the same constraint.
+
+For convergence of values, let $M$ be the common input mass and let $P_\tau$ minimize UOT. A balanced optimal plan bounds its value above by the balanced OT value $V$. If $r=P_\tau\mathbf1$, $s=P_\tau^\top\mathbf1$ have common mass $m$, the log-sum inequality gives
+\[
+\mathrm{KL}(r\mid a)+\mathrm{KL}(s\mid b)
+\ge2\bigl(m\log(m/M)-m+M\bigr).
+\]
+Together with $\langle C,P_\tau\rangle\ge-\|C\|_\infty m$, this bounds $m$ uniformly for $\tau\ge1$. The upper value bound then implies both KL penalties tend to zero. Any cluster point of $P_\tau$ has marginals $a,b$, so its cost is at least $V$. Nonnegativity of the penalties yields $\liminf V_\tau\ge V$, while the balanced competitor yields $V_\tau\le V$. Thus $V_\tau\to V$. Equal mass is essential for this balanced limit.
+\end{solution}
+
+\begin{exercise}[Unbalanced OT + entropic regularization]\label{ex:uot-entropic-short}
+Let $C\in\mathbb R^{m\times n}$, $a\in\mathbb R_{++}^m$, $b\in\mathbb R_{++}^n$, and let $\tau>0$, $\varepsilon>0$. Denote
+\[
+H(P) := \sum_{i,j} P_{i,j}(\log P_{i,j}-1),\qquad
+\mathrm{KL}(r\,|\,a) := \sum_i \bigl(r_i \log \tfrac{r_i}{a_i} - r_i + a_i\bigr).
+\]
+Consider
+\[
+\min_{P\ge 0}\;
+\langle C,P\rangle
++ \varepsilon\,H(P)
++ \tau\,\mathrm{KL}(P\mathbf 1 \,|\, a)
++ \tau\,\mathrm{KL}(P^\top \mathbf 1 \,|\, b).
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Compute the dual problem and show it involves only two dual potentials $f\in\R^m$, $g\in\R^n$.
+  \item For fixed $g$, give the maximizer in $f$ (unbalanced Sinkhorn update).
+  \item Assume equal input masses and identify the pointwise limit of the dual objective as $\tau\to+\infty$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Use the same multiplier signs as in Exercise~\ref{ex:uot}; only the minimization in $P$ changes.\item Differentiate in $f_i$ and isolate its exponential.\item Keep $f,g$ fixed and expand the marginal penalty terms.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Introducing $r,s$ and adding $\langle f,r-P\mathbf1\rangle+\langle g,s-P^\top\mathbf1\rangle$ gives three separable minimizations. The row and column terms are as in Exercise~\ref{ex:uot}, while
+\[
+\inf_{P\ge0}\left\{\sum_{i,j}(C_{i,j}-f_i-g_j)P_{i,j}+\varepsilon H(P)\right\}
+=-\varepsilon\sum_{i,j}e^{(f_i+g_j-C_{i,j})/\varepsilon}.
+\]
+Thus the dual is the unconstrained maximization of
+\[
+\mathcal D(f,g)=\tau\sum_i a_i(1-e^{-f_i/\tau})+
+\tau\sum_j b_j(1-e^{-g_j/\tau})-
+\varepsilon\sum_{i,j}e^{(f_i+g_j-C_{i,j})/\varepsilon}.
+\]
+The primal relation is $P_{i,j}^\star=e^{(f_i^\star+g_j^\star-C_{i,j})/\varepsilon}$.
+
+\textbf{(2)} Put $K_{i,j}=e^{-C_{i,j}/\varepsilon}$, $v_j=e^{g_j/\varepsilon}$, and $S_i=\sum_jK_{i,j}v_j>0$. The stationarity equation is
+$a_i e^{-f_i/\tau}=e^{f_i/\varepsilon}S_i$. Hence
+\[
+f_i^{\rm new}=\frac{\varepsilon\tau}{\varepsilon+\tau}\log\frac{a_i}{S_i},\qquad
+u_i^{\rm new}:=e^{f_i^{\rm new}/\varepsilon}
+=\left(\frac{a_i}{(Kv)_i}\right)^{\tau/(\tau+\varepsilon)}.
+\]
+The scalar objective is strictly concave, so this critical point is its unique maximizer. The $g$ update is analogous with $K^\top$.
+
+\textbf{(3)} For fixed potentials, $\tau a_i(1-e^{-f_i/\tau})\to a_if_i$. Therefore $\mathcal D(f,g)$ tends to
+$\langle a,f\rangle+\langle b,g\rangle-\varepsilon\sum_{i,j}e^{(f_i+g_j-C_{i,j})/\varepsilon}$, precisely the entropy-only balanced dual. The scaling exponent $\tau/(\tau+\varepsilon)$ tends to $1$, recovering ordinary Sinkhorn updates.
+\end{solution}
+
+\begin{exercise}[$\varphi$-divergence, dual form and unbalanced OT]\label{ex:phi-div}
+Let $\alpha$ and $\beta$ be finite nonnegative measures on a measurable space $X$, and let $\varphi:\mathbb R_+\to\mathbb R\cup\{+\infty\}$ be finite, convex and lower semicontinuous on $[0,\infty)$, with $\varphi(1)=0$ and $\lim_{r\to\infty}\varphi(r)/r=+\infty$. The $\varphi$-divergence of $\alpha$ w.r.t. $\beta$ is
+\[
+D_\varphi(\alpha\,|\,\beta) :=
+\begin{cases}
+\displaystyle \int \varphi\Bigl( \frac{d\alpha}{d\beta}(x) \Bigr)\,d\beta(x), & \alpha \ll \beta,\\[0.4em]
++\infty, & \text{otherwise.}
+\end{cases}
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Recall the convex conjugate $\varphi^\star(t) := \sup_{u\ge0} \bigl(u t - \varphi(u)\bigr)$.
+  \item Show that
+  \[
+  D_\varphi(\alpha\,|\,\beta)
+  = \sup_{f} \left\{ \int f\,d\alpha - \int \varphi^\star(f)\,d\beta \right\}.
+  \]
+  \item Consider now the unbalanced OT problem
+  \[
+  \min_{\pi\ge0} \ \int c(x,y)\,d\pi(x,y)
+  + D_\varphi(\pi_1\,|\,\alpha)
+  + D_\varphi(\pi_2\,|\,\beta),
+  \]
+  where $\pi_1,\pi_2$ are the first and second marginals of $\pi$. Using (2), derive a dual lower bound involving only two measurable test functions $f,g$. Show that equality holds whenever the indicated minimax interchange is justified; do not assert strong duality on an arbitrary measurable space without further hypotheses.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Extend $\varphi$ by $+\infty$ to negative arguments.\item Use Fenchel--Young and approximate the pointwise supremum using a countable dense family of slopes; on a singular set, take arbitrarily large test values.\item Insert the two suprema and minimize the resulting linear functional over nonnegative measures. Keep track of the sign change to OT potentials.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} After extending $\varphi$ by $+\infty$ on $(-\infty,0)$, its conjugate is $\varphi^*(t)=\sup_{u\ge0}\{ut-\varphi(u)\}$. Superlinear growth makes $\varphi^*(t)$ finite for every finite $t$.
+
+\textbf{(2)} Fenchel--Young gives $uf-\varphi^*(f)\le\varphi(u)$, hence the required upper bound after integration. Conversely, enumerate the rational slopes and select, pointwise, the best of the first $N$ affine minorants $u t-\varphi^*(t)$. The selector is measurable and takes finitely many values. These maxima increase to $\varphi(u)$; monotone convergence after subtracting one integrable affine minorant proves equality when $\alpha\ll\beta$.
+
+If $\alpha\not\ll\beta$, there is a measurable set $A$ with $\beta(A)=0<\alpha(A)$. Taking $f=M\mathbf1_A$ makes the variational value $M\alpha(A)-\varphi^*(0)\beta(X)$, which tends to $+\infty$. Thus the stated divergence formula is valid under the superlinear hypothesis. Without it, the usual divergence needs a finite recession-cost term for the singular part; the displayed $+\infty$ convention would not generally have this conjugate representation.
+
+\textbf{(3)} Inserting the two variational formulas produces
+\[
+\inf_{\pi\ge0}\sup_{u,v}
+\left\{\int(c+u+v)\,d\pi-\int\varphi^*(u)\,d\alpha-\int\varphi^*(v)\,d\beta\right\}.
+\]
+Interchanging infimum and supremum gives a lower bound. The infimum in $\pi$ is zero if $c(x,y)+u(x)+v(y)\ge0$ everywhere, and $-\infty$ otherwise. In the standard OT convention $f=-u$, $g=-v$, the dual lower bound is
+\[
+\sup_{f(x)+g(y)\le c(x,y)}
+\left\{-\int\varphi^*(-f)\,d\alpha-\int\varphi^*(-g)\,d\beta\right\}.
+\]
+It equals the primal value if the minimax interchange is valid. For $\varphi(r)=\tau(r\log r-r+1)$, its conjugate is $\tau(e^{t/\tau}-1)$, recovering the signs in Exercise~\ref{ex:uot}.
+\end{solution}
+
+\begin{exercise}[Barycentric projection from entropic OT]\label{ex:barycentric}
+Let $\alpha=\sum_{i=1}^m a_i \delta_{x_i}$ and $\beta=\sum_{j=1}^n b_j \delta_{y_j}$ be probability measures with distinct support points and strictly positive weights, and let $P_\varepsilon$ be the optimal plan of entropic OT between the weight vectors $(a,b)$ for some finite cost $C_{i,j}=c(x_i,y_j)$. For $x_i$ with $a_i>0$ define the barycentric projection
+\[
+T_\varepsilon(x_i) := \frac{1}{a_i} \sum_{j=1}^n (P_\varepsilon)_{i,j} \, y_j.
+\]
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Suppose the optimal unregularized coupling is uniquely induced by a map $T:\{x_i\}\to\{y_j\}$. Denote the matrix of its graph plan $(\mathrm{Id},T)_\#\alpha$ by $P^\star$, and assume $P_\varepsilon\to P^\star$ entrywise as $\varepsilon\downarrow0$. Show that
+  \[
+  T_\varepsilon(x_i) \longrightarrow T(x_i)\quad\text{for every }i.
+  \]
+  \item Assume now that $c(x,y)=\tfrac12\|x-y\|^2$ and recall from Exercise~\ref{ex:envelope-entropic} that
+  \[
+  \nabla_{x_i} \W_\varepsilon(a,b) = a_i x_i - \sum_{j=1}^n (P_\varepsilon)_{i,j} \, y_j.
+  \]
+  Express $T_\varepsilon(x_i)$ in terms of $\nabla_{x_i} \W_\varepsilon(a,b)$ and $x_i$, and explain why the displacement $T_\varepsilon(x_i)-x_i$, rather than the target point itself, is the negative cost gradient divided by $a_i$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item On a fixed finite support, weak convergence of plans gives convergence of every matrix entry.\item Rearrange the gradient formula and distinguish a point from a displacement vector.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Since $P_\varepsilon \rightharpoonup P^\star$ and $P^\star$ is supported on $\{(x_i,T(x_i))\}$, we have for each $i$
+\[
+\sum_j (P_\varepsilon)_{i,j} \to \sum_j (P^\star)_{i,j} = a_i,
+\qquad
+\sum_j (P_\varepsilon)_{i,j} y_j \to \sum_j (P^\star)_{i,j} y_j = a_i T(x_i).
+\]
+Dividing by $a_i>0$ gives $T_\varepsilon(x_i)\to T(x_i)$.
+
+\medskip
+\textbf{(2)} From the envelope-theorem computation we have
+\[
+\nabla_{x_i} \W_\varepsilon(a,b) = a_i x_i - \sum_j (P_\varepsilon)_{i,j} y_j
+= a_i x_i - a_i T_\varepsilon(x_i),
+\]
+hence
+\[
+T_\varepsilon(x_i) = x_i - \frac{1}{a_i}\,\nabla_{x_i} \W_\varepsilon(a,b).
+\]
+So the barycentric projection is obtained by moving $x_i$ in the direction of \emph{minus} the gradient of the entropic OT cost, with step size $1/a_i$. This makes explicit that $T_\varepsilon$ is the OT ``target point'' encoded in the gradient of the cost.
+\end{solution}
+
+
+\end{document}

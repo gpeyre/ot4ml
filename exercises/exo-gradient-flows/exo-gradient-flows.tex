@@ -1,0 +1,425 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Wasserstein Gradient Flows}
+\hypersetup{pdftitle={Wasserstein Gradient Flows -- Exercises}}
+\begin{document}
+
+\maketitle
+
+\begin{exercise}[$\varphi$-divergences and Wasserstein gradient flow]\label{ex:phi-divergence-W2}
+Let $\nu\in\mathcal P_2(\R^d)$ be a reference probability measure and let $\varphi:[0,\infty)\to\R\cup\{+\infty\}$ be convex, lower semicontinuous and $\mathcal C^2$ on $(0,\infty)$ with $\varphi(1)=0$. For a probability measure $\alpha$ such that $\alpha\ll\nu$ with density
+$r := \frac{d\alpha}{d\nu}$,
+the $\varphi$-divergence of $\alpha$ with respect to $\nu$ is defined by
+\[
+D_\varphi(\alpha\mid\nu) := \int_{\R^d} \varphi\!\left(\frac{d\alpha}{d\nu}(x)\right)d\nu(x)
+= \int_{\R^d} \varphi(r(x))\,d\nu(x).
+\]
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Show that $D_\varphi(\alpha\mid\nu)\ge 0$.
+
+  \item Consider the functional $f(\alpha) := D_\varphi(\alpha\mid\nu)$ on $\mathcal P_2(\R^d)$. Assume that both $\nu$ and $\alpha$ admit smooth strictly positive densities with respect to Lebesgue measure.
+  \begin{enumerate}[label=\textbf{(\alph*)}]
+    \item Compute the first variation $\frac{\delta f}{\delta\alpha}(\alpha)(x)$ and deduce the Wasserstein gradient
+    $\gradW f(\alpha)(x)$.
+
+    \item Write the corresponding Wasserstein gradient flow PDE.
+    \item Specialize your formulas to the case $\varphi(s) = s\log s$.
+  \end{enumerate}
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Apply Jensen with respect to the probability $\nu$.\item[(2a)] Perturb the Lebesgue density while keeping the reference density fixed.\item[(2b)] The velocity is minus the spatial gradient of the first variation; insert it into the continuity equation.\item[(2c)] Use $\rho\nabla\log\rho=\nabla\rho$.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Since $r=d\alpha/d\nu$ has $\int r\,d\nu=1$, Jensen gives
+$D_\varphi(\alpha\mid\nu)\ge\varphi(\int r\,d\nu)=\varphi(1)=0$.
+If $\varphi$ is strictly convex, equality holds exactly when $r=1$ $\nu$-a.e., that is, $\alpha=\nu$.
+
+\textbf{(2a)} Write $d\alpha=\rho\,dx$ and $d\nu=n\,dx$, so the relative density is $r=\rho/n$. For a smooth compactly supported perturbation $\eta$ with $\int\eta=0$, differentiation gives
+\[
+\left.\frac d{dh}f((\rho+h\eta)\,dx)\right|_{h=0}
+=\int\varphi'(\rho/n)\eta\,dx.
+\]
+Consequently, up to an additive constant,
+\[
+\frac{\delta f}{\delta\alpha}=\varphi'(\rho/n),\qquad
+\gradW f(\alpha)=\nabla[\varphi'(\rho/n)].
+\]
+The double nabla denotes the Wasserstein gradient. The PDE calculations here and below assume sufficient smoothness and integrability; they identify the gradient field, not a general PDE existence theorem.
+
+\textbf{(2b)} With $v_t=-\gradW f(\alpha_t)$, the continuity equation becomes
+\[
+\partial_t\rho_t=\nabla\cdot\left(\rho_t\nabla[\varphi'(\rho_t/n)]\right).
+\]
+Under vanishing boundary flux, it conserves mass and satisfies
+$\frac d{dt}f(\alpha_t)=-\int|\gradW f(\alpha_t)|^2\rho_t\,dx\le0$.
+
+\textbf{(2c)} For $\varphi(s)=s\log s$, the additive $1$ in $\varphi'(s)$ disappears under the spatial gradient. Thus
+\[
+\gradW f(\alpha)=\nabla\log(\rho/n),\qquad
+\partial_t\rho_t=\Delta\rho_t-\nabla\cdot(\rho_t\nabla\log n).
+\]
+If $n=Z^{-1}e^{-V}$, this is $\partial_t\rho_t=\Delta\rho_t+\nabla\cdot(\rho_t\nabla V)$; the standard Gaussian corresponds to $V(x)=|x|^2/2$. For comparison, reverse KL uses $\varphi(s)=-\log s$ and gives $\partial_t\rho_t=-\nabla\cdot(\rho_t\nabla(n/\rho_t))$.
+\end{solution}
+
+\begin{exercise}[Gradient flows of Dirichlet energy and Fisher information]\label{ex:dirichlet-fisher}
+To avoid boundary terms, work on the flat unit-volume torus $\mathbb T^d$, with a smooth strictly positive density $\rho$ and $d\alpha=\rho\,dx$. The same local differential expressions hold on $\R^d$ when the required integrations by parts are justified.
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+\item For the Dirichlet energy $\mathcal E(\alpha)=\int|\nabla\rho|^2\,dx$:
+\begin{enumerate}[label=(\alph*)]
+\item Compute the first variation and the unconstrained $L^2(dx)$ descent equation $\partial_t\rho=-\delta\mathcal E/\delta\rho$.
+\item Compute the Wasserstein gradient and its continuity-equation PDE.
+\end{enumerate}
+\item Repeat these computations for the Fisher information
+\[
+\mathcal I(\alpha)=\int\rho|\nabla\log\rho|^2\,dx=\int\frac{|\nabla\rho|^2}{\rho}\,dx.
+\]
+Does its unconstrained $L^2$ flow preserve mass? How should it be modified to preserve $\int\rho=1$? All evolution equations are to be understood while the solution is smooth and positive.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]
+\item[(1a)] Differentiate $\int|\nabla(\rho+h\eta)|^2$ and integrate by parts.
+\item[(1b)] A Wasserstein velocity is minus the spatial gradient of the first variation, not minus the first variation itself.
+\item[(2)] Differentiate both the numerator and denominator of $|\nabla\rho|^2/\rho$. For the mass constraint, project the $L^2$ gradient onto zero-mean functions.
+\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1a)} Differentiating at $h=0$ gives
+\[
+\left.\frac d{dh}\mathcal E((\rho+h\eta)\,dx)\right|_{h=0}
+=2\int\nabla\rho\cdot\nabla\eta\,dx=-2\int\Delta\rho\,\eta\,dx.
+\]
+Hence $\delta\mathcal E/\delta\rho=-2\Delta\rho$ and the $L^2$ descent equation is $\partial_t\rho=2\Delta\rho$. The sign is negative-gradient descent; this is the heat equation, which preserves mass.
+
+\textbf{(1b)} The Wasserstein gradient is $-2\nabla\Delta\rho$, so its velocity is $2\nabla\Delta\rho$. Therefore
+\[
+\partial_t\rho=-2\nabla\cdot(\rho\nabla\Delta\rho).
+\]
+This fourth-order equation is different from $L^2$ descent of the same energy. Linearization about a constant density $\bar\rho$ yields $\partial_t\eta=-2\bar\rho\Delta^2\eta$.
+
+\textbf{(2)} The density factor in Fisher information is essential. Differentiating gives
+\[
+\left.\frac d{dh}\mathcal I((\rho+h\eta)\,dx)\right|_{h=0}
+=\int\left(\frac{2\nabla\rho\cdot\nabla\eta}{\rho}
+-\frac{|\nabla\rho|^2}{\rho^2}\eta\right)dx.
+\]
+Integrating the first term by parts yields
+\[
+q:=\frac{\delta\mathcal I}{\delta\rho}
+=-2\Delta\log\rho-|\nabla\log\rho|^2
+=-4\frac{\Delta\sqrt\rho}{\sqrt\rho}.
+\]
+Consequently the unconstrained $L^2$ equation is
+$\partial_t\rho=-q=2\Delta\log\rho+|\nabla\log\rho|^2$.
+Its mass derivative is $\int|\nabla\log\rho|^2\,dx$, generally positive. On the unit-volume torus the mass-constrained $L^2$ equation is instead
+\[
+\partial_t\rho=-q+\int q\,dx
+=2\Delta\log\rho+|\nabla\log\rho|^2-\int|\nabla\log\rho|^2\,dx.
+\]
+This projection enforces mass, but by itself is not a proof that positivity is preserved.
+
+For the Wasserstein geometry, $\gradW\mathcal I=\nabla q$, giving
+\[
+\partial_t\rho=\nabla\cdot(\rho\nabla q)
+=-\nabla\cdot\left(\rho\nabla[2\Delta\log\rho+|\nabla\log\rho|^2]\right).
+\]
+It conserves mass by its divergence form and dissipates $\mathcal I$ at rate $-\int\rho|\nabla q|^2\,dx$. The unweighted integral $\int|\nabla\log\rho|^2\,dx$ would be a different functional, not Fisher information.
+\end{solution}
+
+\begin{exercise}[Gaussian evolution under linear dynamics]\label{ex:gaussian-linear-dynamics}
+Let $(X^{(\ell)})_{\ell\in\mathbb{N}}$ be a sequence of random variables in $\R^d$ defined by the linear recursion
+\[
+X^{(\ell+1)} = X^{(\ell)} - \tau A^{(\ell)} X^{(\ell)}, \qquad \ell = 0,1,2,\dots,
+\]
+where $\tau>0$ is a fixed step size and, for each $\ell$, $A^{(\ell)}\in\R^{d\times d}$ is a deterministic matrix. Denote by $\alpha^{(\ell)}$ the law of $X^{(\ell)}$.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Assume that the initial condition is Gaussian
+  $X^{(0)} \sim \mathcal{N}(0,\Sigma^{(0)})$,
+  for some symmetric positive semidefinite covariance matrix $\Sigma^{(0)}\in\R^{d\times d}$. Show that each $X^{(\ell)}$ is also Gaussian, and describe the evolution of the law
+  $\alpha^{(\ell)} = \operatorname{Law}(X^{(\ell)})$
+  by giving an explicit recursion for the covariance matrices $\Sigma^{(\ell)}$.
+
+  \item Consider now the continuous time ODE
+  $\dot X_t = -A_t X_t, \qquad t\ge 0$,
+  with $A_t\in\R^{d\times d}$ a (say, continuous) time dependent matrix and random initial condition
+  $X_0 \sim \mathcal{N}(0,\Sigma_0)$.
+  Explain why $X_t$ is Gaussian for every $t\ge 0$, say
+  $X_t \sim \mathcal{N}(0,\Sigma_t)$,
+  and, by considering the limit $\tau\to 0$ in the discrete time recursion from part \textbf{(1)}, show that $(\Sigma_t)_{t\ge 0}$ solves a matrix ODE that you should identify.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item A deterministic linear image of a Gaussian is Gaussian. Compute the covariance of $(I-\tau A)X$.\item Introduce the fundamental matrix, differentiate $\Phi_t\Sigma_0\Phi_t^\top$, and compare with the first-order expansion of the discrete recursion.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Write $B^{(\ell)}=I-\tau A^{(\ell)}$. If $X^{(\ell)}\sim\mathcal N(0,\Sigma^{(\ell)})$, then its linear image is Gaussian and
+\[
+\Sigma^{(\ell+1)}=B^{(\ell)}\Sigma^{(\ell)}(B^{(\ell)})^\top.
+\]
+Induction proves the claim, including singular covariances. No stability bound on $\tau$ is needed just for Gaussian preservation; it would matter for long-time numerical stability.
+
+\textbf{(2)} Let $\dot\Phi_t=-A_t\Phi_t$, $\Phi_0=I$. The solution is $X_t=\Phi_tX_0$, so $\alpha_t=\mathcal N(0,\Phi_t\Sigma_0\Phi_t^\top)$. Differentiating gives the rigorous covariance ODE
+\[
+\dot\Sigma_t=-A_t\Sigma_t-\Sigma_tA_t^\top.
+\]
+To compare with the discrete scheme, take $A^{(\ell)}=A_{\ell\tau}$ and expand
+\[
+(I-\tau A)\Sigma(I-\tau A)^\top
+=\Sigma-\tau(A\Sigma+\Sigma A^\top)+\tau^2A\Sigma A^\top.
+\]
+Thus the difference quotient is the displayed vector field plus an $O(\tau)$ term on bounded sets. The fundamental-matrix argument proves the ODE independently of this consistency calculation.
+\end{solution}
+
+\begin{exercise}[Wasserstein flow for quadratic kernels]\label{ex:wasserstein-kernels}
+Let $\alpha \in \mathcal{P}_2(\R^d)$ and denote its mean and covariance by
+\[
+m(\alpha) := \int_{\R^d} x \, d\alpha(x),
+\qquad
+\Sigma(\alpha) := \int_{\R^d} (x-m(\alpha))(x-m(\alpha))^\top d\alpha(x).
+\]
+Consider the functionals
+\[
+f(\alpha) := \iint_{\R^d\times\R^d} k(x,y)\,d\alpha(x)\,d\alpha(y)
+\]
+on the Wasserstein space $\mathcal P_2(\R^d)$, where the kernels $k$ are given below.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Let $k(x,y) = \ip{A x}{y}, \qquad A \in \R^{d\times d}$.
+  \begin{enumerate}[label=\textbf{(\alph*)}]
+    \item Express $f(\alpha)$ in terms of $m(\alpha)$ and $A$.
+    \item Compute the Wasserstein gradient $\gradW f(\alpha)$.
+    \item Write the Wasserstein gradient flow PDE,
+    and, for a general initial condition $\alpha_{t=0} = \alpha_0$, give an explicit expression of $\alpha_t$ in terms of $\alpha_0$.
+  \end{enumerate}
+
+  \item Let
+  $k(x,y) = \ip{A x}{y}\,\ip{B x}{y}, \qquad A,B \in \R^{d\times d}$.
+  \begin{enumerate}[label=\textbf{(\alph*)}]
+    \item Compute the Wasserstein gradient $\gradW f(\alpha)$.
+    \item Using the previous exercise on linear ODEs with Gaussian initial data, show that if
+$\alpha_{t=0} = \mathcal{N}(0,\Sigma_0)$,
+    then $\alpha_t = \mathcal{N}(0,\Sigma_t)$ for as long as the covariance ODE exists, and derive the matrix ODE satisfied by $(\Sigma_t)_{t\ge 0}$.
+  \end{enumerate}
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item[(1a)] Integrate the bilinear kernel in each argument.\item[(1b)] Only $(A+A^\top)/2$ contributes to a quadratic form.\item[(1c)] A spatially constant velocity translates the law; first solve the mean ODE.\item[(2a)] Differentiate both copies of $\alpha$. Use the raw second moment $S=\int xx^\top\,d\alpha$, not just the covariance.\item[(2b)] Apply the preceding covariance equation to the resulting linear field. Arbitrary $A,B$ need not yield a global solution.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1a)} Independence in the double integral gives $f(\alpha)=m^\top A m=m^\top A_{\rm s}m$, where $A_{\rm s}=(A+A^\top)/2$.
+
+\textbf{(1b)} For a zero-mass variation $\eta$, $\dot m=\int x\,d\eta(x)$, so
+$Df(\alpha)[\eta]=\int2\langle A_{\rm s}m,x\rangle\,d\eta(x)$. Therefore
+\[
+\frac{\delta f}{\delta\alpha}(x)=2\langle A_{\rm s}m,x\rangle,\qquad
+\gradW f(\alpha)(x)=2A_{\rm s}m.
+\]
+\textbf{(1c)} The velocity is constant in space: $v_t=-2A_{\rm s}m_t$. Integrating the continuity equation against $x$ gives $\dot m_t=-2A_{\rm s}m_t$, hence $m_t=e^{-2A_{\rm s}t}m_0$. Consequently
+\[
+\alpha_t=(x\mapsto x+m_t-m_0)_\#\alpha_0.
+\]
+This solves $\partial_t\alpha_t+\nabla\cdot(\alpha_t v_t)=0$ for any initial $\alpha_0\in\mathcal P_2$, including singular laws. Its covariance is constant. No inverse of $A_{\rm s}$ is required.
+
+\textbf{(2a)} Put $S=\int xx^\top\,d\alpha=\Sigma+mm^\top$. Varying both factors of the product measure gives
+\[
+\frac{\delta f}{\delta\alpha}(x)=\int[k(x,y)+k(y,x)]\,d\alpha(y)
+=x^\top(A^\top SB+ASB^\top)x.
+\]
+For a matrix $D$, $\nabla(x^\top D x)=(D+D^\top)x$. Thus
+\[
+\gradW f(\alpha)(x)=M(S)x,\qquad
+M(S)=A^\top SB+B^\top SA+ASB^\top+BS A^\top.
+\]
+This formula holds for arbitrary, not necessarily symmetric, $A,B$. Both differentiations are needed because $k$ need not be symmetric. Replacing $S$ by $\Sigma$ without assuming $m=0$ would be incorrect.
+
+\textbf{(2b)} At zero mean, $S=\Sigma$. Solve the locally Lipschitz matrix ODE
+\[
+\dot\Sigma_t=-M(\Sigma_t)\Sigma_t-\Sigma_tM(\Sigma_t),\qquad \Sigma_{t=0}=\Sigma_0.
+\]
+Along this deterministic covariance path the characteristic equation is linear, $\dot X_t=-M(\Sigma_t)X_t$. Its fundamental matrix therefore sends the initial Gaussian to a centered Gaussian with exactly the covariance above. This constructs the claimed Wasserstein flow on the interval of existence.
+
+There is no general assertion of global existence for arbitrary $A,B$: in dimension one, take $A=1$, $B=-1$ and variance $s_0>0$. Then $f=-s^2$, $M(s)=-4s$, and $\dot s=8s^2$, giving $s_t=s_0/(1-8s_0t)$ and finite-time blow-up.
+\end{solution}
+
+\Needspace{14\baselineskip}
+\section*{Further exercises}
+
+\begin{exercise}[Mean-field two-layer linear network under Wasserstein flow]\label{ex:mf-linear-network}
+Let $\rho\in\mathcal P_2(\R^d)$ be the data distribution and let $h\in L^2(\rho)$ be a target function. For a parameter distribution
+\[
+\alpha \in \mathcal P_2(\R\times\R^d),
+\qquad x = (u,v)\in\R\times\R^d,
+\]
+consider the two-layer linear mean-field model
+\[
+g_\alpha(z) := \int u\,\langle z,v\rangle\,d\alpha(u,v),
+\qquad z\in\R^d,
+\]
+and the quadratic loss
+\[
+f(\alpha) := \int_{\R^d} \bigl|g_\alpha(z) - h(z)\bigr|^2\,d\rho(z).
+\]
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Show that $f$ can be written as a quadratic functional of $\alpha$ of the form
+  \[
+  f(\alpha)
+  = \iint k(x,y)\,d\alpha(x)\,d\alpha(y)
+    + \int b(x)\,d\alpha(x) + c,
+  \]
+  where $x=(u,v)$, $y=(u',v')$, and identify explicit formulas for $k(x,y)$ and $b(x)$ in terms of $\rho$ and $h$. You may leave the constant $c$ implicit.
+
+  \item Consider the Wasserstein gradient flow of $f$ on $\mathcal P_2(\R\times\R^d)$:
+  \[
+  \partial_t \alpha_t + \nabla\cdot\bigl(\alpha_t v_t\bigr) = 0,
+  \qquad
+  v_t(x) = -\gradW f(\alpha_t)(x).
+  \]
+  Using the structure from part \textbf{(1)} and the previous exercise on quadratic kernels, show that if
+  \[
+  \alpha_{t=0} = \mathcal N(0,\Sigma_0),
+  \]
+  then $\alpha_t$ remains Gaussian for all $t\ge 0$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Introduce $K=\int zz^\top\,d\rho$ and $c_h=\int zh(z)\,d\rho$. Expand the square.\item The predictor depends on $q=\int uv\,d\alpha$. Compute the parameter gradient explicitly, then use energy dissipation to bound the linear coefficient and exclude finite-time blow-up.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Define the raw second-moment matrix $K=\int zz^\top\,d\rho(z)$ and $c_h=\int zh(z)\,d\rho(z)$. They are finite by the stated moment assumptions and Cauchy--Schwarz. Put $q=\int uv\,d\alpha(u,v)$; this is finite because $|u||v|\le(u^2+|v|^2)/2$. Then
+\[
+g_\alpha(z)=z^\top q,\qquad
+f(\alpha)=q^\top Kq-2c_h^\top q+\int h^2\,d\rho.
+\]
+Expanding $q$ yields the requested kernel and linear term:
+\[
+k((u,v),(u',v'))=uu'v^\top Kv',\qquad b(u,v)=-2u\,c_h^\top v.
+\]
+The kernel is quadratic in each parameter vector separately, not bilinear in those vectors. Also, $K$ is a covariance only if the data have zero mean.
+
+\textbf{(2)} Let $r=Kq-c_h$. The first variation is $2u\,r^\top v$ up to a constant, hence
+\[
+\gradW f(\alpha)(u,v)=\begin{pmatrix}2r^\top v\\2ur\end{pmatrix}
+=M(\alpha)\begin{pmatrix}u\\v\end{pmatrix},\qquad
+M(\alpha)=2\begin{pmatrix}0&r^\top\\r&0\end{pmatrix}.
+\]
+There is no affine constant term. At zero mean, $q=\Sigma_{v,u}$ is the cross-covariance, so $M$ depends only on $\Sigma$ and
+\[
+\dot\Sigma_t=-M(\Sigma_t)\Sigma_t-\Sigma_tM(\Sigma_t),\qquad
+\alpha_t=\mathcal N(0,\Sigma_t).
+\]
+This initially gives Gaussian closure on the local existence interval. To prove it lasts for all finite times, use
+\[
+|r_t|=\left|\int z(g_{\alpha_t}(z)-h(z))\,d\rho(z)\right|
+\le\left(\int|z|^2\,d\rho\right)^{1/2}\sqrt{f(\alpha_t)}.
+\]
+Along the smooth moment flow,
+$\frac d{dt}f(\alpha_t)=-\int|\gradW f(\alpha_t)|^2\,d\alpha_t\le0$.
+Thus $r_t$, and hence $\|M(\Sigma_t)\|$, are bounded by constants depending only on the initial loss and the data. Gronwall bounds $\operatorname{tr}\Sigma_t$ on every finite interval, preventing finite-time escape of the covariance ODE. The Gaussian flow is therefore global and remains centered.
+\end{solution}
+
+\begin{exercise}[Wasserstein flow of $W_2^2$]\label{ex:rigorous-W2-squared}
+Fix $\beta\in\mathcal P_2(\mathbb{R}^d)$. For $\alpha\in\mathcal P_2(\mathbb{R}^d)$ define
+$f(\alpha) := W_2(\alpha,\beta)^2$.
+For the first-variation calculation, assume $\alpha$ has a smooth strictly positive density and that the usual envelope differentiation is justified for the perturbations considered. For the flow take an absolutely continuous initial law $\alpha_0\in\mathcal P_2(\R^d)$. Consider the quadratic cost
+$c(x,y) = \frac12|x-y|^2$.
+
+\begin{enumerate}[label=\textbf{(\arabic*)}]
+  \item Using the Kantorovich dual problem, and using the envelope theorem (that was used the same way in the previous exercise sheet for discrete measure), compute
+    the first variation $\delta f(\alpha)$.
+
+  \item Assume $\alpha$ is absolutely continuous. Leveraging Brenier's theorem connecting the transport map $T$ to the dual potential, compute the Wasserstein gradient
+    $\gradW f(\alpha)$.
+
+
+  \item Relate the Wasserstein flow $(\alpha_t)_{t\ge0}$ to the McCann interpolation (you should use Benamou-Brenier dynamical formulation which details a valid field advecting the interpolant).
+
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item The dual for $|x-y|^2/2$ represents $f/2$, not $f$.\item Write the source dual potential as $|x|^2/2-u(x)$, with $T=\nabla u$.\item If $I_s=(1-s)\mathrm{Id}+sT$, compute $\frac d{ds}I_s$. At the current point, the remaining displacement to the target is $(1-s)$ times this velocity.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1)} Let $\varphi_\alpha$ be a source optimal potential for cost $|x-y|^2/2$. Kantorovich duality represents $f(\alpha)/2$ as the supremum of $\int\varphi\,d\alpha+\int\psi\,d\beta$ over $\varphi+\psi\le|x-y|^2/2$. Under the differentiability hypothesis, its derivative in a zero-mass direction $\eta$ is $\int\varphi_\alpha\,d\eta$. Thus
+\[
+\frac{\delta f}{\delta\alpha}(x)=2\varphi_\alpha(x)+\text{constant}.
+\]
+Even without differentiability, the optimal potential gives the corresponding subgradient inequality in the linear space of measures. This should not be confused with geodesic convexity.
+
+\textbf{(2)} Brenier's theorem gives $T_\alpha=\nabla u_\alpha$ with $u_\alpha$ convex, and $\varphi_\alpha(x)=|x|^2/2-u_\alpha(x)$ up to a constant. Therefore
+\[
+\gradW f(\alpha)(x)=2(x-T_\alpha(x)),\qquad v(x)=2(T_\alpha(x)-x).
+\]
+The factor $2$ comes from the definition $f=\Wtwo^2$, rather than $f=\Wtwo^2/2$.
+
+\textbf{(3)} Let $T$ be the optimal map from $\alpha_0$ to $\beta$, put $I_s=(1-s)\mathrm{Id}+sT$, and write $\mu_s=(I_s)_\#\alpha_0$. For $s<1$, monotonicity of $T$ makes $I_s$ strongly monotone and its inverse on its image Lipschitz. In particular $\mu_s$ is absolutely continuous. The remaining optimal map is $T_s=T\circ I_s^{-1}$; the optimality follows from the constant-speed geodesic property of displacement interpolation.
+
+At $x=I_s(x_0)$, the geodesic velocity is
+\[
+w_s(x)=T(x_0)-x_0=\frac{T_s(x)-x}{1-s}.
+\]
+It is \emph{not} merely $T_s(x)-x$. This field solves $\partial_s\mu_s+\nabla\cdot(\mu_sw_s)=0$ and has norm $\|w_s\|_{L^2(\mu_s)}=\Wtwo(\alpha_0,\beta)$, as in Benamou--Brenier.
+
+For $\alpha_t=\mu_{s(t)}$, its velocity is $s'(t)w_{s(t)}$. Matching it with the negative gradient $2(T_{s(t)}-\mathrm{Id})=2(1-s(t))w_{s(t)}$ gives
+\[
+s'(t)=2(1-s(t)),\quad s(0)=0,\qquad
+\alpha_t=\bigl(e^{-2t}\mathrm{Id}+(1-e^{-2t})T\bigr)_\#\alpha_0.
+\]
+Consequently $\Wtwo(\alpha_t,\beta)=e^{-2t}\Wtwo(\alpha_0,\beta)$ and $f(\alpha_t)=e^{-4t}f(\alpha_0)$. Moreover $|\dot\alpha_t|=2\Wtwo(\alpha_t,\beta)=\|\gradW f(\alpha_t)\|_{L^2(\alpha_t)}$, so this is a descending gradient-flow curve, with energy dissipation $f'=-\|\gradW f\|^2$. The endpoint is reached only as $t\to\infty$, unless $\alpha_0=\beta$ already.
+\end{solution}
+
+
+\end{document}

@@ -1,0 +1,327 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Discrete Kantorovich Formulation}
+\hypersetup{pdftitle={Discrete Kantorovich Formulation -- Exercises}}
+\begin{document}
+
+\maketitle
+
+\begin{exercise}[1D discrete $\Rightarrow$ optimal Kantorovich plan]\label{ex:discrete13}
+Let $n=m=3$, $x_1<x_2<x_3$, $y_1<y_2<y_3$, and consider two finite measures of mass $3$ with weights
+$\,a=(1.1,\ 0.8,\ 1.1)$ and $b=(1,\ 1,\ 1)$. For the quadratic cost $c(x,y)=|x-y|^2$, compute the optimal coupling matrix $P\in\R_+^{3\times3}$.
+\end{exercise}
+\begin{hints}
+Intersect the source mass intervals $(A_{i-1},A_i]$ with the target intervals $(B_{j-1},B_j]$. Their overlap lengths are the entries of the monotone plan.
+\end{hints}
+\begin{solution}
+In 1D with convex cost, the optimal plan is the monotone (left-to-right) coupling, which one can obtain by the greedy ``northwest corner'' fill. Cumulative sums are $A=(1.1,1.9,3)$ and $B=(1,2,3)$. The plan is
+\[
+P=\begin{pmatrix}
+1 & 0.1 & 0\\
+0 & 0.8 & 0\\
+0 & 0.1 & 1
+\end{pmatrix}.
+\]
+Row sums are $(1.1,0.8,1.1)$ and column sums $(1,1,1)$, as required.
+\end{solution}
+
+\begin{exercise}[Parametric 1D cases]\label{ex:param}
+In both parts use strictly increasing source and target supports and the quadratic cost $|x-y|^2$. The weights below have equal total mass but are not normalized; dividing both marginals and the resulting plan by that mass gives probability measures.\par (1) Two against two: $a=(1+\varepsilon,\ 1-\varepsilon)$ and $b=(1,\ 1)$ with $|\varepsilon|\le1$.
+Compute the optimal $P\in\R_+^{2\times2}$ as a function of the sign of $\varepsilon$.
+
+(2) Three against three: $a=(1+\varepsilon,\ 1+\eta,\ 1-\varepsilon-\eta)$ and $b=(1,\ 1,\ 1)$ with feasibility $1+\varepsilon\ge0$, $1+\eta\ge0$, $1-\varepsilon-\eta\ge0$.
+Compute the optimal monotone $P\in\R_+^{3\times3}$ in the two regimes (i) $\varepsilon>0,\ \eta>0$ and (ii) $\varepsilon<0,\ \eta>0$.
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\arabic*)]\item Fill the first target mass with the first source, then the second. Include $\varepsilon=0$.\item Compare the second source cumulative $2+\varepsilon+\eta$ with $2$. This splits regime (ii) into two subcases.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(1) $2\times2$.} At $\varepsilon=0$, $P=I_2$. For nonzero $\varepsilon$, the greedy fill gives two cases.
+
+\emph{Case $\varepsilon>0$.} Row~1 first fills column~1 with $1$ and sends the excess $\varepsilon$ to column~2. Row~2 sends the remaining $1-\varepsilon$ to column~2:
+\[
+P=\begin{pmatrix}1&\varepsilon\\[1pt] 0&1-\varepsilon\end{pmatrix}.
+\]
+
+\emph{Case $\varepsilon<0$.} Row~1 has only $1+\varepsilon$; it fills that much of column~1. Row~2 supplies the remaining $-\varepsilon$ to column~1 and the rest to column~2:
+\[
+P=\begin{pmatrix}1+\varepsilon&0\\[1pt] -\varepsilon&1\end{pmatrix}.
+\]
+
+\smallskip
+\textbf{(2) $3\times3$.} We proceed left-to-right.
+
+\emph{Regime (i): $\varepsilon>0,\ \eta>0$ (and thus $\varepsilon+\eta\le1$ by feasibility).}
+Row~1 fills column~1 with $1$ and sends $\varepsilon$ to column~2. Row~2 then completes column~2 with $1-\varepsilon$ and sends its remainder $\varepsilon+\eta$ to column~3. Row~3 fills the rest of column~3:
+\[
+P=\begin{pmatrix}
+1 & \varepsilon & 0\\
+0 & 1-\varepsilon & \varepsilon+\eta\\
+0 & 0 & 1-\varepsilon-\eta
+\end{pmatrix}.
+\]
+
+\emph{Regime (ii): $\varepsilon<0,\ \eta>0$ (feasibility requires $\eta\le 1-\varepsilon$).}
+Write $\delta:=-\varepsilon>0$. Row~1 has $1-\delta$ and sends all of it to column~1. Row~2 supplies the missing $\delta$ to column~1, leaving $1+\eta-\delta=1+\eta+\varepsilon$ to place in columns~2--3. There are two subcases depending on whether column~2 can be completed by row~2 alone:
+
+\hspace{1em}\emph{(a) If $\eta\ge\delta$ (i.e.\ $\eta+\varepsilon\ge0$):}
+row~2 has at least $1$ left for column~2, so it fills column~2 and puts the remaining $\eta-\delta=\eta+\varepsilon$ into column~3; row~3 completes column~3:
+\[
+P=\begin{pmatrix}
+1+\varepsilon & 0 & 0\\
+-\varepsilon & 1 & \eta+\varepsilon\\
+0 & 0 & 1-\eta-\varepsilon
+\end{pmatrix}.
+\]
+
+\hspace{1em}\emph{(b) If $\eta<\delta$ (i.e.\ $\eta+\varepsilon<0$):}
+row~2 does not have enough to complete column~2; it contributes $1+\eta+\varepsilon$ to column~2 and nothing to column~3; row~3 supplies the remaining $\delta-\eta=-(\varepsilon+\eta)$ to column~2 and then fills all of column~3:
+\[
+P=\begin{pmatrix}
+1+\varepsilon & 0 & 0\\
+-\varepsilon & 1+\eta+\varepsilon & 0\\
+0 & -(\varepsilon+\eta) & 1
+\end{pmatrix}.
+\]
+
+One checks in each subcase that row sums are $(1+\varepsilon,1+\eta,1-\varepsilon-\eta)$ and column sums are $(1,1,1)$, with all entries nonnegative under the stated conditions.
+\end{solution}
+
+\begin{exercise}[Couplings in basic cases]\label{ex:simple-couplings}
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item What are the couplings between $\delta_x$ and $\delta_y$?
+\item What are the couplings between $\delta_x$ and $\frac12(\delta_y+\delta_z)$, with $y\neq z$?
+\item Let $\alpha,\beta$ be finite \emph{positive} measures with \emph{different} total masses. What is $\Pi(\alpha,\beta)$, the set of couplings?
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Both coordinates are fixed almost surely.\item The first coordinate is fixed and the second marginal fixes the two weights.\item The total mass of a coupling equals that of each marginal.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) $\delta_x$ vs.\ $\delta_y$.}
+Because $(\mathrm{proj}_1)_\#\pi=\delta_x$, $\pi$ is supported on $\{x\}\times X$.
+Because $(\mathrm{proj}_2)_\#\pi=\delta_y$, all mass is at $y$ in the second coordinate.
+Thus the unique coupling is
+\[
+\pi=\delta_{(x,y)}.
+\]
+
+\medskip
+\textbf{(b) $\delta_x$ vs.\ $\tfrac12(\delta_y+\delta_z)$.}
+Any coupling must be supported on $\{x\}\times\{y,z\}$, so
+\[
+\pi=a\,\delta_{(x,y)}+b\,\delta_{(x,z)},\qquad a,b\ge0,\ a+b=1.
+\]
+Matching the second marginal $\tfrac12(\delta_y+\delta_z)$ forces $a=b=\tfrac12$.
+Hence the coupling is unique:
+\[
+\pi=\tfrac12\,\delta_{(x,y)}+\tfrac12\,\delta_{(x,z)}.
+\]
+
+\medskip
+\textbf{(c) Different total masses.}
+Let $M_\alpha:=\alpha(X)$ and $M_\beta:=\beta(X)$. For any coupling $\pi$,
+\[
+\pi(X\times X)=\alpha(X)=M_\alpha=\beta(X)=\pi(X\times X),
+\]
+so $M_\alpha=M_\beta$ is necessary. If $M_\alpha\neq M_\beta$ then \emph{no} coupling exists:
+\[
+\Pi(\alpha,\beta)=\varnothing.
+\]
+\end{solution}
+
+\begin{exercise}[Discrete $\alpha_t$ from a coupling]\label{ex:discrete-interp}
+Let $\alpha_0=\sum_{i=1}^n a_i\,\delta_{x_i}$ and $\alpha_1=\sum_{j=1}^m b_j\,\delta_{y_j}$ be probability measures on $\R^d$ ($a_i,b_j>0$, $\sum_i a_i=\sum_j b_j=1$).
+Assume the $x_i$ are distinct and the $y_j$ are distinct. Let $\pi$ be a quadratic-cost optimal coupling between $\alpha_0$ and $\alpha_1$ and write it in discrete form
+\[
+\pi=\sum_{i=1}^n\sum_{j=1}^m P_{i,j}\,\delta_{(x_i,y_j)},\qquad
+P\in\R^{n\times m}_+,\;\; \sum_j P_{i,j}=a_i,\;\; \sum_i P_{i,j}=b_j.
+\]
+For $t\in[0,1]$ define $I_t:\R^d\times\R^d\to\R^d$ by $I_t(x,y)=(1-t)x+ty$ and set
+\[
+\alpha_t:=(I_t)_{\push}\pi.
+\]
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item Show that $\alpha_t$ interpolates between $\alpha_0$ and $\alpha_1$, i.e.\ $\alpha_0=(P_0)_{\push}\pi$ and $\alpha_1=(P_1)_{\push}\pi$.
+\item Prove that $\alpha_t$ is discrete for every $t\in[0,1]$. Give an upper bound on the number of Dirac masses of $\alpha_t$ in terms of $P$. Deduce the crude bound $\#\mathrm{supp}(\alpha_t)\le nm$. (Bonus: explain why one can choose an \emph{optimal} coupling with at most $n+m-1$ nonzeros, hence an interpolation with at most $n+m-1$ atoms.)
+\item Give the explicit expression of $\alpha_t$ in terms of the matrix $P\in\R^{n\times m}_+$.
+\item Assume $n=m$. Under which condition(s) can one choose an optimal coupling so that $\alpha_t$ has exactly $n$ Dirac masses for all $t$? Give a concrete example where this happens and write $\alpha_t$ explicitly.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Evaluate the interpolation map at $t=0,1$.\item Push forward each atom separately. For the sharper bound, use an extreme point of the transport polytope.\item Write the image location of each pair $(i,j)$.\item Equal weights permit a permutation optimizer. Show that two quadratic optimal trajectories cannot collide by using two-cycle monotonicity.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Endpoints.}
+By definition, $P_0(x,y)=x$ and $P_1(x,y)=y$. Therefore,
+\[
+\alpha_0=(P_0)_{\push}\pi=(\mathrm{proj}_X)_{\push}\pi,\qquad
+\alpha_1=(P_1)_{\push}\pi=(\mathrm{proj}_Y)_{\push}\pi,
+\]
+which equal the marginals of $\pi$, hence $\alpha_0$ and $\alpha_1$.
+
+\medskip
+\textbf{(b) Discreteness and support size.}
+Since $\pi$ is a finite sum of Dirac masses at points $(x_i,y_j)$ with weights $P_{i,j}$, pushing forward by $I_t$ yields
+\[
+\alpha_t=(I_t)_{\push}\pi
+=\sum_{i=1}^n\sum_{j=1}^m P_{i,j}\,\delta_{(1-t)x_i+ty_j}.
+\]
+Thus $\alpha_t$ is discrete. Each nonzero entry $P_{i,j}>0$ gives an atom at $(1-t)x_i+ty_j$, so
+\[
+\#\mathrm{supp}(\alpha_t)\ \le\ \#\{(i,j):P_{i,j}>0\}\ \le\ nm,
+\]
+with possible strict inequality if different pairs $(i,j)$ produce the same point $(1-t)x_i+ty_j$.
+
+\emph{Bonus (sharper bound).} The transportation polytope is a nonempty bounded polytope; any basic feasible solution has at most $n+m-1$ nonzero entries. Hence there exists an optimal coupling $\pi^\star$ with at most $n+m-1$ nonzeros; using $\pi^\star$ gives an interpolation $\alpha_t$ with at most $n+m-1$ atoms.
+
+\medskip
+\textbf{(c) Explicit formula from $P$.}
+Writing $X\sim\alpha_0$, $Y\sim\alpha_1$ with joint law $\pi$, one has
+\[
+\alpha_t=\mathcal L\!\big((1-t)X+tY\big)
+=\sum_{i=1}^n\sum_{j=1}^m P_{i,j}\,\delta_{(1-t)x_i+ty_j}.
+\]
+If different pairs $(i,j)$, $(i',j')$ yield the same location, their weights add.
+
+\medskip
+
+\textbf{(d) Exactly $n$ atoms.}
+A sufficient condition is a permutation optimizer with $b_{\sigma(i)}=a_i$. In particular, for equal weights $1/n$, Birkhoff's theorem guarantees such an optimizer for any finite cost matrix. For the quadratic cost, its trajectories do not collide.
+
+Indeed, exchanging two matched targets cannot improve the cost, so
+$\langle x_i-x_k,y_{\sigma(i)}-y_{\sigma(k)}\rangle\ge0$ for $i\ne k$. If two trajectories collided at $0<t<1$, then
+$y_{\sigma(i)}-y_{\sigma(k)}=-(1-t)(x_i-x_k)/t$, contradicting this inequality since the source points are distinct. At the endpoints distinctness is assumed. Therefore
+\[
+\alpha_t=\sum_i a_i\delta_{(1-t)x_i+ty_{\sigma(i)}}
+\]
+has exactly $n$ atoms for all $t\in[0,1]$. As a concrete example, for strictly ordered points on the line and uniform weights, take $\sigma(i)=i$; the interpolated locations remain strictly ordered.
+\end{solution}
+
+\Needspace{14\baselineskip}
+\section*{Further exercises}
+
+\begin{exercise}[When does a finite-cost coupling exist?]\label{ex:finite-feasibility-compact}
+Let $n\in\mathbb N$ and consider the uniform discrete measures
+\[
+\alpha=\frac1n\sum_{i=1}^n \delta_{x_i},\qquad
+\beta=\frac1n\sum_{j=1}^n \delta_{y_j}.
+\]
+Let $C=(C_{i,j})\in(\mathbb R\cup\{+\infty\})^{n\times n}$ be a cost matrix; $+\infty$ means the pair $(x_i,y_j)$ is forbidden. A coupling $\pi$ has \emph{finite cost} if it assigns zero mass to all $+\infty$ entries.
+
+\begin{enumerate}[label=(\roman*), itemsep=4pt]
+\item \textbf{$2\times2$ by hand.} For
+\[
+C=\begin{pmatrix}C_{1,1}&C_{1,2}\\ C_{2,1}&C_{2,2}\end{pmatrix},
+\]
+determine exactly when a finite-cost coupling exists in terms of the positions of $+\infty$. When it exists, write one explicit coupling matrix $P\in\R_+^{2\times2}$ with row/column sums $1/2$ supported only on finite entries.
+
+\item \textbf{General uniform case.} Let $E=\{(i,j): C_{i,j}<+\infty\}$ be the set of allowed edges. Prove:
+\[
+\begin{aligned}
+&\text{There exists a finite-cost coupling}\\
+&\qquad\Longleftrightarrow\quad
+\exists\sigma\text{ a permutation with }(i,\sigma(i))\in E\text{ for every }i.
+\end{aligned}
+\]
+
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\roman*)]\item There are only two permutation supports.\item Scale a feasible coupling by $n$ and decompose it into permutation matrices. Nonnegative summands cannot cancel at a forbidden entry.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(i) $2\times2$ case.}
+There are two permutation supports:
+\[
+\text{Id: }\{(1,1),(2,2)\},\qquad \text{Swap: }\{(1,2),(2,1)\}.
+\]
+A finite-cost coupling exists iff at least one support is fully finite:
+\[
+(C_{1,1},C_{2,2}\text{ finite})\quad\text{or}\quad(C_{1,2},C_{2,1}\text{ finite}).
+\]
+Obstructions: any all-$+\infty$ row or column; or the pattern blocking both permutations (e.g.\ exactly one of $\{(1,1),(2,2)\}$ and exactly one of $\{(1,2),(2,1)\}$ is $+\infty$).
+
+When feasible, an explicit coupling is the scaled permutation on the allowed support. If $(1,1)$ and $(2,2)$ are finite, take
+\[
+P=\begin{pmatrix}\tfrac12&0\\[2pt]0&\tfrac12\end{pmatrix};
+\]
+if $(1,2)$ and $(2,1)$ are finite, take
+\[
+P=\begin{pmatrix}0&\tfrac12\\[2pt]\tfrac12&0\end{pmatrix}.
+\]
+In each case rows and columns sum to $1/2$ and no mass sits on forbidden entries.
+
+\medskip
+\par\Needspace{5\baselineskip}
+\textbf{(ii) General uniform case.}
+
+($\Leftarrow$) If there is a permutation $\sigma$ with $(i,\sigma(i))\in E$ for all $i$, then
+\[
+P_{i,\sigma(i)}=\frac1n,\qquad P_{i,j}=0\ \text{otherwise},
+\]
+is a coupling with finite cost.
+
+($\Rightarrow$) Suppose a finite-cost coupling exists. Let $P$ be its matrix (row/column sums $1/n$, zeros on forbidden entries) and set $Q:=nP$. Then $Q$ is doubly stochastic with $Q_{i,j}=0$ on forbidden cells. By Birkhoff--von Neumann,
+\[
+Q=\sum_{k=1}^K \lambda_k\,\Pi_{\sigma_k},\qquad \lambda_k>0,\ \sum_k\lambda_k=1,
+\]
+where $\Pi_{\sigma_k}$ are permutation matrices. For any forbidden $(i,j)$,
+\[
+0=Q_{i,j}=\sum_k \lambda_k (\Pi_{\sigma_k})_{i,j},
+\]
+and since each term is nonnegative, we must have $(\Pi_{\sigma_k})_{i,j}=0$ for all $k$; thus every $\sigma_k$ avoids forbidden entries. As some $\lambda_k>0$, at least one allowed permutation exists. This proves the equivalence.
+\end{solution}
+
+
+\end{document}

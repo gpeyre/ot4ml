@@ -1,0 +1,576 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Continuous Kantorovich Formulation}
+\hypersetup{pdftitle={Continuous Kantorovich Formulation -- Exercises}}
+\begin{document}
+
+\maketitle
+
+\begin{exercise}[Couplings in basic cases]\label{ex:simple-couplings}
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item Let $\alpha,\beta$ be finite \emph{positive} measures with \emph{different} total masses. What is $\Pi(\alpha,\beta)$, the set of couplings?
+\item (i) What are the couplings between $\delta_x$ and $\Unif[0,1]$?\\
+      (ii) What are the couplings between $\frac12(\delta_x+\delta_y)$ and $\Unif[0,1]$, assuming $x\ne y$?
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Compare the total masses of the two marginals.\item[(b-i)] The first coordinate is fixed.\item[(b-ii)] Given $t\in[0,1]$, let $q(t)$ be the conditional probability of the first coordinate being $x$; impose its total mass.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Different total masses.}
+Let $M_\alpha:=\alpha(X)$ and $M_\beta:=\beta(X)$. For any coupling $\pi$,
+\[
+\pi(X\times X)=\alpha(X)=M_\alpha=\beta(X)=\pi(X\times X),
+\]
+so $M_\alpha=M_\beta$ is necessary. If $M_\alpha\neq M_\beta$ then \emph{no} coupling exists:
+\[
+\Pi(\alpha,\beta)=\varnothing.
+\]
+
+\medskip
+\textbf{(b-i) $\delta_x$ vs.\ $\Unif[0,1]$.}
+A coupling must live on $\{x\}\times[0,1]$ and have second marginal $\Unif[0,1]$.
+Disintegrating w.r.t.\ the first coordinate gives a unique conditional law on $[0,1]$, namely $\Unif[0,1]$. Hence the unique coupling is
+\[
+\pi=\delta_x\otimes \Unif[0,1].
+\]
+
+\smallskip
+\textbf{(b-ii) $\tfrac12(\delta_x+\delta_y)$ vs.\ $\Unif[0,1]$.}
+There are \emph{many} couplings. Two equivalent descriptions:
+
+\underline{(1) Disintegration w.r.t.\ the \emph{second} marginal (on $[0,1]$).}
+Any coupling $\pi$ with second marginal $\Unif[0,1]$ can be written as
+\[
+\pi(du,dt)=\big[q(t)\,\delta_x(du)+(1-q(t))\,\delta_y(du)\big]\;dt,
+\]
+for some measurable $q:[0,1]\to[0,1]$ (here $dt$ denotes Lebesgue/Uniform measure on $[0,1]$).
+The first marginal is then
+\[
+(\mathrm{proj}_1)_\#\pi=\Big(\int_0^1 q(t)\,dt\Big)\,\delta_x+\Big(1-\int_0^1 q(t)\,dt\Big)\,\delta_y.
+\]
+Requiring $(\mathrm{proj}_1)_\#\pi=\tfrac12(\delta_x+\delta_y)$ is equivalent to the single constraint
+\[
+\int_0^1 q(t)\,dt=\tfrac12.
+\]
+Thus all couplings are exactly the measures $\pi_q$ in the displayed
+disintegration, indexed by measurable $0\le q\le1$ with $\int_0^1q(t)\,dt=1/2$.
+
+\underline{(2) Disintegration w.r.t.\ the \emph{first} marginal (on $\{x,y\}$).}
+Equivalently, any such coupling can be written as
+\[
+\pi=\tfrac12\,\delta_x\otimes \mu_x\;+\;\tfrac12\,\delta_y\otimes \mu_y,
+\]
+where $\mu_x,\mu_y$ are probabilities on $[0,1]$ with
+\[
+\frac{\mu_x+\mu_y}{2}=\Unif[0,1]\quad\Longleftrightarrow\quad
+\mu_x(B)+\mu_y(B)=2\,|B|\ \ \text{for all Borel }B\subset[0,1].
+\]
+The two parameterizations are linked by $\mu_x=2q(t)\,dt$ and $\mu_y=2(1-q(t))\,dt$. These conditional laws necessarily have densities because their average is Lebesgue measure.
+
+\emph{Extreme examples.}
+Take a measurable $A\subset[0,1]$ with $|A|=\tfrac12$ and set
+\[
+q(t)=\mathbf 1_{A}(t).
+\]
+Then
+\[
+\pi_A(du,dt)=[\mathbf 1_A(t)\,\delta_x+(1-\mathbf 1_A(t))\,\delta_y](du)\,dt
+= \tfrac12\,\delta_x\otimes \Unif(A)\;+\;\tfrac12\,\delta_y\otimes \Unif(A^c),
+\]
+where $\Unif(A)$ and $\Unif(A^c)$ are the uniform laws on $A$ and $A^c$ (normalized).
+These ``split-by-partition'' couplings are extremal points of the convex set above.
+\end{solution}
+
+\begin{exercise}[Gaussian couplings in $\R$ (zero means)]\label{ex:gauss1d}
+Let $\alpha=\mathcal N(0,\sigma_\alpha^2)$ and $\beta=\mathcal N(0,\sigma_\beta^2)$ with $\sigma_\alpha,\sigma_\beta\ge0$.
+Consider \emph{Gaussian} couplings $\pi=\mathcal N(0,\Sigma)$ on $\R\times\R$ with
+\[
+\Sigma=\begin{pmatrix}\sigma_\alpha^2 & c\\[2pt] c & \sigma_\beta^2\end{pmatrix}\succeq0.
+\]
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item Express the quadratic OT cost $\mathbb E[(X-Y)^2]$ in terms of $c$.
+\item Determine the constraint on $c$ implied by $\Sigma\succeq0$.
+\item Solve the Kantorovich problem \emph{restricted to Gaussian couplings} by minimizing over feasible $c$.
+\item What is the rank of $\Sigma$ as a function of $(\sigma_\alpha,\sigma_\beta,c)$, and what is the support of $\pi$ in each case?
+    Compare the optimal Gaussian coupling with the conclusion of Brenier's theorem.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Expand $\mathbb E(X-Y)^2$.\item A symmetric $2\times2$ matrix is PSD exactly when both diagonal entries and the determinant are nonnegative.\item Maximize the covariance $c$. Cauchy--Schwarz gives the same bound for non-Gaussian couplings.\item A Gaussian is supported on the range of its covariance matrix.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Cost as a function of $c$.}
+\[
+\mathbb E[(X-Y)^2]=\mathbb E[X^2]+\mathbb E[Y^2]-2\,\mathbb E[XY]
+=\sigma_\alpha^2+\sigma_\beta^2-2c.
+\]
+
+\medskip
+\textbf{(b) Feasible range of $c$ from $\Sigma\succeq0$.}
+For a $2\times2$ symmetric $\begin{psmallmatrix}a&c\\c&b\end{psmallmatrix}$, PSD $\Leftrightarrow$ $a\ge0$, $b\ge0$, $ab-c^2\ge0$.
+Thus
+\[
+-\sigma_\alpha\sigma_\beta\ \le\ c\ \le\ \sigma_\alpha\sigma_\beta.
+\]
+
+\medskip
+\textbf{(c) Minimization over feasible $c$.}
+The objective $\sigma_\alpha^2+\sigma_\beta^2-2c$ decreases with $c$, so the minimum is at
+\[
+c^*=\sigma_\alpha\sigma_\beta,
+\]
+yielding
+\[
+\boxed{\ \Wtwo^2(\alpha,\beta)=\sigma_\alpha^2+\sigma_\beta^2-2\,\sigma_\alpha\sigma_\beta=(\sigma_\alpha-\sigma_\beta)^2.\ }
+\]
+For any coupling, Cauchy--Schwarz gives $\mathbb E[XY]\le\sigma_\alpha\sigma_\beta$, so the Gaussian optimizer is also globally optimal. At $c^*$ (with $\sigma_\alpha>0$), the optimal coupling is concentrated on $y=\frac{\sigma_\beta}{\sigma_\alpha}x$ (Monge map $T(x)=\frac{\sigma_\beta}{\sigma_\alpha}x$). If $\sigma_\alpha=0$, feasibility forces $c=0$ and $\Wtwo^2=\sigma_\beta^2$.
+
+\medskip
+\textbf{(d) Rank of $\Sigma$, support of $\pi$, and Brenier.}
+\begin{itemize}[itemsep=2pt]
+\item \emph{Generic feasible $c$ with $\sigma_\alpha,\sigma_\beta>0$.}
+$\det\Sigma=\sigma_\alpha^2\sigma_\beta^2-c^2$.
+If $|c|<\sigma_\alpha\sigma_\beta$, then $\det\Sigma>0$ and $\mathrm{rank}(\Sigma)=2$; $\pi$ is a non-degenerate Gaussian with a density on $\R^2$ (full support).
+
+\item \emph{Extremal $c=\pm\sigma_\alpha\sigma_\beta$ with $\sigma_\alpha,\sigma_\beta>0$.}
+Then $\det\Sigma=0$ and $\mathrm{rank}(\Sigma)=1$.
+For $c=+\sigma_\alpha\sigma_\beta$ one has correlation $+1$ and
+\[
+Y=\frac{\sigma_\beta}{\sigma_\alpha}\,X\quad\text{a.s.},
+\]
+so $\pi$ is supported on the line $y=\frac{\sigma_\beta}{\sigma_\alpha}x$.
+(For $c=-\sigma_\alpha\sigma_\beta$, the line is $y=-\frac{\sigma_\beta}{\sigma_\alpha}x$.)
+
+\item \emph{Singular marginals.}
+If $\sigma_\alpha=0$ and $\sigma_\beta>0$, PSD enforces $c=0$ and
+$\Sigma=\begin{psmallmatrix}0&0\\0&\sigma_\beta^2\end{psmallmatrix}$ has rank $1$; $X=0$ a.s. and $Y\sim\mathcal N(0,\sigma_\beta^2)$, so $\pi$ lives on the vertical line $\{x=0\}$.
+The case $\sigma_\beta=0$ is symmetric (horizontal line).
+If $\sigma_\alpha=\sigma_\beta=0$, then $\Sigma=0$ and $\mathrm{rank}(\Sigma)=0$ (a single atom at $(0,0)$).
+
+\item \emph{Comparison with Brenier.}
+When $\sigma_\alpha>0$ (so $\alpha$ is absolutely continuous), Brenier's theorem ensures the \emph{global} $\Wtwo$-optimal coupling is induced by a transport map $T=\nabla\phi$.
+In 1D this map is increasing; for Gaussians it is linear: $T(x)=\frac{\sigma_\beta}{\sigma_\alpha}x$.
+This agrees with the Gaussian-restricted optimizer above: at $c=c^*$ the coupling has rank $1$ and is supported on the graph of $T$.
+When $\alpha$ is not absolutely continuous (e.g.\ $\sigma_\alpha=0$), Brenier's conclusion need not hold; indeed the optimal plan cannot be represented by a deterministic map from $\alpha$ to a non-degenerate $\beta$.
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[Uniform $\to$ two Diracs; two Diracs $\to$ uniform]\label{ex:uniform-to-two-atoms}
+Fix two distinct points $x\neq y$ in $\R$ and let
+\[
+\alpha=\Unif[0,1],\qquad \beta=\tfrac12\,\delta_x+\tfrac12\,\delta_y.
+\]
+Consider the quadratic cost $c(u,v)=|u-v|^2$ (the increasing rearrangement remains optimal for $|u-v|^p$, $p\ge1$, but uniqueness may fail for $p=1$).
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item Find the $\W_p$--optimal Monge map $T:[0,1]\to\R$ that pushes $\alpha$ to $\beta$.
+\item Is there a Monge map $S:\R\to[0,1]$ such that $S_\#\beta=\alpha$?
+\item Describe an optimal Kantorovich coupling $\pi\in\Pi(\alpha,\beta)$ between $\alpha$ and $\beta$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Order the two target atoms and match quantiles.\item A map sends two atoms to at most two atoms.\item Use the graph plan of the map in (a), and transpose it for the reverse direction.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{Setup.} Without loss of generality, reorder the atoms so that $x<y$ (if $y<x$, swap the names $x$ and $y$ below).
+
+\medskip
+\textbf{(a) Optimal Monge map $\alpha\to\beta$.}
+In 1D and for convex costs, the optimal map is the increasing rearrangement (quantile map)
+\[
+T=F_\beta^{-1}\circ F_\alpha.
+\]
+Here $F_\alpha(t)=t$ on $[0,1]$ and $F_\beta^{-1}(u)=
+\begin{cases}
+x,& u\in(0,\tfrac12],\\
+y,& u\in(\tfrac12,1].
+\end{cases}$
+Hence
+\[
+\boxed{\,T(t)=\begin{cases}
+x,& t\in(0,\tfrac12],\\[2pt]
+y,& t\in(\tfrac12,1].
+\end{cases}\,}
+\]
+This $T$ pushes $\alpha$ to $\beta$ and is optimal among maps; for the stated quadratic cost it is unique up to null sets, since exchanging a pair assigned in reversed order strictly lowers the cost. For $p=1$, other partitions can be optimal.
+
+\medskip
+\textbf{(b) No Monge map $\beta\to\alpha$.}
+If $S$ were a measurable map with $S_\#\beta=\alpha$, then
+\[
+S_\#\beta=\tfrac12\,\delta_{S(x)}+\tfrac12\,\delta_{S(y)},
+\]
+which is purely atomic (at most two atoms) and cannot equal the continuous law $\Unif[0,1]$. Therefore \emph{no} Monge map exists from $\beta$ to $\alpha$.
+
+\medskip
+\textbf{(c) An optimal coupling $\pi$.}
+Push forward $\alpha$ by the optimal map $T$ and keep track of preimages:
+\[
+\boxed{\;\pi=\big(\mathrm{id},T\big)_\#\alpha
+= \big(\lambda|_{[0,1/2]}\big)\otimes \delta_x\;+\;\big(\lambda|_{(1/2,1]}\big)\otimes \delta_y, \;}
+\]
+where $\lambda$ is Lebesgue on $[0,1]$. Equivalently, for Borel $A\subset[0,1]$, $B\subset\R$,
+\[
+\pi(A\times B)=\int_{A\cap[0,1/2]}\mathbf 1_B(x)\,dt+\int_{A\cap(1/2,1]}\mathbf 1_B(y)\,dt.
+\]
+This coupling has first marginal $\alpha$ and second marginal $\beta$, and it is optimal (it is induced by the optimal map).
+
+\smallskip
+\emph{Optional cost value (for $p=2$).}
+\[
+W_2^2(\alpha,\beta)=\int_0^{1/2}(t-x)^2\,dt+\int_{1/2}^{1}(t-y)^2\,dt.
+\]
+\end{solution}
+
+\begin{exercise}[Bottleneck cost: metric property and closed-form OT value]\label{ex:bottleneck_positive}
+Let $(\mathsf X,\mathcal B)$ be a standard Borel space (so the diagonal in $\mathsf X\times\mathsf X$ is measurable) and let $m:\mathsf X\to(0,\infty)$ be measurable (strictly positive everywhere).
+Define
+\[
+c(x,y)\;:=\;\begin{cases}
+0,& x=y,\\[2pt]
+m(x)+m(y),& x\neq y.
+\end{cases}
+\]
+\begin{enumerate}[label=(\alph*),itemsep=4pt]
+\item Show that $d(x,y):=c(x,y)$ is a metric on $\mathsf X$.
+\item For probability measures $\alpha,\beta$ on $(\mathsf X,\mathcal B)$ with $\int m\,d\alpha+\int m\,d\beta<\infty$, compute the Kantorovich value
+\[
+W_c(\alpha,\beta)\;:=\;\inf_{\pi\in\Pi(\alpha,\beta)}\int c(x,y)\,d\pi(x,y)
+\]
+in closed form.
+\item Give an explicit optimal plan in terms of the maximal common submeasure $\mu:=\alpha\wedge\beta$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Separate the case of coincident points from three distinct points.\item How much mass can remain on the diagonal at zero cost?\item Couple the two mutually singular residual measures by a normalized product, with a separate convention if their mass is zero.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) $d=c$ is a metric.}
+Nonnegativity and symmetry are immediate. Also $d(x,y)=0$ iff $x=y$:
+if $x\neq y$, then $d(x,y)=m(x)+m(y)>0$ by the strict positivity of $m$.
+
+For the triangle inequality, fix $x,y,z\in\mathsf X$. If any two coincide, the claim is obvious.
+When $x,y,z$ are pairwise distinct,
+\[
+d(x,z)=m(x)+m(z)\ \le\ (m(x)+m(y))+(m(y)+m(z))\ =\ d(x,y)+d(y,z),
+\]
+since $m(y)>0$. Hence $d$ is a metric.
+
+\medskip
+\textbf{(b) Closed form for $W_c(\alpha,\beta)$.}
+Let $\mu:=\alpha\wedge\beta$ be the greatest measure dominated by both $\alpha$ and $\beta$.
+Recall the Hahn decomposition $\alpha-\beta=(\alpha-\mu)-(\beta-\mu)$ and
+\[
+|\alpha-\beta|=(\alpha-\mu)+(\beta-\mu).
+\]
+
+\emph{Upper bound (constructive).}
+Keep the common mass on the diagonal and match only the residuals off the diagonal.
+Formally, choose any $\gamma\in\Pi(\alpha-\mu,\ \beta-\mu)$ with support in $\{(x,y):x\neq y\}$ and set
+\[
+\pi^\star:=\mu\circ(x\mapsto(x,x))^{-1}\ +\ \gamma\ \in\ \Pi(\alpha,\beta).
+\]
+Then
+\begin{align*}
+\int c\,d\pi^\star
+&=\int\big(m(x)+m(y)\big)\,d\gamma(x,y)\\
+&=\int m\,d(\alpha-\mu)+\int m\,d(\beta-\mu)
+=\int m\,d|\alpha-\beta|.
+\end{align*}
+Therefore $W_c(\alpha,\beta)\le \int m\,d|\alpha-\beta|$.
+
+\emph{Lower bound (decomposition).}
+For any $\pi\in\Pi(\alpha,\beta)$, decompose $\pi=\pi_{\mathrm{diag}}+\pi_{\mathrm{off}}$ with
+$\pi_{\mathrm{diag}}$ supported on $\{x=y\}$ and $\pi_{\mathrm{off}}$ on $\{x\neq y\}$.
+The diagonal part costs $0$. Denote the marginals of $\pi_{\mathrm{off}}$ by
+$\alpha_{\mathrm{off}},\beta_{\mathrm{off}}$.
+Since at most $\mu$-mass can stay on the diagonal, one has
+$\alpha_{\mathrm{off}}\ge \alpha-\mu$ and $\beta_{\mathrm{off}}\ge \beta-\mu$.
+Thus
+\begin{align*}
+\int c\,d\pi
+&=\int m\,d\alpha_{\mathrm{off}}+\int m\,d\beta_{\mathrm{off}}\\
+&\ge\int m\,d(\alpha-\mu)+\int m\,d(\beta-\mu)
+=\int m\,d|\alpha-\beta|.
+\end{align*}
+Taking the infimum over $\pi$ yields $W_c(\alpha,\beta)\ge \int m\,d|\alpha-\beta|$.
+
+Combining bounds,
+\[
+\boxed{\quad W_c(\alpha,\beta)=\int_{\mathsf X} m\,d|\alpha-\beta|.\quad}
+\]
+
+\smallskip
+
+\emph{Dual check.} Choose a measurable representative of
+$h=d(\alpha-\beta)/d|\alpha-\beta|$ with $|h|\le1$ everywhere, and put
+$\varphi=mh$, $\psi=-\varphi$. Then $|\varphi(x)|\le m(x)$, so
+$\varphi(x)-\varphi(y)\le c(x,y)$ for $x\ne y$, and it is zero on the diagonal.
+This pair attains $\int m\,d|\alpha-\beta|$.
+
+\medskip
+\textbf{(c) An explicit optimal coupling.}
+With $\mu=\alpha\wedge\beta$ as above, \emph{any} choice of
+$\gamma\in\Pi(\alpha-\mu,\ \beta-\mu)$ (explicitly, $\gamma=(\alpha-\mu)\otimes(\beta-\mu)/r$ if $r:=1-\mu(\mathsf X)>0$, and $\gamma=0$ if $r=0$)
+and
+\[
+\pi^\star=\mu\circ(x\mapsto(x,x))^{-1}+\gamma
+\]
+is optimal and attains the value $\int m\,d|\alpha-\beta|$.
+All common mass stays on the diagonal (zero cost), while every unit of unmatched mass pays $m(x)$ at departure and $m(y)$ at arrival, independently of how the residuals are paired.
+\end{solution}
+
+\Needspace{14\baselineskip}
+\section*{Further exercises}
+
+\begin{exercise}[Gaussian couplings in $\R^d$ (zero means)]\label{ex:gaussRd}
+Let $\alpha=\mathcal N(0,\Sigma_\alpha)$ and $\beta=\mathcal N(0,\Sigma_\beta)$ with $\Sigma_\alpha,\Sigma_\beta\in\mathbb S_{++}^d$.
+Any Gaussian coupling on $\R^d\times\R^d$ has block covariance
+\[
+\Sigma=\begin{pmatrix}\Sigma_\alpha & K\\ K^\top & \Sigma_\beta\end{pmatrix}\succeq0.
+\]
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item Express the quadratic OT cost $\mathbb E\|X-Y\|^2$ in terms of $K$.
+\item Determine the constraint on $K$ implied by $\Sigma\succeq0$ (give equivalent forms).
+\item Solve the Kantorovich problem \emph{restricted to Gaussian couplings} by minimizing the cost over feasible $K$.
+\item What is the rank of $\Sigma$ and the support of the coupling $\pi$ for (i) strict feasibility and (ii) an optimizer from part (c)? Compare the optimal Gaussian coupling with Brenier's theorem.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item Expand the squared norm and take traces.\item Take the Schur complement of $\Sigma_\alpha$.\item Whiten $K$ and maximize a trace over contractions; be careful about the orientation of the SVD.\item Inspect the Schur complement and the graph of the linear optimal map.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Cost as a function of $K$.}
+\[
+\mathbb E\|X-Y\|^2=\mathbb E\|X\|^2+\mathbb E\|Y\|^2-2\,\mathbb E\langle X,Y\rangle
+=\mathrm{tr}(\Sigma_\alpha)+\mathrm{tr}(\Sigma_\beta)-2\,\mathrm{tr}(K).
+\]
+
+\medskip
+\textbf{(b) Feasible $K$ from $\Sigma\succeq0$.}
+Since $\Sigma_\alpha\succ0$, Schur complement gives
+\[
+\Sigma\succeq0
+\;\;\Longleftrightarrow\;\;
+\Sigma_\beta-K^\top\Sigma_\alpha^{-1}K\succeq0.
+\]
+Equivalently, with
+\(
+M:=\Sigma_\alpha^{-1/2}K\,\Sigma_\beta^{-1/2},
+\)
+this is $I-M^\top M\succeq0$, i.e.\ $\|M\|_{\mathrm{op}}\le1$.
+Thus the feasible $K$ are exactly
+\[
+\boxed{\;K=\Sigma_\alpha^{1/2} M\,\Sigma_\beta^{1/2}\quad\text{with}\quad \|M\|_{\mathrm{op}}\le1.\;}
+\]
+Another equivalent form is $K\Sigma_\beta^{-1}K^\top\preceq \Sigma_\alpha$.
+
+\medskip
+\textbf{(c) Minimization over feasible $K$.}
+Using the parametrization in (b),
+\[
+\mathrm{tr}(K)=\mathrm{tr}\!\big(M\,S\big),\qquad
+S:=\Sigma_\beta^{1/2}\Sigma_\alpha^{1/2}.
+\]
+By von Neumann's trace inequality,
+\[
+\max_{\|M\|_{\mathrm{op}}\le1}\mathrm{tr}(MS)
+=\mathrm{tr}\big((S^\top S)^{1/2}\big)
+=\mathrm{tr}\Big((\Sigma_\beta^{1/2}\Sigma_\alpha\Sigma_\beta^{1/2})^{1/2}\Big),
+\]
+achieved for $M=VU^\top$ when $S=U\,\mathrm{diag}(s)\,V^\top$ is an SVD.
+Therefore an optimal cross-covariance is
+\[
+\boxed{\;K^*=\Sigma_\alpha^{1/2}\big(\Sigma_\alpha^{1/2}\Sigma_\beta\Sigma_\alpha^{1/2}\big)^{1/2}\Sigma_\alpha^{-1/2}. \;}
+\]
+Every coupling, Gaussian or not, has a PSD block covariance and obeys the same bound. Since a Gaussian realizes the maximizing cross-covariance, plugging into (a) yields the global Kantorovich value
+\[
+\boxed{\;
+\Wtwo^2(\alpha,\beta)=\mathrm{tr}(\Sigma_\alpha)+\mathrm{tr}(\Sigma_\beta)
+-2\,\mathrm{tr}\Big((\Sigma_\beta^{1/2}\Sigma_\alpha\Sigma_\beta^{1/2})^{1/2}\Big).
+\;}
+\]
+This is attained by the deterministic linear map
+\[
+\boxed{\;T(x)=A x,\qquad
+A=\Sigma_\alpha^{-1/2}\big(\Sigma_\alpha^{1/2}\Sigma_\beta\Sigma_\alpha^{1/2}\big)^{1/2}\Sigma_\alpha^{-1/2},\;}
+\]
+for which $\mathrm{Cov}(X,T(X))=\Sigma_\alpha A^\top=\Sigma_\alpha A=K^*$.
+
+\medskip
+\textbf{(d) Rank of $\Sigma$, support of $\pi$, and Brenier.}
+Write the joint covariance as
+\[
+\Sigma=\begin{pmatrix}\Sigma_\alpha & K\\ K^\top & \Sigma_\beta\end{pmatrix}.
+\]
+\begin{itemize}[itemsep=2pt]
+\item \emph{Strict feasibility:} if $\Sigma_\beta-K^\top\Sigma_\alpha^{-1}K\succ0$ (equivalently $\|M\|_{\mathrm{op}}<1$), then $\Sigma\succ0$ and $\mathrm{rank}(\Sigma)=2d$. The Gaussian $\pi$ has a smooth density on $\R^{2d}$ (full support).
+
+\item \emph{At the optimizer $K=K^*$:} the Schur complement vanishes,
+\[
+\Sigma_\beta-(K^*)^\top\Sigma_\alpha^{-1}K^*=0,
+\]
+so $\mathrm{rank}(\Sigma)=d$. In fact $(X,Y)$ satisfies $Y=AX$ a.s., hence
+\[
+\mathrm{supp}(\pi)=\{(x,Ax):\,x\in\R^d\},
+\]
+a $d$-dimensional linear subspace (the graph of $T$).
+
+\item \emph{Brenier comparison:} since $\alpha$ is absolutely continuous, Brenier's theorem asserts that the \emph{globally} $\Wtwo$-optimal coupling is induced by a map $T=\nabla\phi$. For Gaussians, $T$ is linear, symmetric positive semidefinite, and equals the $A$ above. Thus the Gaussian-restricted optimizer coincides with the Brenier map, and the joint law is concentrated on its graph.
+\end{itemize}
+\end{solution}
+
+\begin{exercise}[A non-Monge optimal plan in $\R^2$]\label{ex:split-segment}
+Let $\alpha$ be the uniform probability measure on the vertical segment
+\[
+S_0:=\{(0,s):\,s\in[0,1]\}
+\]
+(with respect to 1D length, normalized), and let
+\[
+\beta:=\tfrac12\,\Unif(S_-)\;+\;\tfrac12\,\Unif(S_+),
+\qquad
+S_\pm:=\{(\pm1,t):\,t\in[0,1]\}.
+\]
+We consider the quadratic cost $c(x,y)=\|x-y\|^2$ on $\R^2\times\R^2$.
+
+\begin{enumerate}[label=(\alph*), itemsep=4pt]
+\item (\textbf{Lower bound}) Show that for any coupling $\pi\in\Pi(\alpha,\beta)$,
+\[
+\int \|x-y\|^2\,d\pi(x,y)\ \ge\ 1.
+\]
+
+\item (\textbf{An optimal coupling}) Define $\pi^\star$ by the disintegration:
+for $X=(0,s)\sim\alpha$,
+\[
+\pi^\star(\,\cdot\mid X=(0,s))=\tfrac12\,\delta_{(-1,s)}+\tfrac12\,\delta_{(1,s)}.
+\]
+Check that $\pi^\star\in\Pi(\alpha,\beta)$ and compute its cost. Conclude that the Kantorovich value equals $1$.
+
+\item (\textbf{No Monge minimizer}) Let $T:S_0\to S_-\cup S_+$ be a measurable map with $T_{\push}\alpha=\beta$.
+Show that
+\[
+\int \|x-T(x)\|^2\,d\alpha(x) \;>\; 1,
+\]
+hence no Monge map attains the Kantorovich minimum.
+
+\item (\textbf{Structure of the optimizer and comparison with Brenier})
+Describe $\mathrm{supp}(\pi^\star)$ and explain why it is not contained in the graph of any map $x\mapsto T(x)$.
+Comment on why this does not contradict Brenier's theorem.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]\item The horizontal displacement always has squared length $1$.\item Verify each target branch receives half of Lebesgue measure.\item Cost $1$ forces the vertical coordinate to remain unchanged. Can a measurable indicator equal $1/2$ almost everywhere?\item Distinguish absolute continuity on a segment from absolute continuity in the ambient plane.\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Lower bound.}
+Write $x=(0,s)$ and $y=(\xi,t)$ with $\xi\in\{-1,+1\}$ and $s,t\in[0,1]$.
+Then
+\[
+\|x-y\|^2=(\xi-0)^2+(t-s)^2=1+(t-s)^2\ \ge\ 1.
+\]
+Integrating over any coupling $\pi$ gives $\int\|x-y\|^2\,d\pi\ge1$.
+
+\medskip
+\textbf{(b) Optimal coupling $\pi^\star$.}
+By construction, for any Borel $J\subset[0,1]$,
+\[
+\pi^\star\big(S_0\times(\{-1\}\times J)\big)
+=\int_{s\in J}\tfrac12\,ds=\tfrac12\,|J|,
+\]
+and similarly for $S_+$. Hence $(\mathrm{proj}_Y)_\push\pi^\star=\beta$, and trivially $(\mathrm{proj}_X)_\push\pi^\star=\alpha$.
+Moreover, under $\pi^\star$ we have $t=s$ a.s., so
+\[
+\int \|x-y\|^2\,d\pi^\star
+=\int \big(1+(t-s)^2\big)\,d\pi^\star
+=\int 1\,d\pi^\star=1.
+\]
+Combined with (a), this proves that $\pi^\star$ is optimal and the Kantorovich value equals $1$.
+
+\medskip
+\textbf{(c) No Monge minimizer.}
+Suppose $T_{\push}\alpha=\beta$ with $T(0,s)=(\xi(s),\,u(s))$, where $\xi(s)\in\{-1,+1\}$ and $u(s)\in[0,1]$.
+Because $\beta$ assigns mass $\tfrac12$ to each vertical segment with \emph{uniform} $t$-coordinate, we must have
+\[
+\lambda\big(\{s:\xi(s)=-1\}\big)=\lambda\big(\{s:\xi(s)=+1\}\big)=\tfrac12,
+\]
+and the pushforward of Lebesgue restricted to $A_-:=\{s:\xi(s)=-1\}$ by $u$ must equal $\tfrac12\mathbf1_{[0,1]}\,dt$ (and likewise for $A_+$).
+Now compute the cost:
+\[
+\int \|x-T(x)\|^2\,d\alpha(x)
+=\int_{0}^{1} \big(1+(u(s)-s)^2\big)\,ds
+=1+\int_{0}^{1}(u(s)-s)^2\,ds.
+\]
+If this equalled $1$, then $(u(s)-s)^2=0$ a.e., hence $u(s)=s$ a.e.
+But then the $t$-marginal on the left segment is the image of Lebesgue by $s\mapsto s$ restricted to $A_-$, i.e.\ Lebesgue restricted to $A_-$. Equality with $\tfrac12\mathbf1_{[0,1]}\,dt$ would require $\mathbf1_{A_-}=1/2$ almost everywhere, which is impossible.
+Therefore $\int_0^1(u(s)-s)^2\,ds>0$, and so every Monge map has cost $>1$.
+Consequently, no Monge map is optimal.
+
+\medskip
+\textbf{(d) Support and Brenier.}
+The optimizer $\pi^\star$ is supported on two graphs:
+\[
+\mathrm{supp}(\pi^\star)
+=\big\{((0,s),(-1,s)):\ s\in[0,1]\big\}\ \cup\
+\big\{((0,s),(+1,s)):\ s\in[0,1]\big\}.
+\]
+It is not contained in the graph of any single-valued map $T$, since for every $x=(0,s)$ the conditional law assigns positive mass to two distinct points $(-1,s)$ and $(+1,s)$.
+This does not contradict Brenier's theorem: that theorem requires the source to be absolutely continuous with respect to \emph{Lebesgue measure on $\R^2$}.
+Here $\alpha$ is supported on a 1D set (a segment), so the assumption fails and an optimal plan need not be induced by a map.
+
+\smallskip
+\emph{Remark (approximating the optimum with maps).}
+Although no map attains cost $1$, one can build maps with cost arbitrarily close to $1$ by partitioning $[0,1]$ into many small pieces, sending half of them to $S_-$ and half to $S_+$, and rearranging $u(s)$ inside each piece to match the uniform $t$-marginal; the added vertical cost can be made as small as $O(n^{-2})$ with $n$ pieces.
+\end{solution}
+
+
+\end{document}
