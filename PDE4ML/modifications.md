@@ -298,3 +298,12 @@ This pass reviewed all four retained sections, their proofs and examples, the pr
 - Rendered all 62 final pages and reviewed their layout, with enlarged checks of the Gaussian catalogue, its proofs, and the PL theorem. The short definition boxes no longer split awkwardly, and the existing compact figure sizes are preserved.
 - The formal smooth calculus remains explicitly conditional on differentiation, integrability and well-posedness assumptions. This review does not assert a global PDE existence/uniqueness theorem for every catalogue entry or every learned field.
 - No commit or push was performed in this pass.
+
+## 8. Local Placement of General References
+
+- Removed the opening "Guide to the Literature and Scope", including its table-of-contents entry and redundant scope paragraph.
+- Moved the Villani and Santambrogio monographs and the Peyre--Cuturi survey to the OT primer's introduction.
+- Retained the existing local citations to Ambrosio--Gigli--Savare in the gradient-flow discussion.
+- Moved Chewi's sampling reference alongside the Langevin free-energy example, and the Higham--Higham--Grindrod and Tang--Zhao tutorials into the diffusion-model paragraph.
+- Updated the project guidelines and README so future revisions keep general references local rather than restoring an opening guide.
+- Rebuilt the 62-page PDF and checked its opening pages. All 95 citation keys remain in use; source checks find no missing references or citations, and the final build has no overfull boxes or unresolved references. Only the pre-existing small-size mathematical font substitutions remain.

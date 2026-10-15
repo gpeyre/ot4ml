@@ -48,7 +48,7 @@ Generated auxiliary files are ignored locally; the PDF is kept as the review out
 
 ## Synchronization Policy
 
-The review follows the book's mathematics for the topics retained in its deliberately narrower scope. It is not a verbatim concatenation. First variations are defined once in the gradient-flow section; conditional geometry, attention and relative Fisher information are introduced where they are used. The opening literature guide contains only textbooks, surveys and tutorials; specialized results are attributed locally.
+The review follows the book's mathematics for the topics retained in its deliberately narrower scope. It is not a verbatim concatenation. First variations are defined once in the gradient-flow section; conditional geometry, attention and relative Fisher information are introduced where they are used. Textbooks, surveys and tutorials are cited in the relevant sections rather than in an opening literature guide; specialized results are also attributed locally.
 
 The October 2026 scope revision excludes formal treatments of sliced and entropic transport, Schrodinger bridges, generalized/nonlocal/unbalanced transport, variational MFG, density constraints, multi-species flows, synthetic curvature, functional inequalities, inertial flows, SVGD and moment measures. Generalized distances and flows have two short prose literature paragraphs. Sinkhorn-based learning methods may be mentioned with citations and a verbal explanation, but no omitted Sinkhorn notation or formula may be used. Do not restore these topics by copying whole book chapters. When removing a definition, also review later examples, Gaussian catalogues, figures and captions for dependencies.
 

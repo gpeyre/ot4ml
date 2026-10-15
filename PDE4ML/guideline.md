@@ -9,7 +9,7 @@ The manuscript is intended for eventual submission to **Acta Numerica**. Use the
 ## Organization
 
 - Start with a new abstract tailored to PDEs for ML.
-- Add a short scope/literature guide restricted to standard textbooks, surveys and tutorials, including general references on diffusion models and sampling. Cite specialized papers where their results are used, not in this opening guide.
+- Do not add an opening literature guide. Cite textbooks, surveys and tutorials in the sections where they belong: OT in the primer, metric gradient flows in the variational discussion, sampling alongside Langevin dynamics, and diffusion-model introductions in the diffusion discussion. Cite specialized papers where their results are used.
 - Include a first section, **A Primer on Optimal Transport**, covering:
   - Monge problem for general measures;
   - particle interpretation of Monge maps, without assignment algorithms;
