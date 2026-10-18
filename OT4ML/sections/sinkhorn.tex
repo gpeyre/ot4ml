@@ -17,8 +17,8 @@ Entropic regularization makes optimal transport smooth, strictly convex and scal
 \index{entropic!regularization}% strictindex
 \index{Sinkhorn!divergence}% strictindex
 \index{scaling!algorithm}% strictindex
-\index{relative!entropy}% strictindex
-\index{soft!transform}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
+\index{c-transform!soft}% strictindex
 \index{Sinkhorn!scaling}% strictindex
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -33,11 +33,11 @@ Entropy turns a possibly non-unique linear program into a unique smooth problem.
 \paragraph{Entropy penalty.}
 \index{entropy!penalty}% strictindex
 The idea of the entropic regularization of optimal transport is to penalize concentrated couplings by adding the negative of the discrete Shannon--Boltzmann entropy.
-\index{Shannon-Boltzmann@Shannon--Boltzmann entropy}% strictindex
+\index{entropy!Shannon-Boltzmann@Shannon--Boltzmann}% strictindex
 
 \begin{defn}[Discrete Shannon--Boltzmann entropy]\label{def-discrete-shannon-boltzmann-entropy}
-\index{Shannon entropy}% strictindex
-\index{Boltzmann entropy}% strictindex
+\index{entropy!Shannon}% strictindex
+\index{entropy!Boltzmann}% strictindex
 	For a nonnegative matrix $\P$, its Shannon--Boltzmann entropy is
 	\[
 		\HD(\P) \eqdef -\sum_{i,j} \P_{i,j} \log(\P_{i,j}),
@@ -414,7 +414,7 @@ The second crucial aspect of Sinkhorn is that matrix-vector multiplication strea
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Reformulation Using Relative Entropy}
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 
 The KL formulation identifies Sinkhorn as a projection method. It also prepares the continuous and unbalanced settings, where a reference measure is essential.
 \index{reference!measure}% strictindex
@@ -424,7 +424,6 @@ A convenient tool to reformulate and ``normalize'' this discrete entropy is rela
 
 \begin{defn}[Discrete relative entropy]\label{def-discrete-relative-entropy}
 \index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
-\index{relative!entropy}% strictindex
 	For nonnegative matrices $\P,\Q$ of the same size, the generalized relative entropy, or Kullback--Leibler divergence, is
 	\eql{\label{eq-kl-defn}
 		\KLD(\P|\Q) \eqdef \sum_{i,j}  \P_{i,j} \log\pa{\frac{\P_{i,j}}{\Q_{i,j}}} - \P_{i,j} + \Q_{i,j}.
@@ -447,7 +446,7 @@ $\KLD$ is a particular instance of both a $\phi$-divergence (as defined in Secti
 \index{phi-divergence}% strictindex
 
 \begin{prop}[Non-negativity and definiteness of relative entropy]\label{prop-kl-distance-like}
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 	For all $\P,\Q\in\RR_+^{n\times m}$, one has $\KLD(\P|\Q)\geq0$, with equality if and only if $\P=\Q$.
 \end{prop}
 \begin{proof}
@@ -617,8 +616,8 @@ Subtracting $\min_{i,j}\C_{i,j}$ from the cost changes every feasible objective 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{General Formulation}
 
-The continuous formulation replaces matrices by measures and discrete KL by relative entropy. This section records the measure-theoretic problem, explains how the temperature $\epsilon$ connects exact transport to the independent product coupling, and states the two asymptotic regimes that are useful later: a large-temperature expansion around independence and a small-temperature expansion around quadratic optimal transport.
-\index{relative!entropy}% strictindex
+The continuous formulation replaces matrices by measures and discrete KL by relative entropy. This section records the measure-theoretic problem, explains how the temperature $\epsilon$ connects exact transport to the independent product coupling, and states the two asymptotic regimes that are useful later: a large-temperature expansion around independence and a small-temperature expansion around quadratic optimal transport. Finally, releasing one marginal constraint gives a semi-relaxed problem with an explicit Gibbs solution.
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 
 \paragraph{Measure formulation.}
 
@@ -630,7 +629,6 @@ The measure-theoretic definition is the exact analogue of Definition~\ref{def-di
 
 \begin{defn}[Relative entropy of measures]\label{def-measure-relative-entropy}
 \index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
-\index{relative!entropy}% strictindex
 	For finite nonnegative measures $\pi$ and $\xi$ on $\Xx\times\Yy$, the relative entropy is
 	\eql{\label{eq-defn-rel-entropy}
 		\KL(\pi|\xi) \eqdef
@@ -856,6 +854,58 @@ The continuous problem has the same qualitative temperature limits as Propositio
 	Hence $\KL(\pi_\epsilon|\al\otimes\be)\leq \epsilon^{-1}\int c\,\d\al\d\be$. Pinsker's inequality from Theorem~\ref{thm-pinsker} gives total-variation convergence to $\al\otimes\be$, and the convergence of the values follows by continuity of $c$.
 \end{proof}
 
+For the squared Euclidean ground cost, one can quantify this convergence by an explicit bias bound with a sharp leading coefficient. This is useful when using entropic Sinkhorn to approximate unregularized OT: it controls the regularization error separately from the numerical error of the iterations. Unlike the preceding compact-space argument, the bound requires only finite second moments, not densities or regularity of an optimal map.
+
+\begin{prop}[Explicit quadratic entropic bias]\label{prop-quadratic-entropic-bias-bound}
+\index{entropic!bias}% strictindex
+Let $\al,\be\in\Pp_2(\RR^d)$ and $c(x,y)=\norm{x-y}^2$. Write $m_\al,m_\be$ for their means and set $\sigma_\al^2=\int\norm{x-m_\al}^2\d\al(x)$ and $\sigma_\be^2=\int\norm{y-m_\be}^2\d\be(y)$. Then, for every $\epsilon>0$,
+\eql{\label{eq-quadratic-entropic-bias-bound}
+    0\leq\MK_c^\epsilon(\al,\be)-\Wass_2^2(\al,\be)
+    \leq\frac{d\epsilon}{2}
+    \left[1+\log\!\left(1+\frac{4\sigma_\al\sigma_\be}{d\epsilon}\right)\right].
+}
+Here $\sigma_\al^2$ is the trace of the covariance, not the variance per coordinate, and $\MK_c^\epsilon$ uses the product-reference KL convention~\eqref{eq-entropic-generic}. If $\sigma_\al\sigma_\be=0$, the bias is exactly zero.
+\end{prop}
+
+\begin{proof}
+The lower bound follows from nonnegativity of KL. If one marginal is a Dirac mass, the only coupling is the product coupling, so the bias vanishes. Otherwise, choose an optimal quadratic coupling $(X,Y)$ of $(\al,\be)$ and, independently, $G\sim\Gaussian(0,\Id)$. Set
+\[
+    U=\sqrt{\frac{\sigma_\be}{\sigma_\al}}X
+       +\sqrt{\frac{\sigma_\al}{\sigma_\be}}Y,
+    \qquad Z=U+\sqrt{\epsilon}\,G.
+\]
+Conditionally on $Z$, draw $\widetilde X$ and $\widetilde Y$ independently with the conditional laws of $X$ and $Y$ given $Z$. Their joint law $\widetilde\pi$ still has marginals $(\al,\be)$. Since the marginal second moments are unchanged,
+\[
+    \begin{aligned}
+    \int c\,\d\widetilde\pi-\Wass_2^2(\al,\be)
+       &=2\EE\dotp{X-\EE[X|Z]}{Y-\EE[Y|Z]}\\
+       &\leq\tfrac12\EE\norm{U-\EE[U|Z]}^2
+        \leq\tfrac12\EE\norm{U-Z}^2=\frac{d\epsilon}{2}.
+    \end{aligned}
+\]
+The first inequality follows by expanding the square; the second uses the least-squares optimality of conditional expectation.
+
+It remains to control the dependence of this new coupling. Using the mutual information of Definition~\ref{def-mutual-information}, conditional independence and the entropy chain rule give
+\[
+    \KL(\widetilde\pi|\al\otimes\be)
+    =\Ii(\widetilde X,\widetilde Y)
+    \leq\Ii(\widetilde X,Z)=\Ii(X,Z)\leq\Ii(U,Z).
+\]
+Indeed, the last inequality uses that $Z$ depends on $(X,Y)$ only through $U$. To bound this Gaussian-channel information without assuming that $U$ has a density, compare its noisy output with
+$\gamma=\Gaussian\bigl(\EE U,(\epsilon+\EE\norm{U-\EE U}^2/d)\Id\bigr)$.
+The entropy chain rule and direct Gaussian integration yield
+\[
+    \begin{aligned}
+    \Ii(U,Z)+\KL(\operatorname{Law}(Z)|\gamma)
+       &=\EE\KL\bigl(\Gaussian(U,\epsilon\Id)|\gamma\bigr)\\
+       &=\frac d2\log\!\left(1+\frac{\EE\norm{U-\EE U}^2}{d\epsilon}\right).
+    \end{aligned}
+\]
+The $L^2$ triangle inequality gives $\EE\norm{U-\EE U}^2\leq4\sigma_\al\sigma_\be$. Thus $\widetilde\pi$ has finite relative entropy, even for singular marginals. Testing~\eqref{eq-entropic-generic} with this coupling and combining the cost and entropy bounds proves~\eqref{eq-quadratic-entropic-bias-bound}.
+\end{proof}
+
+In particular, the bias is at most $\frac d2\epsilon\log(1/\epsilon)+O(\epsilon)$ as $\epsilon\downarrow0$. The coefficient $d/2$ cannot be reduced in a bound valid for all such measures: for $\al=\be=\Gaussian(0,\Id)$, the Gaussian formula in Proposition~\ref{prop-gaussian-sinkhorn-closed-form} gives exactly this leading term. This is not a universal lower bound: Dirac marginals have zero bias, and finite discrete marginals have an $O(\epsilon)$ bias by testing with an unregularized optimal plan. The same upper bound also controls the excess transport cost $\int c\,\d\pi_\epsilon-\Wass_2^2(\al,\be)$ of the entropic optimizer, since its KL penalty is nonnegative.
+
 \paragraph{Large-temperature expansion.}
 
 When $\epsilon$ is large, the entropy dominates and the optimal plan is a small perturbation of the product coupling. The useful quantity is the component of the cost that cannot be absorbed into row and column potentials.
@@ -1034,6 +1084,90 @@ At the opposite end, entropic transport is a viscous perturbation of quadratic o
 
 Under stronger uniform non-degeneracy and boundary assumptions, Laplace's method applied to the two soft $c$-transform equations also gives spatial order-$\epsilon$ corrections involving the endpoint densities and the Hessian of the contact phase. This is a formal refinement, not part of Proposition~\ref{prop-small-epsilon-expansion}.
 
+\paragraph{Semi-relaxed problem.}\label{par-entropic-semi-relaxed}
+\index{semi-relaxed problem}% strictindex
+Keeping only the source marginal removes the competition between sources for target mass: each source can choose its destination independently. In the entropic version, $\be$ remains a fixed reference measure, not a prescribed target marginal. For simplicity, let $\Xx,\Yy$ be Polish spaces, $\al,\be$ probability measures, and $c$ a bounded Borel cost.
+
+\begin{defn}[Entropic semi-relaxed transport]\label{def-entropic-semi-relaxed}
+With $P_\Xx(x,y)=x$, set $\Couplings_1(\al)\eqdef\{\pi\in\Pp(\Xx\times\Yy):(P_\Xx)_\sharp\pi=\al\}$. For $\epsilon>0$, define
+\eql{\label{eq-entropic-semi-relaxed}
+    \MK_c^{\epsilon,\mathrm{sr}}(\al;\be)
+    \eqdef\inf_{\pi\in\Couplings_1(\al)}
+    \left\{\int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be)\right\}.
+}
+\end{defn}
+The solution is precisely the normalized Gibbs transition of Proposition~\ref{prop-sinkhorn-gibbs-pushforward}, now with $\be_0=\be$ and a free output marginal.
+
+\begin{prop}[Closed-form semi-relaxed transport]\label{prop-entropic-semi-relaxed}
+Let $Z_\epsilon=\mathcal K_\epsilon 1$, using~\eqref{eq-continuous-sinkhorn-operators}. The unique minimizer and optimal value of~\eqref{eq-entropic-semi-relaxed} are
+\eql{\label{eq-entropic-semi-relaxed-closed}
+    \frac{\d\pi_\epsilon}{\d(\al\otimes\be)}(x,y)
+    =\frac{e^{-c(x,y)/\epsilon}}{Z_\epsilon(x)},
+    \qquad
+    \MK_c^{\epsilon,\mathrm{sr}}(\al;\be)
+    =-\epsilon\int_\Xx\log Z_\epsilon\,\d\al.
+}
+\end{prop}
+\begin{proof}
+The normalization gives the required first marginal. Since $c$ is bounded, the logarithm of the displayed density is bounded, so changing reference in the relative entropy gives, for every $\pi\in\Couplings_1(\al)$,
+\[
+    \int c\,\d\pi+\epsilon\KL(\pi|\al\otimes\be)
+    =-\epsilon\int\log Z_\epsilon\,\d\al
+      +\epsilon\KL(\pi|\pi_\epsilon).
+\]
+Nonnegativity of KL, with equality only at $\pi=\pi_\epsilon$, proves the claim, including competitors of infinite relative entropy.
+\end{proof}
+Thus one row normalization, the first half-step of~\eqref{eq-continuous-sinkhorn-iteration} with $v^{(0)}=1$, solves the problem. Its second marginal is the output $\be_\epsilon$ in~\eqref{eq-gibbs-pushforward-target}, generally different from $\be$. The fixed reference is essential: if $\eta$ is the second marginal of $\pi$, the entropy chain rule gives
+\[
+    \KL(\pi|\al\otimes\be)
+    =\KL(\pi|\al\otimes\eta)+\KL(\eta|\be).
+\]
+Consequently, minimizing the balanced value $\MK_c^\epsilon(\al,\eta)$ over $\eta$ without the additional penalty $\epsilon\KL(\eta|\be)$ would define a different problem.
+
+For discrete measures $\al=\sum_i\a_i\de_{x_i}$ and $\be=\sum_j\b_j\de_{y_j}$, with $\C_{i,j}=c(x_i,y_j)$, the formulas become
+\eql{\label{eq-discrete-entropic-semi-relaxed}
+    \begin{aligned}
+    \min_{\P\geq0,\;\P\ones_m=\a}
+       \dotp{\C}{\P}+\epsilon\KLD(\P|\a\otimes\b)
+       &=-\epsilon\sum_i\a_i\log\!\left(\sum_j\b_j e^{-\C_{i,j}/\epsilon}\right),\\
+    (\P_\epsilon)_{i,j}
+       &=\a_i\frac{\b_j e^{-\C_{i,j}/\epsilon}}
+                         {\sum_k\b_k e^{-\C_{i,k}/\epsilon}}.
+    \end{aligned}
+}
+There is no column-sum constraint. Zero source weights give zero rows; zero reference weights forbid the corresponding columns. For uniform $\b$, this also minimizes the raw-entropy objective~\eqref{eq-regularized-discr} with only its row constraint. For nonuniform $\b$, however, the KL formulation adds the genuine column bias $-\epsilon\log\b_j$ to $\C_{i,j}$ on the allowed columns, rather than only shifting the value by a constant.
+
+Without regularization, each source simply chooses a cheapest destination. More precisely, if $\Xx,\Yy$ are compact metric spaces and $c$ is continuous, then
+\eql{\label{eq-unregularized-semi-relaxed}
+    \MK_c^{0,\mathrm{sr}}(\al)
+    \eqdef\min_{\pi\in\Couplings_1(\al)}\int c\,\d\pi
+    =\int_\Xx\min_{y\in\Yy}c(x,y)\,\d\al(x).
+}
+In the disintegration $\pi(\d x,\d y)=\al(\d x)\pi_x(\d y)$, optimality means that $\pi_x$ is supported on $\argmin_y c(x,y)$ for $\al$-almost every $x$. Indeed, pointwise minimization bounds every plan from below. Choosing, for each $x$, a cheapest point of a finite increasingly fine target net, with ties broken by index, gives measurable maps approaching this bound uniformly in cost; compactness then gives an optimal limiting plan. The pointwise minimum is the hard transform $0^{\bar c}$ of Definition~\ref{def-c-transform}; its entropic counterpart $-\epsilon\log Z_\epsilon$ is the soft transform $0^{\bar c,\epsilon}$ introduced in Definition~\ref{def-continuous-soft-c-transform}.
+
+The connection with positive temperature requires attention to support. Under these same compactness and continuity assumptions,
+\eql{\label{eq-semi-relaxed-support-limit}
+    \lim_{\epsilon\downarrow0}\MK_c^{\epsilon,\mathrm{sr}}(\al;\be)
+    =\int_\Xx\min_{y\in\Supp(\be)}c(x,y)\,\d\al(x).
+}
+To see this, fix $x$ and write $m(x)=\min_{\Supp(\be)}c(x,\cdot)$. For $\delta>0$, the set $E_\delta(x)=\{y:c(x,y)\leq m(x)+\delta\}$ has positive $\be$-mass, and
+\[
+    m(x)\leq-\epsilon\log Z_\epsilon(x)
+       \leq m(x)+\delta-\epsilon\log\be(E_\delta(x)).
+\]
+Letting $\epsilon\downarrow0$ and then $\delta\downarrow0$, followed by bounded convergence in $x$, proves~\eqref{eq-semi-relaxed-support-limit}. Thus full support of $\be$ recovers~\eqref{eq-unregularized-semi-relaxed}; otherwise the limit is the hard problem restricted to $\Supp(\be)$. Every weak cluster point of $\pi_\epsilon$ solves this restricted problem, since its cost is bounded between the hard value and the entropic value and $c$ is continuous. If its optimizer is unique, the whole family converges weakly.
+
+For discrete inputs this limit also specifies how ties are resolved. With $J_i=\argmin_{j:\b_j>0}\C_{i,j}$,
+\[
+    (\P_\epsilon)_{i,j}\longrightarrow
+    \a_i\frac{\b_j\,\mathbf 1_{\{j\in J_i\}}}{\sum_{k\in J_i}\b_k}.
+\]
+This follows by factoring the smallest allowed cost out of each row in~\eqref{eq-discrete-entropic-semi-relaxed}. The hard problem allows any distribution among tied minimizers; entropy selects their normalized reference weights. For a nonatomic reference, however, a minimizing set can have zero reference mass, so conditioning $\be$ on that set is not defined. A unique minimizing point then gives a Dirac conditional law in the weak limit: absolute continuity at positive temperature need not survive the limit.
+
+\begin{rem}[Support alone does not replace continuity]\label{rem-semi-relaxed-essential-infimum}
+For a bounded Borel cost, the same bounds prove convergence to $\int\operatorname*{ess\,inf}_{y\sim\be}c(x,y)\,\d\al(x)$, not necessarily to the minimum over $\Supp(\be)$. For example, let $\Xx$ be a singleton, $\Yy=[0,1]$, $\be$ uniform, and $c(0)=0$ while $c(y)=1$ for $y>0$. This cost is even lower semicontinuous and $\be$ has full support, yet the hard value is zero and the entropic value is one for every $\epsilon>0$. The isolated improvement at the reference-null point $0$ is invisible to every finite-KL plan.
+\end{rem}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1041,7 +1175,7 @@ Under stronger uniform non-degeneracy and boundary assumptions, Laplace's method
 \index{Sinkhorn!dual}% strictindex
 
 The dual point of view replaces couplings by potentials and soft $c$-transforms. It is the right formulation for stabilized implementations and differentiation.
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 
 \paragraph{Discrete dual.}
 
@@ -1102,7 +1236,7 @@ We introduce Lagrange multipliers and consider
 \end{proof}
 
 \paragraph{Discrete soft $c$-transforms.}
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 
 Since the dual problem~\eqref{eq-dual-formulation} is smooth and concave, one can perform alternating block maximization. For a fixed $\gD$, maximizing with respect to $\fD$ leads to the following equation after zeroing the derivative with respect to $\fD$:
 \index{dual!problem}% strictindex
@@ -1119,7 +1253,7 @@ The log-sum-exp form is best read as a smoothed minimum. This gives the entropic
 
 \begin{defn}[Soft-min and discrete soft $c$-transform]\label{def-discrete-soft-c-transform}
 \index{soft!minimum}% strictindex
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{c-transform}% strictindex
 		For $h\in\RR^m$ and weights $\b\in\simplex_m$, the weighted soft-min at temperature $\epsilon>0$ is
 		\[
@@ -1186,7 +1320,7 @@ Figure~\ref{fig:sinkhorn-soft-c-transform-epsilon} visualizes the corresponding 
 \begin{tabular}{@{}cccc@{}}
 \small $\epsilon=.55$ & \small $\epsilon=.14$ & \small $\epsilon=.035$ & \small $\epsilon=0$ \\[-.15em]
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p55.pdf} &
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p14.pdf} &
 \index{c-transform}% strictindex
 \includegraphics[width=.235\linewidth]{figures/sinkhorn-soft-c-transform-epsilon/eps-0p035.pdf} &
@@ -1194,7 +1328,7 @@ Figure~\ref{fig:sinkhorn-soft-c-transform-epsilon} visualizes the corresponding 
 \end{tabular}
 \caption{\emph{Soft $c$-transforms for decreasing temperatures.} The hard transform is the lower envelope of shifted cost functions, while a positive $\epsilon$ replaces the pointwise minimum by a log-sum-exp soft minimum. As $\epsilon$ decreases, the soft transform sharpens and approaches the non-smooth hard envelope.}
 \index{log-sum-exp}% strictindex
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{soft!minimum}% strictindex
 \label{fig:sinkhorn-soft-c-transform-epsilon}
 \end{figure}
@@ -1280,8 +1414,7 @@ This is the smooth counterpart of the hard feasibility constraint $f\oplus g\leq
 The corresponding soft $c$-transforms are the exact block maximizers of this dual objective. They are the continuous log-integral counterparts of Definition~\ref{def-discrete-soft-c-transform}.
 
 \begin{defn}[Continuous soft $c$-transforms]\label{def-continuous-soft-c-transform}
-\index{soft!c-transform}% strictindex
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 	For $f\in\Cc(\Xx)$ and $g\in\Cc(\Yy)$, define
 	\begin{align}
 		f^{c,\epsilon}(y)
@@ -1301,7 +1434,7 @@ The corresponding soft $c$-transforms are the exact block maximizers of this dua
 	\end{align}
 \end{defn}
 In the case of discrete measures, these formulas reduce to~\eqref{eq-discrete-soft-c-transforms}. The same calculus also gives the entropic semi-discrete problem: when one measure is discrete, one alternates between a finite-dimensional potential and an integral soft transform, often estimated stochastically.
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{semi-discrete!OT}% strictindex
 
 \begin{prop}[Existence and uniqueness of entropic dual potentials]\label{prop-entropic-dual-potentials}
@@ -1316,8 +1449,7 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-discrete-so
 
 \begin{proof}
 	Normalize potentials by imposing $\int f\d\al=0$. Replacing any pair $(f,g)$ by the corresponding soft $c$-transforms does not decrease the dual objective, because each soft transform is the exact maximizer in one block variable. For transformed potentials, the oscillations are bounded by the oscillation of the cost:
-\index{soft!c-transform}% strictindex
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 	\(\norm{f}_V+\norm{g}_V \leq 2(\sup c-\inf c)\).
 	Moreover the modulus of continuity of the soft transforms is controlled by that of $c$; for instance
 	\[
@@ -1334,7 +1466,7 @@ In the case of discrete measures, these formulas reduce to~\eqref{eq-discrete-so
 \end{proof}
 
 \begin{rem}[Convexity properties of soft transforms]\label{rem-soft-transform-convexity}
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 	The log-sum-exp part behaves like a smoothed maximum and preserves convexity. Since the soft transform takes the negative of this quantity after inserting the cost, it preserves the usual $c$-concavity structure. In particular, for the bilinear cost $c(x,y)=-\dotp{x}{y}$, the transform $f^{c,\epsilon}$ is concave for any $f$. Therefore, for the quadratic cost $c(x,y)=\norm{x-y}^2/2$, the optimal potentials have the form $f^\star(x)=\norm{x}^2/2-\phi^\star(x)$ and $g^\star(y)=\norm{y}^2/2-\psi^\star(y)$, where $\phi^\star$ and $\psi^\star$ are convex.
 \index{log-sum-exp}% strictindex
 \index{quadratic!cost}% strictindex
@@ -1401,7 +1533,7 @@ A useful parameterization is given by input-convex neural networks (ICNNs)~\cite
 \index{Gaussian!marginals}% strictindex
 	For $c(x,y)=\norm{x-y}^2$ and Gaussian marginals, the soft transforms preserve quadratic functions, because products and convolutions of Gaussian functions remain Gaussian. Hence optimal entropic potentials are quadratic and the optimal entropic coupling is Gaussian. Section~\ref{sec-gaussian-sinkhorn} makes this finite-dimensional closure explicit.
 \index{entropic!potential}% strictindex
-\index{soft!transform}% strictindex
+\index{c-transform!soft}% strictindex
 \end{rem}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1462,7 +1594,6 @@ In this subsection, when the total mass of $\pi$ is not fixed, the KL term is un
 \]
 with value $+\infty$ when $\pi^\perp\ne0$. On probability couplings this coincides with the usual relative entropy.
 \index{marginal!penalty}% strictindex
-\index{relative!entropy}% strictindex
 \index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 
 Several standard constructions fit this template. Balanced OT is recovered by taking $\mathcal F=\iota_{\{\al\}}$ and $\mathcal G=\iota_{\{\be\}}$. Unbalanced OT replaces these hard indicators by marginal divergences, as developed later in Section~\ref{sec-unbalanced}. An entropic JKO step fixes the first marginal to the previous iterate and puts the energy on the second marginal, for instance $\mathcal F=\iota_{\{\al_t\}}$ and $\mathcal G=E$, with cost $c/(2\tau)$; this is the static counterpart of the minimizing-movement schemes of Chapter~\ref{sec-wasserstein-gradient-flows}. Barycenters are the multi-coupling extension: several couplings share one unknown marginal and are treated by the generalized Sinkhorn updates of Section~\ref{sec-barycenters}.
@@ -1555,7 +1686,7 @@ Thus exact optimization of this block is equivalent to minimizing $\mathsf F(r)+
 	The KL term is strictly convex and superlinear for $z>0$. Together with proper lower semicontinuity and convexity of $\mathsf F$, this gives existence and uniqueness of the row proximal minimizer. It remains to justify positivity. Since $\C$ is finite and the current scalings are positive, $z>0$. Let $\bar r>0$ belong to $\dom(\mathsf F)$, as supplied by strict feasibility. If a proximal minimizer $r$ had a zero coordinate, then along $r_t=(1-t)r+t\bar r$ convexity bounds the change of $\mathsf F$ by $O(t)$, whereas the corresponding KL term contains $t\bar r_i\log t$. This negative $t\log(1/t)$ variation dominates all $O(t)$ terms and contradicts minimality. Thus $r>0$; the same argument applies to the column block.
 \end{proof}
 \index{Fenchel duality}% strictindex
-\index{dual!Sinkhorn}% strictindex
+\index{Sinkhorn!dual}% strictindex
 \index{Kullback-Leibler@Kullback--Leibler!proximal map}% strictindex
 \index{dual!ascent}% strictindex
 \index{multiplicative scaling}% strictindex
@@ -1750,7 +1881,7 @@ is the normalized Gaussian kernel with covariance $\epsilon\Id$, then~\eqref{eq-
 Thus a soft quadratic $c$-transform is a Gaussian convolution followed by a logarithm, up to an explicit additive constant independent of $x$. This is the bridge between soft-minimum operators, heat kernels and entropic transport potentials.
 \index{heat kernel}% strictindex
 \index{Gaussian!convolution}% strictindex
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 
 \begin{prop}[Soft quadratic $c$-transform and Legendre approximation]\label{prop-soft-legendre-convolution}
 \index{Legendre-Fenchel@Legendre--Fenchel transform}% strictindex
@@ -1988,17 +2119,16 @@ The previous construction regularizes OT by a density-ratio divergence. This dif
 
 \begin{defn}[Measure Bregman divergence]\label{def-measure-bregman-divergence}
 \index{first variation}% strictindex
-	If $\Phi$ is a differentiable convex functional on a convex class of nonnegative measures and $\xi$ is a reference measure in its domain, the measure Bregman divergence generated by $\Phi$ is
+	If $\Phi$ is a differentiable convex functional on a convex class of nonnegative measures and $\xi$ is a reference measure in its domain, its measure Bregman divergence is, whenever the expression is well defined,
 	\begin{equation}\label{eq-measure-bregman-divergence}
 		B_\Phi(\pi|\xi)
 		\eqdef
 		\Phi(\pi)-\Phi(\xi)
 		-
-		\int \delta\Phi(\xi)\d(\pi-\xi),
+		\int \delta\Phi(\xi)\d(\pi-\xi).
 	\end{equation}
-	where $\delta\Phi(\xi)$ is the first variation in the sense of Definition~\ref{def-first-variation}, and the formula is understood whenever the right-hand side is well-defined.
 \end{defn}
-In finite dimension this reduces to Definition~\ref{def-bregman-divergence}.
+Here $\delta\Phi(\xi)$ denotes the first variation, as in Definition~\ref{def-first-variation}. In finite dimension this reduces to Definition~\ref{def-bregman-divergence}.
 \index{first variation}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 \index{Bregman!divergence}% strictindex
@@ -2149,7 +2279,7 @@ Thus, except for KL, the two generalizations lead to different duals and differe
 \index{density!ratio}% strictindex
 
 \paragraph{Generalized soft $c$-transforms and alternate dual maximization method.}
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{dual!alternate maximization}% strictindex
 \index{phi-divergence regularized OT}% strictindex
 
@@ -2239,7 +2369,7 @@ Figure~\ref{fig:sinkhorn-phi-soft-c-transforms} shows how the $\phi$-transform c
 \small quadratic
 \end{tabular}
 \caption{\emph{Generalized soft double transforms for $c(x,y)=-xy$.} Each panel starts from the same dashed non-concave potential $f$. The dark curve is the hard double $c$-transform, i.e.\ the concave envelope associated with the zero-temperature limit, after centering by an additive constant. Colored curves show the centered double transform $(f^{c,\epsilon,\phi})^{\bar c,\epsilon,\phi}$ from a near-zero red regularization to larger blue regularization. The numerical $\epsilon$ scale is chosen separately for each generator because KL, Burg, and quadratic density-ratio penalties have different stiffness; in each panel the red curve matches the hard concave envelope. Changing $\phi$ changes the scalar soft-normalization law and hence the way the dual ascent step smooths the envelope.}
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{concave envelope}% strictindex
 \label{fig:sinkhorn-phi-soft-c-transforms}
 \end{figure}
@@ -2289,7 +2419,7 @@ need not equal $\al$ for $\epsilon>0$. The following proposition identifies the 
 \end{prop}
 \begin{proof}
 	Let $(f_\epsilon,g_\epsilon)$ be optimal dual potentials, normalized by $\int g_\epsilon\d\be=0$. The soft $c$-transform equation gives
-\index{soft!c-transform}% strictindex
+\index{c-transform!soft}% strictindex
 \index{dual!potential}% strictindex
 	\[
 		f_\epsilon(x)

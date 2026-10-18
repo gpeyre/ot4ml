@@ -11,7 +11,7 @@ Optimal transport becomes especially powerful once distances between measures ar
 \index{gradient!flow}% strictindex
 \index{Benamou-Brenier@Benamou--Brenier!formula}% strictindex
 
-\section{Evolutions over the Space of Measures}
+\section{Evolutions over the Space of Measures}\label{sec-measure-evolutions}
 \index{measure!evolution}% strictindex
 
 We start with the continuity equation because it is the common language for particles, densities and weak measure evolutions. It also makes precise which velocity fields actually move mass.
@@ -22,7 +22,7 @@ We start with the continuity equation because it is the common language for part
 \index{Lagrangian!description}% strictindex
 \index{Eulerian!description}% strictindex
 
-We consider the evolution $t \mapsto \alpha_t \in \Pp(\RR^d)$. Such an evolution can be described in a ``Lagrangian'' way as the advection of particles along a (time-dependent) vector field $v_t(x)$ in $\RR^d$. At the particle level, this advection is governed by
+Many flow-matching and probability-flow diffusion samplers generate samples by transporting a simple initial law with a learned time-dependent vector field~\cite{Lipman2022FlowMatching,Song2021ScoreSDE}. The Eulerian description tracks the law of these moving samples; Section~\ref{sec-generative-flow-matching} develops this application. We consider the evolution $t \mapsto \alpha_t \in \Pp(\RR^d)$. Such an evolution can be described in a ``Lagrangian'' way as the advection of particles along a (time-dependent) vector field $v_t(x)$ in $\RR^d$. At the particle level, this advection is governed by
 \index{time-dependent vector field}% strictindex
 \begin{equation}
     \frac{\d x(t)}{\d t} = v_t(x(t)), \label{eq:lagrangian-advection}
@@ -68,7 +68,7 @@ On a bounded domain, allowing test functions that do not vanish on $\partial\Ome
 \begin{prop}[Lagrangian flows solve the continuity equation]\label{prop-lagrangian-flow-continuity}
 \index{Lagrangian!flow}% strictindex
 \index{continuity equation}% strictindex
-	Let $(T_t)_{t\in[0,1]}$ be a $C^1$ family of diffeomorphisms of $\RR^d$ and define $\alpha_t=(T_t)_\sharp\alpha_0$. Assume that the derivatives below are integrable with respect to $\alpha_0$, and define the Eulerian velocity field by
+	Let $(T_t)_{t\in[0,1]}$ be a $C^1$ family of diffeomorphisms of $\RR^d$ with $T_0=\Id$, and define $\alpha_t=(T_t)_\sharp\alpha_0$. Assume that the derivatives below are integrable with respect to $\alpha_0$, and define the Eulerian velocity field by
 \index{velocity field}% strictindex
 \index{Eulerian!velocity}% strictindex
 	\[
@@ -111,7 +111,7 @@ On a bounded domain, allowing test functions that do not vanish on $\partial\Ome
 \paragraph{From measure evolutions to vector fields.}
 \index{measure!evolution}% strictindex
 
-For a given evolution $(\alpha_t)_t$, there are typically infinitely many velocity fields $v_t$ satisfying
+Choosing a tractable interpolation of distributions can be easier than choosing a sampling dynamics. One then seeks a velocity realizing that path, as in the flow-matching regression~\eqref{eq:v_t} and the diffusion paths of Section~\ref{par-diffusion-model-connection}. For a given evolution $(\alpha_t)_t$, there are typically infinitely many velocity fields $v_t$ satisfying
 \index{velocity field}% strictindex
 \begin{equation}\label{eq:inverse-flow}
 	\partial_t\alpha_t+\diverg(\alpha_t v_t)=0.
@@ -131,7 +131,7 @@ Reconstructing particles from an observed density evolution is therefore ill-pos
 \begin{equation}\label{eq:dacorogna-moser}
 	v_t=-\frac{1}{\rho_t}\nabla\Delta^{-1}(\partial_t\rho_t),
 \end{equation}
-with suitable boundary conditions, for instance vanishing at infinity. This formula is useful conceptually but delicate when $\rho_t$ vanishes, and it does not generally produce a gradient velocity field.
+with suitable boundary conditions, for instance vanishing at infinity. This formula is useful conceptually but delicate when $\rho_t$ vanishes, and it does not generally produce a gradient velocity field. A spatial inverse Laplacian is expensive in high dimension, while division by $\rho_t$ can fail in vacuum regions of a linear density interpolation; empirical laws have no Lebesgue density at all. These are limitations of this positive-density inversion, not an obstruction to transporting disjointly supported laws.
 \index{velocity field}% strictindex
 \index{gradient!velocity}% strictindex
 
@@ -160,7 +160,7 @@ $\rho_1(T_1(x))\det(\nabla T_1(x))=\rho_0(x)$.
 \index{least squares!inversion}% strictindex
 \index{gradient!structure}% strictindex
 
-A more robust choice, used implicitly in flow matching, optimal transport and Wasserstein gradient flows, is to select among all admissible velocities the one with smallest kinetic energy:
+A geometrically distinguished choice is to select, among all velocities realizing the prescribed curve, the one with smallest kinetic energy:
 \index{Wasserstein!gradient}% strictindex
 \index{gradient!flow}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
@@ -214,7 +214,10 @@ A more robust choice, used implicitly in flow matching, optimal transport and Wa
 \index{weighted!Poisson equation}% strictindex
 \end{proof}
 
-In general this inversion is still computationally demanding, but special choices of $(\alpha_t)_t$ lead to simpler formulas; this is the mechanism exploited later by flow matching in Section~\ref{sec-generative-flow-matching}.
+The minimum-energy property is an orthogonal-projection principle. If an admissible gradient $v_t$ belongs to the $L^2(\alpha_t)$ closure of gradients of smooth test functions, every other admissible velocity is $v_t+w_t$ with $\diverg(\alpha_t w_t)=0$. Integration by parts and closure give $\langle v_t,w_t\rangle_{L^2(\alpha_t)}=0$, hence $\norm{v_t+w_t}_{L^2(\alpha_t)}^2=\norm{v_t}_{L^2(\alpha_t)}^2+\norm{w_t}_{L^2(\alpha_t)}^2$.
+
+This explains the gradient velocities of OT geodesics below and of Wasserstein flows in Definition~\ref{def-wasserstein-gradient}. Certain flow-matching interpolants, notably the Gaussian-noise construction of Proposition~\ref{prop:flow}, also have this structure. Ordinary flow-matching regression need not select the minimum-energy representative. The attention condition $V=Q^\top K$ in Section~\ref{sec-transformer-depth-evolution} similarly gives a spatial gradient, subject to the same integrability and tangent-space conditions; this alone does not make attention the gradient flow of a fixed functional of measures.
+
 \index{flow matching}% strictindex
 
 \section{Benamou--Brenier Dynamic Formulation of OT}
@@ -232,17 +235,9 @@ The dynamic formulation identifies $\Wass_2$ with the kinetic energy of the chea
 Instead of assuming that a whole curve $(\alpha_t)_{t\in[0,1]}$ is prescribed, one only fixes its endpoints $\alpha_0$ and $\alpha_1$ and minimizes the least-square energy~\eqref{eq:least-square-field}. The theorem of Benamou and Brenier states that this geodesic energy is exactly the squared Wasserstein distance~\cite{benamou2000computational}.
 \index{Wasserstein!distance}% strictindex
 
-The kinetic energy of an admissible evolution is the basic dynamic action.
-\begin{defn}[Benamou--Brenier action]\label{def-benamou-brenier-action}
-For an admissible pair $(\alpha_t,v_t)$, define
-\[
-\operatorname{Act}_2(\alpha,v)
-\eqdef
-\int_0^1\!\int_{\RR^d}\norm{v_t(x)}^2\d\alpha_t(x)\d t.
-\]
-\end{defn}
+Here admissibility includes the endpoint and finite-energy conditions of Definition~\ref{def-admissible-continuity-evolution}, on $\RR^d$.
 
-\begin{thm}[Benamou--Brenier]\label{thm-benamou-brenier}
+\begin{thm}[Benamou--Brenier]\label{thm-benamou-brenier}\label{def-benamou-brenier-action}
 \index{Benamou-Brenier@Benamou--Brenier}% strictindex
 	For probability measures $\alpha_0,\alpha_1\in\Pp_2(\RR^d)$,
 \index{probability measure}% strictindex
@@ -252,7 +247,7 @@ For an admissible pair $(\alpha_t,v_t)$, define
 	\inf_{(\alpha_t,v_t)}
 	\int_0^1\!\int_{\RR^d}\norm{v_t(x)}^2\,\d\alpha_t(x)\d t,
 	\end{equation}
-	where the infimum is over $(\alpha_t,v_t)$ solving $\partial_t\alpha_t+\nabla\!\cdot(\alpha_t v_t)=0$ with $\alpha_{t=0}=\alpha_0$ and $\alpha_{t=1}=\alpha_1$. If $\alpha_0$ has a density and $T$ is the optimal Monge map $T_\sharp\alpha_0=\alpha_1$, a minimizing curve is
+	where the infimum is over admissible pairs $(\alpha_t,v_t)$ solving $\partial_t\alpha_t+\nabla\!\cdot(\alpha_t v_t)=0$ with $\alpha_{t=0}=\alpha_0$ and $\alpha_{t=1}=\alpha_1$. If $\alpha_0$ has a density and $T$ is the optimal Monge map $T_\sharp\alpha_0=\alpha_1$, a minimizing curve is
 \index{Monge!problem}% strictindex
 	\begin{equation}\label{eq:static-to-dynamic}
 		\alpha_t=((1-t)\Id+tT)_\sharp\alpha_0,
@@ -293,6 +288,26 @@ For an admissible pair $(\alpha_t,v_t)$, define
 \index{continuity equation}% strictindex
 \index{quadratic!cost}% strictindex
 \end{proof}
+
+Equation~\eqref{eq:static-to-dynamic} is precisely the displacement interpolation of Definition~\ref{def-monge-mccann-interpolation}; Definition~\ref{def-w2-geodesic-induced-by-plan} covers mass-splitting plans. Along an exact Monge characteristic, $X_t=(1-t)x+tT(x)$ has $\dot X_t=T(x)-x$ and $\ddot X_t=0$. Thus an Euler step using the exact velocity at an exact trajectory point recovers its later position exactly. This favorable geometry motivates rectified and OT-based flow constructions~\cite{Liu2023RectifiedFlow,HertrichChambolleDelon2025RectifiedOT}, but does not remove the error of a learned field or the cost of computing the endpoint correspondence.
+
+Figure~\ref{fig:dynamic-benamou-brenier-geodesic} complements the Eulerian optimization viewpoint with the Lagrangian picture: matched particles travel along the straight characteristics of the minimizing curve.
+
+\begin{figure}[H]
+\centering
+\newcommand{\bbgeodesicpanelheight}{.155\linewidth}
+\begin{tabular}{@{}cc@{}}
+\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/density-sequence.pdf} &
+\index{Benamou-Brenier@Benamou--Brenier}% strictindex
+\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/midpoint-velocities.pdf}
+\\[-.1em]
+\small density sequence &
+\small midpoint velocities
+\end{tabular}
+\caption{\emph{Benamou--Brenier geodesic between two sampled silhouettes.} A discrete quadratic OT plan between finely subsampled cat and two-disks point clouds induces the McCann interpolation $Z_t=(1-t)X+tY$, which is the Lagrangian realization of the least-action solution. The left panel renders local color images of the smaller-bandwidth kernel-smoothed densities with enough padding to include the full silhouettes. The right panel overlays shortened velocity arrows centered at evenly subsampled midpoint particles $Z_{1/2}$; each displayed arrow runs in data coordinates from a source-side tail to a target-side head along the matched characteristic direction $Y-X$, but is not drawn as the full endpoint segment from $X$ to $Y$.}
+\index{McCann!interpolation}% strictindex
+\label{fig:dynamic-benamou-brenier-geodesic}
+\end{figure}
 
 \paragraph{Convex momentum-based reformulation.}
 \index{momentum formulation}% strictindex
@@ -538,24 +553,6 @@ Equivalently one may swap the roles of $\mathcal F$ and $\mathcal G$. At converg
 
 \textbf{Return} $U^{(L)}$.
 \end{alg}
-
-Figure~\ref{fig:dynamic-benamou-brenier-geodesic} complements the Eulerian optimization viewpoint with the Lagrangian picture: matched particles travel along the straight characteristics of the minimizing curve.
-
-\begin{figure}[ht]
-\centering
-\newcommand{\bbgeodesicpanelheight}{.155\linewidth}
-\begin{tabular}{@{}cc@{}}
-\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/density-sequence.pdf} &
-\index{Benamou-Brenier@Benamou--Brenier}% strictindex
-\includegraphics[height=\bbgeodesicpanelheight]{figures/dynamic-benamou-brenier-geodesic/midpoint-velocities.pdf}
-\\[-.1em]
-\small density sequence &
-\small midpoint velocities
-\end{tabular}
-\caption{\emph{Benamou--Brenier geodesic between two sampled silhouettes.} A discrete quadratic OT plan between finely subsampled cat and two-disks point clouds induces the McCann interpolation $Z_t=(1-t)X+tY$, which is the Lagrangian realization of the least-action solution. The left panel renders local color images of the smaller-bandwidth kernel-smoothed densities with enough padding to include the full silhouettes. The right panel overlays shortened velocity arrows centered at evenly subsampled midpoint particles $Z_{1/2}$; each displayed arrow runs in data coordinates from a source-side tail to a target-side head along the matched characteristic direction $Y-X$, but is not drawn as the full endpoint segment from $X$ to $Y$.}
-\index{McCann!interpolation}% strictindex
-\label{fig:dynamic-benamou-brenier-geodesic}
-\end{figure}
 
 \paragraph{Path-space formulation.}\label{rem-bb-path-space}
 \index{path-space formulation}% strictindex
@@ -837,7 +834,7 @@ where $\mathsf R^{\epsilon,x,y}$ is the reference bridge conditioned on endpoint
 	Assume that the regular conditional laws above exist and that the relative-entropy chain rule applies, with value $+\infty$ when absolute continuity fails. Then
 \index{conditional!law}% strictindex
 \index{absolute continuity}% strictindex
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 	\begin{equation}\label{eq-schrodinger-static-endpoint}
 		\mathrm{SB}_\epsilon(\al,\be)
 		=
@@ -851,14 +848,14 @@ where $\mathsf R^{\epsilon,x,y}$ is the reference bridge conditioned on endpoint
 		=
 		\int \mathsf R^{\epsilon,x,y}\,\d\pi(x,y).
 	\end{equation}
-	Consequently, if $\pi^\star$ solves~\eqref{eq-schrodinger-static-endpoint}, then $M^{\pi^\star}$ solves the path-space problem~\eqref{eq-schrodinger-path-space}.
+	Consequently, if $\pi^\star$ solves~\eqref{eq-schrodinger-static-endpoint} with finite relative entropy, then $M^{\pi^\star}$ solves the path-space problem~\eqref{eq-schrodinger-path-space}.
 \index{path-space formulation}% strictindex
 \index{path space}% strictindex
 \end{prop}
 
 \begin{proof}
 	If $M$ has finite relative entropy with respect to $\mathsf R^\epsilon$, then $\pi=(e_0,e_1)_\sharp M$ is necessarily absolutely continuous with respect to $\mathsf R^\epsilon_{0,1}$. The chain rule for relative entropy gives
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 	\begin{equation}\label{eq-kl-chain-rule-path}
 		\KL(M|\mathsf R^\epsilon)
 		=
@@ -1346,10 +1343,10 @@ The choice $\theta(a)=a$ recovers $\Wass_2$. Other choices encode different geom
 \index{matrix!perspective}% strictindex
 \index{spectral Wasserstein!distance}% strictindex
 \index{spectral!tangent action}% strictindex
-\index{velocity covariance}% strictindex
-The static spectral distances of Section~\ref{sec-spectral-subspace-wasserstein} penalize a coupling through the covariance of its displacement. A dynamic version keeps the continuity equation but replaces the pointwise kinetic energy by a gauge of the whole velocity covariance. The resulting action is nonlocal in space: velocity directions are charged globally through their covariance, rather than independently at each point.
+\index{velocity!second-moment matrix}% strictindex
+The static spectral distances of Section~\ref{sec-spectral-subspace-wasserstein} penalize a coupling through the second-moment matrix of its displacement. A dynamic version keeps the continuity equation but replaces the pointwise kinetic energy by a gauge of the velocity's second-moment matrix. The resulting action is nonlocal in space: velocity directions are charged jointly rather than independently at each point. These moments are not centered; subtracting the mean velocity would incorrectly assign zero action to translations.
 
-The spectral geometry charges the covariance of the velocity field through a monotone gauge. The corresponding action and length distance are defined together.
+The corresponding spectral action and length distance are defined together.
 \begin{defn}[Dynamic spectral Wasserstein distance]\label{def-dynamic-spectral-wasserstein}
 Let $\gamma$ be a monotone spectral gauge on $\mathbb S_+^d$. Define
 \index{monotone!spectral gauge}% strictindex
@@ -1459,11 +1456,11 @@ The use of this geometry for normalized flows, including the operator-gauge conn
 
 \paragraph{Kernelized Benamou--Brenier distances.}\label{sec-kernelized-bb-distance}
 \index{kernelized transport distance}% strictindex
-\index{RKHS!velocity}% strictindex
+\index{RKHS@reproducing kernel Hilbert space (RKHS)!velocity}% strictindex
 \index{Stein geometry}% strictindex
 \index{Benamou-Brenier@Benamou--Brenier!kernelized}% strictindex
-\index{Stein variational gradient descent}% strictindex
-\index{RKHS!vector field}% strictindex
+\index{Stein variational gradient descent@Stein variational gradient descent (SVGD)}% strictindex
+\index{RKHS@reproducing kernel Hilbert space (RKHS)!vector field}% strictindex
 A different way to deform the Benamou--Brenier geometry is to keep the local continuity equation but to measure velocities in a reproducing-kernel Hilbert space rather than in $L^2(\alpha)$. This construction is motivated by Stein variational gradient descent, studied later in Section~\ref{sec-svgd-generative-flow}: the kernel makes the velocity field computable from particles, while its regularity is inherited from that of the kernel. The price is a much more restrictive transport geometry.
 
 The kernelized distance uses a vector-valued RKHS as its restricted velocity class.
@@ -1711,12 +1708,12 @@ The limiting accelerated covariance is $2BB^\top$, and the local velocity action
 \index{finite-state transport}% strictindex
 \index{logarithmic mean}% strictindex
 \index{discrete!Wasserstein geometry}% strictindex
-\index{Markov chain}% strictindex
+\index{Markov!chain}% strictindex
 
 The finite-state version keeps the same pair-space philosophy, but with a finite graph of admissible exchanges. It is not the naive Euclidean metric on the simplex. The key idea, introduced by Maas and independently developed in related forms by Mielke and by Chow--Huang--Li--Zhou, is to use the transition graph of a reversible Markov chain to define both the admissible directions and the mobility of the mass~\cite{Maas2011,MielkeCVPDE,ChowHuangLiZhou2012}. The resulting distance is the finite-dimensional counterpart of the Wasserstein geometry behind the heat equation, and it is also the geometric structure used in numerical work on discrete metric-measure spaces~\cite{ErbarDCDS,erbar2017computation}. Its entropy interpretation is stated later in Proposition~\ref{prop-discrete-markov-entropy-gradient}.
-\index{Shannon entropy}% strictindex
+\index{entropy!Shannon}% strictindex
 \index{heat flow}% strictindex
-\index{reversible Markov chain}% strictindex
+\index{Markov!chain!reversible}% strictindex
 \index{Maas distance}% strictindex
 
 Let \(\mathcal X=\{1,\ldots,n\}\) and let \(K=(K_{i,j})\) denote the off-diagonal transition rates of an irreducible continuous-time Markov chain which is reversible with respect to a probability vector \(\pi\), so that \(\pi_iK_{i,j}=\pi_jK_{j,i}\) for \(i\neq j\). We write
@@ -1740,7 +1737,7 @@ The finite nonlocal divergence, tangent action, and distance are the discrete co
 \index{Onsager operator}% strictindex
 \Needspace{26\baselineskip}
 \begin{defn}[Discrete Markov-chain Wasserstein distance]\label{def-discrete-markov-wasserstein}
-\index{Markov-chain Wasserstein geometry!distance}% strictindex
+\index{Markov!chain Wasserstein geometry!distance}% strictindex
 \begin{equation}
 \label{eq-discrete-markov-onsager}
 (\mathcal K_\rho\psi)_i
@@ -1999,8 +1996,7 @@ The distinction is visible already for one-dimensional mixtures with mismatched 
 
 \section{Variational Mean Field Games}
 \label{sec-variational-mean-field-games}
-\index{mean field game}% strictindex
-\index{variational!mean field game}% strictindex
+\index{mean-field game!variational}% strictindex
 
 Mean field games use a population law to summarize strategic interactions among a very large number of individually negligible agents. This section only considers the special \emph{potential} subclass in which the equilibrium system is the optimality condition of one convex planning problem. In that setting, the relation with dynamic OT is particularly transparent: one augments the Benamou--Brenier kinetic action by congestion and may replace a prescribed final measure by a terminal penalty. To state a closed problem without irrelevant issues at infinity, throughout this section $\Omega\subset\RR^d$ is a bounded connected Lipschitz domain, agents remain in $\overline\Omega$, and population flux has zero normal trace on $\partial\Omega$ in the sense of~\eqref{eq-continuity-endpoint-no-flux}.
 

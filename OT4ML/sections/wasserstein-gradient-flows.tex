@@ -19,7 +19,9 @@ Once $\Wass_2$ is understood as a dynamic metric, one can run gradient descent d
 This first section explains how a variational implicit-Euler step on measures gives rise, in the small-step limit, to a continuity equation driven by the Wasserstein gradient of the energy.
 \index{continuity equation}% strictindex
 
-We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_t)_t$. The general strategy is the following implicit Euler construction.
+\paragraph{Implicit JKO step.}
+We now consider a function $f(\alpha)$ and seek a minimizing evolution $(\alpha_t)_t$. Typical energies are the potential $\int h\d\alpha$, the interaction $\iint k\d\alpha\d\alpha$, the Shannon neg-entropy $\int\rho_\alpha\log\rho_\alpha\d x$, relative entropy $\KL(\alpha|\beta)$, or a discrepancy to a target. Equations~\eqref{eq:linear-func}--\eqref{eq:quadratic-func} below develop these examples. The Jordan--Kinderlehrer--Otto (JKO) scheme~\cite{jordan1998variational} extends implicit Euler to measures; see~\cite{ambrosio2006gradient} for the general metric minimizing-movement framework.
+
 \index{implicit Euler scheme}% strictindex
 \begin{defn}[JKO minimizing movement]\label{def-jko-minimizing-movement}
 Given $\tau>0$ and $\alpha^{(0)}$, define recursively
@@ -49,10 +51,11 @@ In contrast, the explicit Euler scheme is:
     x(t+\tau) = (\Id - \tau \nabla h)(x(t)) = x(t) - \tau \nabla h(x(t)).
 \end{equation*}
 
-Both schemes converge as $\tau \to 0$ to:
+If, for instance, $\nabla h$ is globally Lipschitz, then for sufficiently small $\tau$ both schemes are well posed and their interpolants converge locally uniformly as $\tau\to0$ to the unique solution of
 \begin{equation}
     \dot{x}(t) = -\nabla h(x(t)). \label{eq:grad-flow-classical}
 \end{equation}
+The same conclusion holds under local Lipschitz regularity when the discrete and continuous trajectories remain in a common bounded set. Differentiability alone is insufficient: if the ODE is nonunique, explicit and implicit discretizations can select different solutions.
 
 
 \paragraph{Vertical derivatives (first- and higher-order variations).}
@@ -83,9 +86,27 @@ Because \(\beta-\alpha\) has zero mass, \(\delta f(\alpha)\) is determined only 
 \]
 whenever the zero-mass signed perturbation \(\eta\) is admissible. For example, if \(f(\alpha)=\int V\,\d\alpha\), then \(\delta f(\alpha)=V\): the vertical derivative records the value \(V(x)\), whereas the horizontal derivative will record its spatial gradient \(\nabla V(x)\).
 
-Higher derivatives are mostly unnecessary for the first-order flows studied in this chapter, but they provide the appropriate notion of smoothness for functionals of measures. For this brief account, fix a compact set \(\Xx\subset\RR^d\) and denote by \(\Mm_0(\Xx)\) the finite signed Borel measures on \(\Xx\) with zero total mass.
+The following examples make the first variation concrete. They are understood at measures where the displayed integrals and directional derivatives exist; entropy rows require positive densities and integrable logarithms along the admissible perturbations. The kernel $k$ is symmetric (otherwise replace it by its symmetrization), and all entries are defined up to an additive constant.
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}ll@{}}
+\hline
+Energy $f(\alpha)$ & First variation $[\delta f(\alpha)](x)$ \\
+\hline
+$\int h\d\alpha$ & $h(x)$ \\
+$\iint k\d\alpha\d\alpha$ & $2\int k(x,y)\d\alpha(y)$ \\
+$\int\rho_\alpha\log\rho_\alpha\d x$ & $1+\log\rho_\alpha(x)$ \\
+$\KL(\alpha|\beta)$ & $1+\log(\d\alpha/\d\beta)(x)$ \\
+$\MMD_k^2(\alpha,\beta)$ & $2\int k(x,y)\d(\alpha-\beta)(y)$ \\
+\hline
+\end{tabular}
+\end{center}
+A factor $1/2$ in an energy halves its variation. Differentiability of a general discrepancy is not automatic.
+
+Higher derivatives are mostly unnecessary
+ for the first-order flows studied in this chapter, but they provide the appropriate notion of smoothness for functionals of measures. For this brief account, fix a compact set \(\Xx\subset\RR^d\) and denote by \(\Mm_0(\Xx)\) the finite signed Borel measures on \(\Xx\) with zero total mass.
 \begin{defn}[Higher-order vertical derivatives]\label{def-higher-order-vertical-derivatives}
-\index{vertical derivative!higher order}% strictindex
+\index{derivative!vertical!higher order}% strictindex
 	Set \(D^0f=f\). The functional \(f\) admits vertical derivatives through order \(r\) if there are symmetric multilinear forms
 	\[
 		D^j f(\alpha):\Mm_0(\Xx)^j\longrightarrow\RR,
@@ -110,7 +131,14 @@ When these multilinear forms have integral kernels, the notation
 	(\alpha,x_1,\ldots,x_j)
 	\d\eta_1(x_1)\cdots\d\eta_j(x_j)
 \]
-is customary. Because the \(\eta_i\) have zero mass, these kernels have additive gauge freedoms; one can fix them by requiring zero mean in each spatial variable. This calculus and its relation to differential calculus on Wasserstein space are developed in~\cite{CarmonaDelarue2018,ChassagneuxSzpruchTse2022}.
+is customary. Because the \(\eta_i\) have zero mass, adding any kernel term that omits at least one variable leaves the multilinear form unchanged. A canonical representative relative to the base measure \(\alpha\) is obtained by centering each variable,
+\[
+	\int_{\Xx}
+	\frac{\delta^j f}{\delta\alpha^j}
+	(\alpha,x_1,\ldots,x_j)\,\d\alpha(x_i)=0
+	\qquad (1\leq i\leq j),
+\]
+with the other variables fixed. This normalization depends on the base point \(\alpha\). This calculus and its relation to differential calculus on Wasserstein space are developed in~\cite{CarmonaDelarue2018,ChassagneuxSzpruchTse2022}.
 
 \begin{rem}[Higher smoothness and faster particle-polynomial approximation]\label{rem-higher-order-particle-polynomial}
 \index{particle polynomial}% strictindex
@@ -134,7 +162,7 @@ is customary. Because the \(\eta_i\) have zero mass, these kernels have additive
 	\end{equation}
 	The convention \(r=\lceil s\rceil-1\) treats an integer \(s\) as the Lipschitz endpoint \(C^{s-1,1}\).
 
-	Combining the weak empirical expansion of~\cite{ChassagneuxSzpruchTse2022} with~\eqref{eq-higher-order-wasserstein-holder} gives, when the centered derivative kernels are uniformly bounded and with \(r_{n,p,d}\) from~\eqref{eq-empirical-wasserstein-scale},
+	Combining the weak empirical expansion of~\cite{ChassagneuxSzpruchTse2022} with~\eqref{eq-higher-order-wasserstein-holder} gives the following bound when all centered derivative kernels used by the Taylor formula are uniformly bounded and its remainder is uniform over \(\alpha,\beta\). With \(r_{n,p,d}\) from~\eqref{eq-empirical-wasserstein-scale},
 	\[
 		\norm{\mathsf B_n f-f}_\infty
 		\lesssim
@@ -156,7 +184,14 @@ is customary. Because the \(\eta_i\) have zero mass, these kernels have additive
 		\sum_{j=1}^J a_jm_j^{-k}=0
 		\quad (1\leq k<J),
 	\]
-	for distinct positive integers \(m_j\), cancels the first \(J-1\) bias coefficients. If \(s>2J-2\) and the derivative kernels through order \(2J-2\) are uniformly bounded, then
+	for distinct positive integers \(m_j\), cancels the first \(J-1\) bias coefficients. More precisely, assume that the uniform weak expansion
+	\[
+		\mathsf B_n f(\alpha)
+		=
+		f(\alpha)+\sum_{k=1}^{J-1}\frac{c_k(\alpha)}{n^k}
+		+O\!\left(n^{-J}+r_{n,p,d}^{\,s}\right)
+	\]
+	holds uniformly in \(\alpha\). This follows, for example, from the higher linear-functional-derivative and moment hypotheses in~\cite{ChassagneuxSzpruchTse2022}; it is not implied merely by the existence of the first \(2J-2\) kernels. Then
 	\[
 		\norm{\mathsf B_n^{[J]}f-f}_\infty
 		\lesssim
@@ -170,13 +205,13 @@ is customary. Because the \(\eta_i\) have zero mass, these kernels have additive
 \index{derivative!horizontal}% strictindex
 \index{Wasserstein!gradient}% strictindex
 
-The vertical derivative asks how \(f\) reacts when mass is reweighted. Wasserstein geometry asks how it reacts when mass is moved through a Lagrangian displacement \((\Id+\vartheta v)_\sharp\alpha\). When the first variation is differentiable in \(x\), its spatial gradient represents this horizontal differential.
+The vertical derivative asks how \(f\) reacts when mass is reweighted. Wasserstein geometry asks how it reacts when mass is moved through a Lagrangian displacement \((\Id+\vartheta v)_\sharp\alpha\). When the first variation is differentiable in \(x\), its spatial gradient represents this horizontal differential, provided the corresponding transport chain rule is valid.
 
 As \(\tau\to0\), under suitable conditions on \(f\), \eqref{eq:jko-discr} defines a continuous evolution \(t\mapsto\alpha_t\). As discussed earlier, this evolution can be described by the Lagrangian advection formula~\eqref{eq:lagrangian-advection}. The key infinitesimal object is the vector field representing the differential in the Wasserstein metric.
 
 \begin{defn}[Wasserstein gradient]\label{def-wasserstein-gradient}
 \index{Wasserstein!gradient}% strictindex
-	Assume that $f$ admits a smooth first variation $\delta f(\alpha)$. In the smooth formal calculus on $\Pp_2(\RR^d)$, the Wasserstein gradient of $f$ at $\alpha$ is the gradient vector field
+	Assume that $f$ admits a smooth first variation $\delta f(\alpha)$. Here smoothness means that $\nabla\delta f(\alpha)\in L^2(\alpha;\RR^d)$, that the transport chain rule holds along the admissible continuity-equation curves, and that the boundary conditions justify integration by parts. In the smooth formal calculus on $\Pp_2(\RR^d)$, the Wasserstein gradient of $f$ at $\alpha$ is the gradient vector field
 	\begin{equation*}
 	    \Wgrad f(\alpha) = \nabla_x \delta f(\alpha).
 	\end{equation*}
@@ -247,12 +282,13 @@ The following proposition explains why this vector field is the Riemannian gradi
 	By definition of the Riesz representative for the $L^2(\alpha)$ metric, this representative is $\nabla\delta f(\alpha)$.
 \end{proof}
 
+This chain-rule calculation identifies a candidate velocity; it is not a convergence theorem for the JKO scheme. Such a theorem also needs lower semicontinuity, coercivity or compactness, and suitable slope or geodesic-convexity assumptions, depending on the chosen framework~\cite{jordan1998variational,ambrosio2006gradient}. The next two paragraphs separate the discrete optimality calculation from this metric convergence theory.
+
 The Wasserstein gradient-flow viewpoint already appears in John D. Lafferty's PhD work, published as ``The Density Manifold and Configuration Space Quantization'', under the name ``density manifold''. It was then systematically developed by Otto, who exposed the formal Riemannian structure of this space~\cite{otto2001geometry}. Rigorous metric-space treatments and numerical JKO schemes can be found in~\cite{ambrosio2006gradient,JDB-JKO,2015-Peyre-siims,gallouet2017jko}.
 \index{Wasserstein!gradient}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 \index{JKO scheme}% strictindex
 
-%%%%
 \paragraph{From the JKO step to the velocity field.}
 \index{velocity field}% strictindex
 
@@ -320,7 +356,7 @@ For lower-semicontinuous $f:\mathcal X\to(-\infty,+\infty]$, define
 		+\infty, & f(x)=+\infty.
 		\end{cases}
 		\]
-It is a strong upper gradient if $|f(y_t)-f(y_s)|\leq \int_s^t |\partial f|(y_r)|\dot y_r|\d r$ along every absolutely continuous $y$. When this property holds, a curve $x_t$ is a curve of maximal slope for $f$ if
+It is a strong upper gradient if $|f(y_t)-f(y_s)|\leq \int_s^t |\partial f|(y_r)|\dot y_r|\d r$ along every absolutely continuous $y$. When this property holds, a curve $x\in AC^2([0,T];\mathcal X)$ with $f(x_0)<+\infty$ is a curve of maximal slope for $f$ if $f\circ x$ has an absolutely continuous representative and
 \index{strong upper gradient}% strictindex
 \index{energy-dissipation inequality}% strictindex
 	\[
@@ -348,7 +384,7 @@ We now detail examples of such Wasserstein gradient flows.
 		\qquad
 		v_t=-\Wgrad f(\al_t)=-\nabla\delta f(\al_t).
 	\]
-	Here \(\delta f(\al_t)\) is the first variation, with the convention introduced above. For example, if \(\al=\rho\,\d x\), the energy \(f(\al)=\int V\d\al+\sigma^2\int\rho\log\rho\,\d x\) gives a drift toward a potential landscape \(V\) together with diffusion of strength \(\sigma^2\). In single-cell modeling, \(V\), interaction terms or a neural approximation of \(v_t\) can be fitted from unpaired population snapshots. This links Waddington-landscape intuition to the mathematical language of dynamic OT, Fokker--Planck equations and flow matching~\cite{TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}.
+	Here \(\delta f(\al_t)\) is the first variation, with the convention introduced above. For example, if \(\al=\rho\,\d x\), the energy \(f(\al)=\int V\d\al+\sigma^2\int\rho\log\rho\,\d x\) gives a drift toward a potential landscape \(V\) together with diffusion of strength \(\sigma^2\). Valleys and stable attractors of the deterministic drift represent preferred cell states; entropy allows the population to spread between them. In single-cell modeling, \(V\), interaction terms or a neural approximation of \(v_t\) can be fitted from unpaired population snapshots. Unlike snapshot matching by Waddington-OT~\cite{schiebinger2017reconstruction} (Example~\ref{ex-cell-population-distance}), this posits an autonomous dynamical model: OT matches alone do not establish that a fixed energy generates the observations. This links Waddington-landscape intuition to the mathematical language of dynamic OT, Fokker--Planck equations and flow matching~\cite{TongHuangWolfVanDijkKrishnaswamy2020TrajectoryNet,LavenantZhangKimSchiebinger2021TrajectoryInference,KleinUsciddaTheisCuturi2023GENOT}.
 \end{example}
 
 Figure~\ref{fig:gradflow-jko-entropy-steps} shows the same minimizing-movement construction both in density coordinates and through the motion of quantiles.
@@ -360,7 +396,7 @@ Figure~\ref{fig:gradflow-jko-entropy-steps} shows the same minimizing-movement c
 \includegraphics[width=.43\linewidth]{figures/gradflow-jko-entropy-steps/density-steps.pdf} &
 \includegraphics[width=.43\linewidth]{figures/gradflow-jko-entropy-steps/quantile-steps.pdf}
 \end{tabular}
-\caption{\emph{JKO minimizing movements for the entropy flow in one dimension.} The left panel displays successive implicit-Euler minimizers for the heat equation, colored from red to blue. The right panel tracks inverse CDF values $Q_t(s)=F_t^{-1}(s)$ for selected probability levels $s$, giving a Lagrangian view of the proximal movement in Wasserstein space.}
+\caption{\emph{JKO minimizing movements for the entropy flow in one dimension.} The left panel displays the finite-step minimizers of~\eqref{eq:jko-discr} for $f(\alpha)=\int\rho_\alpha\log\rho_\alpha\d x$, colored from red to blue; these approximate, rather than exactly sample, the heat semigroup. The right panel tracks inverse CDF values $Q_t(s)=F_t^{-1}(s)$ for selected probability levels $s$, giving a Lagrangian view of the proximal movement in Wasserstein space.}
 \index{minimizing movement}% strictindex
 \index{Wasserstein!space}% strictindex
 \index{heat equation}% strictindex
@@ -398,16 +434,16 @@ The first benchmark is a functional whose first variation does not depend on the
 \end{example}
 
 \paragraph{Shannon neg-entropy.}
-\index{negative Shannon entropy}% strictindex
+\index{entropy!negative Shannon}% strictindex
 
 
-Entropy gives the opposite benchmark: the flow is no longer a deterministic push-forward of particles, but a diffusion of density.
+Entropy gives the opposite benchmark: particles are no longer independent trajectories driven by a fixed vector field. The evolution is a diffusion, or formally a continuity equation with the density-dependent score velocity $-\nabla\log\rho_t$; when that velocity generates a sufficiently regular flow, the latter still provides a deterministic push-forward representation.
 
 \begin{defn}[Score function]\label{def-score-function}
 For $\alpha=\rho\,\d x$ with differentiable positive density $\rho$, its score is $\nabla\log\rho$. Relative to $\beta$, its relative score is $\nabla\log(\d\alpha/\d\beta)$ whenever this logarithmic density has a weak gradient.
 \end{defn}
 
-\begin{example}[Entropy generates heat and porous-medium flows]
+
 The canonical density-dependent functional is the Shannon neg-entropy
    \begin{equation}
        f(\alpha) = \int \log\left(\frac{\d \alpha}{\d x}(x)\right) \d \alpha(x). \label{eq:entropy-func}
@@ -418,6 +454,30 @@ The canonical density-dependent functional is the Shannon neg-entropy
    \begin{equation*}
 	       \partial_t \rho_t = \Delta \rho_t.
    \end{equation*}
+
+
+\begin{rem}[Two gradient-flow interpretations of the heat equation]\label{rem-two-interpretations-heat-equation}
+\index{heat equation}% strictindex
+\index{Dirichlet energy}% strictindex
+\index{gradient!flow}% strictindex
+\index{entropy!Shannon}% strictindex
+\index{Wasserstein!gradient flow}% strictindex
+	The heat equation already illustrates that a PDE does not determine a unique gradient-flow structure. Write $\alpha=\rho\d x$ on a flat domain, with periodic or no-flux boundary conditions. In the Hilbert geometry of densities, the squared distance and the Dirichlet energy are
+	\[
+		d_{L^2}^2(\alpha,\beta)=\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
+		\qquad
+		\mathcal D(\alpha)=\frac12\int \norm{\nabla\rho(x)}^2\d x,
+	\]
+	so $\delta\mathcal D/\delta\rho=-\Delta\rho$ and the $L^2$ gradient flow $\partial_t\rho_t=-\delta\mathcal D/\delta\rho(\rho_t)$ gives $\partial_t\rho_t=\Delta\rho_t$. This viewpoint says that heat flow decreases oscillations and regularizes the density. In Wasserstein geometry, the same equation is instead the $\Wass_2$ gradient flow of the Shannon entropy $\int \rho\log\rho\d x$, so the driving mechanism is entropic spreading. The example is a useful warning: explaining a dynamics as a gradient flow requires specifying both an energy and a metric, and different pairs $(f,d)$ may produce the same PDE.
+\end{rem}
+For a smooth positive target density $\rho_\beta$, the energy $f(\alpha)=\sigma^2\KL(\alpha|\beta)$ instead generates the relative-score flow
+\begin{equation}\label{eq-relative-entropy-three-representations}
+ \partial_t\rho_t=\sigma^2\diverg\!\left(\rho_t\nabla\log\frac{\rho_t}{\rho_\beta}\right),
+ \qquad v_t=\sigma^2(\nabla\log\rho_\beta-\nabla\log\rho_t).
+\end{equation}
+Its stochastic Langevin representation is discussed below. These score fields also enter diffusion samplers (Section~\ref{par-diffusion-model-connection}); forward noising and reverse generative sampling need not descend the same energy.
+
+\paragraph{Generalized entropies and nonlinear diffusion.}
    Other entropy functionals lead to nonlinear diffusion equations; finite-volume and particle discretizations are discussed in~\cite{CarrilloFiniteVolume,GianazzaARMA,Maas2011,ErbarHeatManifold}.
 %
 \eqllead{For a generalized entropy}{eq:gen-entropies}{
@@ -430,22 +490,8 @@ The canonical density-dependent functional is the Shannon neg-entropy
    \end{equation*}
    where the pressure $P$ satisfies $P'(s)=s g''(s)$. For example, $g(s) = s \log(s)$ gives $P(s)=s$ and recovers \eqref{eq:entropy-func}, while $g(s) = s^m/(m-1)$, $m > 1$, gives $P(s)=s^m$ up to an additive constant and yields the porous-medium equation.
 \index{porous medium equation}% strictindex
-\end{example}
+For a flat reference, these internal energies include $\phi$-divergences. A nonuniform reference changes the equation: in the smooth positive-density regime, $D_\phi(\alpha|\beta)$ has velocity $-\nabla[\phi'(\rho_\alpha/\rho_\beta)]$, not in general the translation-invariant porous-medium velocity. A particular localized-neuron scaling limit of neural-network training also leads to porous-medium dynamics~\cite{JavanmardMondelliMontanari2020Displacement}; this is a specific architecture and scaling, not the generic training PDE.
 
-\begin{rem}[Two gradient-flow interpretations of the heat equation]\label{rem-two-interpretations-heat-equation}
-\index{heat equation}% strictindex
-\index{Dirichlet energy}% strictindex
-\index{gradient!flow}% strictindex
-\index{Shannon entropy}% strictindex
-\index{Wasserstein!gradient flow}% strictindex
-	The heat equation already illustrates that a PDE does not determine a unique gradient-flow structure. Write $\alpha=\rho\d x$ on a flat domain, with periodic or no-flux boundary conditions. In the Hilbert geometry of densities, the squared distance and the Dirichlet energy are
-	\[
-		d_{L^2}^2(\alpha,\beta)=\int |\rho_\alpha(x)-\rho_\beta(x)|^2\d x,
-		\qquad
-		\mathcal D(\alpha)=\frac12\int \norm{\nabla\rho(x)}^2\d x,
-	\]
-	so $\delta\mathcal D/\delta\rho=-\Delta\rho$ and the $L^2$ gradient flow $\partial_t\rho_t=-\delta\mathcal D/\delta\rho(\rho_t)$ gives $\partial_t\rho_t=\Delta\rho_t$. This viewpoint says that heat flow decreases oscillations and regularizes the density. In Wasserstein geometry, the same equation is instead the $\Wass_2$ gradient flow of the Shannon entropy $\int \rho\log\rho\d x$, so the driving mechanism is entropic spreading. The example is a useful warning: explaining a dynamics as a gradient flow requires specifying both an energy and a metric, and different pairs $(f,d)$ may produce the same PDE.
-\end{rem}
 
 Figure~\ref{fig:gradflow-heat-versus-porous-medium} contrasts the spreading induced by the linear heat equation with the compactly supported, density-dependent propagation of two porous-medium flows.
 
@@ -460,14 +506,14 @@ Figure~\ref{fig:gradflow-heat-versus-porous-medium} contrasts the spreading indu
 \end{tabular}
 \caption{\emph{Entropy-driven Wasserstein gradient flows from the same compact initial density.} The heat flow is generated by Shannon entropy $g(\rho)=\rho\log\rho$ and instantly develops Gaussian tails. The porous-medium flows use the power entropy $g(\rho)=\rho^m/(m-1)$, hence $\partial_t\rho=\Delta(\rho^m)$: the middle panel has $m=2$, while the right panel has the stronger nonlinearity $m=6$, i.e.\ $\partial_t\rho=\Delta(\rho^6)$. Larger powers diffuse mainly where the density is high, producing a flatter core and a sharper compact free boundary.}
 \index{Wasserstein!gradient flow}% strictindex
-\index{Shannon entropy}% strictindex
+\index{entropy!Shannon}% strictindex
 \label{fig:gradflow-heat-versus-porous-medium}
 \end{figure}
 
-\paragraph{Interaction energies.}
+\paragraph{Interaction energies.}\label{par-gradient-interactions}
 \index{energy!interaction}% strictindex
 
-In a similar spirit, to obtain nonlinear evolutions without requiring the measure to have density, one can consider
+Interaction energies lead to coupled particles without requiring a density. They will also express the square-loss MLP risk in~\eqref{eq-mlp-square-loss-quadratic-linear}. In a similar spirit, one can consider
    \begin{equation}
        f(\alpha) := \iint k(x, y) \d \alpha(x) \d \alpha(y). \label{eq:quadratic-func}
    \end{equation}
@@ -545,7 +591,7 @@ The preceding particle flow minimizes a squared kernel discrepancy. Figure~\ref{
 \end{tabular}
 \caption{\emph{Wasserstein gradient flows of three discrepancies toward the same one-dimensional Gaussian-mixture target, shown as a dashed black density.} The source density is also a Gaussian mixture. Red-to-blue curves are snapshots of $\alpha_t$. The energy-distance and $\Wass_2$ panels descend the unsquared distances and use many equal-weight quantile particles: in one dimension the energy distance is obtained from $\mathrm{ED}^2=2\int |F_{\alpha}-F_{\beta}|^2\d x$, while $\Wass_2$ uses monotone quantile matching. The relative-entropy panel solves the reversible Fokker--Planck equation $\partial_t\rho=\partial_x(\rho_\beta\,\partial_x(\rho/\rho_\beta))$ by an implicit finite-volume scheme, so that $\rho_\beta$ is the discrete stationary density.}
 \index{energy distance}% strictindex
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 \index{Fokker-Planck@Fokker--Planck!equation}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 \label{fig:gradflow-discrepancy-density-comparison}
@@ -567,7 +613,7 @@ Figure~\ref{fig:gradflow-interaction-particles} complements this target-matching
 \label{fig:gradflow-interaction-particles}
 \end{figure}
 
-Figure~\ref{fig:gradflow-particle-objective-geometries} then compares the trajectory geometries produced by several discrepancies on common source and target clouds.
+Discrepancy-driven particle descent will also provide target velocities for one-step generators in Section~\ref{sec-one-step-generative-models}. Figure~\ref{fig:gradflow-particle-objective-geometries} then compares the trajectory geometries produced by several discrepancies on common source and target clouds.
 
 \begin{figure}[ht]
 \centering
@@ -585,8 +631,8 @@ Figure~\ref{fig:gradflow-particle-objective-geometries} then compares the trajec
 
 \paragraph{Stochastic particles and McKean--Vlasov limits.}
 \index{stochastic!particle}% strictindex
-\index{McKean-Vlasov@McKean--Vlasov limit}% strictindex
-\index{McKean-Vlasov@McKean--Vlasov equation}% strictindex
+\index{McKean-Vlasov@McKean--Vlasov!limit}% strictindex
+\index{McKean-Vlasov@McKean--Vlasov!equation}% strictindex
 More generally, deterministic particle flows have stochastic counterparts, where Brownian noise at the particle level becomes an entropy term at the level of measures. If the drift does not depend on the empirical measure, each particle evolves independently according to
 \index{empirical!measure}% strictindex
 \[
@@ -615,12 +661,12 @@ The mean-field case is different: the drift is recomputed from the current empir
 	\qquad
 	\al_t^n=\frac1n\sum_{i=1}^n\delta_{X_i^n(t)}.
 \]
-For finite $n$, the empirical law $\al_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\al_t^n$ converges in probability to this law. The limiting density solves the nonlinear Fokker--Planck, or McKean--Vlasov, equation
+Here the $B_i$ are independent Brownian motions and the initial particles are i.i.d. with a common law, independently of the noises. For finite $n$, the empirical law $\al_t^n$ is itself random. Under suitable Lipschitz, growth and chaotic-initialization assumptions, propagation of chaos states that finitely many particles become asymptotically independent as $n\to\infty$, all with the same deterministic law $\rho_t\d x$; equivalently, the empirical measure $\al_t^n$ converges in probability to this law~\cite{ChaintronDiez2022ChaosI,ChaintronDiez2022ChaosII}. The limiting density solves the nonlinear Fokker--Planck, or McKean--Vlasov, equation
 \index{Fokker-Planck@Fokker--Planck!equation}% strictindex
-\index{McKean-Vlasov@McKean--Vlasov limit}% strictindex
+\index{McKean-Vlasov@McKean--Vlasov!limit}% strictindex
 \index{propagation of chaos}% strictindex
 \index{empirical!law}% strictindex
-\index{McKean-Vlasov@McKean--Vlasov equation}% strictindex
+\index{McKean-Vlasov@McKean--Vlasov!equation}% strictindex
 \[
 	\partial_t \rho_t
 	=
@@ -640,16 +686,7 @@ When the interaction drift has variational form
 		\mathcal E(\rho)+\sigma^2\int \rho\log\rho\,\d x.
 	\]
 
-For a prescribed target $\beta=\rho_\beta\d x$, take $b=\sigma^2\nabla\log\rho_\beta$. The SDE, the Fokker--Planck equation, and the deterministic continuity equation with score velocity are then three representations of the same gradient flow:
-\begin{equation}\label{eq-relative-entropy-three-representations}
-	\partial_t\rho_t
-	=
-	\sigma^2\diverg\!\left(\rho_t\nabla\log\frac{\rho_t}{\rho_\beta}\right),
-	\qquad
-	v_t
-	=
-	\sigma^2\bigl(\nabla\log\rho_\beta-\nabla\log\rho_t\bigr).
-\end{equation}
+For the prescribed target $\beta=\rho_\beta\d x$, choosing $b=\sigma^2\nabla\log\rho_\beta$ recovers~\eqref{eq-relative-entropy-three-representations}. The Langevin SDE, its Fokker--Planck equation and the deterministic relative-score continuity equation thus describe the same marginal evolution, although their path laws differ.
 Figure~\ref{fig:gradflow-fokker-planck-three-representations} compares numerical realizations of precisely these three descriptions.
 
 \begin{figure}[ht]
@@ -764,7 +801,7 @@ The equations are independent only if $f$ is separable. Otherwise the coupling e
 \index{product Wasserstein metric}% strictindex
 \index{JKO scheme}% strictindex
 
-A second useful model imposes a pointwise composition constraint. Given a fixed reference measure $\beta=\density{\beta}\d x$ with total mass $\sum_i m_i$, set
+A second useful model imposes a pointwise composition constraint. Given a fixed reference measure $\beta=b\,\d x$ with density $b=\density{\beta}>0$ and total mass $\sum_i m_i$, set
 \begin{equation}\label{eq-multispecies-composition-constraint}
 	\mathcal C_\beta=
 	\enscond{\alpha\in\Pp_{2,\mathbf m}(\Omega;\RR_+^p)}
@@ -781,7 +818,7 @@ In the smooth-density regime, the formal constrained flow has a common pressure 
 \begin{equation}\label{eq-multispecies-constrained-pde}
 	\partial_t\rho_i=\diverg\left(\rho_i\nabla(\phi_i-\lambda_t)\right),
 	\qquad
-		\diverg(\density{\beta}\nabla\lambda_t)=\diverg\left(\sum_{i=1}^p \rho_i\nabla\phi_i\right).
+		\diverg(b\nabla\lambda_t)=\diverg\left(\sum_{i=1}^p \rho_i\nabla\phi_i\right).
 \end{equation}
 For the separable Shannon entropy $f(\alpha)=\sum_i\int_\Omega \rho_i\log\rho_i\d x$, this becomes
 \begin{equation}\label{eq-multispecies-modified-heat}
@@ -789,8 +826,8 @@ For the separable Shannon entropy $f(\alpha)=\sum_i\int_\Omega \rho_i\log\rho_i\
 	\qquad
 	\diverg(b\nabla\lambda_t)=\Delta b.
 \end{equation}
-When $b$ is constant, the pressure can be chosen constant and the system reduces to independent heat equations which nevertheless preserve the pointwise sum $\sum_i\rho_i=b$. This product geometry should be contrasted with the vector-valued Benamou--Brenier distances of Section~\ref{sec-vector-matrix-valued-measures}, where the metric itself can couple the components through a non-diagonal mobility.
-\index{Shannon entropy}% strictindex
+These equations are understood with periodic or no-flux boundary conditions. When $b$ is constant on a connected domain, the pressure can be chosen constant and the system reduces to independent heat equations which nevertheless preserve the pointwise sum $\sum_i\rho_i=b$. This product geometry should be contrasted with the vector-valued Benamou--Brenier distances of Section~\ref{sec-vector-matrix-valued-measures}, where the metric itself can couple the components through a non-diagonal mobility.
+\index{entropy!Shannon}% strictindex
 \index{pressure field}% strictindex
 \index{composition constraint}% strictindex
 
@@ -806,18 +843,21 @@ Figure~\ref{fig:gradflow-multispecies-entropy-flow} visualizes this constant-tot
 \end{tabular}
 \caption{\emph{Multi-species entropy flow under the shared-density constraint $\sum_i\rho_i=1$ on the periodic interval.} Each row is a time snapshot of the stacked densities, with the species shown as colored bands and time increasing from top to bottom. For a constant total density, the pressure in~\eqref{eq-multispecies-modified-heat} is constant, so each component follows the heat equation while the sum of the bands remains exactly flat.}
 \index{multi-species!gradient flow}% strictindex
-\index{Shannon entropy}% strictindex
+\index{entropy!Shannon}% strictindex
 \index{density!constraint}% strictindex
 \label{fig:gradflow-multispecies-entropy-flow}
 \end{figure}
+
+\paragraph{Other geometries of descent.}
+The same energy can generate different dynamics when the transport metric changes. Later sections develop generalized mobilities (Section~\ref{sec-generalized-dynamic-wasserstein-flows}), nonlocal jumps (Section~\ref{sec-nonlocal-wasserstein-flows}) and transport with mass creation/destruction (Section~\ref{sec-dynamic-unbalanced-wfr-flows}); conditional geometry will preserve layer labels in ResNet training (Section~\ref{sec-conditional-wasserstein-resnets}). Birth--death particle methods~\cite{Rotskoff2019BirthDeath} illustrate the unbalanced viewpoint, while jump geometries provide a link to discrete-state sampling.
 
 \section{Geodesic Convexity and Convergence}
 \index{convexity!geodesic}% strictindex
 \label{sec-geodesic-convexity}
 
-Geodesic convexity is the convexity notion adapted to Wasserstein geometry. It is the condition that turns the formal gradient-flow calculus into a convergence theory.
+Training seeks low-risk limits, while sampling seeks a specified target law; stationarity alone guarantees neither. Geodesic convexity is the convexity notion adapted to Wasserstein geometry. Together with the PL and KL inequalities studied below, it provides mechanisms for convergence and quantitative rates. These assumptions are restrictive, particularly for neural-network energies.
 \index{gradient!flow}% strictindex
-\index{geodesic!convexity}% strictindex
+\index{convexity!geodesic}% strictindex
 
 \paragraph{Geodesics and convexity.}
 
@@ -968,22 +1008,32 @@ Internal energies require a different mechanism: convexity is hidden in the Jaco
 \index{McCann!displacement convexity}% strictindex
 \index{internal energy}% strictindex
 \index{displacement convexity}% strictindex
-	Let \(g:[0,+\infty)\to\RR\cup\{+\infty\}\) be convex with \(g(0)=0\), and define
+	Let \(g:[0,+\infty)\to\RR\cup\{+\infty\}\) be proper, lower-semicontinuous and convex, with \(g(0)=0\), set
+	\[
+		g'_\infty\eqdef\lim_{r\to+\infty}\frac{g(r)}r\in\RR\cup\{+\infty\},
+	\]
+	and define
 	\[
 		\psi(r)=r^d g(r^{-d}),\qquad r>0.
 	\]
-	If \(\psi\) is convex and nonincreasing on \((0,+\infty)\), then the internal energy
+	If \(\psi\) is convex and nonincreasing on \((0,+\infty)\), then the relaxed internal energy
 	\[
-		\mathcal U_g(\alpha)=
-		\begin{cases}
-			\displaystyle \int_{\RR^d} g(\rho(x))\,\d x, & \alpha=\rho\d x,\\
-			+\infty, & \text{otherwise},
-		\end{cases}
+		\overline{\mathcal U}_g(\alpha)
+		\eqdef
+		\int_{\RR^d}g(\rho(x))\,\d x
+		+g'_\infty\alpha^\perp(\RR^d),
+		\qquad
+		\alpha=\rho\,\d x+\alpha^\perp,
 	\]
-	is geodesically convex on \(\Pp_2(\RR^d)\).
+	is geodesically convex on its effective domain in \(\Pp_2(\RR^d)\). If, in addition,
+	\[
+		g^-(r)\leq C r^q
+		\qquad\text{for some }q\in\left(\frac{d}{d+2},1\right),
+	\]
+	then it never takes the value \(-\infty\) and is lower semicontinuous for \(\Wass_2\) convergence. On a bounded convex domain, lower semicontinuity holds without this tail condition. The convention is \(+\infty\cdot0=0\); when \(g'_\infty=+\infty\), finite energy forces \(\alpha^\perp=0\).
 \end{thm}
 \begin{proof}
-	It is enough to prove the inequality for smooth positive compactly supported densities; the general case follows by approximation and lower semicontinuity. Let \(T=\nabla\varphi\) be the Brenier map from \(\alpha_0=\rho_0\d x\) to \(\alpha_1=\rho_1\d x\), set \(T_t=(1-t)\Id+tT\), and denote
+	It is enough to establish the inequality first for smooth positive compactly supported densities. Let \(T=\nabla\varphi\) be the Brenier map from \(\alpha_0=\rho_0\d x\) to \(\alpha_1=\rho_1\d x\), set \(T_t=(1-t)\Id+tT\), and denote
 	\(J_t(x)=\det\big((1-t)\Id+t\nabla T(x)\big)\).
 	The interpolation satisfies \(\alpha_t=(T_t)_\sharp\alpha_0\) and
 	\(\rho_t(T_t(x))J_t(x)=\rho_0(x)\).
@@ -1007,7 +1057,8 @@ Internal energies require a different mechanism: convexity is hidden in the Jaco
 		\leq (1-t)\psi(\rho_0(x)^{-1/d})+t\psi(\rho_1(T(x))^{-1/d}).
 	\]
 	Multiplying by \(\rho_0\) and integrating gives
-	\(\mathcal U_g(\alpha_t)\leq(1-t)\mathcal U_g(\alpha_0)+t\mathcal U_g(\alpha_1)\).
+	\(\overline{\mathcal U}_g(\alpha_t)\leq(1-t)\overline{\mathcal U}_g(\alpha_0)+t\overline{\mathcal U}_g(\alpha_1)\).
+	The recession term is the measure relaxation that accounts for concentration of mass, and approximation gives geodesic convexity on the effective domain. For lower semicontinuity, the positive part follows from the standard convex-integral relaxation. On \(\RR^d\), the displayed bound on \(g^-\), together with \(q>d/(d+2)\), makes the negative parts uniformly integrable on sets with bounded second moment; on bounded domains, tightness supplies this control directly. This yields the stated \(\Wass_2\)-lower-semicontinuity; see~\cite{mccann1997convexity,ambrosio2006gradient}.
 \index{Jacobian determinant}% strictindex
 \index{Brenier!map}% strictindex
 \end{proof}
@@ -1015,7 +1066,7 @@ Internal energies require a different mechanism: convexity is hidden in the Jaco
 The theorem applies to \(g(s)=s\log s\), since then \(\psi(r)=-d\log r\), to porous-medium powers \(g(s)=s^m/(m-1)\), \(m>1\), and more generally to the fast-diffusion range \(m\geq1-1/d\) when the energy is well defined, with \(m=1\) understood as the entropy limit.
 The same criterion also clarifies which Csisz\'ar divergences inherit displacement convexity from an internal-energy structure.
 \begin{prop}[Geodesic convexity of power divergences]\label{prop-power-divergences-geodesic-convexity}\label{prop-kl-gibbs-geodesic-convexity}
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 \index{power divergence}% strictindex
 \index{Csiszar divergence@Csisz\'ar divergence}% strictindex
 \index{convexity!geodesic}% strictindex
@@ -1029,16 +1080,16 @@ The same criterion also clarifies which Csisz\'ar divergences inherit displaceme
 	\]
 	Then the following geodesic-convexity statements hold.
 	\begin{enumerate}
-	\item If \(\Omega\subset\RR^d\) is convex, \(\beta=\density{\beta}\d x\) is uniform on \(\Omega\), and \(m\geq1-1/d\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \(\Pp_2(\Omega)\).
+	\item If \(\Omega\subset\RR^d\) is a bounded convex domain, \(\beta=\density{\beta}\d x\) is uniform on \(\Omega\), and \(m\geq1-1/d\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \(\Pp_2(\Omega)\).
 		\item If \(\beta=Z^{-1}e^{-V}\d x\) on \(\RR^d\), \(V\) is convex, and \(m\geq1\), then \(\alpha\mapsto\Divergm_{\phi_m}(\alpha|\beta)\) is geodesically convex on \((\Pp_2(\RR^d),\Wass_2)\).
 		\item In the KL case \(m=1\), if \(V\) is \(\lambda\)-strongly convex, then \(\alpha\mapsto\KL(\alpha|\beta)=\Divergm_{\phi_1}(\alpha|\beta)\) is \(\lambda\)-geodesically convex.
 	\end{enumerate}
-	All statements use the convention that the divergence is \(+\infty\) when \(\alpha\) is not absolutely continuous with respect to \(\beta\).
+	The divergence uses the recession convention of Definition~\ref{def_divergence}. Thus singular mass has infinite cost for \(m\geq1\), whereas for \(0<m<1\) its cost is \(\alpha^\perp(\Omega)/(1-m)\).
 \end{prop}
 \begin{proof}
 	For the flat reference case, write \(\alpha=\rho\d x\) and let \(\density{\beta}=b\,\mathds{1}_\Omega\), where $b=1/|\Omega|$. Up to affine terms in \(\rho\), which only add constants on probability measures, the integrand \(b\,\phi_m(\rho/b)\) has non-affine part \(b^{1-m}\rho^m/(m(m-1))\) for \(m\neq1\), and \(\rho\log\rho\) for \(m=1\). For \(m=1\), McCann's criterion gives \(\psi(r)=-d\log r\). For \(m\neq1\), the transformed non-affine part is, up to the irrelevant factor \(b^{1-m}\),
 	\(\psi_m(r)=\frac{r^{d(1-m)}}{m(m-1)}\).
-	If \(m>1\), this function is convex and nonincreasing. If \(0<m<1\), it is convex and nonincreasing exactly when \(d(1-m)\leq1\), i.e.\ \(m\geq1-1/d\). This proves the first claim by Theorem~\ref{thm-mccann-internal-energy}.
+	If \(m>1\), this function is convex and nonincreasing. If \(0<m<1\), it is convex and nonincreasing exactly when \(d(1-m)\leq1\), i.e.\ \(m\geq1-1/d\). The affine density term and the recession contribution combine with this relaxed internal energy to give precisely Definition~\ref{def_divergence}. This proves the first claim by Theorem~\ref{thm-mccann-internal-energy}.
 
 	Assume next that \(m>1\) and \(V\) is convex. Up to constants,
 	\[
@@ -1067,15 +1118,15 @@ The same criterion also clarifies which Csisz\'ar divergences inherit displaceme
 \end{proof}
 \begin{rem}[Flat references and general \(\phi\)-divergences]\label{rem-phi-divergence-geodesic-convexity}
 \index{phi-divergence}% strictindex
-\index{geodesic!convexity}% strictindex
+\index{convexity!geodesic}% strictindex
 	The Csisz\'ar \(\phi\)-divergences \(\Divergm_\phi\) of Definition~\ref{def_divergence} behave like internal energies only in special reference geometries. If \(\beta=b\,\mathds{1}_{\Omega}\d x\) is proportional to Lebesgue measure on a bounded convex domain, then
 	\[
-		\Divergm_\phi(\alpha|\beta)
-		=
-		\int_{\Omega} b\,\phi(\rho(x)/b)\,\d x,
-		\qquad \alpha=\rho\d x,
+	\Divergm_\phi(\alpha|\beta)
+	=
+	\int_{\Omega} b\,\phi(\rho(x)/b)\,\d x,
+	\qquad \alpha=\rho\d x,
 	\]
-	so McCann's theorem applies whenever the integrand \(g(s)=b\,\phi(s/b)\) satisfies the displacement-convexity condition. For a nonuniform target \(\beta\), this reduction is no longer available. Proposition~\ref{prop-power-divergences-geodesic-convexity} gives a useful structured extension for the power family: log-concave targets preserve geodesic convexity for \(m\geq1\), while the KL endpoint is special in the stronger sense that \(\lambda\)-strong log-concavity gives \(\lambda\)-geodesic convexity. Outside such structured families, a generic \(\phi\)-divergence is not expected to be geodesically convex.
+	for absolutely continuous \(\alpha\); the recession term of Definition~\ref{def_divergence} gives its lower-semicontinuous extension to singular measures. Thus McCann's theorem applies whenever the relaxed integrand \(g(s)=b\,\phi(s/b)\) satisfies the displacement-convexity condition. For a nonuniform target \(\beta\), this reduction is no longer available. Proposition~\ref{prop-power-divergences-geodesic-convexity} gives a useful structured extension for the power family: log-concave targets preserve geodesic convexity for \(m\geq1\), while the KL endpoint is special in the stronger sense that \(\lambda\)-strong log-concavity gives \(\lambda\)-geodesic convexity. Outside such structured families, a generic \(\phi\)-divergence is not expected to be geodesically convex.
 
 	The Hellinger integrand \(\phi_H(r)=(\sqrt r-1)^2\) illustrates why the qualifier ``flat reference'' matters. Since \(\phi_H=\phi_{1/2}/2\), Proposition~\ref{prop-power-divergences-geodesic-convexity} shows that the corresponding flat-reference internal energy is geodesically convex in dimension \(d=1\). The same \(\phi\)-divergence can nevertheless fail to be geodesically convex once the reference is nonuniform.
 
@@ -1105,8 +1156,8 @@ The same criterion also clarifies which Csisz\'ar divergences inherit displaceme
 	\]
 	which need not hold. The KL integrand is special because this function is \(m^2/2\), up to the usual normalization.
 \end{rem}
-\index{Shannon entropy}% strictindex
-\index{relative!entropy}% strictindex
+\index{entropy!Shannon}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 
 \paragraph{Geodesically convex constraints.}
 \label{par-geodesically-convex-constraints}
@@ -1222,7 +1273,7 @@ which violates geodesic convexity. Thus objectives built from squared Wasserstei
 
 \paragraph{Dissipation and finite metric length.}
 \index{metric!length bound}% strictindex
-\index{Holder curve}% strictindex
+\index{Holder curve@H\"older curve}% strictindex
 \index{energy!dissipation}% strictindex
 \index{energy-dissipation identity}% strictindex
 \index{energy-dissipation inequality}% strictindex
@@ -1350,7 +1401,6 @@ with an additional factor \(\sqrt2\) under the energy-dissipation inequality. Th
 	\]
 	Geodesic convexity along the geodesic
 \index{convexity!geodesic}% strictindex
-\index{geodesic!convexity}% strictindex
 	\(((1-s)\Id+sT_t)_\sharp\alpha_t\) gives
 	\[
 		f(\alpha^\star)-f(\alpha_t)
@@ -1403,7 +1453,7 @@ The terminology mirrors the finite-dimensional Polyak--{\L}ojasiewicz condition 
 \begin{defn}[Wasserstein--Polyak--{\L}ojasiewicz inequality]\label{def-wasserstein-pl}
 \index{Wasserstein!PL inequality}% strictindex
 \index{Polyak-Lojasiewicz@Polyak--Lojasiewicz inequality}% strictindex
-	Let \(f_\star\eqdef\inf_{\alpha\in\Pp_2(\RR^d)} f(\alpha)>-\infty\). The functional \(f\) satisfies the Wasserstein--PL inequality with constant \(\kappa>0\) if
+	Let \(f_\star\eqdef\inf_{\alpha\in\Pp_2(\RR^d)} f(\alpha)\in\RR\). The functional \(f\) satisfies the Wasserstein--PL inequality with constant \(\kappa>0\) if
 	\begin{equation}\label{eq-wasserstein-pl}
 		|\partial f|^2(\alpha)
 		\geq
@@ -1421,7 +1471,7 @@ The terminology mirrors the finite-dimensional Polyak--{\L}ojasiewicz condition 
 \index{Wasserstein!PL inequality}% strictindex
 \index{linear!convergence}% strictindex
 \index{energy!dissipation}% strictindex
-	Assume that \(f_\star>-\infty\), that \(f\) satisfies the Wasserstein--PL inequality~\eqref{eq-wasserstein-pl} with constant \(\kappa>0\), and that \((\alpha_t)_{t\geq0}\) is a global Wasserstein gradient flow satisfying the full energy-dissipation identity
+	Assume that \(f_\star>-\infty\), that \(f\) satisfies the Wasserstein--PL inequality~\eqref{eq-wasserstein-pl} with constant \(\kappa>0\), and that \((\alpha_t)_{t\geq0}\) is a global Wasserstein gradient flow with $f(\alpha_0)<+\infty$. Assume that $t\mapsto f(\alpha_t)$ is locally absolutely continuous and satisfies the full energy-dissipation identity
 	\begin{equation}\label{eq-full-wasserstein-energy-dissipation}
 		\frac{\d}{\d t}f(\alpha_t)
 		=
@@ -1563,7 +1613,7 @@ Together, Proposition~\ref{prop-strong-geodesic-convexity-implies-pl} and Theore
 \end{rem}
 \index{convexity!geodesic}% strictindex
 \index{Wasserstein!PL inequality}% strictindex
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 
 \paragraph{Wasserstein Kurdyka--{\L}ojasiewicz inequalities.}
 The PL condition is the quadratic case of a broader slope--energy principle. The classical starting point is the gradient inequality of {\L}ojasiewicz for real-analytic functions~\cite{Lojasiewicz1963GradientInequality}, later extended by Kurdyka to functions definable in o-minimal structures~\cite{Kurdyka1998GradientsDefinable}. Modern nonsmooth optimization uses the same idea as the Kurdyka--{\L}ojasiewicz property to prove convergence of descent algorithms and subgradient flows; see, for instance, Bolte, Daniilidis, Ley and Mazet~\cite{BolteDaniilidisLeyMazet2010Lojasiewicz} and Attouch, Bolte, Redont and Soubeyran~\cite{attouch-2010}. For displacement-convex functionals, Bolte and Blanchet~\cite{BolteBlanchet2018LojasiewiczDisplacementConvex} develop a family of {\L}ojasiewicz-type functional inequalities in Wasserstein space and relate them to convergence of the associated gradient dynamics. In the metric-space setting relevant here, the Euclidean gradient norm is replaced by the metric slope, as in the general theory of curves of maximal slope and recent KL/PL convergence results for metric gradient flows~\cite{HauerMazon2019KLSMetric,DelloSchiavoMaasPedrotti2023LocalConditions}.
@@ -1577,7 +1627,7 @@ The Kurdyka--{\L}ojasiewicz viewpoint replaces the linear relation between the e
 \index{metric slope}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
 \index{Kurdyka-Lojasiewicz inequality@Kurdyka--{\L}ojasiewicz inequality}% strictindex
-	Let \(f_\star=\inf f\), let \(E(\alpha)=f(\alpha)-f_\star\), and fix \(c>0\), \(\theta\in[0,1)\). We say that \(f\) satisfies a power Wasserstein--KL inequality on a set \(\mathcal U\subset \Pp_2(\RR^d)\) if
+	Let \(f_\star=\inf f\in\RR\), let \(E(\alpha)=f(\alpha)-f_\star\), and fix \(c>0\), \(\theta\in[0,1)\). We say that \(f\) satisfies a power Wasserstein--KL inequality on a set \(\mathcal U\subset \Pp_2(\RR^d)\) if
 	\[
 		|\partial f|(\alpha)
 		\geq
@@ -1597,7 +1647,7 @@ The Kurdyka--{\L}ojasiewicz viewpoint replaces the linear relation between the e
 \begin{thm}[Sublinear convergence under Wasserstein--KL]\label{thm-wasserstein-kl-sublinear}
 \index{sublinear convergence}% strictindex
 \index{Kurdyka-Lojasiewicz inequality@Kurdyka--{\L}ojasiewicz inequality}% strictindex
-	Let \((\alpha_t)_{t\geq0}\) be a Wasserstein gradient flow of \(f\) satisfying the full energy-dissipation identity \eqref{eq-full-wasserstein-energy-dissipation}. Assume that \(f_\star> -\infty\), that \(E(t)=f(\alpha_t)-f_\star\) is finite, and that the trajectory stays in a region where the Wasserstein--KL inequality of Definition~\ref{def-wasserstein-kl} holds with \(\theta\in(1/2,1)\). If \(E(0)>0\), then
+	Let \((\alpha_t)_{t\geq0}\) be a Wasserstein gradient flow of \(f\) satisfying the full energy-dissipation identity \eqref{eq-full-wasserstein-energy-dissipation}. Assume that \(f_\star> -\infty\), that \(E(t)=f(\alpha_t)-f_\star\) is finite and locally absolutely continuous, and that the trajectory stays in a region where the Wasserstein--KL inequality of Definition~\ref{def-wasserstein-kl} holds with \(\theta\in(1/2,1)\). If \(E(0)>0\), then
 	\[
 		E(t)
 		\leq
@@ -1692,13 +1742,13 @@ Two recurring homogeneous families make the Wasserstein--KL mechanism explicit.
 \begin{rem}[Potential and distance powers]\label{ex-homogeneous-wasserstein-kl}
 \index{potential energy}% strictindex
 \index{moment energy}% strictindex
-	Let \(V\) be smooth and bounded below, set \(V_\star=\inf V\), and define \(f_V(\alpha)=\int V\,\d\alpha\), whose formal slope is \(|\partial f_V|^2(\alpha)=\int|\nabla V|^2\,\d\alpha\). For \(\theta\in[1/2,1)\),
+		Let \(V\) be smooth and bounded below on \(\RR^d\), set \(V_\star=\inf V\), and define \(f_V(\alpha)=\int V\,\d\alpha\). On the effective domain in \(\Pp_2(\RR^d)\) where \(V\) and \(\nabla V\) have the required integrability, its formal slope is \(|\partial f_V|^2(\alpha)=\int|\nabla V|^2\,\d\alpha\). For \(\theta\in[1/2,1)\),
 	\[
 		|\nabla V(x)|\geq c(V(x)-V_\star)^\theta
 		\quad\Longleftrightarrow\quad
 		|\partial f_V|(\alpha)\geq c(f_V(\alpha)-V_\star)^\theta
 	\]
-	for every probability measure \(\alpha\). Jensen proves the forward implication, and testing \(\alpha=\delta_x\) proves the converse.
+		for every \(\alpha\) in this effective domain. Jensen proves the forward implication, and testing \(\alpha=\delta_x\) proves the converse.
 
 	For \(V(x)=|x|^q\), \(q\geq2\), the moment energy \(f_q(\alpha)=\int|x|^q\,\d\alpha\) satisfies
 	\[
@@ -1731,7 +1781,7 @@ Two recurring homogeneous families make the Wasserstein--KL mechanism explicit.
 The same language is not restricted to subsets of $\RR^d$. If $(\X,\dist,\mathfrak m)$ is a geodesic metric-measure space, $\Wass_2$ geodesics can be defined by transporting each pair of endpoints along metric geodesics, or more intrinsically by dynamical optimal plans on path space, as discussed in Section~\ref{sec-kantorovich-plan-interpolation}. Given a reference measure $\mathfrak m$, the entropy relative to $\mathfrak m$ is
 \index{metric-measure space}% strictindex
 \index{geodesic!space}% strictindex
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 \index{optimal coupling!dynamical}% strictindex
 \[
 	\mathrm{Ent}_{\mathfrak m}(\alpha)
@@ -1749,7 +1799,7 @@ On a smooth Riemannian manifold $(M,g)$, the Ricci curvature tensor $\mathrm{Ric
 \index{convexity!geodesic}% strictindex
 
 \begin{thm}[Ricci curvature and entropy convexity]\label{thm-ricci-entropy-convexity}
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 	Let $(M,g)$ be a smooth compact connected Riemannian manifold without boundary, and let $\mathfrak m=\mathrm{vol}_g$. For $\lambda\in\RR$, the lower Ricci bound $\mathrm{Ric}_g\geq\lambda g$ holds if and only if $\mathrm{Ent}_{\mathfrak m}$ is $\lambda$-geodesically convex on $(\Pp_2(M),\Wass_2)$.
 \end{thm}
 
@@ -1933,7 +1983,7 @@ This is a coercivity property of the reference measure, not a universal inequali
 
 \begin{rem}[Logarithmic Sobolev as Wasserstein--PL]\label{rem-lsi-wasserstein-pl}
 \index{Wasserstein!PL inequality}% strictindex
-\index{relative!Fisher information}% strictindex
+\index{Fisher information!relative}% strictindex
 	Under the usual smoothness assumptions, for \(f(\alpha)=\KL(\alpha|\beta)\) the Wasserstein gradient is
 	\[
 		\Wgrad f(\alpha)
@@ -2068,7 +2118,7 @@ one has \(\rho_a\gamma_d=\Gaussian(a,\Id)\). A direct computation gives
 	\frac12\norm{a}^2.
 \]
 Thus equality is attained along translations, and the sharp logarithmic Sobolev constant of the standard Gaussian is \(\lambda=1\). Proposition~\ref{prop-lsi-entropy-decay} then gives the classical exponential convergence of the Ornstein--Uhlenbeck flow.
-\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck flow}% strictindex
+\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck!flow}% strictindex
 
 
 \paragraph{Poincar\'e as a linearized Wasserstein--PL inequality.}
@@ -2196,22 +2246,13 @@ For \(f(\alpha)=\KL(\alpha|\beta)\), Proposition~\ref{prop-linearized-pl-functio
 	=
 	\epsilon^2\int\norm{\nabla\xi}^2\,\d\beta+o(\epsilon^2).
 \]
-\index{relative!Fisher information}% strictindex
+\index{Fisher information!relative}% strictindex
 \index{logarithmic Sobolev inequality}% strictindex
 
 \begin{prop}[Poincar\'e from logarithmic Sobolev]\label{prop-poincare-linearized-wasserstein-pl}
 \index{Poincare inequality@Poincar\'e inequality}% strictindex
 \index{spectral!gap}% strictindex
-	Let \(\beta\) be a smooth probability measure on \(\RR^d\). Assume that \(\beta\) satisfies the logarithmic Sobolev inequality with constant \(\lambda>0\),
-	\[
-		\KL(\alpha|\beta)
-		\leq
-		\frac{1}{2\lambda}\,\mathcal I(\alpha|\beta),
-		\qquad
-		\mathcal I(\alpha|\beta)
-		\eqdef
-		\int\norm{\nabla\log\frac{\d\alpha}{\d\beta}}^2\,\d\alpha.
-	\]
+	Let \(\beta\) be a smooth probability measure on \(\RR^d\) satisfying the logarithmic Sobolev inequality~\eqref{eq-general-log-sobolev} with constant \(\lambda>0\), using the relative Fisher information of Definition~\ref{def-relative-fisher-lsi}.
 	Then, for every smooth \(\xi\) with \(\int\xi\,\d\beta=0\),
 	\[
 		\lambda\int\xi^2\,\d\beta
@@ -2222,7 +2263,7 @@ For \(f(\alpha)=\KL(\alpha|\beta)\), Proposition~\ref{prop-linearized-pl-functio
 \end{prop}
 
 \begin{proof}
-	For \(h_\epsilon=1+\epsilon\xi\), with \(|\epsilon|\) small enough, one has \(\beta_\epsilon=h_\epsilon\beta\) and
+	First take $\xi$ bounded, with $\int\xi\,\d\beta=0$ and $\int\norm{\nabla\xi}^2\d\beta<+\infty$. For \(h_\epsilon=1+\epsilon\xi\), with \(|\epsilon|\norm{\xi}_\infty<1\), one has \(\beta_\epsilon=h_\epsilon\beta\) and
 	\[
 		\KL(\beta_\epsilon|\beta)
 		=
@@ -2238,7 +2279,7 @@ For \(f(\alpha)=\KL(\alpha|\beta)\), Proposition~\ref{prop-linearized-pl-functio
 		=
 		\epsilon^2\int\norm{\nabla\xi}^2\,\d\beta+o(\epsilon^2).
 	\]
-		Inserting these expansions in the logarithmic Sobolev inequality and letting \(\epsilon\to0\) gives the Poincar\'e inequality. The last assertion is the usual Bakry--Emery implication from \(\lambda\)-convexity of \(V\) to the logarithmic Sobolev inequality.
+	Inserting these expansions in the logarithmic Sobolev inequality and letting \(\epsilon\to0\) gives the Poincar\'e inequality for bounded perturbations. For a general smooth integrable $\xi$ with finite Dirichlet energy, apply this bound to smooth truncations of $\xi$, subtracting their $\beta$-means. Choose truncations with derivative bounded by one and converging pointwise to the identity. Dominated convergence gives convergence of the means, and Fatou's lemma yields the claimed inequality, including finiteness of $\int\xi^2\d\beta$. If the Dirichlet energy is infinite, the assertion is immediate. The last assertion follows from the Bakry--Emery criterion.
 \end{proof}
 
 If \(\d\beta=\rho_\beta\d x=Z^{-1}e^{-V}\d x\), the Poincar\'e inequality is equivalently a spectral gap for the \(\beta\)-weighted Laplacian
@@ -2327,13 +2368,7 @@ The Gaussian logarithmic Sobolev and transport-entropy inequalities are not isol
 
 \begin{prop}[Otto--Villani HWI inequality]\label{prop-hwi-inequality}
 \index{displacement convexity}% strictindex
-	Let $\beta=\rho_\beta\d x=e^{-V}\d x/Z$ be a smooth probability measure in $\Pp_2(\RR^d)$, and assume that $\nabla^2 V\succeq \lambda \Id$ for some $\lambda\in\RR$. For $\alpha\in\Pp_2(\RR^d)$, define the relative Fisher information by
-	\[
-		\mathcal I(\alpha|\beta)
-		\eqdef
-		\int \norm{\nabla\log\frac{\rho_\alpha}{\rho_\beta}}^2\,\d\alpha,
-	\]
-	when \(\alpha=\rho_\alpha\d x\) and the expression is finite, and set \(\mathcal I(\alpha|\beta)=+\infty\) otherwise. Then
+	Let $\beta=\rho_\beta\d x=e^{-V}\d x/Z$ be a smooth probability measure in $\Pp_2(\RR^d)$, and assume that $\nabla^2 V\succeq \lambda \Id$ for some $\lambda\in\RR$. For $\alpha\in\Pp_2(\RR^d)$, let $\mathcal I(\alpha|\beta)$ be the relative Fisher information of Definition~\ref{def-relative-fisher-lsi}. Then
 	\[
 		\KL(\alpha|\beta)
 		\leq
@@ -2360,7 +2395,7 @@ The Gaussian logarithmic Sobolev and transport-entropy inequalities are not isol
 		-\int \dotp{\nabla\log\frac{\rho_\alpha}{\rho_\beta}}{T-\Id}\,\d\alpha
 		-\frac{\lambda}{2}\Wass_2^2(\alpha,\beta).
 	\]
-		Cauchy--Schwarz and $\int\norm{T-\Id}^2\d\alpha=\Wass_2^2(\alpha,\beta)$ give the announced bound. The general case follows by standard approximation and lower semicontinuity of entropy, Fisher information, and $\Wass_2$.
+	Cauchy--Schwarz and $\int\norm{T-\Id}^2\d\alpha=\Wass_2^2(\alpha,\beta)$ give the announced bound. For finite Fisher information, write $\alpha=h\beta$ and approximate $\sqrt h$ by smooth nonnegative functions in the weighted Sobolev norm, also preserving convergence of the second moment through truncation. Normalization and a vanishing admixture of $\beta$ give smooth positive $\alpha_n\to\alpha$ in $\Wass_2$ with $\mathcal I(\alpha_n|\beta)\to\mathcal I(\alpha|\beta)$. The smooth inequality then passes to the limit by lower semicontinuity of relative entropy. The recovery of Fisher information, rather than its lower semicontinuity alone, is needed because it occurs on the right-hand side; see~\cite{OttoVillani2000Generalization}.
 \end{proof}
 
 When \(\lambda>0\), the HWI inequality is a bridge from curvature to PL\@. It is not itself a PL inequality because it still contains the distance term \(\Wass_2(\alpha,\beta)\). Optimizing the right-hand side, or simply using Young's inequality \(rs-\lambda r^2/2\leq s^2/(2\lambda)\), gives the logarithmic Sobolev estimate
@@ -2390,7 +2425,7 @@ Figure~\ref{fig:gradflow-hwi-entropy-decay} shows these inequalities on an exact
 \label{fig:gradflow-hwi-entropy-decay}
 \index{HWI inequality}% strictindex
 \index{logarithmic Sobolev inequality}% strictindex
-\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck flow}% strictindex
+\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck!flow}% strictindex
 \end{figure}
 
 \section{Training Two-Layer MLPs as Wasserstein Flows}
@@ -2401,7 +2436,7 @@ Mean-field limits recast the training of wide neural networks as transport of a 
 \index{neuron}% strictindex
 \index{interacting particle system}% strictindex
 
-\paragraph{Wasserstein training of two-layer MLPs.}
+\paragraph{Mean-field representation of two-layer MLPs.}
 The key modeling step is to forget the ordering of the hidden neurons and to regard the network weights as a probability measure on parameter space. A finite-width network is then an empirical measure, and the population loss becomes a functional of this measure. Gradient descent on the particle positions is precisely the finite-dimensional discretization of a Wasserstein gradient flow for this functional, with the Wasserstein metric acting on neuron parameters rather than on data samples. This is the sense in which training a two-layer mean-field MLP becomes a transport problem for the law of its neurons.
 \index{Wasserstein!training}% strictindex
 \index{two-layer neural network}% strictindex
@@ -2423,10 +2458,12 @@ The width-$n$ network and its mean-field version are
 	\qquad
 	\alpha=\frac1n\sum_i\delta_{x_i}.
 \]
-This formulation removes the artificial ordering of neurons and allows $\alpha$ to be a continuous distribution of infinitely many neurons.
+This formulation removes neuron ordering and allows a continuous distribution of parameters. With biases, obtained by replacing $\dotp{u}{z}$ by $\dotp{u}{z}+b$, any continuous nonpolynomial activation gives uniform approximation of continuous functions on compact input sets as the width grows~\cite{LeshnoLinPinkusSchocken1993}. The vector-output case follows componentwise. Biases can be absorbed by appending a constant input coordinate; without them, this general universality claim need not hold. The factor $1/n$ is absorbed into the outer weights. Expressivity alone does not explain whether training finds good parameters.
+
 \index{neuron}% strictindex
 
-Let $\zeta$ be a probability distribution on data-label pairs $(z,y)\in\RR^d\times\RR^{d'}$. The population risk is
+\paragraph{Training dynamics as a Wasserstein flow.}
+Let $\zeta$ be a probability distribution on data-label pairs $(z,y)\in\RR^d\times\RR^{d'}$. A principal example is the least-squares loss $\ell(s,y)=\frac12\norm{s-y}^2$. The population risk is
 \[
 	f(\alpha)=\int \ell(G_\alpha(z),y)\d\zeta(z,y),
 \]
@@ -2440,7 +2477,7 @@ and the empirical risk is the special case $\zeta=\zeta_N\eqdef N^{-1}\sum_{k=1}
 which is the gradient flow of $F(X)=f(\alpha_X)$ for this Wasserstein particle metric, equivalently Euclidean gradient descent with the time scale multiplied by $n$. It gives a particle discretization of~\eqref{eq:wassflow-pde}.
 \index{gradient!flow}% strictindex
 
-Assume that $\ell$ is differentiable in its first variable. The first variation is
+Assume that $\ell$ and the feature are differentiable and that differentiation under the integral is justified; ReLU requires an almost-everywhere or nonsmooth interpretation. The first variation is
 \index{first variation}% strictindex
 \begin{equation}\label{eq-mlp-first-variation-general}
 	\delta f(\alpha)(x)
@@ -2460,7 +2497,7 @@ and the Wasserstein gradient in parameter space is
 	[D_x\psi(x,z)]^\top\nabla_1\ell(G_\alpha(z),y)
 		\d\zeta(z,y).
 \]
-For the squared Euclidean loss $\ell(s,y)=\frac12\norm{s-y}^2$, the energy is the sum of a quadratic interaction and a linear potential:
+For the squared Euclidean loss $\ell(s,y)=\frac12\norm{s-y}^2$, the energy is the sum of a quadratic interaction and a linear potential, as in~\eqref{eq:quadratic-func} and~\eqref{eq:linear-func}, with an additional factor $1/2$ in the interaction:
 \begin{equation}\label{eq-mlp-square-loss-quadratic-linear}
 	f(\alpha)
 	=
@@ -2483,7 +2520,7 @@ Thus
 \]
 These kernels are generally not convex in the particle variable, so the geodesic-convex convergence theory above does not apply directly.
 
-Figure~\ref{fig:gradflow-mlp-homogeneous-relu} illustrates the resulting transport of neurons for a homogeneous ReLU model.
+Figure~\ref{fig:gradflow-mlp-homogeneous-relu} fits labels generated by a three-neuron ReLU teacher. Writing $\beta=\frac13\sum_{j=1}^3\delta_{\bar x_j}$ and denoting the input law by $\zeta_z$, the data law is $\zeta=(\Id,G_\beta)_\sharp\zeta_z$: every label is $y=G_\beta(z)$. Thus, for the kernel~\eqref{eq-mlp-kernel-linear-potential}, the normalized square loss is exactly $f(\alpha)=\frac12\MMD_k^2(\alpha,\beta)$. It is classically convex but generally not geodesically convex in neuron space. This feature kernel need not be characteristic: different neuron laws representing the same predictor have zero discrepancy.
 
 \begin{figure}[ht]
 \centering
@@ -2493,39 +2530,26 @@ Figure~\ref{fig:gradflow-mlp-homogeneous-relu} illustrates the resulting transpo
 \includegraphics[width=.34\linewidth]{figures/gradflow-mlp-homogeneous-relu/neuron-trajectories.pdf} &
 \includegraphics[width=.34\linewidth]{figures/gradflow-mlp-homogeneous-relu/direction-histogram.pdf}
 \end{tabular}
-\caption{\emph{Mean-field training of a homogeneous two-layer model as transport in neuron space.} The left panel shows the Wasserstein particle gradient flow in the reduced homogeneous coordinates $(|u|v_1,|u|v_2)$, with black dashed rays marking the teacher directions. The right panel shows the weighted angular density along a front-loaded sequence of times, colored from red to blue, so that the early concentration of neuron directions is visible. The display follows the rendering of the auxiliary MLP experiment but keeps only the $\Wass_2$ flow, not the spectral-flow comparison.}
+\caption{\emph{Mean-field training of a homogeneous two-layer model as transport in neuron space.} The left panel shows a discretized particle descent with step normalization and bounded-parameter projection, in the reduced homogeneous coordinates $(|v|u_1,|v|u_2)$ for a scalar-output ReLU model. Black dashed rays mark the three teacher directions. The input data are Gaussian samples and the labels are generated by this teacher. The right panel shows the weighted angular density at successive stored iterates, colored from red to blue.}
 \index{two-layer neural network}% strictindex
 \index{gradient!flow}% strictindex
 \label{fig:gradflow-mlp-homogeneous-relu}
 \end{figure}
 
-\paragraph{Classical convexity and stationarity.}
+\paragraph{Stationarity and convergence of training.}
 \index{convexity!classical}% strictindex
 \index{stationarity}% strictindex
-Before using the specific homogeneity mechanism of Chizat and Bach, it is useful to isolate a simpler convex-analytic principle behind many mean-field arguments. Consider an energy of the form
+Classical convexity of $f$ in the affine variable $\alpha$ can identify an optimizer even without displacement convexity. For the feature kernel~\eqref{eq-mlp-kernel-linear-potential},
 \[
-	f(\alpha)
-	=
-	\frac12\iint k(x,x')\d\alpha(x)\d\alpha(x')
-	+
-	\int V(x)\d\alpha(x)
-	+C,
+ \iint k(x,x')\d\xi(x)\d\xi(x')
+ =\int\left\|\int\psi(x,z)\d\xi(x)\right\|^2\d\zeta(z,y)\geq0
 \]
-on probability measures over a parameter domain. Assume that the quadratic part is convex in the classical sense, namely convex for the affine structure of measures:
-\index{probability measure}% strictindex
-\[
-	Q((1-s)\alpha+s\beta)\leq (1-s)Q(\alpha)+sQ(\beta),
-	\qquad
-	Q(\alpha)=\frac12\iint k\d\alpha\d\alpha.
-\]
-This is ordinary convexity of the functional on the convex set of measures, not displacement convexity along $\Wass_2$ geodesics.
-\index{convexity!along geodesics}% strictindex
-\index{displacement convexity}% strictindex
+whenever the integrals exist. Thus the square-loss risk is classically convex; more generally, conditional positivity on zero-mass signed measures suffices for convexity on probability laws. The next result assumes that a flow converges and asks when its limit is globally optimal.
 
 \begin{prop}[Affine convexity and stationary positive densities]\label{prop-classical-convex-stationary}
 \index{convexity!classical}% strictindex
 \index{stationary density}% strictindex
-	Let $\Omega\subset\RR^d$ be connected, let $f=Q+\int V\,\d\alpha+C$ be as above on $\Pp(\Omega)$, and assume that $Q$ is classically convex. Suppose that a Wasserstein gradient flow $\alpha_t$ of $f$ converges to $\alpha_\infty=\rho_\infty\d x$, where $\rho_\infty>0$ almost everywhere on $\Omega$, and that $\inf_{t\geq0}f(\alpha_t)>-\infty$. Assume that $\delta f(\alpha_\infty)\in C^1(\Omega)$ and that the squared Wasserstein slope is lower semicontinuous along the convergence, in the sense that
+		Let $\Omega\subset\RR^d$ be connected and open, let $f$ be classically convex on $\Pp_2(\Omega)$. Suppose that $\alpha_t\in AC^2_{\mathrm{loc}}([0,+\infty);\Pp_2(\Omega))$ is an energy-dissipation solution of the Wasserstein gradient flow of $f$, with $f(\alpha_0)<+\infty$, and converges in $\Wass_2$ to $\alpha_\infty=\rho_\infty\d x$, where $\rho_\infty>0$ almost everywhere on $\Omega$, and that $\inf_{t\geq0}f(\alpha_t)>-\infty$. Assume that $f(\alpha_\infty)<+\infty$ and $\delta f(\alpha_\infty)\in C^1(\Omega)$, that the first-variation formula and the affine subgradient inequality hold along every finite-energy segment from $\alpha_\infty$, and that the squared Wasserstein slope is lower semicontinuous along the convergence, in the sense that
 \index{stationary condition}% strictindex
 \index{first variation}% strictindex
 \index{stationarity}% strictindex
@@ -2542,7 +2566,7 @@ This is ordinary convexity of the functional on the convex set of measures, not 
 \index{global!minimizer}% strictindex
 \end{prop}
 \begin{proof}
-	The energy-dissipation identity and the lower bound on $f$ along the convergent trajectory imply
+	The energy-dissipation inequality and the lower bound on $f$ along the convergent trajectory imply
 	\[
 		\int_0^\infty
 		\int_\Omega\norm{\nabla\delta f(\alpha_t)}^2\d\alpha_t\d t
@@ -2553,7 +2577,7 @@ This is ordinary convexity of the functional on the convex set of measures, not 
 	\[
 		\int_\Omega \norm{\nabla \delta f(\alpha_\infty)}^2\d\alpha_\infty=0.
 	\]
-	Because $\rho_\infty>0$ almost everywhere and $\nabla\delta f(\alpha_\infty)$ is continuous, this gradient vanishes throughout $\Omega$. Connectedness then implies that $\delta f(\alpha_\infty)$ is constant. Consequently, for every $\beta\in\Pp(\Omega)$,
+	Because $\rho_\infty>0$ almost everywhere and $\nabla\delta f(\alpha_\infty)$ is continuous, this gradient vanishes throughout $\Omega$. Connectedness then implies that $\delta f(\alpha_\infty)$ is constant. Consequently, for every $\beta\in\Pp_2(\Omega)$ with $f(\beta)<+\infty$,
 	\[
 		\int_\Omega\delta f(\alpha_\infty)\d(\beta-\alpha_\infty)=0.
 	\]
@@ -2567,14 +2591,13 @@ This is ordinary convexity of the functional on the convex set of measures, not 
 		\int \delta f(\alpha_\infty)\d(\beta-\alpha_\infty)
 		= f(\alpha_\infty).
 	\]
-	Thus no competitor has smaller energy. Strict positivity is essential to this argument: without it, stationarity controls the first variation only on the support explored by the limiting measure. For square-loss two-layer mean-field models, \eqref{eq-mlp-square-loss-quadratic-linear} is exactly of this quadratic-plus-linear form, and positive semidefiniteness of the induced kernel $k$ is the classical convexity assumption.
+	The same conclusion is immediate when $f(\beta)=+\infty$, so no competitor in $\Pp_2(\Omega)$ has smaller energy. Strict positivity is essential to this argument: without it, stationarity controls the first variation only on the support explored by the limiting measure. For square-loss two-layer mean-field models, \eqref{eq-mlp-square-loss-quadratic-linear} is exactly of this quadratic-plus-linear form, and positive semidefiniteness of the induced kernel $k$ is the classical convexity assumption.
 \index{linear!form}% strictindex
 \index{two-layer neural network}% strictindex
 \index{convexity!classical}% strictindex
-\index{convexity!classical}% strictindex
 \end{proof}
 
-The convergence theory then separates two regimes. Chizat and Bach prove global convergence for the unregularized, noiseless Wasserstein flow of positively homogeneous models~\cite{ChizatBach2018OverparameterizedOT}. Mei, Montanari and Nguyen prove convergence for the noisy, regularized dynamics~\cite{MeiMontanariNguyen2018MeanFieldNN}: at the PDE level the noise adds a diffusion, or Laplacian, term, so an initially singular neuron law is immediately smoothed and acquires a density. Rotskoff and Vanden-Eijnden emphasize the parameters-as-particles interpretation, long-time convergence and asymptotic error scaling with the network width~\cite{RotskoffVandenEijnden2018Trainability}. The following formal statement isolates the noiseless Chizat--Bach mechanism and ignores the technical issues due to ReLU non-smoothness, support propagation and compactness.
+Under the stated convergence and regularity assumptions, a nonoptimal limit cannot retain a positive density everywhere. Full support at each finite time does not ensure full support of the limit; proving convergence itself remains a separate issue. The convergence theory then separates two regimes. Chizat and Bach show that, under their regularity, homogeneity, support-propagation and Sard-type assumptions, any $\Wass_2$-convergent unregularized noiseless flow has a globally minimizing limit~\cite{ChizatBach2018OverparameterizedOT}; this conditional result does not assert convergence of every trajectory. Mei, Montanari and Nguyen prove convergence for noisy, regularized dynamics under their stated regularity and initialization assumptions~\cite{MeiMontanariNguyen2018MeanFieldNN}: at the PDE level nondegenerate noise adds diffusion and smooths the law for positive time. Rotskoff and Vanden-Eijnden emphasize the parameters-as-particles interpretation, long-time convergence and asymptotic error scaling with the network width under their model assumptions~\cite{RotskoffVandenEijnden2018Trainability}. The following formal statement isolates the noiseless Chizat--Bach mechanism and ignores the technical issues due to ReLU non-smoothness, support propagation and compactness.
 \index{noisy gradient descent}% strictindex
 \index{interacting particle system}% strictindex
 
@@ -2591,50 +2614,11 @@ The convergence theory then separates two regimes. Chizat and Bach prove global 
 \index{global!minimizer}% strictindex
 \end{prop}
 \begin{proof}
-	Choose the first-variation representative
-	\[
-		h_\alpha(x)=\delta f(\alpha)(x)
-		=
-		DJ(G_\alpha)\bigl[\psi(x,\cdot)\bigr].
-	\]
-	When the predictor space is $L^2(\zeta)$ and $DJ(G_\alpha)$ has a Riesz representative, this derivative-dual pairing can equivalently be written as the $L^2(\zeta)$ inner product with that representative. The abstract notation above is all that is needed here.
-	Additive constants in first variations do not affect the Wasserstein gradient or first-order inequalities between probability measures; this normalization is useful because it inherits the homogeneity of $\psi$. By two-homogeneity of $\psi$, one has
-	\[
-		h_\alpha(\lambda x)=\lambda^2h_\alpha(x),
-		\qquad \lambda>0.
-	\]
-	Taking \(x=0\) and any \(\lambda\neq1\) in this identity gives \(h_\alpha(0)=0\). We first record that stationarity forces \(h_\alpha\) to vanish on \(\supp(\alpha)\). Indeed, if \(x=r\omega\in\supp(\alpha)\) with \(r>0\) and \(\norm{\omega}=1\), then
-	\[
-		0=\dotp{\nabla h_\alpha(r\omega)}{\omega}
-		=\frac{\d}{\d s}h_\alpha(s\omega)\bigg|_{s=r}
-		=2r h_\alpha(\omega),
-	\]
-	so \(h_\alpha(\omega)=0\), and hence \(h_\alpha(x)=r^2h_\alpha(\omega)=0\). The case \(x=0\) has already been covered, so \(h_\alpha=0\) on \(\supp(\alpha)\) and \(\int h_\alpha\,\d\alpha=0\).
-
-	We now argue by contradiction. Suppose that a competitor \(\beta\) satisfies \(f(\beta)<f(\alpha)\). Since
-	\[
-		G_\beta-G_\alpha
-		=
-		\int \psi(x,\cdot)\d(\beta-\alpha)(x),
-	\]
-	convexity of \(J\) gives
-	\[
-		f(\beta)-f(\alpha)
-		\geq
-		\int h_\alpha(x)\d(\beta-\alpha)(x).
-	\]
-	The left-hand side is negative, while \(\int h_\alpha\,\d\alpha=0\), so \(\int h_\alpha\,\d\beta<0\). Since \(h_\alpha(0)=0\), this strict negativity must occur away from the origin: there exists a nonzero point \(x=r\omega\) with \(r>0\), \(\norm{\omega}=1\), and \(h_\alpha(x)<0\). Equivalently \(h_\alpha(\omega)=h_\alpha(x)/r^2<0\). By full directional support, there is \(r_\omega>0\) such that \(r_\omega\omega\in\supp(\alpha)\). At this support point,
-	\[
-		\dotp{\nabla h_\alpha(r_\omega\omega)}{\omega}
-		=
-		2r_\omega h_\alpha(\omega)
-		<0,
-	\]
-	which contradicts the stationarity condition \(\nabla h_\alpha=0\) on \(\supp(\alpha)\). Thus no competitor has smaller risk.
-
-	The rigorous Chizat--Bach theorem replaces the full directional support assumption by propagation and overparameterization hypotheses ensuring that any negative first-variation direction is represented by the evolving support. The same radial-derivative contradiction, applied after this support-propagation step, then rules out non-optimal stationary limits.
-\index{stationarity}% strictindex
+Choose the representative $h(x)=DJ(G_\alpha)[\psi(x,\cdot)]$ of $\delta f(\alpha)$. It is two-homogeneous. For every unit $\omega$, choose $r>0$ with $r\omega\in\supp(\alpha)$. Stationarity and Euler's identity give $2h(r\omega)=\langle r\omega,\nabla h(r\omega)\rangle=0$. Homogeneity gives $h(\omega)=0$, hence $h=0$ on all rays and also at zero. Convexity now implies $f(\beta)-f(\alpha)\geq\int h\d(\beta-\alpha)=0$ for every admissible competitor $\beta$.
 \end{proof}
+The support assumption is on the stationary law, not merely its initialization. Full support of that law is sufficient, but full support at initialization alone cannot replace it in this proof. The rigorous Chizat--Bach theorem~\cite{ChizatBach2018OverparameterizedOT} instead propagates an appropriate separation property and rules out nonoptimal limits by an escape argument; it is conditional on convergence.
+
+For $\psi((u,v),z)=v\sigma(\dotp{u}{z})$, a positively one-homogeneous activation such as ReLU yields two-homogeneity in $(u,v)$. Literal ReLU is nonsmooth, so the formal proposition requires appropriate regularity or a nonsmooth extension. Bounded activations such as sigmoids do not share this joint homogeneity. Partially homogeneous scalar-output models are treated in~\cite{ChizatBach2018OverparameterizedOT}; extensions to vector-output bounded-nonlinearity models appear in~\cite{PetitPoonPeyre2026GlobalFlow}, under full-support sub-Gaussian initialization and additional regularity and nondegenerate escape-region assumptions. Their global-optimality conclusion still assumes convergence in $\Wass_2$, rather than proving it for every trajectory.
 
 \section{Generalized Dynamic Wasserstein Flows}
 \label{sec-generalized-dynamic-wasserstein-flows}
@@ -2648,7 +2632,7 @@ This section explains how changing the metric geometry changes the associated de
 \index{JKO scheme}% strictindex
 \index{curve of maximal slope}% strictindex
 The JKO construction is not tied to the quadratic Wasserstein distance. Once a space of probability measures is equipped with a metric or extended metric \(d\), it gives the following generalized descent construction.
-\begin{defn}[Generalized action gradient flow]\label{def-generalized-action-gradient-flow}
+\begin{defn}[Generalized action minimizing movement]\label{def-generalized-action-gradient-flow}
 \index{generalized!action gradient flow}% strictindex
 Let $d$ be a metric or extended metric generated by the action $\mathbb A$ through the path value in Definition~\ref{def-generalized-dynamic-action-distance}; for a quadratic action, $d^2=\mathsf E_{\mathbb A}$. Given \(\alpha^{(0)}\in\Pp(\RR^d)\) and \(\tau>0\), define
 \begin{equation}\label{eq-generalized-jko-step}
@@ -2657,9 +2641,9 @@ Let $d$ be a metric or extended metric generated by the action $\mathbb A$ throu
 	\uargmin{\alpha\in\Pp(\RR^d)}
 	\left\{\frac{1}{2\tau}d^2(\alpha^{(\ell)},\alpha)+f(\alpha)\right\}.
 \end{equation}
-Any continuous-time limit of its piecewise-constant interpolants is called a generalized action gradient flow of \(f\) for \(\mathbb A\).
+For each step size, let \(\bar\alpha_\tau(t)=\alpha^{(\ell)}\) on \(((\ell-1)\tau,\ell\tau]\). Any limit of \(\bar\alpha_{\tau_k}\) along a sequence \(\tau_k\downarrow0\), in a topology strong enough to identify the initial condition, is called a generalized minimizing movement of \(f\) for \(\mathbb A\). When such a limit is identified with a curve of maximal slope for the action metric, it is called the corresponding generalized action gradient flow.
 \end{defn}
-This is the metric-gradient-flow framework of Ambrosio, Gigli and Savar\'e~\cite{ambrosio2006gradient,gigli2011user}: under compactness, coercivity and lower-semicontinuity assumptions adapted to \(d\), the piecewise-constant interpolants of \eqref{eq-generalized-jko-step} can converge, as \(\tau\to0\), to a curve of maximal slope. A nonmetric discrepancy may still be inserted in the same variational update, but the metric theory does not then apply automatically. In the local mass-preserving metrics considered below, a smooth limiting curve is again represented by a continuity equation of the type introduced in \eqref{eq:eulerian-advection} and used for Wasserstein flows in \eqref{eq:wassflow-pde},
+Compactness, coercivity and lower semicontinuity adapted to \(d\) can yield subsequential convergence of the interpolants in \eqref{eq-generalized-jko-step} to the minimizing movement just defined. The stronger identification as a curve of maximal slope uses the metric-gradient-flow theory of Ambrosio, Gigli and Savar\'e~\cite{ambrosio2006gradient,gigli2011user}: it additionally requires a suitable complete metric or extended metric, a liminf estimate for the discrete slopes/actions, a relaxed slope that is a strong upper gradient, and, for an action metric, identification of the metric derivative with the minimal tangent action. A nonmetric discrepancy may still be inserted in the same variational update, but this metric theory does not then apply automatically. In the local mass-preserving metrics considered below, a smooth limiting curve is again represented by a continuity equation of the type introduced in \eqref{eq:eulerian-advection} and used for Wasserstein flows in \eqref{eq:wassflow-pde},
 \begin{equation}\label{eq-generalized-flow-continuity-motivation}
 	\partial_t\alpha_t+\diverg(\alpha_t v_{\alpha_t})=0,
 \end{equation}
@@ -2682,8 +2666,7 @@ In the \(\Wass_2\) case, all objects reduce to the familiar Benamou--Brenier one
 \index{tangent action}% strictindex
 
 \begin{defn}[Penalized minimization oracle]\label{def-generalized-action-steepest-direction}
-\index{penalized minimization oracle}% strictindex
-\index{PMO}% strictindex
+\index{penalized minimization oracle@penalized minimization oracle (PMO)}% strictindex
 	Let \(\mathbb A(\alpha,\cdot)\) be the local squared-speed action at \(\alpha\). For a cotangent field \(u\) for which the pairing below is finite, usually \(u=\Wgrad f(\alpha)\), the penalized minimization oracle associated with this action is
 	\begin{equation}\label{eq-local-action-steepest-descent}
 		\operatorname{PMO}_{\mathbb A,\alpha}(u)
@@ -2805,14 +2788,14 @@ Thus \(\theta(a)=a\) and \(U(a)=a\log a\) gives the usual heat or Fokker--Planck
 \index{spectral!steepest descent}% strictindex
 \index{Muon algorithm}% strictindex
 
-The spectral tangent action \eqref{eq-spectral-tangent-action}, and the dynamic distance \eqref{eq-dynamic-spectral-wasserstein} it generates, normalize the whole velocity covariance through a monotone spectral gauge. Using this geometry for gradient descent replaces the pointwise Wasserstein direction by a globally preconditioned direction. This is close to many large-scale optimizers: normalized gradient methods solve norm-constrained linear minimization problems~\cite{PethickXieAntonakopoulosEtAl2025}; related ideas appear in normalized SGD~\cite{MurraySwensonKar2019,CutkoskyMehta2020}, tensor-aware optimizers such as Shampoo~\cite{GuptaKorenSinger2018}, and Muon-type spectral normalizations~\cite{KellerJordan2024,LiuSuYaoEtAl2025}. We now describe the mean-field version developed in~\cite{peyre2026muon}. The trace gauge gives the classical $\Wass_2$ flow, while the operator gauge $\gamma(M)=\lambda_{\max}(M)$ gives the idealized Muon geometry.
+The spectral tangent action \eqref{eq-spectral-tangent-action}, and the dynamic distance \eqref{eq-dynamic-spectral-wasserstein} it generates, normalize the velocity's second-moment matrix through a monotone spectral gauge. Using this geometry for gradient descent replaces the pointwise Wasserstein direction by a globally preconditioned direction. This is close to many large-scale optimizers: normalized gradient methods solve norm-constrained linear minimization problems~\cite{PethickXieAntonakopoulosEtAl2025}; related ideas appear in normalized SGD~\cite{MurraySwensonKar2019,CutkoskyMehta2020}, tensor-aware optimizers such as Shampoo~\cite{GuptaKorenSinger2018}, and Muon-type spectral normalizations~\cite{KellerJordan2024,LiuSuYaoEtAl2025}. We now describe the mean-field version developed in~\cite{peyre2026muon}. The trace gauge gives the classical $\Wass_2$ flow, while the operator gauge $\gamma(M)=\lambda_{\max}(M)$ gives the idealized Muon geometry.
 \index{normalized SGD}% strictindex
 \index{Shampoo optimizer}% strictindex
 \index{spectral!gauge}% strictindex
 \index{operator gauge}% strictindex
 
 Specializing Definition~\ref{def-generalized-action-steepest-direction} to the spectral action \(\mathbb A_\gamma\), the descent direction associated with a field \(g\in L^2(\alpha;\RR^d)\) is simply \(\operatorname{PMO}_{\mathbb A_\gamma,\alpha}(g)\).
-The field \(g\) should be read as the Wasserstein gradient \(g=\Wgrad f(\alpha)=\nabla\delta f(\alpha)\). Since \(v\mapsto\mathbb A_\gamma(\alpha,v)\) is \(2\)-homogeneous, fixed-speed normalized algorithms keep the same ray as this PMO and only change the scalar normalization; equivalently, they minimize the linear pairing over the unit ball \(\mathbb A_\gamma(\alpha,w)\leq1\). In the trace case, \(\mathbb A_{\tr}(\alpha,v)=\int\norm{v}^2\d\alpha\) and \(\operatorname{PMO}_{\mathbb A_{\tr},\alpha}(g)=-g\). For other gauges, the velocity is globally preconditioned by the covariance of \(g\) under \(\alpha\).
+The field \(g\) should be read as the Wasserstein gradient \(g=\Wgrad f(\alpha)=\nabla\delta f(\alpha)\). Since \(v\mapsto\mathbb A_\gamma(\alpha,v)\) is \(2\)-homogeneous, fixed-speed normalized algorithms keep the same ray as this PMO and only change the scalar normalization; equivalently, they minimize the linear pairing over the unit ball \(\mathbb A_\gamma(\alpha,w)\leq1\). In the trace case, \(\mathbb A_{\tr}(\alpha,v)=\int\norm{v}^2\d\alpha\) and \(\operatorname{PMO}_{\mathbb A_{\tr},\alpha}(g)=-g\). For other gauges, the velocity is globally preconditioned by the raw second-moment matrix of \(g\) under \(\alpha\).
 \index{spectral!tangent action}% strictindex
 
 \begin{prop}[Polar formula for the spectral direction]\label{prop-normalized-spectral-polar}
@@ -2833,7 +2816,7 @@ The field \(g\) should be read as the Wasserstein gradient \(g=\Wgrad f(\alpha)=
 		=
 		-(A_\alpha^\star)^{-1}g(x)
 	}
-	is the spectral PMO direction. If the minimizer lies on the boundary of $\mathcal B_\gamma$, the same formula is understood by a limiting argument along positive definite minimizers, or equivalently by replacing the inverse by the corresponding inverse on the range of $S_\alpha(g)$.
+	is the spectral PMO direction. If $S_\alpha(g)$ is singular, one may instead solve the polar problem on its range, provided a positive definite minimizer exists on that subspace, and extend the resulting velocity by zero on its orthogonal complement. If $S_\alpha(g)=0$, the zero velocity is a minimizer.
 \end{prop}
 \begin{proof}
 	Using the polar formula $\gamma(M)=\sup_{A\in\mathcal B_\gamma}\tr(AM)$, the PMO objective~\eqref{eq-local-action-steepest-descent} with \(\mathbb A=\mathbb A_\gamma\) can be written as
@@ -2873,7 +2856,9 @@ The field \(g\) should be read as the Wasserstein gradient \(g=\Wgrad f(\alpha)=
 		\geq
 		\int \dotp{g}{v}\d\alpha+\frac12\int v^\top A_\alpha^\star v\d\alpha,
 	\]
-	and the right-hand side is minimized at $v_\star$. The activity identity above shows that equality holds at $v_\star$, hence $v_\star$ is the spectral PMO direction. The boundary case follows by approximation with positive definite matrices in the polar set.
+	and the right-hand side is minimized at $v_\star$. The activity identity above shows that equality holds at $v_\star$, hence $v_\star$ is the spectral PMO direction.
+
+	For singular $S_\alpha(g)$, let $P$ be the orthogonal projection onto its range. Since $\int\norm{(\Id-P)g}^2\d\alpha=0$, one has $Pg=g$ almost everywhere. Replacing any velocity $v$ by $Pv$ preserves its pairing with $g$ and replaces its second-moment matrix $M$ by $PMP$. Orthogonal compression cannot increase the ordered eigenvalues of a positive semidefinite matrix, so monotonicity of the spectral gauge gives $\gamma(PMP)\leq\gamma(M)$. Thus minimization can be restricted to this subspace, where the preceding proof applies to the restricted polar set. This argument does not require a sequence of full-space positive definite minimizers, which need not exist.
 \end{proof}
 
 For the trace gauge, $\mathcal B_\gamma=\enscond{A}{0\preceq A\preceq\Id}$ and the minimizer is $A_\alpha^\star=\Id$. For the operator gauge $\gamma(M)=\lambda_{\max}(M)$, one has $\mathcal B_\gamma=\enscond{A\succeq0}{\tr(A)\leq1}$; if $S_\alpha(g)\succ0$, then
@@ -2886,7 +2871,7 @@ For the trace gauge, $\mathcal B_\gamma=\enscond{A}{0\preceq A\preceq\Id}$ and t
 	=
 	-\tr(S_\alpha(g)^{1/2})\,S_\alpha(g)^{-1/2}g(x).
 \]
-This is the continuum covariance-normalization formula that becomes the Muon polar factor for empirical measures.
+For nonzero singular $S_\alpha(g)$, replace $S_\alpha(g)^{-1/2}$ by $(S_\alpha(g)^\dagger)^{1/2}$, where $\dagger$ denotes the Moore--Penrose pseudoinverse. This follows from the range reduction above. The resulting continuum second-moment normalization becomes the Muon polar factor for empirical measures.
 \index{covariance!normalization}% strictindex
 \index{Muon polar factor}% strictindex
 
@@ -2995,7 +2980,7 @@ The effect of this spectral normalization is visible already in the homogeneous 
 \includegraphics[width=.285\linewidth]{figures/gradflow-mlp-w2-vs-muon/trajectories-muon.pdf} &
 \includegraphics[width=.345\linewidth]{figures/gradflow-mlp-w2-vs-muon/risk-comparison.pdf}
 \end{tabular}
-\caption{\emph{Wasserstein versus Muon mean-field training of a homogeneous ReLU model.} The first two panels display trajectories in the reduced homogeneous coordinates $(|u|v_1,|u|v_2)$; black dashed rays are the teacher directions. The right panel compares the empirical square-loss decay, with the solid curve for the $\Wass_2$ flow and the dashed curve for the operator-gauge Muon flow. Both methods use the same particles and first variation; the spectral normalization reaches the low-risk regime earlier in normalized time.}
+\caption{\emph{Wasserstein versus Muon mean-field training of a homogeneous ReLU model.} The first two panels display trajectories in the reduced homogeneous coordinates $(|v|u_1,|v|u_2)$; black dashed rays are the teacher directions. The right panel compares the empirical square-loss decay, with the solid curve for the $\Wass_2$ flow and the dashed curve for the operator-gauge Muon flow. Both methods use the same particles and first variation; the spectral normalization reaches the low-risk regime earlier in normalized time.}
 \index{Muon algorithm}% strictindex
 \index{two-layer neural network}% strictindex
 \index{spectral Wasserstein!flow}% strictindex
@@ -3007,9 +2992,11 @@ The effect of this spectral normalization is visible already in the homogeneous 
 \label{sec-nonlocal-wasserstein-pdes}
 \index{nonlocal Wasserstein!flow}% strictindex
 \index{fractional PDE}% strictindex
-\index{Markov-chain Wasserstein geometry}% strictindex
+\index{Markov!chain Wasserstein geometry}% strictindex
 
 The nonlocal distances of Section~\ref{sec-nonlocal-wasserstein-distances} replace the local vector-field tangent model by pairwise exchanges. This separate section records the corresponding gradient-flow interpretation in the same order as the distance constructions: first continuum nonlocal Wasserstein flows and fractional PDEs, then discrete Wasserstein flows on Markov chains. In the continuum jump-kernel case, entropy descent gives nonlocal diffusion and, for power-law kernels, fractional PDEs. On a finite state space, the same logarithmic-mean edge calculus makes a reversible Markov chain exactly the entropy gradient flow of the discrete Wasserstein distance. Both examples are mass-preserving, but they are not local Benamou--Brenier flows: their tangent variables live on pairs or graph edges rather than at individual points.
+
+For machine learning, jump processes permit noising and denoising on token or categorical state spaces~\cite{Austin2021DiscreteDiffusion,Campbell2022DiscreteDenoising}. The reversible entropy-flow interpretation developed here requires the stated kernel and geometry; it does not automatically describe a learned time-inhomogeneous reverse chain.
 
 \paragraph{Nonlocal Wasserstein flows and fractional PDEs.}
 \index{nonlocal Wasserstein!distance}% strictindex
@@ -3018,12 +3005,12 @@ The nonlocal distances of Section~\ref{sec-nonlocal-wasserstein-distances} repla
 
 The continuum nonlocal distance \(\mathcal W_K\) of Section~\ref{sec-nonlocal-wasserstein-distances} replaces local velocities by antisymmetric fluxes across jumps selected by a reversible kernel \(K\). Its logarithmic-mean mobility is chosen so that entropy dissipation produces the Markov generator. This turns jump processes, fractional heat equations and some heavy-tailed stochastic models into gradient flows for nonlocal transport geometries.
 \index{transport!metric}% strictindex
-\index{Markov-chain Wasserstein geometry}% strictindex
+\index{Markov!chain Wasserstein geometry}% strictindex
 \index{antisymmetric flux}% strictindex
 
 \begin{prop}[Entropy gradient flow for reversible jump kernels]\label{prop-nonlocal-entropy-gradient-flow}
-\index{relative!entropy}% strictindex
-\index{Markov semigroup}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
+\index{Markov!semigroup}% strictindex
 	Let $\mathcal X=\RR^d$, let $\mathfrak m=\mathcal L^d$, and let $K(x,\d y)=\nu(\d y-x)$ be translation invariant. Assume the metric hypotheses of Proposition~\ref{prop-nonlocal-distance-properties} and the heat-kernel and moment conditions of Assumptions~5.5--5.6 in~\cite{Erbar2012JumpEntropy}. Then the Markov semigroup generated by the closure of
 	\[
 		L\psi(x)
@@ -3042,7 +3029,7 @@ The continuum nonlocal distance \(\mathcal W_K\) of Section~\ref{sec-nonlocal-wa
 	\begin{equation}\label{eq-nonlocal-entropy-flow}
 		\partial_t\rho_t=L\rho_t.
 	\end{equation}
-	When \(K\) is singular, the integral defining \(L\) is understood in the principal-value sense.
+	For singular kernels, \(L\) is understood through the closure of its Dirichlet form; for symmetric stable kernels, this agrees with the principal-value formula displayed below.
 \end{prop}
 
 \begin{proof}[Proof idea]
@@ -3156,9 +3143,9 @@ whose law solves a fractional Fokker--Planck equation of the form \eqref{eq-frac
 \end{rem}
 
 \paragraph{Discrete Wasserstein flows on Markov chains.}
-\index{Markov-chain Wasserstein geometry}% strictindex
+\index{Markov!chain Wasserstein geometry}% strictindex
 \index{discrete!Wasserstein geometry}% strictindex
-\index{Markov semigroup}% strictindex
+\index{Markov!semigroup}% strictindex
 The finite-state distance \(\mathcal W_K\) in Section~\ref{sec-discrete-wasserstein-markov} is designed so that the reversible Markov chain itself becomes an entropy gradient flow. This is the discrete counterpart of the fact that the heat equation is the Wasserstein gradient flow of Shannon entropy.
 
 For masses \(a_i=\pi_i\rho_i\), or equivalently relative densities \(\rho_i=a_i/\pi_i\) with respect to the invariant law \(\pi\), the entropy relative to \(\pi\) is
@@ -3177,7 +3164,7 @@ Here \((K\rho)_i=\sum_jK_{i,j}(\rho_j-\rho_i)\). Under smoothness and strict pos
 \begin{prop}[Entropy gradient flow of a reversible Markov chain]
 \label{prop-discrete-markov-entropy-gradient}
 Let \(K\) be reversible with invariant law \(\pi\). The gradient flow of \(\operatorname{Ent}_\pi\) for the metric \(\mathcal W_K\) is the forward equation of the Markov chain,
-\index{Markov chain}% strictindex
+\index{Markov!chain}% strictindex
 \begin{equation}
 \label{eq-discrete-markov-gradient-flow}
 \dot\rho_i(t)=\sum_jK_{i,j}\bigl(\rho_j(t)-\rho_i(t)\bigr).
@@ -3281,9 +3268,9 @@ The reaction term makes additive constants in the first variation meaningful: ad
 \index{positive!measure}% strictindex
 
 \begin{example}[Relative entropy and birth--death relaxation]\label{ex-wfr-kl-flow}
-\index{relative!entropy}% strictindex
+\index{Kullback-Leibler@Kullback--Leibler!divergence}% strictindex
 \index{Fokker-Planck@Fokker--Planck!equation}% strictindex
-	Let $\beta=\density{\beta}\d x$ and use the finite-measure relative entropy
+	Let $\beta=\density{\beta}\d x$ with $\density{\beta}>0$ on the domain, and use the finite-measure relative entropy
 	\[
 		f(\alpha)=\KL(\alpha|\beta)
 		=
@@ -3309,19 +3296,19 @@ The reaction term makes additive constants in the first variation meaningful: ad
 			-
 			\frac{1}{\kappa^2}\rho_t\log\frac{\rho_t}{\density{\beta}}.
 	\end{equation}
-	The first two terms transport and diffuse mass, while the last term kills mass where $\rho_t>\density{\beta}$ and creates it where $\rho_t<\density{\beta}$.
+	The first two terms transport and diffuse mass. The reaction attenuates overrepresented density and amplifies density that is positive but below $\density{\beta}$; it does not nucleate mass at an exact vacuum because $\rho\log\rho\to0$ as $\rho\downarrow0$. Any instantaneous filling of vacuum in the full equation comes from the diffusion term under the corresponding parabolic positivity assumptions.
 \end{example}
 
 Figure~\ref{fig:gradflow-wfr-unbalanced-flow} contrasts this reaction-assisted relaxation with its mass-preserving Wasserstein counterpart.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{tabular}{@{}cc@{}}
 \small balanced $\Wass_2$ flow & \small unbalanced $\WFR_\kappa$ flow \\[-.15em]
 \includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/balanced.pdf} &
 \includegraphics[width=.46\linewidth]{figures/gradflow-wfr-unbalanced-flow/unbalanced.pdf}
 \end{tabular}
-\caption{\emph{Balanced and unbalanced gradient flows of $\KL(\alpha|\beta)$ for one-dimensional Gaussian mixtures.} In each panel the colored density stacks correspond to five increasing times, from red to blue, and the faint gray curve repeated on each row is the target mixture $\beta$. The balanced Wasserstein flow is the conservative Fokker--Planck equation, so mass must move through the low-density region between modes. The $\WFR_\kappa$ flow adds the birth--death reaction term in~\eqref{eq-wfr-kl-flow}; it attenuates overrepresented regions and creates missing mass near target modes, reaching the target shape much faster.}
+\caption{\emph{Balanced and unbalanced gradient flows of $\KL(\alpha|\beta)$ for one-dimensional Gaussian mixtures.} In each panel the colored density stacks correspond to five increasing times, from red to blue, and the faint gray curve repeated on each row is the target mixture $\beta$. The balanced Wasserstein flow is the conservative Fokker--Planck equation, so mass must move through the low-density region between modes. The $\WFR_\kappa$ flow adds the birth--death reaction term in~\eqref{eq-wfr-kl-flow}; it attenuates overrepresented regions and amplifies positive underrepresented density near target modes, while diffusion fills intervening low-density regions.}
 \index{Wasserstein!gradient flow}% strictindex
 \index{Wasserstein-Fisher-Rao@Wasserstein--Fisher--Rao}% strictindex
 \index{birth-death dynamics}% strictindex
@@ -3330,162 +3317,106 @@ Figure~\ref{fig:gradflow-wfr-unbalanced-flow} contrasts this reaction-assisted r
 \end{figure}
 
 \section{Conditional Wasserstein Training of Infinite ResNets}
-\index{conditional!Wasserstein flow}% strictindex
-\index{ResNet!infinite-depth}% strictindex
 \label{sec-conditional-wasserstein-resnets}
+\index{ResNet!infinite-depth}% strictindex
 \index{conditional!optimal transport}% strictindex
 \index{conditional!Wasserstein distance}% strictindex
-\index{ResNet}% strictindex
-Residual networks learn small residual updates around the identity~\cite{HeZhangRenSun2016ResNet}. This makes depth behave like time: very deep residual architectures can be interpreted as discretizations of differential equations, a viewpoint developed in stable architectures, neural ODEs and mean-field optimal-control models of deep learning~\cite{HaberRuthotto2017StableArchitectures,LuZhongLiDong2018BeyondFiniteLayers,Chen2018NeuralODE,EHanLi2019MeanFieldDeepLearning}. The conditional-OT formulation of Barboni, Peyr\'e and Vialard~\cite{BarboniPeyreVialard2024ConditionalResNets} adds the width mean-field limit to this continuous-depth picture. This should be read alongside the broader conditional-transport literature reviewed in Section~\ref{sec-conditional-wasserstein-distances}, especially fibered gradient flows~\cite{PeszekPoyato2023FiberedOptimalTransport}, function-space conditional OT~\cite{HosseiniHsuTaghvaei2023ConditionalFunctionSpaces}, and conditional OT flow-matching constructions~\cite{ChemseddineHagemannSteidlWald2024ConditionalWasserstein,KerriganMiglioriniSmyth2024DynamicConditionalOT}. From the viewpoint of Section~\ref{sec-generalized-dynamic-wasserstein-flows}, it is a concrete instance of a generalized dynamic Wasserstein flow: the conditional Wasserstein distance has a geodesic dynamic structure obtained by integrating the usual Benamou--Brenier action over the conditioning variable. The point of the construction is to keep track of two independent symmetries: neurons can be relabelled inside each layer, but mass should not move from one depth to another. Conditional Wasserstein geometry implements exactly this rule. It transports neurons fiber by fiber in parameter space, while the depth variable remains fixed.
-
-We follow the three limiting levels of the model. A finite ResNet is first a labelled particle system arranged by layers. Sending the width to infinity turns each layer into a probability law of neurons. Sending the depth step to zero then turns the sequence of layer laws into a conditional measure indexed by depth, on which training becomes a Wasserstein gradient flow.
-
-\paragraph{Finite-depth finite-width ResNets.}
 \index{ResNet!finite-depth}% strictindex
 \index{ResNet!finite-width}% strictindex
 \index{residual block}% strictindex
-The starting point is the ordinary architecture: depth is discrete, width is finite, and each layer carries a labelled collection of neurons. Fix a parameter space $\Theta\subset\RR^q$, a residual feature $\psi:\Theta\times\RR^d\to\RR^d$, a data law $\zeta$ on input-label pairs $(z,y)$, and a loss $\ell$. With $L$ layers, step size $\tau=1/L$, widths $n_r$, and parameters $\theta_{r,i}\in\Theta$, a finite ResNet is the composition of the residual updates
-\begin{equation}\label{eq-finite-resnet}
-	z_{r+1}
-	=
-	z_r+\tau G_{r,n_r}(z_r),
-	\qquad
-	G_{r,n_r}(z)
-	\eqdef
-	\frac1{n_r}\sum_{i=1}^{n_r}\psi(\theta_{r,i},z),
-	\qquad
-	z_0=z,\qquad r=0,\ldots,L-1.
-\end{equation}
-The associated population loss, with $n=(n_0,\ldots,n_{L-1})$, is
-\[
-	f_{L,n}((\theta_{r,i})_{r,i})
-	=
-	\int \ell(z_L^{\theta}(z),y)\d\zeta(z,y).
-\]
-Equivalently, each layer carries an empirical neuron law
-\[
-	\alpha_r
-	=
-	\frac1{n_r}\sum_{i=1}^{n_r}\delta_{\theta_{r,i}},
-	\qquad
-	G_{r,n_r}(z)
-	=
-	\int_\Theta\psi(\theta,z)\d\alpha_r(\theta).
-\]
-Thus a finite ResNet is already a discrete conditional measure on depth and neuron space,
-\[
-	\alpha^{L,n}(\d s,\d\theta)
-	=
-	\frac1L\sum_{r=0}^{L-1}\delta_{s_r}(\d s)\alpha_r(\d\theta),
-	\qquad
-	s_r=r/L,
-\]
-whose marginal on the depth variable is the discrete measure $\lambda_L=L^{-1}\sum_{r=0}^{L-1}\delta_{s_r}$.
 \index{empirical!measure}% strictindex
 \index{neuron}% strictindex
-
-\paragraph{Finite-depth mean-field limit.}
 \index{ResNet!finite-depth mean-field}% strictindex
-The first mean-field limit removes neuron labels inside each fixed layer. The residual depth grid stays discrete, but the widths tend to infinity. Each empirical law $\alpha_r$ is replaced by an arbitrary probability measure in $\Pp_2(\Theta)$, and each residual block becomes a mean-field residual block
-\[
-	z_{r+1}
-	=
-	z_r+\tau G_{\alpha_r}(z_r),
-	\qquad z_0=z,
-	\qquad
-	G_{\alpha_r}(z)
-	\eqdef
-	\int_\Theta\psi(\theta,z)\d\alpha_r(\theta).
-\]
-The loss becomes a functional of the finite family of layer measures,
-\[
-	f_L(\alpha_0,\ldots,\alpha_{L-1})
-	=
-	\int \ell(z_L^\alpha(z),y)\d\zeta(z,y).
-\]
-This is the finite-depth conditional Wasserstein setting with condition marginal $\lambda_L$: each fiber $s_r$ carries a Wasserstein geometry on neuron laws.
-
-\paragraph{Continuous-depth conditional geometry.}
 \index{ResNet!continuous-depth}% strictindex
 \index{depth variable}% strictindex
 \index{conditional!neuron law}% strictindex
-The second limit turns the layer index into a conditioning variable. The model is no longer described by one neuron law, nor even by a finite list of them, but by a family of neuron laws indexed by depth. The state is therefore a conditional probability law
-\[
-	\alpha(\d s,\d\theta)=\alpha_s(\d\theta)\d s,
-\]
-or, equivalently, a probability measure on $[0,1]\times\Theta$ whose first marginal is Lebesgue measure. The general conditional Wasserstein distance is defined in Section~\ref{sec-conditional-wasserstein-distances}. Here the condition is continuous depth, $s\in[0,1]$, the condition law is $\lambda(\d s)=\d s$, and the fiber space is the neuron parameter space $\Theta$. For two conditional neuron laws $\alpha(\d s,\d\theta)=\alpha_s(\d\theta)\d s$ and $\beta(\d s,\d\theta)=\beta_s(\d\theta)\d s$, the relevant distance is the depthwise quadratic Wasserstein metric
-\begin{equation}\label{eq-resnet-depth-wasserstein}
-	\Wass_{2,\lambda}^2(\alpha,\beta)
-	=
-	\int_0^1\Wass_2^2(\alpha_s,\beta_s)\d s.
-\end{equation}
-It compares neurons only at the same depth: transport in $\theta$ is allowed fiber by fiber, while mass is not transported between layers.
-
-\paragraph{Infinite-depth mean-field ResNet.}
-\index{ResNet!infinite-depth}% strictindex
-Once depth is continuous, the forward pass is a controlled ODE and the control is the conditional neuron law. A mean-field infinite-depth and infinite-width ResNet is described by a measurable family $s\mapsto\alpha_s\in\Pp_2(\Theta)$. Each slice is the neuron law of one infinitesimal residual block, and the feature $\psi(\theta,z)$ now acts as a vector field on the state variable. The forward pass is
-\begin{equation}\label{eq-mean-field-resnet-forward}
-	\partial_s z_s
-	=
-	G_{\alpha_s}(z_s)
-	\eqdef
-	\int_\Theta \psi(\theta,z_s)\d\alpha_s(\theta),
-	\qquad z_0=z.
-\end{equation}
-The population risk is
-\[
-	f_{\mathrm{Res}}(\alpha)
-	=
-	\int \ell(z_1^\alpha(z),y)\d\zeta(z,y).
-\]
-Under the usual regularity assumptions ensuring well-posedness of the ODE, this defines a functional on the conditional Wasserstein space.
-
-\paragraph{Conditional Wasserstein gradient flow.}
 \index{layerwise matching}% strictindex
 \index{conditional!gradient flow}% strictindex
-Training is now steepest descent for an objective on conditional laws. More generally, let $(S,\lambda)$ be a probability space of conditions and let $f$ be a differentiable functional on measures $\alpha(\d s,\d\theta)=\alpha_s(\d\theta)\lambda(\d s)$ with fixed first marginal $\lambda$. For signed perturbations $\xi(\d s,\d\theta)=\xi_s(\d\theta)\lambda(\d s)$ satisfying $\int_\Theta\d\xi_s=0$ for $\lambda$-a.e.\ $s$, we use the fiberwise first-variation convention
-\[
-	\frac{\d}{\d\varepsilon}f(\alpha+\varepsilon\xi)\bigg|_{\varepsilon=0}
-	=
-	\int_S\int_\Theta \frac{\delta f}{\delta\alpha_s}(\alpha)(\theta)\d\xi_s(\theta)\d\lambda(s).
-\]
-The formal conditional Wasserstein gradient flow is the family of continuity equations
-\begin{equation}\label{eq-conditional-resnet-gradient-flow}
-	\partial_t\alpha_{t,s}
-	+\diverg_\theta(\alpha_{t,s}v_{t,s})=0,
-	\qquad
-	v_{t,s}(\theta)
-	=
-		-\nabla_\theta\frac{\delta f}{\delta\alpha_s}(\alpha_t)(\theta),
-\end{equation}
-for $\lambda$-a.e.\ condition $s$, whenever the first variation is differentiable in the parameter variable. In the ResNet case one takes $f=f_{\mathrm{Res}}$ and $S=[0,1]$. The equation is fiberwise in its transport geometry, but not decoupled as a training dynamics: changing $\alpha_s$ affects the terminal loss through the forward ODE and the corresponding adjoint equation. Thus each depth performs a Wasserstein steepest descent in its own neuron space, while all depths interact through the state trajectory.
 \index{first variation}% strictindex
 \index{Wasserstein!gradient flow}% strictindex
-
-\paragraph{Particle discretization and layerwise matching.}
 \index{ResNet!particle discretization}% strictindex
-The finite network is recovered by discretizing both the condition variable and the fiber measures. With the discrete depth marginal $\lambda_L$, finite-depth finite-width ResNets are particle approximations of the conditional flow above. If two networks have the same depth grid and the same widths, and if their empirical layer laws are
-\[
-	\alpha_r=\frac1{n_r}\sum_{i=1}^{n_r}\delta_{\theta_{r,i}},
-	\qquad
-	\beta_r=\frac1{n_r}\sum_{i=1}^{n_r}\delta_{\theta'_{r,i}},
-\]
-then their squared conditional distance is
-\[
-	\Wass_{2,\lambda_L}^2(\alpha^{L,n},\beta^{L,n})
-	=
-	\frac1L\sum_{r=0}^{L-1} \Wass_2^2(\alpha_r,\beta_r).
-\]
-Keeping neuron labels fixed gives the labelled parameter distance
-\[
-	\frac1L\sum_{r=0}^{L-1}\frac1{n_r}
-	\sum_{i=1}^{n_r}\norm{\theta_{r,i}-\theta'_{r,i}}^2,
-\]
-which corresponds to a particular feasible coupling and therefore upper bounds the squared conditional Wasserstein distance. Optimizing over permutations inside each equal-weight layer gives the Wasserstein matching term above. In this sense, the shallow mean-field flow is the one-fiber case, whereas infinitely deep ResNets require a continuum of Wasserstein flows indexed by depth and coupled through the network state.
 \index{continuous!depth}% strictindex
 \index{residual network}% strictindex
 \index{mean-field neural network}% strictindex
-\index{Wasserstein!gradient flow}% strictindex
+\index{conditional!Wasserstein flow}% strictindex
+\index{ResNet}% strictindex
+Residual networks compose small changes to the identity~\cite{HeZhangRenSun2016ResNet}. Passing from layers to continuous depth produces a neural ODE; representing the neurons in each layer by a measure then leads to a conditional Wasserstein geometry for training. The construction below keeps depth $s$ distinct from training time $t$.
+
+\paragraph{Finite networks and gradient descent.}
+Fix a residual feature $\psi:\RR^q\times\RR^d\to\RR^d$, a data law $\zeta$ on pairs $(z,y)\in\RR^d\times\RR^d$, and a differentiable loss $\ell$. As for MLPs, $x\in\RR^q$ denotes a neuron's weights and $z$ a data state. A depth-$R$ network with $n$ neurons in every layer has parameters $X=(x_{r,i})_{r,i}$ and recursion
+\begin{equation}\label{eq-finite-resnet}
+  z_0=z,\qquad
+  z_{r+1}=z_r+\frac1{Rn}\sum_{i=1}^n\psi(x_{r,i},z_r),
+  \qquad r=0,\ldots,R-1.
+\end{equation}
+Its output is $G_X(z)=z_R^X(z)$ and its loss is $F_{R,n}(X)=\int\ell(G_X(z),y)\d\zeta(z,y)$. Training ordinarily uses gradient descent,
+\[
+  x_{r,i}^{(\ell+1)}=x_{r,i}^{(\ell)}
+  -\eta\nabla_{x_{r,i}}F_{R,n}(X^{(\ell)}),
+\]
+with learning rate $\eta>0$ and iteration index $\ell$; its small-step limit is Euclidean gradient flow. Backpropagation computes these derivatives through the recursion.
+
+\paragraph{From layers to a neural ODE.}
+Represent layer $r$ by $\alpha_r=n^{-1}\sum_i\delta_{x_{r,i}}$ at depth $s_r=r/R$, with depth marginal $\lambda_R=R^{-1}\sum_{r=0}^{R-1}\delta_{s_r}$. Interpolating these laws as piecewise constant on $[r/R,(r+1)/R)$ gives a family $\alpha_s$. Replacing empirical laws by arbitrary probability measures removes the width constraint. As $R\to\infty$, the recursion~\eqref{eq-finite-resnet} formally becomes
+\begin{equation}\label{eq-mean-field-resnet-forward}
+  \partial_s z_s=G_{\alpha_s}(z_s)
+  \eqdef\int_{\RR^q}\psi(x,z_s)\d\alpha_s(x),
+  \qquad z_0=z,\qquad 0\leq s\leq1.
+\end{equation}
+Assume the field is measurable in $s$ and locally Lipschitz in the state, with integrable growth bounds ensuring a unique solution up to depth one. The model is parameterized by $\alpha(\d s,\d x)=\alpha_s(\d x)\d s$, a probability measure whose depth marginal is fixed Lebesgue measure, and its risk is
+\begin{equation}\label{eq-resnet-risk}
+  f_{\mathrm{Res}}(\alpha)=\int\ell(z_1^\alpha(z),y)\d\zeta(z,y).
+\end{equation}
+This continuous-depth interpretation is developed in~\cite{HaberRuthotto2017StableArchitectures,LuZhongLiDong2018BeyondFiniteLayers,Chen2018NeuralODE,EHanLi2019MeanFieldDeepLearning}. Here the depth limit motivates the model; a joint width--depth convergence theorem requires additional uniform estimates. The question is now which Wasserstein geometry represents training of $f_{\mathrm{Res}}$.
+
+\paragraph{A geometry that preserves depth.}
+Neurons may be relabelled within a layer, but cannot be transported to another layer. Thus the geometry must compare $\alpha_s$ and $\beta_s$ at the same depth, rather than allow arbitrary transport on $[0,1]\times\RR^q$.
+Specializing Definition~\ref{def-conditional-wasserstein-distance} to depth gives the required metric.
+For $\alpha(\d s,\d x)=\alpha_s(\d x)\d s$ and $\beta(\d s,\d x)=\beta_s(\d x)\d s$, with $\int_0^1\int_{\RR^q}\norm{x}^2\d\alpha_s(x)\d s<\infty$ and likewise for $\beta$, set
+\begin{equation}\label{eq-resnet-depth-wasserstein}
+  \Wass_{2,\lambda}^2(\alpha,\beta)
+  \eqdef\int_0^1\Wass_2^2(\alpha_s,\beta_s)\d s,
+  \qquad \lambda(\d s)=\d s.
+\end{equation}
+
+The distance identifies families equal for almost every depth. This fiberwise geometry is studied by~\cite{PeszekPoyato2023FiberedOptimalTransport} and used for ResNet training by~\cite{BarboniPeyreVialard2024ConditionalResNets}; related conditional-transport constructions appear in~\cite{HosseiniHsuTaghvaei2023ConditionalFunctionSpaces,ChemseddineHagemannSteidlWald2024ConditionalWasserstein,KerriganMiglioriniSmyth2024DynamicConditionalOT}. Although transport does not mix depths, training couples all layers through the terminal loss~\eqref{eq-resnet-risk}.
+
+\paragraph{Particle training as a conditional flow.}
+The first variation from Definition~\ref{def-first-variation} now acts on perturbations that preserve the mass at each depth: its representative $\delta f_{\mathrm{Res}}/\delta\alpha_s$ is determined up to a depth-dependent constant. Formally the Wasserstein gradient is its gradient in $x$, not in $s$.
+\begin{prop}[Particle realization of conditional Wasserstein descent]\label{prop-resnet-particle-flow}
+Let $f_{\mathrm{Res}}$ be the risk~\eqref{eq-resnet-risk}. Assume its transport chain rule holds, its fiberwise first variation is differentiable in $x$, and the resulting characteristic equations are well posed. For neuron paths $X=(x_i)_{i=1}^n$ with $x_i\in L^2([0,1];\RR^q)$, put $\alpha_s=n^{-1}\sum_i\delta_{x_i(s)}$ and $F_n(X)=f_{\mathrm{Res}}(\alpha)$. Then
+\[
+  \frac{\delta F_n}{\delta x_i(s)}
+  =\frac1n\nabla_x\frac{\delta f_{\mathrm{Res}}}{\delta\alpha_s}(\alpha)(x_i(s)).
+\]
+Consequently, the parameter flow $\partial_t x_i(t,s)=-n\,\delta F_n/\delta x_i(s)$ induces the conditional Wasserstein descent equation
+\begin{equation}\label{eq-conditional-resnet-gradient-flow}
+  \partial_t\alpha_{t,s}+\diverg_x(\alpha_{t,s}v_{t,s})=0,
+  \qquad v_{t,s}=-\nabla_x\frac{\delta f_{\mathrm{Res}}}{\delta\alpha_s}(\alpha_t).
+\end{equation}
+Conversely, the characteristics of this equation from empirical initial fibers satisfy the same parameter flow.
+\end{prop}
+\begin{proof}
+For a variation $x_i+\varepsilon\eta_i$, the transport chain rule gives
+\[
+  DF_n(X)[\eta]
+  =\frac1n\sum_i\int_0^1
+  \dotp{\nabla_x\frac{\delta f_{\mathrm{Res}}}{\delta\alpha_s}(\alpha)(x_i(s))}{\eta_i(s)}\d s.
+\]
+This identifies the displayed derivative in the ordinary $L^2$ pairing. For the normalized particle metric
+\[
+  \norm{\dot X}^2=\frac1n\sum_i\int_0^1\norm{\dot x_i(s)}^2\d s,
+\]
+the negative gradient is $-n\,\delta F_n/\delta x_i$. Differentiating $n^{-1}\sum_i h(x_i(t,s))$ for smooth test functions $h$ proves~\eqref{eq-conditional-resnet-gradient-flow}; uniqueness of characteristics gives the converse. The gradient velocity is the least-norm representative in each fiber, by the same chain-rule argument as in Proposition~\ref{prop-formal-wass-gradient}, and
+\[
+  \frac{\d}{\d t}f_{\mathrm{Res}}(\alpha_t)=-\int_0^1\int_{\RR^q}\norm{v_{t,s}}^2\d\alpha_{t,s}\d s.
+\]
+\end{proof}
+At finite depth, the same normalization is $(Rn)^{-1}\sum_{r,i}\norm{\dot x_{r,i}}^2$, hence the corresponding flow is $\dot x_{r,i}=-Rn\nabla_{x_{r,i}}F_{R,n}$. Ordinary gradient descent absorbs this common factor into its learning rate. These identities explain the geometry; the rigorous finite-width limit for the continuous-depth model is proved under the assumptions of~\cite{BarboniPeyreVialard2024ConditionalResNets}, not asserted here as a simultaneous width--depth limit.
+
+\paragraph{Local convergence of training.}
+The risk depends nonlinearly on the entire forward trajectory and is not generally convex. For squared loss, Barboni, Peyr\'e and Vialard~\cite[Theorem~4.2]{BarboniPeyreVialard2024ConditionalResNets} prove exponential loss decay and convergence to a zero-risk law for suitable finite-data architectures and initializations. Besides smoothness and moment assumptions, their result needs a positive lower eigenvalue for an initial feature Gram matrix and an initial loss small relative to that conditioning. Sufficiently many well-chosen random features can ensure the eigenvalue condition. Small loss alone is not enough: a local PL inequality and a length estimate keep the trajectory in the region where the inequality holds, echoing Section~\ref{sec-geodesic-convexity}. Arbitrary-initialization global convergence remains a substantially harder question.
+
 
 \section{Second-Order Momentum Flows}
 \label{sec-second-order-momentum-flows}
@@ -3524,7 +3455,7 @@ Nesterov's accelerated method~\cite{Nesterov1983Accelerated} uses a closely rela
 	\qquad
 	X^{(\ell+1)}=Y^{(\ell)}-h\nabla F(Y^{(\ell)}),
 \end{equation}
-with $\theta^{(\ell)}=(\ell-1)/(\ell+r-1)$ for the classical convex schedule $r=3$. Its scaling limit is the time-dependent damping equation
+with $\theta^{(\ell)}=(\ell-1)/(\ell+r-1)$ for the classical convex schedule $r=3$. Under the nontrivial time scaling \(t=\ell\sqrt h\), a smooth interpolation with the compatible initial condition \(\dot X(0)=0\) formally converges, as \(h\to0\), to the time-dependent damping equation
 \begin{equation}\label{eq-nesterov-ode}
 	\ddot X(t)+\frac{r}{t}\dot X(t)+\nabla F(X(t))=0.
 \end{equation}
@@ -3687,7 +3618,6 @@ Because momentum is part of the state, the mean-field object is not merely a mea
 
 \begin{rem}[Newtonian limit]\label{rem-newtonian-momentum-limit}
 \index{Newtonian dynamics}% strictindex
-\index{Newton dynamics}% strictindex
 \index{inertia}% strictindex
 	If damping is removed, or if inertia dominates friction after rescaling, \eqref{eq-wasserstein-momentum-particles} becomes
 	\[
@@ -3834,7 +3764,7 @@ The previous interaction example has a genuine value on empirical measures: once
 
 For the numerical illustration, we add the quadratic confinement $V(x)=\norm{x}^2/2$. In one dimension the overdamped equation becomes the Ornstein--Uhlenbeck Fokker--Planck equation
 \index{quadratic!confinement}% strictindex
-\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck process}% strictindex
+\index{Ornstein-Uhlenbeck@Ornstein--Uhlenbeck!process}% strictindex
 \[
 \partial_t\rho_t=\partial_{xx}\rho_t+\partial_x(x\rho_t),
 \]
