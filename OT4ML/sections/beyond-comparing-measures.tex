@@ -2301,12 +2301,11 @@ As in scalar OT, one obtains a smoother problem by adding the convex quantum ent
 	For a density matrix or positive semidefinite matrix $T$, the shifted von Neumann entropy functional used here is
 \index{density!matrix}% strictindex
 	\[
-		H(T)=\tr\!\left(T(\log T-\Id)\right),
-		\qquad
-		\nabla H(T)=\log T,
+		H(T)=\sum_k\lambda_k(T)\bigl(\log\lambda_k(T)-1\bigr),
 	\]
-	with the convention $0\log0=0$ on eigenvalues. This is the convex negative quantum entropy; on trace-one states it differs from the physical entropy $-\tr(T\log T)$ by a sign and an additive constant.
+	where $\lambda_k(T)$ are its eigenvalues and $0\log0=0$. For $T\succ0$, one has $H(T)=\tr(T(\log T-\Id))$ and $\nabla H(T)=\log T$.
 \end{defn}
+The entropy extends continuously to singular matrices, but its gradient does not. This is the convex negative quantum entropy; on trace-one states it differs from the physical entropy $-\tr(T\log T)$ by a sign and an additive constant.
 \eqllead{For $\epsilon>0$ define}{eq-qot-entropic-primal}{
 	\mathrm{QOT}_C^\epsilon(A,B)
 	=
@@ -2449,9 +2448,9 @@ Algorithm~\ref{alg:quantum-exact-bregman} records this exact but implicit non-co
 \paragraph{Gurvits scaling and quantum Sinkhorn.}
 \index{Gurvits scaling}% strictindex
 \index{quantum!Sinkhorn}% strictindex
-The exact Bregman scheme above has a major computational obstruction: unlike classical marginal rescaling, projection onto either non-commutative marginal constraint requires solving a nonlinear matrix equation and has no closed form in general. Gurvits scaling instead provides an explicit fixed-point construction of a feasible quantum coupling, used as a surrogate for entropic QOT\@. Its iterates do not minimize the entropic QOT objective and, outside special commuting settings, do not generally arise as block minimizations of a global energy. In the diagonal case, however, the construction coincides with classical Sinkhorn, hence recovers its variational interpretation.
+The exact Bregman scheme above has a major computational obstruction: unlike classical marginal rescaling, projection onto either non-commutative marginal constraint requires solving a nonlinear matrix equation and has no closed form in general. Operator scaling suggests instead an explicit fixed-point scheme seeking a feasible quantum coupling, used as a surrogate for entropic QOT\@. The symmetric variant below enforces one marginal at each half-step, but this alone is not a convergence proof for general targets. Its iterates are not block maximizers of the entropic QOT dual. In the diagonal case, however, the construction coincides with classical Sinkhorn, hence recovers its variational interpretation.
 
-The algorithm often called quantum Sinkhorn comes from the operator-scaling literature of Gurvits and subsequent developments~\cite{gurvits2003classical,gurvits2004classical,georgiou2015positive,garg2018recent}. It replaces the true Gibbs coupling~\eqref{eq-qot-gibbs-coupling} by the symmetric factorization
+This construction is inspired by the operator-scaling literature of Gurvits and subsequent developments~\cite{gurvits2003classical,gurvits2004classical,georgiou2015positive,garg2018recent}. It replaces the true Gibbs coupling~\eqref{eq-qot-gibbs-coupling} by the symmetric factorization
 \index{operator scaling}% strictindex
 \index{Gibbs!coupling}% strictindex
 \begin{equation}\label{eq-qot-symmetric-scaling}
@@ -2511,7 +2510,9 @@ They can be enforced by the explicit congruence normalizations
 	S_U^{-1/2}\bigl(S_U^{1/2} B S_U^{1/2}\bigr)^{1/2}S_U^{-1/2}.
 \end{aligned}
 \end{equation}
-\begin{alg}[Gurvits/operator scaling for quantum Sinkhorn]\label{alg:quantum-gurvits-scaling}
+These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$, and each half-step exactly enforces its own marginal. Algorithm~\ref{alg:quantum-gurvits-scaling} records the iteration and its feasibility diagnostic.
+
+\begin{alg}[Symmetric quantum marginal scaling]\label{alg:quantum-gurvits-scaling}
 \index{operator scaling}% strictindex
 \textbf{Input:} Positive definite marginals $A,B$, positive definite kernel operator $K$, maps $\mathcal K,\mathcal K^\star$, tolerance $\mathrm{tol}$, iteration budget $L\geq1$.
 
@@ -2534,22 +2535,22 @@ They can be enforced by the explicit congruence normalizations
 \algreturnskip
 \textbf{Return} \(T_s\) and $r$.
 \end{alg}
-These inverse square roots are well-defined when $K\succ0$ and $U,V,A,B\succ0$. Under the standard strict-positivity and scalability hypotheses, the alternating normalizations converge to the prescribed marginals~\cite{georgiou2015positive,garg2018recent}; the finite algorithm returns once the residual is below tolerance or the iteration budget is exhausted. This is Gurvits/operator scaling with prescribed targets. When all matrices are diagonal it reduces to classical Sinkhorn scaling, and when the targets are proportional to identities it matches the usual bistochastic operator-scaling normalization, up to the conventional trace normalization.
+When $A=\Id_n/n$ and $B=\Id_m/m$, the updates for $U^2$ and $V^2$ reduce to scaled inverses of $\mathcal K(V^2)$ and $\mathcal K^\star(U^2)$. Positive-map contraction and the projective isometry of matrix inversion then give the usual bistochastic convergence mechanism~\cite{georgiou2015positive,garg2018recent}. When all data are diagonal, classical Sinkhorn convergence applies. For general noncommuting targets, these arguments do not establish convergence of the particular symmetric iteration~\eqref{eq-qot-gurvits-updates}; no such guarantee is asserted here. The algorithm returns its residual, and the iterate is only certified approximately feasible when that residual meets the tolerance, not merely when the iteration budget is exhausted.
 \index{Gurvits scaling}% strictindex
 \index{inverse square root}% strictindex
 \index{Sinkhorn!scaling}% strictindex
 \index{operator scaling}% strictindex
 
 
-\begin{rem}[Gurvits scaling is not the exact Bregman scheme]
-	It is important not to identify~\eqref{eq-qot-gurvits-updates} with the exact Bregman scheme for~\eqref{eq-qot-entropic-primal}. The exact Bregman step would enforce the marginals of $T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true concave dual~\eqref{eq-qot-entropic-dual}. Gurvits scaling instead enforces the marginals of the surrogate
+\begin{rem}[Symmetric scaling is not the exact Bregman scheme]
+	It is important not to identify~\eqref{eq-qot-gurvits-updates} with the exact Bregman scheme for~\eqref{eq-qot-entropic-primal}. The exact Bregman step would enforce the marginals of $T_e(F,G)=\exp((Z-C)/\epsilon)$ and would be a block maximization of the true concave dual~\eqref{eq-qot-entropic-dual}. Symmetric scaling instead seeks to enforce the marginals of the surrogate
 \[
 	T_s=
 	\exp\!\left(\frac{Z}{2\epsilon}\right)
 	\exp(-C/\epsilon)
 	\exp\!\left(\frac{Z}{2\epsilon}\right).
 \]
-		The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. The Gurvits iteration should therefore be understood as a tractable symmetric operator-scaling approximation to entropic Q--OT, not as the literal alternating KL projection algorithm or, in general, as block minimization of an underlying energy.
+		The two coincide in the commuting/diagonal regime, but in general the Baker--Campbell--Hausdorff commutator terms do not vanish. Symmetric scaling should therefore be understood as an operator-scaling surrogate, not as the literal alternating KL projection algorithm; even a converged feasible iterate need not minimize the entropic QOT objective.
 \index{Gurvits scaling}% strictindex
 \index{commutator}% strictindex
 \index{Baker-Campbell-Hausdorff@Baker--Campbell--Hausdorff formula}% strictindex
