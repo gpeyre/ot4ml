@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the five self-contained sheets, with and without hints/solutions."""
+"""Build the self-contained sheets, with and without hints/solutions."""
 from pathlib import Path
 import argparse
 import re
@@ -13,6 +13,7 @@ SHEETS = {
     "exo-kanto-cont": 6,
     "exo-sinkhorn": 11,
     "exo-gradient-flows": 6,
+    "exo-flow-matching": 5,
 }
 
 
@@ -62,7 +63,7 @@ def build(stem):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("sheets", nargs="*", help="Folder names; default: all five")
+    parser.add_argument("sheets", nargs="*", help="Folder names; default: all sheets")
     parser.add_argument("--check", action="store_true", help="Check sources without compiling")
     args = parser.parse_args()
     names = args.sheets or list(SHEETS)

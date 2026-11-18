@@ -12,9 +12,10 @@ question-by-question hints and a detailed solution.
 | Continuous Kantorovich transport | 6 | [PDF](exo-kanto-cont/exo-kanto-cont-uncorrected.pdf) | [PDF](exo-kanto-cont/exo-kanto-cont.pdf) |
 | Entropic transport and Sinkhorn | 11 | [PDF](exo-sinkhorn/exo-sinkhorn-uncorrected.pdf) | [PDF](exo-sinkhorn/exo-sinkhorn.pdf) |
 | Wasserstein gradient flows | 6 | [PDF](exo-gradient-flows/exo-gradient-flows-uncorrected.pdf) | [PDF](exo-gradient-flows/exo-gradient-flows.pdf) |
+| Flow matching and dynamic OT (original exercises by Julie Delon) | 5 | [PDF](exo-flow-matching/exo-flow-matching-uncorrected.pdf) | [PDF](exo-flow-matching/exo-flow-matching.pdf) |
 
 Discrete and continuous Kantorovich transport are intentionally separate sheets,
-not chapters of a combined PDF. The website links to all ten editions in its
+not chapters of a combined PDF. The website links to all twelve editions in its
 Exercises section.
 
 ## Rebuilding
@@ -42,7 +43,7 @@ python3 exercises/test_exercises.py
 
 ## Mathematical corrections
 
-All 41 exercise statements and their solutions were reviewed. The substantive
+The collection contains 46 reviewed exercises and their solutions. The substantive
 corrections include:
 
 - **Monge:** added nondegeneracy and moment assumptions; distinguished atomless
@@ -69,21 +70,33 @@ corrections include:
   ODE lifetime where necessary and supplied a blow-up example; corrected the
   time parametrization and factor of two for descent of squared Wasserstein
   distance.
+- **Flow matching:** adapted Julie Delon's five exercises, with credit in both
+  editions. Distinguished affine equivariance from preservation of quadratic
+  optimality; made the characteristic and endpoint assumptions explicit in
+  one dimension; required invertible interpolated Gaussian covariances; fixed
+  the orientation of cross covariances and made mixture weights time-dependent;
+  specified independence for the Gaussian-to-discrete example. See the
+  [sheet's provenance and correction notes](exo-flow-matching/README.md).
 
 The solutions now explain intermediate steps rather than only giving final
 formulas. Every exercise starts below a blue divider, with its title on a separate
 line. Consistent hint and solution headings and page-break protection make the
 blocks easy to distinguish; no answers appear in the statement editions.
-The homepage presents the five topics in a compact three-column grid, adapting
+The homepage presents the six topics in a compact three-column grid, adapting
 to two columns on tablets and one on phones, without per-sheet descriptions.
 
 ## Checks
 
-- All ten PDFs compile without unresolved references or missing glyph warnings.
-- Source checks verify the 41 statement/hints/solution triples and local labels.
+- All twelve PDFs compile without unresolved references or missing glyph warnings.
+- Source checks verify the 46 statement/hints/solution triples and local labels.
 - PDF checks verify that every corrected exercise has hints and a solution and
   that neither appears in a statement-only edition.
 - Numerical regression checks cover assignment enumeration, explicit transport
   integrals, noncommuting Gaussian covariances, first variations, unbalanced
   coordinate maximization, Gaussian Sinkhorn formulas and flow time changes.
+- Flow-matching checks cover Gaussian regression with nonsymmetric cross
+  covariance, target-dilation time changes, the affine-optimality counterexample,
+  the commuting-covariance ODE, and the discrete-target continuity equation.
+- Both flow-matching PDFs are checked for Julie Delon's visible credit and
+  author metadata.
 - Rendered pages are inspected for equation overflow and orphaned headings.
