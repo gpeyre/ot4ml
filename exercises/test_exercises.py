@@ -52,12 +52,77 @@ class ExerciseChecks(unittest.TestCase):
         costs = [sum(c[i, j] for i, j in enumerate(p)) for p in permutations(range(3))]
         self.assertEqual(sorted(costs), [5, 5, 7, 7, 9, 9])
 
-    def test_flow_matching_attribution(self):
-        stem = "exo-flow-matching"
-        for suffix in ("", "-uncorrected"):
-            pdf = PdfReader(ROOT / stem / (stem + suffix + ".pdf"))
-            self.assertIn("Julie Delon", pdf.pages[0].extract_text())
-            self.assertIn("Julie Delon", pdf.metadata.author)
+    def test_exercise_attribution(self):
+        credits = {
+            "exo-flow-matching": "Julie Delon",
+            "exo-sliced": "Kimia Nadjahi",
+            "exo-distance-duality": "Julie Delon",
+        }
+        for stem, author in credits.items():
+            for suffix in ("", "-uncorrected"):
+                with self.subTest(sheet=stem, edition=suffix):
+                    pdf = PdfReader(ROOT / stem / (stem + suffix + ".pdf"))
+                    self.assertIn(author, pdf.pages[0].extract_text())
+                    self.assertIn(author, pdf.metadata.author)
+
+    def test_zero_one_cost_maximal_coupling(self):
+        for a, b in (
+            (np.array([.25, .25, .5]), np.array([.5, .125, .375])),
+            (np.array([1., 0.]), np.array([0., 1.])),
+            (np.array([.25, .75]), np.array([.25, .75])),
+        ):
+            m = np.minimum(a, b)
+            r = (a-m).sum()
+            plan = np.diag(m)
+            if r > 0:
+                plan += np.outer(a-m, b-m)/r
+            np.testing.assert_allclose(plan.sum(axis=1), a)
+            np.testing.assert_allclose(plan.sum(axis=0), b)
+            np.testing.assert_array_equal(np.diag(plan), m)
+            self.assertAlmostEqual(plan.sum()-np.trace(plan), np.abs(a-b).sum()/2)
+
+    def test_c_transform_closure(self):
+        # Rectangular costs test the two transform directions separately.
+        cost = np.array([[2, 0, 3], [1, 4, 2]])
+        f = np.array([3, 0])
+        g = (cost-f[:, None]).min(axis=0)
+        closed = (cost-g).min(axis=1)
+        self.assertTrue(np.all(closed >= f))
+        np.testing.assert_array_equal((cost-closed[:, None]).min(axis=0), g)
+
+        cost = np.array([[0, 1], [1, 0]])
+        f = np.array([0, 1])
+        g = (cost-f[:, None]).min(axis=0)
+        np.testing.assert_array_equal((cost-g).min(axis=1), f)
+        self.assertAlmostEqual([.75, .25] @ f + [.25, .75] @ g, -.5)
+        self.assertTrue(np.all(cost >= 0))  # The zero dual pair is feasible.
+
+    def test_sliced_projection_can_destroy_optimality(self):
+        u, v = np.array([1., 1.]), np.array([-1., 2.])
+        x, y = np.array([u, -u]), np.array([v, -v])
+        costs = ((x[:, None, :] - y[None, :, :])**2).sum(axis=-1)
+        np.testing.assert_array_equal(costs, [[5, 9], [9, 5]])
+        self.assertLess(np.trace(costs), costs[0, 1] + costs[1, 0])
+        projected_cost = np.mean((x[:, 0] - y[:, 0])**2)
+        optimal_slice_cost = np.mean((np.sort(x[:, 0]) - np.sort(y[:, 0]))**2)
+        self.assertEqual(projected_cost, 4.)
+        self.assertEqual(optimal_slice_cost, 0.)
+
+    def test_sliced_translation_decomposition(self):
+        x = np.array([[-2., 3.], [1., 0.], [1., 2.]])
+        y = np.array([[1., 0.], [5., -1.], [2., 1.]])
+        angles = 2*np.pi*np.arange(48)/48
+        directions = np.column_stack((np.cos(angles), np.sin(angles)))
+
+        def slice_cost(a, b):
+            sa, sb = np.sort(a @ directions.T, axis=0), np.sort(b @ directions.T, axis=0)
+            return np.mean((sa-sb)**2, axis=0)
+
+        a, b = x.mean(axis=0), y.mean(axis=0)
+        raw = slice_cost(x, y)
+        centered = slice_cost(x-a, y-b)
+        np.testing.assert_allclose(raw, centered + (directions @ (a-b))**2)
+        self.assertAlmostEqual(raw.mean(), centered.mean() + np.sum((a-b)**2)/2)
 
     def test_flow_matching_detailed_proofs_stay_in_solutions(self):
         stem = "exo-flow-matching"

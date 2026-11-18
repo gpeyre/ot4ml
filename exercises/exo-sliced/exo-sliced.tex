@@ -1,0 +1,352 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Sliced Optimal Transport}
+\DeclareMathOperator{\SW}{\mathcal{SW}}
+\DeclareMathOperator{\Law}{Law}
+\newcommand{\EE}{\mathbb E}
+\newcommand{\PPtwo}{\mathcal P_2}
+\newcommand{\Couplings}{\mathcal U}
+\newcommand{\Sphere}{\mathbb S}
+\newcommand{\Gauss}{\mathcal N}
+\hypersetup{pdftitle={Sliced Optimal Transport -- Exercises},
+  pdfauthor={Kimia Nadjahi (original exercises); OT4ML (adaptation and solutions)}}
+
+\begin{document}
+\maketitle
+\textbf{Original exercises: Kimia Nadjahi.} Adapted for OT4ML.
+
+\textbf{Notation.}
+Let $\PPtwo(\R^d)$ be the probability measures with a finite second moment
+and $\Couplings(\alpha,\beta)$ the couplings of $\alpha$ and $\beta$.
+Use $\Wtwo$ for the Wasserstein distance with squared Euclidean cost.
+For $\theta\in\Sphere^{d-1}$, write
+$P_\theta(x)=\ip{\theta}{x}$ and $\alpha_\theta=(P_\theta)_\push\alpha$.
+The order-two sliced Wasserstein distance is defined by
+\[
+  \SW_2(\alpha,\beta)^2
+    =\int_{\Sphere^{d-1}}\Wtwo(\alpha_\theta,\beta_\theta)^2
+      \,d\varsigma(\theta),
+\]
+where $\varsigma$ is the uniform \emph{probability} measure on the sphere.
+
+\begin{exercise}[Comparing centered isotropic Gaussians]\label{ex-sliced-gaussians}
+Let $\alpha=\Gauss(0,\sigma^2 I_d)$ and $\beta=\Gauss(0,\tau^2 I_d)$ with
+$\sigma,\tau\geq0$, where a zero standard deviation denotes $\delta_0$.
+\begin{enumerate}[label=(\alph*)]
+\item Compute $\SW_2(\alpha,\beta)$.
+\item Compute $\Wtwo(\alpha,\beta)$ and compare the two distances.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item If $G\sim\Gauss(0,I_d)$, what is the variance of $\ip{\theta}{G}$?
+  In one dimension, try coupling the two Gaussians with the same standard
+  Gaussian. To prove optimality, expand the squared cost and bound the
+  cross moment by Cauchy--Schwarz.
+\item In $\R^d$, use the same standard Gaussian \emph{vector} for the
+  two marginals. For any other coupling, apply Cauchy--Schwarz to its
+  expected inner product.
+\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Project, transport on the line, then average.}
+Write $G=(G_1,\ldots,G_d)\sim\Gauss(0,I_d)$.
+The projection $\ip{\theta}{G}=\sum_i\theta_iG_i$ is Gaussian. Its mean
+is zero and its variance is
+$\sum_{i,j}\theta_i\theta_j\EE[G_iG_j]=\sum_i\theta_i^2=1$.
+Since $\sigma G$ and $\tau G$ have laws $\alpha$ and $\beta$, respectively,
+\[
+  \alpha_\theta=\Gauss(0,\sigma^2),\qquad
+  \beta_\theta=\Gauss(0,\tau^2).
+\]
+For any coupling $(S,T)$ of these projected laws,
+\[
+  \EE(S-T)^2=\sigma^2+\tau^2-2\EE[ST]
+        \geq\sigma^2+\tau^2-2\sigma\tau=(\sigma-\tau)^2.
+\]
+The inequality uses $\EE[ST]\leq(\EE S^2)^{1/2}(\EE T^2)^{1/2}$.
+It is attained by $(S,T)=(\sigma Z,\tau Z)$ with
+$Z\sim\Gauss(0,1)$, since $\EE[ST]=\sigma\tau\EE Z^2=\sigma\tau$.
+This proof needs no division by $\sigma$ or $\tau$, so it also covers
+a Dirac marginal. Every slice has the same squared cost. Integrating
+against $\varsigma$, which has total mass one, gives
+\[
+  \boxed{\SW_2(\alpha,\beta)=|\sigma-\tau|.}
+\]
+
+\par\Needspace{10\baselineskip}
+\textbf{(b) Transport in the ambient space.}
+For a coupling $(X,Y)$ of $\alpha$ and $\beta$, summing the coordinate
+variances gives $\EE|X|^2=d\sigma^2$ and $\EE|Y|^2=d\tau^2$. Expanding
+the squared norm and applying Cauchy--Schwarz in the space of
+square-integrable random vectors yields
+\begin{align*}
+  \EE|X-Y|^2
+    &=d\sigma^2+d\tau^2-2\EE\ip{X}{Y}\\
+    &\geq d\sigma^2+d\tau^2
+            -2(\EE|X|^2)^{1/2}(\EE|Y|^2)^{1/2}
+     =d(\sigma-\tau)^2.
+\end{align*}
+The coupling $(X,Y)=(\sigma G,\tau G)$ attains the bound because its
+displacement is $(\sigma-\tau)G$ and $\EE|G|^2=d$. Thus
+\[
+  \boxed{\Wtwo(\alpha,\beta)=\sqrt d\,|\sigma-\tau|,\qquad
+    \SW_2(\alpha,\beta)=d^{-1/2}\Wtwo(\alpha,\beta).}
+\]
+The coupling that attains the ambient bound projects to the
+one-dimensional optimizer in every direction. Exercise~\ref{ex-sliced-plans}
+shows that this property can fail for other measures.
+\end{solution}
+
+\begin{exercise}[Projected optimal transport plans]\label{ex-sliced-plans}
+Let $\alpha,\beta\in\PPtwo(\R^d)$ and let
+$\pi\in\Couplings(\alpha,\beta)$ be optimal for the squared Euclidean
+cost. For a unit direction $\theta$, define
+$\pi_\theta=(P_\theta,P_\theta)_\push\pi$, where the map sends
+$(x,y)$ to $(P_\theta(x),P_\theta(y))$.
+\begin{enumerate}[label=(\alph*)]
+\item Show that $\pi_\theta\in\Couplings(\alpha_\theta,\beta_\theta)$.
+\item Must $\pi_\theta$ be optimal for the squared-distance cost on
+  the line? Justify your answer, giving an explicit example if not.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item If $(X,Y)\sim\pi$, identify the separate laws of
+  $(P_\theta(X),P_\theta(Y))$.
+\item In $\R^2$, try equal weights on each of $\{u,-u\}$ and
+  $\{v,-v\}$. Choose $u,v$ so pairing the vectors with the same signs
+  is cheaper in the plane but their first coordinates have opposite signs.
+\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Feasibility survives projection.}
+If $(X,Y)\sim\pi$, then $\pi_\theta$ is the joint law of
+$(P_\theta(X),P_\theta(Y))$. Its first marginal is
+$\Law(P_\theta(X))=(P_\theta)_\push\alpha$; its second is
+$\Law(P_\theta(Y))=(P_\theta)_\push\beta$. Equivalently, for every Borel
+set $A\subset\R$,
+\begin{align*}
+  \pi_\theta(A\times\R)
+    &=\pi(P_\theta^{-1}(A)\times\R)=\alpha_\theta(A),\\
+  \pi_\theta(\R\times A)
+    &=\pi(\R\times P_\theta^{-1}(A))=\beta_\theta(A).
+\end{align*}
+This does not use the optimality of $\pi$.
+
+\textbf{(b) A strict counterexample.}
+In $\R^2$ let $u=(1,1)$ and $v=(-1,2)$, and take
+$\alpha=\tfrac12(\delta_u+\delta_{-u})$ and
+$\beta=\tfrac12(\delta_v+\delta_{-v})$.
+With row order $(u,-u)$ and column order $(v,-v)$ the matrix of squared
+distances is
+\[
+  \begin{pmatrix}
+    |u-v|^2 & |u+v|^2\\
+    |u+v|^2 & |u-v|^2
+  \end{pmatrix}
+  =\begin{pmatrix}5&9\\9&5\end{pmatrix},
+\]
+since $u-v=(2,-1)$ and $u+v=(0,3)$.
+The marginal constraints force every feasible matrix to be
+$\left(\begin{smallmatrix}a&1/2-a\\1/2-a&a\end{smallmatrix}\right)$
+for $0\leq a\leq1/2$: once the top-left entry is chosen, its row and
+column sums determine the two off-diagonal entries and then the last
+entry. Its cost is $2a\cdot5+2(1/2-a)\cdot9=9-8a$.
+Hence the unique optimum is $a=1/2$, with cost $5$ and plan
+$\pi=\tfrac12\delta_{(u,v)}+\tfrac12\delta_{(-u,-v)}$.
+
+Project onto the first coordinate, $\theta=e_1$. Both projected
+marginals are $\tfrac12(\delta_{-1}+\delta_1)$, because
+$P_\theta(u)=1$ and $P_\theta(v)=-1$. Nevertheless, the projected plan is
+\[
+  \pi_\theta=\tfrac12\delta_{(1,-1)}+\tfrac12\delta_{(-1,1)}.
+\]
+Its cost is $\tfrac12(1-(-1))^2+\tfrac12(-1-1)^2=4$, while the identity
+coupling of the two equal projected measures costs zero.
+Thus feasibility survives, but optimality can fail even for the
+projection of a \emph{unique} ambient optimizer.
+
+For $d>2$ the same example embeds by adding zero coordinates. For $d=1$,
+in contrast, the only projections are $x\mapsto x$ and $x\mapsto -x$.
+Each is a bijective isometry, so it preserves optimality.
+
+\textbf{Consequence: why slicing gives a lower bound.}
+Even when $\pi_\theta$ is not optimal, its feasibility gives
+$\Wtwo(\alpha_\theta,\beta_\theta)^2
+\leq\int|\ip{\theta}{x-y}|^2\,d\pi(x,y)$.
+For any $z\in\R^d$, the spherical average of
+$|\ip{\theta}{z}|^2$ is $|z|^2/d$: one can rotate $z$ to $|z|e_1$
+and use $\int\theta_1^2\,d\varsigma=1/d$ by symmetry and
+$\sum_i\theta_i^2=1$. Averaging the inequality and swapping integrals
+(the integrand is nonnegative) proves
+\[
+  \SW_2(\alpha,\beta)^2
+     \leq \frac1d\int|x-y|^2\,d\pi(x,y)
+     =\frac1d\Wtwo(\alpha,\beta)^2.
+\]
+For the example above this inequality is strict, not merely a failure
+in an isolated direction. For $\theta$ near $e_1$, the projected
+values $a_\theta=P_\theta(u)$ and $b_\theta=P_\theta(v)$ still have
+opposite signs; switching the projected pairing reduces the cost
+from $(a_\theta-b_\theta)^2$ to $(a_\theta+b_\theta)^2$.
+This open set of directions has positive $\varsigma$-measure.
+\end{solution}
+
+\begin{exercise}[Translation decomposition for $\SW_2$]\label{ex-sliced-centering}
+Let $\alpha,\beta\in\PPtwo(\R^d)$. Write $m_\alpha=\int x\,d\alpha(x)$
+and $m_\beta=\int y\,d\beta(y)$ for their means, and
+$\alpha_0,\beta_0$ for their centered translates.
+\begin{enumerate}[label=(\alph*)]
+\item Compute the means of $\alpha_\theta$ and $\beta_\theta$ for
+  each fixed $\theta\in\Sphere^{d-1}$.
+\item Find the unique translations that center $\alpha$ and $\beta$.
+  Show that centering and projecting commute:
+  $(\alpha_\theta)_0=(P_\theta)_\push\alpha_0$ and
+  $(\beta_\theta)_0=(P_\theta)_\push\beta_0$.
+\item Prove that
+\[
+  \SW_2(\alpha,\beta)^2
+    =\frac1d|m_\alpha-m_\beta|^2+\SW_2(\alpha_0,\beta_0)^2.
+\]
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item Use linearity of $P_\theta$ and the definition of the pushforward.
+\item Translating a random vector by $-m$ subtracts $m$ from its mean.
+  Compute $P_\theta(x-m)$.
+\item On the line, expand the squared difference after separately
+  centering the two coordinates of a coupling. Which term drops out
+  for \emph{every} coupling? Finally use
+  $\int\theta\theta^\top\,d\varsigma(\theta)=I_d/d$.
+\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) A projected mean is the projection of the mean.}
+Finite second moments imply finite first moments by Cauchy--Schwarz.
+For a fixed direction, the pushforward formula gives
+\[
+  \int s\,d\alpha_\theta(s)
+     =\int P_\theta(x)\,d\alpha(x)
+     =\ip{\theta}{\int x\,d\alpha(x)}
+     =\ip{\theta}{m_\alpha}.
+\]
+Replacing $\alpha$ by $\beta$ gives $\int t\,d\beta_\theta(t)=
+\ip{\theta}{m_\beta}$. There is no average over directions at this step.
+
+\textbf{(b) Center first or project first.}
+For any $u\in\R^d$, the mean of $(x\mapsto x-u)_\push\alpha$ is
+$\int(x-u)\,d\alpha(x)=m_\alpha-u$, using the unit mass of $\alpha$.
+It is zero precisely when $u=m_\alpha$. Likewise, $\beta$ is centered
+by subtracting $m_\beta$, and no other vector. If $X\sim\alpha$, then
+\[
+  P_\theta(X-m_\alpha)
+    =P_\theta(X)-\ip{\theta}{m_\alpha}.
+\]
+The left-hand side has law $(P_\theta)_\push\alpha_0$ and the
+right-hand side has law $(\alpha_\theta)_0$ by part~(a).
+The same calculation with $\beta$ gives the second identity.
+
+\par\Needspace{11\baselineskip}
+\textbf{(c) Split the cost in each direction.}
+First let $\eta,\zeta\in\PPtwo(\R)$ have means $a,b$, and let
+$(S,T)$ be \emph{any} coupling of them. Write $S_0=S-a$ and $T_0=T-b$.
+Then $S-T=(S_0-T_0)+(a-b)$ and
+\begin{align*}
+  \EE(S-T)^2
+    &=\EE(S_0-T_0)^2+2(a-b)\EE(S_0-T_0)+(a-b)^2\\
+    &=\EE(S_0-T_0)^2+(a-b)^2,
+\end{align*}
+since $\EE S_0=\EE T_0=0$ regardless of their dependence.
+Subtracting $a,b$ from the two coordinates is a bijection between
+the couplings of $\eta,\zeta$ and those of $\eta_0,\zeta_0$:
+the inverse simply adds $a,b$ back. The constant term does not depend
+on the chosen coupling, so taking the infimum gives
+$\Wtwo(\eta,\zeta)^2=(a-b)^2+\Wtwo(\eta_0,\zeta_0)^2$.
+Apply this to $\alpha_\theta,\beta_\theta$ and use parts (a) and (b):
+\[
+  \Wtwo(\alpha_\theta,\beta_\theta)^2
+    =|\ip{\theta}{m_\alpha-m_\beta}|^2+
+      \Wtwo\bigl((P_\theta)_\push\alpha_0,(P_\theta)_\push\beta_0\bigr)^2.
+\]
+
+\textbf{Average the squared mean displacement.}
+For completeness, the matrix $M=\int\theta\theta^\top\,d\varsigma(\theta)$
+has vanishing off-diagonal entries: flipping the sign of one
+coordinate preserves $\varsigma$ and negates the corresponding
+product of distinct coordinates. Its diagonal entries are equal by
+permutation symmetry and add to $\int|\theta|^2\,d\varsigma=1$.
+Thus $M=I_d/d$, including $d=1$. Setting $w=m_\alpha-m_\beta$ gives
+\[
+  \int|\ip{\theta}{w}|^2\,d\varsigma(\theta)
+     =w^\top M w=\frac{|w|^2}{d}.
+\]
+Averaging the directional identity now yields
+\[
+  \boxed{\SW_2(\alpha,\beta)^2
+    =\frac{|m_\alpha-m_\beta|^2}{d}+\SW_2(\alpha_0,\beta_0)^2.}
+\]
+For example, if $\beta=(x\mapsto x+h)_\push\alpha$, then
+$m_\beta=m_\alpha+h$ and $\beta_0=\alpha_0$, so
+$\SW_2(\alpha,\beta)=|h|/\sqrt d$. If the means already agree, the first
+term vanishes and the distance is entirely between the centered laws.
+\end{solution}
+
+\par\addvspace{7pt}\Needspace{3\baselineskip}
+\textbf{Further reading.}
+See the sections on sliced Wasserstein (including Gaussians) and on
+the Euclidean mean decomposition in
+\href{https://www.gpeyre.com/ot4ml/OT4ML/OT4ML.pdf}
+     {\emph{Optimal Transport for Machine Learners}}.
+\end{document}

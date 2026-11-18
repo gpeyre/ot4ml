@@ -1,0 +1,318 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=23mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{newpxtext,newpxmath}
+\usepackage{microtype,xcolor,enumitem,environ,needspace,fancyhdr,etoolbox}
+\usepackage[colorlinks=true,linkcolor=heading,urlcolor=heading]{hyperref}
+\definecolor{heading}{HTML}{244B65}
+\definecolor{hintcolor}{HTML}{765638}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=4pt,parsep=2pt,leftmargin=*}
+\allowdisplaybreaks[1]
+\newtheoremstyle{exostyle}{8pt}{6pt}{\normalfont}{}{\color{heading}\bfseries}{.}{\newline}{}
+\theoremstyle{exostyle}
+\newtheorem{exercise}{Exercise}
+\BeforeBeginEnvironment{exercise}{\par\addvspace{10pt}\Needspace{9\baselineskip}%
+  \begingroup\color{heading!45}\hrule height .6pt\endgroup\nobreak}
+\newif\ifcorr
+\ifdefined\StatementOnly\corrfalse\else\corrtrue\fi
+\newcommand{\showsolutions}{\corrtrue}
+\newcommand{\hidesolutions}{\corrfalse}
+\NewEnviron{hints}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{hintcolor}\bfseries Useful hints}\par\BODY\par\medskip\fi}
+\NewEnviron{solution}{\ifcorr\par\Needspace{4\baselineskip}\noindent
+  {\color{heading}\bfseries Detailed solution}\par\BODY\par\medskip\fi}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\push}{\#}
+\newcommand{\W}{\mathcal{W}}
+\newcommand{\Wone}{\mathcal{W}_1}
+\newcommand{\Wtwo}{\mathcal{W}_2}
+\newcommand{\Unif}{\mathcal U}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gradW}{\mathord{\nabla\mkern-9.3mu\nabla}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{heading}Optimal Transport / Exercises}
+\fancyhead[R]{\small\ifcorr Solutions\else Statements\fi}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\maketitle}{\thispagestyle{plain}\begingroup
+  \color{heading}\LARGE\bfseries\SheetTitle\par\endgroup
+  \vspace{3pt}{\large\ifcorr Statements, hints and worked solutions\else Exercise statements\fi}\par
+  \vspace{7pt}\hrule\vspace{9pt}
+  \ifcorr Each exercise is followed by question-by-question hints and a worked solution.
+  Try the questions before reading the hints.\else
+  This version contains the exercises only. Hints and worked solutions are available in the companion PDF.\fi
+  \par\medskip}
+\hypersetup{pdfauthor={Optimal Transport for Machine Learners},pdfsubject={Exercises in optimal transport}}
+
+\newcommand{\SheetTitle}{Wasserstein Distances and Duality}
+\newcommand{\X}{\mathcal X}
+\newcommand{\Y}{\mathcal Y}
+\newcommand{\U}{\mathcal U}
+\hypersetup{pdftitle={Wasserstein Distances and Duality -- Exercises},
+  pdfauthor={Julie Delon (original exercises); OT4ML (adaptation and solutions)}}
+
+\begin{document}
+\maketitle
+\textbf{Original exercises: Julie Delon.} Adapted for OT4ML.
+
+\textbf{Notation.}
+Write $\U(\alpha,\beta)$ for probability couplings with marginals
+$\alpha,\beta$, and $\mathcal L_c(\alpha,\beta)$ for the infimum of
+$\int c\,d\pi$ over these couplings. We use the full total variation
+norm $\|\nu\|_{\mathrm{TV}}=|\nu|(\X)$ for signed measures; for example,
+$\|\sum_i v_i\delta_{x_i}\|_{\mathrm{TV}}=\sum_i|v_i|$ for distinct points.
+
+\begin{exercise}[Total variation and the $0/1$ cost]\label{ex-dd-tv}
+On a standard Borel space $\X$, set $d_0(x,y)=\mathbf 1_{\{x\ne y\}}$.
+\begin{enumerate}[label=(\alph*)]
+\item Let $\alpha=\sum_i a_i\delta_{x_i}$ and
+  $\beta=\sum_i b_i\delta_{x_i}$ be probabilities on the same finite
+  set of distinct points (zero weights are allowed). Compute
+  $\mathcal L_{d_0}(\alpha,\beta)$ and construct an optimal plan.
+\item Extend the identity $\mathcal L_{d_0}(\alpha,\beta)=
+  \tfrac12\|\alpha-\beta\|_{\mathrm{TV}}$ to arbitrary probabilities on
+  $\X$. Explain why, on a countable discrete space, this also gives
+  $\mathcal W_{p,d_0}(\alpha,\beta)^p=\tfrac12\|\alpha-\beta\|_{\mathrm{TV}}$
+  for $1\le p<\infty$, where the subscript $d_0$ specifies the ground metric.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item The cost of a plan is the mass it sends off the diagonal.
+  How much mass can you keep at each $x_i$? Couple the two residual
+  weight vectors after taking out that mass.
+\item Use $\lambda=\alpha+\beta$ as a dominating measure and take the
+  pointwise minimum of the two densities. For any plan, the measure
+  of its diagonal part is dominated by both marginals.
+\end{enumerate}
+\end{hints}
+\begin{solution}
+\textbf{(a) Match as much mass as possible in place.}
+A coupling matrix $\mathrm P$ has nonnegative entries, row sums $a_i$
+and column sums $b_j$. Its cost is
+\[
+  \sum_{i,j}\mathbf 1_{\{i\ne j\}}\mathrm P_{i,j}
+    =1-\sum_i\mathrm P_{i,i}.
+\]
+The row and column constraints imply separately that
+$\mathrm P_{i,i}\le a_i$ and $\mathrm P_{i,i}\le b_i$.
+Set $m_i=\min(a_i,b_i)$ and $r=1-\sum_i m_i$. No plan can cost less than
+$r$, and the identity $|a_i-b_i|=a_i+b_i-2m_i$ gives
+\[
+  r=\frac12\sum_i|a_i-b_i|
+    =\frac12\|\alpha-\beta\|_{\mathrm{TV}}.
+\]
+To attain the lower bound, keep $m_i$ at each $x_i$. The residual weights
+$a_i'=a_i-m_i$ and $b_i'=b_i-m_i$ both sum to $r$ and satisfy
+$a_i'b_i'=0$ for every $i$. If $r>0$, set
+\[
+  \mathrm P^\star_{i,j}=\mathbf 1_{\{i=j\}}m_i+\frac{a_i'b_j'}{r}.
+\]
+Indeed, $\sum_j\mathrm P^\star_{i,j}=m_i+a_i'=a_i$, and
+$\sum_i\mathrm P^\star_{i,j}=m_j+b_j'=b_j$. The product term
+has no diagonal entries and has total mass
+$(\sum_i a_i')(\sum_j b_j')/r=r$, so the cost is exactly $r$.
+If $r=0$, the two weight vectors are equal and the diagonal plan is
+feasible with cost zero. In either case the lower bound is attained;
+when $r>0$, there can be other ways to match the leftover mass.
+
+\par\Needspace{6\baselineskip}
+\textbf{(b) The common part of two measures.}
+Let $a=d\alpha/d\lambda$ and $b=d\beta/d\lambda$ for
+$\lambda=\alpha+\beta$. Define the common part $\eta$ by
+$d\eta=\min(a,b)\,d\lambda$. The residuals $\alpha'=\alpha-\eta$
+and $\beta'=\beta-\eta$ have densities $(a-b)_+$ and $(b-a)_+$.
+They are concentrated on the disjoint measurable sets $\{a>b\}$
+and $\{b>a\}$, respectively, and their masses are both
+\[
+  r=1-\eta(\X)=\frac12\int |a-b|\,d\lambda
+               =\frac12\|\alpha-\beta\|_{\mathrm{TV}}.
+\]
+The middle equality again follows from
+$|a-b|=a+b-2\min(a,b)$ and the unit mass of each probability.
+
+Let $\Delta(x)=(x,x)$ and let $D=\{(x,x):x\in\X\}$.
+For a coupling $\pi$, its diagonal mass defines a measure
+$\gamma(A)=\pi(D\cap(A\times\X))$ on $\X$. The diagonal is measurable
+on a standard Borel space (a countable separating family of measurable
+sets detects whether two points agree). Since
+$D\cap(A\times\X)=D\cap(\X\times A)$, the marginal constraints give
+$\gamma(A)\le\alpha(A)$ and $\gamma(A)\le\beta(A)$.
+Hence $\gamma\ll\lambda$ and its density is at most both $a$ and $b$,
+so $\gamma\le\eta$. It follows that
+\[
+  \int d_0\,d\pi=1-\pi(D)=1-\gamma(\X)\ge 1-\eta(\X)=r .
+\]
+For $r>0$, take $\pi^\star=\Delta_\push\eta+\alpha'\otimes\beta'/r$.
+The first and second marginals of the product term are $\alpha'$ and
+$\beta'$ because the opposite residual has mass $r$. Adding the
+diagonal term therefore restores the two prescribed marginals.
+The product term is off the diagonal by disjointness of the residual
+sets, so $\pi^\star$ costs exactly $r$. If $r=0$, use $\Delta_\push\alpha$.
+
+Since $d_0^p=d_0$ for every finite $p\ge 1$, the same cost appears in
+the definition of $\mathcal W_{p,d_0}^p$ on a countable discrete space.
+On an uncountable standard Borel space the calculation still holds
+for the measurable cost on the given Borel structure; it does not
+require changing that structure to the discrete metric topology.
+\end{solution}
+
+\begin{exercise}[Equivalence of topologies on a finite metric space]\label{ex-dd-finite}
+Let $(\X,d)$ be a finite metric space with at least two points, and set
+$d_{\min}=\min_{x\ne y}d(x,y)$ and $d_{\max}=\max_{x,y}d(x,y)$.
+\begin{enumerate}[label=(\alph*)]
+\item Prove that all probability measures $\alpha,\beta$ on $\X$ satisfy
+  \[
+    \frac{d_{\min}}2\|\alpha-\beta\|_{\mathrm{TV}}
+    \le \Wone(\alpha,\beta)
+    \le\frac{d_{\max}}2\|\alpha-\beta\|_{\mathrm{TV}} .
+  \]
+\item Deduce that $\Wone$ and total variation induce the same topology.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item Bound $d$ above and below by multiples of $d_0$. For the upper
+  bound, test with the optimal $d_0$ plan from Exercise~\ref{ex-dd-tv}.
+\item Turn the two distance estimates into ball inclusions at a fixed
+  center. Why is $d_{\min}>0$?
+\end{enumerate}
+\end{hints}
+\ifcorr\Needspace{12\baselineskip}\fi
+\begin{solution}
+\textbf{(a) Price the mass that must move.}
+On the diagonal both $d$ and $d_0$ vanish. Off the diagonal $d_0=1$,
+so the definitions of $d_{\min}$ and $d_{\max}$ give
+$d_{\min}d_0(x,y)\le d(x,y)\le d_{\max}d_0(x,y)$ everywhere.
+For any coupling $\pi$, the lower bound and Exercise~\ref{ex-dd-tv} give
+\[
+  \int d\,d\pi\ge d_{\min}\int d_0\,d\pi
+                \ge \frac{d_{\min}}2\|\alpha-\beta\|_{\mathrm{TV}}.
+\]
+Taking the infimum proves the first inequality. For the second use the
+specific coupling $\pi^\star$ that is optimal for $d_0$. It need not be
+optimal for $d$:
+\[
+  \Wone(\alpha,\beta)\le\int d\,d\pi^\star
+    \le d_{\max}\int d_0\,d\pi^\star
+    =\frac{d_{\max}}2\|\alpha-\beta\|_{\mathrm{TV}} .
+\]
+The constants are sharp. For $\alpha=\delta_x$, $\beta=\delta_y$ with
+$x\ne y$, the TV norm of the difference is $2$ and the unique coupling
+has cost $d(x,y)$. Choosing pairs attaining $d_{\min}$ and $d_{\max}$
+gives equality in the respective bounds.
+
+\textbf{(b) Compare neighborhoods.}
+Finiteness and definiteness of $d$ give $0<d_{\min}\le d_{\max}<\infty$.
+Writing $B_{\mathrm{TV}}$ for balls in the full TV norm and $B_{\Wone}$
+for Wasserstein balls, part~(a) gives, for every center $\alpha$
+and radius $\varepsilon>0$,
+\[
+  B_{\mathrm{TV}}(\alpha,2\varepsilon/d_{\max})
+   \subset B_{\Wone}(\alpha,\varepsilon)
+   \subset B_{\mathrm{TV}}(\alpha,2\varepsilon/d_{\min}).
+\]
+Each kind of neighborhood therefore contains one of the other kind.
+In particular, $\Wone(\alpha_n,\alpha)\to0$ if and only if
+$\|\alpha_n-\alpha\|_{\mathrm{TV}}\to0$. If $\X$ has only one point,
+the two topologies coincide trivially and no $d_{\min}$ is needed.
+\end{solution}
+
+\begin{exercise}[Algebra of $c$-transforms]\label{ex-dd-transforms}
+Let $\X,\Y$ be nonempty compact metric spaces and
+$c:\X\times\Y\to\R$ continuous. For continuous real-valued potentials
+$f,f'$ on $\X$ and $g$ on $\Y$, use the conventions
+\[
+  f^c(y)=\inf_{x\in\X}\{c(x,y)-f(x)\},\qquad
+  g^{\bar c}(x)=\inf_{y\in\Y}\{c(x,y)-g(y)\}.
+\]
+Here $\bar c(y,x)=c(x,y)$, and the transforms are applied in the order
+written: $f^{c\bar c}=(f^c)^{\bar c}$.
+Prove the following pointwise statements:
+\begin{enumerate}[label=(\alph*)]
+\item If $f\le f'$, then $f^c\ge(f')^c$.
+\item $f^{c\bar c}\ge f$.
+\item $g^{\bar c c}\ge g$.
+\item $f^{c\bar c c}=f^c$.
+\end{enumerate}
+\end{exercise}
+\begin{hints}
+\begin{enumerate}[label=(\alph*)]
+\item Compare the expressions inside the infima before taking them.
+\item In $f^c(y)$, test the infimum with a fixed $x$; then rearrange.
+\item Repeat the argument with the roles of $\X$ and $\Y$ exchanged.
+\item For one inequality, apply (a) to (b). For the other, plug
+  $g=f^c$ into (c).
+\end{enumerate}
+\end{hints}
+\ifcorr\Needspace{12\baselineskip}\fi
+\begin{solution}
+Compactness and continuity imply that the transforms are finite.
+For example,
+$|f^c(y)-f^c(y')|\le\sup_x |c(x,y)-c(x,y')|$: the two functions
+of $x$ inside the infima differ by at most the right-hand side.
+Uniform continuity of $c$ on the compact product gives continuity of
+$f^c$. The same reasoning applies to $g^{\bar c}$, so the repeated
+transforms are also well defined.
+
+\textbf{(a) A single transform reverses the order.}
+If $f(x)\le f'(x)$ for all $x$, then
+$c(x,y)-f(x)\ge c(x,y)-f'(x)$ for each $x,y$.
+Taking the infimum over $x$ on both sides preserves this last
+inequality, giving $f^c\ge(f')^c$. The same proof gives order reversal
+for the $\bar c$-transform.
+
+\textbf{(b) Closing a potential on the source.}
+By definition $f^c(y)\le c(x,y)-f(x)$ for every $x,y$. Thus for each
+fixed $x$, all the values $c(x,y)-f^c(y)$ are at least $f(x)$.
+Taking their infimum gives
+\[
+  f^{c\bar c}(x)=\inf_{y\in\Y}\{c(x,y)-f^c(y)\}\ge f(x).
+\]
+The starting inequality also says that $(f,f^c)$ is dual feasible:
+$f(x)+f^c(y)\le c(x,y)$ everywhere.
+
+\textbf{(c) Closing a potential on the target.}
+This time $g^{\bar c}(x)\le c(x,y)-g(y)$ for every $x,y$.
+Rearrange to $c(x,y)-g^{\bar c}(x)\ge g(y)$, and take the infimum
+over $x$ for each fixed $y$. This gives $g^{\bar c c}(y)\ge g(y)$.
+
+\textbf{(d) The third transform repeats the first.}
+From (b), $f\le f^{c\bar c}$, so (a) gives
+$f^c\ge(f^{c\bar c})^c=f^{c\bar c c}$.
+On the other hand, apply (c) to the target potential $g=f^c$ to
+obtain $(f^c)^{\bar c c}\ge f^c$. The left-hand side is
+$f^{c\bar c c}$, proving equality. In particular, applying $\bar c$
+to that equality gives $f^{c\bar c c\bar c}=f^{c\bar c}$: taking the
+double transform twice gives the same result as taking it once.
+
+\par\Needspace{5\baselineskip}
+\textbf{Consequence for alternating dual updates.}
+With the other potential fixed, a transform is the pointwise
+largest feasible choice. Starting from $f$, updating first the target
+potential and then the source gives the feasible pair
+$(f^{c\bar c},f^c)$. By (d), the next target update returns $f^c$ again,
+and the next source update returns $f^{c\bar c}$. This proves that
+the updates stop, not that the pair is jointly optimal.
+
+For instance, on two points with diagonal costs $0$ and off-diagonal
+costs $1$, start at $f=(0,1)$. The two columnwise minima give
+$f^c=(0,-1)$, and the two rowwise minima give $f^{c\bar c}=(0,1)$.
+For source weights $(3/4,1/4)$ and target weights $(1/4,3/4)$, this
+fixed pair has dual value $1/4-3/4=-1/2$. The feasible zero pair
+already has a larger value, namely $0$.
+\end{solution}
+
+\par\addvspace{7pt}\Needspace{3\baselineskip}
+\textbf{Further reading.}
+See the discussions of total variation in \emph{Wasserstein Space}
+and of the algebra of $c$-transforms in \emph{Dual Problem} in
+\href{https://www.gpeyre.com/ot4ml/OT4ML/OT4ML.pdf}
+     {\emph{Optimal Transport for Machine Learners}}.
+\end{document}

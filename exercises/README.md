@@ -10,13 +10,15 @@ question-by-question hints and a detailed solution.
 | Monge transport | 13 | [PDF](exo-monge/exo-monge-uncorrected.pdf) | [PDF](exo-monge/exo-monge.pdf) |
 | Discrete Kantorovich transport | 5 | [PDF](exo-kanto-discr/exo-kanto-discr-uncorrected.pdf) | [PDF](exo-kanto-discr/exo-kanto-discr.pdf) |
 | Continuous Kantorovich transport | 6 | [PDF](exo-kanto-cont/exo-kanto-cont-uncorrected.pdf) | [PDF](exo-kanto-cont/exo-kanto-cont.pdf) |
+| Wasserstein distances and duality (original exercises by Julie Delon) | 3 | [PDF](exo-distance-duality/exo-distance-duality-uncorrected.pdf) | [PDF](exo-distance-duality/exo-distance-duality.pdf) |
 | Entropic transport and Sinkhorn | 11 | [PDF](exo-sinkhorn/exo-sinkhorn-uncorrected.pdf) | [PDF](exo-sinkhorn/exo-sinkhorn.pdf) |
 | Wasserstein gradient flows | 6 | [PDF](exo-gradient-flows/exo-gradient-flows-uncorrected.pdf) | [PDF](exo-gradient-flows/exo-gradient-flows.pdf) |
 | Flow matching and dynamic OT (original exercises by Julie Delon) | 5 | [PDF](exo-flow-matching/exo-flow-matching-uncorrected.pdf) | [PDF](exo-flow-matching/exo-flow-matching.pdf) |
+| Sliced optimal transport (original exercises by Kimia Nadjahi) | 3 | [PDF](exo-sliced/exo-sliced-uncorrected.pdf) | [PDF](exo-sliced/exo-sliced.pdf) |
 
 Discrete and continuous Kantorovich transport are intentionally separate sheets,
-not chapters of a combined PDF. The website links to all twelve editions in its
-Exercises section.
+not chapters of a combined PDF. The website links to both editions of every
+sheet in its Exercises section.
 
 ## Rebuilding
 
@@ -43,7 +45,7 @@ python3 exercises/test_exercises.py
 
 ## Mathematical corrections
 
-The collection contains 46 reviewed exercises and their solutions. The substantive
+The collection contains 52 reviewed exercises and their solutions. The substantive
 corrections include:
 
 - **Monge:** added nondegeneracy and moment assumptions; distinguished atomless
@@ -77,18 +79,28 @@ corrections include:
   the orientation of cross covariances and made mixture weights time-dependent;
   specified independence for the Gaussian-to-discrete example. See the
   [sheet's provenance and correction notes](exo-flow-matching/README.md).
+- **Distance and duality:** adapted Julie Delon's three exercises, with credit in
+  both editions. Distinguished the full TV norm from the \(0/1\) transport cost,
+  made the finite-space comparison constants explicit, and corrected the order of
+  the transforms on the target space. See the
+  [sheet's provenance and solution notes](exo-distance-duality/README.md).
+- **Sliced optimal transport:** adapted Kimia Nadjahi's three exercises, with
+  credit in both editions. Treated zero-variance Gaussians, showed by an explicit
+  example that an optimal coupling can become suboptimal after projection, and
+  justified the \(1/d\) factor in the squared mean--shape decomposition. See the
+  [sheet's provenance and solution notes](exo-sliced/README.md).
 
 The solutions now explain intermediate steps rather than only giving final
 formulas. Every exercise starts below a blue divider, with its title on a separate
 line. Consistent hint and solution headings and page-break protection make the
 blocks easy to distinguish; no answers appear in the statement editions.
-The homepage presents the six topics in a compact three-column grid, adapting
+The homepage presents the topics in a compact three-column grid, adapting
 to two columns on tablets and one on phones, without per-sheet descriptions.
 
 ## Checks
 
-- All twelve PDFs compile without unresolved references or missing glyph warnings.
-- Source checks verify the 46 statement/hints/solution triples and local labels.
+- All sixteen PDFs compile without unresolved references or missing glyph warnings.
+- Source checks verify the 52 statement/hints/solution triples and local labels.
 - PDF checks verify that every corrected exercise has hints and a solution and
   that neither appears in a statement-only edition.
 - Numerical regression checks cover assignment enumeration, explicit transport
@@ -97,6 +109,10 @@ to two columns on tablets and one on phones, without per-sheet descriptions.
 - Flow-matching checks cover Gaussian regression with nonsymmetric cross
   covariance, target-dilation time changes, the affine-optimality counterexample,
   the commuting-covariance ODE, and the discrete-target continuity equation.
-- Both flow-matching PDFs are checked for Julie Delon's visible credit and
-  author metadata.
+- Both editions of the flow-matching, sliced, and distance/duality sheets are
+  checked for visible credit and PDF author metadata.
+- Distance and duality checks cover the explicit \(0/1\)-cost plan and the
+  triple-transform identity, including a suboptimal alternating fixed point.
+- Sliced transport checks cover the projected-plan counterexample and the
+  directionwise and averaged mean--shape decompositions.
 - Rendered pages are inspected for equation overflow and orphaned headings.

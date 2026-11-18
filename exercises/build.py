@@ -11,9 +11,11 @@ SHEETS = {
     "exo-monge": 13,
     "exo-kanto-discr": 5,
     "exo-kanto-cont": 6,
+    "exo-distance-duality": 3,
     "exo-sinkhorn": 11,
     "exo-gradient-flows": 6,
     "exo-flow-matching": 5,
+    "exo-sliced": 3,
 }
 
 
