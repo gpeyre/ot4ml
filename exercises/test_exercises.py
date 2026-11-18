@@ -95,7 +95,30 @@ class ExerciseChecks(unittest.TestCase):
         g = (cost-f[:, None]).min(axis=0)
         np.testing.assert_array_equal((cost-g).min(axis=1), f)
         self.assertAlmostEqual([.75, .25] @ f + [.25, .75] @ g, -.5)
-        self.assertTrue(np.all(cost >= 0))  # The zero dual pair is feasible.
+        f_opt, g_opt = np.array([1., 0.]), np.array([-1., 0.])
+        plan = np.array([[.25, .5], [0., .25]])
+        np.testing.assert_array_equal(plan.sum(axis=1), [.75, .25])
+        np.testing.assert_array_equal(plan.sum(axis=0), [.25, .75])
+        slack = cost - f_opt[:, None] - g_opt
+        self.assertTrue(np.all(slack >= 0))
+        np.testing.assert_array_equal(plan * slack, np.zeros_like(plan))
+        self.assertAlmostEqual((plan * cost).sum(), .5)
+
+    def test_entropic_two_by_two_root(self):
+        for p in (.12, .49, .5, .51, .89):
+            for q in (.0001, .3, .9999):
+                b = p*(1-q) + (1+q)/2
+                x = p/(b + np.sqrt(b*b-2*p*(1-q)))
+                self.assertTrue(max(0., p-.5) < x < min(.5, p))
+                self.assertAlmostEqual((p-x)*(.5-x), q*x*(.5-p+x))
+                if p == .5:
+                    self.assertAlmostEqual(.5-x, .5*np.sqrt(q)/(1+np.sqrt(q)))
+
+    def test_split_plan_interpolation(self):
+        # The monotone plan splits sources and merges targets at the endpoints.
+        edges = [(0, 1), (0, 2), (2, 2), (2, 5)]
+        for t, expected in [(0, 2), (Fraction(1, 3), 4), (Fraction(3, 4), 4), (1, 3)]:
+            self.assertEqual(len({(1-t)*x + t*y for x, y in edges}), expected)
 
     def test_sliced_projection_can_destroy_optimality(self):
         u, v = np.array([1., 1.]), np.array([-1., 2.])

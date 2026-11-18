@@ -31,9 +31,9 @@ The five original topics and their order are preserved.
    source are explicit.
 3. **One-dimensional terminal optimality:** specify sufficient regularity for
    characteristics and continuity-equation uniqueness on each interval before
-   time 1, together with existence of an almost-everywhere finite terminal
-   limit. These assumptions justify the pushforward claim, not merely
-   noncrossing of trajectories. The limiting map may be non-strictly
+   time 1. Conditional Jensen bounds the action of the characteristics and
+   proves existence of an almost-everywhere finite terminal limit; it is not
+   an additional hypothesis. The limiting map may be non-strictly
    increasing, allowing atomic targets. The quantile-composition formula is
    only asserted for atomless sources.
 4. **Gaussian endpoints:** define the cross covariance as

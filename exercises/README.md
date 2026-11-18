@@ -74,8 +74,8 @@ corrections include:
   distance.
 - **Flow matching:** adapted Julie Delon's five exercises, with credit in both
   editions. Distinguished affine equivariance from preservation of quadratic
-  optimality; made the characteristic and endpoint assumptions explicit in
-  one dimension; required invertible interpolated Gaussian covariances; fixed
+  optimality; proved almost-everywhere existence of the terminal map from
+  the kinetic-action bound in one dimension; required invertible interpolated Gaussian covariances; fixed
   the orientation of cross covariances and made mixture weights time-dependent;
   specified independence for the Gaussian-to-discrete example. See the
   [sheet's provenance and correction notes](exo-flow-matching/README.md).
